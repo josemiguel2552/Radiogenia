@@ -1,0 +1,64 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { decrypt } from "@/lib/encryption";
+import { generateAI } from "@/lib/ai-provider";
+import { buildRecommendationsPrompt } from "@/lib/prompts";
+import type { AIProvider, OutputLanguage } from "@/lib/types";
+
+export async function POST(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { findingsText } = await req.json();
+
+    const { data: config } = await supabase
+      .from("user_model_config")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
+
+    let apiKey = "";
+    try {
+      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
+    } catch {
+      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
+    }
+
+    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
+
+    // Get user recommendations
+    const { data: recs } = await supabase
+      .from("user_recommendations")
+      .select("trigger_keyword, recommendation_text")
+      .eq("user_id", user.id);
+
+    const recommendations = (recs || []).map((r: { trigger_keyword: string; recommendation_text: string }) => ({
+      trigger: r.trigger_keyword,
+      recommendation: r.recommendation_text,
+    }));
+
+    const { system, user: userPrompt } = buildRecommendationsPrompt({
+      findingsText,
+      recommendations,
+      outputLanguage: (config.output_language || "es") as OutputLanguage,
+    });
+
+    const text = await generateAI({
+      provider: config.provider as AIProvider,
+      modelName: config.model_name,
+      apiKey,
+      customBaseUrl: config.custom_base_url,
+      system,
+      user: userPrompt,
+    });
+
+    return NextResponse.json({ text });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
