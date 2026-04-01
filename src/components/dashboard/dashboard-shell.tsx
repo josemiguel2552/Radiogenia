@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,11 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
   const router = useRouter();
   const [rightOpen, setRightOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  // Ensure templates are seeded (fallback if registration seeding failed)
+  useEffect(() => {
+    fetch("/api/seed", { method: "POST" }).catch(() => {});
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();

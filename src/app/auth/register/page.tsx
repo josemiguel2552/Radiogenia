@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Stethoscope } from "lucide-react";
-import { DEFAULT_TEMPLATES } from "@/lib/templates";
-import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendations";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,26 +36,13 @@ export default function RegisterPage() {
     }
 
     if (data.user) {
-      // Seed templates
-      const templatesPayload = DEFAULT_TEMPLATES.map((t) => ({
-        user_id: data.user!.id,
-        name: t.title,
-        modality: t.technique,
-        base_template_id: t.id,
-        structure: t,
-        is_default: true,
-      }));
-      await supabase.from("user_templates").insert(templatesPayload);
-
-      // Seed recommendations
-      const recsPayload = DEFAULT_RECOMMENDATIONS.map((r) => ({
-        user_id: data.user!.id,
-        trigger_keyword: r.trigger,
-        recommendation_text: r.recommendation,
-        source: "manual" as const,
-        guideline_name: r.guideline,
-      }));
-      await supabase.from("user_recommendations").insert(recsPayload);
+      // Seed templates and recommendations via server-side API
+      // This avoids race conditions with the profile trigger
+      try {
+        await fetch("/api/seed", { method: "POST" });
+      } catch {
+        // Seeding will be retried on dashboard load if needed
+      }
     }
 
     router.push("/dashboard");

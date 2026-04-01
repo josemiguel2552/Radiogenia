@@ -10,6 +10,14 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, Upload, Loader2, Check, X } from "lucide-react";
 import type { UserRecommendation } from "@/lib/types";
 
+interface ExtractedRec {
+  trigger: string;
+  recommendation: string;
+  guideline: string;
+  keywords?: string;
+  supported_report_types?: string;
+}
+
 export function RecommendationsTab() {
   const [recs, setRecs] = useState<UserRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,9 +27,9 @@ export function RecommendationsTab() {
   const [guideline, setGuideline] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // PDF extraction
+  // Document upload (Word + PDF)
   const [extracting, setExtracting] = useState(false);
-  const [extractedRecs, setExtractedRecs] = useState<{ trigger: string; recommendation: string; guideline: string }[]>([]);
+  const [extractedRecs, setExtractedRecs] = useState<ExtractedRec[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function load() {
@@ -59,7 +67,8 @@ export function RecommendationsTab() {
     load();
   }
 
-  async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  // Unified file upload (Word or PDF)
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setExtracting(true);
@@ -68,12 +77,20 @@ export function RecommendationsTab() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/generate/extract-pdf", { method: "POST", body: formData });
-    if (res.ok) {
-      const data = await res.json();
-      setExtractedRecs(data.recommendations || []);
+    try {
+      const res = await fetch("/api/upload/recommendations", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setExtractedRecs(data.recommendations || []);
+      } else {
+        const data = await res.json();
+        alert("Error: " + (data.error || "Upload failed"));
+      }
+    } catch (err) {
+      alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
     }
     setExtracting(false);
+    if (fileRef.current) fileRef.current.value = "";
   }
 
   async function approveExtracted(idx: number) {
@@ -85,10 +102,26 @@ export function RecommendationsTab() {
         trigger_keyword: rec.trigger,
         recommendation_text: rec.recommendation,
         source: "pdf_extracted",
-        guideline_name: rec.guideline,
+        guideline_name: rec.guideline || "",
       }),
     });
     setExtractedRecs((prev) => prev.filter((_, i) => i !== idx));
+    load();
+  }
+
+  async function approveAllExtracted() {
+    const batch = extractedRecs.map((rec) => ({
+      trigger_keyword: rec.trigger,
+      recommendation_text: rec.recommendation,
+      source: "pdf_extracted",
+      guideline_name: rec.guideline || "",
+    }));
+    await fetch("/api/recommendations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(batch),
+    });
+    setExtractedRecs([]);
     load();
   }
 
@@ -128,7 +161,7 @@ export function RecommendationsTab() {
         </div>
       )}
 
-      <div className="space-y-2 max-h-[30vh] overflow-y-auto">
+      <div className="space-y-2 max-h-[25vh] overflow-y-auto">
         {recs.map((r) => (
           <div key={r.id} className="p-2.5 border rounded-lg text-xs dark:border-gray-700">
             <div className="flex justify-between items-start gap-2">
@@ -146,28 +179,31 @@ export function RecommendationsTab() {
             </div>
           </div>
         ))}
+        {recs.length === 0 && (
+          <p className="text-center text-xs text-gray-400 py-4">No recommendations yet. Add manually or upload a document.</p>
+        )}
       </div>
 
       <Separator />
 
-      {/* PDF Import */}
+      {/* Document Import (Word + PDF) */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Import from PDF</h3>
-        <input type="file" accept=".pdf" ref={fileRef} onChange={handlePdfUpload} className="hidden" />
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Import from Document</h3>
+        <input type="file" accept=".docx,.doc,.pdf" ref={fileRef} onChange={handleFileUpload} className="hidden" />
         <div
-          className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors dark:border-gray-600"
+          className="border-2 border-dashed rounded-lg p-5 text-center cursor-pointer hover:border-blue-400 transition-colors dark:border-gray-600"
           onClick={() => fileRef.current?.click()}
         >
           {extracting ? (
             <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-              <p className="text-sm text-gray-500">Extracting recommendations...</p>
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <p className="text-xs text-gray-500">AI is extracting recommendations...</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2">
-              <Upload className="h-6 w-6 text-gray-400" />
-              <p className="text-sm text-gray-500">Drop PDF guideline here</p>
-              <p className="text-xs text-gray-400">ACR, Fleischner, etc.</p>
+            <div className="flex flex-col items-center gap-1">
+              <Upload className="h-5 w-5 text-gray-400" />
+              <p className="text-xs text-gray-500">Upload Word or PDF guideline</p>
+              <p className="text-[10px] text-gray-400">ACR, Fleischner, BI-RADS, etc.</p>
             </div>
           )}
         </div>
@@ -175,12 +211,23 @@ export function RecommendationsTab() {
         {/* Extracted recommendations for review */}
         {extractedRecs.length > 0 && (
           <div className="mt-3 space-y-2">
-            <p className="text-xs font-medium text-gray-500">{extractedRecs.length} recommendations extracted — review:</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-gray-500">{extractedRecs.length} recommendations extracted — review:</p>
+              <Button size="sm" variant="outline" className="h-6 text-xs" onClick={approveAllExtracted}>
+                <Check className="h-3 w-3" /> Approve all
+              </Button>
+            </div>
             {extractedRecs.map((r, i) => (
               <div key={i} className="p-2.5 border rounded-lg text-xs bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
-                <p className="font-medium">{r.trigger}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{r.trigger}</p>
                 <p className="text-gray-600 dark:text-gray-400 mt-0.5">{r.recommendation}</p>
-                <p className="text-gray-400 mt-0.5 italic">{r.guideline}</p>
+                <div className="flex gap-1 mt-1">
+                  {r.guideline && <Badge variant="outline" className="text-[10px]">{r.guideline}</Badge>}
+                  {r.keywords && <span className="text-[10px] text-gray-400 italic">{r.keywords.substring(0, 50)}</span>}
+                </div>
+                {r.supported_report_types && (
+                  <p className="text-[10px] text-gray-400 mt-1">Applies to: {r.supported_report_types}</p>
+                )}
                 <div className="flex gap-1 mt-2">
                   <Button size="sm" variant="outline" className="h-6 text-xs text-green-600" onClick={() => approveExtracted(i)}>
                     <Check className="h-3 w-3" /> Approve
