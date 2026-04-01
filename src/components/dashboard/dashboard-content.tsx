@@ -149,9 +149,10 @@ export function DashboardContent() {
     })
       .then((r) => r.json())
       .then((data) => {
-        setFindings(data.text || data.error || "");
+        const cleaned = data.text ? cleanReport(data.text) : data.error || "";
+        setFindings(cleaned);
         setLoadingFindings(false);
-        return data.text || "";
+        return cleaned;
       })
       .catch((e) => {
         setFindings("Error: " + e.message);
@@ -171,7 +172,7 @@ export function DashboardContent() {
       })
         .then((r) => r.json())
         .then((data) => {
-          setConclusion(data.text || data.error || "");
+          setConclusion(data.text ? cleanReport(data.text) : data.error || "");
           setLoadingConclusion(false);
         })
         .catch((e) => {
@@ -187,7 +188,7 @@ export function DashboardContent() {
       })
         .then((r) => r.json())
         .then((data) => {
-          setRecommendations(data.text || data.error || "");
+          setRecommendations(data.text ? cleanReport(data.text) : data.error || "");
           setLoadingRecs(false);
         })
         .catch((e) => {
@@ -200,11 +201,60 @@ export function DashboardContent() {
     }
   }
 
+  // Clean AI output: strip asterisks/markdown artifacts
+  function cleanReport(text: string): string {
+    return text
+      // Remove **** section markers like ****FINDINGS**** or ****CONCLUSION****
+      .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES)\*{2,}/gi, "")
+      // Convert ***Section***: or **Section**: to SECTION:
+      .replace(/\*{2,3}([^*]+)\*{2,3}\s*:/g, (_match, name: string) => name.trim().toUpperCase() + ":")
+      // Convert remaining ***Section*** or **Section** (no colon) to SECTION
+      .replace(/\*{2,3}([^*]+)\*{2,3}/g, (_match, name: string) => name.trim().toUpperCase())
+      // Remove any remaining stray asterisks
+      .replace(/\*+/g, "")
+      // Clean up excessive blank lines
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  // Build the study title line
+  function getStudyTitle(): string {
+    if (!selectedTemplate) return "";
+    let title = selectedTemplate.name;
+    if (contrastOption === "con_contraste") title += " con contraste";
+    else if (contrastOption === "sin_contraste") title += " sin contraste";
+    return title.toUpperCase();
+  }
+
   // Copy functions
   function copyText(text: string, id: string) {
     navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
+    const title = getStudyTitle();
+    const cleanFindings = cleanReport(findings);
+    const cleanConclusion = cleanReport(conclusion);
+    const cleanRecs = cleanReport(recommendations);
+
+    let text = "";
+
+    if (title) text += title + "\n\n";
+
+    text += "HALLAZGOS\n" + cleanFindings;
+
+    if (mode === "findings_conclusion" || mode === "full") {
+      text += "\n\nCONCLUSIÓN\n" + cleanConclusion;
+    }
+
+    if (mode === "full" && cleanRecs) {
+      text += "\n\nRECOMENDACIONES\n" + cleanRecs;
+    }
+
+    const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
+    copyText(text, id);
   }
 
   // Save report
@@ -423,15 +473,15 @@ export function DashboardContent() {
 
           {/* Step 4: Copy & Save buttons */}
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => copyText(findings, "f")}>
+            <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")}>
               {copied === "f" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Copy Findings
             </Button>
-            <Button variant="outline" size="sm" onClick={() => copyText(findings + "\n\n" + conclusion, "fc")}>
+            <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")}>
               {copied === "fc" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Copy Findings + Conclusion
             </Button>
-            <Button variant="outline" size="sm" onClick={() => copyText(findings + "\n\n" + conclusion + "\n\n" + recommendations, "all")}>
+            <Button variant="outline" size="sm" onClick={() => copyFormatted("full")}>
               {copied === "all" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Copy Full Report
             </Button>

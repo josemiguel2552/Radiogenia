@@ -43,7 +43,12 @@ Reglas:
 2. Rellena secciones no mencionadas con frases normales apropiadas.
 3. NO inventes hallazgos no mencionados en el dictado.
 4. NO omitas ninguna sección del template.
-5. Formato: nombre de sección en negrita seguido del texto.
+5. Formato de salida OBLIGATORIO:
+   - NO uses asteriscos (*), almohadillas (#) ni markdown.
+   - Los nombres de sección van en MAYÚSCULAS seguidos de dos puntos y el texto en la misma línea o línea siguiente.
+   - NO incluyas encabezados como "HALLAZGOS" ni "CONCLUSIÓN" — solo las secciones anatómicas del template.
+   - Cada sección empieza con mayúscula inicial en el texto descriptivo.
+   - Ejemplo: "HÍGADO: Parénquima hepático de tamaño y morfología normal."
 
 ${LENGTH_INSTRUCTIONS[params.findingsLength]}
 ${VERBOSITY_INSTRUCTIONS[params.normalFieldsVerbosity]}
@@ -68,10 +73,12 @@ export function buildConclusionPrompt(params: {
   const system = `Genera la conclusión del informe radiológico.
 
 Reglas:
-1. Solo hallazgos con relevancia clínica, 1-4 bullet points, mayor a menor relevancia.
+1. Solo hallazgos con relevancia clínica, 1-4 puntos numerados, mayor a menor relevancia.
 2. Hallazgos normales NO se incluyen.
 3. Si todo es normal: "Exploración dentro de límites normales."
 4. Lenguaje conciso y profesional.
+5. NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
+6. NO incluyas el encabezado "CONCLUSIÓN" — escribe directamente el contenido.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const user = `Hallazgos: ${params.findingsText}`;
@@ -91,6 +98,8 @@ Reglas ABSOLUTAS:
 3. NUNCA sugieras procedimientos invasivos.
 4. Si ningún hallazgo activa una recomendación: "No se emiten recomendaciones adicionales."
 5. Indica entre paréntesis el hallazgo que activó cada recomendación.
+6. NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
+7. NO incluyas el encabezado "RECOMENDACIONES" — escribe directamente el contenido.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const recsJson = JSON.stringify(params.recommendations);
