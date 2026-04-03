@@ -30,6 +30,7 @@ const LANGUAGE_INSTRUCTIONS: Record<OutputLanguage, string> = {
 export function buildFindingsPrompt(params: {
   template: string;
   dictation: string;
+  modality: string;
   findingsLength: FindingsLength;
   normalFieldsVerbosity: NormalFieldsVerbosity;
   paraphraseLevel: ParaphraseLevel;
@@ -38,17 +39,25 @@ export function buildFindingsPrompt(params: {
 }): { system: string; user: string } {
   let system = `Eres un asistente especializado en radiología. Toma el dictado del radiólogo y estructúralo dentro del template proporcionado.
 
+La modalidad del estudio es: ${params.modality}.
+
 Reglas:
 1. Distribuye cada hallazgo en la sección anatómica correcta del template.
 2. Rellena secciones no mencionadas con frases normales apropiadas.
 3. NO inventes hallazgos no mencionados en el dictado.
-4. NO omitas ninguna sección del template.
-5. Formato de salida OBLIGATORIO:
+4. NO omitas ninguna sección anatómica del template.
+5. IGNORA por completo la sección "CONCLUSION" o "CONCLUSIÓN" del template — NO la incluyas en tu respuesta. Solo genera las secciones de hallazgos anatómicos.
+6. Usa EXCLUSIVAMENTE terminología apropiada para la modalidad ${params.modality}:
+   - Si es MRI/RM: usa "intensidad de señal", "hiperintenso", "hipointenso", "realce", etc. NUNCA uses "ecotextura", "ecogenicidad", "anecoico" ni otros términos ecográficos.
+   - Si es Ultrasound/Ecografía: usa "ecotextura", "ecogenicidad", "anecoico", "hipoecoico", etc.
+   - Si es CT/TC: usa "densidad", "atenuación", "hiperdenso", "hipodenso", "realce", etc.
+   - Si es XRay/Rx: usa "radiopaco", "radiolúcido", "densidad", etc.
+7. Formato de salida OBLIGATORIO:
    - NO uses asteriscos (*), almohadillas (#) ni markdown.
-   - Los nombres de sección van en MAYÚSCULAS seguidos de dos puntos y el texto en la misma línea o línea siguiente.
-   - NO incluyas encabezados como "HALLAZGOS" ni "CONCLUSIÓN" — solo las secciones anatómicas del template.
-   - Cada sección empieza con mayúscula inicial en el texto descriptivo.
-   - Ejemplo: "HÍGADO: Parénquima hepático de tamaño y morfología normal."
+   - Los nombres de sección van con la primera letra en mayúscula y el resto en minúsculas, seguidos de dos puntos.
+   - Ejemplo: "Hígado: Parénquima hepático de tamaño y morfología normal."
+   - Ejemplo: "Parénquima pulmonar: Sin consolidaciones ni opacidades."
+   - Si hay subsecciones, el nombre de la subsección también va con primera letra en mayúscula: "Ganglios linfáticos mediastínicos: Sin adenopatías."
 
 ${LENGTH_INSTRUCTIONS[params.findingsLength]}
 ${VERBOSITY_INSTRUCTIONS[params.normalFieldsVerbosity]}
@@ -73,12 +82,13 @@ export function buildConclusionPrompt(params: {
   const system = `Genera la conclusión del informe radiológico.
 
 Reglas:
-1. Solo hallazgos con relevancia clínica, 1-4 puntos numerados, mayor a menor relevancia.
-2. Hallazgos normales NO se incluyen.
-3. Si todo es normal: "Exploración dentro de límites normales."
+1. Solo hallazgos con relevancia clínica, 1-4 puntos numerados, de mayor a menor relevancia.
+2. Hallazgos normales NO se incluyen en la conclusión.
+3. Si todo es normal, escribe únicamente: "Exploración dentro de límites normales." (o su equivalente en el idioma seleccionado).
 4. Lenguaje conciso y profesional.
 5. NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
-6. NO incluyas el encabezado "CONCLUSIÓN" — escribe directamente el contenido.
+6. NO incluyas el encabezado "CONCLUSIÓN" ni "CONCLUSION" — escribe directamente el contenido.
+7. Cada punto numerado empieza con mayúscula inicial.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const user = `Hallazgos: ${params.findingsText}`;
@@ -93,13 +103,14 @@ export function buildRecommendationsPrompt(params: {
   const system = `Revisa si algún hallazgo activa recomendaciones del catálogo aprobado.
 
 Reglas ABSOLUTAS:
-1. SOLO emite recomendaciones del catálogo proporcionado.
-2. NUNCA inventes recomendaciones fuera del catálogo.
+1. SOLO emite recomendaciones del catálogo proporcionado. Copia el texto de la recomendación TAL CUAL aparece en el catálogo.
+2. NUNCA inventes, parafrasees ni modifiques recomendaciones. Si el catálogo dice "US hepático", NO lo cambies a "US pélvico" ni a otro estudio.
 3. NUNCA sugieras procedimientos invasivos.
-4. Si ningún hallazgo activa una recomendación: "No se emiten recomendaciones adicionales."
-5. Indica entre paréntesis el hallazgo que activó cada recomendación.
-6. NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
-7. NO incluyas el encabezado "RECOMENDACIONES" — escribe directamente el contenido.
+4. Empareja cada hallazgo con su recomendación correspondiente según el ÓRGANO y la PATOLOGÍA específica del trigger. Un hallazgo hepático solo puede activar una recomendación con trigger hepático, uno pulmonar solo una pulmonar, etc.
+5. Si ningún hallazgo activa una recomendación: "No se emiten recomendaciones adicionales." (o su equivalente en el idioma seleccionado).
+6. Indica entre paréntesis el hallazgo que activó cada recomendación.
+7. NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
+8. NO incluyas el encabezado "RECOMENDACIONES" — escribe directamente el contenido.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const recsJson = JSON.stringify(params.recommendations);

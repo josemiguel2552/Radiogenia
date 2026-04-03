@@ -38,6 +38,7 @@ export function DashboardContent() {
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [outputLanguage, setOutputLanguage] = useState<string>("es");
 
   // Autosave draft
   useEffect(() => {
@@ -145,10 +146,11 @@ export function DashboardContent() {
     const findingsPromise = fetch("/api/generate/findings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ template: templateText, dictation }),
+      body: JSON.stringify({ template: templateText, dictation, modality: selectedTemplate.modality }),
     })
       .then((r) => r.json())
       .then((data) => {
+        if (data.outputLanguage) setOutputLanguage(data.outputLanguage);
         const cleaned = data.text ? cleanReport(data.text) : data.error || "";
         setFindings(cleaned);
         setLoadingFindings(false);
@@ -201,21 +203,39 @@ export function DashboardContent() {
     }
   }
 
-  // Clean AI output: strip asterisks/markdown artifacts
+  // Clean AI output: strip asterisks/markdown artifacts, fix casing
   function cleanReport(text: string): string {
     return text
       // Remove **** section markers like ****FINDINGS**** or ****CONCLUSION****
-      .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES)\*{2,}/gi, "")
-      // Convert ***Section***: or **Section**: to SECTION:
-      .replace(/\*{2,3}([^*]+)\*{2,3}\s*:/g, (_match, name: string) => name.trim().toUpperCase() + ":")
-      // Convert remaining ***Section*** or **Section** (no colon) to SECTION
-      .replace(/\*{2,3}([^*]+)\*{2,3}/g, (_match, name: string) => name.trim().toUpperCase())
+      .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES|RECOMMENDATIONS|RECOMENDACIONES)\*{2,}/gi, "")
+      // Remove standalone section headers like "FINDINGS", "CONCLUSION" on their own line
+      .replace(/^\s*(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES)\s*$/gim, "")
+      // Convert ***Section***: or **Section**: to Sentence case:
+      .replace(/\*{2,3}([^*]+)\*{2,3}\s*:/g, (_match, name: string) => {
+        const trimmed = name.trim();
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase() + ":";
+      })
+      // Convert remaining ***Section*** or **Section** (no colon) to Sentence case
+      .replace(/\*{2,3}([^*]+)\*{2,3}/g, (_match, name: string) => {
+        const trimmed = name.trim();
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+      })
       // Remove any remaining stray asterisks
       .replace(/\*+/g, "")
       // Clean up excessive blank lines
       .replace(/\n{3,}/g, "\n\n")
       .trim();
   }
+
+  // Section headers by language
+  const SECTION_HEADERS: Record<string, { findings: string; conclusion: string; recommendations: string }> = {
+    es: { findings: "HALLAZGOS", conclusion: "CONCLUSIÓN", recommendations: "RECOMENDACIONES" },
+    en: { findings: "FINDINGS", conclusion: "CONCLUSION", recommendations: "RECOMMENDATIONS" },
+    pt: { findings: "ACHADOS", conclusion: "CONCLUSÃO", recommendations: "RECOMENDAÇÕES" },
+    fr: { findings: "RÉSULTATS", conclusion: "CONCLUSION", recommendations: "RECOMMANDATIONS" },
+    de: { findings: "BEFUNDE", conclusion: "SCHLUSSFOLGERUNG", recommendations: "EMPFEHLUNGEN" },
+    it: { findings: "REPERTI", conclusion: "CONCLUSIONE", recommendations: "RACCOMANDAZIONI" },
+  };
 
   // Build the study title line
   function getStudyTitle(): string {
@@ -238,19 +258,20 @@ export function DashboardContent() {
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);
     const cleanRecs = cleanReport(recommendations);
+    const headers = SECTION_HEADERS[outputLanguage] || SECTION_HEADERS.es;
 
     let text = "";
 
     if (title) text += title + "\n\n";
 
-    text += "HALLAZGOS\n" + cleanFindings;
+    text += headers.findings + "\n" + cleanFindings;
 
     if (mode === "findings_conclusion" || mode === "full") {
-      text += "\n\nCONCLUSIÓN\n" + cleanConclusion;
+      text += "\n\n" + headers.conclusion + "\n" + cleanConclusion;
     }
 
     if (mode === "full" && cleanRecs) {
-      text += "\n\nRECOMENDACIONES\n" + cleanRecs;
+      text += "\n\n" + headers.recommendations + "\n" + cleanRecs;
     }
 
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";

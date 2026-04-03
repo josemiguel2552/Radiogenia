@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { template, dictation } = await req.json();
+    const { template, dictation, modality } = await req.json();
 
     // Get model config
     const { data: config } = await supabase
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     const { system, user: userPrompt } = buildFindingsPrompt({
       template,
       dictation,
+      modality: modality || "CT",
       findingsLength: config.findings_length as FindingsLength,
       normalFieldsVerbosity: config.normal_fields_verbosity as NormalFieldsVerbosity,
       paraphraseLevel: config.paraphrase_level as ParaphraseLevel,
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
     });
 
-    return NextResponse.json({ text });
+    return NextResponse.json({ text, outputLanguage: config.output_language || "es" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
