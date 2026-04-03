@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Copy, Trash2, Loader2, Upload, Check, X, FileText } from "lucide-react";
+import { Plus, Pencil, Copy, Trash2, Loader2, Upload, Check, X, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
-import { MODALITIES } from "@/lib/types";
+import { MODALITIES, SECTIONS } from "@/lib/types";
 
 interface ExtractedTemplate {
   title: string;
@@ -27,8 +27,10 @@ export function TemplatesTab() {
   const [editTemplate, setEditTemplate] = useState<UserTemplate | null>(null);
   const [editName, setEditName] = useState("");
   const [editModality, setEditModality] = useState("");
+  const [editSection, setEditSection] = useState("");
   const [editStructure, setEditStructure] = useState("");
   const [saving, setSaving] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   // Word upload
   const fileRef = useRef<HTMLInputElement>(null);
@@ -46,20 +48,42 @@ export function TemplatesTab() {
 
   const filtered = templates.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.modality.toLowerCase().includes(search.toLowerCase())
+    t.modality.toLowerCase().includes(search.toLowerCase()) ||
+    (t.structure?.section || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  // Group templates by anatomical section
+  const grouped = filtered.reduce<Record<string, UserTemplate[]>>((acc, t) => {
+    const section = t.structure?.section || "Other";
+    if (!acc[section]) acc[section] = [];
+    acc[section].push(t);
+    return acc;
+  }, {});
+
+  // Sort sections by SECTIONS order
+  const sectionOrder = [...SECTIONS.map(String), "Other"];
+  const sortedSections = Object.keys(grouped).sort((a, b) => {
+    const ia = sectionOrder.indexOf(a);
+    const ib = sectionOrder.indexOf(b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+
+  function toggleSection(section: string) {
+    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  }
 
   function openEdit(t: UserTemplate) {
     setEditTemplate(t);
     setEditName(t.name);
     setEditModality(t.modality);
+    setEditSection(t.structure?.section || "");
     setEditStructure(t.structure?.template || "");
   }
 
   async function handleSave() {
     if (!editTemplate) return;
     setSaving(true);
-    const updatedStructure = { ...editTemplate.structure, template: editStructure, title: editName, technique: editModality };
+    const updatedStructure = { ...editTemplate.structure, template: editStructure, title: editName, technique: editModality, section: editSection };
     await fetch("/api/templates", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -161,19 +185,18 @@ export function TemplatesTab() {
       {/* Word Upload Zone */}
       <input type="file" accept=".docx,.doc" ref={fileRef} onChange={handleWordUpload} className="hidden" />
       <div
-        className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition-colors dark:border-gray-600"
+        className="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:border-blue-400 transition-colors dark:border-gray-600"
         onClick={() => fileRef.current?.click()}
       >
         {uploading ? (
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
             <p className="text-xs text-gray-500">AI is extracting templates...</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-1">
-            <Upload className="h-5 w-5 text-gray-400" />
+          <div className="flex items-center justify-center gap-2">
+            <Upload className="h-4 w-4 text-gray-400" />
             <p className="text-xs text-gray-500">Upload Word doc with templates</p>
-            <p className="text-[10px] text-gray-400">AI will classify by modality & section</p>
           </div>
         )}
       </div>
@@ -182,7 +205,7 @@ export function TemplatesTab() {
       {extractedTemplates.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-gray-500">{extractedTemplates.length} templates extracted — review:</p>
+            <p className="text-xs font-medium text-gray-500">{extractedTemplates.length} extracted:</p>
             <Button size="sm" variant="outline" className="h-6 text-xs" onClick={approveAllExtracted}>
               <Check className="h-3 w-3" /> Approve all
             </Button>
@@ -194,8 +217,7 @@ export function TemplatesTab() {
                 <Badge variant="secondary" className="text-[10px]">{t.technique}</Badge>
                 <Badge variant="outline" className="text-[10px]">{t.section}</Badge>
               </div>
-              <p className="text-gray-500 line-clamp-2 font-mono text-[10px]">{t.template.substring(0, 120)}...</p>
-              <div className="flex gap-1 mt-2">
+              <div className="flex gap-1 mt-1">
                 <Button size="sm" variant="outline" className="h-6 text-xs text-green-600" onClick={() => approveExtracted(i)}>
                   <Check className="h-3 w-3" /> Approve
                 </Button>
@@ -210,42 +232,59 @@ export function TemplatesTab() {
 
       <Separator />
 
-      {/* Template list */}
-      <div className="space-y-2 max-h-[45vh] overflow-y-auto">
+      {/* Template list grouped by section */}
+      <div className="space-y-1 max-h-[50vh] overflow-y-auto">
         {filtered.length === 0 && (
           <div className="text-center py-6 text-gray-400">
             <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No templates yet</p>
-            <p className="text-xs">Upload a Word doc or create one manually</p>
+            <p className="text-sm">No templates found</p>
           </div>
         )}
-        {filtered.map((t) => (
-          <div key={t.id} className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700 hover:border-blue-300 transition-colors">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-gray-900 dark:text-white">{t.name}</p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Badge variant="secondary" className="text-xs">{t.modality}</Badge>
-                  {t.structure?.section && <Badge variant="outline" className="text-[10px]">{t.structure.section}</Badge>}
-                  <Badge variant={t.is_default ? "outline" : "default"} className="text-xs">
-                    {t.is_default ? "Original" : "Custom"}
-                  </Badge>
-                </div>
+        {sortedSections.map((section) => (
+          <div key={section}>
+            {/* Section header */}
+            <button
+              onClick={() => toggleSection(section)}
+              className="w-full flex items-center gap-2 py-2 px-1 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              {collapsedSections[section] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {section}
+              <Badge variant="secondary" className="text-[10px] ml-auto">{grouped[section].length}</Badge>
+            </button>
+
+            {/* Templates in this section */}
+            {!collapsedSections[section] && (
+              <div className="space-y-1.5 ml-2 mb-2">
+                {grouped[section].map((t) => (
+                  <div key={t.id} className="p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700 hover:border-blue-300 transition-colors">
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate text-gray-900 dark:text-white">{t.name}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Badge variant="secondary" className="text-[10px]">{t.modality}</Badge>
+                          <Badge variant={t.is_default ? "outline" : "default"} className="text-[10px]">
+                            {t.is_default ? "Default" : "Custom"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(t)} title="Edit">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicate(t)} title="Duplicate">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        {!t.is_default && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleDelete(t.id)} title="Delete">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(t)} title="Edit">
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(t)} title="Duplicate">
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-                {!t.is_default && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDelete(t.id)} title="Delete">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         ))}
       </div>
@@ -261,17 +300,28 @@ export function TemplatesTab() {
               <Label>Name</Label>
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
-            <div>
-              <Label>Modality</Label>
-              <Select value={editModality} onValueChange={setEditModality}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MODALITIES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Modality</Label>
+                <Select value={editModality} onValueChange={setEditModality}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MODALITIES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Anatomical section</Label>
+                <Select value={editSection} onValueChange={setEditSection}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SECTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
-              <Label>Template Structure</Label>
+              <Label>Template structure</Label>
               <Textarea value={editStructure} onChange={(e) => setEditStructure(e.target.value)} className="min-h-[200px] font-mono text-xs" />
             </div>
           </div>
