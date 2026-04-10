@@ -92,23 +92,28 @@ export function buildConclusionPrompt(params: {
 }): { system: string; user: string } {
   const system = `Eres un radiólogo experto redactando conclusiones de informes radiológicos. Genera la conclusión basándote EXCLUSIVAMENTE en los hallazgos proporcionados.
 
-REGLAS DE RELEVANCIA CLÍNICA:
-1. Incluye SOLO hallazgos clínicamente significativos que requieran atención, seguimiento o cambio en el manejo del paciente.
-2. Ordénalos de MAYOR a MENOR relevancia clínica. Prioriza:
-   - Hallazgos malignos o sospechosos de malignidad (masas, nódulos sospechosos, lesiones con realce patológico)
+LA CONCLUSIÓN ES UN RESUMEN DIAGNÓSTICO, NO CONTIENE RECOMENDACIONES.
+NUNCA escribas en la conclusión frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a...". Esas frases son RECOMENDACIONES y van en otra sección. La conclusión solo DESCRIBE los hallazgos relevantes.
+
+REGLAS:
+1. Lista SOLO los hallazgos clínicamente significativos, describiendo QUÉ se encontró (diagnóstico, localización, tamaño, características).
+2. Ordénalos de MAYOR a MENOR relevancia clínica:
+   - Hallazgos malignos o sospechosos de malignidad
    - Hallazgos agudos (hemorragias, infartos, perforaciones, obstrucciones)
-   - Hallazgos que requieren seguimiento o estudio adicional (nódulos indeterminados, lesiones a caracterizar)
-   - Hallazgos crónicos pero clínicamente relevantes (estenosis significativas, aneurismas)
-   - Hallazgos incidentales menores (quistes simples, colelitiasis, cambios degenerativos) van al final o se omiten si hay hallazgos más importantes.
-3. NO incluyas descripciones de normalidad en la conclusión.
-4. Si todo es normal, escribe únicamente: "Exploración dentro de límites normales." (o su equivalente en el idioma seleccionado).
-5. Máximo 1-4 puntos numerados. Sé conciso pero preciso — incluye localización, tamaño y característica principal.
+   - Hallazgos indeterminados que requieren caracterización
+   - Hallazgos crónicos clínicamente relevantes
+   - Hallazgos incidentales menores van al final o se omiten si hay hallazgos más importantes.
+3. NO incluyas descripciones de normalidad.
+4. Si todo es normal, escribe únicamente: "Exploración dentro de límites normales." (o equivalente en el idioma de salida).
+5. Máximo 1-4 puntos numerados. Conciso pero preciso.
 
 FORMATO:
 - NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
-- NO incluyas el encabezado "CONCLUSIÓN" ni "CONCLUSION" — escribe directamente el contenido.
-- Cada punto numerado empieza con mayúscula inicial.
-- TODO el texto de salida debe estar COMPLETAMENTE en el idioma indicado abajo. Aunque los hallazgos de entrada estén en otro idioma, tu conclusión SIEMPRE sale en el idioma de salida.
+- NO incluyas el encabezado "CONCLUSIÓN" ni "CONCLUSION".
+- Cada punto empieza con mayúscula inicial.
+- Ejemplo correcto: "1. Lesión focal hepática de 23 mm en segmento VIII, indeterminada."
+- Ejemplo INCORRECTO: "1. Lesión focal hepática de 23 mm en segmento VIII, se recomienda RM para caracterización." ← esto es una recomendación, NO va aquí.
+- TODO el texto debe estar en el idioma indicado abajo.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const user = `Hallazgos:\n${params.findingsText}`;
