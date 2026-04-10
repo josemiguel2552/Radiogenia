@@ -122,7 +122,7 @@ ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
 export function buildRecommendationsPrompt(params: {
   findingsText: string;
-  recommendations: { trigger: string; recommendation: string }[];
+  recommendations: { trigger: string; recommendation: string; guideline: string }[];
   outputLanguage: OutputLanguage;
 }): { system: string; user: string } {
   const system = `Eres un radiólogo experto emitiendo recomendaciones de seguimiento basadas en guías clínicas.
@@ -137,17 +137,21 @@ PROCESO DE EMPAREJAMIENTO — sigue estos pasos para cada hallazgo:
 
 REGLAS ABSOLUTAS:
 1. SOLO emite recomendaciones basadas en las que aparecen en el catálogo proporcionado. NO inventes recomendaciones que no estén en el catálogo.
-2. El CONTENIDO de la recomendación debe ser fiel al catálogo (mismo estudio, mismo plazo, misma guía), pero la REDACCIÓN FINAL debe estar SIEMPRE en el idioma de salida indicado abajo. Si la recomendación del catálogo está en un idioma diferente al de salida, tradúcela manteniendo el significado exacto.
-3. NUNCA apliques la recomendación de un órgano a otro. Ejemplo: si el catálogo tiene un trigger para "nódulo pulmonar", NO lo apliques a un nódulo hepático ni a un nódulo tiroideo.
+2. El CONTENIDO de la recomendación debe ser fiel al catálogo (mismo estudio, mismo plazo, misma guía), pero la REDACCIÓN FINAL debe estar SIEMPRE en el idioma de salida indicado abajo.
+3. NUNCA apliques la recomendación de un órgano a otro.
 4. NUNCA sugieras procedimientos invasivos (biopsia, cirugía) a menos que el catálogo lo diga explícitamente.
-5. Si ningún hallazgo coincide con ningún trigger del catálogo: escribe solamente "No se emiten recomendaciones adicionales." (o su equivalente en el idioma de salida).
-6. Para cada recomendación emitida, indica entre paréntesis el hallazgo específico que la activó.
+5. Si ningún hallazgo coincide con ningún trigger del catálogo: escribe solamente "No se emiten recomendaciones adicionales." (o equivalente en el idioma de salida).
+6. SIEMPRE cita la guía o referencia bibliográfica de la que proviene cada recomendación. El campo "guideline" del catálogo contiene esta referencia. Inclúyela entre paréntesis al final de cada recomendación.
+7. Indica también entre paréntesis el hallazgo que activó la recomendación.
 
 FORMATO:
 - NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
-- NO incluyas el encabezado "RECOMENDACIONES" — escribe directamente el contenido.
+- NO incluyas el encabezado "RECOMENDACIONES".
 - Numera las recomendaciones si hay más de una.
-- TODO el texto de salida (recomendaciones, paréntesis, conectores) debe estar en el idioma indicado a continuación.
+- Cada recomendación debe seguir esta estructura:
+  [número]. [texto de la recomendación] ([guía/referencia]) — Hallazgo: [hallazgo que la activó].
+- Ejemplo: "1. TC torácico de control en 3 meses (Fleischner Society) — Hallazgo: nódulo pulmonar sólido de 9 mm en LSD."
+- TODO el texto debe estar en el idioma indicado abajo.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const recsJson = JSON.stringify(params.recommendations);

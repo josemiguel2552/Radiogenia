@@ -33,12 +33,13 @@ export async function POST(req: NextRequest) {
     // Get user recommendations
     const { data: recs } = await supabase
       .from("user_recommendations")
-      .select("trigger_keyword, recommendation_text")
+      .select("trigger_keyword, recommendation_text, guideline_name")
       .eq("user_id", user.id);
 
-    const recommendations = (recs || []).map((r: { trigger_keyword: string; recommendation_text: string }) => ({
+    const recommendations = (recs || []).map((r: { trigger_keyword: string; recommendation_text: string; guideline_name: string }) => ({
       trigger: r.trigger_keyword,
       recommendation: r.recommendation_text,
+      guideline: r.guideline_name || "",
     }));
 
     const { system, user: userPrompt } = buildRecommendationsPrompt({
