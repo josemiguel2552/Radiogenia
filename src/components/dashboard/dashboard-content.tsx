@@ -237,12 +237,23 @@ export function DashboardContent() {
     it: { findings: "REPERTI", conclusion: "CONCLUSIONE", recommendations: "RACCOMANDAZIONI" },
   };
 
+  // Contrast labels by language
+  const CONTRAST_LABELS: Record<string, { with: string; without: string }> = {
+    es: { with: "con contraste", without: "sin contraste" },
+    en: { with: "with contrast", without: "without contrast" },
+    pt: { with: "com contraste", without: "sem contraste" },
+    fr: { with: "avec contraste", without: "sans contraste" },
+    de: { with: "mit Kontrastmittel", without: "ohne Kontrastmittel" },
+    it: { with: "con contrasto", without: "senza contrasto" },
+  };
+
   // Build the study title line
   function getStudyTitle(): string {
     if (!selectedTemplate) return "";
     let title = selectedTemplate.name;
-    if (contrastOption === "con_contraste") title += " con contraste";
-    else if (contrastOption === "sin_contraste") title += " sin contraste";
+    const cl = CONTRAST_LABELS[outputLanguage] || CONTRAST_LABELS.es;
+    if (contrastOption === "con_contraste") title += " " + cl.with;
+    else if (contrastOption === "sin_contraste") title += " " + cl.without;
     return title.toUpperCase();
   }
 

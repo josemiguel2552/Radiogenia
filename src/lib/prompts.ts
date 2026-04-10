@@ -64,10 +64,11 @@ params.modality === "XRay" ? `- Usa: "radiopaco", "radiolúcido", "densidad", "s
 
 FORMATO DE SALIDA:
 - NO uses asteriscos (*), almohadillas (#) ni markdown.
+- TRADUCE los nombres de las secciones del template al idioma de salida. El template puede tener secciones en inglés como "Liver", "Gallbladder", "Lung parenchyma", etc. — tradúcelas al idioma correspondiente (ej: "Hígado", "Vesícula biliar", "Parénquima pulmonar" en español).
 - Nombres de sección con primera letra en mayúscula y el resto en minúsculas, seguidos de dos puntos.
 - Ejemplo correcto: "Hígado: De tamaño y morfología normales, con intensidad de señal homogénea en todas las secuencias."
 - Ejemplo correcto: "Parénquima pulmonar: Sin consolidaciones ni nódulos."
-- Si el template tiene subsecciones/agrupaciones, mantenlas con el mismo formato.
+- Si el template tiene subsecciones/agrupaciones, tradúcelas y mantenlas con el mismo formato.
 
 ${LENGTH_INSTRUCTIONS[params.findingsLength]}
 ${VERBOSITY_INSTRUCTIONS[params.normalFieldsVerbosity]}
