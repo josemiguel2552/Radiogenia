@@ -108,10 +108,10 @@ FORMATO:
 - NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
 - NO incluyas el encabezado "CONCLUSIÓN" ni "CONCLUSION" — escribe directamente el contenido.
 - Cada punto numerado empieza con mayúscula inicial.
-- Ejemplo: "1. Lesión hepática de 23 mm en segmento VIII, indeterminada, que requiere caracterización con RM."
+- TODO el texto de salida debe estar COMPLETAMENTE en el idioma indicado abajo. Aunque los hallazgos de entrada estén en otro idioma, tu conclusión SIEMPRE sale en el idioma de salida.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
-  const user = `Hallazgos: ${params.findingsText}`;
+  const user = `Hallazgos:\n${params.findingsText}`;
   return { system, user };
 }
 
@@ -128,20 +128,21 @@ PROCESO DE EMPAREJAMIENTO — sigue estos pasos para cada hallazgo:
 1. Identifica el ÓRGANO afectado por el hallazgo (hígado, pulmón, riñón, etc.).
 2. Identifica la PATOLOGÍA o CARACTERÍSTICA del hallazgo (nódulo, quiste, masa, etc.).
 3. Busca en el catálogo un trigger que coincida en ÓRGANO Y PATOLOGÍA.
-4. Solo si hay coincidencia en ambos, emite esa recomendación COPIANDO el texto EXACTO del catálogo.
+4. Solo si hay coincidencia en ambos, emite esa recomendación.
 
 REGLAS ABSOLUTAS:
-1. SOLO emite recomendaciones que estén LITERALMENTE en el catálogo proporcionado. Copia el texto TAL CUAL.
-2. NUNCA inventes, parafrasees, combines ni modifiques el texto de una recomendación del catálogo.
+1. SOLO emite recomendaciones basadas en las que aparecen en el catálogo proporcionado. NO inventes recomendaciones que no estén en el catálogo.
+2. El CONTENIDO de la recomendación debe ser fiel al catálogo (mismo estudio, mismo plazo, misma guía), pero la REDACCIÓN FINAL debe estar SIEMPRE en el idioma de salida indicado abajo. Si la recomendación del catálogo está en un idioma diferente al de salida, tradúcela manteniendo el significado exacto.
 3. NUNCA apliques la recomendación de un órgano a otro. Ejemplo: si el catálogo tiene un trigger para "nódulo pulmonar", NO lo apliques a un nódulo hepático ni a un nódulo tiroideo.
 4. NUNCA sugieras procedimientos invasivos (biopsia, cirugía) a menos que el catálogo lo diga explícitamente.
-5. Si ningún hallazgo coincide con ningún trigger del catálogo: escribe solamente "No se emiten recomendaciones adicionales." (o equivalente en el idioma).
+5. Si ningún hallazgo coincide con ningún trigger del catálogo: escribe solamente "No se emiten recomendaciones adicionales." (o su equivalente en el idioma de salida).
 6. Para cada recomendación emitida, indica entre paréntesis el hallazgo específico que la activó.
 
 FORMATO:
 - NO uses asteriscos (*), almohadillas (#) ni markdown. Texto plano solamente.
 - NO incluyas el encabezado "RECOMENDACIONES" — escribe directamente el contenido.
 - Numera las recomendaciones si hay más de una.
+- TODO el texto de salida (recomendaciones, paréntesis, conectores) debe estar en el idioma indicado a continuación.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   const recsJson = JSON.stringify(params.recommendations);
