@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { BarChart3, FileText, Mic, MicOff, Loader2, Copy, Save, Check } from "lucide-react";
+import { BarChart3, FileText, Mic, MicOff, Loader2, Copy, Save, Check, ClipboardList } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 
@@ -23,6 +23,9 @@ export function DashboardContent() {
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [contrastOption, setContrastOption] = useState<string>("default");
+
+  // Clinical info state
+  const [clinicalInfo, setClinicalInfo] = useState("");
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -43,15 +46,15 @@ export function DashboardContent() {
   // Autosave draft
   useEffect(() => {
     const interval = setInterval(() => {
-      if (dictation || findings || conclusion || recommendations) {
+      if (dictation || findings || conclusion || recommendations || clinicalInfo) {
         localStorage.setItem("radiogenia_draft", JSON.stringify({
-          dictation, findings, conclusion, recommendations,
+          clinicalInfo, dictation, findings, conclusion, recommendations,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
         }));
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
+  }, [clinicalInfo, dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
 
   // Load draft on mount
   useEffect(() => {
@@ -59,6 +62,7 @@ export function DashboardContent() {
     if (draft) {
       try {
         const d = JSON.parse(draft);
+        if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
         if (d.dictation) setDictation(d.dictation);
         if (d.findings) setFindings(d.findings);
         if (d.conclusion) setConclusion(d.conclusion);
@@ -170,7 +174,7 @@ export function DashboardContent() {
       fetch("/api/generate/conclusion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ findingsText }),
+        body: JSON.stringify({ findingsText, clinicalInfo }),
       })
         .then((r) => r.json())
         .then((data) => {
@@ -407,7 +411,26 @@ export function DashboardContent() {
         </CardContent>
       </Card>
 
-      {/* Step 2: Dictation */}
+      {/* Step 2: Clinical Info */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-amber-600" />
+            Clinical Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            placeholder="Clinical question, relevant history, reason for study... (optional)"
+            value={clinicalInfo}
+            onChange={(e) => setClinicalInfo(e.target.value)}
+            className="min-h-[60px] text-sm"
+          />
+          <p className="text-[11px] text-gray-400 mt-1.5">The conclusion will prioritize answering this clinical question.</p>
+        </CardContent>
+      </Card>
+
+      {/* Step 3: Dictation */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Dictation</CardTitle>

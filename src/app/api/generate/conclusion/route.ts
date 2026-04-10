@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { findingsText } = await req.json();
+    const { findingsText, clinicalInfo } = await req.json();
 
     const { data: config } = await supabase
       .from("user_model_config")
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
 
     const { system, user: userPrompt } = buildConclusionPrompt({
       findingsText,
+      clinicalInfo: clinicalInfo || "",
       outputLanguage: (config.output_language || "es") as OutputLanguage,
     });
 
