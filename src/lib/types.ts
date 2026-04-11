@@ -72,9 +72,31 @@ export interface Report {
   findings_text: string;
   conclusion_text: string;
   recommendations_text: string;
+  initial_findings_text?: string;
+  initial_conclusion_text?: string;
   created_at: string;
   template_snapshot: Template;
   model_config_snapshot: UserModelConfig;
+}
+
+export type StylePatternKind = "normal_phrase" | "conclusion_phrase";
+
+export interface StylePattern {
+  id: string;
+  user_id: string;
+  modality: string;
+  study_type: string;
+  kind: StylePatternKind;
+  label: string | null;
+  phrase: string;
+  frequency: number;
+  last_seen_at: string;
+  created_at: string;
+}
+
+export interface PreferredNormalPhrase {
+  label: string;
+  phrase: string;
 }
 
 export const MODALITIES = [
