@@ -2,15 +2,27 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { BarChart3, FileText, Mic, MicOff, Loader2, Copy, Save, Check, ClipboardList } from "lucide-react";
+import {
+  FileText,
+  Mic,
+  MicOff,
+  Loader2,
+  Copy,
+  Save,
+  Check,
+  ClipboardList,
+  Sparkles,
+  Wand2,
+  Lightbulb,
+  Stethoscope,
+  CircleCheck,
+} from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 
@@ -40,6 +52,7 @@ export function DashboardContent() {
   const [loadingConclusion, setLoadingConclusion] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
 
@@ -139,14 +152,13 @@ export function DashboardContent() {
   async function handleGenerate() {
     if (!selectedTemplate || !dictation.trim()) return;
 
+    setSaved(false);
     const templateText = selectedTemplate.structure?.template || "";
 
-    // Launch all 3 agents in parallel
     setLoadingFindings(true);
     setLoadingConclusion(true);
     setLoadingRecs(true);
 
-    // Agent 1: Findings
     const findingsPromise = fetch("/api/generate/findings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -166,11 +178,9 @@ export function DashboardContent() {
         return "";
       });
 
-    // Wait for findings before launching conclusion & recs
     const findingsText = await findingsPromise;
 
     if (findingsText) {
-      // Agent 2: Conclusion
       fetch("/api/generate/conclusion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -186,7 +196,6 @@ export function DashboardContent() {
           setLoadingConclusion(false);
         });
 
-      // Agent 3: Recommendations
       fetch("/api/generate/recommendations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,31 +216,23 @@ export function DashboardContent() {
     }
   }
 
-  // Clean AI output: strip asterisks/markdown artifacts, fix casing
   function cleanReport(text: string): string {
     return text
-      // Remove **** section markers like ****FINDINGS**** or ****CONCLUSION****
       .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES|RECOMMENDATIONS|RECOMENDACIONES)\*{2,}/gi, "")
-      // Remove standalone section headers like "FINDINGS", "CONCLUSION" on their own line
       .replace(/^\s*(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES)\s*$/gim, "")
-      // Convert ***Section***: or **Section**: to Sentence case:
       .replace(/\*{2,3}([^*]+)\*{2,3}\s*:/g, (_match, name: string) => {
         const trimmed = name.trim();
         return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase() + ":";
       })
-      // Convert remaining ***Section*** or **Section** (no colon) to Sentence case
       .replace(/\*{2,3}([^*]+)\*{2,3}/g, (_match, name: string) => {
         const trimmed = name.trim();
         return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
       })
-      // Remove any remaining stray asterisks
       .replace(/\*+/g, "")
-      // Clean up excessive blank lines
       .replace(/\n{3,}/g, "\n\n")
       .trim();
   }
 
-  // Section headers by language
   const SECTION_HEADERS: Record<string, { findings: string; conclusion: string; recommendations: string }> = {
     es: { findings: "HALLAZGOS", conclusion: "CONCLUSIÓN", recommendations: "RECOMENDACIONES" },
     en: { findings: "FINDINGS", conclusion: "CONCLUSION", recommendations: "RECOMMENDATIONS" },
@@ -241,7 +242,6 @@ export function DashboardContent() {
     it: { findings: "REPERTI", conclusion: "CONCLUSIONE", recommendations: "RACCOMANDAZIONI" },
   };
 
-  // Contrast labels by language
   const CONTRAST_LABELS: Record<string, { with: string; without: string }> = {
     es: { with: "con contraste", without: "sin contraste" },
     en: { with: "with contrast", without: "without contrast" },
@@ -251,7 +251,6 @@ export function DashboardContent() {
     it: { with: "con contrasto", without: "senza contrasto" },
   };
 
-  // Build the study title line
   function getStudyTitle(): string {
     if (!selectedTemplate) return "";
     let title = selectedTemplate.name;
@@ -261,7 +260,6 @@ export function DashboardContent() {
     return title.toUpperCase();
   }
 
-  // Copy functions
   function copyText(text: string, id: string) {
     navigator.clipboard.writeText(text);
     setCopied(id);
@@ -276,15 +274,11 @@ export function DashboardContent() {
     const headers = SECTION_HEADERS[outputLanguage] || SECTION_HEADERS.es;
 
     let text = "";
-
     if (title) text += title + "\n\n";
-
     text += headers.findings + "\n" + cleanFindings;
-
     if (mode === "findings_conclusion" || mode === "full") {
       text += "\n\n" + headers.conclusion + "\n" + cleanConclusion;
     }
-
     if (mode === "full" && cleanRecs) {
       text += "\n\n" + headers.recommendations + "\n" + cleanRecs;
     }
@@ -293,7 +287,6 @@ export function DashboardContent() {
     copyText(text, id);
   }
 
-  // Save report
   async function handleSave() {
     if (!selectedTemplate) return;
     setSaving(true);
@@ -321,35 +314,72 @@ export function DashboardContent() {
 
     localStorage.removeItem("radiogenia_draft");
     setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
+
+  function startNewReport() {
+    if (dictation || findings) {
+      if (!confirm("Discard the current report and start a new one?")) return;
+    }
+    setDictation("");
+    setFindings("");
+    setConclusion("");
+    setRecommendations("");
+    setClinicalInfo("");
+    setSaved(false);
+    localStorage.removeItem("radiogenia_draft");
   }
 
   const isGenerating = loadingFindings || loadingConclusion || loadingRecs;
+  const hasOutput = findings || conclusion || recommendations || isGenerating;
+  const setupReady = !!selectedTemplate;
+  const canGenerate = setupReady && dictation.trim() && !isGenerating;
 
   return (
     <div className="space-y-6">
-      {/* Stats Panel */}
+      {/* Stats */}
       <StatsPanel />
 
-      <Separator />
+      {/* Workflow header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Wand2 className="h-5 w-5 text-blue-600" />
+            New report
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Pick a template, add the clinical context, dictate, and let AI assemble the report.
+          </p>
+        </div>
+        {hasOutput && (
+          <Button variant="outline" size="sm" onClick={startNewReport} className="gap-1.5 text-xs">
+            <FileText className="h-3.5 w-3.5" />
+            New report
+          </Button>
+        )}
+      </div>
 
-      {/* Step 1: Study Selection */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            New Report
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Modality toggle buttons */}
+      {/* Step 1 — Setup */}
+      <StepCard
+        step={1}
+        title="Study setup"
+        description="Choose modality, anatomy and template"
+        complete={setupReady}
+        icon={<FileText className="h-4 w-4" />}
+      >
+        <div className="space-y-4">
           <div>
-            <Label className="text-xs text-gray-500 mb-2 block">Modality</Label>
-            <div className="flex flex-wrap gap-2">
+            <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+              Modality
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
               {MODALITIES.map((mod) => (
                 <Button
                   key={mod}
                   variant={selectedModality === mod ? "default" : "outline"}
                   size="sm"
+                  className="h-8 px-3 text-xs"
                   onClick={() => {
                     setSelectedModality(selectedModality === mod ? "" : mod);
                     setSelectedSection("");
@@ -362,12 +392,13 @@ export function DashboardContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Anatomical section */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs text-gray-500 mb-2 block">Anatomical Section</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">
+                Anatomical region
+              </Label>
               <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Any region" /></SelectTrigger>
                 <SelectContent>
                   {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -375,12 +406,14 @@ export function DashboardContent() {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Report type */}
             <div>
-              <Label className="text-xs text-gray-500 mb-2 block">Report Type</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">
+                Template
+              </Label>
               <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder={filteredTemplates.length === 0 ? "No templates available" : "Select a template"} />
+                </SelectTrigger>
                 <SelectContent>
                   {filteredTemplates.map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
@@ -388,165 +421,297 @@ export function DashboardContent() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            {/* Contrast option */}
-            <div>
-              <Label className="text-xs text-gray-500 mb-2 block">Contrast</Label>
-              <RadioGroup value={contrastOption} onValueChange={setContrastOption} className="flex gap-4">
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="default" id="c-default" />
-                  <Label htmlFor="c-default" className="text-sm font-normal">Default</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="con_contraste" id="c-con" />
-                  <Label htmlFor="c-con" className="text-sm font-normal">With</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <RadioGroupItem value="sin_contraste" id="c-sin" />
-                  <Label htmlFor="c-sin" className="text-sm font-normal">Without</Label>
-                </div>
-              </RadioGroup>
+          <div>
+            <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+              Contrast
+            </Label>
+            <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
+              {[
+                { v: "default", l: "Default" },
+                { v: "con_contraste", l: "With contrast" },
+                { v: "sin_contraste", l: "Without contrast" },
+              ].map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setContrastOption(opt.v)}
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                    contrastOption === opt.v
+                      ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm font-medium"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  {opt.l}
+                </button>
+              ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </StepCard>
 
-      {/* Step 2: Clinical Info */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-amber-600" />
-            Clinical Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            placeholder="Clinical question, relevant history, reason for study... (optional)"
-            value={clinicalInfo}
-            onChange={(e) => setClinicalInfo(e.target.value)}
-            className="min-h-[60px] text-sm"
-          />
-          <p className="text-[11px] text-gray-400 mt-1.5">The conclusion will prioritize answering this clinical question.</p>
-        </CardContent>
-      </Card>
+      {/* Step 2 — Clinical context */}
+      <StepCard
+        step={2}
+        title="Clinical context"
+        description="Reason for the study and clinical question (optional)"
+        complete={!!clinicalInfo.trim()}
+        icon={<Stethoscope className="h-4 w-4" />}
+      >
+        <Textarea
+          placeholder="e.g. 58-year-old male with right upper quadrant pain. Rule out cholelithiasis."
+          value={clinicalInfo}
+          onChange={(e) => setClinicalInfo(e.target.value)}
+          className="min-h-[64px] text-sm resize-none"
+        />
+        <p className="text-[11px] text-gray-400 mt-1.5">
+          The conclusion will prioritize answering this clinical question.
+        </p>
+      </StepCard>
 
-      {/* Step 3: Dictation */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Dictation</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-3">
+      {/* Step 3 — Dictation */}
+      <StepCard
+        step={3}
+        title="Dictation"
+        description="Speak or type your findings — the AI will format them"
+        complete={!!dictation.trim()}
+        icon={<Mic className="h-4 w-4" />}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
             <Button
-              variant={isRecording ? "destructive" : "outline"}
+              variant={isRecording ? "destructive" : "default"}
               size="icon"
-              className={`relative ${isRecording ? "recording-pulse" : ""}`}
+              className={`relative h-10 w-10 rounded-full ${isRecording ? "recording-pulse" : ""}`}
               onClick={toggleRecording}
             >
               {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </Button>
-            <span className="text-sm text-gray-500">
-              {isRecording ? "Recording... Click to stop" : "Click to start dictation"}
-            </span>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-gray-900 dark:text-white">
+                {isRecording ? "Listening…" : "Voice dictation"}
+              </p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                {isRecording ? "Click the mic to stop" : "Click the mic to start dictating, or type below"}
+              </p>
+            </div>
+            {isRecording && (
+              <Badge className="bg-red-500 text-white animate-pulse">REC</Badge>
+            )}
           </div>
+
           <Textarea
-            placeholder="Dictate or type your findings here..."
+            placeholder="Type or dictate your findings here..."
             value={dictation}
             onChange={(e) => setDictation(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[140px] text-sm"
           />
+
           <Button
             onClick={handleGenerate}
-            disabled={!selectedTemplate || !dictation.trim() || isGenerating}
-            className="w-full"
+            disabled={!canGenerate}
+            className="w-full h-10 gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50"
           >
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Generating Report...
+                Generating report…
               </>
             ) : (
-              "Generate Report"
+              <>
+                <Sparkles className="h-4 w-4" />
+                Generate report
+              </>
             )}
           </Button>
-        </CardContent>
-      </Card>
+          {!setupReady && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
+              Pick a template above to enable generation.
+            </p>
+          )}
+        </div>
+      </StepCard>
 
-      {/* Step 3: Report Output */}
-      {(findings || conclusion || recommendations || isGenerating) && (
-        <div className="grid gap-4">
-          {/* Findings */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Findings</CardTitle>
-                {loadingFindings && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingFindings ? (
-                <div className="h-24 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-md" />
-              ) : (
-                <Textarea value={findings} onChange={(e) => setFindings(e.target.value)} className="min-h-[150px]" />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Conclusion */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Conclusion</CardTitle>
-                {loadingConclusion && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingConclusion ? (
-                <div className="h-16 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-md" />
-              ) : (
-                <Textarea value={conclusion} onChange={(e) => setConclusion(e.target.value)} className="min-h-[80px]" />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recommendations */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Recommendations</CardTitle>
-                {loadingRecs && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingRecs ? (
-                <div className="h-16 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-md" />
-              ) : (
-                <Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} className="min-h-[60px]" />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Step 4: Copy & Save buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")}>
-              {copied === "f" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              Copy Findings
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")}>
-              {copied === "fc" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              Copy Findings + Conclusion
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => copyFormatted("full")}>
-              {copied === "all" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              Copy Full Report
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving || !findings}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save Report
-            </Button>
+      {/* Output */}
+      {hasOutput && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
+            <span className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
+              Generated report
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
           </div>
+
+          <OutputCard
+            title="Findings"
+            icon={<FileText className="h-4 w-4 text-blue-600" />}
+            loading={loadingFindings}
+            value={findings}
+            onChange={setFindings}
+            minHeight={170}
+          />
+
+          <OutputCard
+            title="Conclusion"
+            icon={<CircleCheck className="h-4 w-4 text-green-600" />}
+            loading={loadingConclusion}
+            value={conclusion}
+            onChange={setConclusion}
+            minHeight={90}
+          />
+
+          <OutputCard
+            title="Recommendations"
+            icon={<Lightbulb className="h-4 w-4 text-amber-600" />}
+            loading={loadingRecs}
+            value={recommendations}
+            onChange={setRecommendations}
+            minHeight={70}
+          />
+
+          {/* Action bar */}
+          <Card className="sticky bottom-4 shadow-lg border-blue-100 dark:border-blue-900/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+            <CardContent className="p-3">
+              <div className="flex flex-wrap items-center gap-2 justify-between">
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyFormatted("findings")}
+                    disabled={!findings}
+                    className="gap-1.5 text-xs"
+                  >
+                    {copied === "f" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    Findings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyFormatted("findings_conclusion")}
+                    disabled={!findings || !conclusion}
+                    className="gap-1.5 text-xs"
+                  >
+                    {copied === "fc" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    + Conclusion
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyFormatted("full")}
+                    disabled={!findings}
+                    className="gap-1.5 text-xs"
+                  >
+                    {copied === "all" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    Full report
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving || !findings}
+                  className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700"
+                >
+                  {saving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : saved ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Save className="h-3.5 w-3.5" />
+                  )}
+                  {saved ? "Saved" : "Save report"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
+  );
+}
+
+/* ────────── Helper components ────────── */
+
+function StepCard({
+  step,
+  title,
+  description,
+  complete,
+  icon,
+  children,
+}: {
+  step: number;
+  title: string;
+  description: string;
+  complete: boolean;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className={`overflow-hidden transition-colors ${complete ? "border-blue-100 dark:border-blue-900/40" : ""}`}>
+      <div className="flex items-start gap-3 px-5 pt-5">
+        <div
+          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+            complete
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+          }`}
+        >
+          {complete ? <Check className="h-4 w-4" /> : step}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+            {icon}
+            {title}
+          </h3>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>
+        </div>
+      </div>
+      <CardContent className="pt-4 pl-[3.75rem] pr-5 pb-5">{children}</CardContent>
+    </Card>
+  );
+}
+
+function OutputCard({
+  title,
+  icon,
+  loading,
+  value,
+  onChange,
+  minHeight,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  loading: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  minHeight: number;
+}) {
+  return (
+    <Card>
+      <div className="flex items-center justify-between px-5 pt-4 pb-2">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+          {icon}
+          {title}
+        </h3>
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />}
+      </div>
+      <CardContent className="pt-0 pb-4">
+        {loading ? (
+          <div
+            className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
+            style={{ height: minHeight }}
+          />
+        ) : (
+          <Textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="text-sm leading-relaxed"
+            style={{ minHeight }}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
