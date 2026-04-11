@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Check, Info, Eye, Trash2, Plus } from "lucide-react";
+import { Loader2, Check, Info, Eye, Trash2, Plus, Upload, RefreshCw, Sparkles } from "lucide-react";
 import { PROVIDERS, LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type StyleSample } from "@/lib/types";
 import { buildFullPromptPreview } from "@/lib/prompts";
 
@@ -53,6 +53,21 @@ export function ModelConfigTab() {
 
   // Prompt preview
   const [showPrompt, setShowPrompt] = useState(false);
+
+  // Fine-tuning
+  const [ftUploading, setFtUploading] = useState(false);
+  const [ftFileId, setFtFileId] = useState<string | null>(null);
+  const [ftExamples, setFtExamples] = useState(0);
+  const [ftStarting, setFtStarting] = useState(false);
+  const [ftJobId, setFtJobId] = useState<string | null>(null);
+  const [ftStatus, setFtStatus] = useState<string | null>(null);
+  const [ftModel, setFtModel] = useState<string | null>(null);
+  const [ftError, setFtError] = useState<string | null>(null);
+  const [ftChecking, setFtChecking] = useState(false);
+  const [ftJobs, setFtJobs] = useState<{ jobId: string; status: string; fineTunedModel: string | null; model: string; createdAt: number }[]>([]);
+  const [ftSuffix, setFtSuffix] = useState("radiogenia");
+  const [ftBaseModel, setFtBaseModel] = useState("gpt-4o-mini-2024-07-18");
+  const ftFileRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     setLoading(true);
@@ -148,6 +163,100 @@ export function ModelConfigTab() {
     load();
   }
 
+  // Fine-tuning functions
+  async function loadFtJobs() {
+    try {
+      const res = await fetch("/api/finetune/status");
+      if (res.ok) {
+        const data = await res.json();
+        setFtJobs(data.jobs || []);
+      }
+    } catch { /* ignore */ }
+  }
+
+  async function handleFtUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFtUploading(true);
+    setFtError(null);
+    setFtFileId(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/finetune/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setFtFileId(data.fileId);
+        setFtExamples(data.validExamples);
+        if (data.skippedErrors > 0) {
+          setFtError(`${data.skippedErrors} lines skipped (invalid format)`);
+        }
+      } else {
+        setFtError(data.error || "Upload failed");
+      }
+    } catch (err) {
+      setFtError(err instanceof Error ? err.message : "Upload failed");
+    }
+    setFtUploading(false);
+    if (ftFileRef.current) ftFileRef.current.value = "";
+  }
+
+  async function handleFtStart() {
+    if (!ftFileId) return;
+    setFtStarting(true);
+    setFtError(null);
+
+    try {
+      const res = await fetch("/api/finetune/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFtJobId(data.jobId);
+        setFtStatus(data.status);
+        setFtFileId(null);
+      } else {
+        setFtError(data.error || "Failed to start");
+      }
+    } catch (err) {
+      setFtError(err instanceof Error ? err.message : "Failed to start");
+    }
+    setFtStarting(false);
+  }
+
+  async function handleFtCheckStatus() {
+    if (!ftJobId) return;
+    setFtChecking(true);
+
+    try {
+      const res = await fetch("/api/finetune/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: ftJobId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFtStatus(data.status);
+        if (data.fineTunedModel) {
+          setFtModel(data.fineTunedModel);
+        }
+        if (data.error) setFtError(data.error);
+      }
+    } catch { /* ignore */ }
+    setFtChecking(false);
+  }
+
+  function useFtModel() {
+    if (!ftModel) return;
+    update("provider", "openai");
+    update("model_name", ftModel);
+    setDirty(true);
+  }
+
   if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div>;
 
   const selectedProvider = PROVIDERS.find((p) => p.value === config.provider);
@@ -191,14 +300,26 @@ export function ModelConfigTab() {
               <div>
                 <Label className="text-xs">Model</Label>
                 {selectedProvider && selectedProvider.models.length > 0 ? (
-                  <Select value={config.model_name} onValueChange={(v) => update("model_name", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {selectedProvider.models.map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  config.model_name.startsWith("ft:") ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
+                        <Sparkles className="h-3 w-3 text-purple-500" />
+                        <span className="text-xs font-mono truncate">{config.model_name}</span>
+                      </div>
+                      <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={() => update("model_name", selectedProvider.models[0])}>
+                        Switch to standard model
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select value={config.model_name} onValueChange={(v) => update("model_name", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {selectedProvider.models.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
                 ) : (
                   <Input value={config.model_name} onChange={(e) => update("model_name", e.target.value)} placeholder="Model name" />
                 )}
@@ -338,6 +459,166 @@ export function ModelConfigTab() {
                   <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-[10px] text-blue-700 dark:text-blue-300">
                     <Info className="h-3 w-3 inline mr-1" />
                     Style learning injects examples of your own previous reports into the model prompt. It does not fine-tune the base model. Examples are selected by modality and study type similarity. Your reports are never shared or used outside your session.
+                  </div>
+                </>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Block D: Fine-Tuning */}
+          <AccordionItem value="finetune">
+            <AccordionTrigger className="text-sm font-semibold">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                Fine-Tuning (OpenAI)
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3">
+              {config.provider !== "openai" ? (
+                <div className="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-xs text-yellow-700 dark:text-yellow-300">
+                  <Info className="h-3 w-3 inline mr-1" />
+                  Fine-tuning is only available with OpenAI. Switch your provider to OpenAI to use this feature.
+                </div>
+              ) : (
+                <>
+                  {/* Step 1: Upload training data */}
+                  <input type="file" accept=".docx,.doc,.jsonl,.txt" ref={ftFileRef} onChange={handleFtUpload} className="hidden" />
+                  <div>
+                    <Label className="text-xs mb-1.5 block">1. Upload training data</Label>
+                    <div
+                      className="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:border-purple-400 transition-colors dark:border-gray-600"
+                      onClick={() => ftFileRef.current?.click()}
+                    >
+                      {ftUploading ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                          <p className="text-xs text-gray-500">Uploading to OpenAI...</p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2">
+                          <Upload className="h-4 w-4 text-gray-400" />
+                          <p className="text-xs text-gray-500">Word doc or JSONL with examples</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Upload result */}
+                  {ftFileId && (
+                    <div className="p-2.5 bg-green-50 dark:bg-green-900/20 rounded-lg text-xs text-green-700 dark:text-green-300">
+                      <Check className="h-3 w-3 inline mr-1" />
+                      {ftExamples} training examples uploaded successfully.
+                    </div>
+                  )}
+
+                  {/* Step 2: Configure & start */}
+                  {ftFileId && (
+                    <div className="space-y-2">
+                      <Label className="text-xs mb-1 block">2. Configure fine-tuning</Label>
+                      <div>
+                        <Label className="text-[10px] text-gray-500">Base model</Label>
+                        <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
+                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-gray-500">Model suffix</Label>
+                        <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenia" className="h-8 text-xs" />
+                      </div>
+                      <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700">
+                        {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        Start fine-tuning
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Step 3: Job status */}
+                  {ftJobId && (
+                    <div className="space-y-2">
+                      <Label className="text-xs mb-1 block">3. Training status</Label>
+                      <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-gray-500">Job:</span>
+                          <span className="font-mono text-[10px]">{ftJobId.slice(0, 20)}...</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">Status:</span>
+                          <Badge variant={
+                            ftStatus === "succeeded" ? "default" :
+                            ftStatus === "failed" ? "destructive" :
+                            "secondary"
+                          } className="text-[10px]">
+                            {ftStatus || "unknown"}
+                          </Badge>
+                        </div>
+                        {ftModel && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-gray-500">Model:</span>
+                            <span className="font-mono text-[10px] text-green-600">{ftModel}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={handleFtCheckStatus} disabled={ftChecking} className="flex-1 text-xs">
+                          {ftChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                          Check status
+                        </Button>
+                        {ftModel && (
+                          <Button size="sm" onClick={useFtModel} className="flex-1 text-xs bg-green-600 hover:bg-green-700">
+                            <Check className="h-3 w-3" /> Use this model
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Previous jobs */}
+                  {!ftJobId && !ftFileId && (
+                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={loadFtJobs}>
+                      <RefreshCw className="h-3 w-3" /> Load previous jobs
+                    </Button>
+                  )}
+
+                  {ftJobs.length > 0 && !ftJobId && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-gray-500">Previous fine-tuning jobs:</Label>
+                      {ftJobs.map((job) => (
+                        <div key={job.jobId} className="p-2 border rounded-lg text-xs dark:border-gray-700">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-[10px]">{job.model}</span>
+                            <Badge variant={job.status === "succeeded" ? "default" : "secondary"} className="text-[10px]">{job.status}</Badge>
+                          </div>
+                          {job.fineTunedModel && (
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="font-mono text-[10px] text-green-600 truncate flex-1">{job.fineTunedModel}</span>
+                              <Button size="sm" variant="ghost" className="h-5 text-[10px] text-green-600 ml-1" onClick={() => {
+                                update("provider", "openai");
+                                update("model_name", job.fineTunedModel!);
+                                setDirty(true);
+                              }}>
+                                Use
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {ftError && (
+                    <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg text-xs text-red-600 dark:text-red-400">
+                      {ftError}
+                    </div>
+                  )}
+
+                  <div className="p-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-[10px] text-purple-700 dark:text-purple-300">
+                    <Info className="h-3 w-3 inline mr-1" />
+                    Fine-tuning trains a personalized OpenAI model with your reports. Upload a document with JSONL examples (system/user/assistant messages). Training typically takes 15-60 min and costs are billed by OpenAI based on tokens. Once trained, select the model to generate reports in your exact style.
                   </div>
                 </>
               )}
