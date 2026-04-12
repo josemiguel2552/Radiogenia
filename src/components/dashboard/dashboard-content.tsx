@@ -48,6 +48,8 @@ export function DashboardContent() {
   const [findings, setFindings] = useState("");
   const [conclusion, setConclusion] = useState("");
   const [recommendations, setRecommendations] = useState("");
+  const [initialFindings, setInitialFindings] = useState("");
+  const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
   const [loadingConclusion, setLoadingConclusion] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(false);
@@ -159,15 +161,24 @@ export function DashboardContent() {
     setLoadingConclusion(true);
     setLoadingRecs(true);
 
+    const studyName = selectedTemplate.name +
+      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
+
     const findingsPromise = fetch("/api/generate/findings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ template: templateText, dictation, modality: selectedTemplate.modality }),
+      body: JSON.stringify({
+        template: templateText,
+        dictation,
+        modality: selectedTemplate.modality,
+        studyType: studyName,
+      }),
     })
       .then((r) => r.json())
       .then((data) => {
         if (data.outputLanguage) setOutputLanguage(data.outputLanguage);
         const cleaned = data.text ? cleanReport(data.text) : data.error || "";
+        setInitialFindings(cleaned);
         setFindings(cleaned);
         setLoadingFindings(false);
         return cleaned;
@@ -184,11 +195,18 @@ export function DashboardContent() {
       fetch("/api/generate/conclusion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ findingsText, clinicalInfo }),
+        body: JSON.stringify({
+          findingsText,
+          clinicalInfo,
+          modality: selectedTemplate.modality,
+          studyType: studyName,
+        }),
       })
         .then((r) => r.json())
         .then((data) => {
-          setConclusion(data.text ? cleanReport(data.text) : data.error || "");
+          const cleaned = data.text ? cleanReport(data.text) : data.error || "";
+          setInitialConclusion(cleaned);
+          setConclusion(cleaned);
           setLoadingConclusion(false);
         })
         .catch((e) => {
@@ -307,6 +325,8 @@ export function DashboardContent() {
         findings_text: findings,
         conclusion_text: conclusion,
         recommendations_text: recommendations,
+        initial_findings_text: initialFindings || undefined,
+        initial_conclusion_text: initialConclusion || undefined,
         template_snapshot: selectedTemplate.structure,
         model_config_snapshot: config,
       }),
@@ -326,6 +346,8 @@ export function DashboardContent() {
     setFindings("");
     setConclusion("");
     setRecommendations("");
+    setInitialFindings("");
+    setInitialConclusion("");
     setClinicalInfo("");
     setSaved(false);
     localStorage.removeItem("radiogenia_draft");
