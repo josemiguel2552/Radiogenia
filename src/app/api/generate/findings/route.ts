@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/encryption";
 import { generateAI } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
-import type { AIProvider, FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage } from "@/lib/types";
+import { pickTopPhrases } from "@/lib/style-learning";
+import type { AIProvider, FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { template, dictation, modality } = await req.json();
+    const { template, dictation, modality, studyType } = await req.json();
 
     // Get model config
     const { data: config } = await supabase
@@ -31,18 +32,33 @@ export async function POST(req: NextRequest) {
 
     if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
 
-    // Get style samples if enabled
-    let styleSamples: string[] = [];
-    if (config.style_learning_enabled && config.style_sample_count >= 5) {
-      const { data: samples } = await supabase
-        .from("style_samples")
-        .select("findings_text")
+    // Get learned normality phrases if style learning is enabled
+    let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
+    if (config.style_learning_enabled && studyType) {
+      // Check if we have >= 3 reports for this study type to enable style injection
+      const { count } = await supabase
+        .from("reports")
+        .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(config.few_shot_count || 3);
+        .eq("modality", modality || "CT")
+        .eq("study_type", studyType);
 
-      if (samples) {
-        styleSamples = samples.map((s: { findings_text: string }) => s.findings_text);
+      if (count != null && count >= 3) {
+        const { data: patterns } = await supabase
+          .from("style_patterns")
+          .select("label, phrase, frequency, last_seen_at")
+          .eq("user_id", user.id)
+          .eq("modality", modality || "CT")
+          .eq("study_type", studyType)
+          .eq("kind", "normal_phrase");
+
+        if (patterns && patterns.length > 0) {
+          const top = pickTopPhrases(
+            patterns as { label: string; phrase: string; frequency: number; last_seen_at: string }[],
+            config.few_shot_count || 5,
+          );
+          preferredNormalPhrases = top.map((p) => ({ label: p.label, phrase: p.phrase }));
+        }
       }
     }
 
@@ -54,7 +70,7 @@ export async function POST(req: NextRequest) {
       normalFieldsVerbosity: config.normal_fields_verbosity as NormalFieldsVerbosity,
       paraphraseLevel: config.paraphrase_level as ParaphraseLevel,
       outputLanguage: (config.output_language || "es") as OutputLanguage,
-      styleSamples,
+      preferredNormalPhrases,
     });
 
     const text = await generateAI({
