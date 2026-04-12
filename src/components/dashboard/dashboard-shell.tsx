@@ -137,7 +137,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0 overflow-auto">
         {/* Top header */}
         <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -168,7 +168,7 @@ export function DashboardShell({ children, user }: { children: React.ReactNode; 
 
       {/* Right sidebar */}
       {rightOpen && (
-        <aside className="w-[26rem] border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col">
+        <aside className="w-80 min-w-0 shrink-0 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
           <Tabs defaultValue="templates" className="flex-1 flex flex-col">
             <div className="px-4 pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
               <TabsList className="grid w-full grid-cols-3 h-9">
