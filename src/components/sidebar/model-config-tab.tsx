@@ -7,16 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Check, Info, Eye, Trash2, Plus, Upload, RefreshCw, Sparkles } from "lucide-react";
-import { PROVIDERS, LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type StyleSample } from "@/lib/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import {
+  Loader2, Check, Eye, Trash2, Upload, RefreshCw, Sparkles,
+  Plug, Wand2, GraduationCap, Brain,
+} from "lucide-react";
+import { PROVIDERS, LANGUAGES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
 import { buildFullPromptPreview } from "@/lib/prompts";
 
 interface ModelConfig {
@@ -33,6 +31,13 @@ interface ModelConfig {
   few_shot_count: number;
 }
 
+interface StylePatternGroup {
+  modality: string;
+  study_type: string;
+  normal_phrases: { id: string; label: string | null; phrase: string; frequency: number; last_seen_at: string }[];
+  conclusion_phrases: { id: string; phrase: string; frequency: number; last_seen_at: string }[];
+}
+
 export function ModelConfigTab() {
   const [config, setConfig] = useState<ModelConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,14 +47,9 @@ export function ModelConfigTab() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<boolean | null>(null);
 
-  // Style samples
-  const [samples, setSamples] = useState<StyleSample[]>([]);
-  const [showSamples, setShowSamples] = useState(false);
-  const [showAddSample, setShowAddSample] = useState(false);
-  const [sampleFindings, setSampleFindings] = useState("");
-  const [sampleConclusion, setSampleConclusion] = useState("");
-  const [sampleModality, setSampleModality] = useState("CT");
-  const [sampleStudyType, setSampleStudyType] = useState("");
+  // Style patterns (new system)
+  const [patternGroups, setPatternGroups] = useState<StylePatternGroup[]>([]);
+  const [showPhrases, setShowPhrases] = useState(false);
 
   // Prompt preview
   const [showPrompt, setShowPrompt] = useState(false);
@@ -80,12 +80,15 @@ export function ModelConfigTab() {
     setLoading(false);
   }
 
-  async function loadSamples() {
-    const res = await fetch("/api/style-samples");
-    if (res.ok) setSamples(await res.json());
+  async function loadPatterns() {
+    const res = await fetch("/api/style-patterns");
+    if (res.ok) {
+      const data = await res.json();
+      setPatternGroups(data.groups || []);
+    }
   }
 
-  useEffect(() => { load(); loadSamples(); }, []);
+  useEffect(() => { load(); loadPatterns(); }, []);
 
   function update(field: string, value: string | boolean | number) {
     if (!config) return;
@@ -130,37 +133,15 @@ export function ModelConfigTab() {
     setTesting(false);
   }
 
-  async function handleDeleteSample(id: string) {
-    await fetch(`/api/style-samples?id=${id}`, { method: "DELETE" });
-    loadSamples();
-    load();
+  async function handleDeletePattern(id: string) {
+    await fetch(`/api/style-patterns?id=${id}`, { method: "DELETE" });
+    loadPatterns();
   }
 
-  async function handleClearAllSamples() {
-    if (!confirm("Clear all style samples?")) return;
-    await fetch("/api/style-samples?id=all", { method: "DELETE" });
-    loadSamples();
-    load();
-  }
-
-  async function handleAddSample() {
-    if (!sampleFindings.trim()) return;
-    await fetch("/api/style-samples", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        findings_text: sampleFindings,
-        conclusion_text: sampleConclusion,
-        modality: sampleModality,
-        study_type: sampleStudyType,
-      }),
-    });
-    setSampleFindings("");
-    setSampleConclusion("");
-    setSampleStudyType("");
-    setShowAddSample(false);
-    loadSamples();
-    load();
+  async function handleResetGroup(modality: string, studyType: string) {
+    if (!confirm(`Reset all learned phrases for ${studyType} (${modality})?`)) return;
+    await fetch(`/api/style-patterns?group=${encodeURIComponent(modality + "|" + studyType)}`, { method: "DELETE" });
+    loadPatterns();
   }
 
   // Fine-tuning functions
@@ -260,231 +241,262 @@ export function ModelConfigTab() {
   if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div>;
 
   const selectedProvider = PROVIDERS.find((p) => p.value === config.provider);
-
-  // Style learning progress
-  const styleLevel = config.style_sample_count < 5 ? "No data" :
-    config.style_sample_count < 15 ? "Initial" :
-    config.style_sample_count < 30 ? "Developing" : "Consolidated";
-  const styleProgress = Math.min((config.style_sample_count / 30) * 100, 100);
-
-  // Samples by modality
-  const samplesByModality: Record<string, number> = {};
-  samples.forEach((s) => { samplesByModality[s.modality] = (samplesByModality[s.modality] || 0) + 1; });
+  const langLabel = LANGUAGES.find((l) => l.value === config.output_language)?.label || config.output_language;
+  const totalPhrases = patternGroups.reduce((sum, g) => sum + g.normal_phrases.length + g.conclusion_phrases.length, 0);
 
   return (
-    <TooltipProvider>
-      <div className="space-y-3">
+    <div className="space-y-3">
+      {/* Active model summary card */}
+      <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex-shrink-0 h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+          <Plug className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+            {selectedProvider?.label || config.provider} / {config.model_name}
+          </p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400">{langLabel}</p>
+        </div>
         {dirty && (
-          <Badge variant="warning" className="w-full justify-center bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-            Configuration modified — unsaved
+          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] flex-shrink-0">
+            Unsaved
           </Badge>
         )}
+      </div>
 
-        <Accordion type="multiple" defaultValue={["provider", "params", "style"]}>
-          {/* Block A: Provider */}
-          <AccordionItem value="provider">
-            <AccordionTrigger className="text-sm font-semibold">Provider & Model</AccordionTrigger>
-            <AccordionContent className="space-y-3">
-              <div>
-                <Label className="text-xs">Provider</Label>
-                <Select value={config.provider} onValueChange={(v) => update("provider", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PROVIDERS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <Accordion type="single" collapsible defaultValue="connection">
+        {/* Connection */}
+        <AccordionItem value="connection">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <Plug className="h-3.5 w-3.5 text-blue-500" />
+              Connection
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pt-1">
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Provider</Label>
+              <Select value={config.provider} onValueChange={(v) => update("provider", v)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <Label className="text-xs">Model</Label>
-                {selectedProvider && selectedProvider.models.length > 0 ? (
-                  config.model_name.startsWith("ft:") ? (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
-                        <Sparkles className="h-3 w-3 text-purple-500" />
-                        <span className="text-xs font-mono truncate">{config.model_name}</span>
-                      </div>
-                      <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={() => update("model_name", selectedProvider.models[0])}>
-                        Switch to standard model
-                      </Button>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Model</Label>
+              {selectedProvider && selectedProvider.models.length > 0 ? (
+                config.model_name.startsWith("ft:") ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
+                      <Sparkles className="h-3 w-3 text-purple-500" />
+                      <span className="text-xs font-mono truncate">{config.model_name}</span>
                     </div>
-                  ) : (
-                    <Select value={config.model_name} onValueChange={(v) => update("model_name", v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {selectedProvider.models.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )
+                    <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={() => update("model_name", selectedProvider.models[0])}>
+                      Switch to standard model
+                    </Button>
+                  </div>
                 ) : (
-                  <Input value={config.model_name} onChange={(e) => update("model_name", e.target.value)} placeholder="Model name" />
-                )}
-              </div>
-
-              {config.provider === "custom" && (
-                <div>
-                  <Label className="text-xs">Custom endpoint URL</Label>
-                  <Input value={config.custom_base_url} onChange={(e) => update("custom_base_url", e.target.value)} placeholder="https://..." />
-                </div>
-              )}
-
-              <div>
-                <Label className="text-xs">API Key</Label>
-                <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder="Enter API key" />
-                <p className="text-[10px] text-gray-400 mt-1">Encrypted with AES-256. Only used for your authenticated calls.</p>
-              </div>
-
-              <Button size="sm" variant="outline" onClick={handleTestConnection} disabled={testing}>
-                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : testResult === true ? <Check className="h-3.5 w-3.5 text-green-500" /> : null}
-                {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test connection"}
-              </Button>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Block B: Writing parameters */}
-          <AccordionItem value="params">
-            <AccordionTrigger className="text-sm font-semibold">Writing Parameters</AccordionTrigger>
-            <AccordionContent className="space-y-4">
-              {/* Findings length */}
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <Label className="text-xs">Findings length</Label>
-                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
-                    <TooltipContent>Controls how detailed each section is written</TooltipContent>
-                  </Tooltip>
-                </div>
-                <RadioGroup value={config.findings_length} onValueChange={(v) => update("findings_length", v)} className="space-y-1">
-                  <div className="flex items-center gap-2"><RadioGroupItem value="concise" id="fl-c" /><Label htmlFor="fl-c" className="text-xs font-normal">Concise</Label></div>
-                  <div className="flex items-center gap-2"><RadioGroupItem value="standard" id="fl-s" /><Label htmlFor="fl-s" className="text-xs font-normal">Standard</Label></div>
-                  <div className="flex items-center gap-2"><RadioGroupItem value="detailed" id="fl-d" /><Label htmlFor="fl-d" className="text-xs font-normal">Detailed</Label></div>
-                </RadioGroup>
-              </div>
-
-              {/* Normal fields verbosity */}
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <Label className="text-xs">Normal fields verbosity</Label>
-                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
-                    <TooltipContent>How unmentioned sections are filled with normal text</TooltipContent>
-                  </Tooltip>
-                </div>
-                <RadioGroup value={config.normal_fields_verbosity} onValueChange={(v) => update("normal_fields_verbosity", v)} className="space-y-1">
-                  <div className="flex items-center gap-2"><RadioGroupItem value="minimal" id="nv-m" /><Label htmlFor="nv-m" className="text-xs font-normal">Minimal</Label></div>
-                  <div className="flex items-center gap-2"><RadioGroupItem value="standard" id="nv-s" /><Label htmlFor="nv-s" className="text-xs font-normal">Standard</Label></div>
-                  <div className="flex items-center gap-2"><RadioGroupItem value="explicit" id="nv-e" /><Label htmlFor="nv-e" className="text-xs font-normal">Explicit</Label></div>
-                </RadioGroup>
-              </div>
-
-              {/* Paraphrase level */}
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <Label className="text-xs">Paraphrase level</Label>
-                  <Tooltip><TooltipTrigger><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
-                    <TooltipContent>Controls if the model can rewrite dictated findings</TooltipContent>
-                  </Tooltip>
-                </div>
-                <RadioGroup value={config.paraphrase_level} onValueChange={(v) => update("paraphrase_level", v)} className="space-y-1">
-                  <div className="flex items-center gap-2"><RadioGroupItem value="none" id="pp-n" /><Label htmlFor="pp-n" className="text-xs font-normal">No paraphrase</Label></div>
-                  <div className="flex items-center gap-2"><RadioGroupItem value="light" id="pp-l" /><Label htmlFor="pp-l" className="text-xs font-normal">Light paraphrase</Label></div>
-                  <div className="flex items-center gap-2"><RadioGroupItem value="free" id="pp-f" /><Label htmlFor="pp-f" className="text-xs font-normal">Free paraphrase</Label></div>
-                </RadioGroup>
-              </div>
-
-              {/* Language */}
-              <div>
-                <Label className="text-xs">Output language</Label>
-                <Select value={config.output_language} onValueChange={(v) => update("output_language", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Block C: Style Learning */}
-          <AccordionItem value="style">
-            <AccordionTrigger className="text-sm font-semibold">Style Learning</AccordionTrigger>
-            <AccordionContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Enable style learning</Label>
-                <Switch checked={config.style_learning_enabled} onCheckedChange={(v) => update("style_learning_enabled", v)} />
-              </div>
-
-              {config.style_learning_enabled && (
-                <>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">{config.style_sample_count} samples</span>
-                      <span className="text-gray-500">{styleLevel}</span>
-                    </div>
-                    <Progress value={styleProgress} className="h-2" />
-                  </div>
-
-                  {/* Samples by modality */}
-                  {Object.keys(samplesByModality).length > 0 && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Samples by modality:</Label>
-                      {Object.entries(samplesByModality).map(([mod, count]) => (
-                        <div key={mod} className="flex justify-between text-xs px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded">
-                          <span>{mod}</span>
-                          <span className="font-medium">{count}</span>
-                        </div>
+                  <Select value={config.model_name} onValueChange={(v) => update("model_name", v)}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {selectedProvider.models.map((m) => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}
-                    </div>
-                  )}
-
-                  {/* Few-shot count */}
-                  <div>
-                    <div className="flex items-center gap-1 mb-2">
-                      <Label className="text-xs">Few-shot examples: {config.few_shot_count}</Label>
-                    </div>
-                    <Slider value={[config.few_shot_count]} min={1} max={5} step={1} onValueChange={(v) => update("few_shot_count", v[0])} />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="text-xs" onClick={() => { setShowSamples(true); loadSamples(); }}>
-                      Manage samples
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs" onClick={() => setShowAddSample(true)}>
-                      <Plus className="h-3 w-3" /> Add manually
-                    </Button>
-                  </div>
-
-                  <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-[10px] text-blue-700 dark:text-blue-300">
-                    <Info className="h-3 w-3 inline mr-1" />
-                    Style learning injects examples of your own previous reports into the model prompt. It does not fine-tune the base model. Examples are selected by modality and study type similarity. Your reports are never shared or used outside your session.
-                  </div>
-                </>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Block D: Fine-Tuning */}
-          <AccordionItem value="finetune">
-            <AccordionTrigger className="text-sm font-semibold">
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                Fine-Tuning (OpenAI)
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="space-y-3">
-              {config.provider !== "openai" ? (
-                <div className="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-xs text-yellow-700 dark:text-yellow-300">
-                  <Info className="h-3 w-3 inline mr-1" />
-                  Fine-tuning is only available with OpenAI. Switch your provider to OpenAI to use this feature.
-                </div>
+                    </SelectContent>
+                  </Select>
+                )
               ) : (
-                <>
-                  {/* Step 1: Upload training data */}
-                  <input type="file" accept=".docx,.doc,.jsonl,.txt" ref={ftFileRef} onChange={handleFtUpload} className="hidden" />
-                  <div>
-                    <Label className="text-xs mb-1.5 block">1. Upload training data</Label>
+                <Input value={config.model_name} onChange={(e) => update("model_name", e.target.value)} placeholder="Model name" className="h-9" />
+              )}
+            </div>
+
+            {config.provider === "custom" && (
+              <div>
+                <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Endpoint URL</Label>
+                <Input value={config.custom_base_url} onChange={(e) => update("custom_base_url", e.target.value)} placeholder="https://..." className="h-9" />
+              </div>
+            )}
+
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">API Key</Label>
+              <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder="Enter API key" className="h-9" />
+              <p className="text-[10px] text-gray-400 mt-1">Encrypted with AES-256-GCM. Never leaves your server.</p>
+            </div>
+
+            <Button size="sm" variant="outline" onClick={handleTestConnection} disabled={testing} className="w-full gap-1.5">
+              {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : testResult === true ? <Check className="h-3.5 w-3.5 text-green-500" /> : null}
+              {testResult === true ? "Connected" : testResult === false ? "Connection failed" : "Test connection"}
+            </Button>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Writing preferences */}
+        <AccordionItem value="writing">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <Wand2 className="h-3.5 w-3.5 text-violet-500" />
+              Writing preferences
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-5 pt-1">
+            {/* Findings length */}
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">Findings length</Label>
+              <p className="text-[10px] text-gray-400 mb-2">Controls how detailed each anatomical section is written.</p>
+              <SegmentedPill
+                value={config.findings_length}
+                options={[
+                  { value: "concise", label: "Concise" },
+                  { value: "standard", label: "Standard" },
+                  { value: "detailed", label: "Detailed" },
+                ]}
+                onChange={(v) => update("findings_length", v)}
+              />
+            </div>
+
+            {/* Normal fields verbosity */}
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">Normal fields verbosity</Label>
+              <p className="text-[10px] text-gray-400 mb-2">How sections the radiologist did not mention are filled.</p>
+              <SegmentedPill
+                value={config.normal_fields_verbosity}
+                options={[
+                  { value: "minimal", label: "Minimal" },
+                  { value: "standard", label: "Standard" },
+                  { value: "explicit", label: "Explicit" },
+                ]}
+                onChange={(v) => update("normal_fields_verbosity", v)}
+              />
+            </div>
+
+            {/* Paraphrase level */}
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">Paraphrase level</Label>
+              <p className="text-[10px] text-gray-400 mb-2">Whether the AI can rephrase dictated findings.</p>
+              <SegmentedPill
+                value={config.paraphrase_level}
+                options={[
+                  { value: "none", label: "Literal" },
+                  { value: "light", label: "Light" },
+                  { value: "free", label: "Free" },
+                ]}
+                onChange={(v) => update("paraphrase_level", v)}
+              />
+            </div>
+
+            {/* Language */}
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Output language</Label>
+              <Select value={config.output_language} onValueChange={(v) => update("output_language", v)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Style Learning */}
+        <AccordionItem value="style">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <Brain className="h-3.5 w-3.5 text-emerald-500" />
+              Style learning
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pt-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs">Automatic learning</Label>
+                <p className="text-[10px] text-gray-400">Learn your writing style from corrections.</p>
+              </div>
+              <Switch checked={config.style_learning_enabled} onCheckedChange={(v) => update("style_learning_enabled", v)} />
+            </div>
+
+            {config.style_learning_enabled && (
+              <>
+                {/* Summary */}
+                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-300">
+                  {patternGroups.length === 0 ? (
+                    <p>No corrections learned yet. Save a corrected report to start learning.</p>
+                  ) : (
+                    <p>
+                      Learning from corrections across <strong>{patternGroups.length}</strong> study type{patternGroups.length !== 1 ? "s" : ""}.
+                      {" "}<strong>{totalPhrases}</strong> phrase{totalPhrases !== 1 ? "s" : ""} learned.
+                    </p>
+                  )}
+                </div>
+
+                {/* Study type table */}
+                {patternGroups.length > 0 && (
+                  <div className="space-y-1">
+                    {patternGroups.slice(0, 5).map((g) => (
+                      <div key={`${g.modality}|${g.study_type}`} className="flex items-center justify-between text-xs px-2.5 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="min-w-0">
+                          <span className="text-gray-900 dark:text-white font-medium truncate block">{g.study_type}</span>
+                          <span className="text-[10px] text-gray-500">{g.modality}</span>
+                        </div>
+                        <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+                          {g.normal_phrases.length + g.conclusion_phrases.length} phrases
+                        </Badge>
+                      </div>
+                    ))}
+                    {patternGroups.length > 5 && (
+                      <p className="text-[10px] text-gray-400 text-center">
+                        + {patternGroups.length - 5} more study types
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Few-shot count */}
+                <div>
+                  <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+                    Max phrases injected: {config.few_shot_count}
+                  </Label>
+                  <Slider value={[config.few_shot_count]} min={1} max={10} step={1} onValueChange={(v) => update("few_shot_count", v[0])} />
+                </div>
+
+                {patternGroups.length > 0 && (
+                  <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setShowPhrases(true)}>
+                    View learned phrases
+                  </Button>
+                )}
+
+                <p className="text-[10px] text-gray-400">
+                  Phrases are collected automatically when you save a corrected report. Only wording changes are learned — never clinical findings.
+                </p>
+              </>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Fine-Tuning */}
+        <AccordionItem value="finetune">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <GraduationCap className="h-3.5 w-3.5 text-purple-500" />
+              Fine-tuning (OpenAI)
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pt-1">
+            {config.provider !== "openai" ? (
+              <p className="text-xs text-gray-500 py-2">
+                Switch your provider to OpenAI to enable fine-tuning.
+              </p>
+            ) : (
+              <>
+                {/* Step 1: Upload */}
+                <input type="file" accept=".docx,.doc,.jsonl,.txt" ref={ftFileRef} onChange={handleFtUpload} className="hidden" />
+
+                <div className="space-y-3">
+                  {/* Step indicator */}
+                  <FtStep n={1} label="Upload training data" active={!ftFileId && !ftJobId}>
                     <div
                       className="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:border-purple-400 transition-colors dark:border-gray-600"
                       onClick={() => ftFileRef.current?.click()}
@@ -497,235 +509,271 @@ export function ModelConfigTab() {
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <Upload className="h-4 w-4 text-gray-400" />
-                          <p className="text-xs text-gray-500">Word doc or JSONL with examples</p>
+                          <p className="text-xs text-gray-500">Word doc or JSONL</p>
                         </div>
                       )}
                     </div>
-                  </div>
+                  </FtStep>
 
-                  {/* Upload result */}
                   {ftFileId && (
                     <div className="p-2.5 bg-green-50 dark:bg-green-900/20 rounded-lg text-xs text-green-700 dark:text-green-300">
                       <Check className="h-3 w-3 inline mr-1" />
-                      {ftExamples} training examples uploaded successfully.
+                      {ftExamples} examples uploaded.
                     </div>
                   )}
 
                   {/* Step 2: Configure & start */}
-                  {ftFileId && (
-                    <div className="space-y-2">
-                      <Label className="text-xs mb-1 block">2. Configure fine-tuning</Label>
-                      <div>
-                        <Label className="text-[10px] text-gray-500">Base model</Label>
-                        <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
-                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-gray-500">Model suffix</Label>
-                        <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenia" className="h-8 text-xs" />
-                      </div>
-                      <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700">
-                        {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        Start fine-tuning
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Step 3: Job status */}
-                  {ftJobId && (
-                    <div className="space-y-2">
-                      <Label className="text-xs mb-1 block">3. Training status</Label>
-                      <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-gray-500">Job:</span>
-                          <span className="font-mono text-[10px]">{ftJobId.slice(0, 20)}...</span>
+                  <FtStep n={2} label="Configure & start" active={!!ftFileId}>
+                    {ftFileId && (
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-[10px] text-gray-500">Base model</Label>
+                          <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
+                              <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-500">Status:</span>
-                          <Badge variant={
-                            ftStatus === "succeeded" ? "default" :
-                            ftStatus === "failed" ? "destructive" :
-                            "secondary"
-                          } className="text-[10px]">
-                            {ftStatus || "unknown"}
-                          </Badge>
+                        <div>
+                          <Label className="text-[10px] text-gray-500">Suffix</Label>
+                          <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenia" className="h-8 text-xs" />
                         </div>
-                        {ftModel && (
-                          <div className="flex items-center justify-between mt-1">
-                            <span className="text-gray-500">Model:</span>
-                            <span className="font-mono text-[10px] text-green-600">{ftModel}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={handleFtCheckStatus} disabled={ftChecking} className="flex-1 text-xs">
-                          {ftChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                          Check status
+                        <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700 gap-1.5">
+                          {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                          Start fine-tuning
                         </Button>
-                        {ftModel && (
-                          <Button size="sm" onClick={useFtModel} className="flex-1 text-xs bg-green-600 hover:bg-green-700">
-                            <Check className="h-3 w-3" /> Use this model
-                          </Button>
-                        )}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </FtStep>
 
-                  {/* Previous jobs */}
-                  {!ftJobId && !ftFileId && (
-                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={loadFtJobs}>
-                      <RefreshCw className="h-3 w-3" /> Load previous jobs
-                    </Button>
-                  )}
-
-                  {ftJobs.length > 0 && !ftJobId && (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-gray-500">Previous fine-tuning jobs:</Label>
-                      {ftJobs.map((job) => (
-                        <div key={job.jobId} className="p-2 border rounded-lg text-xs dark:border-gray-700">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-[10px]">{job.model}</span>
-                            <Badge variant={job.status === "succeeded" ? "default" : "secondary"} className="text-[10px]">{job.status}</Badge>
+                  {/* Step 3: Status */}
+                  <FtStep n={3} label="Training status" active={!!ftJobId}>
+                    {ftJobId && (
+                      <div className="space-y-2">
+                        <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700 space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Job:</span>
+                            <span className="font-mono text-[10px]">{ftJobId.slice(0, 20)}...</span>
                           </div>
-                          {job.fineTunedModel && (
-                            <div className="flex items-center justify-between mt-1">
-                              <span className="font-mono text-[10px] text-green-600 truncate flex-1">{job.fineTunedModel}</span>
-                              <Button size="sm" variant="ghost" className="h-5 text-[10px] text-green-600 ml-1" onClick={() => {
-                                update("provider", "openai");
-                                update("model_name", job.fineTunedModel!);
-                                setDirty(true);
-                              }}>
-                                Use
-                              </Button>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Status:</span>
+                            <Badge variant={ftStatus === "succeeded" ? "default" : ftStatus === "failed" ? "destructive" : "secondary"} className="text-[10px]">
+                              {ftStatus || "unknown"}
+                            </Badge>
+                          </div>
+                          {ftModel && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Model:</span>
+                              <span className="font-mono text-[10px] text-green-600">{ftModel}</span>
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Error */}
-                  {ftError && (
-                    <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg text-xs text-red-600 dark:text-red-400">
-                      {ftError}
-                    </div>
-                  )}
-
-                  <div className="p-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-[10px] text-purple-700 dark:text-purple-300">
-                    <Info className="h-3 w-3 inline mr-1" />
-                    Fine-tuning trains a personalized OpenAI model with your reports. Upload a document with JSONL examples (system/user/assistant messages). Training typically takes 15-60 min and costs are billed by OpenAI based on tokens. Once trained, select the model to generate reports in your exact style.
-                  </div>
-                </>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
-        <Separator />
-
-        <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={saving || !dirty} className="flex-1">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save configuration"}
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => setShowPrompt(true)} title="View active prompt">
-            <Eye className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Prompt Preview Dialog */}
-        <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Active Prompt Preview</DialogTitle>
-            </DialogHeader>
-            <pre className="text-xs bg-gray-50 dark:bg-gray-800 p-4 rounded-lg whitespace-pre-wrap font-mono">
-              {buildFullPromptPreview({
-                template: "[Selected template structure]",
-                findingsLength: config.findings_length,
-                normalFieldsVerbosity: config.normal_fields_verbosity,
-                paraphraseLevel: config.paraphrase_level,
-                outputLanguage: config.output_language,
-                styleSamplesCount: config.style_learning_enabled ? config.few_shot_count : 0,
-              })}
-            </pre>
-          </DialogContent>
-        </Dialog>
-
-        {/* Manage Samples Dialog */}
-        <Dialog open={showSamples} onOpenChange={setShowSamples}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Style Samples</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2">
-              {samples.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No samples yet</p>}
-              {samples.map((s) => (
-                <div key={s.id} className="p-3 border rounded-lg text-xs dark:border-gray-700">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex gap-1 mb-1">
-                        <Badge variant="secondary" className="text-[10px]">{s.modality}</Badge>
-                        <Badge variant="outline" className="text-[10px]">{s.study_type}</Badge>
-                        <span className="text-gray-400 text-[10px]">{new Date(s.created_at).toLocaleDateString()}</span>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={handleFtCheckStatus} disabled={ftChecking} className="flex-1 text-xs gap-1">
+                            {ftChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                            Refresh
+                          </Button>
+                          {ftModel && (
+                            <Button size="sm" onClick={useFtModel} className="flex-1 text-xs bg-green-600 hover:bg-green-700 gap-1">
+                              <Check className="h-3 w-3" /> Use model
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{s.findings_text}</p>
+                    )}
+                  </FtStep>
+                </div>
+
+                {/* Previous jobs */}
+                {!ftJobId && !ftFileId && (
+                  <Button size="sm" variant="outline" className="w-full text-xs gap-1" onClick={loadFtJobs}>
+                    <RefreshCw className="h-3 w-3" /> Load previous jobs
+                  </Button>
+                )}
+
+                {ftJobs.length > 0 && !ftJobId && (
+                  <div className="space-y-1.5">
+                    {ftJobs.map((job) => (
+                      <div key={job.jobId} className="p-2 border rounded-lg text-xs dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px]">{job.model}</span>
+                          <Badge variant={job.status === "succeeded" ? "default" : "secondary"} className="text-[10px]">{job.status}</Badge>
+                        </div>
+                        {job.fineTunedModel && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="font-mono text-[10px] text-green-600 truncate flex-1">{job.fineTunedModel}</span>
+                            <Button size="sm" variant="ghost" className="h-5 text-[10px] text-green-600 ml-1" onClick={() => {
+                              update("provider", "openai");
+                              update("model_name", job.fineTunedModel!);
+                              setDirty(true);
+                            }}>
+                              Use
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {ftError && (
+                  <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg text-xs text-red-600 dark:text-red-400">
+                    {ftError}
+                  </div>
+                )}
+
+                <p className="text-[10px] text-gray-400">
+                  Fine-tuning trains a personalized OpenAI model. Training typically takes 15-60 min. Costs billed by OpenAI.
+                </p>
+              </>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Footer actions */}
+      <div className="flex gap-2 pt-1">
+        <Button onClick={handleSave} disabled={saving || !dirty} className="flex-1 h-10">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save configuration"}
+        </Button>
+        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setShowPrompt(true)} title="Preview active prompt">
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Prompt Preview Dialog */}
+      <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Active Prompt Preview</DialogTitle>
+          </DialogHeader>
+          <pre className="text-xs bg-gray-50 dark:bg-gray-800 p-4 rounded-lg whitespace-pre-wrap font-mono">
+            {buildFullPromptPreview({
+              template: "[Selected template structure]",
+              findingsLength: config.findings_length,
+              normalFieldsVerbosity: config.normal_fields_verbosity,
+              paraphraseLevel: config.paraphrase_level,
+              outputLanguage: config.output_language,
+              styleSamplesCount: config.style_learning_enabled ? config.few_shot_count : 0,
+            })}
+          </pre>
+        </DialogContent>
+      </Dialog>
+
+      {/* Learned Phrases Dialog */}
+      <Dialog open={showPhrases} onOpenChange={setShowPhrases}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Learned Phrases</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {patternGroups.length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-4">No phrases learned yet.</p>
+            )}
+            {patternGroups.map((g) => {
+              const key = `${g.modality}|${g.study_type}`;
+              return (
+                <div key={key} className="border rounded-lg dark:border-gray-700 overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">{g.study_type}</span>
+                      <Badge variant="secondary" className="text-[10px] ml-2">{g.modality}</Badge>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleDeleteSample(s.id)}>
-                      <Trash2 className="h-3 w-3" />
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] text-red-500 hover:text-red-600" onClick={() => handleResetGroup(g.modality, g.study_type)}>
+                      Reset
                     </Button>
                   </div>
+                  <div className="divide-y dark:divide-gray-700">
+                    {g.normal_phrases.length > 0 && (
+                      <div className="px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">Normal phrases</p>
+                        {g.normal_phrases.slice(0, 10).map((p) => (
+                          <div key={p.id} className="flex items-start justify-between gap-2 py-1">
+                            <div className="min-w-0">
+                              <span className="text-[10px] text-gray-500">{p.label}: </span>
+                              <span className="text-xs text-gray-700 dark:text-gray-300">{p.phrase}</span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Badge variant="outline" className="text-[9px]">{p.frequency}x</Badge>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-red-400 hover:text-red-500" onClick={() => handleDeletePattern(p.id)}>
+                                <Trash2 className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {g.conclusion_phrases.length > 0 && (
+                      <div className="px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">Conclusion phrases</p>
+                        {g.conclusion_phrases.slice(0, 10).map((p) => (
+                          <div key={p.id} className="flex items-start justify-between gap-2 py-1">
+                            <span className="text-xs text-gray-700 dark:text-gray-300 min-w-0">{p.phrase}</span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Badge variant="outline" className="text-[9px]">{p.frequency}x</Badge>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-red-400 hover:text-red-500" onClick={() => handleDeletePattern(p.id)}>
+                                <Trash2 className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-            <DialogFooter>
-              <Button variant="destructive" size="sm" onClick={handleClearAllSamples}>Clear all</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
-        {/* Add Sample Dialog */}
-        <Dialog open={showAddSample} onOpenChange={setShowAddSample}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Style Sample</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs">Modality</Label>
-                  <Select value={sampleModality} onValueChange={setSampleModality}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {MODALITIES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Study type</Label>
-                  <Input value={sampleStudyType} onChange={(e) => setSampleStudyType(e.target.value)} placeholder="e.g. Chest CT scan" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs">Findings</Label>
-                <Textarea value={sampleFindings} onChange={(e) => setSampleFindings(e.target.value)} className="min-h-[120px]" placeholder="Paste your findings text..." />
-              </div>
-              <div>
-                <Label className="text-xs">Conclusion (optional)</Label>
-                <Textarea value={sampleConclusion} onChange={(e) => setSampleConclusion(e.target.value)} className="min-h-[60px]" placeholder="Paste conclusion..." />
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleAddSample} disabled={!sampleFindings.trim()}>Save sample</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+/* ────────── Helper components ────────── */
+
+function SegmentedPill({ value, options, onChange }: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+            value === opt.value
+              ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm font-medium"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function FtStep({ n, label, active, children }: {
+  n: number;
+  label: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`relative pl-7 ${active ? "" : "opacity-50"}`}>
+      <div className={`absolute left-0 top-0 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+        active ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+      }`}>
+        {n}
       </div>
-    </TooltipProvider>
+      <Label className="text-xs mb-1.5 block font-medium">{label}</Label>
+      {children}
+    </div>
   );
 }
