@@ -13,7 +13,10 @@ export async function GET() {
       .eq("user_id", user.id)
       .order("frequency", { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // If style_patterns table doesn't exist yet (migration not applied), return empty
+    if (error) {
+      return NextResponse.json({ groups: [], total_reports: 0 });
+    }
 
     // Fetch report counts per (modality, study_type) for progress tracking
     const { data: reports } = await supabase

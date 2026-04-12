@@ -32,86 +32,73 @@ export async function GET(req: NextRequest) {
   }
 }
 
+async function upsertPattern(
+  supabase: SupabaseClient,
+  userId: string,
+  modality: string,
+  studyType: string,
+  kind: "normal_phrase" | "conclusion_phrase",
+  phrase: string,
+  label: string | null,
+) {
+  const { data: existing } = await supabase
+    .from("style_patterns")
+    .select("id, frequency")
+    .eq("user_id", userId)
+    .eq("modality", modality)
+    .eq("study_type", studyType)
+    .eq("kind", kind)
+    .eq("phrase", phrase)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("style_patterns")
+      .update({ frequency: existing.frequency + 1, last_seen_at: new Date().toISOString(), label })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("style_patterns").insert({
+      user_id: userId,
+      modality,
+      study_type: studyType,
+      kind,
+      label,
+      phrase,
+      frequency: 1,
+      last_seen_at: new Date().toISOString(),
+    });
+  }
+}
+
 async function learnFromReport(
   supabase: SupabaseClient,
   userId: string,
   body: {
     modality: string;
     study_type: string;
-    initial_findings_text?: string;
+    initial_findings_text?: string | null;
     findings_text: string;
-    initial_conclusion_text?: string;
+    initial_conclusion_text?: string | null;
     conclusion_text: string;
   },
 ) {
   const { modality, study_type } = body;
+  const initialFindings = body.initial_findings_text || "";
+  const initialConclusion = body.initial_conclusion_text || "";
 
-  // Learn normality phrases
-  if (body.initial_findings_text) {
-    const normalPhrases = extractNormalityPhrases(body.initial_findings_text, body.findings_text);
+  // Learn normality phrases — compare initial vs final findings
+  if (initialFindings && body.findings_text) {
+    const normalPhrases = extractNormalityPhrases(initialFindings, body.findings_text);
     for (const p of normalPhrases) {
-      // Try to find existing pattern
-      const { data: existing } = await supabase
-        .from("style_patterns")
-        .select("id, frequency")
-        .eq("user_id", userId)
-        .eq("modality", modality)
-        .eq("study_type", study_type)
-        .eq("kind", "normal_phrase")
-        .eq("phrase", p.phrase)
-        .single();
-
-      if (existing) {
-        await supabase
-          .from("style_patterns")
-          .update({ frequency: existing.frequency + 1, last_seen_at: new Date().toISOString(), label: p.label })
-          .eq("id", existing.id);
-      } else {
-        await supabase.from("style_patterns").insert({
-          user_id: userId,
-          modality,
-          study_type,
-          kind: "normal_phrase",
-          label: p.label,
-          phrase: p.phrase,
-          frequency: 1,
-          last_seen_at: new Date().toISOString(),
-        });
-      }
+      await upsertPattern(supabase, userId, modality, study_type, "normal_phrase", p.phrase, p.label);
     }
   }
 
   // Learn conclusion phrases
-  if (body.initial_conclusion_text) {
-    const conclusionPhrases = extractConclusionPhrases(body.initial_conclusion_text, body.conclusion_text);
+  if (initialConclusion && body.conclusion_text) {
+    const conclusionPhrases = extractConclusionPhrases(initialConclusion, body.conclusion_text);
     for (const phrase of conclusionPhrases) {
-      const { data: existing } = await supabase
-        .from("style_patterns")
-        .select("id, frequency")
-        .eq("user_id", userId)
-        .eq("modality", modality)
-        .eq("study_type", study_type)
-        .eq("kind", "conclusion_phrase")
-        .eq("phrase", phrase)
-        .single();
-
-      if (existing) {
-        await supabase
-          .from("style_patterns")
-          .update({ frequency: existing.frequency + 1, last_seen_at: new Date().toISOString() })
-          .eq("id", existing.id);
-      } else {
-        await supabase.from("style_patterns").insert({
-          user_id: userId,
-          modality,
-          study_type,
-          kind: "conclusion_phrase",
-          label: null,
-          phrase,
-          frequency: 1,
-          last_seen_at: new Date().toISOString(),
-        });
-      }
+      await upsertPattern(supabase, userId, modality, study_type, "conclusion_phrase", phrase, null);
     }
   }
 
@@ -137,13 +124,42 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    body.user_id = user.id;
 
-    const { data, error } = await supabase
+    // Ensure migration 002 columns exist by trying with them first, fallback without
+    const reportRow: Record<string, unknown> = {
+      user_id: user.id,
+      study_type: body.study_type,
+      modality: body.modality,
+      contrast_option: body.contrast_option || "default",
+      raw_dictation: body.raw_dictation || "",
+      findings_text: body.findings_text || "",
+      conclusion_text: body.conclusion_text || "",
+      recommendations_text: body.recommendations_text || "",
+      template_snapshot: body.template_snapshot || null,
+      model_config_snapshot: body.model_config_snapshot || null,
+      initial_findings_text: body.initial_findings_text || null,
+      initial_conclusion_text: body.initial_conclusion_text || null,
+    };
+
+    let data;
+    let error;
+
+    ({ data, error } = await supabase
       .from("reports")
-      .insert(body)
+      .insert(reportRow)
       .select()
-      .single();
+      .single());
+
+    // If insert failed because of unknown columns (migration not applied), retry without them
+    if (error && error.message?.includes("initial_")) {
+      delete reportRow.initial_findings_text;
+      delete reportRow.initial_conclusion_text;
+      ({ data, error } = await supabase
+        .from("reports")
+        .insert(reportRow)
+        .select()
+        .single());
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -156,17 +172,32 @@ export async function POST(req: NextRequest) {
 
     if (config?.style_learning_enabled && data) {
       // Keep writing to style_samples for backward compatibility
-      await supabase.from("style_samples").insert({
-        user_id: user.id,
-        report_id: data.id,
-        findings_text: body.findings_text,
-        conclusion_text: body.conclusion_text,
-        modality: body.modality,
-        study_type: body.study_type,
-      });
+      // Keep writing to style_samples for backward compatibility (non-critical)
+      try {
+        await supabase.from("style_samples").insert({
+          user_id: user.id,
+          report_id: data.id,
+          findings_text: body.findings_text || "",
+          conclusion_text: body.conclusion_text || "",
+          modality: body.modality,
+          study_type: body.study_type,
+        });
+      } catch { /* non-critical */ }
 
       // Run the new style learning pipeline
-      await learnFromReport(supabase, user.id, body);
+      try {
+        await learnFromReport(supabase, user.id, {
+          modality: body.modality,
+          study_type: body.study_type,
+          initial_findings_text: body.initial_findings_text || null,
+          findings_text: body.findings_text || "",
+          initial_conclusion_text: body.initial_conclusion_text || null,
+          conclusion_text: body.conclusion_text || "",
+        });
+      } catch (learnErr) {
+        // Style learning failure should never block the save
+        console.error("Style learning error:", learnErr);
+      }
     }
 
     return NextResponse.json(data);

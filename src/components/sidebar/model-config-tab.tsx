@@ -92,7 +92,14 @@ export function ModelConfigTab() {
     }
   }
 
-  useEffect(() => { load(); loadPatterns(); }, []);
+  useEffect(() => {
+    load();
+    loadPatterns();
+    // Refresh stats when a report is saved from the dashboard
+    const onSaved = () => loadPatterns();
+    window.addEventListener("radiogenia:report-saved", onSaved);
+    return () => window.removeEventListener("radiogenia:report-saved", onSaved);
+  }, []);
 
   function update(field: string, value: string | boolean | number) {
     if (!config) return;

@@ -309,29 +309,38 @@ export function DashboardContent() {
 
     const { data: config } = await supabase.from("user_model_config").select("*").single();
 
-    await fetch("/api/reports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        study_type: studyName,
-        modality: selectedTemplate.modality,
-        contrast_option: contrastOption,
-        raw_dictation: dictation,
-        findings_text: findings,
-        conclusion_text: conclusion,
-        recommendations_text: recommendations,
-        initial_findings_text: initialFindings || undefined,
-        initial_conclusion_text: initialConclusion || undefined,
-        template_snapshot: selectedTemplate.structure,
-        model_config_snapshot: config,
-      }),
-    });
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          study_type: studyName,
+          modality: selectedTemplate.modality,
+          contrast_option: contrastOption,
+          raw_dictation: dictation,
+          findings_text: findings,
+          conclusion_text: conclusion,
+          recommendations_text: recommendations,
+          initial_findings_text: initialFindings || null,
+          initial_conclusion_text: initialConclusion || null,
+          template_snapshot: selectedTemplate.structure,
+          model_config_snapshot: config,
+        }),
+      });
+      if (!res.ok) {
+        console.error("Failed to save report:", await res.text());
+      }
+    } catch (e) {
+      console.error("Failed to save report:", e);
+    }
   }
 
   async function startNewReport() {
     // Auto-save the current report (and trigger style learning) before clearing
     if (findings) {
       await saveReportQuietly();
+      // Notify sidebar to refresh style learning stats
+      window.dispatchEvent(new Event("radiogenia:report-saved"));
     }
     setDictation("");
     setFindings("");
