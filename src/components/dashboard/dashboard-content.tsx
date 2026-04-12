@@ -14,14 +14,13 @@ import {
   MicOff,
   Loader2,
   Copy,
-  Save,
   Check,
-  ClipboardList,
   Sparkles,
   Wand2,
   Lightbulb,
   Stethoscope,
   CircleCheck,
+  ArrowRight,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -53,8 +52,6 @@ export function DashboardContent() {
   const [loadingFindings, setLoadingFindings] = useState(false);
   const [loadingConclusion, setLoadingConclusion] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
 
@@ -154,7 +151,6 @@ export function DashboardContent() {
   async function handleGenerate() {
     if (!selectedTemplate || !dictation.trim()) return;
 
-    setSaved(false);
     const templateText = selectedTemplate.structure?.template || "";
 
     setLoadingFindings(true);
@@ -305,9 +301,8 @@ export function DashboardContent() {
     copyText(text, id);
   }
 
-  async function handleSave() {
-    if (!selectedTemplate) return;
-    setSaving(true);
+  async function saveReportQuietly() {
+    if (!selectedTemplate || !findings) return;
 
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
@@ -331,16 +326,12 @@ export function DashboardContent() {
         model_config_snapshot: config,
       }),
     });
-
-    localStorage.removeItem("radiogenia_draft");
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   }
 
-  function startNewReport() {
-    if (dictation || findings) {
-      if (!confirm("Discard the current report and start a new one?")) return;
+  async function startNewReport() {
+    // Auto-save the current report (and trigger style learning) before clearing
+    if (findings) {
+      await saveReportQuietly();
     }
     setDictation("");
     setFindings("");
@@ -349,7 +340,6 @@ export function DashboardContent() {
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
-    setSaved(false);
     localStorage.removeItem("radiogenia_draft");
   }
 
@@ -376,8 +366,8 @@ export function DashboardContent() {
         </div>
         {hasOutput && (
           <Button variant="outline" size="sm" onClick={startNewReport} className="gap-1.5 text-xs">
-            <FileText className="h-3.5 w-3.5" />
-            New report
+            <ArrowRight className="h-3.5 w-3.5" />
+            Next report
           </Button>
         )}
       </div>
@@ -631,18 +621,12 @@ export function DashboardContent() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={handleSave}
-                  disabled={saving || !findings}
+                  onClick={startNewReport}
+                  disabled={!findings}
                   className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700"
                 >
-                  {saving ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : saved ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <Save className="h-3.5 w-3.5" />
-                  )}
-                  {saved ? "Saved" : "Save report"}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  Next report
                 </Button>
               </div>
             </CardContent>
