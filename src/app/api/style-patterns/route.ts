@@ -15,13 +15,42 @@ export async function GET() {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Group by modality + study_type
+    // Fetch report counts per (modality, study_type) for progress tracking
+    const { data: reports } = await supabase
+      .from("reports")
+      .select("modality, study_type")
+      .eq("user_id", user.id);
+
+    const reportCounts = new Map<string, number>();
+    let totalReports = 0;
+    for (const r of reports || []) {
+      if (r.modality && r.study_type) {
+        const key = `${r.modality}|${r.study_type}`;
+        reportCounts.set(key, (reportCounts.get(key) || 0) + 1);
+        totalReports++;
+      }
+    }
+
+    // Group patterns by modality + study_type
     const groupMap = new Map<string, {
       modality: string;
       study_type: string;
+      report_count: number;
       normal_phrases: typeof data;
       conclusion_phrases: typeof data;
     }>();
+
+    // Seed groups from reports (even those with no patterns yet)
+    for (const [key, count] of reportCounts) {
+      const [modality, study_type] = key.split("|");
+      groupMap.set(key, {
+        modality,
+        study_type,
+        report_count: count,
+        normal_phrases: [],
+        conclusion_phrases: [],
+      });
+    }
 
     for (const row of data || []) {
       const key = `${row.modality}|${row.study_type}`;
@@ -29,6 +58,7 @@ export async function GET() {
         groupMap.set(key, {
           modality: row.modality,
           study_type: row.study_type,
+          report_count: 0,
           normal_phrases: [],
           conclusion_phrases: [],
         });
@@ -41,7 +71,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ groups: Array.from(groupMap.values()) });
+    return NextResponse.json({
+      groups: Array.from(groupMap.values()),
+      total_reports: totalReports,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

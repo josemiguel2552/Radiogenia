@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -34,6 +35,7 @@ interface ModelConfig {
 interface StylePatternGroup {
   modality: string;
   study_type: string;
+  report_count: number;
   normal_phrases: { id: string; label: string | null; phrase: string; frequency: number; last_seen_at: string }[];
   conclusion_phrases: { id: string; phrase: string; frequency: number; last_seen_at: string }[];
 }
@@ -49,6 +51,7 @@ export function ModelConfigTab() {
 
   // Style patterns (new system)
   const [patternGroups, setPatternGroups] = useState<StylePatternGroup[]>([]);
+  const [totalReports, setTotalReports] = useState(0);
   const [showPhrases, setShowPhrases] = useState(false);
 
   // Prompt preview
@@ -85,6 +88,7 @@ export function ModelConfigTab() {
     if (res.ok) {
       const data = await res.json();
       setPatternGroups(data.groups || []);
+      setTotalReports(data.total_reports || 0);
     }
   }
 
@@ -407,6 +411,9 @@ export function ModelConfigTab() {
             <span className="flex items-center gap-2">
               <Brain className="h-3.5 w-3.5 text-emerald-500" />
               Style learning
+              {config.style_learning_enabled && totalReports > 0 && (
+                <Badge variant="secondary" className="text-[9px] ml-1">{totalReports} reports</Badge>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-4 pt-1">
@@ -420,37 +427,67 @@ export function ModelConfigTab() {
 
             {config.style_learning_enabled && (
               <>
-                {/* Summary */}
-                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-300">
-                  {patternGroups.length === 0 ? (
-                    <p>No corrections learned yet. Save a corrected report to start learning.</p>
-                  ) : (
-                    <p>
-                      Learning from corrections across <strong>{patternGroups.length}</strong> study type{patternGroups.length !== 1 ? "s" : ""}.
-                      {" "}<strong>{totalPhrases}</strong> phrase{totalPhrases !== 1 ? "s" : ""} learned.
+                {/* Global progress */}
+                <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-900 dark:text-white">Training progress</span>
+                    <Badge variant={totalReports >= 10 ? "default" : "secondary"} className="text-[10px]">
+                      {totalReports < 3 ? "Starting" : totalReports < 10 ? "Learning" : "Trained"}
+                    </Badge>
+                  </div>
+                  <Progress value={Math.min((totalReports / 10) * 100, 100)} className="h-2" />
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>{totalReports} report{totalReports !== 1 ? "s" : ""} saved</span>
+                    <span>{totalReports < 3 ? `${3 - totalReports} more to activate` : totalReports < 10 ? `${10 - totalReports} more to consolidate` : "Fully trained"}</span>
+                  </div>
+                  {totalPhrases > 0 && (
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                      {totalPhrases} phrase{totalPhrases !== 1 ? "s" : ""} learned across {patternGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0).length} study type{patternGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0).length !== 1 ? "s" : ""}.
                     </p>
                   )}
                 </div>
 
-                {/* Study type table */}
+                {/* Per study type breakdown */}
                 {patternGroups.length > 0 && (
-                  <div className="space-y-1">
-                    {patternGroups.slice(0, 5).map((g) => (
-                      <div key={`${g.modality}|${g.study_type}`} className="flex items-center justify-between text-xs px-2.5 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="min-w-0">
-                          <span className="text-gray-900 dark:text-white font-medium truncate block">{g.study_type}</span>
-                          <span className="text-[10px] text-gray-500">{g.modality}</span>
-                        </div>
-                        <Badge variant="secondary" className="text-[10px] flex-shrink-0">
-                          {g.normal_phrases.length + g.conclusion_phrases.length} phrases
-                        </Badge>
-                      </div>
-                    ))}
-                    {patternGroups.length > 5 && (
+                  <div className="space-y-2">
+                    <Label className="text-[11px] uppercase tracking-wide text-gray-500 block">By study type</Label>
+                    {patternGroups
+                      .sort((a, b) => b.report_count - a.report_count)
+                      .slice(0, 6)
+                      .map((g) => {
+                        const phrases = g.normal_phrases.length + g.conclusion_phrases.length;
+                        const pct = Math.min((g.report_count / 10) * 100, 100);
+                        return (
+                          <div key={`${g.modality}|${g.study_type}`} className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-medium text-gray-900 dark:text-white truncate block">{g.study_type}</span>
+                              </div>
+                              <span className="text-[10px] text-gray-500 flex-shrink-0 ml-2">{g.modality}</span>
+                            </div>
+                            <Progress value={pct} className="h-1.5" />
+                            <div className="flex justify-between text-[10px] text-gray-400">
+                              <span>{g.report_count}/10 reports</span>
+                              {phrases > 0 && <span>{phrases} phrases</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    {patternGroups.length > 6 && (
                       <p className="text-[10px] text-gray-400 text-center">
-                        + {patternGroups.length - 5} more study types
+                        + {patternGroups.length - 6} more
                       </p>
                     )}
+                  </div>
+                )}
+
+                {patternGroups.length === 0 && (
+                  <div className="text-center py-3">
+                    <Brain className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-xs text-gray-500">No reports yet.</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Generate a report, correct it, and click &quot;Next report&quot; to start training.
+                    </p>
                   </div>
                 )}
 
@@ -462,14 +499,14 @@ export function ModelConfigTab() {
                   <Slider value={[config.few_shot_count]} min={1} max={10} step={1} onValueChange={(v) => update("few_shot_count", v[0])} />
                 </div>
 
-                {patternGroups.length > 0 && (
+                {totalPhrases > 0 && (
                   <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setShowPhrases(true)}>
                     View learned phrases
                   </Button>
                 )}
 
                 <p className="text-[10px] text-gray-400">
-                  Phrases are collected automatically when you save a corrected report. Only wording changes are learned — never clinical findings.
+                  Style is learned automatically when you move to the next report. Only wording changes are captured — never clinical findings.
                 </p>
               </>
             )}
