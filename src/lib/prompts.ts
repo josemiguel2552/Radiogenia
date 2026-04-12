@@ -1,4 +1,4 @@
-import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage } from "./types";
+import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "./types";
 
 const LENGTH_INSTRUCTIONS: Record<FindingsLength, string> = {
   concise: "Redacta cada sección de forma concisa en una sola frase. Incluye solo el dato diagnóstico esencial.",
@@ -36,6 +36,7 @@ export function buildFindingsPrompt(params: {
   paraphraseLevel: ParaphraseLevel;
   outputLanguage: OutputLanguage;
   styleSamples?: string[];
+  preferredNormalPhrases?: PreferredNormalPhrase[];
 }): { system: string; user: string } {
   let system = `Eres un radiólogo experto redactando informes estructurados. Tu tarea es tomar el dictado del radiólogo y distribuirlo en las secciones anatómicas del template proporcionado.
 
@@ -75,6 +76,20 @@ ${VERBOSITY_INSTRUCTIONS[params.normalFieldsVerbosity]}
 ${PARAPHRASE_INSTRUCTIONS[params.paraphraseLevel]}
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
+  if (params.preferredNormalPhrases && params.preferredNormalPhrases.length > 0) {
+    system += `\n\nFRASES DE NORMALIDAD PREFERIDAS DEL RADIÓLOGO (aprendidas de sus correcciones previas para este tipo de estudio).
+Reglas de uso:
+- Si el dictado NO menciona una sección y existe una frase preferida para ella, úsala literalmente.
+- Si el dictado describe un hallazgo en esa sección, IGNORA la frase preferida y redacta el hallazgo dictado.
+- NUNCA introduzcas información clínica que no esté en el dictado.
+- Si no hay coincidencia exacta de nombre de sección, puedes adaptarla al equivalente anatómico traducido al idioma de salida.
+
+Lista de frases preferidas:`;
+    params.preferredNormalPhrases.forEach((p) => {
+      system += `\n- ${p.label}: ${p.phrase}`;
+    });
+  }
+
   if (params.styleSamples && params.styleSamples.length > 0) {
     system += `\n\nA continuación se muestran ${params.styleSamples.length} ejemplos de informes redactados por este radiólogo para estudios similares. Imita su estilo de redacción, estructura de frases y nivel de detalle. NO copies el contenido clínico de los ejemplos, solo el estilo:\n`;
     params.styleSamples.forEach((sample, i) => {
@@ -90,10 +105,11 @@ export function buildConclusionPrompt(params: {
   findingsText: string;
   clinicalInfo: string;
   outputLanguage: OutputLanguage;
+  preferredConclusionPhrases?: string[];
 }): { system: string; user: string } {
   const hasClinical = params.clinicalInfo.trim().length > 0;
 
-  const system = `Eres un radiólogo experto redactando conclusiones de informes radiológicos. Genera la conclusión basándote EXCLUSIVAMENTE en los hallazgos proporcionados.
+  let system = `Eres un radiólogo experto redactando conclusiones de informes radiológicos. Genera la conclusión basándote EXCLUSIVAMENTE en los hallazgos proporcionados.
 
 LA CONCLUSIÓN ES UN RESUMEN DIAGNÓSTICO, NO CONTIENE RECOMENDACIONES.
 NUNCA escribas frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a...". Esas frases son RECOMENDACIONES y van en otra sección.
@@ -120,6 +136,19 @@ FORMATO:
 - Cada punto empieza con mayúscula inicial.
 - TODO el texto debe estar en el idioma indicado abajo.
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
+
+  if (params.preferredConclusionPhrases && params.preferredConclusionPhrases.length > 0) {
+    system += `\n\nFRASES FRECUENTES DEL RADIÓLOGO EN CONCLUSIONES SIMILARES (aprendidas de sus correcciones previas).
+Reglas de uso:
+- Imita la ESTRUCTURA, el tono y la fraseología de estas frases.
+- NO copies contenido clínico que no esté presente en los hallazgos actuales.
+- Si una frase no encaja con los hallazgos de este informe, NO la utilices.
+
+Lista de frases:`;
+    params.preferredConclusionPhrases.forEach((p) => {
+      system += `\n- ${p}`;
+    });
+  }
 
   let userMsg = "";
   if (hasClinical) userMsg += `Datos clínicos / pregunta clínica:\n${params.clinicalInfo}\n\n`;
