@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,16 @@ import { AppearanceTab } from "@/components/sidebar/appearance-tab";
 import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import type { User } from "@supabase/supabase-js";
 
+const PANEL_MIN = 240;
+const PANEL_MAX = 600;
+const PANEL_DEFAULT = 320;
+
 function DashboardShellInner({ children, user }: { children: React.ReactNode; user: User }) {
   const router = useRouter();
   const [panelOpen, setPanelOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
+  const dragging = useRef(false);
   const { prefs, preset } = useUIPrefs();
 
   useEffect(() => {
@@ -47,7 +53,39 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
     }
     const saved = localStorage.getItem("radiogenia_panel");
     if (saved !== null) setPanelOpen(saved === "1");
+    const savedWidth = localStorage.getItem("radiogenia_panel_width");
+    if (savedWidth) setPanelWidth(Math.max(PANEL_MIN, Math.min(PANEL_MAX, Number(savedWidth))));
   }, []);
+
+  const onDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const side = prefs.panelSide;
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      const newWidth = side === "right"
+        ? window.innerWidth - ev.clientX
+        : ev.clientX - 56; // 56 = left rail width
+      const clamped = Math.max(PANEL_MIN, Math.min(PANEL_MAX, newWidth));
+      setPanelWidth(clamped);
+    };
+    const onUp = () => {
+      dragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      setPanelWidth((w) => {
+        localStorage.setItem("radiogenia_panel_width", String(w));
+        return w;
+      });
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [prefs.panelSide]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -82,10 +120,25 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
   const PanelOpenIcon = panelSide === "right" ? PanelRightOpen : PanelLeftOpen;
   const PanelCloseIcon = panelSide === "right" ? PanelRightClose : PanelLeftClose;
 
+  /* ── Resize handle ───────────────────────────────────────── */
+  const resizeHandle = (
+    <div
+      onMouseDown={onDragStart}
+      className="w-1.5 shrink-0 cursor-col-resize group relative hover:bg-blue-500/20 active:bg-blue-500/30 transition-colors"
+      title="Drag to resize"
+    >
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 group-hover:bg-blue-500 group-active:bg-blue-500 transition-colors" />
+    </div>
+  );
+
   /* ── Sidebar panel ─────────────────────────────────────── */
   const sidebarPanel = panelOpen && (
-    <aside className="w-72 max-w-[30vw] min-w-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
-      style={{ [panelSide === "right" ? "borderLeftWidth" : "borderRightWidth"]: "1px" }}
+    <aside
+      className="min-w-0 shrink-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
+      style={{
+        width: panelWidth,
+        [panelSide === "right" ? "borderLeftWidth" : "borderRightWidth"]: "1px",
+      }}
     >
       <Tabs defaultValue="templates" className="flex-1 flex flex-col">
         <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-gray-800">
@@ -170,6 +223,7 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
 
       {/* Panel on the left (if configured) */}
       {panelSide === "left" && sidebarPanel}
+      {panelSide === "left" && panelOpen && resizeHandle}
 
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-auto">
@@ -196,6 +250,7 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
       </main>
 
       {/* Panel on the right (if configured) */}
+      {panelSide === "right" && panelOpen && resizeHandle}
       {panelSide === "right" && sidebarPanel}
     </div>
   );
