@@ -84,7 +84,7 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
 
   /* ── Sidebar panel ─────────────────────────────────────── */
   const sidebarPanel = panelOpen && (
-    <aside className="w-80 min-w-0 shrink-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
+    <aside className="w-72 max-w-[30vw] min-w-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
       style={{ [panelSide === "right" ? "borderLeftWidth" : "borderRightWidth"]: "1px" }}
     >
       <Tabs defaultValue="templates" className="flex-1 flex flex-col">
@@ -127,7 +127,7 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-gray-50 dark:bg-gray-950">
       {/* Left rail */}
       <aside className="w-14 bg-gray-900 dark:bg-black flex flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
         <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center shadow-lg`}>
