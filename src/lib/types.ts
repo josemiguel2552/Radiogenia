@@ -79,7 +79,7 @@ export interface Report {
   model_config_snapshot: UserModelConfig;
 }
 
-export type StylePatternKind = "normal_phrase" | "conclusion_phrase";
+export type StylePatternKind = "normal_phrase" | "conclusion_phrase" | "conclusion_sample";
 
 export interface StylePattern {
   id: string;

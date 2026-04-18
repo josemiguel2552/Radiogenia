@@ -31,33 +31,33 @@ export async function POST(req: NextRequest) {
 
     if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
 
-    // Get learned conclusion phrases if style learning is enabled
+    // Get learned conclusion style samples if style learning is enabled
     let preferredConclusionPhrases: string[] | undefined;
     if (config.style_learning_enabled && modality && studyType) {
-      const { count } = await supabase
-        .from("reports")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("modality", modality)
-        .eq("study_type", studyType);
-
-      if (count != null && count >= 3) {
-        const { data: patterns } = await supabase
-          .from("style_patterns")
-          .select("phrase, frequency, last_seen_at")
+      try {
+        const { count } = await supabase
+          .from("reports")
+          .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
           .eq("modality", modality)
-          .eq("study_type", studyType)
-          .eq("kind", "conclusion_phrase");
+          .eq("study_type", studyType);
 
-        if (patterns && patterns.length > 0) {
-          const top = pickTopPhrases(
-            patterns as { phrase: string; frequency: number; last_seen_at: string }[],
-            5,
-          );
-          preferredConclusionPhrases = top.map((p) => p.phrase);
+        if (count != null && count >= 3) {
+          const { data: samples } = await supabase
+            .from("style_patterns")
+            .select("phrase, frequency, last_seen_at")
+            .eq("user_id", user.id)
+            .eq("modality", modality)
+            .eq("study_type", studyType)
+            .eq("kind", "conclusion_sample")
+            .order("last_seen_at", { ascending: false })
+            .limit(3);
+
+          if (samples && samples.length > 0) {
+            preferredConclusionPhrases = samples.map((s) => s.phrase);
+          }
         }
-      }
+      } catch { /* style_patterns table may not exist */ }
     }
 
     const { system, user: userPrompt } = buildConclusionPrompt({

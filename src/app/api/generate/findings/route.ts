@@ -35,31 +35,32 @@ export async function POST(req: NextRequest) {
     // Get learned normality phrases if style learning is enabled
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
     if (config.style_learning_enabled && studyType) {
-      // Check if we have >= 3 reports for this study type to enable style injection
-      const { count } = await supabase
-        .from("reports")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("modality", modality || "CT")
-        .eq("study_type", studyType);
-
-      if (count != null && count >= 3) {
-        const { data: patterns } = await supabase
-          .from("style_patterns")
-          .select("label, phrase, frequency, last_seen_at")
+      try {
+        const { count } = await supabase
+          .from("reports")
+          .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
           .eq("modality", modality || "CT")
-          .eq("study_type", studyType)
-          .eq("kind", "normal_phrase");
+          .eq("study_type", studyType);
 
-        if (patterns && patterns.length > 0) {
-          const top = pickTopPhrases(
-            patterns as { label: string; phrase: string; frequency: number; last_seen_at: string }[],
-            config.few_shot_count || 5,
-          );
-          preferredNormalPhrases = top.map((p) => ({ label: p.label, phrase: p.phrase }));
+        if (count != null && count >= 3) {
+          const { data: patterns } = await supabase
+            .from("style_patterns")
+            .select("label, phrase, frequency, last_seen_at")
+            .eq("user_id", user.id)
+            .eq("modality", modality || "CT")
+            .eq("study_type", studyType)
+            .eq("kind", "normal_phrase");
+
+          if (patterns && patterns.length > 0) {
+            const top = pickTopPhrases(
+              patterns as { label: string; phrase: string; frequency: number; last_seen_at: string }[],
+              config.few_shot_count || 5,
+            );
+            preferredNormalPhrases = top.map((p) => ({ label: p.label || "", phrase: p.phrase }));
+          }
         }
-      }
+      } catch { /* style_patterns table may not exist */ }
     }
 
     const { system, user: userPrompt } = buildFindingsPrompt({

@@ -62,6 +62,7 @@ export function DashboardContent() {
         localStorage.setItem("radiogenia_draft", JSON.stringify({
           clinicalInfo, dictation, findings, conclusion, recommendations,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
+          initialFindings, initialConclusion,
         }));
       }
     }, 30000);
@@ -83,6 +84,8 @@ export function DashboardContent() {
         if (d.selectedSection) setSelectedSection(d.selectedSection);
         if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
         if (d.contrastOption) setContrastOption(d.contrastOption);
+        if (d.initialFindings) setInitialFindings(d.initialFindings);
+        if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
       } catch { /* ignore corrupt draft */ }
     }
   }, []);

@@ -69,7 +69,7 @@ export async function GET() {
       const group = groupMap.get(key)!;
       if (row.kind === "normal_phrase") {
         group.normal_phrases.push(row);
-      } else {
+      } else if (row.kind === "conclusion_phrase" || row.kind === "conclusion_sample") {
         group.conclusion_phrases.push(row);
       }
     }

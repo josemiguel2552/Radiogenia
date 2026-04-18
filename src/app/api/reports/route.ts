@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { extractNormalityPhrases, extractConclusionPhrases } from "@/lib/style-learning";
+import {
+  extractNormalityPhrases,
+  extractNormalityPhrasesFromFinal,
+  extractConclusionStyle,
+} from "@/lib/style-learning";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function GET(req: NextRequest) {
@@ -37,7 +41,7 @@ async function upsertPattern(
   userId: string,
   modality: string,
   studyType: string,
-  kind: "normal_phrase" | "conclusion_phrase",
+  kind: string,
   phrase: string,
   label: string | null,
 ) {
@@ -84,21 +88,39 @@ async function learnFromReport(
 ) {
   const { modality, study_type } = body;
   const initialFindings = body.initial_findings_text || "";
-  const initialConclusion = body.initial_conclusion_text || "";
 
-  // Learn normality phrases — compare initial vs final findings
+  // Learn normality phrases
+  let normalPhrases;
   if (initialFindings && body.findings_text) {
-    const normalPhrases = extractNormalityPhrases(initialFindings, body.findings_text);
+    normalPhrases = extractNormalityPhrases(initialFindings, body.findings_text);
+  } else if (body.findings_text) {
+    normalPhrases = extractNormalityPhrasesFromFinal(body.findings_text);
+  }
+
+  if (normalPhrases) {
     for (const p of normalPhrases) {
       await upsertPattern(supabase, userId, modality, study_type, "normal_phrase", p.phrase, p.label);
     }
   }
 
-  // Learn conclusion phrases
-  if (initialConclusion && body.conclusion_text) {
-    const conclusionPhrases = extractConclusionPhrases(initialConclusion, body.conclusion_text);
-    for (const phrase of conclusionPhrases) {
-      await upsertPattern(supabase, userId, modality, study_type, "conclusion_phrase", phrase, null);
+  // Learn conclusion style — store the complete conclusion as a style sample
+  if (body.conclusion_text) {
+    const samples = extractConclusionStyle(body.conclusion_text);
+    for (const sample of samples) {
+      await upsertPattern(supabase, userId, modality, study_type, "conclusion_sample", sample, null);
+    }
+    // Keep max 5 conclusion samples per study type
+    const { data: allSamples } = await supabase
+      .from("style_patterns")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("modality", modality)
+      .eq("study_type", study_type)
+      .eq("kind", "conclusion_sample")
+      .order("last_seen_at", { ascending: false });
+    if (allSamples && allSamples.length > 5) {
+      const toDelete = allSamples.slice(5).map((r: { id: string }) => r.id);
+      await supabase.from("style_patterns").delete().in("id", toDelete);
     }
   }
 
@@ -117,6 +139,14 @@ async function learnFromReport(
   }
 }
 
+async function ensureStylePatternsTable(supabase: SupabaseClient) {
+  const { error } = await supabase
+    .from("style_patterns")
+    .select("id")
+    .limit(0);
+  return !error;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -125,7 +155,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    // Ensure migration 002 columns exist by trying with them first, fallback without
     const reportRow: Record<string, unknown> = {
       user_id: user.id,
       study_type: body.study_type,
@@ -150,7 +179,6 @@ export async function POST(req: NextRequest) {
       .select()
       .single());
 
-    // If insert failed because of unknown columns (migration not applied), retry without them
     if (error && error.message?.includes("initial_")) {
       delete reportRow.initial_findings_text;
       delete reportRow.initial_conclusion_text;
@@ -163,7 +191,8 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Always learn from corrections (toggle only controls prompt injection)
+    let learnedPhrases = 0;
+
     if (data) {
       try {
         await supabase.from("style_samples").insert({
@@ -176,21 +205,32 @@ export async function POST(req: NextRequest) {
         });
       } catch { /* non-critical */ }
 
-      try {
-        await learnFromReport(supabase, user.id, {
-          modality: body.modality,
-          study_type: body.study_type,
-          initial_findings_text: body.initial_findings_text || null,
-          findings_text: body.findings_text || "",
-          initial_conclusion_text: body.initial_conclusion_text || null,
-          conclusion_text: body.conclusion_text || "",
-        });
-      } catch (learnErr) {
-        console.error("Style learning error:", learnErr);
+      const tableExists = await ensureStylePatternsTable(supabase);
+      if (tableExists) {
+        try {
+          await learnFromReport(supabase, user.id, {
+            modality: body.modality,
+            study_type: body.study_type,
+            initial_findings_text: body.initial_findings_text || null,
+            findings_text: body.findings_text || "",
+            initial_conclusion_text: body.initial_conclusion_text || null,
+            conclusion_text: body.conclusion_text || "",
+          });
+
+          const { count } = await supabase
+            .from("style_patterns")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .eq("modality", body.modality)
+            .eq("study_type", body.study_type);
+          learnedPhrases = count || 0;
+        } catch (learnErr) {
+          console.error("Style learning error:", learnErr);
+        }
       }
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({ ...data, _learned_phrases: learnedPhrases });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

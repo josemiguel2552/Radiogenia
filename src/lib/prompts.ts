@@ -138,15 +138,15 @@ FORMATO:
 ${LANGUAGE_INSTRUCTIONS[params.outputLanguage]}`;
 
   if (params.preferredConclusionPhrases && params.preferredConclusionPhrases.length > 0) {
-    system += `\n\nFRASES FRECUENTES DEL RADIÓLOGO EN CONCLUSIONES SIMILARES (aprendidas de sus correcciones previas).
+    system += `\n\nEJEMPLOS DE CONCLUSIONES PREVIAS DEL RADIÓLOGO (aprendidas de sus informes corregidos para este tipo de estudio).
 Reglas de uso:
-- Imita la ESTRUCTURA, el tono y la fraseología de estas frases.
-- NO copies contenido clínico que no esté presente en los hallazgos actuales.
-- Si una frase no encaja con los hallazgos de este informe, NO la utilices.
+- Observa la ESTRUCTURA (¿usa puntos numerados o párrafo único?), el TONO (formal/conciso) y las FRASES recurrentes.
+- Imita el estilo y la estructura, NO copies contenido clínico de los ejemplos.
+- Adapta tu conclusión a los hallazgos ACTUALES manteniendo el estilo del radiólogo.
 
-Lista de frases:`;
-    params.preferredConclusionPhrases.forEach((p) => {
-      system += `\n- ${p}`;
+Conclusiones de referencia:`;
+    params.preferredConclusionPhrases.forEach((p, i) => {
+      system += `\n\nEjemplo ${i + 1}:\n${p}`;
     });
   }
 
