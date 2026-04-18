@@ -418,7 +418,7 @@ export function ModelConfigTab() {
             <span className="flex items-center gap-2">
               <Brain className="h-3.5 w-3.5 text-emerald-500" />
               Style learning
-              {config.style_learning_enabled && totalReports > 0 && (
+              {totalReports > 0 && (
                 <Badge variant="secondary" className="text-[9px] ml-1">{totalReports} reports</Badge>
               )}
             </span>
@@ -426,14 +426,13 @@ export function ModelConfigTab() {
           <AccordionContent className="space-y-4 pt-1">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs">Automatic learning</Label>
-                <p className="text-[10px] text-gray-400">Learn your writing style from corrections.</p>
+                <Label className="text-xs">Apply learned style</Label>
+                <p className="text-[10px] text-gray-400">Inject learned phrases into AI prompts.</p>
               </div>
               <Switch checked={config.style_learning_enabled} onCheckedChange={(v) => update("style_learning_enabled", v)} />
             </div>
 
-            {config.style_learning_enabled && (
-              <>
+            {/* Always show learning progress (learning happens regardless of toggle) */}
                 {/* Global progress */}
                 <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -515,8 +514,6 @@ export function ModelConfigTab() {
                 <p className="text-[10px] text-gray-400">
                   Style is learned automatically when you move to the next report. Only wording changes are captured — never clinical findings.
                 </p>
-              </>
-            )}
           </AccordionContent>
         </AccordionItem>
 

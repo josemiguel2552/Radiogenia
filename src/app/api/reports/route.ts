@@ -163,16 +163,8 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // If style learning enabled, learn patterns from corrections
-    const { data: config } = await supabase
-      .from("user_model_config")
-      .select("style_learning_enabled")
-      .eq("user_id", user.id)
-      .single();
-
-    if (config?.style_learning_enabled && data) {
-      // Keep writing to style_samples for backward compatibility
-      // Keep writing to style_samples for backward compatibility (non-critical)
+    // Always learn from corrections (toggle only controls prompt injection)
+    if (data) {
       try {
         await supabase.from("style_samples").insert({
           user_id: user.id,
@@ -184,7 +176,6 @@ export async function POST(req: NextRequest) {
         });
       } catch { /* non-critical */ }
 
-      // Run the new style learning pipeline
       try {
         await learnFromReport(supabase, user.id, {
           modality: body.modality,
@@ -195,7 +186,6 @@ export async function POST(req: NextRequest) {
           conclusion_text: body.conclusion_text || "",
         });
       } catch (learnErr) {
-        // Style learning failure should never block the save
         console.error("Style learning error:", learnErr);
       }
     }

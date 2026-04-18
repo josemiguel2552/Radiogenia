@@ -32,3 +32,7 @@ create policy "user manages own style_patterns" on public.style_patterns
   for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- 3. Enable style learning by default for existing users --------------------
+alter table public.user_model_config alter column style_learning_enabled set default true;
+update public.user_model_config set style_learning_enabled = true where style_learning_enabled = false;

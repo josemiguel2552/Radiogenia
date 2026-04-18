@@ -56,7 +56,7 @@ create table public.user_model_config (
   normal_fields_verbosity text default 'standard' check (normal_fields_verbosity in ('minimal', 'standard', 'explicit')),
   paraphrase_level text default 'light' check (paraphrase_level in ('none', 'light', 'free')),
   output_language text default 'es' check (output_language in ('es', 'en', 'pt', 'fr', 'de', 'it')),
-  style_learning_enabled boolean default false,
+  style_learning_enabled boolean default true,
   style_sample_count integer default 0,
   few_shot_count integer default 3,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
