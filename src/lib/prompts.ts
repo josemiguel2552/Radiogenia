@@ -257,26 +257,40 @@ export function buildConclusionPrompt(params: {
 
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
 
+PRINCIPIO FUNDAMENTAL — LA CONCLUSIÓN ES DESCRIPTIVA, NO INTERPRETATIVA:
+La conclusión DESCRIBE los hallazgos relevantes. NUNCA especula sobre su naturaleza, etiología ni relación entre ellos. El radiólogo describe lo que VE, no lo que CREE.
+
 PROHIBICIONES ABSOLUTAS:
-- NUNCA incluyas recomendaciones. Frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a..." están PROHIBIDAS. Las recomendaciones van en otra sección.
-- NUNCA incluyas descripciones de normalidad. Si un órgano es normal, NO lo menciones en la conclusión.
+- NUNCA incluyas recomendaciones. Frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a..." están PROHIBIDAS.
+- NUNCA incluyas descripciones de normalidad. Si un órgano es normal, NO lo menciones.
+- NUNCA especules sobre la naturaleza de un hallazgo. NO escribas "probablemente inflamatorio", "posiblemente benigno", "de probable origen...", "sugiere...". Describe el hallazgo tal como aparece en los datos sin añadir interpretaciones diagnósticas.
+- NUNCA establezcas relaciones causales entre hallazgos a menos que la relación sea anatómicamente obvia e indiscutible. NO escribas "probablemente relacionado con...", "en el contexto de...", "secundario a...".
+- NUNCA descartes patología. NO escribas "sin evidencia de malignidad" si hay un hallazgo indeterminado (como un nódulo sin caracterizar). Solo puedes descartar patología si genuinamente no hay NINGÚN hallazgo que la sugiera.
 
 ${hasClinical ? `PREGUNTA CLÍNICA:
-Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la conclusión debe responder directamente a esa pregunta clínica basándose en los hallazgos.
-- Si los hallazgos responden claramente: "Sin evidencia de...", "Hallazgos compatibles con..."
-- Si no permiten responder con certeza: "No se identifican hallazgos concluyentes respecto a..."` : ""}
+Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la conclusión debe responder directamente a esa pregunta basándose en los hallazgos.
+- Si los hallazgos responden claramente: usa lenguaje descriptivo directo ("Hallazgos compatibles con...", "Se identifica...")
+- Si no permiten responder con certeza: "No se identifican hallazgos concluyentes respecto a..."
+- Si hay un hallazgo indeterminado relacionado con la pregunta: descríbelo sin especular sobre su naturaleza.` : ""}
 
 ESTRUCTURA DE LA CONCLUSIÓN:
 1. ${hasClinical ? "Punto 1: respuesta a la pregunta clínica." : "Solo hallazgos clínicamente SIGNIFICATIVOS."}
-2. Los demás puntos van ordenados de MAYOR a MENOR relevancia clínica:
-   - Hallazgos malignos o sospechosos
-   - Hallazgos agudos (hemorragia, infarto, perforación, obstrucción)
-   - Hallazgos indeterminados que requieren caracterización
-   - Hallazgos crónicos relevantes
-3. Los hallazgos de ESCASA relevancia clínica NO se incluyen en la conclusión.
-4. Si todo es normal: "${hasClinical ? "Sin hallazgos que sugieran [la patología preguntada]. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
+2. Cada hallazgo en un punto SEPARADO. NO agrupes hallazgos que no tengan relación anatómica directa.
+3. Ordenados de MAYOR a MENOR relevancia clínica.
+4. Los hallazgos de ESCASA relevancia clínica NO se incluyen.
+5. Si todo es normal: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
 
-LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Toda la conclusión debe caber en 4 puntos o menos. Si hay más hallazgos, agrupa los menos relevantes o descártalos.
+EJEMPLO CORRECTO (nódulo pulmonar + engrosamiento septal + derrame):
+1. Nódulo pulmonar de 12 mm en lóbulo inferior izquierdo.
+2. Engrosamiento septal interlobulillar difuso con tenues opacidades en vidrio deslustrado bilaterales.
+3. Pequeño derrame pleural izquierdo.
+
+EJEMPLO INCORRECTO:
+1. No evidence of malignancy. ← MAL: hay un nódulo sin caracterizar, no puedes descartar malignidad.
+2. A 12 mm lung nodule, possibly inflammatory, with associated septal thickening. ← MAL: especula sobre la naturaleza y agrupa hallazgos sin relación.
+3. Pleural effusion, likely related to the above. ← MAL: establece relación causal especulativa.
+
+LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Si hay más hallazgos relevantes, descarta los menos importantes.
 
 FORMATO:
 - Puntos numerados (1. 2. 3. 4.). Texto plano.
@@ -287,26 +301,40 @@ FORMATO:
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
 
+FUNDAMENTAL PRINCIPLE — THE CONCLUSION IS DESCRIPTIVE, NOT INTERPRETIVE:
+The conclusion DESCRIBES relevant findings. It NEVER speculates about their nature, etiology or relationship to each other. The radiologist describes what they SEE, not what they THINK.
+
 ABSOLUTE PROHIBITIONS:
-- NEVER include recommendations. Phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." are FORBIDDEN. Recommendations belong in a separate section.
-- NEVER include normality descriptions. If an organ is normal, do NOT mention it in the conclusion.
+- NEVER include recommendations. Phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." are FORBIDDEN.
+- NEVER include normality descriptions. If an organ is normal, do NOT mention it.
+- NEVER speculate about the nature of a finding. Do NOT write "possibly inflammatory", "likely benign", "probably related to...", "suggestive of...". Describe the finding as it appears in the data without adding diagnostic interpretations.
+- NEVER establish causal relationships between findings unless the relationship is anatomically obvious and indisputable. Do NOT write "likely related to...", "in the context of...", "secondary to...".
+- NEVER rule out pathology. Do NOT write "no evidence of malignancy" if there is an indeterminate finding (e.g. an uncharacterized nodule). You may only rule out pathology if there genuinely is NO finding that suggests it.
 
 ${hasClinical ? `CLINICAL QUESTION:
 Clinical data from the referring physician is provided. The FIRST point of the conclusion must directly answer that clinical question based on the findings.
-- If findings clearly answer: "No evidence of...", "Findings consistent with..."
-- If inconclusive: "No conclusive findings regarding..."` : ""}
+- If findings clearly answer: use direct descriptive language ("Findings consistent with...", "Identified...")
+- If inconclusive: "No conclusive findings regarding..."
+- If there is an indeterminate finding related to the question: describe it without speculating about its nature.` : ""}
 
 CONCLUSION STRUCTURE:
 1. ${hasClinical ? "Point 1: answer to the clinical question." : "Only clinically SIGNIFICANT findings."}
-2. Remaining points ordered from MOST to LEAST clinically relevant:
-   - Malignant or suspicious findings
-   - Acute findings (hemorrhage, infarction, perforation, obstruction)
-   - Indeterminate findings requiring characterization
-   - Relevant chronic findings
-3. Findings of LOW clinical relevance are NOT included in the conclusion.
-4. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
+2. Each finding in a SEPARATE point. Do NOT group findings that are not directly anatomically related.
+3. Ordered from MOST to LEAST clinically relevant.
+4. Findings of LOW clinical relevance are NOT included.
+5. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
 
-STRICT LIMIT: MAXIMUM 4 POINTS. The entire conclusion must fit in 4 points or fewer. If there are more findings, group or discard the less relevant ones.
+CORRECT EXAMPLE (lung nodule + septal thickening + effusion):
+1. 12 mm pulmonary nodule in the left lower lobe.
+2. Diffuse interlobular septal thickening with faint bilateral ground-glass opacities.
+3. Small left pleural effusion.
+
+INCORRECT EXAMPLE:
+1. No evidence of malignancy. ← WRONG: there is an uncharacterized nodule, you cannot rule out malignancy.
+2. A 12 mm lung nodule, possibly inflammatory, with associated septal thickening. ← WRONG: speculates about nature and groups unrelated findings.
+3. Pleural effusion, likely related to the above. ← WRONG: speculative causal relationship.
+
+STRICT LIMIT: MAXIMUM 4 POINTS. If there are more relevant findings, discard the least important ones.
 
 FORMAT:
 - Numbered points (1. 2. 3. 4.). Plain text.
