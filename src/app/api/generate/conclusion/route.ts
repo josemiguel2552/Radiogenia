@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/encryption";
 import { generateAI } from "@/lib/ai-provider";
 import { buildConclusionPrompt } from "@/lib/prompts";
-import { pickTopPhrases } from "@/lib/style-learning";
 import type { AIProvider, OutputLanguage } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -35,27 +34,38 @@ export async function POST(req: NextRequest) {
     let preferredConclusionPhrases: string[] | undefined;
     if (config.style_learning_enabled && modality && studyType) {
       try {
-        const { count } = await supabase
-          .from("reports")
-          .select("id", { count: "exact", head: true })
+        // First: samples from the exact study type
+        const { data: exact } = await supabase
+          .from("style_patterns")
+          .select("phrase, frequency, last_seen_at")
           .eq("user_id", user.id)
           .eq("modality", modality)
-          .eq("study_type", studyType);
+          .eq("study_type", studyType)
+          .eq("kind", "conclusion_sample")
+          .order("last_seen_at", { ascending: false })
+          .limit(3);
 
-        if (count != null && count >= 3) {
-          const { data: samples } = await supabase
+        const samples = exact || [];
+
+        // Fallback: fill with conclusions from same modality if < 3
+        if (samples.length < 3) {
+          const { data: modalitySamples } = await supabase
             .from("style_patterns")
             .select("phrase, frequency, last_seen_at")
             .eq("user_id", user.id)
             .eq("modality", modality)
-            .eq("study_type", studyType)
+            .neq("study_type", studyType)
             .eq("kind", "conclusion_sample")
             .order("last_seen_at", { ascending: false })
-            .limit(3);
+            .limit(3 - samples.length);
 
-          if (samples && samples.length > 0) {
-            preferredConclusionPhrases = samples.map((s) => s.phrase);
+          if (modalitySamples) {
+            samples.push(...modalitySamples);
           }
+        }
+
+        if (samples.length > 0) {
+          preferredConclusionPhrases = samples.map((s) => s.phrase);
         }
       } catch { /* style_patterns table may not exist */ }
     }
