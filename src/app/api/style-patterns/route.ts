@@ -84,6 +84,29 @@ export async function GET() {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id, phrase } = await req.json();
+    if (!id || !phrase) return NextResponse.json({ error: "Missing id or phrase" }, { status: 400 });
+
+    const { error } = await supabase
+      .from("style_patterns")
+      .update({ phrase, last_seen_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -92,7 +115,7 @@ export async function DELETE(req: NextRequest) {
 
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    const group = url.searchParams.get("group"); // "modality|study_type"
+    const group = url.searchParams.get("group");
 
     if (id) {
       const { error } = await supabase

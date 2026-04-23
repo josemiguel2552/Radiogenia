@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import {
   Loader2, Check, Eye, Trash2, Upload, RefreshCw, Sparkles,
-  Plug, Wand2, GraduationCap, Brain,
+  Plug, Wand2, GraduationCap, Brain, Pencil, X,
 } from "lucide-react";
 import { PROVIDERS, LANGUAGES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
 import { buildFullPromptPreview } from "@/lib/prompts";
@@ -146,6 +146,15 @@ export function ModelConfigTab() {
 
   async function handleDeletePattern(id: string) {
     await fetch(`/api/style-patterns?id=${id}`, { method: "DELETE" });
+    loadPatterns();
+  }
+
+  async function handleUpdatePhrase(id: string, phrase: string) {
+    await fetch("/api/style-patterns", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, phrase }),
+    });
     loadPatterns();
   }
 
@@ -731,34 +740,31 @@ export function ModelConfigTab() {
                       <div className="px-3 py-2">
                         <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">Normal phrases</p>
                         {g.normal_phrases.slice(0, 10).map((p) => (
-                          <div key={p.id} className="flex items-start justify-between gap-2 py-1">
-                            <div className="min-w-0">
-                              <span className="text-[10px] text-gray-500">{p.label}: </span>
-                              <span className="text-xs text-gray-700 dark:text-gray-300">{p.phrase}</span>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Badge variant="outline" className="text-[9px]">{p.frequency}x</Badge>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 text-red-400 hover:text-red-500" onClick={() => handleDeletePattern(p.id)}>
-                                <Trash2 className="h-2.5 w-2.5" />
-                              </Button>
-                            </div>
-                          </div>
+                          <EditablePhraseRow
+                            key={p.id}
+                            id={p.id}
+                            label={p.label}
+                            phrase={p.phrase}
+                            frequency={p.frequency}
+                            onSave={handleUpdatePhrase}
+                            onDelete={handleDeletePattern}
+                          />
                         ))}
                       </div>
                     )}
                     {g.conclusion_phrases.length > 0 && (
                       <div className="px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">Conclusion phrases</p>
-                        {g.conclusion_phrases.slice(0, 10).map((p) => (
-                          <div key={p.id} className="flex items-start justify-between gap-2 py-1">
-                            <span className="text-xs text-gray-700 dark:text-gray-300 min-w-0">{p.phrase}</span>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Badge variant="outline" className="text-[9px]">{p.frequency}x</Badge>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 text-red-400 hover:text-red-500" onClick={() => handleDeletePattern(p.id)}>
-                                <Trash2 className="h-2.5 w-2.5" />
-                              </Button>
-                            </div>
-                          </div>
+                        <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">Conclusion style</p>
+                        {g.conclusion_phrases.slice(0, 5).map((p) => (
+                          <EditablePhraseRow
+                            key={p.id}
+                            id={p.id}
+                            label={null}
+                            phrase={p.phrase}
+                            frequency={p.frequency}
+                            onSave={handleUpdatePhrase}
+                            onDelete={handleDeletePattern}
+                          />
                         ))}
                       </div>
                     )}
@@ -774,6 +780,84 @@ export function ModelConfigTab() {
 }
 
 /* ────────── Helper components ────────── */
+
+function EditablePhraseRow({ id, label, phrase, frequency, onSave, onDelete }: {
+  id: string;
+  label: string | null;
+  phrase: string;
+  frequency: number;
+  onSave: (id: string, phrase: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(phrase);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.selectionStart = inputRef.current.value.length;
+    }
+  }, [editing]);
+
+  function handleSave() {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== phrase) {
+      onSave(id, trimmed);
+    }
+    setEditing(false);
+  }
+
+  function handleCancel() {
+    setDraft(phrase);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="py-1.5 space-y-1.5">
+        {label && <span className="text-[10px] text-gray-500">{label}:</span>}
+        <textarea
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); }
+            if (e.key === "Escape") handleCancel();
+          }}
+          rows={2}
+          className="w-full text-xs border rounded-md px-2 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-600 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={handleCancel}>
+            <X className="h-2.5 w-2.5 mr-1" />Cancel
+          </Button>
+          <Button size="sm" className="h-6 text-[10px] px-2" onClick={handleSave}>
+            <Check className="h-2.5 w-2.5 mr-1" />Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-2 py-1 group">
+      <div className="min-w-0">
+        {label && <span className="text-[10px] text-gray-500">{label}: </span>}
+        <span className="text-xs text-gray-700 dark:text-gray-300">{phrase}</span>
+      </div>
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        <Badge variant="outline" className="text-[9px]">{frequency}x</Badge>
+        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditing(true)} title="Edit">
+          <Pencil className="h-2.5 w-2.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(id)} title="Delete">
+          <Trash2 className="h-2.5 w-2.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function SegmentedPill({ value, options, onChange }: {
   value: string;
