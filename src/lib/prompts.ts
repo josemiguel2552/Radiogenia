@@ -125,11 +125,11 @@ PRINCIPIO FUNDAMENTAL — SECCIONES NO MENCIONADAS:
 El radiólogo solo dicta lo anormal o lo que quiere destacar. Si el radiólogo NO menciona una sección del template, significa que la evaluó y es NORMAL. NUNCA escribas "no se describe", "no se explora", "no evaluado", "no mencionado" ni variantes. En su lugar, describe normalidad radiológica apropiada para ese órgano/estructura y esta modalidad.
 
 REGLAS OBLIGATORIAS:
-1. Distribuye cada hallazgo dictado en la sección anatómica correcta del template.
-2. Las secciones no mencionadas se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
-3. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
-4. NO omitas ninguna sección anatómica del template.
-5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas.
+1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna. No añadas secciones que no estén en el template.
+2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template.
+3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
+4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
+5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
 
 FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
@@ -137,10 +137,10 @@ FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Una línea por sección. Sin líneas en blanco entre secciones. Sin saltos de línea dentro de una sección.
 - NO uses asteriscos (*), almohadillas (#), guiones (-), viñetas, negritas ni ningún formato markdown.
 - NO numeres las secciones.
-- NO añadas encabezados, títulos ni agrupaciones. Solo la lista plana de secciones.
+- NO añadas encabezados como "HALLAZGOS", "FINDINGS" ni agrupaciones. Solo la lista plana de secciones.
 - TRADUCE los nombres de las secciones del template al ${l}.
 
-Ejemplo de formato correcto:
+Ejemplo — si el template tiene las secciones Liver, Gallbladder, Bile ducts, Pancreas (en ese orden), la salida debe ser EXACTAMENTE:
 Hígado: De tamaño y morfología normales.
 Vesícula biliar: De paredes finas, sin litiasis.
 Vía biliar: De calibre normal.
@@ -157,10 +157,10 @@ FUNDAMENTAL PRINCIPLE — UNMENTIONED SECTIONS:
 The radiologist only dictates abnormal or noteworthy findings. If the radiologist does NOT mention a section from the template, it means they evaluated it and it is NORMAL. NEVER write "not described", "not assessed", "not evaluated", "not mentioned" or variants. Instead, describe appropriate radiological normality for that organ/structure and this modality.
 
 MANDATORY RULES:
-1. Place each dictated finding in the correct anatomical section of the template.
-2. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
-3. Do NOT invent pathological findings that the radiologist did not dictate.
-4. Do NOT omit any anatomical section from the template.
+1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any. Do not add sections not in the template.
+2. Place each dictated finding in the correct anatomical section of the template.
+3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
+4. Do NOT invent pathological findings that the radiologist did not dictate.
 5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
 
 OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
@@ -169,10 +169,10 @@ OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - One line per section. No blank lines between sections. No line breaks within a section.
 - Do NOT use asterisks (*), hashes (#), dashes (-), bullets, bold or any markdown formatting.
 - Do NOT number the sections.
-- Do NOT add headings, titles or groupings. Only the flat list of sections.
+- Do NOT add headings like "FINDINGS" or groupings. Only the flat list of sections.
 - TRANSLATE section names from the template into ${l}.
 
-Example of correct format:
+Example — if the template has sections Liver, Gallbladder, Bile ducts, Pancreas (in that order), the output must be EXACTLY:
 Liver: Normal in size and morphology.
 Gallbladder: Thin-walled, no lithiasis.
 Bile ducts: Normal caliber.
