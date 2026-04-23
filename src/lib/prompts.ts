@@ -131,11 +131,20 @@ REGLAS OBLIGATORIAS:
 4. NO omitas ninguna sección anatómica del template.
 5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas.
 
-FORMATO DE SALIDA:
-- NO uses asteriscos (*), almohadillas (#) ni markdown.
+FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
+- Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
+- Primera letra de la sección en MAYÚSCULA, el resto en minúsculas. Dos puntos. Un espacio. Descripción. Punto final.
+- Una línea por sección. Sin líneas en blanco entre secciones. Sin saltos de línea dentro de una sección.
+- NO uses asteriscos (*), almohadillas (#), guiones (-), viñetas, negritas ni ningún formato markdown.
+- NO numeres las secciones.
+- NO añadas encabezados, títulos ni agrupaciones. Solo la lista plana de secciones.
 - TRADUCE los nombres de las secciones del template al ${l}.
-- Nombres de sección con primera letra en mayúscula, seguidos de dos puntos.
-- Si el template tiene subsecciones/agrupaciones, tradúcelas y mantenlas.`;
+
+Ejemplo de formato correcto:
+Hígado: De tamaño y morfología normales.
+Vesícula biliar: De paredes finas, sin litiasis.
+Vía biliar: De calibre normal.
+Páncreas: De tamaño y morfología normales.`;
   }
 
   return `You are an expert radiologist writing structured reports. Your task is to take the radiologist's dictation and distribute it into the anatomical sections of the provided template.
@@ -154,11 +163,20 @@ MANDATORY RULES:
 4. Do NOT omit any anatomical section from the template.
 5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
 
-OUTPUT FORMAT:
-- Do NOT use asterisks (*), hashes (#) or markdown.
+OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
+- Each section is exactly ONE line with the format: "Anatomical section: Description."
+- First letter of section name in UPPERCASE, rest in lowercase. Colon. One space. Description. Period.
+- One line per section. No blank lines between sections. No line breaks within a section.
+- Do NOT use asterisks (*), hashes (#), dashes (-), bullets, bold or any markdown formatting.
+- Do NOT number the sections.
+- Do NOT add headings, titles or groupings. Only the flat list of sections.
 - TRANSLATE section names from the template into ${l}.
-- Section names with initial capital letter, followed by colon.
-- If the template has subsections/groups, translate and keep them.`;
+
+Example of correct format:
+Liver: Normal in size and morphology.
+Gallbladder: Thin-walled, no lithiasis.
+Bile ducts: Normal caliber.
+Pancreas: Normal in size and morphology.`;
 }
 
 function modalityTerminology(modality: string, lang: OutputLanguage): string {
