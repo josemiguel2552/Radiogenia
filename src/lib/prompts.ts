@@ -257,40 +257,60 @@ export function buildConclusionPrompt(params: {
 
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
 
-LA CONCLUSIÓN ES UN RESUMEN DIAGNÓSTICO, NO CONTIENE RECOMENDACIONES.
-NUNCA escribas frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a...".
+PROHIBICIONES ABSOLUTAS:
+- NUNCA incluyas recomendaciones. Frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a..." están PROHIBIDAS. Las recomendaciones van en otra sección.
+- NUNCA incluyas descripciones de normalidad. Si un órgano es normal, NO lo menciones en la conclusión.
 
 ${hasClinical ? `PREGUNTA CLÍNICA:
-Se proporcionan datos clínicos del médico solicitante. La conclusión debe PRIMERO responder a esa pregunta basándose en los hallazgos.` : ""}
+Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la conclusión debe responder directamente a esa pregunta clínica basándose en los hallazgos.
+- Si los hallazgos responden claramente: "Sin evidencia de...", "Hallazgos compatibles con..."
+- Si no permiten responder con certeza: "No se identifican hallazgos concluyentes respecto a..."` : ""}
 
-REGLAS:
-1. ${hasClinical ? "El PRIMER punto debe responder la pregunta clínica. Los siguientes puntos van" : "Lista SOLO los hallazgos clínicamente significativos,"} ordenados de MAYOR a MENOR relevancia.
-2. NO incluyas descripciones de normalidad.
-3. Si todo es normal, escribe: "${hasClinical ? "Sin hallazgos que sugieran [la patología preguntada]. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
-4. Máximo 1-5 puntos. Conciso pero preciso.
+ESTRUCTURA DE LA CONCLUSIÓN:
+1. ${hasClinical ? "Punto 1: respuesta a la pregunta clínica." : "Solo hallazgos clínicamente SIGNIFICATIVOS."}
+2. Los demás puntos van ordenados de MAYOR a MENOR relevancia clínica:
+   - Hallazgos malignos o sospechosos
+   - Hallazgos agudos (hemorragia, infarto, perforación, obstrucción)
+   - Hallazgos indeterminados que requieren caracterización
+   - Hallazgos crónicos relevantes
+3. Los hallazgos de ESCASA relevancia clínica NO se incluyen en la conclusión.
+4. Si todo es normal: "${hasClinical ? "Sin hallazgos que sugieran [la patología preguntada]. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
+
+LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Toda la conclusión debe caber en 4 puntos o menos. Si hay más hallazgos, agrupa los menos relevantes o descártalos.
 
 FORMATO:
-- NO uses asteriscos, almohadillas ni markdown. Texto plano.
+- Puntos numerados (1. 2. 3. 4.). Texto plano.
+- NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".`;
   } else {
     system = `You are an expert radiologist writing radiology report conclusions. Generate the conclusion based EXCLUSIVELY on the provided findings.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
 
-THE CONCLUSION IS A DIAGNOSTIC SUMMARY, NOT RECOMMENDATIONS.
-NEVER write phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." — those belong in a separate recommendations section.
+ABSOLUTE PROHIBITIONS:
+- NEVER include recommendations. Phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." are FORBIDDEN. Recommendations belong in a separate section.
+- NEVER include normality descriptions. If an organ is normal, do NOT mention it in the conclusion.
 
 ${hasClinical ? `CLINICAL QUESTION:
-Clinical data from the referring physician is provided. The conclusion must FIRST address that clinical question based on the findings.` : ""}
+Clinical data from the referring physician is provided. The FIRST point of the conclusion must directly answer that clinical question based on the findings.
+- If findings clearly answer: "No evidence of...", "Findings consistent with..."
+- If inconclusive: "No conclusive findings regarding..."` : ""}
 
-RULES:
-1. ${hasClinical ? "The FIRST point must answer the clinical question. Subsequent points are" : "List ONLY clinically significant findings,"} ordered from MOST to LEAST relevant.
-2. Do NOT include normality descriptions.
-3. If everything is normal, write the equivalent of "Examination within normal limits" in ${l}.
-4. Maximum 1-5 numbered points. Concise but precise.
+CONCLUSION STRUCTURE:
+1. ${hasClinical ? "Point 1: answer to the clinical question." : "Only clinically SIGNIFICANT findings."}
+2. Remaining points ordered from MOST to LEAST clinically relevant:
+   - Malignant or suspicious findings
+   - Acute findings (hemorrhage, infarction, perforation, obstruction)
+   - Indeterminate findings requiring characterization
+   - Relevant chronic findings
+3. Findings of LOW clinical relevance are NOT included in the conclusion.
+4. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
+
+STRICT LIMIT: MAXIMUM 4 POINTS. The entire conclusion must fit in 4 points or fewer. If there are more findings, group or discard the less relevant ones.
 
 FORMAT:
-- Do NOT use asterisks, hashes or markdown. Plain text only.
+- Numbered points (1. 2. 3. 4.). Plain text.
+- Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".`;
   }
 
