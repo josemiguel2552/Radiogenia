@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -663,13 +663,10 @@ export function DashboardContent() {
             minHeight={90}
           />
 
-          <OutputCard
-            title="Recommendations"
-            icon={<Lightbulb className="h-4 w-4 text-amber-600" />}
+          <RecommendationsCard
             loading={loadingRecs}
             value={recommendations}
             onChange={setRecommendations}
-            minHeight={70}
           />
 
           {/* Action bar */}
@@ -811,6 +808,137 @@ function OutputCard({
             onChange={(e) => onChange(e.target.value)}
             className="text-sm leading-relaxed"
             style={{ minHeight }}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ── Recommendations with traceability ── */
+
+interface ParsedRec {
+  number: string;
+  recommendation: string;
+  guideline: string;
+  finding: string;
+}
+
+const REC_COLORS = [
+  { bg: "rgba(245,158,11,0.12)", border: "#f59e0b", dark: "rgba(251,191,36,0.18)" },
+  { bg: "rgba(249,115,22,0.12)", border: "#f97316", dark: "rgba(251,146,60,0.18)" },
+  { bg: "rgba(239,68,68,0.12)",  border: "#ef4444", dark: "rgba(248,113,113,0.18)" },
+  { bg: "rgba(168,85,247,0.12)", border: "#a855f7", dark: "rgba(192,132,252,0.18)" },
+  { bg: "rgba(59,130,246,0.12)", border: "#3b82f6", dark: "rgba(96,165,250,0.18)" },
+];
+
+function parseRecommendations(text: string): ParsedRec[] {
+  const lines = text.split("\n").filter(l => l.trim());
+  const results: ParsedRec[] = [];
+
+  for (const line of lines) {
+    const m = line.match(
+      /^(\d+)\.\s*(.+?)\s*\(([^)]+)\)\s*[-—–]\s*(?:Hallazgo|Finding|Achado|Résultat|Befund|Reperto)\s*:\s*(.+?)\.?\s*$/i
+    );
+    if (m) {
+      results.push({ number: m[1], recommendation: m[2].trim(), guideline: m[3].trim(), finding: m[4].trim() });
+    }
+  }
+  return results;
+}
+
+function RecommendationsCard({
+  loading,
+  value,
+  onChange,
+}: {
+  loading: boolean;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const parsed = useMemo(() => parseRecommendations(value), [value]);
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  const hasStructured = parsed.length > 0 && !editing;
+  const noRecs = !loading && value.trim() && parsed.length === 0 && !editing;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between px-5 pt-4 pb-2">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+          <Lightbulb className="h-4 w-4 text-amber-600" />
+          Recommendations
+        </h3>
+        <div className="flex items-center gap-1.5">
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+          {!loading && value.trim() && (
+            <button
+              type="button"
+              onClick={() => setEditing(!editing)}
+              className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
+            >
+              {editing ? "View" : "Edit"}
+            </button>
+          )}
+        </div>
+      </div>
+      <CardContent className="pt-0 pb-4">
+        {loading ? (
+          <div
+            className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
+            style={{ height: 70 }}
+          />
+        ) : editing ? (
+          <Textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="text-sm leading-relaxed"
+            style={{ minHeight: 70 }}
+          />
+        ) : hasStructured ? (
+          <div className="space-y-2">
+            {parsed.map((rec, i) => {
+              const color = REC_COLORS[i % REC_COLORS.length];
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg p-3 border text-sm"
+                  style={{
+                    backgroundColor: isDark ? color.dark : color.bg,
+                    borderColor: color.border + "40",
+                  }}
+                >
+                  <div className="flex items-start gap-2">
+                    <span
+                      className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{ backgroundColor: color.border }}
+                    >
+                      {rec.number}
+                    </span>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="text-gray-900 dark:text-gray-100 font-medium">{rec.recommendation}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">({rec.guideline})</p>
+                      <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
+                        <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                          <span className="font-medium" style={{ color: color.border }}>Finding: </span>
+                          {rec.finding}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : noRecs ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{value}</p>
+        ) : (
+          <Textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="text-sm leading-relaxed"
+            style={{ minHeight: 70 }}
           />
         )}
       </CardContent>
