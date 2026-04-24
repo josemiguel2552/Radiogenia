@@ -2,14 +2,18 @@
 
 @layer base {
   :root {
+    --preset-primary: 221.2 83.2% 53.3%;
+    --preset-primary-dark: 217.2 91.2% 65%;
+    --preset-primary-fg: 210 40% 98%;
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+    --primary: var(--preset-primary);
+    --primary-foreground: var(--preset-primary-fg);
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -20,7 +24,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: var(--preset-primary);
     --radius: 0.5rem;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   }
@@ -32,8 +36,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: var(--preset-primary-dark);
+    --primary-foreground: var(--preset-primary-fg);
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -44,7 +48,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: var(--preset-primary-dark);
   }
 }
 
@@ -65,15 +69,19 @@
   .text-accent { color: hsl(var(--primary)); }
   .bg-accent { background-color: hsl(var(--primary)); }
   .bg-accent-soft { background-color: hsl(var(--primary) / 0.08); }
+  .dark .bg-accent-soft { background-color: hsl(var(--primary) / 0.15); }
   .bg-accent-soft-hover:hover { background-color: hsl(var(--primary) / 0.12); }
+  .dark .bg-accent-soft-hover:hover { background-color: hsl(var(--primary) / 0.2); }
   .border-accent { border-color: hsl(var(--primary)); }
   .border-accent-soft { border-color: hsl(var(--primary) / 0.2); }
+  .dark .border-accent-soft { border-color: hsl(var(--primary) / 0.35); }
   .ring-accent { --tw-ring-color: hsl(var(--primary)); }
   .from-accent { --tw-gradient-from: hsl(var(--primary)); }
   .to-accent-dark { --tw-gradient-to: hsl(var(--primary) / 0.85); }
   .shadow-accent { box-shadow: 0 4px 14px hsl(var(--primary) / 0.25); }
   .accent-border { border: 2px solid hsl(var(--primary)); }
   .accent-switch[data-state="checked"] { background-color: hsl(var(--primary)); }
+  .accent-radio[data-state="checked"] { border-color: hsl(var(--primary)); }
   .focus-accent:focus { outline-color: hsl(var(--primary)); }
   .focus-ring-accent:focus-visible { --tw-ring-color: hsl(var(--primary)); }
 }

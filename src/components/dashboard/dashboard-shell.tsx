@@ -189,8 +189,7 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
 
         <Separator className="bg-gray-800 w-8" />
 
-        <Button variant="ghost" size="icon" className="text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title="Dashboard"
-          style={{ color: `hsl(${preset.primary})` }}
+        <Button variant="ghost" size="icon" className="text-accent hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title="Dashboard"
         >
           <LayoutDashboard className="h-5 w-5" />
         </Button>

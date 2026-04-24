@@ -848,10 +848,10 @@ function EditablePhraseRow({ id, label, phrase, frequency, onSave, onDelete }: {
       </div>
       <div className="flex items-center gap-0.5 flex-shrink-0">
         <Badge variant="outline" className="text-[9px]">{frequency}x</Badge>
-        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditing(true)} title="Edit">
+        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-accent" onClick={() => setEditing(true)} title="Edit">
           <Pencil className="h-2.5 w-2.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(id)} title="Delete">
+        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-red-500" onClick={() => onDelete(id)} title="Delete">
           <Trash2 className="h-2.5 w-2.5" />
         </Button>
       </div>

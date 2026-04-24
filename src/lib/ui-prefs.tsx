@@ -6,16 +6,18 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 
 export interface ColorPreset {
   name: string;
-  primary: string;       // HSL values "221 83% 53%"
+  primary: string;        // HSL values for light mode  "221 83% 53%"
+  primaryDark: string;    // HSL values for dark mode (higher lightness)
   primaryFg: string;
   accent: string;
-  gradient: [string, string]; // tailwind classes for logo / avatar gradients
+  gradient: [string, string];
 }
 
 export const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Blue",
     primary: "221 83% 53%",
+    primaryDark: "217 91% 65%",
     primaryFg: "210 40% 98%",
     accent: "221 83% 53%",
     gradient: ["from-blue-500", "to-blue-700"],
@@ -23,6 +25,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Teal",
     primary: "173 80% 40%",
+    primaryDark: "173 80% 55%",
     primaryFg: "210 40% 98%",
     accent: "173 80% 40%",
     gradient: ["from-teal-500", "to-teal-700"],
@@ -30,6 +33,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Violet",
     primary: "262 83% 58%",
+    primaryDark: "262 83% 70%",
     primaryFg: "210 40% 98%",
     accent: "262 83% 58%",
     gradient: ["from-violet-500", "to-violet-700"],
@@ -37,6 +41,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Rose",
     primary: "347 77% 50%",
+    primaryDark: "347 77% 63%",
     primaryFg: "210 40% 98%",
     accent: "347 77% 50%",
     gradient: ["from-rose-500", "to-rose-700"],
@@ -44,6 +49,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Amber",
     primary: "38 92% 50%",
+    primaryDark: "38 92% 60%",
     primaryFg: "20 14% 10%",
     accent: "38 92% 50%",
     gradient: ["from-amber-500", "to-amber-700"],
@@ -51,6 +57,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Emerald",
     primary: "160 84% 39%",
+    primaryDark: "160 84% 55%",
     primaryFg: "210 40% 98%",
     accent: "160 84% 39%",
     gradient: ["from-emerald-500", "to-emerald-700"],
@@ -109,9 +116,10 @@ function applyPreferences(prefs: UIPreferences) {
   const preset = COLOR_PRESETS.find((p) => p.name === prefs.colorPreset) || COLOR_PRESETS[0];
   const density = DENSITY_SCALES[prefs.density];
 
-  root.style.setProperty("--primary", preset.primary);
-  root.style.setProperty("--primary-foreground", preset.primaryFg);
-  root.style.setProperty("--ring", preset.accent);
+  // Set intermediate variables — CSS rules derive --primary from these
+  root.style.setProperty("--preset-primary", preset.primary);
+  root.style.setProperty("--preset-primary-dark", preset.primaryDark);
+  root.style.setProperty("--preset-primary-fg", preset.primaryFg);
 
   root.style.setProperty("--radius", density.radius);
   root.style.setProperty("--ui-gap", density.gap);

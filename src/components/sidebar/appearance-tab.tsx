@@ -54,7 +54,7 @@ export function AppearanceTab() {
                     ? "border-transparent shadow-sm font-medium bg-accent-soft"
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                 }`}
-                style={active ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
+                style={active ? { color: "hsl(var(--primary))" } : undefined}
               >
                 <span style={{ fontFamily: f.stack }}>{f.label}</span>
               </button>
