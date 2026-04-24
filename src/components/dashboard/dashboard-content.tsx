@@ -21,9 +21,11 @@ import {
   Stethoscope,
   CircleCheck,
   ArrowRight,
+  ScanSearch,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
+import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -54,6 +56,9 @@ export function DashboardContent() {
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
+  const [traceData, setTraceData] = useState<TraceData | null>(null);
+  const [traceActive, setTraceActive] = useState(false);
+  const [loadingTrace, setLoadingTrace] = useState(false);
 
   // Autosave draft
   useEffect(() => {
@@ -159,6 +164,8 @@ export function DashboardContent() {
     setLoadingFindings(true);
     setLoadingConclusion(true);
     setLoadingRecs(true);
+    setTraceData(null);
+    setTraceActive(false);
 
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
@@ -304,6 +311,30 @@ export function DashboardContent() {
     copyText(text, id);
   }
 
+  async function runTrace() {
+    if (!dictation.trim() || !findings.trim()) return;
+    setLoadingTrace(true);
+    setTraceActive(true);
+    try {
+      const res = await fetch("/api/generate/trace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dictation, findings }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTraceData(data);
+      }
+    } catch (e) {
+      console.error("Trace failed:", e);
+    } finally {
+      setLoadingTrace(false);
+    }
+  }
+
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  const { dictationHighlights, findingsHighlights } = useTraceHighlights(dictation, findings, traceActive ? traceData : null);
+
   async function saveReportQuietly() {
     if (!selectedTemplate || !findings) return;
 
@@ -352,6 +383,8 @@ export function DashboardContent() {
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
+    setTraceData(null);
+    setTraceActive(false);
     localStorage.removeItem("radiogenia_draft");
   }
 
@@ -525,12 +558,25 @@ export function DashboardContent() {
             )}
           </div>
 
-          <Textarea
-            placeholder="Type or dictate your findings here..."
-            value={dictation}
-            onChange={(e) => setDictation(e.target.value)}
-            className="min-h-[140px] text-sm"
-          />
+          {traceActive && dictationHighlights.length > 0 ? (
+            <div>
+              <HighlightedText text={dictation} highlights={dictationHighlights} isDark={isDark} />
+              <button
+                type="button"
+                onClick={() => setTraceActive(false)}
+                className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1 underline underline-offset-2"
+              >
+                Back to edit
+              </button>
+            </div>
+          ) : (
+            <Textarea
+              placeholder="Type or dictate your findings here..."
+              value={dictation}
+              onChange={(e) => { setDictation(e.target.value); setTraceData(null); }}
+              className="min-h-[140px] text-sm"
+            />
+          )}
 
           <Button
             onClick={handleGenerate}
@@ -568,13 +614,44 @@ export function DashboardContent() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
           </div>
 
+          {/* Trace controls */}
+          {findings && !loadingFindings && (
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={traceActive ? () => setTraceActive(false) : runTrace}
+                disabled={loadingTrace || !dictation.trim()}
+                className="gap-1.5 text-xs"
+              >
+                {loadingTrace ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ScanSearch className="h-3.5 w-3.5" />
+                )}
+                {traceActive ? "Exit trace" : "Trace dictation"}
+              </Button>
+            </div>
+          )}
+
+          {/* Trace legend */}
+          {traceActive && traceData && (
+            <Card>
+              <CardContent className="p-3">
+                <TraceLegend trace={traceData} isDark={isDark} />
+              </CardContent>
+            </Card>
+          )}
+
           <OutputCard
             title="Findings"
             icon={<FileText className="h-4 w-4 text-accent" />}
             loading={loadingFindings}
             value={findings}
-            onChange={setFindings}
+            onChange={(v) => { setFindings(v); setTraceData(null); }}
             minHeight={170}
+            traceHighlights={traceActive ? findingsHighlights : undefined}
+            isDark={isDark}
           />
 
           <OutputCard
@@ -698,6 +775,8 @@ function OutputCard({
   value,
   onChange,
   minHeight,
+  traceHighlights,
+  isDark,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -705,7 +784,10 @@ function OutputCard({
   value: string;
   onChange: (v: string) => void;
   minHeight: number;
+  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
+  isDark?: boolean;
 }) {
+  const showTrace = traceHighlights && traceHighlights.length > 0;
   return (
     <Card>
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
@@ -721,6 +803,8 @@ function OutputCard({
             className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
             style={{ height: minHeight }}
           />
+        ) : showTrace ? (
+          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
         ) : (
           <Textarea
             value={value}
