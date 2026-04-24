@@ -128,9 +128,12 @@ FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ni
 "no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
 Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
 
+HALLAZGOS NEGATIVOS DICTADOS:
+Cuando el radiólogo dicta explícitamente la AUSENCIA de un hallazgo (ej: "no masa colónica", "sin evidencia de TEP", "no disección aórtica", "no se identifica litiasis"), esto es un hallazgo negativo relevante y DEBE incluirse en la sección anatómica correspondiente. No lo omitas ni lo sustituyas por una frase genérica de normalidad. Reproduce fielmente la negación dictada.
+
 REGLAS OBLIGATORIAS:
 1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna. No añadas secciones que no estén en el template.
-2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template.
+2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template. Esto incluye tanto hallazgos positivos como hallazgos negativos dictados por el radiólogo.
 3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
@@ -164,9 +167,12 @@ ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any
 "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
 If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
 
+DICTATED NEGATIVE FINDINGS:
+When the radiologist explicitly dictates the ABSENCE of a finding (e.g. "no colonic mass", "no CT evidence of acute pulmonary embolism", "no aortic dissection", "no lithiasis identified"), this is a relevant negative finding and MUST be included in the corresponding anatomical section. Do not omit it or replace it with a generic normality phrase. Faithfully reproduce the dictated negation.
+
 MANDATORY RULES:
 1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any. Do not add sections not in the template.
-2. Place each dictated finding in the correct anatomical section of the template.
+2. Place each dictated finding in the correct anatomical section of the template. This includes both positive findings AND negative findings explicitly dictated by the radiologist.
 3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
 4. Do NOT invent pathological findings that the radiologist did not dictate.
 5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
@@ -288,10 +294,16 @@ La conclusión DESCRIBE los hallazgos relevantes. NUNCA especula sobre su natura
 
 PROHIBICIONES ABSOLUTAS:
 - NUNCA incluyas recomendaciones. Frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a..." están PROHIBIDAS.
-- NUNCA incluyas descripciones de normalidad. Si un órgano es normal, NO lo menciones.
+- NUNCA incluyas descripciones genéricas de normalidad. Si un órgano es normal y el radiólogo no lo destacó, NO lo menciones.
 - NUNCA especules sobre la naturaleza de un hallazgo. NO escribas "probablemente inflamatorio", "posiblemente benigno", "de probable origen...", "sugiere...". Describe el hallazgo tal como aparece en los datos sin añadir interpretaciones diagnósticas.
 - NUNCA establezcas relaciones causales entre hallazgos a menos que la relación sea anatómicamente obvia e indiscutible. NO escribas "probablemente relacionado con...", "en el contexto de...", "secundario a...".
 - NUNCA descartes patología. NO escribas "sin evidencia de malignidad" si hay un hallazgo indeterminado (como un nódulo sin caracterizar). Solo puedes descartar patología si genuinamente no hay NINGÚN hallazgo que la sugiera.
+
+HALLAZGOS NEGATIVOS CON RELEVANCIA CLÍNICA:
+Si en los hallazgos aparece un hallazgo negativo que el radiólogo dictó explícitamente (ej: "sin evidencia de TEP", "no masa colónica", "no disección aórtica"), inclúyelo en la conclusión SOLO si:
+- Responde directamente a la pregunta clínica, O
+- Tiene alta relevancia clínica por el contexto del estudio.
+Ejemplo: si la pregunta clínica es "descartar TEP" y los hallazgos dicen "sin evidencia de TEP agudo", la conclusión DEBE incluir "Sin evidencia de tromboembolismo pulmonar agudo."
 
 ${hasClinical ? `PREGUNTA CLÍNICA:
 Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la conclusión debe responder directamente a esa pregunta basándose en los hallazgos.
@@ -332,10 +344,16 @@ The conclusion DESCRIBES relevant findings. It NEVER speculates about their natu
 
 ABSOLUTE PROHIBITIONS:
 - NEVER include recommendations. Phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." are FORBIDDEN.
-- NEVER include normality descriptions. If an organ is normal, do NOT mention it.
+- NEVER include generic normality descriptions. If an organ is normal and the radiologist did not highlight it, do NOT mention it.
 - NEVER speculate about the nature of a finding. Do NOT write "possibly inflammatory", "likely benign", "probably related to...", "suggestive of...". Describe the finding as it appears in the data without adding diagnostic interpretations.
 - NEVER establish causal relationships between findings unless the relationship is anatomically obvious and indisputable. Do NOT write "likely related to...", "in the context of...", "secondary to...".
 - NEVER rule out pathology. Do NOT write "no evidence of malignancy" if there is an indeterminate finding (e.g. an uncharacterized nodule). You may only rule out pathology if there genuinely is NO finding that suggests it.
+
+CLINICALLY RELEVANT NEGATIVE FINDINGS:
+If the findings include a negative finding that the radiologist explicitly dictated (e.g. "no CT evidence of acute pulmonary embolism", "no colonic mass", "no aortic dissection"), include it in the conclusion ONLY if:
+- It directly answers the clinical question, OR
+- It has high clinical relevance given the study context.
+Example: if the clinical question is "rule out PE" and the findings state "no CT evidence of acute pulmonary embolism", the conclusion MUST include "No CT evidence of acute pulmonary embolism."
 
 ${hasClinical ? `CLINICAL QUESTION:
 Clinical data from the referring physician is provided. The FIRST point of the conclusion must directly answer that clinical question based on the findings.
