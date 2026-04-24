@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/encryption";
 import { generateAI } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
-import { pickTopPhrases } from "@/lib/style-learning";
+import { getDefaultsForModality } from "@/lib/normality-defaults";
 import type { AIProvider, FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
 
     const { template, dictation, modality, studyType } = await req.json();
 
-    // Get model config
     const { data: config } = await supabase
       .from("user_model_config")
       .select("*")
@@ -32,53 +31,31 @@ export async function POST(req: NextRequest) {
 
     if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
 
-    // Get learned normality phrases if style learning is enabled
+    // Build normality phrases from defaults + user overrides
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
-    if (config.style_learning_enabled && studyType) {
+    if (config.style_learning_enabled) {
       try {
         const mod = modality || "CT";
-        const maxPhrases = config.few_shot_count || 5;
+        const defaults = getDefaultsForModality(mod);
 
-        // First: phrases from the exact study type
-        const { data: exact } = await supabase
-          .from("style_patterns")
-          .select("label, phrase, frequency, last_seen_at")
-          .eq("user_id", user.id)
-          .eq("modality", mod)
-          .eq("study_type", studyType)
-          .eq("kind", "normal_phrase");
-
-        const exactTop = exact && exact.length > 0
-          ? pickTopPhrases(exact as { label: string; phrase: string; frequency: number; last_seen_at: string }[], maxPhrases)
-          : [];
-
-        // Collect labels already covered by the exact study type
-        const coveredLabels = new Set(exactTop.map((p) => (p.label || "").toLowerCase().trim()));
-
-        // Fallback: fill gaps with phrases from the same modality (other study types)
-        let fallback: typeof exactTop = [];
-        if (coveredLabels.size < maxPhrases) {
-          const { data: modalityPhrases } = await supabase
-            .from("style_patterns")
-            .select("label, phrase, frequency, last_seen_at")
+        // Fetch user overrides for this modality
+        let overrides: { section_label: string; phrase: string }[] = [];
+        try {
+          const { data } = await supabase
+            .from("normality_phrases")
+            .select("section_label, phrase")
             .eq("user_id", user.id)
-            .eq("modality", mod)
-            .neq("study_type", studyType)
-            .eq("kind", "normal_phrase");
+            .eq("modality", mod);
+          overrides = data || [];
+        } catch { /* table may not exist */ }
 
-          if (modalityPhrases && modalityPhrases.length > 0) {
-            const uncovered = (modalityPhrases as typeof exactTop).filter(
-              (p) => !coveredLabels.has((p.label || "").toLowerCase().trim()),
-            );
-            fallback = pickTopPhrases(uncovered, maxPhrases - exactTop.length);
-          }
-        }
+        const overrideMap = new Map(overrides.map((o) => [o.section_label, o.phrase]));
 
-        const combined = [...exactTop, ...fallback];
-        if (combined.length > 0) {
-          preferredNormalPhrases = combined.map((p) => ({ label: p.label || "", phrase: p.phrase }));
-        }
-      } catch { /* style_patterns table may not exist */ }
+        preferredNormalPhrases = defaults.map((d) => ({
+          label: d.section_label,
+          phrase: overrideMap.get(d.section_label) ?? d.phrase,
+        }));
+      } catch { /* ignore */ }
     }
 
     const { system, user: userPrompt } = buildFindingsPrompt({
