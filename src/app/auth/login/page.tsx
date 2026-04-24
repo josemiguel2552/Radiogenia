@@ -32,10 +32,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-accent">
             <Stethoscope className="h-8 w-8" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">Radiogenia</span>
           </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
             </form>
             <p className="text-center text-sm text-gray-500 mt-4">
               No account?{" "}
-              <Link href="/auth/register" className="text-blue-600 hover:underline font-medium">
+              <Link href="/auth/register" className="text-accent hover:underline font-medium">
                 Register
               </Link>
             </p>

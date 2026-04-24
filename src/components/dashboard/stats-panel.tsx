@@ -51,7 +51,7 @@ export function StatsPanel() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-          <BarChart3 className="h-5 w-5 text-blue-600" />
+          <BarChart3 className="h-5 w-5 text-accent" />
           Statistics
         </h2>
         <div className="flex gap-1">
@@ -66,8 +66,8 @@ export function StatsPanel() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/30">
-              <FileText className="h-5 w-5 text-blue-600" />
+            <div className="p-2 rounded-full bg-accent-soft">
+              <FileText className="h-5 w-5 text-accent" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalReports}</p>
@@ -85,7 +85,7 @@ export function StatsPanel() {
                 <span className="text-sm font-bold text-gray-900 dark:text-white">{count}</span>
               </div>
               <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
+                <div className="bg-accent h-2 rounded-full transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
               </div>
             </CardContent>
           </Card>

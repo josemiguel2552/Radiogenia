@@ -186,7 +186,7 @@ export function TemplatesTab() {
   if (loading) {
     return (
       <div className="flex justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-accent" />
       </div>
     );
   }
@@ -242,7 +242,7 @@ export function TemplatesTab() {
 
       {/* Upload status */}
       {uploading && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-soft text-accent">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           <p className="text-xs">AI is extracting templates from your document…</p>
         </div>
@@ -347,7 +347,7 @@ export function TemplatesTab() {
                   {grouped[section].map((t) => (
                     <div
                       key={t.id}
-                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all"
+                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-accent-soft hover:shadow-sm transition-all"
                     >
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex-1 min-w-0">
@@ -363,7 +363,7 @@ export function TemplatesTab() {
                                 Default
                               </Badge>
                             ) : (
-                              <Badge className="text-[9px] h-4 px-1.5 bg-blue-600">Custom</Badge>
+                              <Badge className="text-[9px] h-4 px-1.5 bg-accent">Custom</Badge>
                             )}
                           </div>
                         </div>

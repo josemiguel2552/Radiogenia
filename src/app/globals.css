@@ -22,6 +22,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   .dark {
@@ -54,8 +55,27 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-body);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* ── Theme-aware utility classes ── */
+@layer utilities {
+  .text-accent { color: hsl(var(--primary)); }
+  .bg-accent { background-color: hsl(var(--primary)); }
+  .bg-accent-soft { background-color: hsl(var(--primary) / 0.08); }
+  .bg-accent-soft-hover:hover { background-color: hsl(var(--primary) / 0.12); }
+  .border-accent { border-color: hsl(var(--primary)); }
+  .border-accent-soft { border-color: hsl(var(--primary) / 0.2); }
+  .ring-accent { --tw-ring-color: hsl(var(--primary)); }
+  .from-accent { --tw-gradient-from: hsl(var(--primary)); }
+  .to-accent-dark { --tw-gradient-to: hsl(var(--primary) / 0.85); }
+  .shadow-accent { box-shadow: 0 4px 14px hsl(var(--primary) / 0.25); }
+  .accent-border { border: 2px solid hsl(var(--primary)); }
+  .accent-switch[data-state="checked"] { background-color: hsl(var(--primary)); }
+  .focus-accent:focus { outline-color: hsl(var(--primary)); }
+  .focus-ring-accent:focus-visible { --tw-ring-color: hsl(var(--primary)); }
 }
 
 /* Recording animation */

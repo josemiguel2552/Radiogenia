@@ -124,10 +124,10 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
   const resizeHandle = (
     <div
       onMouseDown={onDragStart}
-      className="w-1.5 shrink-0 cursor-col-resize group relative hover:bg-blue-500/20 active:bg-blue-500/30 transition-colors"
+      className="w-1.5 shrink-0 cursor-col-resize group relative bg-accent-soft-hover transition-colors"
       title="Drag to resize"
     >
-      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 group-hover:bg-blue-500 group-active:bg-blue-500 transition-colors" />
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 transition-colors" />
     </div>
   );
 

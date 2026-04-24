@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useUIPrefs, COLOR_PRESETS, type UIDensity, type PanelSide } from "@/lib/ui-prefs";
+import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, type UIDensity, type PanelSide, type FontFamily } from "@/lib/ui-prefs";
 
 export function AppearanceTab() {
   const { prefs, update } = useUIPrefs();
@@ -36,6 +36,51 @@ export function AppearanceTab() {
         </p>
       </div>
 
+      {/* Font family */}
+      <div>
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
+          Font family
+        </Label>
+        <div className="grid grid-cols-2 gap-2">
+          {FONT_FAMILIES.map((f) => {
+            const active = prefs.fontFamily === f.value;
+            return (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => update({ fontFamily: f.value as FontFamily })}
+                className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${
+                  active
+                    ? "border-transparent shadow-sm font-medium bg-accent-soft"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
+                style={active ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
+              >
+                <span style={{ fontFamily: f.stack }}>{f.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Font size */}
+      <div>
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+          Font size: {prefs.fontSize}px
+        </Label>
+        <Slider
+          value={[prefs.fontSize]}
+          min={12}
+          max={18}
+          step={1}
+          onValueChange={(v) => update({ fontSize: v[0] })}
+        />
+        <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+          <span>12px</span>
+          <span>18px</span>
+        </div>
+      </div>
+
       {/* UI Density */}
       <div>
         <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
@@ -61,24 +106,6 @@ export function AppearanceTab() {
         <p className="text-[10px] text-gray-400 mt-2">
           Affects spacing, padding, and border radius across the UI.
         </p>
-      </div>
-
-      {/* Font size */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
-          Font size: {prefs.fontSize}px
-        </Label>
-        <Slider
-          value={[prefs.fontSize]}
-          min={12}
-          max={18}
-          step={1}
-          onValueChange={(v) => update({ fontSize: v[0] })}
-        />
-        <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-          <span>12px</span>
-          <span>18px</span>
-        </div>
       </div>
 
       {/* Panel side */}
@@ -111,7 +138,7 @@ export function AppearanceTab() {
       {/* Reset */}
       <button
         type="button"
-        onClick={() => update({ colorPreset: "Blue", density: "comfortable", panelSide: "right", fontSize: 14 })}
+        onClick={() => update({ colorPreset: "Blue", density: "comfortable", panelSide: "right", fontSize: 14, fontFamily: "inter" })}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >
         Reset to defaults

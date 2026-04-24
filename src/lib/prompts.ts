@@ -122,7 +122,11 @@ IDIOMA DE SALIDA: ${l}. TODO el informe debe estar en ${l}.
 MODALIDAD DEL ESTUDIO: ${modality}
 
 PRINCIPIO FUNDAMENTAL — SECCIONES NO MENCIONADAS:
-El radiólogo solo dicta lo anormal o lo que quiere destacar. Si el radiólogo NO menciona una sección del template, significa que la evaluó y es NORMAL. NUNCA escribas "no se describe", "no se explora", "no evaluado", "no mencionado" ni variantes. En su lugar, describe normalidad radiológica apropiada para ese órgano/estructura y esta modalidad.
+El radiólogo solo dicta lo anormal o lo que quiere destacar. Si el radiólogo NO menciona una sección del template, significa que la evaluó y es NORMAL. En su lugar, describe normalidad radiológica apropiada para ese órgano/estructura y esta modalidad.
+
+FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ninguna circunstancia):
+"no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
+Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
 
 REGLAS OBLIGATORIAS:
 1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna. No añadas secciones que no estén en el template.
@@ -154,7 +158,11 @@ OUTPUT LANGUAGE: ${l}. The ENTIRE report must be written in ${l}.
 STUDY MODALITY: ${modality}
 
 FUNDAMENTAL PRINCIPLE — UNMENTIONED SECTIONS:
-The radiologist only dictates abnormal or noteworthy findings. If the radiologist does NOT mention a section from the template, it means they evaluated it and it is NORMAL. NEVER write "not described", "not assessed", "not evaluated", "not mentioned" or variants. Instead, describe appropriate radiological normality for that organ/structure and this modality.
+The radiologist only dictates abnormal or noteworthy findings. If the radiologist does NOT mention a section from the template, it means they evaluated it and it is NORMAL. Instead, describe appropriate radiological normality for that organ/structure and this modality.
+
+ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any circumstance):
+"not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
+If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
 
 MANDATORY RULES:
 1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any. Do not add sections not in the template.

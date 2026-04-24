@@ -258,7 +258,7 @@ export function ModelConfigTab() {
     setDirty(true);
   }
 
-  if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div>;
+  if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
 
   const selectedProvider = PROVIDERS.find((p) => p.value === config.provider);
   const langLabel = LANGUAGES.find((l) => l.value === config.output_language)?.label || config.output_language;
@@ -268,8 +268,8 @@ export function ModelConfigTab() {
     <div className="space-y-3">
       {/* Active model summary card */}
       <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-        <div className="flex-shrink-0 h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-          <Plug className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <div className="flex-shrink-0 h-9 w-9 rounded-full bg-accent-soft flex items-center justify-center">
+          <Plug className="h-4 w-4 text-accent" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
@@ -289,7 +289,7 @@ export function ModelConfigTab() {
         <AccordionItem value="connection">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
-              <Plug className="h-3.5 w-3.5 text-blue-500" />
+              <Plug className="h-3.5 w-3.5 text-accent" />
               Connection
             </span>
           </AccordionTrigger>
@@ -826,7 +826,7 @@ function EditablePhraseRow({ id, label, phrase, frequency, onSave, onDelete }: {
             if (e.key === "Escape") handleCancel();
           }}
           rows={2}
-          className="w-full text-xs border rounded-md px-2 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-600 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full text-xs border rounded-md px-2 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-600 resize-none focus:outline-none focus:ring-1 ring-accent"
         />
         <div className="flex gap-1 justify-end">
           <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={handleCancel}>
@@ -848,7 +848,7 @@ function EditablePhraseRow({ id, label, phrase, frequency, onSave, onDelete }: {
       </div>
       <div className="flex items-center gap-0.5 flex-shrink-0">
         <Badge variant="outline" className="text-[9px]">{frequency}x</Badge>
-        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditing(true)} title="Edit">
+        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditing(true)} title="Edit">
           <Pencil className="h-2.5 w-2.5" />
         </Button>
         <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(id)} title="Delete">
@@ -873,7 +873,7 @@ function SegmentedPill({ value, options, onChange }: {
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
             value === opt.value
-              ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm font-medium"
+              ? "bg-white dark:bg-gray-900 text-accent shadow-sm font-medium"
               : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           }`}
         >

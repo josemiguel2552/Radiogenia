@@ -71,13 +71,25 @@ const DENSITY_SCALES: Record<UIDensity, { text: string; gap: string; padding: st
 
 export type PanelSide = "left" | "right";
 
+/* ── Font families ─────────────────────────────────────────────── */
+
+export type FontFamily = "inter" | "system" | "mono" | "serif";
+
+export const FONT_FAMILIES: { value: FontFamily; label: string; stack: string }[] = [
+  { value: "inter",  label: "Inter",     stack: "'Inter', system-ui, -apple-system, sans-serif" },
+  { value: "system", label: "System",    stack: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+  { value: "mono",   label: "Monospace", stack: "'SF Mono', 'Fira Code', 'JetBrains Mono', ui-monospace, monospace" },
+  { value: "serif",  label: "Serif",     stack: "'Georgia', 'Times New Roman', ui-serif, serif" },
+];
+
 /* ── Full prefs shape ───────────────────────────────────────────── */
 
 export interface UIPreferences {
-  colorPreset: string;   // name from COLOR_PRESETS
+  colorPreset: string;
   density: UIDensity;
   panelSide: PanelSide;
-  fontSize: number;      // 12–18
+  fontSize: number;
+  fontFamily: FontFamily;
 }
 
 const DEFAULTS: UIPreferences = {
@@ -85,6 +97,7 @@ const DEFAULTS: UIPreferences = {
   density: "comfortable",
   panelSide: "right",
   fontSize: 14,
+  fontFamily: "inter",
 };
 
 const STORAGE_KEY = "radiogenia_ui_prefs";
@@ -96,19 +109,19 @@ function applyPreferences(prefs: UIPreferences) {
   const preset = COLOR_PRESETS.find((p) => p.name === prefs.colorPreset) || COLOR_PRESETS[0];
   const density = DENSITY_SCALES[prefs.density];
 
-  // Colours
   root.style.setProperty("--primary", preset.primary);
   root.style.setProperty("--primary-foreground", preset.primaryFg);
   root.style.setProperty("--ring", preset.accent);
 
-  // Density
   root.style.setProperty("--radius", density.radius);
   root.style.setProperty("--ui-gap", density.gap);
   root.style.setProperty("--ui-padding", density.padding);
 
-  // Font size
   root.style.setProperty("--ui-font-size", `${prefs.fontSize}px`);
   root.style.fontSize = `${prefs.fontSize}px`;
+
+  const font = FONT_FAMILIES.find((f) => f.value === prefs.fontFamily) || FONT_FAMILIES[0];
+  root.style.setProperty("--font-body", font.stack);
 }
 
 /* ── Context ────────────────────────────────────────────────────── */
