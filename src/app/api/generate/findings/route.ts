@@ -24,13 +24,13 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, compactNormals } = await req.json();
+    const { template, dictation, modality, studyType } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
 
     const { data: config } = await supabase
       .from("user_model_config")
-      .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled")
+      .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
       .eq("user_id", user.id)
       .single();
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       normalFieldsVerbosity: config.normal_fields_verbosity as NormalFieldsVerbosity,
       paraphraseLevel: config.paraphrase_level as ParaphraseLevel,
       outputLanguage: (config.output_language || "es") as OutputLanguage,
-      compactNormals: !!compactNormals,
+      compactNormals: !!config.compact_normals,
       preferredNormalPhrases,
     });
 

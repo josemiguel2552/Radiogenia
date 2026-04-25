@@ -3,13 +3,19 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, FileText, Calendar } from "lucide-react";
+import { BarChart3, FileText, Calendar, Activity } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 interface ReportStat {
   modality: string;
   study_type: string;
   created_at: string;
+}
+
+interface SubInfo {
+  used: number;
+  limit: number;
+  plan: string;
 }
 
 const PERIOD_KEYS: Record<string, string> = {
@@ -19,7 +25,17 @@ const PERIOD_KEYS: Record<string, string> = {
 export function StatsPanel() {
   const t = useT();
   const [reports, setReports] = useState<ReportStat[]>([]);
+  const [sub, setSub] = useState<SubInfo | null>(null);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("month");
+
+  useEffect(() => {
+    fetch("/api/subscription")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data) setSub({ used: data.used, limit: data.limit, plan: data.plan });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -52,6 +68,7 @@ export function StatsPanel() {
   });
 
   const maxCount = Math.max(...Object.values(modalityCounts), 1);
+  const usagePct = sub ? Math.min(100, Math.round((sub.used / sub.limit) * 100)) : 0;
 
   return (
     <div className="space-y-4">
@@ -70,6 +87,27 @@ export function StatsPanel() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Monthly usage card */}
+        {sub && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-full bg-brand-soft">
+                <Activity className="h-5 w-5 text-brand" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{sub.used}<span className="text-sm font-normal text-gray-400">/{sub.limit}</span></p>
+                <p className="text-xs text-gray-500">{t("stats.this_month")}</p>
+                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all ${usagePct >= 90 ? "bg-red-500" : usagePct >= 70 ? "bg-amber-500" : "bg-brand"}`}
+                    style={{ width: `${usagePct}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-full bg-brand-soft">
@@ -83,7 +121,7 @@ export function StatsPanel() {
         </Card>
 
         {/* Modality breakdown */}
-        {Object.entries(modalityCounts).slice(0, 3).map(([mod, count]) => (
+        {Object.entries(modalityCounts).slice(0, sub ? 2 : 3).map(([mod, count]) => (
           <Card key={mod}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-1">
@@ -98,7 +136,7 @@ export function StatsPanel() {
         ))}
 
         {Object.keys(modalityCounts).length === 0 && (
-          <Card className="col-span-3">
+          <Card className={sub ? "col-span-2" : "col-span-3"}>
             <CardContent className="p-4 text-center text-gray-400 text-sm">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
               {t("stats.no_reports")}

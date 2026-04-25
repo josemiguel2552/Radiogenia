@@ -29,6 +29,7 @@ interface ModelConfig {
   style_learning_enabled: boolean;
   style_sample_count: number;
   few_shot_count: number;
+  compact_normals: boolean;
 }
 
 interface NormalityPhraseRow {
@@ -409,49 +410,13 @@ export function ModelConfigTab() {
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-5 pt-1">
-            {/* Findings length */}
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.findings_length")}</Label>
-              <p className="text-[10px] text-gray-400 mb-2">{t("cfg.findings_hint")}</p>
-              <SegmentedPill
-                value={config.findings_length}
-                options={[
-                  { value: "concise", label: t("cfg.concise") },
-                  { value: "standard", label: t("cfg.standard") },
-                  { value: "detailed", label: t("cfg.detailed") },
-                ]}
-                onChange={(v) => update("findings_length", v)}
-              />
-            </div>
-
-            {/* Normal fields verbosity */}
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.normal_verbosity")}</Label>
-              <p className="text-[10px] text-gray-400 mb-2">{t("cfg.normal_hint")}</p>
-              <SegmentedPill
-                value={config.normal_fields_verbosity}
-                options={[
-                  { value: "minimal", label: t("cfg.minimal") },
-                  { value: "standard", label: t("cfg.standard") },
-                  { value: "explicit", label: t("cfg.explicit") },
-                ]}
-                onChange={(v) => update("normal_fields_verbosity", v)}
-              />
-            </div>
-
-            {/* Paraphrase level */}
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.paraphrase")}</Label>
-              <p className="text-[10px] text-gray-400 mb-2">{t("cfg.paraphrase_hint")}</p>
-              <SegmentedPill
-                value={config.paraphrase_level}
-                options={[
-                  { value: "none", label: t("cfg.literal") },
-                  { value: "light", label: t("cfg.light") },
-                  { value: "free", label: t("cfg.free") },
-                ]}
-                onChange={(v) => update("paraphrase_level", v)}
-              />
+            {/* Compact normals toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs">{t("cfg.compact_normals")}</Label>
+                <p className="text-[10px] text-gray-400">{t("cfg.compact_normals_hint")}</p>
+              </div>
+              <Switch checked={!!config.compact_normals} onCheckedChange={(v) => update("compact_normals", v)} />
             </div>
 
             {/* Language */}

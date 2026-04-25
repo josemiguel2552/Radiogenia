@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
-import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendations";
 
 export async function POST() {
   try {
@@ -40,28 +39,6 @@ export async function POST() {
           console.error("Global template seed error:", tErr);
           return NextResponse.json({ error: "Failed to seed global templates: " + tErr.message }, { status: 500 });
         }
-      }
-    }
-
-    // Seed recommendations for this user if they have none
-    const { count: recCount } = await supabase
-      .from("user_recommendations")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
-    if (!recCount || recCount === 0) {
-      const recsPayload = DEFAULT_RECOMMENDATIONS.map((r) => ({
-        user_id: user.id,
-        trigger_keyword: r.trigger,
-        recommendation_text: r.recommendation,
-        source: "manual" as const,
-        guideline_name: r.guideline,
-      }));
-
-      const { error: rErr } = await supabase.from("user_recommendations").insert(recsPayload);
-      if (rErr) {
-        console.error("Recommendations seed error:", rErr);
-        return NextResponse.json({ error: "Failed to seed recommendations: " + rErr.message }, { status: 500 });
       }
     }
 
