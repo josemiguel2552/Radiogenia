@@ -448,7 +448,7 @@ export function DashboardContent() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-accent" />
+            <Wand2 className="h-5 w-5 text-brand" />
             {t("dash.new_report_title")}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -542,7 +542,7 @@ export function DashboardContent() {
                   onClick={() => setContrastOption(opt.v)}
                   className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                     contrastOption === opt.v
-                      ? "bg-white dark:bg-gray-900 text-accent shadow-sm font-medium"
+                      ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
@@ -638,13 +638,13 @@ export function DashboardContent() {
             onClick={() => setCompactNormals((v) => !v)}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
               compactNormals
-                ? "border-accent bg-accent/10 text-accent dark:bg-accent/20"
+                ? "border-brand bg-brand/10 text-brand dark:bg-brand/20"
                 : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600"
             }`}
           >
             <AlignLeft className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="flex-1 text-left">{t("dash.compact_normals")}</span>
-            <div className={`h-4 w-7 rounded-full transition-colors flex items-center ${compactNormals ? "bg-accent justify-end" : "bg-gray-300 dark:bg-gray-600 justify-start"}`}>
+            <div className={`h-4 w-7 rounded-full transition-colors flex items-center ${compactNormals ? "bg-brand justify-end" : "bg-gray-300 dark:bg-gray-600 justify-start"}`}>
               <div className="h-3 w-3 rounded-full bg-white mx-0.5 shadow-sm" />
             </div>
           </button>
@@ -652,7 +652,7 @@ export function DashboardContent() {
           <Button
             onClick={handleGenerate}
             disabled={!canGenerate}
-            className="w-full h-10 gap-2 bg-gradient-to-r from-accent to-accent-dark shadow-accent hover:opacity-90 disabled:opacity-50 text-white"
+            className="w-full h-10 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
           >
             {isGenerating ? (
               <>
@@ -722,7 +722,7 @@ export function DashboardContent() {
 
           <OutputCard
             title={t("dash.findings")}
-            icon={<FileText className="h-4 w-4 text-accent" />}
+            icon={<FileText className="h-4 w-4 text-brand" />}
             loading={loadingFindings}
             value={findings}
             onChange={(v) => { setFindings(v); setTraceData(null); setRepairMessage(null); }}
@@ -747,7 +747,7 @@ export function DashboardContent() {
           />
 
           {/* Action bar */}
-          <Card className="sticky bottom-4 shadow-lg border-accent-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+          <Card className="sticky bottom-4 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
             <CardContent className="p-3">
               <div className="flex flex-wrap items-center gap-2 justify-between">
                 <div className="flex flex-wrap gap-1.5">
@@ -786,7 +786,7 @@ export function DashboardContent() {
                   size="sm"
                   onClick={startNewReport}
                   disabled={!findings}
-                  className="gap-1.5 text-xs bg-accent text-white hover:opacity-90"
+                  className="gap-1.5 text-xs bg-brand text-brand-fg hover:opacity-90"
                 >
                   <ArrowRight className="h-3.5 w-3.5" />
                   {t("dash.next_report")}
@@ -828,12 +828,12 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={`overflow-hidden transition-colors ${complete ? "border-accent-soft" : ""}`}>
+    <Card className={`overflow-hidden transition-colors ${complete ? "border-brand-soft" : ""}`}>
       <div className="flex items-start gap-3 px-5 pt-5">
         <div
           className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
             complete
-              ? "bg-accent text-white"
+              ? "bg-brand text-brand-fg"
               : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
           }`}
         >
@@ -879,7 +879,7 @@ function OutputCard({
           {icon}
           {title}
         </h3>
-        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
       </div>
       <CardContent className="pt-0 pb-4">
         {loading && !value ? (
@@ -893,7 +893,7 @@ function OutputCard({
             style={{ minHeight }}
           >
             {value}
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-accent animate-pulse align-text-bottom" />
+            <span className="inline-block w-0.5 h-4 ml-0.5 bg-brand animate-pulse align-text-bottom" />
           </div>
         ) : showTrace ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
@@ -966,7 +966,7 @@ function RecommendationsCard({
           {t("dash.recommendations")}
         </h3>
         <div className="flex items-center gap-1.5">
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
           {!loading && value.trim() && (
             <button
               type="button"

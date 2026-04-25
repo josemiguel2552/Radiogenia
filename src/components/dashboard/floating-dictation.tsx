@@ -145,7 +145,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
               ? "bg-red-500 hover:bg-red-600 recording-pulse"
               : isTranscribing
               ? "bg-blue-500"
-              : "bg-gradient-to-br from-accent to-accent-dark hover:shadow-accent/40"
+              : "bg-brand-gradient-br hover:shadow-brand/40"
           }`}
           title={`${t("dash.voice_dictation")} (+)`}
         >
@@ -154,7 +154,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
           ) : isTranscribing ? (
             <Loader2 className="h-6 w-6 text-white animate-spin" />
           ) : (
-            <Mic className="h-6 w-6 text-white" />
+            <Mic className="h-6 w-6 text-brand-fg" />
           )}
         </button>
 
@@ -165,7 +165,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
 
         {/* Text indicator badge */}
         {hasText && !expanded && (
-          <div className="absolute -top-2 -left-2 h-6 min-w-[1.5rem] px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shadow">
+          <div className="absolute -top-2 -left-2 h-6 min-w-[1.5rem] px-1 rounded-full bg-brand text-brand-fg text-[10px] font-bold flex items-center justify-center shadow">
             {wordCount}
           </div>
         )}
@@ -210,12 +210,12 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
             onChange={(e) => setBuffer(e.target.value)}
             onSelect={handleSelect}
             placeholder={t("dash.dictation_placeholder")}
-            className="w-full h-[180px] text-sm resize-none border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-gray-400"
+            className="w-full h-[180px] text-sm resize-none border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand/50 placeholder:text-gray-400"
           />
 
           {/* Selection indicator */}
           {selRange && selRange.start !== selRange.end && (
-            <p className="text-[10px] text-accent mt-1 flex items-center gap-1">
+            <p className="text-[10px] text-brand mt-1 flex items-center gap-1">
               <Keyboard className="h-3 w-3" />
               {t("dash.float_selection_hint")}
             </p>
@@ -241,9 +241,9 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
             {isRecording ? (
               <MicOff className="h-5 w-5 text-white" />
             ) : isTranscribing ? (
-              <Loader2 className="h-5 w-5 text-accent animate-spin" />
+              <Loader2 className="h-5 w-5 text-brand animate-spin" />
             ) : (
-              <Mic className="h-5 w-5 text-accent" />
+              <Mic className="h-5 w-5 text-brand" />
             )}
           </button>
 
@@ -268,7 +268,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
             type="button"
             onClick={handleSend}
             disabled={!hasText}
-            className="h-9 px-3 rounded-lg bg-accent text-white text-xs font-medium flex items-center gap-1.5 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            className="h-9 px-3 rounded-lg bg-brand text-brand-fg text-xs font-medium flex items-center gap-1.5 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
           >
             <Send className="h-3.5 w-3.5" />
             {t("dash.float_send")}

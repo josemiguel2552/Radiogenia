@@ -189,7 +189,7 @@ export function TemplatesTab() {
   if (loading) {
     return (
       <div className="flex justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
@@ -245,7 +245,7 @@ export function TemplatesTab() {
 
       {/* Upload status */}
       {uploading && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-soft text-accent">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-soft text-brand">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           <p className="text-xs">{t("tpl.extracting")}</p>
         </div>
@@ -350,7 +350,7 @@ export function TemplatesTab() {
                   {grouped[section].map((tpl) => (
                     <div
                       key={tpl.id}
-                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-accent-soft hover:shadow-sm transition-all"
+                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft hover:shadow-sm transition-all"
                     >
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex-1 min-w-0">
@@ -366,7 +366,7 @@ export function TemplatesTab() {
                                 {t("global")}
                               </Badge>
                             ) : (
-                              <Badge className="text-[9px] h-4 px-1.5 bg-accent">{t("custom")}</Badge>
+                              <Badge className="text-[9px] h-4 px-1.5 bg-brand">{t("custom")}</Badge>
                             )}
                           </div>
                         </div>

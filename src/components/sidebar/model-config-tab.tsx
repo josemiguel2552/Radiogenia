@@ -301,7 +301,7 @@ export function ModelConfigTab() {
     setDirty(true);
   }
 
-  if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
+  if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
 
   const selectedProvider = PROVIDERS.find((p) => p.value === config.provider);
   const langLabel = LANGUAGES.find((l) => l.value === config.output_language)?.label || config.output_language;
@@ -314,8 +314,8 @@ export function ModelConfigTab() {
     <div className="space-y-3">
       {/* Active model summary card */}
       <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-        <div className="flex-shrink-0 h-9 w-9 rounded-full bg-accent-soft flex items-center justify-center">
-          <Plug className="h-4 w-4 text-accent" />
+        <div className="flex-shrink-0 h-9 w-9 rounded-full bg-brand-soft flex items-center justify-center">
+          <Plug className="h-4 w-4 text-brand" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
@@ -335,7 +335,7 @@ export function ModelConfigTab() {
         {userRole === "admin" && <AccordionItem value="connection">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
-              <Plug className="h-3.5 w-3.5 text-accent" />
+              <Plug className="h-3.5 w-3.5 text-brand" />
               {t("cfg.connection")}
             </span>
           </AccordionTrigger>
@@ -511,7 +511,7 @@ export function ModelConfigTab() {
                         </div>
                       ))}
                       {styleGroups.length > 5 && (
-                        <Button size="sm" variant="ghost" className="w-full text-xs text-accent" onClick={() => setShowLearnedPhrases(true)}>
+                        <Button size="sm" variant="ghost" className="w-full text-xs text-brand" onClick={() => setShowLearnedPhrases(true)}>
                           {t("cfg.view_all")} ({styleGroups.length})
                         </Button>
                       )}
@@ -901,7 +901,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
             if (e.key === "Escape") { setDraft(row.phrase); setEditing(false); }
           }}
           rows={2}
-          className="w-full text-xs border rounded-md px-2 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-600 resize-none focus:outline-none focus:ring-1 ring-accent"
+          className="w-full text-xs border rounded-md px-2 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-600 resize-none focus:outline-none focus:ring-1 ring-brand"
         />
         <div className="flex gap-1 justify-end">
           <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setDraft(row.phrase); setEditing(false); }}>
@@ -926,7 +926,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
           <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
         ) : (
           <>
-            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-accent" onClick={() => setEditing(true)} title={t("edit")}>
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-brand" onClick={() => setEditing(true)} title={t("edit")}>
               <Pencil className="h-2.5 w-2.5" />
             </Button>
             {row.is_customized && (
@@ -955,7 +955,7 @@ function SegmentedPill({ value, options, onChange }: {
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
             value === opt.value
-              ? "bg-white dark:bg-gray-900 text-accent shadow-sm font-medium"
+              ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
               : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           }`}
         >

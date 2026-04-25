@@ -124,7 +124,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const resizeHandle = (
     <div
       onMouseDown={onDragStart}
-      className="w-1.5 shrink-0 cursor-col-resize group relative bg-accent-soft-hover transition-colors"
+      className="w-1.5 shrink-0 cursor-col-resize group relative bg-brand-soft-hover transition-colors"
       title="Drag to resize"
     >
       <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 transition-colors" />
@@ -189,7 +189,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
         <Separator className="bg-gray-800 w-8" />
 
-        <Button variant="ghost" size="icon" className="text-accent hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title={t("nav.dashboard")}
+        <Button variant="ghost" size="icon" className="text-brand hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title={t("nav.dashboard")}
         >
           <LayoutDashboard className="h-5 w-5" />
         </Button>

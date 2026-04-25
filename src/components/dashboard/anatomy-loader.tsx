@@ -160,7 +160,7 @@ export function AnatomyLoader({ label }: { label?: string }) {
         </svg>
 
         {/* Glow backdrop */}
-        <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-accent/5 rounded-2xl pointer-events-none" />
+        <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ background: "linear-gradient(to bottom, hsl(var(--primary) / 0.05), transparent, hsl(var(--primary) / 0.05))" }} />
       </div>
 
       <div className="text-center space-y-1.5">
@@ -168,9 +168,9 @@ export function AnatomyLoader({ label }: { label?: string }) {
           {label || t("dash.generating")}
         </p>
         <div className="flex items-center justify-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "0s" }} />
-          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "0.15s" }} />
-          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "0.3s" }} />
+          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-bounce" style={{ animationDelay: "0s" }} />
+          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-bounce" style={{ animationDelay: "0.15s" }} />
+          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-bounce" style={{ animationDelay: "0.3s" }} />
         </div>
       </div>
 

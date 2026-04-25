@@ -80,7 +80,7 @@ export function AppearanceTab() {
                 onClick={() => update({ fontFamily: f.value as FontFamily })}
                 className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${
                   active
-                    ? "border-transparent shadow-sm font-medium bg-accent-soft"
+                    ? "border-transparent shadow-sm font-medium bg-brand-soft"
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                 }`}
                 style={active ? { color: "hsl(var(--primary))" } : undefined}

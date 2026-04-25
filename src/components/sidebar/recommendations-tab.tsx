@@ -204,7 +204,7 @@ export function RecommendationsTab() {
   if (loading) {
     return (
       <div className="flex justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
@@ -301,7 +301,7 @@ export function RecommendationsTab() {
 
       {/* Upload status */}
       {extracting && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-soft text-accent">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-soft text-brand">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           <p className="text-xs">{t("rec.extracting")}</p>
         </div>
@@ -410,7 +410,7 @@ export function RecommendationsTab() {
                   {grouped[group].map((r) => (
                     <div
                       key={r.id}
-                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-accent-soft hover:shadow-sm transition-all"
+                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft hover:shadow-sm transition-all"
                     >
                       <div className="flex justify-between items-start gap-1">
                         <div className="flex-1 min-w-0">
