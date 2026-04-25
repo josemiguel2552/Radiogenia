@@ -21,6 +21,7 @@ import {
   Stethoscope,
   CircleCheck,
   ArrowRight,
+  AlignLeft,
   ScanSearch,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
@@ -64,6 +65,7 @@ export function DashboardContent() {
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
+  const [compactNormals, setCompactNormals] = useState(false);
 
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
@@ -177,6 +179,7 @@ export function DashboardContent() {
           dictation,
           modality: selectedTemplate.modality,
           studyType: studyName,
+          compactNormals,
         }),
       });
 
@@ -612,6 +615,22 @@ export function DashboardContent() {
               className="min-h-[140px] text-sm"
             />
           )}
+
+          <button
+            type="button"
+            onClick={() => setCompactNormals((v) => !v)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+              compactNormals
+                ? "border-accent bg-accent/10 text-accent dark:bg-accent/20"
+                : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600"
+            }`}
+          >
+            <AlignLeft className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="flex-1 text-left">{t("dash.compact_normals")}</span>
+            <div className={`h-4 w-7 rounded-full transition-colors flex items-center ${compactNormals ? "bg-accent justify-end" : "bg-gray-300 dark:bg-gray-600 justify-start"}`}>
+              <div className="h-3 w-3 rounded-full bg-white mx-0.5 shadow-sm" />
+            </div>
+          </button>
 
           <Button
             onClick={handleGenerate}

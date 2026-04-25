@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType } = await req.json();
+    const { template, dictation, modality, studyType, compactNormals } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
 
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
       normalFieldsVerbosity: config.normal_fields_verbosity as NormalFieldsVerbosity,
       paraphraseLevel: config.paraphrase_level as ParaphraseLevel,
       outputLanguage: (config.output_language || "es") as OutputLanguage,
+      compactNormals: !!compactNormals,
       preferredNormalPhrases,
     });
 
