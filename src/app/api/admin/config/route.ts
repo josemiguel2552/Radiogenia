@@ -46,9 +46,20 @@ export async function PUT(req: NextRequest) {
       updates.api_key_encrypted = encrypt(body.api_key);
     }
 
+    // Get existing config ID (singleton table)
+    const { data: existing } = await supabase
+      .from("global_model_config")
+      .select("id")
+      .single();
+
+    if (!existing) {
+      return NextResponse.json({ error: "Global config not found" }, { status: 404 });
+    }
+
     const { data, error } = await supabase
       .from("global_model_config")
       .update(updates)
+      .eq("id", existing.id)
       .select()
       .single();
 
