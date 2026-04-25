@@ -28,6 +28,7 @@ import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { AnatomyLoader } from "./anatomy-loader";
+import { FloatingDictation } from "./floating-dictation";
 import { useT, useSection } from "@/lib/i18n";
 
 export function DashboardContent() {
@@ -757,6 +758,16 @@ export function DashboardContent() {
           </Card>
         </div>
       )}
+
+      <FloatingDictation
+        language={LANG_TO_WHISPER[outputLanguage] || "es"}
+        onSendText={(text) => {
+          setDictation((prev) => {
+            const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
+            return prev + sep + text;
+          });
+        }}
+      />
     </div>
   );
 }
