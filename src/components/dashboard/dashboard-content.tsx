@@ -214,60 +214,33 @@ export function DashboardContent() {
       return;
     }
 
-    // Run trace, conclusion, and recommendations ALL IN PARALLEL after findings
+    // Run trace+repair, conclusion, and recommendations ALL IN PARALLEL
     const tracePromise = (async () => {
       setLoadingTrace(true);
       try {
         const traceRes = await fetch("/api/generate/trace", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dictation, findings: findingsText }),
+          body: JSON.stringify({ dictation, findings: findingsText, outputLanguage }),
         });
         if (traceRes.ok) {
-          const trace = await traceRes.json();
-          if (!trace.hallucinations) trace.hallucinations = [];
-          const hasOmissions = trace.unmatched && trace.unmatched.length > 0;
-          const hasHallucinations = trace.hallucinations && trace.hallucinations.length > 0;
+          const result = await traceRes.json();
+          if (!result.hallucinations) result.hallucinations = [];
+          if (!result.mappings) result.mappings = [];
+          if (!result.unmatched) result.unmatched = [];
 
-          if (hasOmissions || hasHallucinations) {
-            const repairRes = await fetch("/api/generate/repair-findings", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                findings: findingsText,
-                omissions: trace.unmatched,
-                hallucinations: trace.hallucinations,
-                outputLanguage,
-              }),
-            });
-            if (repairRes.ok) {
-              const repairData = await repairRes.json();
-              if (repairData.findings) {
-                findingsText = cleanReport(repairData.findings);
-                setFindings(findingsText);
-                setInitialFindings(findingsText);
-                if (hasOmissions) {
-                  setRepairMessage(
-                    t("trace.auto_repaired").replace("{0}", String(trace.unmatched.length))
-                  );
-                }
-              }
-            }
-            const retraceRes = await fetch("/api/generate/trace", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ dictation, findings: findingsText }),
-            });
-            if (retraceRes.ok) {
-              const retrace = await retraceRes.json();
-              if (!retrace.hallucinations) retrace.hallucinations = [];
-              setTraceData(retrace);
-            } else {
-              setTraceData(trace);
-            }
-          } else {
-            setTraceData(trace);
+          if (result.repaired && result.corrected_findings) {
+            findingsText = cleanReport(result.corrected_findings);
+            setFindings(findingsText);
+            setInitialFindings(findingsText);
+            setRepairMessage(t("trace.auto_repaired").replace("{0}", ""));
           }
+
+          setTraceData({
+            mappings: result.mappings,
+            unmatched: result.unmatched,
+            hallucinations: result.hallucinations,
+          });
           setTraceActive(true);
         }
       } catch (e) {

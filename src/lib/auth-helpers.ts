@@ -17,7 +17,7 @@ export interface GlobalAIConfig {
 }
 
 export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("global_model_config")
     .select("*")

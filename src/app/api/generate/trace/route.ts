@@ -9,53 +9,37 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { dictation, findings } = await req.json();
+    const { dictation, findings, outputLanguage } = await req.json();
     if (!dictation || !findings) {
       return NextResponse.json({ error: "Missing dictation or findings" }, { status: 400 });
     }
 
     const globalConfig = await getGlobalAIConfig();
+    const lang = outputLanguage || "es";
 
-    const system = `You are a medical report auditing assistant performing bidirectional traceability between a radiologist's dictation and the structured findings report.
+    const system = `You are a medical report auditing assistant. You perform bidirectional traceability AND automatic repair in a SINGLE pass.
 
-TASK — TWO DIRECTIONS:
+STEP 1 — TRACE:
+A) DICTATION → FINDINGS (omission check): Split the dictation into individual clinical observations. For each, identify which findings section contains it. Mark as unmatched if missing.
+B) FINDINGS → DICTATION (hallucination check): Flag any specific clinical finding/measurement in the findings NOT backed by the dictation. Exclude normal/default phrases.
 
-A) DICTATION → FINDINGS (omission check):
-1. Split the dictation into individual clinical observations. Each distinct finding, measurement, anatomical description, or negative finding is a separate fragment. Keep each fragment as a short phrase (the exact words from the dictation).
-2. For each fragment, identify which section of the structured findings contains that information.
-3. If a dictation fragment is NOT reflected in any section, mark it as unmatched — this is a critical safety issue (omission).
+STEP 2 — REPAIR (only if unmatched or hallucinations exist):
+If there are omissions: integrate each omitted fragment into the appropriate findings section naturally, matching the report style.
+If there are hallucinations: remove only the hallucinated detail (not the entire section). If removing leaves a section empty, write a normal/default phrase.
+Then re-map the corrected findings in the same format.
 
-B) FINDINGS → DICTATION (hallucination check):
-1. Identify any specific clinical finding, measurement, or pathological description in the findings that does NOT have a corresponding observation in the dictation.
-2. Exclude normal/default phrases ("within normal limits", "unremarkable", etc.) — those are expected for unmentioned sections.
-3. Only flag genuinely invented clinical details that appear in the findings but the radiologist never dictated.
-
-RESPOND ONLY with valid JSON:
+OUTPUT — respond ONLY with valid JSON:
 {
-  "mappings": [
-    {
-      "dictation_fragment": "exact short phrase from dictation",
-      "section": "Section name from findings",
-      "matched": true
-    }
-  ],
-  "unmatched": [
-    {
-      "dictation_fragment": "phrase from dictation not found in findings",
-      "reason": "brief reason"
-    }
-  ],
-  "hallucinations": [
-    {
-      "findings_fragment": "clinical detail in findings not backed by dictation",
-      "section": "Section name",
-      "reason": "brief reason"
-    }
-  ]
+  "mappings": [{"dictation_fragment": "exact phrase", "section": "Section name", "matched": true}],
+  "unmatched": [{"dictation_fragment": "phrase", "reason": "brief reason"}],
+  "hallucinations": [{"findings_fragment": "detail", "section": "Section name", "reason": "brief reason"}],
+  "repaired": false,
+  "corrected_findings": null
 }
 
-If there are no unmatched items, return "unmatched": [].
-If there are no hallucinations, return "hallucinations": [].`;
+If repair was needed, set "repaired": true and "corrected_findings" to the FULL corrected findings text (in ${lang}). The mappings/unmatched/hallucinations should reflect the FINAL corrected state (mappings should be complete, unmatched should be empty, hallucinations should be empty).
+
+If no repair was needed, set "repaired": false, "corrected_findings": null, and return the trace of the original findings.`;
 
     const userMsg = `DICTATION:\n${dictation}\n\nSTRUCTURED FINDINGS:\n${findings}`;
 
@@ -73,9 +57,14 @@ If there are no hallucinations, return "hallucinations": [].`;
       return NextResponse.json({ error: "Failed to parse trace" }, { status: 500 });
     }
 
-    const trace = JSON.parse(jsonMatch[0]);
-    if (!trace.hallucinations) trace.hallucinations = [];
-    return NextResponse.json(trace);
+    const result = JSON.parse(jsonMatch[0]);
+    if (!result.hallucinations) result.hallucinations = [];
+    if (!result.mappings) result.mappings = [];
+    if (!result.unmatched) result.unmatched = [];
+    if (result.repaired === undefined) result.repaired = false;
+    if (result.corrected_findings === undefined) result.corrected_findings = null;
+
+    return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
