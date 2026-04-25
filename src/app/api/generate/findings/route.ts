@@ -28,11 +28,22 @@ export async function POST(req: NextRequest) {
 
     const globalConfig = await getGlobalAIConfig();
 
-    const { data: config } = await supabase
+    let { data: config } = await supabase
       .from("user_model_config")
       .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
       .eq("user_id", user.id)
       .single();
+
+    if (!config) {
+      const service = createServiceClient();
+      await service.from("user_model_config").upsert({ user_id: user.id }, { onConflict: "user_id" });
+      const { data: retry } = await supabase
+        .from("user_model_config")
+        .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
+        .eq("user_id", user.id)
+        .single();
+      config = retry;
+    }
 
     if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
 

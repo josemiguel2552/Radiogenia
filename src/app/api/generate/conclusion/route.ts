@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildConclusionPrompt } from "@/lib/prompts";
@@ -15,11 +16,22 @@ export async function POST(req: NextRequest) {
 
     const globalConfig = await getGlobalAIConfig();
 
-    const { data: config } = await supabase
+    let { data: config } = await supabase
       .from("user_model_config")
       .select("output_language, style_learning_enabled")
       .eq("user_id", user.id)
       .single();
+
+    if (!config) {
+      const service = createServiceClient();
+      await service.from("user_model_config").upsert({ user_id: user.id }, { onConflict: "user_id" });
+      const { data: retry } = await supabase
+        .from("user_model_config")
+        .select("output_language, style_learning_enabled")
+        .eq("user_id", user.id)
+        .single();
+      config = retry;
+    }
 
     if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
 

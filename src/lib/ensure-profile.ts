@@ -24,19 +24,26 @@ export async function ensureProfile(userId: string, email: string): Promise<stri
         role: isAdmin ? "admin" : "radiologist",
         subscription_plan: isAdmin ? "professional" : "free",
       });
-      return isAdmin ? "admin" : "radiologist";
-    }
-
-    if (isAdmin && profile.role !== "admin") {
+    } else if (isAdmin && profile.role !== "admin") {
       await supabase
         .from("profiles")
         .update({ role: "admin", subscription_plan: "professional" })
         .eq("id", userId);
-      return "admin";
+    }
+
+    // Ensure user_model_config exists (trigger may have failed)
+    const { data: cfg } = await supabase
+      .from("user_model_config")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!cfg) {
+      await supabase.from("user_model_config").insert({ user_id: userId });
     }
 
     if (isAdmin) return "admin";
-    return profile.role;
+    return profile?.role || "radiologist";
   } catch {
     return isAdmin ? "admin" : "radiologist";
   }

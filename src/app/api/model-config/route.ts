@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { encrypt } from "@/lib/encryption";
 import { getUserRole } from "@/lib/auth-helpers";
 
@@ -9,11 +10,22 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data } = await supabase
+    let { data } = await supabase
       .from("user_model_config")
       .select("*")
       .eq("user_id", user.id)
       .single();
+
+    if (!data) {
+      const service = createServiceClient();
+      await service.from("user_model_config").upsert({ user_id: user.id }, { onConflict: "user_id" });
+      const { data: retry } = await supabase
+        .from("user_model_config")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      data = retry;
+    }
 
     if (data) {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
