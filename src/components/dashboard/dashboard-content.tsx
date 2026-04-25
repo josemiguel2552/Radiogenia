@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -42,8 +43,7 @@ export function DashboardContent() {
 
   // Dictation state
   const [dictation, setDictation] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   // Report output state
   const [findings, setFindings] = useState("");
@@ -59,6 +59,22 @@ export function DashboardContent() {
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
+
+  // Whisper voice dictation
+  const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
+  const { isRecording, isTranscribing, toggleRecording } = useVoiceDictation({
+    language: LANG_TO_WHISPER[outputLanguage] || "es",
+    context: "Radiology report dictation. Medical terminology.",
+    onTranscript: (text) => {
+      setDictation((prev) => {
+        const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
+        return prev + sep + text;
+      });
+      setTraceData(null);
+      setVoiceError(null);
+    },
+    onError: (err) => setVoiceError(err),
+  });
 
   // Autosave draft
   useEffect(() => {
@@ -120,40 +136,7 @@ export function DashboardContent() {
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
-  // Voice recording
-  const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Speech recognition not supported in this browser");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "es-ES";
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      setDictation((prev) => prev + " " + transcript);
-    };
-
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => setIsRecording(false);
-
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsRecording(true);
-  }, [isRecording]);
+  // Voice recording is handled by useVoiceDictation hook above
 
   // Generate report
   async function handleGenerate() {
@@ -547,16 +530,25 @@ export function DashboardContent() {
             </Button>
             <div className="flex-1">
               <p className="text-xs font-medium text-gray-900 dark:text-white">
-                {isRecording ? "Listening…" : "Voice dictation"}
+                {isRecording ? "Listening…" : isTranscribing ? "Transcribing…" : "Voice dictation"}
               </p>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                {isRecording ? "Click the mic to stop" : "Click the mic to start dictating, or type below"}
+                {isRecording ? "Click the mic to stop" : isTranscribing ? "Processing audio with Whisper AI" : "Click the mic to start dictating, or type below"}
               </p>
             </div>
             {isRecording && (
               <Badge className="bg-red-500 text-white animate-pulse">REC</Badge>
             )}
+            {!isRecording && isTranscribing && (
+              <Badge className="bg-blue-500 text-white animate-pulse gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Processing
+              </Badge>
+            )}
           </div>
+          {voiceError && (
+            <p className="text-xs text-red-500 dark:text-red-400 px-1">{voiceError}</p>
+          )}
 
           {traceActive && dictationHighlights.length > 0 ? (
             <div>
