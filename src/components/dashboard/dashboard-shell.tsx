@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import {
   Zap,
   LogOut,
@@ -194,15 +195,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         </Button>
 
         {role === "admin" && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg h-9 w-9"
+          <Link
+            href="/admin"
+            className="inline-flex items-center justify-center text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg h-9 w-9 transition-colors"
             title={t("nav.admin")}
-            onClick={() => router.push("/admin")}
           >
             <Shield className="h-5 w-5" />
-          </Button>
+          </Link>
         )}
 
         <div className="flex-1" />

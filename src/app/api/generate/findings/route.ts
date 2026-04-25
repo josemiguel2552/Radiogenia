@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, checkReportLimit } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
@@ -81,10 +82,11 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
     });
 
-    // Increment report usage on generation (not on save)
-    supabase.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
+    // Increment report usage via service client (bypasses RLS)
+    const service = createServiceClient();
+    service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
       if (rpcError) {
-        supabase
+        service
           .from("profiles")
           .update({ reports_used_this_month: quota.used + 1 })
           .eq("id", user.id)
