@@ -257,7 +257,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
             ) : isTranscribing ? (
               <span className="text-[11px] text-blue-600 dark:text-blue-400">{t("dash.transcribing")}</span>
             ) : hasText ? (
-              <span className="text-[11px] text-gray-500">{wordCount} {wordCount === 1 ? "word" : "words"}</span>
+              <span className="text-[11px] text-gray-500">{wordCount} {wordCount === 1 ? t("word") : t("words")}</span>
             ) : (
               <span className="text-[11px] text-gray-400">{t("dash.float_ready")}</span>
             )}

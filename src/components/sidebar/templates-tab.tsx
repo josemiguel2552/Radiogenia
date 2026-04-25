@@ -119,7 +119,7 @@ export function TemplatesTab() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this template?")) return;
+    if (!confirm(t("confirm_delete_template"))) return;
     await fetch(`/api/templates?id=${id}`, { method: "DELETE" });
     load();
   }
@@ -200,7 +200,7 @@ export function TemplatesTab() {
       <div>
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("tpl.title")}</h2>
         <p className="text-[11px] text-gray-500 dark:text-gray-400">
-          {templates.length} {templates.length === 1 ? "template" : "templates"} · {t("tpl.grouped_by")}
+          {templates.length} {templates.length === 1 ? t("tpl.template") : t("tpl.templates")} · {t("tpl.grouped_by")}
         </p>
       </div>
 

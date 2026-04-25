@@ -134,7 +134,7 @@ export function RecommendationsTab() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this recommendation?")) return;
+    if (!confirm(t("confirm_delete_recommendation"))) return;
     await fetch(`/api/recommendations?id=${id}`, { method: "DELETE" });
     load();
   }
@@ -215,7 +215,7 @@ export function RecommendationsTab() {
       <div>
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("rec.title")}</h2>
         <p className="text-[11px] text-gray-500 dark:text-gray-400">
-          {recs.length} {recs.length === 1 ? "recommendation" : "recommendations"} · {t("rec.grouped_by")}
+          {recs.length} {recs.length === 1 ? t("rec.recommendation_singular") : t("rec.recommendations")} · {t("rec.grouped_by")}
         </p>
       </div>
 
@@ -264,7 +264,7 @@ export function RecommendationsTab() {
           <div>
             <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("rec.trigger")}</Label>
             <Input
-              placeholder="e.g. Pulmonary nodule >8mm"
+              placeholder={t("rec.trigger_placeholder")}
               value={trigger}
               onChange={(e) => setTrigger(e.target.value)}
               className="h-8 text-xs"
@@ -273,7 +273,7 @@ export function RecommendationsTab() {
           <div>
             <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("rec.recommendation")}</Label>
             <Textarea
-              placeholder="e.g. Follow-up chest CT in 3 months"
+              placeholder={t("rec.recommendation_placeholder")}
               value={recText}
               onChange={(e) => setRecText(e.target.value)}
               className="min-h-[60px] text-xs"
@@ -282,7 +282,7 @@ export function RecommendationsTab() {
           <div>
             <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("rec.guideline_source")}</Label>
             <Input
-              placeholder="e.g. Fleischner Society"
+              placeholder={t("rec.guideline_placeholder")}
               value={guideline}
               onChange={(e) => setGuideline(e.target.value)}
               className="h-8 text-xs"

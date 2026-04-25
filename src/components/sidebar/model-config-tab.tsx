@@ -376,7 +376,7 @@ export function ModelConfigTab() {
                   </Select>
                 )
               ) : (
-                <Input value={config.model_name} onChange={(e) => update("model_name", e.target.value)} placeholder="Model name" className="h-9" />
+                <Input value={config.model_name} onChange={(e) => update("model_name", e.target.value)} placeholder={t("cfg.model")} className="h-9" />
               )}
             </div>
 
@@ -389,7 +389,7 @@ export function ModelConfigTab() {
 
             <div>
               <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.api_key")}</Label>
-              <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder="Enter API key" className="h-9" />
+              <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder={t("cfg.api_key")} className="h-9" />
               <p className="text-[10px] text-gray-400 mt-1">{t("cfg.key_hint")}</p>
             </div>
 
@@ -628,18 +628,18 @@ export function ModelConfigTab() {
                       <div className="space-y-2">
                         <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700 space-y-1">
                           <div className="flex justify-between">
-                            <span className="text-gray-500 dark:text-gray-400">Job:</span>
+                            <span className="text-gray-500 dark:text-gray-400">{t("job")}:</span>
                             <span className="font-mono text-[10px]">{ftJobId.slice(0, 20)}...</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500 dark:text-gray-400">Status:</span>
+                            <span className="text-gray-500 dark:text-gray-400">{t("status")}:</span>
                             <Badge variant={ftStatus === "succeeded" ? "default" : ftStatus === "failed" ? "destructive" : "secondary"} className="text-[10px]">
                               {ftStatus || "unknown"}
                             </Badge>
                           </div>
                           {ftModel && (
                             <div className="flex justify-between">
-                              <span className="text-gray-500 dark:text-gray-400">Model:</span>
+                              <span className="text-gray-500 dark:text-gray-400">{t("model")}:</span>
                               <span className="font-mono text-[10px] text-green-600">{ftModel}</span>
                             </div>
                           )}
@@ -683,7 +683,7 @@ export function ModelConfigTab() {
                               update("model_name", job.fineTunedModel!);
                               setDirty(true);
                             }}>
-                              Use
+                              {t("use")}
                             </Button>
                           </div>
                         )}
@@ -757,7 +757,7 @@ export function ModelConfigTab() {
               <Input
                 value={normalitySearch}
                 onChange={(e) => setNormalitySearch(e.target.value)}
-                placeholder="Search sections..."
+                placeholder={`${t("search")}...`}
                 className="h-8 text-xs pl-7"
               />
             </div>
@@ -777,7 +777,7 @@ export function ModelConfigTab() {
               />
             ))}
             {filteredPhrases.length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-6">No sections match your search.</p>
+              <p className="text-xs text-gray-400 text-center py-6">{t("no_match_search")}</p>
             )}
           </div>
         </DialogContent>
@@ -866,6 +866,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   onSave: (phrase: string) => void;
   onReset: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(row.phrase);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -904,10 +905,10 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
         />
         <div className="flex gap-1 justify-end">
           <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setDraft(row.phrase); setEditing(false); }}>
-            <X className="h-2.5 w-2.5 mr-1" />Cancel
+            <X className="h-2.5 w-2.5 mr-1" />{t("cancel")}
           </Button>
           <Button size="sm" className="h-6 text-[10px] px-2" onClick={handleSave}>
-            <Check className="h-2.5 w-2.5 mr-1" />Save
+            <Check className="h-2.5 w-2.5 mr-1" />{t("save")}
           </Button>
         </div>
       </div>
@@ -925,11 +926,11 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
           <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
         ) : (
           <>
-            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-accent" onClick={() => setEditing(true)} title="Edit">
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-accent" onClick={() => setEditing(true)} title={t("edit")}>
               <Pencil className="h-2.5 w-2.5" />
             </Button>
             {row.is_customized && (
-              <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-amber-500" onClick={onReset} title="Reset to default">
+              <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-amber-500" onClick={onReset} title={t("reset")}>
                 <RotateCcw className="h-2.5 w-2.5" />
               </Button>
             )}

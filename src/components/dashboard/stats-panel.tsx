@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart3, FileText, Calendar } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface ReportStat {
   modality: string;
@@ -11,7 +12,12 @@ interface ReportStat {
   created_at: string;
 }
 
+const PERIOD_KEYS: Record<string, string> = {
+  today: "stats.today", week: "stats.week", month: "stats.month", all: "stats.all_time",
+};
+
 export function StatsPanel() {
+  const t = useT();
   const [reports, setReports] = useState<ReportStat[]>([]);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("month");
 
@@ -52,12 +58,12 @@ export function StatsPanel() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
           <BarChart3 className="h-5 w-5 text-accent" />
-          Statistics
+          {t("stats.title")}
         </h2>
         <div className="flex gap-1">
           {(["today", "week", "month", "all"] as const).map((p) => (
-            <Button key={p} variant={period === p ? "default" : "ghost"} size="sm" onClick={() => setPeriod(p)} className="text-xs capitalize">
-              {p === "all" ? "All time" : p}
+            <Button key={p} variant={period === p ? "default" : "ghost"} size="sm" onClick={() => setPeriod(p)} className="text-xs">
+              {t(PERIOD_KEYS[p])}
             </Button>
           ))}
         </div>
@@ -71,7 +77,7 @@ export function StatsPanel() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalReports}</p>
-              <p className="text-xs text-gray-500">Total reports</p>
+              <p className="text-xs text-gray-500">{t("stats.total_reports")}</p>
             </div>
           </CardContent>
         </Card>
@@ -95,7 +101,7 @@ export function StatsPanel() {
           <Card className="col-span-3">
             <CardContent className="p-4 text-center text-gray-400 text-sm">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              No reports in this period
+              {t("stats.no_reports")}
             </CardContent>
           </Card>
         )}
