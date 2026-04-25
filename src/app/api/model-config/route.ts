@@ -15,11 +15,16 @@ export async function GET() {
       .single();
 
     if (data) {
-      // Never send encrypted key to frontend - just indicate if set
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
     }
 
-    return NextResponse.json(data);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    return NextResponse.json({ ...data, role: profile?.role || "radiologist" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

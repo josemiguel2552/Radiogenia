@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import { buildRecommendationsPrompt } from "@/lib/prompts";
-import type { AIProvider, OutputLanguage } from "@/lib/types";
+import type { OutputLanguage } from "@/lib/types";
 
 interface CatalogueEntry {
   trigger: string;
@@ -94,22 +94,15 @@ export async function POST(req: NextRequest) {
 
     const { findingsText } = await req.json();
 
+    const globalConfig = await getGlobalAIConfig();
+
     const { data: config } = await supabase
       .from("user_model_config")
-      .select("*")
+      .select("output_language")
       .eq("user_id", user.id)
       .single();
 
     if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
-
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-
-    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
 
     const { data: recs } = await supabase
       .from("user_recommendations")
@@ -136,10 +129,10 @@ export async function POST(req: NextRequest) {
     }
 
     const raw = await generateAI({
-      provider: config.provider as AIProvider,
-      modelName: config.model_name,
-      apiKey,
-      customBaseUrl: config.custom_base_url,
+      provider: globalConfig.provider,
+      modelName: globalConfig.modelName,
+      apiKey: globalConfig.apiKey,
+      customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
     });

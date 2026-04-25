@@ -21,6 +21,7 @@ import {
   BookOpen,
   Cpu,
   Palette,
+  Shield,
 } from "lucide-react";
 import { TemplatesTab } from "@/components/sidebar/templates-tab";
 import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
@@ -33,7 +34,7 @@ const PANEL_MIN = 240;
 const PANEL_MAX = 600;
 const PANEL_DEFAULT = 320;
 
-function DashboardShellInner({ children, user }: { children: React.ReactNode; user: User }) {
+function DashboardShellInner({ children, user, role }: { children: React.ReactNode; user: User; role: string }) {
   const router = useRouter();
   const [panelOpen, setPanelOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
@@ -194,6 +195,18 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
           <LayoutDashboard className="h-5 w-5" />
         </Button>
 
+        {role === "admin" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg h-9 w-9"
+            title="Admin panel"
+            onClick={() => router.push("/admin")}
+          >
+            <Shield className="h-5 w-5" />
+          </Button>
+        )}
+
         <div className="flex-1" />
 
         <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={toggleDark} title="Toggle theme">
@@ -255,10 +268,10 @@ function DashboardShellInner({ children, user }: { children: React.ReactNode; us
   );
 }
 
-export function DashboardShell({ children, user }: { children: React.ReactNode; user: User }) {
+export function DashboardShell({ children, user, role = "radiologist" }: { children: React.ReactNode; user: User; role?: string }) {
   return (
     <UIPrefsProvider>
-      <DashboardShellInner user={user}>
+      <DashboardShellInner user={user} role={role}>
         {children}
       </DashboardShellInner>
     </UIPrefsProvider>

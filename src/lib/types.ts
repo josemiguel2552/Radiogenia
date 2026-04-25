@@ -1,3 +1,24 @@
+export type UserRole = "admin" | "radiologist";
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  subscription_status: string;
+  created_at: string;
+}
+
+export interface GlobalModelConfig {
+  id: string;
+  provider: AIProvider;
+  model_name: string;
+  api_key_encrypted: string;
+  custom_base_url: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 export interface Template {
   id: number;
   title: string;

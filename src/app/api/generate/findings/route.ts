@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
-import type { AIProvider, FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
+import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,31 +14,22 @@ export async function POST(req: NextRequest) {
 
     const { template, dictation, modality, studyType } = await req.json();
 
+    const globalConfig = await getGlobalAIConfig();
+
     const { data: config } = await supabase
       .from("user_model_config")
-      .select("*")
+      .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled")
       .eq("user_id", user.id)
       .single();
 
     if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
 
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-
-    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
-
-    // Build normality phrases from defaults + user overrides
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
     if (config.style_learning_enabled) {
       try {
         const mod = modality || "CT";
         const defaults = getDefaultsForModality(mod);
 
-        // Fetch user overrides for this modality
         let overrides: { section_label: string; phrase: string }[] = [];
         try {
           const { data } = await supabase
@@ -70,10 +61,10 @@ export async function POST(req: NextRequest) {
     });
 
     const stream = await generateAIStream({
-      provider: config.provider as AIProvider,
-      modelName: config.model_name,
-      apiKey,
-      customBaseUrl: config.custom_base_url,
+      provider: globalConfig.provider,
+      modelName: globalConfig.modelName,
+      apiKey: globalConfig.apiKey,
+      customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
     });

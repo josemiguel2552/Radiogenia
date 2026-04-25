@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildConclusionPrompt } from "@/lib/prompts";
-import type { AIProvider, OutputLanguage } from "@/lib/types";
+import type { OutputLanguage } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,28 +13,19 @@ export async function POST(req: NextRequest) {
 
     const { findingsText, clinicalInfo, modality, studyType } = await req.json();
 
+    const globalConfig = await getGlobalAIConfig();
+
     const { data: config } = await supabase
       .from("user_model_config")
-      .select("*")
+      .select("output_language, style_learning_enabled")
       .eq("user_id", user.id)
       .single();
 
     if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
 
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-
-    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
-
-    // Get learned conclusion style samples if style learning is enabled
     let preferredConclusionPhrases: string[] | undefined;
     if (config.style_learning_enabled && modality && studyType) {
       try {
-        // First: samples from the exact study type
         const { data: exact } = await supabase
           .from("style_patterns")
           .select("phrase, frequency, last_seen_at")
@@ -47,7 +38,6 @@ export async function POST(req: NextRequest) {
 
         const samples = exact || [];
 
-        // Fallback: fill with conclusions from same modality if < 3
         if (samples.length < 3) {
           const { data: modalitySamples } = await supabase
             .from("style_patterns")
@@ -78,10 +68,10 @@ export async function POST(req: NextRequest) {
     });
 
     const stream = await generateAIStream({
-      provider: config.provider as AIProvider,
-      modelName: config.model_name,
-      apiKey,
-      customBaseUrl: config.custom_base_url,
+      provider: globalConfig.provider,
+      modelName: globalConfig.modelName,
+      apiKey: globalConfig.apiKey,
+      customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
     });

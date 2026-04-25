@@ -40,6 +40,7 @@ interface NormalityPhraseRow {
 
 export function ModelConfigTab() {
   const [config, setConfig] = useState<ModelConfig | null>(null);
+  const [userRole, setUserRole] = useState<"admin" | "radiologist">("radiologist");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -77,6 +78,7 @@ export function ModelConfigTab() {
     const res = await fetch("/api/model-config");
     if (res.ok) {
       const data = await res.json();
+      if (data.role) setUserRole(data.role);
       setConfig(data);
       setApiKey(data?.api_key_encrypted || "");
     }
@@ -267,7 +269,7 @@ export function ModelConfigTab() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-            {selectedProvider?.label || config.provider} / {config.model_name}
+            {userRole === "admin" ? `${selectedProvider?.label || config.provider} / ${config.model_name}` : "AI Model — managed by admin"}
           </p>
           <p className="text-[10px] text-gray-500 dark:text-gray-400">{langLabel}</p>
         </div>
@@ -278,9 +280,9 @@ export function ModelConfigTab() {
         )}
       </div>
 
-      <Accordion type="single" collapsible defaultValue="connection">
-        {/* Connection */}
-        <AccordionItem value="connection">
+      <Accordion type="single" collapsible defaultValue={userRole === "admin" ? "connection" : "writing"}>
+        {/* Connection — admin only */}
+        {userRole === "admin" && <AccordionItem value="connection">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Plug className="h-3.5 w-3.5 text-accent" />
@@ -346,7 +348,7 @@ export function ModelConfigTab() {
               {testResult === true ? "Connected" : testResult === false ? "Connection failed" : "Test connection"}
             </Button>
           </AccordionContent>
-        </AccordionItem>
+        </AccordionItem>}
 
         {/* Writing preferences */}
         <AccordionItem value="writing">
@@ -456,8 +458,8 @@ export function ModelConfigTab() {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Fine-Tuning */}
-        <AccordionItem value="finetune">
+        {/* Fine-Tuning — admin only */}
+        {userRole === "admin" && <AccordionItem value="finetune">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
               <GraduationCap className="h-3.5 w-3.5 text-purple-500" />
@@ -610,7 +612,7 @@ export function ModelConfigTab() {
               </>
             )}
           </AccordionContent>
-        </AccordionItem>
+        </AccordionItem>}
       </Accordion>
 
       {/* Footer actions */}
