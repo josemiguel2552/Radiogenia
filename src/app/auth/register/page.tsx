@@ -14,11 +14,16 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!accepted) {
+      setError("You must accept the terms of use and privacy policy to create an account.");
+      return;
+    }
     setLoading(true);
     setError("");
     const supabase = createClient();
@@ -48,6 +53,10 @@ export default function RegisterPage() {
   }
 
   async function handleGoogleSignUp() {
+    if (!accepted) {
+      setError("You must accept the terms of use and privacy policy to create an account.");
+      return;
+    }
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -103,7 +112,8 @@ export default function RegisterPage() {
           <button
             onClick={handleGoogleSignUp}
             type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium text-white transition-colors"
+            disabled={!accepted}
+            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-white/10 text-sm font-medium transition-colors ${accepted ? "bg-white/5 hover:bg-white/10 text-white" : "bg-white/[0.02] text-gray-500 cursor-not-allowed"}`}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -161,6 +171,24 @@ export default function RegisterPage() {
               />
             </div>
 
+            <div className="space-y-3 pt-1">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => { setAccepted(e.target.checked); setError(""); }}
+                  className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500/50 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                  I accept the{" "}
+                  <Link href="/legal" target="_blank" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
+                    Terms of Use, Privacy Policy and Liability Disclaimer
+                  </Link>.
+                  I understand that Radiogen.ai is a report drafting tool and does not generate autonomous diagnoses or recommendations. All clinical responsibility lies with the radiologist.
+                </span>
+              </label>
+            </div>
+
             {error && (
               <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>
             )}
@@ -168,7 +196,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold shadow-lg shadow-purple-500/20"
-              disabled={loading}
+              disabled={loading || !accepted}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
             </Button>
