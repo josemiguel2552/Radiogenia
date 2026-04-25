@@ -20,6 +20,7 @@ interface GlobalConfig {
   provider: string;
   model_name: string;
   api_key_encrypted: string;
+  whisper_api_key_encrypted: string;
   custom_base_url: string;
   updated_at: string;
 }
@@ -61,8 +62,10 @@ export default function AdminPage() {
   const [provider, setProvider] = useState("deepseek");
   const [modelName, setModelName] = useState("deepseek-chat");
   const [apiKey, setApiKey] = useState("");
+  const [whisperKey, setWhisperKey] = useState("");
   const [customUrl, setCustomUrl] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const [showWhisperKey, setShowWhisperKey] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<boolean | null>(null);
@@ -94,6 +97,7 @@ export default function AdminPage() {
       setProvider(d.provider || "deepseek");
       setModelName(d.model_name || "deepseek-chat");
       setApiKey(d.api_key_encrypted || "");
+      setWhisperKey(d.whisper_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
     }
     if (usersRes?.ok) {
@@ -112,6 +116,7 @@ export default function AdminPage() {
     try {
       const body: Record<string, string> = { provider, model_name: modelName };
       if (apiKey && apiKey !== "••••••••") body.api_key = apiKey;
+      if (whisperKey && whisperKey !== "••••••••") body.whisper_api_key = whisperKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
       const res = await fetch("/api/admin/config", {
@@ -125,6 +130,7 @@ export default function AdminPage() {
         const d = await res.json();
         setConfig(d);
         setApiKey(d.api_key_encrypted || "");
+        setWhisperKey(d.whisper_api_key_encrypted || "");
         setConfigSuccess(true);
         setTimeout(() => setConfigSuccess(false), 3000);
       }
@@ -516,6 +522,23 @@ export default function AdminPage() {
                     {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Whisper API Key (OpenAI — voice dictation)</Label>
+                <div className="relative">
+                  <input
+                    type={showWhisperKey ? "text" : "password"} value={whisperKey}
+                    onChange={(e) => setWhisperKey(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                    placeholder="sk-... (OpenAI key for Whisper)"
+                  />
+                  <button type="button" onClick={() => setShowWhisperKey(!showWhisperKey)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showWhisperKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">Separate OpenAI key used only for voice-to-text. Independent of the text generation provider above.</p>
               </div>
 
               <div className="flex gap-2 pt-2">

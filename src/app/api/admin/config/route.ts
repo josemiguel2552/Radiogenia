@@ -22,6 +22,7 @@ export async function GET() {
     return NextResponse.json({
       ...data,
       api_key_encrypted: data.api_key_encrypted ? "••••••••" : "",
+      whisper_api_key_encrypted: data.whisper_api_key_encrypted ? "••••••••" : "",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -44,6 +45,10 @@ export async function PUT(req: NextRequest) {
 
     if (body.api_key && body.api_key !== "••••••••") {
       updates.api_key_encrypted = encrypt(body.api_key);
+    }
+
+    if (body.whisper_api_key && body.whisper_api_key !== "••••••••") {
+      updates.whisper_api_key_encrypted = encrypt(body.whisper_api_key);
     }
 
     // Get existing config ID (singleton table)
@@ -70,6 +75,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({
       ...data,
       api_key_encrypted: data.api_key_encrypted ? "••••••••" : "",
+      whisper_api_key_encrypted: data.whisper_api_key_encrypted ? "••••••••" : "",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

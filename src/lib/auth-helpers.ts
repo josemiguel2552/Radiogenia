@@ -7,6 +7,7 @@ export interface GlobalAIConfig {
   modelName: string;
   apiKey: string;
   customBaseUrl?: string;
+  whisperApiKey?: string;
 }
 
 export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
@@ -31,11 +32,17 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     throw new Error("No global API key configured. Contact your administrator.");
   }
 
+  let whisperApiKey = "";
+  try {
+    whisperApiKey = data.whisper_api_key_encrypted ? decrypt(data.whisper_api_key_encrypted) : "";
+  } catch { /* optional field */ }
+
   return {
     provider: data.provider as AIProvider,
     modelName: data.model_name,
     apiKey,
     customBaseUrl: data.custom_base_url || undefined,
+    whisperApiKey,
   };
 }
 
