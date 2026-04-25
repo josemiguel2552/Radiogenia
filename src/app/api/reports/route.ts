@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  extractNormalityPhrases,
-  extractNormalityPhrasesFromFinal,
-  extractConclusionStyle,
-} from "@/lib/style-learning";
+import { extractConclusionStyle } from "@/lib/style-learning";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function GET(req: NextRequest) {
@@ -80,28 +76,10 @@ async function learnFromReport(
   body: {
     modality: string;
     study_type: string;
-    initial_findings_text?: string | null;
-    findings_text: string;
-    initial_conclusion_text?: string | null;
     conclusion_text: string;
   },
 ) {
   const { modality, study_type } = body;
-  const initialFindings = body.initial_findings_text || "";
-
-  // Learn normality phrases
-  let normalPhrases;
-  if (initialFindings && body.findings_text) {
-    normalPhrases = extractNormalityPhrases(initialFindings, body.findings_text);
-  } else if (body.findings_text) {
-    normalPhrases = extractNormalityPhrasesFromFinal(body.findings_text);
-  }
-
-  if (normalPhrases) {
-    for (const p of normalPhrases) {
-      await upsertPattern(supabase, userId, modality, study_type, "normal_phrase", p.phrase, p.label);
-    }
-  }
 
   // Learn conclusion style — store the complete conclusion as a style sample
   if (body.conclusion_text) {
@@ -211,9 +189,6 @@ export async function POST(req: NextRequest) {
           await learnFromReport(supabase, user.id, {
             modality: body.modality,
             study_type: body.study_type,
-            initial_findings_text: body.initial_findings_text || null,
-            findings_text: body.findings_text || "",
-            initial_conclusion_text: body.initial_conclusion_text || null,
             conclusion_text: body.conclusion_text || "",
           });
 
