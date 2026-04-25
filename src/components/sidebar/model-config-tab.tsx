@@ -69,7 +69,7 @@ export function ModelConfigTab() {
   const [ftError, setFtError] = useState<string | null>(null);
   const [ftChecking, setFtChecking] = useState(false);
   const [ftJobs, setFtJobs] = useState<{ jobId: string; status: string; fineTunedModel: string | null; model: string; createdAt: number }[]>([]);
-  const [ftSuffix, setFtSuffix] = useState("radiogenia");
+  const [ftSuffix, setFtSuffix] = useState("radiogenai");
   const [ftBaseModel, setFtBaseModel] = useState("gpt-4o-mini-2024-07-18");
   const ftFileRef = useRef<HTMLInputElement>(null);
 
@@ -520,7 +520,7 @@ export function ModelConfigTab() {
                         </div>
                         <div>
                           <Label className="text-[10px] text-gray-500">Suffix</Label>
-                          <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenia" className="h-8 text-xs" />
+                          <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenai" className="h-8 text-xs" />
                         </div>
                         <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700 gap-1.5">
                           {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}

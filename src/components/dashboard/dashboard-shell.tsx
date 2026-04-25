@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Stethoscope,
+  Zap,
   LogOut,
   LayoutDashboard,
   PanelRightOpen,
@@ -47,14 +47,14 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   }, []);
 
   useEffect(() => {
-    const dark = localStorage.getItem("radiogenia_dark") === "1";
+    const dark = localStorage.getItem("radiogenai_dark") === "1";
     if (dark) {
       document.documentElement.classList.add("dark");
       setDarkMode(true);
     }
-    const saved = localStorage.getItem("radiogenia_panel");
+    const saved = localStorage.getItem("radiogenai_panel");
     if (saved !== null) setPanelOpen(saved === "1");
-    const savedWidth = localStorage.getItem("radiogenia_panel_width");
+    const savedWidth = localStorage.getItem("radiogenai_panel_width");
     if (savedWidth) setPanelWidth(Math.max(PANEL_MIN, Math.min(PANEL_MAX, Number(savedWidth))));
   }, []);
 
@@ -80,7 +80,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
       setPanelWidth((w) => {
-        localStorage.setItem("radiogenia_panel_width", String(w));
+        localStorage.setItem("radiogenai_panel_width", String(w));
         return w;
       });
     };
@@ -99,13 +99,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     const next = !darkMode;
     setDarkMode(next);
     document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("radiogenia_dark", next ? "1" : "0");
+    localStorage.setItem("radiogenai_dark", next ? "1" : "0");
   }
 
   function togglePanel() {
     const next = !panelOpen;
     setPanelOpen(next);
-    localStorage.setItem("radiogenia_panel", next ? "1" : "0");
+    localStorage.setItem("radiogenai_panel", next ? "1" : "0");
   }
 
   const userName = user.user_metadata?.name || user.email?.split("@")[0] || "Doctor";
@@ -185,7 +185,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       {/* Left rail */}
       <aside className="w-14 bg-gray-900 dark:bg-black flex flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
         <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center shadow-lg`}>
-          <Stethoscope className="h-4.5 w-4.5 text-white" />
+          <Zap className="h-4.5 w-4.5 text-white" />
         </div>
 
         <Separator className="bg-gray-800 w-8" />
@@ -243,7 +243,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
             <div>
               <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
-                Radiogenia
+                Radiogen.ai
               </h1>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
                 AI radiology reporting · {userName}

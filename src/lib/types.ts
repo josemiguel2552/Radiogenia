@@ -1,11 +1,74 @@
 export type UserRole = "admin" | "radiologist";
+export type SubscriptionPlan = "free" | "starter" | "professional";
+
+export interface PlanConfig {
+  name: string;
+  label: string;
+  price: number;
+  reports: number;
+  tokensPerReport: number;
+  features: string[];
+  highlight?: boolean;
+}
+
+export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
+  free: {
+    name: "free",
+    label: "Free",
+    price: 0,
+    reports: 50,
+    tokensPerReport: 10000,
+    features: [
+      "50 reports/month",
+      "All modalities",
+      "Voice dictation",
+      "Style learning",
+      "Custom templates",
+    ],
+  },
+  starter: {
+    name: "starter",
+    label: "Starter",
+    price: 9.99,
+    reports: 150,
+    tokensPerReport: 10000,
+    highlight: true,
+    features: [
+      "150 reports/month",
+      "All modalities",
+      "Voice dictation",
+      "Style learning",
+      "Custom templates",
+      "Priority support",
+    ],
+  },
+  professional: {
+    name: "professional",
+    label: "Professional",
+    price: 14.99,
+    reports: 400,
+    tokensPerReport: 10000,
+    features: [
+      "400 reports/month",
+      "All modalities",
+      "Voice dictation",
+      "Style learning",
+      "Custom templates",
+      "Priority support",
+      "API access",
+      "Bulk export",
+    ],
+  },
+};
 
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
   role: UserRole;
-  subscription_status: string;
+  subscription_plan: SubscriptionPlan;
+  reports_used_this_month: number;
+  billing_period_start: string;
   created_at: string;
 }
 

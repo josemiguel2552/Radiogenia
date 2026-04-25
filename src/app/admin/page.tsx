@@ -166,7 +166,7 @@ export default function AdminPage() {
           </h1>
         </div>
         <Badge variant="outline" className="ml-auto text-xs">
-          Radiogenia
+          Radiogen.ai
         </Badge>
       </div>
 

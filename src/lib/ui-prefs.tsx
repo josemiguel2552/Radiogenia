@@ -107,7 +107,7 @@ const DEFAULTS: UIPreferences = {
   fontFamily: "inter",
 };
 
-const STORAGE_KEY = "radiogenia_ui_prefs";
+const STORAGE_KEY = "radiogenai_ui_prefs";
 
 /* ── Apply to DOM ───────────────────────────────────────────────── */
 

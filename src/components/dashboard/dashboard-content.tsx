@@ -81,7 +81,7 @@ export function DashboardContent() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (dictation || findings || conclusion || recommendations || clinicalInfo) {
-        localStorage.setItem("radiogenia_draft", JSON.stringify({
+        localStorage.setItem("radiogenai_draft", JSON.stringify({
           clinicalInfo, dictation, findings, conclusion, recommendations,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
           initialFindings, initialConclusion,
@@ -93,7 +93,7 @@ export function DashboardContent() {
 
   // Load draft on mount
   useEffect(() => {
-    const draft = localStorage.getItem("radiogenia_draft");
+    const draft = localStorage.getItem("radiogenai_draft");
     if (draft) {
       try {
         const d = JSON.parse(draft);
@@ -388,7 +388,7 @@ export function DashboardContent() {
     if (findings) {
       await saveReportQuietly();
       // Notify sidebar to refresh style learning stats
-      window.dispatchEvent(new Event("radiogenia:report-saved"));
+      window.dispatchEvent(new Event("radiogenai:report-saved"));
     }
     setDictation("");
     setFindings("");
@@ -399,7 +399,7 @@ export function DashboardContent() {
     setClinicalInfo("");
     setTraceData(null);
     setTraceActive(false);
-    localStorage.removeItem("radiogenia_draft");
+    localStorage.removeItem("radiogenai_draft");
   }
 
   const isGenerating = loadingFindings || loadingConclusion || loadingRecs;

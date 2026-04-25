@@ -99,3 +99,28 @@
   background: rgb(239 68 68 / 0.4);
   animation: pulse-ring 1s ease-out infinite;
 }
+
+/* Landing page animations */
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+@keyframes float-slower {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-40px, 20px) scale(1.08); }
+  66% { transform: translate(25px, -35px) scale(0.92); }
+}
+@keyframes float-medium {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(35px, 25px); }
+}
+@keyframes scroll-dot {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(8px); }
+}
+
+.animate-float-slow { animation: float-slow 15s ease-in-out infinite; }
+.animate-float-slower { animation: float-slower 20s ease-in-out infinite; }
+.animate-float-medium { animation: float-medium 12s ease-in-out infinite; }
+.animate-scroll-dot { animation: scroll-dot 1.5s ease-in-out infinite; }

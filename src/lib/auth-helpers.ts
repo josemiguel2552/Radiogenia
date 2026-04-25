@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/encryption";
-import type { AIProvider, UserRole } from "@/lib/types";
+import { PLANS, type AIProvider, type UserRole, type SubscriptionPlan } from "@/lib/types";
 
 export interface GlobalAIConfig {
   provider: AIProvider;
@@ -58,4 +58,26 @@ export async function requireAdmin(): Promise<{ userId: string }> {
   if (role !== "admin") throw new Error("Forbidden");
 
   return { userId: user.id };
+}
+
+export async function checkReportLimit(userId: string): Promise<{ allowed: boolean; used: number; limit: number; plan: SubscriptionPlan }> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_plan, reports_used_this_month, billing_period_start")
+    .eq("id", userId)
+    .single();
+
+  const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+  const planConfig = PLANS[plan];
+  const periodStart = new Date(profile?.billing_period_start || Date.now());
+  const needsReset = periodStart.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
+  const used = needsReset ? 0 : (profile?.reports_used_this_month || 0);
+
+  return {
+    allowed: used < planConfig.reports,
+    used,
+    limit: planConfig.reports,
+    plan,
+  };
 }

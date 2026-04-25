@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Radiogenia — Radiology Report Platform",
+  title: "Radiogen.ai — AI Radiology Reports",
   description: "AI-powered structured radiology report generator",
 };
 
