@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import mammoth from "mammoth";
-import type { AIProvider } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,22 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Document is empty" }, { status: 400 });
     }
 
-    // Get AI config
-    const { data: config } = await supabase
-      .from("user_model_config")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
-
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
+    const globalConfig = await getGlobalAIConfig();
 
     const system = `You are a radiology clinical guidelines expert. Extract structured recommendations from the provided clinical guideline document.
 
@@ -77,10 +61,10 @@ Return ONLY valid JSON array. Example:
 ]`;
 
     const text = await generateAI({
-      provider: config.provider as AIProvider,
-      modelName: config.model_name,
-      apiKey,
-      customBaseUrl: config.custom_base_url,
+      provider: globalConfig.provider,
+      modelName: globalConfig.modelName,
+      apiKey: globalConfig.apiKey,
+      customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: `Extract all recommendations from this clinical guideline document:\n\n${docText.substring(0, 20000)}`,
     });
