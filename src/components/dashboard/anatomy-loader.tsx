@@ -8,15 +8,13 @@ export function AnatomyLoader({ label }: { label?: string }) {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="flex flex-col items-center justify-center py-10 gap-5 select-none">
-      <div className="relative w-44 h-72 flex items-center justify-center overflow-hidden">
+    <div className="flex flex-col items-center justify-center py-8 gap-4 select-none">
+      <div className="relative w-full max-w-md mx-auto flex items-center justify-center overflow-hidden rounded-xl" style={{ aspectRatio: "1902/827" }}>
         {!imgError ? (
           <img
             src="/anatomy-loader.png"
             alt=""
-            width={320}
-            height={520}
-            className="w-auto h-full object-contain opacity-80 dark:opacity-70"
+            className="w-full h-full object-contain opacity-85 dark:opacity-75"
             onError={() => setImgError(true)}
           />
         ) : (
