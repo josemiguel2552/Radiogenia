@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, checkReportLimit } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
@@ -11,6 +11,17 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const quota = await checkReportLimit(user.id);
+    if (!quota.allowed) {
+      return NextResponse.json({
+        error: `Monthly report limit reached (${quota.used}/${quota.limit}). Upgrade your plan for more reports.`,
+        code: "LIMIT_REACHED",
+        used: quota.used,
+        limit: quota.limit,
+        plan: quota.plan,
+      }, { status: 429 });
+    }
 
     const { template, dictation, modality, studyType } = await req.json();
 
@@ -67,6 +78,17 @@ export async function POST(req: NextRequest) {
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
+    });
+
+    // Increment report usage on generation (not on save)
+    supabase.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
+      if (rpcError) {
+        supabase
+          .from("profiles")
+          .update({ reports_used_this_month: quota.used + 1 })
+          .eq("id", user.id)
+          .then(() => {});
+      }
     });
 
     return new Response(stream, {
