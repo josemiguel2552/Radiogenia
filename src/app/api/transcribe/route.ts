@@ -44,8 +44,17 @@ export async function POST(req: NextRequest) {
       ? globalConfig.customBaseUrl.replace(/\/+$/, "")
       : "https://api.openai.com/v1";
 
+    const mimeToExt: Record<string, string> = {
+      "audio/webm": "webm", "audio/webm;codecs=opus": "webm",
+      "audio/ogg": "ogg", "audio/ogg;codecs=opus": "ogg",
+      "audio/mp4": "m4a", "audio/mpeg": "mp3", "audio/wav": "wav",
+      "audio/x-m4a": "m4a", "audio/flac": "flac",
+    };
+    const ext = mimeToExt[audioFile.type] || "webm";
+    const fileName = `dictation.${ext}`;
+
     const whisperForm = new FormData();
-    whisperForm.append("file", audioFile, "audio.webm");
+    whisperForm.append("file", audioFile, fileName);
     whisperForm.append("model", "whisper-1");
     whisperForm.append("response_format", "text");
     if (language) whisperForm.append("language", language);
