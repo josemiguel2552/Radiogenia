@@ -96,25 +96,13 @@ export async function POST(req: NextRequest) {
     const { findingsText } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
+    const service = createServiceClient();
 
-    let { data: config } = await supabase
+    const { data: config } = await service
       .from("user_model_config")
       .select("output_language")
       .eq("user_id", user.id)
-      .single();
-
-    if (!config) {
-      const service = createServiceClient();
-      await service.from("user_model_config").upsert({ user_id: user.id }, { onConflict: "user_id" });
-      const { data: retry } = await supabase
-        .from("user_model_config")
-        .select("output_language")
-        .eq("user_id", user.id)
-        .single();
-      config = retry;
-    }
-
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
+      .maybeSingle();
 
     const { data: recs } = await supabase
       .from("user_recommendations")
@@ -127,7 +115,7 @@ export async function POST(req: NextRequest) {
       guideline: r.guideline_name || "",
     }));
 
-    const outputLanguage = (config.output_language || "es") as OutputLanguage;
+    const outputLanguage = (config?.output_language || "es") as OutputLanguage;
 
     const { system, user: userPrompt } = buildRecommendationsPrompt({
       findingsText,

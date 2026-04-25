@@ -27,28 +27,38 @@ export async function POST(req: NextRequest) {
     const { template, dictation, modality, studyType } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
+    const service = createServiceClient();
 
-    let { data: config } = await supabase
+    let { data: config } = await service
       .from("user_model_config")
       .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!config) {
-      const service = createServiceClient();
-      await service.from("user_model_config").upsert({ user_id: user.id }, { onConflict: "user_id" });
-      const { data: retry } = await supabase
+      await service.from("user_model_config").upsert(
+        { user_id: user.id },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
+      const { data: retry } = await service
         .from("user_model_config")
         .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       config = retry;
     }
 
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
+    const safeConfig = {
+      findings_length: config?.findings_length || "standard",
+      normal_fields_verbosity: config?.normal_fields_verbosity || "standard",
+      paraphrase_level: config?.paraphrase_level || "light",
+      output_language: config?.output_language || "es",
+      style_learning_enabled: config?.style_learning_enabled ?? true,
+      compact_normals: config?.compact_normals ?? false,
+    };
 
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
-    if (config.style_learning_enabled) {
+    if (safeConfig.style_learning_enabled) {
       try {
         const mod = modality || "CT";
         const defaults = getDefaultsForModality(mod);
@@ -76,11 +86,11 @@ export async function POST(req: NextRequest) {
       template,
       dictation,
       modality: modality || "CT",
-      findingsLength: config.findings_length as FindingsLength,
-      normalFieldsVerbosity: config.normal_fields_verbosity as NormalFieldsVerbosity,
-      paraphraseLevel: config.paraphrase_level as ParaphraseLevel,
-      outputLanguage: (config.output_language || "es") as OutputLanguage,
-      compactNormals: !!config.compact_normals,
+      findingsLength: safeConfig.findings_length as FindingsLength,
+      normalFieldsVerbosity: safeConfig.normal_fields_verbosity as NormalFieldsVerbosity,
+      paraphraseLevel: safeConfig.paraphrase_level as ParaphraseLevel,
+      outputLanguage: safeConfig.output_language as OutputLanguage,
+      compactNormals: safeConfig.compact_normals,
       preferredNormalPhrases,
     });
 
@@ -94,7 +104,6 @@ export async function POST(req: NextRequest) {
     });
 
     // Increment report usage via service client (bypasses RLS)
-    const service = createServiceClient();
     service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
       if (rpcError) {
         service
@@ -108,7 +117,7 @@ export async function POST(req: NextRequest) {
     return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "X-Output-Language": config.output_language || "es",
+        "X-Output-Language": safeConfig.output_language,
       },
     });
   } catch (error) {

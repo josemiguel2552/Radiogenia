@@ -10,20 +10,24 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    let { data } = await supabase
+    const service = createServiceClient();
+
+    let { data } = await service
       .from("user_model_config")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!data) {
-      const service = createServiceClient();
-      await service.from("user_model_config").upsert({ user_id: user.id }, { onConflict: "user_id" });
-      const { data: retry } = await supabase
+      await service.from("user_model_config").upsert(
+        { user_id: user.id },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
+      const { data: retry } = await service
         .from("user_model_config")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       data = retry;
     }
 
