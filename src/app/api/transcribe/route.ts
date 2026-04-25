@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, checkDictationLimit } from "@/lib/auth-helpers";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,12 +14,23 @@ export async function POST(req: NextRequest) {
     const audioFile = formData.get("audio") as File | null;
     const language = (formData.get("language") as string) || "";
     const context = (formData.get("context") as string) || "";
+    const durationSeconds = Math.max(0, Math.min(120, Number(formData.get("duration_seconds")) || 0));
 
     if (!audioFile) {
       return NextResponse.json({ error: "No audio file" }, { status: 400 });
     }
 
-    // Use dedicated Whisper key if available, otherwise fall back to main key when provider is OpenAI
+    // Check dictation quota before calling Whisper
+    const quota = await checkDictationLimit(user.id);
+    if (!quota.allowed) {
+      const usedMin = Math.round(quota.usedSeconds / 60);
+      const limitMin = Math.round(quota.limitSeconds / 60);
+      return NextResponse.json({
+        error: `Dictation limit reached (${usedMin}/${limitMin} min). Upgrade your plan for more minutes.`,
+        code: "DICTATION_LIMIT",
+      }, { status: 429 });
+    }
+
     const whisperKey = globalConfig.whisperApiKey
       || (globalConfig.provider === "openai" ? globalConfig.apiKey : "");
 
@@ -51,8 +62,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Whisper API error: ${err}` }, { status: res.status });
     }
 
+    // Increment dictation usage after successful transcription
+    if (durationSeconds > 0) {
+      const roundedSeconds = Math.ceil(durationSeconds);
+      await supabase.rpc("increment_dictation_seconds", {
+        uid: user.id,
+        seconds: roundedSeconds,
+      }).then(({ error }) => {
+        if (error) {
+          supabase
+            .from("profiles")
+            .update({ dictation_seconds_used: quota.usedSeconds + roundedSeconds })
+            .eq("id", user.id)
+            .then(() => {});
+        }
+      });
+    }
+
     const text = await res.text();
-    return NextResponse.json({ text: text.trim() });
+    return NextResponse.json({
+      text: text.trim(),
+      dictation: {
+        usedSeconds: quota.usedSeconds + Math.ceil(durationSeconds),
+        limitSeconds: quota.limitSeconds,
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

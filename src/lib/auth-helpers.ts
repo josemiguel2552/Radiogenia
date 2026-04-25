@@ -92,3 +92,35 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
     plan,
   };
 }
+
+export async function checkDictationLimit(userId: string): Promise<{
+  allowed: boolean;
+  usedSeconds: number;
+  limitSeconds: number;
+  plan: SubscriptionPlan;
+}> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, subscription_plan, dictation_seconds_used, billing_period_start")
+    .eq("id", userId)
+    .single();
+
+  if (profile?.role === "admin") {
+    return { allowed: true, usedSeconds: 0, limitSeconds: 999999 * 60, plan: "professional" };
+  }
+
+  const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+  const planConfig = PLANS[plan];
+  const limitSeconds = planConfig.dictationMinutes * 60;
+  const periodStart = new Date(profile?.billing_period_start || Date.now());
+  const needsReset = periodStart.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
+  const usedSeconds = needsReset ? 0 : (profile?.dictation_seconds_used || 0);
+
+  return {
+    allowed: usedSeconds < limitSeconds,
+    usedSeconds,
+    limitSeconds,
+    plan,
+  };
+}

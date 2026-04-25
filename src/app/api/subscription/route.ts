@@ -10,7 +10,7 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("subscription_plan, reports_used_this_month, billing_period_start")
+      .select("subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start")
       .eq("id", user.id)
       .single();
 
@@ -25,11 +25,15 @@ export async function GET() {
     const needsReset = new Date(periodStart).getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
     const effectiveUsed = needsReset ? 0 : used;
 
+    const dictationSecondsUsed = needsReset ? 0 : (profile.dictation_seconds_used || 0);
+    const dictationLimitSeconds = planConfig.dictationMinutes * 60;
+
     if (needsReset) {
       await supabase
         .from("profiles")
         .update({
           reports_used_this_month: 0,
+          dictation_seconds_used: 0,
           billing_period_start: new Date().toISOString(),
         })
         .eq("id", user.id);
@@ -42,6 +46,13 @@ export async function GET() {
       limit,
       remaining: Math.max(0, limit - effectiveUsed),
       periodStart,
+      dictation: {
+        usedSeconds: dictationSecondsUsed,
+        limitSeconds: dictationLimitSeconds,
+        usedMinutes: Math.round(dictationSecondsUsed / 60),
+        limitMinutes: planConfig.dictationMinutes,
+        remainingMinutes: Math.max(0, planConfig.dictationMinutes - Math.round(dictationSecondsUsed / 60)),
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -66,6 +77,7 @@ export async function PUT(req: NextRequest) {
         subscription_plan: plan,
         billing_period_start: new Date().toISOString(),
         reports_used_this_month: 0,
+        dictation_seconds_used: 0,
       })
       .eq("id", user.id);
 
