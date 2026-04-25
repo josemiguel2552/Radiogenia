@@ -375,7 +375,7 @@ export function DashboardContent() {
   }
 
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-  const { dictationHighlights, findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
+  const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
 
   async function saveReportQuietly() {
     if (!selectedTemplate || !findings) return;
@@ -610,25 +610,12 @@ export function DashboardContent() {
             <p className="text-xs text-red-500 dark:text-red-400 px-1">{voiceError}</p>
           )}
 
-          {dictationHighlights.length > 0 ? (
-            <div>
-              <HighlightedText text={dictation} highlights={dictationHighlights} isDark={isDark} />
-              <button
-                type="button"
-                onClick={() => { setTraceData(null); setRepairMessage(null); }}
-                className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1 underline underline-offset-2"
-              >
-                {t("dash.back_to_edit")}
-              </button>
-            </div>
-          ) : (
-            <Textarea
-              placeholder={t("dash.dictation_placeholder")}
-              value={dictation}
-              onChange={(e) => { setDictation(e.target.value); setTraceData(null); }}
-              className="min-h-[140px] text-sm"
-            />
-          )}
+          <Textarea
+            placeholder={t("dash.dictation_placeholder")}
+            value={dictation}
+            onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+            className="min-h-[140px] text-sm"
+          />
 
           <Button
             onClick={handleGenerate}
