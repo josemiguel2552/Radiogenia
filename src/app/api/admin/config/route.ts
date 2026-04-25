@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { testConnection } from "@/lib/ai-provider";
@@ -8,7 +8,7 @@ import type { AIProvider } from "@/lib/types";
 export async function GET() {
   try {
     await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data, error } = await supabase
       .from("global_model_config")
@@ -34,7 +34,7 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     const { userId } = await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const body = await req.json();
 
     const updates: Record<string, unknown> = { updated_by: userId };

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
     await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data: profiles, error } = await supabase
       .from("profiles")
@@ -41,7 +41,7 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const { userId, role, subscription_plan } = await req.json();
 
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
@@ -74,7 +74,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const { userId } = await req.json();
 
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
