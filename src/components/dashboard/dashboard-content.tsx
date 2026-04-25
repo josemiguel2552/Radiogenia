@@ -155,6 +155,11 @@ export function DashboardContent() {
     setLoadingFindings(true);
     setLoadingConclusion(true);
     setLoadingRecs(true);
+    setFindings("");
+    setConclusion("");
+    setRecommendations("");
+    setInitialFindings("");
+    setInitialConclusion("");
     setTraceData(null);
     setTraceActive(false);
 
