@@ -424,52 +424,70 @@ export function buildRecommendationsPrompt(params: {
   const lang = params.outputLanguage;
   const l = LANGUAGE_LABEL[lang];
 
+  if (params.recommendations.length === 0) {
+    const noRecs = lang === "es"
+      ? "No se emiten recomendaciones adicionales."
+      : "No additional recommendations.";
+    return { system: "", user: noRecs };
+  }
+
+  const numberedCatalogue = params.recommendations.map((r, i) => {
+    const gPart = r.guideline ? ` (${r.guideline})` : "";
+    return `[R${i + 1}] Trigger: "${r.trigger}" → Recommendation: "${r.recommendation}"${gPart}`;
+  }).join("\n");
+
   let system: string;
 
   if (lang === "es") {
-    system = `Eres un radiólogo experto emitiendo recomendaciones de seguimiento basadas en guías clínicas.
+    system = `Eres un radiólogo experto emitiendo recomendaciones de seguimiento.
 
-Tu tarea es revisar los hallazgos del informe y determinar si alguno activa una recomendación del catálogo aprobado.
+CATÁLOGO CERRADO DE RECOMENDACIONES:
+${numberedCatalogue}
 
-REGLAS:
-1. SOLO emite recomendaciones del catálogo proporcionado. NO inventes recomendaciones.
-2. La REDACCIÓN FINAL debe estar en ${l}.
-3. NUNCA apliques la recomendación de un órgano a otro.
-4. NUNCA sugieras procedimientos invasivos a menos que el catálogo lo diga.
-5. Si ningún hallazgo coincide: "No se emiten recomendaciones adicionales."
-6. SIEMPRE cita la guía entre paréntesis.
-7. Indica el hallazgo que activó la recomendación.
+REGLAS ABSOLUTAS:
+1. SOLO puedes emitir recomendaciones que aparecen LITERALMENTE en el catálogo anterior. CADA recomendación emitida DEBE corresponder a una entrada [Rn] del catálogo.
+2. Para emitir una recomendación, el hallazgo del informe debe coincidir SEMÁNTICAMENTE con el trigger de esa entrada del catálogo. La coincidencia debe ser sobre el MISMO órgano/estructura y el MISMO tipo de hallazgo.
+3. Si NINGÚN hallazgo del informe coincide con NINGÚN trigger del catálogo: responde ÚNICAMENTE "No se emiten recomendaciones adicionales." — nada más.
+4. NUNCA inventes, parafrasees, combines ni modifiques recomendaciones. Usa la redacción EXACTA del catálogo.
+5. NUNCA apliques un trigger de un órgano a un hallazgo de otro órgano diferente.
+6. NUNCA sugieras procedimientos invasivos a menos que el catálogo lo diga explícitamente.
+7. Indica el hallazgo EXACTO del informe que activó cada recomendación.
+8. La redacción final debe estar en ${l}.
 
-FORMATO:
-- NO uses asteriscos, almohadillas ni markdown. Texto plano.
-- NO incluyas el encabezado "RECOMENDACIONES".
-- Estructura: [número]. [recomendación] ([guía]) — Hallazgo: [hallazgo].`;
+FORMATO (texto plano, sin markdown):
+[número]. [recomendación exacta del catálogo] ([guía]) — Hallazgo: [cita textual del hallazgo del informe].
+
+RESPONDE EN JSON:
+[{"catalogue_id": "R1", "recommendation": "texto exacto", "guideline": "nombre guía", "triggering_finding": "cita textual del hallazgo"}]
+
+Si no hay coincidencias, responde: []`;
   } else {
-    system = `You are an expert radiologist issuing follow-up recommendations based on clinical guidelines.
+    system = `You are an expert radiologist issuing follow-up recommendations.
 
-Your task is to review the report findings and determine if any triggers a recommendation from the approved catalogue.
+CLOSED RECOMMENDATION CATALOGUE:
+${numberedCatalogue}
 
-OUTPUT LANGUAGE: ${l}. All output must be in ${l}.
+ABSOLUTE RULES:
+1. You may ONLY issue recommendations that appear LITERALLY in the catalogue above. EVERY recommendation issued MUST correspond to an [Rn] entry.
+2. To issue a recommendation, the report finding must SEMANTICALLY match the trigger of that catalogue entry. The match must be about the SAME organ/structure and the SAME type of finding.
+3. If NO report finding matches ANY catalogue trigger: respond ONLY with "No additional recommendations." — nothing else.
+4. NEVER invent, paraphrase, combine or modify recommendations. Use the EXACT wording from the catalogue.
+5. NEVER apply a trigger from one organ to a finding in a different organ.
+6. NEVER suggest invasive procedures unless the catalogue explicitly says so.
+7. Indicate the EXACT finding from the report that triggered each recommendation.
+8. Final wording must be in ${l}.
 
-RULES:
-1. ONLY issue recommendations from the provided catalogue. Do NOT invent recommendations.
-2. The FINAL wording must be in ${l}.
-3. NEVER apply a recommendation from one organ to another.
-4. NEVER suggest invasive procedures unless the catalogue explicitly says so.
-5. If no finding matches: write "No additional recommendations" (in ${l}).
-6. ALWAYS cite the guideline in parentheses.
-7. Indicate the finding that triggered the recommendation.
+FORMAT (plain text, no markdown):
+[number]. [exact recommendation from catalogue] ([guideline]) — Finding: [verbatim quote from report finding].
 
-FORMAT:
-- Do NOT use asterisks, hashes or markdown. Plain text only.
-- Do NOT include the heading "RECOMMENDATIONS".
-- Structure: [number]. [recommendation] ([guideline]) — Finding: [finding].`;
+RESPOND IN JSON:
+[{"catalogue_id": "R1", "recommendation": "exact text", "guideline": "guideline name", "triggering_finding": "verbatim finding quote"}]
+
+If no matches, respond: []`;
   }
 
-  const recsJson = JSON.stringify(params.recommendations);
-  const catLabel = lang === "es" ? "Catálogo de recomendaciones aprobadas" : "Approved recommendations catalogue";
-  const findLabel = lang === "es" ? "Hallazgos del informe" : "Report findings";
-  const user = `${catLabel}:\n${recsJson}\n\n${findLabel}:\n${params.findingsText}`;
+  const findLabel = lang === "es" ? "Hallazgos del informe a evaluar" : "Report findings to evaluate";
+  const user = `${findLabel}:\n${params.findingsText}`;
   return { system, user };
 }
 
