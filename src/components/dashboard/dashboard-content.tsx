@@ -27,6 +27,7 @@ import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { AnatomyLoader } from "./anatomy-loader";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -636,6 +637,15 @@ export function DashboardContent() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
           </div>
 
+          {/* Anatomy animation — shown only during initial wait (no text yet) */}
+          {isGenerating && !findings && !conclusion && !recommendations && (
+            <Card>
+              <CardContent className="p-0">
+                <AnatomyLoader />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Trace controls */}
           {findings && !loadingFindings && (
             <div className="flex items-center justify-end gap-2">
@@ -817,11 +827,19 @@ function OutputCard({
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
       </div>
       <CardContent className="pt-0 pb-4">
-        {loading ? (
+        {loading && !value ? (
           <div
             className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
             style={{ height: minHeight }}
           />
+        ) : loading && value ? (
+          <div
+            className="whitespace-pre-wrap text-sm leading-relaxed p-3 border rounded-md bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+            style={{ minHeight }}
+          >
+            {value}
+            <span className="inline-block w-0.5 h-4 ml-0.5 bg-accent animate-pulse align-text-bottom" />
+          </div>
         ) : showTrace ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
         ) : (
