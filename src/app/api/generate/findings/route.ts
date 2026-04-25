@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/encryption";
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
 import type { AIProvider, FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       preferredNormalPhrases,
     });
 
-    const text = await generateAI({
+    const stream = await generateAIStream({
       provider: config.provider as AIProvider,
       modelName: config.model_name,
       apiKey,
@@ -78,7 +78,12 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
     });
 
-    return NextResponse.json({ text, outputLanguage: config.output_language || "es" });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Output-Language": config.output_language || "es",
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

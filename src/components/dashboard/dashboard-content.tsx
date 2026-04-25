@@ -153,74 +153,104 @@ export function DashboardContent() {
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
 
-    const findingsPromise = fetch("/api/generate/findings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        template: templateText,
-        dictation,
-        modality: selectedTemplate.modality,
-        studyType: studyName,
-      }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.outputLanguage) setOutputLanguage(data.outputLanguage);
-        const cleaned = data.text ? cleanReport(data.text) : data.error || "";
-        setInitialFindings(cleaned);
-        setFindings(cleaned);
-        setLoadingFindings(false);
-        return cleaned;
-      })
-      .catch((e) => {
-        setFindings("Error: " + e.message);
-        setLoadingFindings(false);
-        return "";
-      });
-
-    const findingsText = await findingsPromise;
-
-    if (findingsText) {
-      fetch("/api/generate/conclusion", {
+    // Stream findings — text appears progressively
+    let findingsText = "";
+    try {
+      const res = await fetch("/api/generate/findings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          findingsText,
-          clinicalInfo,
+          template: templateText,
+          dictation,
           modality: selectedTemplate.modality,
           studyType: studyName,
         }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          const cleaned = data.text ? cleanReport(data.text) : data.error || "";
-          setInitialConclusion(cleaned);
-          setConclusion(cleaned);
-          setLoadingConclusion(false);
-        })
-        .catch((e) => {
-          setConclusion("Error: " + e.message);
-          setLoadingConclusion(false);
-        });
+      });
 
-      fetch("/api/generate/recommendations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ findingsText }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          setRecommendations(data.text ? cleanReport(data.text) : data.error || "");
-          setLoadingRecs(false);
-        })
-        .catch((e) => {
-          setRecommendations("Error: " + e.message);
-          setLoadingRecs(false);
-        });
-    } else {
+      if (res.ok && res.body) {
+        const lang = res.headers.get("X-Output-Language") || "es";
+        setOutputLanguage(lang);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          findingsText += decoder.decode(value, { stream: true });
+          setFindings(cleanReport(findingsText));
+        }
+        findingsText = cleanReport(findingsText);
+        setInitialFindings(findingsText);
+        setFindings(findingsText);
+      } else {
+        const data = await res.json().catch(() => ({ error: "Generation failed" }));
+        setFindings(data.error || "Error generating findings");
+      }
+    } catch (e) {
+      setFindings("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+    }
+    setLoadingFindings(false);
+
+    if (!findingsText) {
       setLoadingConclusion(false);
       setLoadingRecs(false);
+      return;
     }
+
+    // Stream conclusion + fetch recommendations in parallel
+    const conclusionPromise = (async () => {
+      try {
+        const res = await fetch("/api/generate/conclusion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            findingsText,
+            clinicalInfo,
+            modality: selectedTemplate.modality,
+            studyType: studyName,
+          }),
+        });
+
+        if (res.ok && res.body) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let text = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            text += decoder.decode(value, { stream: true });
+            setConclusion(cleanReport(text));
+          }
+          const cleaned = cleanReport(text);
+          setInitialConclusion(cleaned);
+          setConclusion(cleaned);
+        } else {
+          const data = await res.json().catch(() => ({ error: "Generation failed" }));
+          setConclusion(data.error || "Error generating conclusion");
+        }
+      } catch (e) {
+        setConclusion("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+      } finally {
+        setLoadingConclusion(false);
+      }
+    })();
+
+    const recsPromise = fetch("/api/generate/recommendations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ findingsText }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setRecommendations(data.text ? cleanReport(data.text) : data.error || "");
+      })
+      .catch((e) => {
+        setRecommendations("Error: " + e.message);
+      })
+      .finally(() => {
+        setLoadingRecs(false);
+      });
+
+    await Promise.all([conclusionPromise, recsPromise]);
   }
 
   function cleanReport(text: string): string {

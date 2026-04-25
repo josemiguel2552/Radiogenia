@@ -31,6 +31,7 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         buildBody: (model, system, user) => ({
           model,
           max_tokens: 4096,
+          temperature: 0,
           system,
           messages: [{ role: "user", content: user }],
         }),
@@ -54,6 +55,7 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
             { role: "user", content: user },
           ],
           max_tokens: 4096,
+          temperature: 0,
         }),
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
@@ -75,6 +77,7 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
             { role: "user", content: user },
           ],
           max_tokens: 4096,
+          temperature: 0,
         }),
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
@@ -89,7 +92,7 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         buildBody: (_model, system, user) => ({
           system_instruction: { parts: [{ text: system }] },
           contents: [{ parts: [{ text: user }] }],
-          generationConfig: { maxOutputTokens: 4096 },
+          generationConfig: { maxOutputTokens: 4096, temperature: 0 },
         }),
         extractText: (data: unknown) => {
           const d = data as { candidates: { content: { parts: { text: string }[] } }[] };
@@ -111,6 +114,7 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
             { role: "user", content: user },
           ],
           max_tokens: 4096,
+          temperature: 0,
         }),
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
@@ -137,6 +141,118 @@ export async function generateAI(params: GenerateParams): Promise<string> {
 
   const data = await response.json();
   return config.extractText(data);
+}
+
+/* ── Streaming support ──────────────────────────────────────── */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractStreamToken(parsed: any, provider: AIProvider, eventType: string): string {
+  switch (provider) {
+    case "openai":
+    case "deepseek":
+    case "custom":
+      return parsed?.choices?.[0]?.delta?.content || "";
+    case "claude":
+      if (eventType === "content_block_delta" && parsed?.delta?.type === "text_delta") {
+        return parsed.delta.text || "";
+      }
+      return "";
+    case "gemini":
+      return parsed?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    default:
+      return "";
+  }
+}
+
+function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProvider): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+      let eventType = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+
+            if (trimmed.startsWith("event: ")) {
+              eventType = trimmed.slice(7);
+              continue;
+            }
+
+            if (!trimmed.startsWith("data: ")) continue;
+            const data = trimmed.slice(6);
+            if (data === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const token = extractStreamToken(parsed, provider, eventType);
+              if (token) {
+                controller.enqueue(encoder.encode(token));
+              }
+            } catch { /* skip unparseable SSE lines */ }
+          }
+        }
+      } catch (e) {
+        controller.error(e);
+      } finally {
+        controller.close();
+      }
+    },
+  });
+}
+
+export async function generateAIStream(params: GenerateParams): Promise<ReadableStream<Uint8Array>> {
+  const { provider, modelName } = params;
+  const config = getProviderConfig(params);
+  const body = config.buildBody(modelName, params.system, params.user);
+
+  let url = config.url;
+  let requestBody: object;
+
+  if (provider === "gemini") {
+    url = url.replace(":generateContent", ":streamGenerateContent");
+    url += url.includes("?") ? "&alt=sse" : "?alt=sse";
+    requestBody = body;
+  } else {
+    requestBody = { ...body, stream: true };
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: config.headers,
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`AI provider error (${response.status}): ${errText}`);
+  }
+
+  if (!response.body) {
+    const data = await response.json();
+    const text = config.extractText(data);
+    const encoder = new TextEncoder();
+    return new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(text));
+        controller.close();
+      },
+    });
+  }
+
+  return parseSSEToTextStream(response.body, provider);
 }
 
 export async function testConnection(params: Omit<GenerateParams, "system" | "user">): Promise<boolean> {
