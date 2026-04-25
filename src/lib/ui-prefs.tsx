@@ -91,12 +91,15 @@ export const FONT_FAMILIES: { value: FontFamily; label: string; stack: string }[
 
 /* ── Full prefs shape ───────────────────────────────────────────── */
 
+export type UILanguage = "es" | "en";
+
 export interface UIPreferences {
   colorPreset: string;
   density: UIDensity;
   panelSide: PanelSide;
   fontSize: number;
   fontFamily: FontFamily;
+  uiLanguage: UILanguage;
 }
 
 const DEFAULTS: UIPreferences = {
@@ -105,6 +108,7 @@ const DEFAULTS: UIPreferences = {
   panelSide: "right",
   fontSize: 14,
   fontFamily: "inter",
+  uiLanguage: "es",
 };
 
 const STORAGE_KEY = "radiogenai_ui_prefs";

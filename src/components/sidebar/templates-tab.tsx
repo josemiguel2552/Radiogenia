@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
+import { useT, useSection } from "@/lib/i18n";
 
 interface ExtractedTemplate {
   title: string;
@@ -44,6 +45,8 @@ export function TemplatesTab() {
   const [editStructure, setEditStructure] = useState("");
   const [saving, setSaving] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const t = useT();
+  const sec = useSection();
 
   // Word upload
   const fileRef = useRef<HTMLInputElement>(null);
@@ -195,9 +198,9 @@ export function TemplatesTab() {
     <div className="space-y-3">
       {/* Header */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Templates</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("tpl.title")}</h2>
         <p className="text-[11px] text-gray-500 dark:text-gray-400">
-          {templates.length} {templates.length === 1 ? "template" : "templates"} · grouped by region
+          {templates.length} {templates.length === 1 ? "template" : "templates"} · {t("tpl.grouped_by")}
         </p>
       </div>
 
@@ -206,7 +209,7 @@ export function TemplatesTab() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input
-            placeholder="Search…"
+            placeholder={t("tpl.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-8 text-xs"
@@ -216,7 +219,7 @@ export function TemplatesTab() {
           size="icon"
           variant="outline"
           onClick={() => fileRef.current?.click()}
-          title="Upload Word document with templates"
+          title={t("tpl.upload_word")}
           className="h-8 w-8 shrink-0"
         >
           <Upload className="h-3.5 w-3.5" />
@@ -225,7 +228,7 @@ export function TemplatesTab() {
           size="icon"
           variant="default"
           onClick={handleCreateNew}
-          title="Create blank template"
+          title={t("tpl.create_blank")}
           className="h-8 w-8 shrink-0"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -244,7 +247,7 @@ export function TemplatesTab() {
       {uploading && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-soft text-accent">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          <p className="text-xs">AI is extracting templates from your document…</p>
+          <p className="text-xs">{t("tpl.extracting")}</p>
         </div>
       )}
 
@@ -259,7 +262,7 @@ export function TemplatesTab() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               <span className="text-xs font-medium text-amber-900 dark:text-amber-200">
-                {extractedTemplates.length} extracted, awaiting review
+                {extractedTemplates.length} {t("tpl.extracted_review")}
               </span>
             </div>
             <ChevronDown
@@ -277,17 +280,17 @@ export function TemplatesTab() {
                 onClick={approveAllExtracted}
                 className="w-full h-7 text-xs gap-1.5 bg-white dark:bg-gray-900"
               >
-                <Check className="h-3 w-3 text-green-600" /> Approve all {extractedTemplates.length}
+                <Check className="h-3 w-3 text-green-600" /> {t("approve_all")} {extractedTemplates.length}
               </Button>
-              {extractedTemplates.map((t, i) => (
+              {extractedTemplates.map((ext, i) => (
                 <div
                   key={i}
                   className="p-2.5 border border-amber-200/60 dark:border-amber-900/40 rounded-md bg-white dark:bg-gray-900"
                 >
-                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{t.title}</p>
+                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{ext.title}</p>
                   <div className="flex gap-1 mt-1">
-                    <Badge variant="secondary" className="text-[10px]">{t.technique}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{t.section}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{ext.technique}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{ext.section}</Badge>
                   </div>
                   <div className="flex gap-1 mt-2">
                     <Button
@@ -296,7 +299,7 @@ export function TemplatesTab() {
                       className="h-6 text-[10px] flex-1 gap-1 text-green-600"
                       onClick={() => approveExtracted(i)}
                     >
-                      <Check className="h-3 w-3" /> Approve
+                      <Check className="h-3 w-3" /> {t("approve")}
                     </Button>
                     <Button
                       size="sm"
@@ -320,10 +323,10 @@ export function TemplatesTab() {
           <div className="text-center py-10 px-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
             <FileText className="h-10 w-10 mx-auto mb-3 text-gray-300 dark:text-gray-700" />
             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {search ? "No matching templates" : "No templates yet"}
+              {search ? t("tpl.no_match") : t("tpl.no_templates")}
             </p>
             <p className="text-[11px] text-gray-400 mt-1">
-              {search ? "Try a different search term" : "Create one or upload a Word document"}
+              {search ? t("tpl.try_different") : t("tpl.create_or_upload")}
             </p>
           </div>
         )}
@@ -337,44 +340,44 @@ export function TemplatesTab() {
                 className="w-full flex items-center gap-1.5 py-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                <span className="truncate">{section}</span>
+                <span className="truncate">{sec(section)}</span>
                 <Badge variant="secondary" className="text-[9px] h-4 px-1.5 ml-auto">
                   {grouped[section].length}
                 </Badge>
               </button>
               {!isCollapsed && (
                 <div className="space-y-1 pl-1">
-                  {grouped[section].map((t) => (
+                  {grouped[section].map((tpl) => (
                     <div
-                      key={t.id}
+                      key={tpl.id}
                       className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-accent-soft hover:shadow-sm transition-all"
                     >
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                            {t.name}
+                            {tpl.name}
                           </p>
                           <div className="flex items-center gap-1 mt-1">
                             <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                              {t.modality}
+                              {tpl.modality}
                             </Badge>
-                            {t.is_global ? (
+                            {tpl.is_global ? (
                               <Badge variant="outline" className="text-[9px] h-4 px-1.5">
-                                Global
+                                {t("global")}
                               </Badge>
                             ) : (
-                              <Badge className="text-[9px] h-4 px-1.5 bg-accent">Custom</Badge>
+                              <Badge className="text-[9px] h-4 px-1.5 bg-accent">{t("custom")}</Badge>
                             )}
                           </div>
                         </div>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {!t.is_global && (
+                          {!tpl.is_global && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={() => openEdit(t)}
-                              title="Edit"
+                              onClick={() => openEdit(tpl)}
+                              title={t("edit")}
                             >
                               <Pencil className="h-3 w-3" />
                             </Button>
@@ -383,18 +386,18 @@ export function TemplatesTab() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
-                            onClick={() => handleDuplicate(t)}
-                            title={t.is_global ? "Customize (create your copy)" : "Duplicate"}
+                            onClick={() => handleDuplicate(tpl)}
+                            title={tpl.is_global ? t("tpl.customize") : t("duplicate")}
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          {!t.is_global && !t.is_default && (
+                          {!tpl.is_global && !tpl.is_default && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 text-red-500 hover:text-red-600"
-                              onClick={() => handleDelete(t.id)}
-                              title="Delete"
+                              onClick={() => handleDelete(tpl.id)}
+                              title={t("delete")}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -414,16 +417,16 @@ export function TemplatesTab() {
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit template</DialogTitle>
+            <DialogTitle>{t("tpl.edit_dialog")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="text-xs">Name</Label>
+              <Label className="text-xs">{t("tpl.name")}</Label>
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Modality</Label>
+                <Label className="text-xs">{t("tpl.modality")}</Label>
                 <Select value={editModality} onValueChange={setEditModality}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -432,7 +435,7 @@ export function TemplatesTab() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Anatomical region</Label>
+                <Label className="text-xs">{t("tpl.anatomical_region")}</Label>
                 <Select value={editSection} onValueChange={setEditSection}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -442,23 +445,23 @@ export function TemplatesTab() {
               </div>
             </div>
             <div>
-              <Label className="text-xs">Template structure</Label>
+              <Label className="text-xs">{t("tpl.structure")}</Label>
               <Textarea
                 value={editStructure}
                 onChange={(e) => setEditStructure(e.target.value)}
                 className="min-h-[200px] font-mono text-xs"
               />
               <p className="text-[10px] text-gray-400 mt-1">
-                Use the same wording and section names you want in the final report.
+                {t("tpl.structure_hint")}
               </p>
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t("cancel")}</Button>
             </DialogClose>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("tpl.save_changes")}
             </Button>
           </DialogFooter>
         </DialogContent>
