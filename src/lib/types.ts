@@ -98,6 +98,7 @@ export interface UserTemplate {
   base_template_id: number | null;
   structure: Template;
   is_default: boolean;
+  is_global?: boolean;
   created_at: string;
 }
 

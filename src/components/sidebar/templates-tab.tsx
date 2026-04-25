@@ -358,9 +358,9 @@ export function TemplatesTab() {
                             <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
                               {t.modality}
                             </Badge>
-                            {t.is_default ? (
+                            {t.is_global ? (
                               <Badge variant="outline" className="text-[9px] h-4 px-1.5">
-                                Default
+                                Global
                               </Badge>
                             ) : (
                               <Badge className="text-[9px] h-4 px-1.5 bg-accent">Custom</Badge>
@@ -368,25 +368,27 @@ export function TemplatesTab() {
                           </div>
                         </div>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => openEdit(t)}
-                            title="Edit"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
+                          {!t.is_global && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => openEdit(t)}
+                              title="Edit"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
                             onClick={() => handleDuplicate(t)}
-                            title="Duplicate"
+                            title={t.is_global ? "Customize (create your copy)" : "Duplicate"}
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          {!t.is_default && (
+                          {!t.is_global && !t.is_default && (
                             <Button
                               variant="ghost"
                               size="icon"
