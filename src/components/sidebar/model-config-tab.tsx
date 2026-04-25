@@ -291,7 +291,7 @@ export function ModelConfigTab() {
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Provider</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Provider</Label>
               <Select value={config.provider} onValueChange={(v) => update("provider", v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -303,7 +303,7 @@ export function ModelConfigTab() {
             </div>
 
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Model</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Model</Label>
               {selectedProvider && selectedProvider.models.length > 0 ? (
                 config.model_name.startsWith("ft:") ? (
                   <div className="space-y-1.5">
@@ -332,13 +332,13 @@ export function ModelConfigTab() {
 
             {config.provider === "custom" && (
               <div>
-                <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Endpoint URL</Label>
+                <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Endpoint URL</Label>
                 <Input value={config.custom_base_url} onChange={(e) => update("custom_base_url", e.target.value)} placeholder="https://..." className="h-9" />
               </div>
             )}
 
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">API Key</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">API Key</Label>
               <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder="Enter API key" className="h-9" />
               <p className="text-[10px] text-gray-400 mt-1">Encrypted with AES-256-GCM. Never leaves your server.</p>
             </div>
@@ -361,7 +361,7 @@ export function ModelConfigTab() {
           <AccordionContent className="space-y-5 pt-1">
             {/* Findings length */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">Findings length</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">Findings length</Label>
               <p className="text-[10px] text-gray-400 mb-2">Controls how detailed each anatomical section is written.</p>
               <SegmentedPill
                 value={config.findings_length}
@@ -376,7 +376,7 @@ export function ModelConfigTab() {
 
             {/* Normal fields verbosity */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">Normal fields verbosity</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">Normal fields verbosity</Label>
               <p className="text-[10px] text-gray-400 mb-2">How sections the radiologist did not mention are filled.</p>
               <SegmentedPill
                 value={config.normal_fields_verbosity}
@@ -391,7 +391,7 @@ export function ModelConfigTab() {
 
             {/* Paraphrase level */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">Paraphrase level</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">Paraphrase level</Label>
               <p className="text-[10px] text-gray-400 mb-2">Whether the AI can rephrase dictated findings.</p>
               <SegmentedPill
                 value={config.paraphrase_level}
@@ -406,7 +406,7 @@ export function ModelConfigTab() {
 
             {/* Language */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">Output language</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Output language</Label>
               <Select value={config.output_language} onValueChange={(v) => update("output_language", v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -438,7 +438,7 @@ export function ModelConfigTab() {
             </div>
 
             <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-              <p className="text-[10px] text-gray-500">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">
                 Each anatomical section has a default phrase for when it is normal (not mentioned in the dictation). Customize them to match your preferred wording.
               </p>
               <div className="flex items-center justify-between">
@@ -468,7 +468,7 @@ export function ModelConfigTab() {
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
             {config.provider !== "openai" ? (
-              <p className="text-xs text-gray-500 py-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 py-2">
                 Switch your provider to OpenAI to enable fine-tuning.
               </p>
             ) : (
@@ -486,12 +486,12 @@ export function ModelConfigTab() {
                       {ftUploading ? (
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
-                          <p className="text-xs text-gray-500">Uploading to OpenAI...</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Uploading to OpenAI...</p>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <Upload className="h-4 w-4 text-gray-400" />
-                          <p className="text-xs text-gray-500">Word doc or JSONL</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Word doc or JSONL</p>
                         </div>
                       )}
                     </div>
@@ -509,7 +509,7 @@ export function ModelConfigTab() {
                     {ftFileId && (
                       <div className="space-y-2">
                         <div>
-                          <Label className="text-[10px] text-gray-500">Base model</Label>
+                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">Base model</Label>
                           <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -519,7 +519,7 @@ export function ModelConfigTab() {
                           </Select>
                         </div>
                         <div>
-                          <Label className="text-[10px] text-gray-500">Suffix</Label>
+                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">Suffix</Label>
                           <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenai" className="h-8 text-xs" />
                         </div>
                         <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700 gap-1.5">
@@ -536,18 +536,18 @@ export function ModelConfigTab() {
                       <div className="space-y-2">
                         <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700 space-y-1">
                           <div className="flex justify-between">
-                            <span className="text-gray-500">Job:</span>
+                            <span className="text-gray-500 dark:text-gray-400">Job:</span>
                             <span className="font-mono text-[10px]">{ftJobId.slice(0, 20)}...</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">Status:</span>
+                            <span className="text-gray-500 dark:text-gray-400">Status:</span>
                             <Badge variant={ftStatus === "succeeded" ? "default" : ftStatus === "failed" ? "destructive" : "secondary"} className="text-[10px]">
                               {ftStatus || "unknown"}
                             </Badge>
                           </div>
                           {ftModel && (
                             <div className="flex justify-between">
-                              <span className="text-gray-500">Model:</span>
+                              <span className="text-gray-500 dark:text-gray-400">Model:</span>
                               <span className="font-mono text-[10px] text-green-600">{ftModel}</span>
                             </div>
                           )}
@@ -809,7 +809,7 @@ function FtStep({ n, label, active, children }: {
   return (
     <div className={`relative pl-7 ${active ? "" : "opacity-50"}`}>
       <div className={`absolute left-0 top-0 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-        active ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500"
+        active ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
       }`}>
         {n}
       </div>

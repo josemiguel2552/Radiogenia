@@ -11,7 +11,7 @@ export function AppearanceTab() {
     <div className="space-y-6">
       {/* Accent colour */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
           Accent colour
         </Label>
         <div className="grid grid-cols-6 gap-2">
@@ -38,7 +38,7 @@ export function AppearanceTab() {
 
       {/* Font family */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
           Font family
         </Label>
         <div className="grid grid-cols-2 gap-2">
@@ -65,7 +65,7 @@ export function AppearanceTab() {
 
       {/* Font size */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
           Font size: {prefs.fontSize}px
         </Label>
         <Slider
@@ -83,7 +83,7 @@ export function AppearanceTab() {
 
       {/* UI Density */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
           UI density
         </Label>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
@@ -95,7 +95,7 @@ export function AppearanceTab() {
               className={`px-3 py-1.5 text-xs rounded-md transition-colors capitalize ${
                 prefs.density === d
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
               style={prefs.density === d ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
             >
@@ -110,7 +110,7 @@ export function AppearanceTab() {
 
       {/* Panel side */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
           Tools panel position
         </Label>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
@@ -122,7 +122,7 @@ export function AppearanceTab() {
               className={`px-4 py-1.5 text-xs rounded-md transition-colors capitalize ${
                 prefs.panelSide === s
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
               style={prefs.panelSide === s ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
             >

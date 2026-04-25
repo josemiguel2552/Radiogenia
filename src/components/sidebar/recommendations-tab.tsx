@@ -260,7 +260,7 @@ export function RecommendationsTab() {
       {showForm && (
         <div className="space-y-2 p-3 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-800/50">
           <div>
-            <Label className="text-[11px] text-gray-500">Trigger finding</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400">Trigger finding</Label>
             <Input
               placeholder="e.g. Pulmonary nodule >8mm"
               value={trigger}
@@ -269,7 +269,7 @@ export function RecommendationsTab() {
             />
           </div>
           <div>
-            <Label className="text-[11px] text-gray-500">Recommendation</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400">Recommendation</Label>
             <Textarea
               placeholder="e.g. Follow-up chest CT in 3 months"
               value={recText}
@@ -278,7 +278,7 @@ export function RecommendationsTab() {
             />
           </div>
           <div>
-            <Label className="text-[11px] text-gray-500">Guideline / source</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400">Guideline / source</Label>
             <Input
               placeholder="e.g. Fleischner Society"
               value={guideline}

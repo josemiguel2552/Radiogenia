@@ -441,7 +441,7 @@ export function DashboardContent() {
       >
         <div className="space-y-4">
           <div>
-            <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+            <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
               Modality
             </Label>
             <div className="flex flex-wrap gap-1.5">
@@ -465,7 +465,7 @@ export function DashboardContent() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">
                 Anatomical region
               </Label>
               <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
@@ -478,7 +478,7 @@ export function DashboardContent() {
               </Select>
             </div>
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">
                 Template
               </Label>
               <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
@@ -495,7 +495,7 @@ export function DashboardContent() {
           </div>
 
           <div>
-            <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
+            <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
               Contrast
             </Label>
             <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
