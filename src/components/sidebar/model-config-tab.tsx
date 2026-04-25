@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PROVIDERS, LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
 import { buildFullPromptPreview } from "@/lib/prompts";
+import { useT, useSection } from "@/lib/i18n";
 
 interface ModelConfig {
   provider: AIProvider;
@@ -39,6 +40,8 @@ interface NormalityPhraseRow {
 }
 
 export function ModelConfigTab() {
+  const t = useT();
+  const sec = useSection();
   const [config, setConfig] = useState<ModelConfig | null>(null);
   const [userRole, setUserRole] = useState<"admin" | "radiologist">("radiologist");
   const [loading, setLoading] = useState(true);
@@ -269,13 +272,13 @@ export function ModelConfigTab() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-            {userRole === "admin" ? `${selectedProvider?.label || config.provider} / ${config.model_name}` : "AI Model — managed by admin"}
+            {userRole === "admin" ? `${selectedProvider?.label || config.provider} / ${config.model_name}` : t("cfg.managed_by_admin")}
           </p>
           <p className="text-[10px] text-gray-500 dark:text-gray-400">{langLabel}</p>
         </div>
         {dirty && (
           <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] flex-shrink-0">
-            Unsaved
+            {t("cfg.unsaved")}
           </Badge>
         )}
       </div>
@@ -286,12 +289,12 @@ export function ModelConfigTab() {
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Plug className="h-3.5 w-3.5 text-accent" />
-              Connection
+              {t("cfg.connection")}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Provider</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.provider")}</Label>
               <Select value={config.provider} onValueChange={(v) => update("provider", v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -303,7 +306,7 @@ export function ModelConfigTab() {
             </div>
 
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Model</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.model")}</Label>
               {selectedProvider && selectedProvider.models.length > 0 ? (
                 config.model_name.startsWith("ft:") ? (
                   <div className="space-y-1.5">
@@ -312,7 +315,7 @@ export function ModelConfigTab() {
                       <span className="text-xs font-mono truncate">{config.model_name}</span>
                     </div>
                     <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={() => update("model_name", selectedProvider.models[0])}>
-                      Switch to standard model
+                      {t("cfg.switch_standard")}
                     </Button>
                   </div>
                 ) : (
@@ -332,20 +335,20 @@ export function ModelConfigTab() {
 
             {config.provider === "custom" && (
               <div>
-                <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Endpoint URL</Label>
+                <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.endpoint_url")}</Label>
                 <Input value={config.custom_base_url} onChange={(e) => update("custom_base_url", e.target.value)} placeholder="https://..." className="h-9" />
               </div>
             )}
 
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">API Key</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.api_key")}</Label>
               <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder="Enter API key" className="h-9" />
-              <p className="text-[10px] text-gray-400 mt-1">Encrypted with AES-256-GCM. Never leaves your server.</p>
+              <p className="text-[10px] text-gray-400 mt-1">{t("cfg.key_hint")}</p>
             </div>
 
             <Button size="sm" variant="outline" onClick={handleTestConnection} disabled={testing} className="w-full gap-1.5">
               {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : testResult === true ? <Check className="h-3.5 w-3.5 text-green-500" /> : null}
-              {testResult === true ? "Connected" : testResult === false ? "Connection failed" : "Test connection"}
+              {testResult === true ? t("cfg.connected") : testResult === false ? t("cfg.connection_failed") : t("cfg.test_connection")}
             </Button>
           </AccordionContent>
         </AccordionItem>}
@@ -355,20 +358,20 @@ export function ModelConfigTab() {
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Wand2 className="h-3.5 w-3.5 text-violet-500" />
-              Writing preferences
+              {t("cfg.writing_prefs")}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-5 pt-1">
             {/* Findings length */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">Findings length</Label>
-              <p className="text-[10px] text-gray-400 mb-2">Controls how detailed each anatomical section is written.</p>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.findings_length")}</Label>
+              <p className="text-[10px] text-gray-400 mb-2">{t("cfg.findings_hint")}</p>
               <SegmentedPill
                 value={config.findings_length}
                 options={[
-                  { value: "concise", label: "Concise" },
-                  { value: "standard", label: "Standard" },
-                  { value: "detailed", label: "Detailed" },
+                  { value: "concise", label: t("cfg.concise") },
+                  { value: "standard", label: t("cfg.standard") },
+                  { value: "detailed", label: t("cfg.detailed") },
                 ]}
                 onChange={(v) => update("findings_length", v)}
               />
@@ -376,14 +379,14 @@ export function ModelConfigTab() {
 
             {/* Normal fields verbosity */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">Normal fields verbosity</Label>
-              <p className="text-[10px] text-gray-400 mb-2">How sections the radiologist did not mention are filled.</p>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.normal_verbosity")}</Label>
+              <p className="text-[10px] text-gray-400 mb-2">{t("cfg.normal_hint")}</p>
               <SegmentedPill
                 value={config.normal_fields_verbosity}
                 options={[
-                  { value: "minimal", label: "Minimal" },
-                  { value: "standard", label: "Standard" },
-                  { value: "explicit", label: "Explicit" },
+                  { value: "minimal", label: t("cfg.minimal") },
+                  { value: "standard", label: t("cfg.standard") },
+                  { value: "explicit", label: t("cfg.explicit") },
                 ]}
                 onChange={(v) => update("normal_fields_verbosity", v)}
               />
@@ -391,14 +394,14 @@ export function ModelConfigTab() {
 
             {/* Paraphrase level */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">Paraphrase level</Label>
-              <p className="text-[10px] text-gray-400 mb-2">Whether the AI can rephrase dictated findings.</p>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.paraphrase")}</Label>
+              <p className="text-[10px] text-gray-400 mb-2">{t("cfg.paraphrase_hint")}</p>
               <SegmentedPill
                 value={config.paraphrase_level}
                 options={[
-                  { value: "none", label: "Literal" },
-                  { value: "light", label: "Light" },
-                  { value: "free", label: "Free" },
+                  { value: "none", label: t("cfg.literal") },
+                  { value: "light", label: t("cfg.light") },
+                  { value: "free", label: t("cfg.free") },
                 ]}
                 onChange={(v) => update("paraphrase_level", v)}
               />
@@ -406,7 +409,7 @@ export function ModelConfigTab() {
 
             {/* Language */}
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">Output language</Label>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.output_language")}</Label>
               <Select value={config.output_language} onValueChange={(v) => update("output_language", v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -422,38 +425,38 @@ export function ModelConfigTab() {
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Brain className="h-3.5 w-3.5 text-emerald-500" />
-              Normality phrases
+              {t("cfg.normality")}
               {customizedCount > 0 && (
-                <Badge variant="secondary" className="text-[9px] ml-1">{customizedCount} customized</Badge>
+                <Badge variant="secondary" className="text-[9px] ml-1">{customizedCount} {t("cfg.customized")}</Badge>
               )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs">Use normality phrases</Label>
-                <p className="text-[10px] text-gray-400">Inject your preferred phrases for normal sections into AI prompts.</p>
+                <Label className="text-xs">{t("cfg.normality_use")}</Label>
+                <p className="text-[10px] text-gray-400">{t("cfg.normality_use_hint")}</p>
               </div>
               <Switch checked={config.style_learning_enabled} onCheckedChange={(v) => update("style_learning_enabled", v)} />
             </div>
 
             <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
               <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                Each anatomical section has a default phrase for when it is normal (not mentioned in the dictation). Customize them to match your preferred wording.
+                {t("cfg.normality_desc")}
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold">{selectedModality}</span> — {normalityPhrases.length} sections
+                  <span className="font-semibold">{selectedModality}</span> — {normalityPhrases.length} {t("cfg.sections")}
                 </span>
                 <Badge variant={customizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
-                  {customizedCount}/{normalityPhrases.length} customized
+                  {customizedCount}/{normalityPhrases.length} {t("cfg.customized")}
                 </Badge>
               </div>
             </div>
 
             <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowNormality(true)}>
               <Pencil className="h-3 w-3" />
-              Edit normality phrases
+              {t("cfg.edit_normality")}
             </Button>
           </AccordionContent>
         </AccordionItem>
@@ -463,13 +466,13 @@ export function ModelConfigTab() {
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
               <GraduationCap className="h-3.5 w-3.5 text-purple-500" />
-              Fine-tuning (OpenAI)
+              {t("cfg.finetuning")}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
             {config.provider !== "openai" ? (
               <p className="text-xs text-gray-500 dark:text-gray-400 py-2">
-                Switch your provider to OpenAI to enable fine-tuning.
+                {t("cfg.switch_openai")}
               </p>
             ) : (
               <>
@@ -478,7 +481,7 @@ export function ModelConfigTab() {
 
                 <div className="space-y-3">
                   {/* Step indicator */}
-                  <FtStep n={1} label="Upload training data" active={!ftFileId && !ftJobId}>
+                  <FtStep n={1} label={t("cfg.upload_training")} active={!ftFileId && !ftJobId}>
                     <div
                       className="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:border-purple-400 transition-colors dark:border-gray-600"
                       onClick={() => ftFileRef.current?.click()}
@@ -486,12 +489,12 @@ export function ModelConfigTab() {
                       {ftUploading ? (
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Uploading to OpenAI...</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{t("cfg.uploading_openai")}</p>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <Upload className="h-4 w-4 text-gray-400" />
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Word doc or JSONL</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{t("cfg.word_or_jsonl")}</p>
                         </div>
                       )}
                     </div>
@@ -500,16 +503,16 @@ export function ModelConfigTab() {
                   {ftFileId && (
                     <div className="p-2.5 bg-green-50 dark:bg-green-900/20 rounded-lg text-xs text-green-700 dark:text-green-300">
                       <Check className="h-3 w-3 inline mr-1" />
-                      {ftExamples} examples uploaded.
+                      {ftExamples} {t("cfg.examples_uploaded")}
                     </div>
                   )}
 
                   {/* Step 2: Configure & start */}
-                  <FtStep n={2} label="Configure & start" active={!!ftFileId}>
+                  <FtStep n={2} label={t("cfg.configure_start")} active={!!ftFileId}>
                     {ftFileId && (
                       <div className="space-y-2">
                         <div>
-                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">Base model</Label>
+                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">{t("cfg.base_model")}</Label>
                           <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -519,19 +522,19 @@ export function ModelConfigTab() {
                           </Select>
                         </div>
                         <div>
-                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">Suffix</Label>
+                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">{t("cfg.suffix")}</Label>
                           <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenai" className="h-8 text-xs" />
                         </div>
                         <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700 gap-1.5">
                           {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                          Start fine-tuning
+                          {t("cfg.start_finetuning")}
                         </Button>
                       </div>
                     )}
                   </FtStep>
 
                   {/* Step 3: Status */}
-                  <FtStep n={3} label="Training status" active={!!ftJobId}>
+                  <FtStep n={3} label={t("cfg.training_status")} active={!!ftJobId}>
                     {ftJobId && (
                       <div className="space-y-2">
                         <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700 space-y-1">
@@ -555,11 +558,11 @@ export function ModelConfigTab() {
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={handleFtCheckStatus} disabled={ftChecking} className="flex-1 text-xs gap-1">
                             {ftChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                            Refresh
+                            {t("cfg.refresh")}
                           </Button>
                           {ftModel && (
                             <Button size="sm" onClick={useFtModel} className="flex-1 text-xs bg-green-600 hover:bg-green-700 gap-1">
-                              <Check className="h-3 w-3" /> Use model
+                              <Check className="h-3 w-3" /> {t("cfg.use_model")}
                             </Button>
                           )}
                         </div>
@@ -571,7 +574,7 @@ export function ModelConfigTab() {
                 {/* Previous jobs */}
                 {!ftJobId && !ftFileId && (
                   <Button size="sm" variant="outline" className="w-full text-xs gap-1" onClick={loadFtJobs}>
-                    <RefreshCw className="h-3 w-3" /> Load previous jobs
+                    <RefreshCw className="h-3 w-3" /> {t("cfg.load_previous")}
                   </Button>
                 )}
 
@@ -607,7 +610,7 @@ export function ModelConfigTab() {
                 )}
 
                 <p className="text-[10px] text-gray-400">
-                  Fine-tuning trains a personalized OpenAI model. Training typically takes 15-60 min. Costs billed by OpenAI.
+                  {t("cfg.ft_hint")}
                 </p>
               </>
             )}
@@ -618,9 +621,9 @@ export function ModelConfigTab() {
       {/* Footer actions */}
       <div className="flex gap-2 pt-1">
         <Button onClick={handleSave} disabled={saving || !dirty} className="flex-1 h-10">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save configuration"}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cfg.save_config")}
         </Button>
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setShowPrompt(true)} title="Preview active prompt">
+        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setShowPrompt(true)} title={t("cfg.preview_prompt")}>
           <Eye className="h-4 w-4" />
         </Button>
       </div>
@@ -629,7 +632,7 @@ export function ModelConfigTab() {
       <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Active Prompt Preview</DialogTitle>
+            <DialogTitle>{t("cfg.prompt_preview")}</DialogTitle>
           </DialogHeader>
           <pre className="text-xs bg-gray-50 dark:bg-gray-800 p-4 rounded-lg whitespace-pre-wrap font-mono">
             {buildFullPromptPreview({
@@ -648,7 +651,7 @@ export function ModelConfigTab() {
       <Dialog open={showNormality} onOpenChange={setShowNormality}>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Normality Phrases</DialogTitle>
+            <DialogTitle>{t("cfg.normality_dialog")}</DialogTitle>
           </DialogHeader>
 
           <div className="flex items-center gap-2 pb-2">
@@ -705,6 +708,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(row.phrase);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sec = useSection();
 
   useEffect(() => { setDraft(row.phrase); }, [row.phrase]);
   useEffect(() => {
@@ -725,7 +729,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   if (editing) {
     return (
       <div className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 space-y-1.5 bg-gray-50 dark:bg-gray-800">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{row.section_label}</span>
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{sec(row.section_label)}</span>
         <textarea
           ref={inputRef}
           value={draft}
