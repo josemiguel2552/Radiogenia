@@ -19,9 +19,12 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles enable row level security;
-create policy if not exists "Users can view own profile" on public.profiles for select using (auth.uid() = id);
-create policy if not exists "Users can update own profile" on public.profiles for update using (auth.uid() = id);
-create policy if not exists "Users can insert own profile" on public.profiles for insert with check (auth.uid() = id);
+drop policy if exists "Users can view own profile" on public.profiles;
+create policy "Users can view own profile" on public.profiles for select using (auth.uid() = id);
+drop policy if exists "Users can update own profile" on public.profiles;
+create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
+drop policy if exists "Users can insert own profile" on public.profiles;
+create policy "Users can insert own profile" on public.profiles for insert with check (auth.uid() = id);
 
 -- User templates
 create table if not exists public.user_templates (
@@ -36,7 +39,8 @@ create table if not exists public.user_templates (
 );
 
 alter table public.user_templates enable row level security;
-create policy if not exists "Users can CRUD own templates" on public.user_templates for all using (auth.uid() = user_id);
+drop policy if exists "Users can CRUD own templates" on public.user_templates;
+create policy "Users can CRUD own templates" on public.user_templates for all using (auth.uid() = user_id);
 
 -- User recommendations
 create table if not exists public.user_recommendations (
@@ -50,7 +54,8 @@ create table if not exists public.user_recommendations (
 );
 
 alter table public.user_recommendations enable row level security;
-create policy if not exists "Users can CRUD own recommendations" on public.user_recommendations for all using (auth.uid() = user_id);
+drop policy if exists "Users can CRUD own recommendations" on public.user_recommendations;
+create policy "Users can CRUD own recommendations" on public.user_recommendations for all using (auth.uid() = user_id);
 
 -- User model configuration
 create table if not exists public.user_model_config (
@@ -72,7 +77,8 @@ create table if not exists public.user_model_config (
 );
 
 alter table public.user_model_config enable row level security;
-create policy if not exists "Users can CRUD own model config" on public.user_model_config for all using (auth.uid() = user_id);
+drop policy if exists "Users can CRUD own model config" on public.user_model_config;
+create policy "Users can CRUD own model config" on public.user_model_config for all using (auth.uid() = user_id);
 
 -- Style samples
 create table if not exists public.style_samples (
@@ -87,7 +93,8 @@ create table if not exists public.style_samples (
 );
 
 alter table public.style_samples enable row level security;
-create policy if not exists "Users can CRUD own style samples" on public.style_samples for all using (auth.uid() = user_id);
+drop policy if exists "Users can CRUD own style samples" on public.style_samples;
+create policy "Users can CRUD own style samples" on public.style_samples for all using (auth.uid() = user_id);
 
 -- Reports
 create table if not exists public.reports (
@@ -106,7 +113,8 @@ create table if not exists public.reports (
 );
 
 alter table public.reports enable row level security;
-create policy if not exists "Users can CRUD own reports" on public.reports for all using (auth.uid() = user_id);
+drop policy if exists "Users can CRUD own reports" on public.reports;
+create policy "Users can CRUD own reports" on public.reports for all using (auth.uid() = user_id);
 
 -- Function to handle new user registration
 create or replace function public.handle_new_user()
@@ -324,7 +332,8 @@ alter table public.profiles
   add column if not exists reports_used_this_month integer not null default 0,
   add column if not exists billing_period_start timestamptz not null default now(),
   add column if not exists stripe_customer_id text,
-  add column if not exists stripe_subscription_id text;
+  add column if not exists stripe_subscription_id text,
+  add column if not exists dictation_seconds_used integer not null default 0;
 
 -- Add check constraint safely
 do $$
@@ -423,11 +432,8 @@ alter table public.global_model_config
 
 
 -- ##########################################################
--- 009 — Dictation limits
+-- 009 — Dictation limits (column created in 005, function here)
 -- ##########################################################
-
-alter table public.profiles
-  add column if not exists dictation_seconds_used integer not null default 0;
 
 create or replace function public.increment_dictation_seconds(uid uuid, seconds integer)
 returns void as $$
