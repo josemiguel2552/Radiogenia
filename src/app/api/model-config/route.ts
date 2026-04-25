@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encryption";
+import { getUserRole } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
@@ -18,13 +19,9 @@ export async function GET() {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    const role = await getUserRole(user.id);
 
-    return NextResponse.json({ ...data, role: profile?.role || "radiologist" });
+    return NextResponse.json({ ...data, role });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
