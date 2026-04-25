@@ -64,9 +64,13 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_plan, reports_used_this_month, billing_period_start")
+    .select("role, subscription_plan, reports_used_this_month, billing_period_start")
     .eq("id", userId)
     .single();
+
+  if (profile?.role === "admin") {
+    return { allowed: true, used: 0, limit: 999999, plan: "professional" };
+  }
 
   const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
   const planConfig = PLANS[plan];
