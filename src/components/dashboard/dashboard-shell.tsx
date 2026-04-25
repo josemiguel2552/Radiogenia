@@ -43,10 +43,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const { prefs, preset } = useUIPrefs();
 
   useEffect(() => {
-    fetch("/api/seed", { method: "POST" }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
     const dark = localStorage.getItem("radiogenai_dark") === "1";
     if (dark) {
       document.documentElement.classList.add("dark");

@@ -19,8 +19,16 @@ export async function POST() {
       return NextResponse.json({ message: "Already seeded" });
     }
 
-    // Wait briefly for the profile trigger to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Wait for the profile trigger to complete (the profile row must exist
+    // before we can insert into user_templates due to the FK constraint)
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { count } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("id", user.id);
+      if (count && count > 0) break;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
 
     // Seed templates
     const templatesPayload = DEFAULT_TEMPLATES.map((t) => ({

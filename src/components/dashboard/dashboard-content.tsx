@@ -112,13 +112,16 @@ export function DashboardContent() {
     }
   }, []);
 
-  // Load templates
+  // Seed defaults (if needed) then load templates
   useEffect(() => {
-    async function load() {
+    async function seedAndLoad() {
+      try {
+        await fetch("/api/seed", { method: "POST" });
+      } catch { /* seed may already exist */ }
       const res = await fetch("/api/templates");
       if (res.ok) setTemplates(await res.json());
     }
-    load();
+    seedAndLoad();
   }, []);
 
   // Filtered data
