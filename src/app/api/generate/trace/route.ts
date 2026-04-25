@@ -16,12 +16,19 @@ export async function POST(req: NextRequest) {
 
     const globalConfig = await getGlobalAIConfig();
 
-    const system = `You are a medical report auditing assistant. Trace each clinical observation from the radiologist's dictation to the structured findings.
+    const system = `You are a medical report auditing assistant performing bidirectional traceability between a radiologist's dictation and the structured findings report.
 
-TASK:
+TASK — TWO DIRECTIONS:
+
+A) DICTATION → FINDINGS (omission check):
 1. Split the dictation into individual clinical observations. Each distinct finding, measurement, anatomical description, or negative finding is a separate fragment. Keep each fragment as a short phrase (the exact words from the dictation).
 2. For each fragment, identify which section of the structured findings contains that information.
-3. If a dictation fragment is NOT reflected in any section, mark it as unmatched — this is a critical safety issue.
+3. If a dictation fragment is NOT reflected in any section, mark it as unmatched — this is a critical safety issue (omission).
+
+B) FINDINGS → DICTATION (hallucination check):
+1. Identify any specific clinical finding, measurement, or pathological description in the findings that does NOT have a corresponding observation in the dictation.
+2. Exclude normal/default phrases ("within normal limits", "unremarkable", etc.) — those are expected for unmentioned sections.
+3. Only flag genuinely invented clinical details that appear in the findings but the radiologist never dictated.
 
 RESPOND ONLY with valid JSON:
 {
@@ -37,8 +44,18 @@ RESPOND ONLY with valid JSON:
       "dictation_fragment": "phrase from dictation not found in findings",
       "reason": "brief reason"
     }
+  ],
+  "hallucinations": [
+    {
+      "findings_fragment": "clinical detail in findings not backed by dictation",
+      "section": "Section name",
+      "reason": "brief reason"
+    }
   ]
-}`;
+}
+
+If there are no unmatched items, return "unmatched": [].
+If there are no hallucinations, return "hallucinations": [].`;
 
     const userMsg = `DICTATION:\n${dictation}\n\nSTRUCTURED FINDINGS:\n${findings}`;
 
@@ -57,6 +74,7 @@ RESPOND ONLY with valid JSON:
     }
 
     const trace = JSON.parse(jsonMatch[0]);
+    if (!trace.hallucinations) trace.hallucinations = [];
     return NextResponse.json(trace);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

@@ -1,0 +1,85 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { generateAI } from "@/lib/ai-provider";
+
+export async function POST(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { findings, omissions, hallucinations, outputLanguage } = await req.json();
+    if (!findings) {
+      return NextResponse.json({ error: "Missing findings" }, { status: 400 });
+    }
+
+    const hasOmissions = omissions && omissions.length > 0;
+    const hasHallucinations = hallucinations && hallucinations.length > 0;
+    if (!hasOmissions && !hasHallucinations) {
+      return NextResponse.json({ findings });
+    }
+
+    const globalConfig = await getGlobalAIConfig();
+
+    const lang = outputLanguage || "es";
+    const langInstructions: Record<string, string> = {
+      es: "Responde SOLO con el informe corregido en español. Sin explicaciones.",
+      en: "Respond ONLY with the corrected report in English. No explanations.",
+      pt: "Responda APENAS com o relatório corrigido em português. Sem explicações.",
+      fr: "Répondez UNIQUEMENT avec le rapport corrigé en français. Sans explications.",
+      de: "Antworten Sie NUR mit dem korrigierten Bericht auf Deutsch. Keine Erklärungen.",
+      it: "Rispondi SOLO con il referto corretto in italiano. Senza spiegazioni.",
+    };
+
+    let instructions = `You are a radiology report editor. Your ONLY task is to correct a structured findings report.\n\n`;
+    instructions += `CURRENT FINDINGS:\n${findings}\n\n`;
+
+    if (hasOmissions) {
+      instructions += `OMITTED DICTATION FRAGMENTS (MUST be integrated into the appropriate section):\n`;
+      for (const o of omissions) {
+        instructions += `- "${o.dictation_fragment}" → suggested section: ${o.reason || "unknown"}\n`;
+      }
+      instructions += `\nRULES FOR OMISSIONS:\n`;
+      instructions += `- Each omitted fragment MUST appear in the final report in the most appropriate section.\n`;
+      instructions += `- If a fragment doesn't fit an existing section, append it to the closest section or add it at the end of the section list as "Additional findings" / "Hallazgos adicionales".\n`;
+      instructions += `- Integrate naturally — don't just append raw text. Write it in the same style as the rest of the report.\n`;
+      instructions += `- DO NOT remove or change any existing correct findings.\n\n`;
+    }
+
+    if (hasHallucinations) {
+      instructions += `HALLUCINATED FINDINGS (MUST be removed — these were NOT dictated):\n`;
+      for (const h of hallucinations) {
+        instructions += `- In section "${h.section}": "${h.findings_fragment}"\n`;
+      }
+      instructions += `\nRULES FOR HALLUCINATIONS:\n`;
+      instructions += `- Remove only the specific hallucinated detail, not the entire section.\n`;
+      instructions += `- If removing a hallucination leaves a section empty, describe it as normal.\n`;
+      instructions += `- DO NOT remove legitimate findings.\n\n`;
+    }
+
+    instructions += `OUTPUT FORMAT:\n`;
+    instructions += `- Keep the exact same section structure (Section: description).\n`;
+    instructions += `- Keep the same order and formatting.\n`;
+    instructions += `- ${langInstructions[lang] || langInstructions.es}\n`;
+
+    const raw = await generateAI({
+      provider: globalConfig.provider,
+      modelName: globalConfig.modelName,
+      apiKey: globalConfig.apiKey,
+      customBaseUrl: globalConfig.customBaseUrl,
+      system: instructions,
+      user: "Output the corrected findings report now.",
+    });
+
+    const cleaned = raw
+      .replace(/^```[\s\S]*?\n/, "")
+      .replace(/\n```\s*$/, "")
+      .trim();
+
+    return NextResponse.json({ findings: cleaned });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

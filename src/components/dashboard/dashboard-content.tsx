@@ -22,7 +22,7 @@ import {
   CircleCheck,
   ArrowRight,
   AlignLeft,
-  ScanSearch,
+  ShieldCheck,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -66,6 +66,7 @@ export function DashboardContent() {
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
   const [compactNormals, setCompactNormals] = useState(false);
+  const [repairMessage, setRepairMessage] = useState<string | null>(null);
 
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
@@ -164,6 +165,7 @@ export function DashboardContent() {
     setInitialConclusion("");
     setTraceData(null);
     setTraceActive(false);
+    setRepairMessage(null);
 
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
@@ -210,6 +212,68 @@ export function DashboardContent() {
       setLoadingConclusion(false);
       setLoadingRecs(false);
       return;
+    }
+
+    // Auto-trace + auto-repair: verify completeness before generating conclusion
+    setLoadingTrace(true);
+    try {
+      const traceRes = await fetch("/api/generate/trace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dictation, findings: findingsText }),
+      });
+      if (traceRes.ok) {
+        const trace = await traceRes.json();
+        if (!trace.hallucinations) trace.hallucinations = [];
+        const hasOmissions = trace.unmatched && trace.unmatched.length > 0;
+        const hasHallucinations = trace.hallucinations && trace.hallucinations.length > 0;
+
+        if (hasOmissions || hasHallucinations) {
+          const repairRes = await fetch("/api/generate/repair-findings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              findings: findingsText,
+              omissions: trace.unmatched,
+              hallucinations: trace.hallucinations,
+              outputLanguage,
+            }),
+          });
+          if (repairRes.ok) {
+            const repairData = await repairRes.json();
+            if (repairData.findings) {
+              findingsText = cleanReport(repairData.findings);
+              setFindings(findingsText);
+              setInitialFindings(findingsText);
+              if (hasOmissions) {
+                setRepairMessage(
+                  t("trace.auto_repaired").replace("{0}", String(trace.unmatched.length))
+                );
+              }
+            }
+          }
+          // Re-trace after repair to get updated mappings
+          const retraceRes = await fetch("/api/generate/trace", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dictation, findings: findingsText }),
+          });
+          if (retraceRes.ok) {
+            const retrace = await retraceRes.json();
+            if (!retrace.hallucinations) retrace.hallucinations = [];
+            setTraceData(retrace);
+          } else {
+            setTraceData(trace);
+          }
+        } else {
+          setTraceData(trace);
+        }
+        setTraceActive(true);
+      }
+    } catch (e) {
+      console.error("Auto-trace failed:", e);
+    } finally {
+      setLoadingTrace(false);
     }
 
     // Stream conclusion + fetch recommendations in parallel
@@ -340,29 +404,8 @@ export function DashboardContent() {
     copyText(text, id);
   }
 
-  async function runTrace() {
-    if (!dictation.trim() || !findings.trim()) return;
-    setLoadingTrace(true);
-    setTraceActive(true);
-    try {
-      const res = await fetch("/api/generate/trace", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dictation, findings }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTraceData(data);
-      }
-    } catch (e) {
-      console.error("Trace failed:", e);
-    } finally {
-      setLoadingTrace(false);
-    }
-  }
-
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-  const { dictationHighlights, findingsHighlights } = useTraceHighlights(dictation, findings, traceActive ? traceData : null);
+  const { dictationHighlights, findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
 
   async function saveReportQuietly() {
     if (!selectedTemplate || !findings) return;
@@ -414,6 +457,7 @@ export function DashboardContent() {
     setClinicalInfo("");
     setTraceData(null);
     setTraceActive(false);
+    setRepairMessage(null);
     localStorage.removeItem("radiogenai_draft");
   }
 
@@ -596,12 +640,12 @@ export function DashboardContent() {
             <p className="text-xs text-red-500 dark:text-red-400 px-1">{voiceError}</p>
           )}
 
-          {traceActive && dictationHighlights.length > 0 ? (
+          {dictationHighlights.length > 0 ? (
             <div>
               <HighlightedText text={dictation} highlights={dictationHighlights} isDark={isDark} />
               <button
                 type="button"
-                onClick={() => setTraceActive(false)}
+                onClick={() => { setTraceData(null); setRepairMessage(null); }}
                 className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1 underline underline-offset-2"
               >
                 {t("dash.back_to_edit")}
@@ -677,28 +721,25 @@ export function DashboardContent() {
             </Card>
           )}
 
-          {/* Trace controls */}
-          {findings && !loadingFindings && (
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={traceActive ? () => setTraceActive(false) : runTrace}
-                disabled={loadingTrace || !dictation.trim()}
-                className="gap-1.5 text-xs"
-              >
-                {loadingTrace ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <ScanSearch className="h-3.5 w-3.5" />
-                )}
-                {traceActive ? t("dash.exit_trace") : t("dash.trace")}
-              </Button>
+          {/* Verification status */}
+          {loadingTrace && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+              <span className="text-xs text-blue-700 dark:text-blue-300">
+                {t("dash.verifying")}
+              </span>
+            </div>
+          )}
+
+          {repairMessage && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+              <span className="text-xs text-amber-700 dark:text-amber-300">{repairMessage}</span>
             </div>
           )}
 
           {/* Trace legend */}
-          {traceActive && traceData && (
+          {traceData && (
             <Card>
               <CardContent className="p-3">
                 <TraceLegend trace={traceData} isDark={isDark} />
@@ -711,9 +752,9 @@ export function DashboardContent() {
             icon={<FileText className="h-4 w-4 text-accent" />}
             loading={loadingFindings}
             value={findings}
-            onChange={(v) => { setFindings(v); setTraceData(null); }}
+            onChange={(v) => { setFindings(v); setTraceData(null); setRepairMessage(null); }}
             minHeight={170}
-            traceHighlights={traceActive ? findingsHighlights : undefined}
+            traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
             isDark={isDark}
           />
 
