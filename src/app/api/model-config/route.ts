@@ -49,7 +49,9 @@ export async function PUT(req: NextRequest) {
     delete body.id;
     delete body.user_id;
     delete body.created_at;
+    delete body.updated_at;
     delete body.style_sample_count;
+    delete body.role;
 
     const { data, error } = await supabase
       .from("user_model_config")
