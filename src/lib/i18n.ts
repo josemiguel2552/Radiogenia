@@ -8,7 +8,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     // Common
     save: "Guardar", cancel: "Cancelar", delete: "Eliminar", edit: "Editar",
     duplicate: "Duplicar", search: "Buscar", loading: "Cargando...", close: "Cerrar",
-    reset: "Restablecer", confirm: "Confirmar", copy: "Copiar", copied: "Copiado",
+    view: "Ver", reset: "Restablecer", confirm: "Confirmar", copy: "Copiar", copied: "Copiado",
     approve: "Aprobar", reject: "Rechazar", "approve_all": "Aprobar todas",
     upload: "Subir", new: "Nuevo", custom: "Personalizada", global: "Global",
     // Dashboard
@@ -157,7 +157,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
   en: {
     save: "Save", cancel: "Cancel", delete: "Delete", edit: "Edit",
     duplicate: "Duplicate", search: "Search", loading: "Loading...", close: "Close",
-    reset: "Reset", confirm: "Confirm", copy: "Copy", copied: "Copied",
+    view: "View", reset: "Reset", confirm: "Confirm", copy: "Copy", copied: "Copied",
     approve: "Approve", reject: "Reject", "approve_all": "Approve all",
     upload: "Upload", new: "New", custom: "Custom", global: "Global",
     "dash.setup": "Setup", "dash.dictation": "Dictation", "dash.report": "Report",
