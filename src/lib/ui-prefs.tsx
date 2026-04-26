@@ -64,16 +64,6 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
 ];
 
-/* ── Density ────────────────────────────────────────────────────── */
-
-export type UIDensity = "compact" | "comfortable" | "spacious";
-
-const DENSITY_SCALES: Record<UIDensity, { text: string; gap: string; padding: string; radius: string }> = {
-  compact:     { text: "0.8125rem", gap: "0.375rem", padding: "0.875rem", radius: "0.375rem" },
-  comfortable: { text: "0.875rem",  gap: "0.5rem",   padding: "1rem",     radius: "0.5rem" },
-  spacious:    { text: "0.9375rem", gap: "0.625rem",  padding: "1.25rem",  radius: "0.625rem" },
-};
-
 /* ── Panel side ─────────────────────────────────────────────────── */
 
 export type PanelSide = "left" | "right";
@@ -95,7 +85,6 @@ export type UILanguage = "es" | "en";
 
 export interface UIPreferences {
   colorPreset: string;
-  density: UIDensity;
   panelSide: PanelSide;
   fontSize: number;
   fontFamily: FontFamily;
@@ -104,7 +93,6 @@ export interface UIPreferences {
 
 const DEFAULTS: UIPreferences = {
   colorPreset: "Blue",
-  density: "comfortable",
   panelSide: "right",
   fontSize: 14,
   fontFamily: "inter",
@@ -118,16 +106,10 @@ const STORAGE_KEY = "radiogenai_ui_prefs";
 function applyPreferences(prefs: UIPreferences) {
   const root = document.documentElement;
   const preset = COLOR_PRESETS.find((p) => p.name === prefs.colorPreset) || COLOR_PRESETS[0];
-  const density = DENSITY_SCALES[prefs.density];
 
-  // Set intermediate variables — CSS rules derive --primary from these
   root.style.setProperty("--preset-primary", preset.primary);
   root.style.setProperty("--preset-primary-dark", preset.primaryDark);
   root.style.setProperty("--preset-primary-fg", preset.primaryFg);
-
-  root.style.setProperty("--radius", density.radius);
-  root.style.setProperty("--ui-gap", density.gap);
-  root.style.setProperty("--ui-padding", density.padding);
 
   root.style.setProperty("--ui-font-size", `${prefs.fontSize}px`);
   root.style.fontSize = `${prefs.fontSize}px`;

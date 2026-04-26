@@ -38,10 +38,10 @@ export function StatsPanel() {
       })
       .catch(() => {});
 
-    fetch("/api/reports")
+    fetch("/api/reports?count_only=true")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (Array.isArray(data)) setTotalCount(data.length);
+        if (data && typeof data.count === "number") setTotalCount(data.count);
       })
       .catch(() => {});
   }, []);
@@ -102,7 +102,7 @@ export function StatsPanel() {
           {totalCount !== null && (
             <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span>
           )}
-          <span className="text-xs">{t("stats.this_month")}</span>
+          <span className="text-xs">{t("stats.total_reports")}</span>
         </div>
         <ChevronDown className={`h-3.5 w-3.5 text-gray-400 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>

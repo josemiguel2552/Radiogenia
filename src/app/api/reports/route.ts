@@ -12,6 +12,19 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
+    const countOnly = url.searchParams.get("count_only");
+
+    if (countOnly) {
+      let countQuery = supabase
+        .from("reports")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if (from) countQuery = countQuery.gte("created_at", from);
+      if (to) countQuery = countQuery.lte("created_at", to);
+      const { count, error } = await countQuery;
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ count: count || 0 });
+    }
 
     let query = supabase
       .from("reports")

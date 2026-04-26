@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, type UIDensity, type PanelSide, type FontFamily, type UILanguage } from "@/lib/ui-prefs";
+import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 
 export function AppearanceTab() {
@@ -110,33 +110,6 @@ export function AppearanceTab() {
         </div>
       </div>
 
-      {/* UI Density */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.density")}
-        </Label>
-        <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-          {(["compact", "comfortable", "spacious"] as UIDensity[]).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => update({ density: d })}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                prefs.density === d
-                  ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-              style={prefs.density === d ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
-            >
-              {t(`app.${d}`)}
-            </button>
-          ))}
-        </div>
-        <p className="text-[10px] text-gray-400 mt-2">
-          {t("app.density_hint")}
-        </p>
-      </div>
-
       {/* Panel side */}
       <div>
         <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
@@ -167,7 +140,7 @@ export function AppearanceTab() {
       {/* Reset */}
       <button
         type="button"
-        onClick={() => update({ colorPreset: "Blue", density: "comfortable", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es" })}
+        onClick={() => update({ colorPreset: "Blue", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es" })}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >
         {t("app.reset_defaults")}
