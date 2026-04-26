@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus,
   Pencil,
@@ -22,6 +22,12 @@ import {
   ChevronRight,
   Search,
   Sparkles,
+  ArrowUp,
+  ArrowDown,
+  Indent,
+  Outdent,
+  GripVertical,
+  FolderOpen,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
@@ -34,6 +40,170 @@ interface ExtractedTemplate {
   template: string;
 }
 
+interface TemplateField {
+  id: string;
+  label: string;
+  indent: number; // 0 = top-level, 1 = child
+}
+
+let _fieldId = 0;
+function nextFieldId(): string { return `f_${++_fieldId}_${Date.now()}`; }
+
+function parseTemplateSections(raw: string): TemplateField[] {
+  const fields: TemplateField[] = [];
+  const body = raw
+    .replace(/\*{4}FINDINGS\*{4}\n?/g, "")
+    .replace(/\n?\*{4}CONCLUSION\*{4}\n?\{conclusion\}/g, "")
+    .trim();
+  if (!body) return fields;
+
+  for (const line of body.split("\n")) {
+    if (!line.trim()) continue;
+    const isIndented = /^\s{2,}/.test(line);
+    const trimmed = line.trim();
+
+    const tripleMatch = trimmed.match(/^\*{3}([^*]+)\*{3}/);
+    if (tripleMatch) {
+      fields.push({ id: nextFieldId(), label: tripleMatch[1].trim(), indent: 0 });
+      continue;
+    }
+
+    const fieldMatch = trimmed.match(/^\*{2}([^*]+)\*{2}/);
+    if (fieldMatch) {
+      fields.push({ id: nextFieldId(), label: fieldMatch[1].trim(), indent: isIndented ? 1 : 0 });
+      continue;
+    }
+
+    if (trimmed.length > 1 && !trimmed.startsWith("{")) {
+      fields.push({ id: nextFieldId(), label: trimmed.replace(/[*{}:]/g, "").trim(), indent: isIndented ? 1 : 0 });
+    }
+  }
+  return fields;
+}
+
+function serializeTemplateSections(fields: TemplateField[]): string {
+  const lines: string[] = [];
+
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i];
+    if (!f.label.trim()) continue;
+
+    const isParent = f.indent === 0 && fields[i + 1]?.indent === 1;
+
+    if (isParent) {
+      lines.push(`**${f.label}**:`);
+    } else if (f.indent === 1) {
+      lines.push(`   **${f.label}**: {${f.label.toLowerCase()}}`);
+    } else {
+      lines.push(`**${f.label}**: {${f.label.toLowerCase()}}`);
+    }
+  }
+
+  return `****FINDINGS****\n${lines.join("\n")}\n\n****CONCLUSION****\n{conclusion}`;
+}
+
+function SectionEditor({ fields, onChange }: { fields: TemplateField[]; onChange: (fields: TemplateField[]) => void }) {
+  const t = useT();
+
+  const updateLabel = useCallback((id: string, label: string) => {
+    onChange(fields.map((f) => f.id === id ? { ...f, label } : f));
+  }, [fields, onChange]);
+
+  const indentField = useCallback((id: string) => {
+    onChange(fields.map((f) => f.id === id ? { ...f, indent: Math.min(f.indent + 1, 1) } : f));
+  }, [fields, onChange]);
+
+  const outdentField = useCallback((id: string) => {
+    onChange(fields.map((f) => f.id === id ? { ...f, indent: Math.max(f.indent - 1, 0) } : f));
+  }, [fields, onChange]);
+
+  const moveUp = useCallback((id: string) => {
+    const idx = fields.findIndex((f) => f.id === id);
+    if (idx <= 0) return;
+    const next = [...fields];
+    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+    onChange(next);
+  }, [fields, onChange]);
+
+  const moveDown = useCallback((id: string) => {
+    const idx = fields.findIndex((f) => f.id === id);
+    if (idx < 0 || idx >= fields.length - 1) return;
+    const next = [...fields];
+    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+    onChange(next);
+  }, [fields, onChange]);
+
+  const remove = useCallback((id: string) => {
+    onChange(fields.filter((f) => f.id !== id));
+  }, [fields, onChange]);
+
+  const addAfter = useCallback((id: string) => {
+    const idx = fields.findIndex((f) => f.id === id);
+    const currentIndent = fields[idx]?.indent ?? 0;
+    const next = [...fields];
+    next.splice(idx + 1, 0, { id: nextFieldId(), label: "", indent: currentIndent });
+    onChange(next);
+  }, [fields, onChange]);
+
+  const addAtEnd = useCallback(() => {
+    onChange([...fields, { id: nextFieldId(), label: "", indent: 0 }]);
+  }, [fields, onChange]);
+
+  return (
+    <div className="space-y-1">
+      {fields.map((f, idx) => {
+        const isParent = f.indent === 0 && fields[idx + 1]?.indent === 1;
+        const isChild = f.indent === 1;
+
+        return (
+          <div key={f.id} className={`flex items-center gap-1 group ${isChild ? "ml-6" : ""}`}>
+            <GripVertical className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0 hidden sm:block" />
+
+            {isParent ? (
+              <FolderOpen className="h-3.5 w-3.5 text-brand shrink-0" />
+            ) : (
+              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isChild ? "bg-gray-300 dark:bg-gray-600" : "bg-gray-400 dark:bg-gray-500"}`} />
+            )}
+
+            <Input
+              value={f.label}
+              onChange={(e) => updateLabel(f.id, e.target.value)}
+              placeholder={t("tpl.section_name_placeholder")}
+              className={`h-8 text-xs flex-1 min-w-0 ${isParent ? "font-semibold" : ""}`}
+              autoFocus={!f.label}
+            />
+
+            <div className="flex gap-0.5 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => indentField(f.id)} disabled={f.indent >= 1} title={t("tpl.make_group")}>
+                <Indent className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => outdentField(f.id)} disabled={f.indent <= 0} title={t("tpl.make_field")}>
+                <Outdent className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveUp(f.id)} disabled={idx === 0}>
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveDown(f.id)} disabled={idx === fields.length - 1}>
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-brand" onClick={() => addAfter(f.id)} title={t("tpl.add_below")}>
+                <Plus className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600" onClick={() => remove(f.id)} disabled={fields.length <= 1}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+
+      <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1.5 mt-2 border-dashed" onClick={addAtEnd}>
+        <Plus className="h-3 w-3" /> {t("tpl.add_section")}
+      </Button>
+    </div>
+  );
+}
+
 export function TemplatesTab() {
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +212,7 @@ export function TemplatesTab() {
   const [editName, setEditName] = useState("");
   const [editModality, setEditModality] = useState("");
   const [editSection, setEditSection] = useState("");
-  const [editStructure, setEditStructure] = useState("");
+  const [editFields, setEditFields] = useState<TemplateField[]>([]);
   const [saving, setSaving] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const t = useT();
@@ -98,13 +268,14 @@ export function TemplatesTab() {
     setEditName(t.name);
     setEditModality(t.modality);
     setEditSection(t.structure?.section || "");
-    setEditStructure(t.structure?.template || "");
+    setEditFields(parseTemplateSections(t.structure?.template || ""));
   }
 
   async function handleSave() {
     if (!editTemplate) return;
     setSaving(true);
-    const updatedStructure = { ...editTemplate.structure, template: editStructure, title: editName, technique: editModality, section: editSection };
+    const templateText = serializeTemplateSections(editFields);
+    const updatedStructure = { ...editTemplate.structure, template: templateText, title: editName, technique: editModality, section: editSection };
     await fetch("/api/templates", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -421,11 +592,11 @@ export function TemplatesTab() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{t("tpl.edit_dialog")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
               <Label className="text-xs">{t("tpl.name")}</Label>
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
@@ -450,23 +621,35 @@ export function TemplatesTab() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label className="text-xs">{t("tpl.structure")}</Label>
-              <Textarea
-                value={editStructure}
-                onChange={(e) => setEditStructure(e.target.value)}
-                className="min-h-[200px] font-mono text-xs"
-              />
-              <p className="text-[10px] text-gray-400 mt-1">
-                {t("tpl.structure_hint")}
-              </p>
-            </div>
           </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+            <Label className="text-xs font-semibold">
+              {t("tpl.structure")} ({editFields.length})
+            </Label>
+            <p className="text-[10px] text-gray-400">{t("tpl.structure_hint")}</p>
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+            <div className="space-y-1 pr-3 pb-2">
+              <div className="flex items-center gap-2 px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">
+                <Badge variant="secondary" className="text-[10px]">{t("tpl.findings_header")}</Badge>
+              </div>
+
+              <SectionEditor fields={editFields} onChange={setEditFields} />
+
+              <div className="flex items-center gap-2 px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 mt-2">
+                <Badge variant="secondary" className="text-[10px]">{t("tpl.conclusion_header")}</Badge>
+                <span className="text-[10px] text-gray-400">{t("tpl.auto_generated")}</span>
+              </div>
+            </div>
+          </ScrollArea>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">{t("cancel")}</Button>
             </DialogClose>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || editFields.every((f) => !f.label.trim())}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("tpl.save_changes")}
             </Button>
           </DialogFooter>
