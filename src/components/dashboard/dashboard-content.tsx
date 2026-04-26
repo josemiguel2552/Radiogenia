@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ShieldCheck,
   ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -46,6 +47,8 @@ export function DashboardContent() {
   // Clinical info state
   const [clinicalInfo, setClinicalInfo] = useState("");
   const [clinicalOpen, setClinicalOpen] = useState(false);
+  const [setupCollapsed, setSetupCollapsed] = useState(false);
+  const [recsOpen, setRecsOpen] = useState(false);
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -82,6 +85,11 @@ export function DashboardContent() {
     },
     onError: (err) => setVoiceError(err),
   });
+
+  // Auto-open recommendations when they arrive
+  useEffect(() => {
+    if (recommendations && !loadingRecs) setRecsOpen(true);
+  }, [recommendations, loadingRecs]);
 
   // Autosave draft
   useEffect(() => {
@@ -429,6 +437,7 @@ export function DashboardContent() {
     setTraceData(null);
     setTraceActive(false);
     setRepairMessage(null);
+    setRecsOpen(false);
     localStorage.removeItem("radiogenai_draft");
   }
 
@@ -441,139 +450,218 @@ export function DashboardContent() {
     <div className="space-y-4">
       <StatsPanel />
 
-      {/* ── Input card: setup + clinical + dictation ── */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          {/* Modality chips */}
-          <div className="flex flex-wrap gap-1.5">
-            {MODALITIES.map((mod) => (
-              <Button
-                key={mod}
-                variant={selectedModality === mod ? "default" : "outline"}
-                size="sm"
-                className="h-7 px-2.5 text-xs"
-                onClick={() => {
-                  setSelectedModality(selectedModality === mod ? "" : mod);
-                  setSelectedSection("");
-                  setSelectedTemplateId("");
-                }}
-              >
-                {mod}
-              </Button>
-            ))}
-          </div>
-
-          {/* Region + Template + Contrast row */}
-          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
-            <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
-              <SelectContent>
-                {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
-                  <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredTemplates.map((tpl) => (
-                  <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-              {[
-                { v: "default", l: t("dash.default") },
-                { v: "con_contraste", l: "C+" },
-                { v: "sin_contraste", l: "C−" },
-              ].map((opt) => (
-                <button
-                  key={opt.v}
-                  type="button"
-                  onClick={() => setContrastOption(opt.v)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                    contrastOption === opt.v
-                      ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  {opt.l}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Clinical context — collapsible */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setClinicalOpen(!clinicalOpen)}
-              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-            >
-              <Stethoscope className="h-3 w-3" />
-              {t("dash.clinical_context")}
-              {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-brand" />}
-              <ChevronDown className={`h-3 w-3 transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
-            </button>
-            {clinicalOpen && (
-              <Textarea
-                placeholder={t("dash.clinical_placeholder")}
-                value={clinicalInfo}
-                onChange={(e) => setClinicalInfo(e.target.value)}
-                className="mt-2 min-h-[48px] text-sm resize-none"
-              />
-            )}
-          </div>
-
-          {/* Dictation */}
-          <div className="relative">
-            <Textarea
-              placeholder={t("dash.dictation_placeholder")}
-              value={dictation}
-              onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
-              className="min-h-[120px] text-sm pr-14"
-            />
-            <Button
-              variant={isRecording ? "destructive" : "secondary"}
-              size="icon"
-              className={`absolute top-2 right-2 h-8 w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
-              onClick={toggleRecording}
-            >
-              {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-            {(isRecording || isTranscribing) && (
-              <div className="absolute bottom-2 right-2">
-                <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                  {isRecording ? "REC" : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
-                </Badge>
-              </div>
-            )}
-          </div>
-          {voiceError && (
-            <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>
-          )}
-
-          {/* Generate */}
-          <Button
-            onClick={handleGenerate}
-            disabled={!canGenerate}
-            className="w-full h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+      {/* ── Input: study setup (left) + dictation (right) ── */}
+      {setupCollapsed ? (
+        <div className="space-y-3">
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
+            onClick={() => setSetupCollapsed(false)}
           >
-            {isGenerating ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
-            ) : (
-              <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
-            )}
-          </Button>
-          {!setupReady && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
-              {t("dash.select_template_first")}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            <Stethoscope className="h-3.5 w-3.5 text-brand" />
+            <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 truncate flex-1 min-w-0">
+              {selectedModality && <Badge variant="secondary" className="text-[10px] h-5 flex-shrink-0">{selectedModality}</Badge>}
+              {selectedTemplate ? (
+                <span className="truncate font-medium">{selectedTemplate.name}</span>
+              ) : (
+                <span className="text-gray-400">{t("dash.select_template_first")}</span>
+              )}
+              {contrastOption !== "default" && (
+                <Badge variant="outline" className="text-[10px] h-5 flex-shrink-0">
+                  {contrastOption === "con_contraste" ? "C+" : "C−"}
+                </Badge>
+              )}
+              {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0" />}
+            </div>
+            <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+          </div>
+
+          <Card>
+            <CardContent className="p-3 space-y-2.5">
+              <div className="relative">
+                <Textarea
+                  placeholder={t("dash.dictation_placeholder")}
+                  value={dictation}
+                  onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  className="min-h-[180px] text-sm pr-14"
+                />
+                <Button
+                  variant={isRecording ? "destructive" : "secondary"}
+                  size="icon"
+                  className={`absolute top-2 right-2 h-8 w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+                  onClick={toggleRecording}
+                >
+                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                {(isRecording || isTranscribing) && (
+                  <div className="absolute bottom-2 right-2">
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+              <Button
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+                className="w-full h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+              >
+                {isGenerating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                ) : (
+                  <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3">
+          {/* Left: Study setup */}
+          <Card className="flex flex-col">
+            <CardContent className="p-3 space-y-2.5 flex-1">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Stethoscope className="h-3.5 w-3.5 text-brand" />
+                  {t("dash.study_setup")}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSetupCollapsed(true)}
+                  className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
+                >
+                  <ChevronDown className="h-3.5 w-3.5 rotate-90" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {MODALITIES.map((mod) => (
+                  <Button
+                    key={mod}
+                    variant={selectedModality === mod ? "default" : "outline"}
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() => {
+                      setSelectedModality(selectedModality === mod ? "" : mod);
+                      setSelectedSection("");
+                      setSelectedTemplateId("");
+                    }}
+                  >
+                    {mod}
+                  </Button>
+                ))}
+              </div>
+
+              <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
+                <SelectContent>
+                  {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
+                    <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredTemplates.map((tpl) => (
+                    <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800 w-full">
+                {[
+                  { v: "default", l: t("dash.default") },
+                  { v: "con_contraste", l: "C+" },
+                  { v: "sin_contraste", l: "C−" },
+                ].map((opt) => (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => setContrastOption(opt.v)}
+                    className={`flex-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                      contrastOption === opt.v
+                        ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setClinicalOpen(!clinicalOpen)}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                >
+                  {t("dash.clinical_context")}
+                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+                  <ChevronDown className={`h-3 w-3 transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
+                </button>
+                {clinicalOpen && (
+                  <Textarea
+                    placeholder={t("dash.clinical_placeholder")}
+                    value={clinicalInfo}
+                    onChange={(e) => setClinicalInfo(e.target.value)}
+                    className="mt-1.5 min-h-[48px] text-xs resize-none"
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Right: Dictation + Generate */}
+          <Card className="flex flex-col">
+            <CardContent className="p-3 flex flex-col flex-1 gap-2.5">
+              <div className="relative flex-1">
+                <Textarea
+                  placeholder={t("dash.dictation_placeholder")}
+                  value={dictation}
+                  onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  className="min-h-[200px] h-full text-sm pr-14 resize-none"
+                />
+                <Button
+                  variant={isRecording ? "destructive" : "secondary"}
+                  size="icon"
+                  className={`absolute top-2 right-2 h-8 w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+                  onClick={toggleRecording}
+                >
+                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                {(isRecording || isTranscribing) && (
+                  <div className="absolute bottom-2 right-2">
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+              <Button
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+                className="w-full h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+              >
+                {isGenerating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                ) : (
+                  <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
+                )}
+              </Button>
+              {!setupReady && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
+                  {t("dash.select_template_first")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ── Output ── */}
       {hasOutput && (
@@ -624,6 +712,8 @@ export function DashboardContent() {
             loading={loadingRecs}
             value={recommendations}
             onChange={setRecommendations}
+            open={recsOpen}
+            onToggle={() => setRecsOpen(!recsOpen)}
           />
 
           {/* Action bar */}
@@ -763,10 +853,14 @@ function RecommendationsCard({
   loading,
   value,
   onChange,
+  open,
+  onToggle,
 }: {
   loading: boolean;
   value: string;
   onChange: (v: string) => void;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const parsed = useMemo(() => parseRecommendations(value), [value]);
@@ -775,86 +869,102 @@ function RecommendationsCard({
   const noRecs = !loading && value.trim() && parsed.length === 0 && !editing;
   const t = useT();
 
+  const hasContent = loading || value.trim();
+
   return (
     <Card>
-      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center justify-between w-full px-4 py-2.5 text-left hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors rounded-t-xl"
+      >
         <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
           <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
           {t("dash.recommendations")}
+          {!open && hasContent && !loading && (
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">
+              {parsed.length || (value.trim() ? 1 : 0)}
+            </Badge>
+          )}
         </h3>
         <div className="flex items-center gap-1.5">
           {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
-          {!loading && value.trim() && (
-            <button
-              type="button"
-              onClick={() => setEditing(!editing)}
-              className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
-            >
-              {editing ? t("view") : t("edit")}
-            </button>
-          )}
+          <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
-      </div>
-      <CardContent className="pt-0 px-4 pb-3">
-        {loading ? (
-          <div
-            className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
-            style={{ height: 70 }}
-          />
-        ) : editing ? (
-          <Textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="text-sm leading-relaxed"
-            style={{ minHeight: 70 }}
-          />
-        ) : hasStructured ? (
-          <div className="space-y-2">
-            {parsed.map((rec, i) => {
-              const color = REC_COLORS[i % REC_COLORS.length];
-              return (
-                <div
-                  key={i}
-                  className="rounded-lg p-3 border text-sm"
-                  style={{
-                    backgroundColor: isDark ? color.dark : color.bg,
-                    borderColor: color.border + "40",
-                  }}
-                >
-                  <div className="flex items-start gap-2">
-                    <span
-                      className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                      style={{ backgroundColor: color.border }}
-                    >
-                      {rec.number}
-                    </span>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <p className="text-gray-900 dark:text-gray-100 font-medium">{rec.recommendation}</p>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">({rec.guideline})</p>
-                      <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
-                        <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          <span className="font-medium" style={{ color: color.border }}>{t("dash.finding_label")}: </span>
-                          {rec.finding}
-                        </p>
+      </button>
+      {open && (
+        <CardContent className="pt-0 px-4 pb-3">
+          {!loading && value.trim() && (
+            <div className="flex justify-end mb-1.5">
+              <button
+                type="button"
+                onClick={() => setEditing(!editing)}
+                className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
+              >
+                {editing ? t("view") : t("edit")}
+              </button>
+            </div>
+          )}
+          {loading ? (
+            <div
+              className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
+              style={{ height: 70 }}
+            />
+          ) : editing ? (
+            <Textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="text-sm leading-relaxed"
+              style={{ minHeight: 70 }}
+            />
+          ) : hasStructured ? (
+            <div className="space-y-2">
+              {parsed.map((rec, i) => {
+                const color = REC_COLORS[i % REC_COLORS.length];
+                return (
+                  <div
+                    key={i}
+                    className="rounded-lg p-3 border text-sm"
+                    style={{
+                      backgroundColor: isDark ? color.dark : color.bg,
+                      borderColor: color.border + "40",
+                    }}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span
+                        className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                        style={{ backgroundColor: color.border }}
+                      >
+                        {rec.number}
+                      </span>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <p className="text-gray-900 dark:text-gray-100 font-medium">{rec.recommendation}</p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">({rec.guideline})</p>
+                        <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
+                          <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />
+                          <p className="text-xs text-gray-600 dark:text-gray-300">
+                            <span className="font-medium" style={{ color: color.border }}>{t("dash.finding_label")}: </span>
+                            {rec.finding}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : noRecs ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{value}</p>
-        ) : (
-          <Textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="text-sm leading-relaxed"
-            style={{ minHeight: 70 }}
-          />
-        )}
-      </CardContent>
+                );
+              })}
+            </div>
+          ) : noRecs ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{value}</p>
+          ) : (
+            <Textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="text-sm leading-relaxed"
+              style={{ minHeight: 70 }}
+            />
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
