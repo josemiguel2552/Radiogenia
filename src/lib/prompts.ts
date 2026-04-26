@@ -110,6 +110,20 @@ const LANGUAGE_LABEL: Record<OutputLanguage, string> = {
   it: "italiano",
 };
 
+const COMPACT_NORMALS_INSTRUCTION: Record<string, string> = {
+  es: `FORMATO COMPACTO DE NORMALIDAD:
+Se ha solicitado un informe compacto. Debes reorganizar la salida así:
+1. PRIMERO: escribe SOLO las secciones que tienen hallazgos mencionados por el radiólogo (positivos o negativos dictados), cada una en su formato estructurado habitual ("Sección: Descripción.").
+2. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (sin etiquetas de sección, sin viñetas, sin saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Este párrafo debe decir algo como: "El resto de las estructuras evaluadas (nombrar las secciones) no muestran alteraciones significativas." o una variante natural y profesional. NO listes cada sección individualmente — redacta un texto fluido que las englobe.
+El párrafo final de normalidad debe ser breve y natural. No repitas "es normal" para cada órgano.`,
+
+  en: `COMPACT NORMALITY FORMAT:
+A compact report has been requested. Reorganize the output as follows:
+1. FIRST: write ONLY the sections that have findings mentioned by the radiologist (positive or dictated negative findings), each in the usual structured format ("Section: Description.").
+2. THEN: at the end, write a SINGLE running paragraph (no section labels, no bullets, no internal line breaks) grouping ALL the normal unmentioned sections. This paragraph should say something like: "The remaining evaluated structures (name the sections) show no significant abnormalities." or a natural, professional variation. Do NOT list each section individually — write a flowing text that encompasses them all.
+The final normality paragraph should be brief and natural. Do not repeat "is normal" for each organ.`,
+};
+
 /* ── System prompt templates per language ───────────────────── */
 
 function findingsSystemPrompt(lang: OutputLanguage, modality: string): string {
@@ -226,6 +240,7 @@ export function buildFindingsPrompt(params: {
   normalFieldsVerbosity: NormalFieldsVerbosity;
   paraphraseLevel: ParaphraseLevel;
   outputLanguage: OutputLanguage;
+  compactNormals?: boolean;
   styleSamples?: string[];
   preferredNormalPhrases?: PreferredNormalPhrase[];
 }): { system: string; user: string } {
@@ -236,7 +251,7 @@ export function buildFindingsPrompt(params: {
   system += `\n\n${modalityTerminology(params.modality, lang)}
 
 ${LENGTH_INSTRUCTIONS[lang][params.findingsLength]}
-${VERBOSITY_INSTRUCTIONS[lang][params.normalFieldsVerbosity]}
+${params.compactNormals ? (COMPACT_NORMALS_INSTRUCTION[lang] || COMPACT_NORMALS_INSTRUCTION.en) : VERBOSITY_INSTRUCTIONS[lang][params.normalFieldsVerbosity]}
 ${PARAPHRASE_INSTRUCTIONS[lang][params.paraphraseLevel]}`;
 
   if (params.preferredNormalPhrases && params.preferredNormalPhrases.length > 0) {
@@ -315,20 +330,22 @@ Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la c
 
 ESTRUCTURA DE LA CONCLUSIÓN:
 1. ${hasClinical ? "Punto 1: respuesta a la pregunta clínica." : "Solo hallazgos clínicamente SIGNIFICATIVOS."}
-2. Cada hallazgo en un punto SEPARADO. NO agrupes hallazgos que no tengan relación anatómica directa.
-3. Ordenados de MAYOR a MENOR relevancia clínica.
-4. Los hallazgos de ESCASA relevancia clínica NO se incluyen.
-5. Si todo es normal: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
+2. AGRUPA hallazgos que probablemente compartan la misma patología de base en un MISMO punto. Por ejemplo: lesión pulmonar + adenopatías mediastínicas + derrame pleural pueden ir juntos si sugieren un mismo proceso; diverticulitis colónica + adenopatías mesentéricas pueden ir juntos. El objetivo es que cada punto represente un "problema" clínico coherente, no una lista desgranada de hallazgos individuales.
+3. Hallazgos que NO tengan relación fisiopatológica razonable entre sí van en puntos SEPARADOS.
+4. Ordenados de MAYOR a MENOR relevancia clínica.
+5. Los hallazgos de ESCASA relevancia clínica NO se incluyen.
+6. Si todo es normal: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
 
-EJEMPLO CORRECTO (nódulo pulmonar + engrosamiento septal + derrame):
-1. Nódulo pulmonar de 12 mm en lóbulo inferior izquierdo.
-2. Engrosamiento septal interlobulillar difuso con tenues opacidades en vidrio deslustrado bilaterales.
-3. Pequeño derrame pleural izquierdo.
+EJEMPLO CORRECTO (lesión pulmonar + adenopatías + derrame + diverticulitis + adenopatías mesentéricas):
+1. Masa pulmonar de 35 mm en lóbulo superior derecho con adenopatías mediastínicas patológicas y pequeño derrame pleural ipsilateral.
+2. Signos de diverticulitis aguda en sigma con adenopatías mesentéricas reactivas adyacentes.
 
 EJEMPLO INCORRECTO:
-1. No evidence of malignancy. ← MAL: hay un nódulo sin caracterizar, no puedes descartar malignidad.
-2. A 12 mm lung nodule, possibly inflammatory, with associated septal thickening. ← MAL: especula sobre la naturaleza y agrupa hallazgos sin relación.
-3. Pleural effusion, likely related to the above. ← MAL: establece relación causal especulativa.
+1. Masa pulmonar de 35 mm, probablemente neoplásica. ← MAL: especula sobre la naturaleza / da un diagnóstico.
+2. Adenopatías mediastínicas. ← MAL: separó un hallazgo que probablemente está relacionado con la masa.
+3. Derrame pleural, probablemente secundario a la masa. ← MAL: relación causal especulativa explícita.
+4. Diverticulitis aguda. ← Bien como concepto, pero le faltan las adenopatías asociadas.
+5. Adenopatías mesentéricas. ← MAL: deberían ir agrupadas con la diverticulitis.
 
 LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Si hay más hallazgos relevantes, descarta los menos importantes.
 
@@ -365,20 +382,22 @@ Clinical data from the referring physician is provided. The FIRST point of the c
 
 CONCLUSION STRUCTURE:
 1. ${hasClinical ? "Point 1: answer to the clinical question." : "Only clinically SIGNIFICANT findings."}
-2. Each finding in a SEPARATE point. Do NOT group findings that are not directly anatomically related.
-3. Ordered from MOST to LEAST clinically relevant.
-4. Findings of LOW clinical relevance are NOT included.
-5. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
+2. GROUP findings that likely share the same underlying pathology into a SINGLE point. For example: lung mass + mediastinal lymphadenopathy + pleural effusion may go together if they suggest a single process; colonic diverticulitis + mesenteric lymphadenopathy may go together. The goal is for each point to represent a coherent clinical "problem", not a broken-down list of individual findings.
+3. Findings that have NO reasonable pathophysiological relationship go in SEPARATE points.
+4. Ordered from MOST to LEAST clinically relevant.
+5. Findings of LOW clinical relevance are NOT included.
+6. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
 
-CORRECT EXAMPLE (lung nodule + septal thickening + effusion):
-1. 12 mm pulmonary nodule in the left lower lobe.
-2. Diffuse interlobular septal thickening with faint bilateral ground-glass opacities.
-3. Small left pleural effusion.
+CORRECT EXAMPLE (lung mass + lymphadenopathy + effusion + diverticulitis + mesenteric nodes):
+1. 35 mm pulmonary mass in the right upper lobe with pathological mediastinal lymphadenopathy and small ipsilateral pleural effusion.
+2. Signs of acute diverticulitis in the sigmoid colon with adjacent reactive mesenteric lymphadenopathy.
 
 INCORRECT EXAMPLE:
-1. No evidence of malignancy. ← WRONG: there is an uncharacterized nodule, you cannot rule out malignancy.
-2. A 12 mm lung nodule, possibly inflammatory, with associated septal thickening. ← WRONG: speculates about nature and groups unrelated findings.
-3. Pleural effusion, likely related to the above. ← WRONG: speculative causal relationship.
+1. 35 mm pulmonary mass, likely neoplastic. ← WRONG: speculates about nature / gives a diagnosis.
+2. Mediastinal lymphadenopathy. ← WRONG: separated a finding that is likely related to the mass.
+3. Pleural effusion, probably secondary to the mass. ← WRONG: explicit speculative causal relationship.
+4. Acute diverticulitis. ← Correct concept, but missing the associated lymphadenopathy.
+5. Mesenteric lymphadenopathy. ← WRONG: should be grouped with the diverticulitis.
 
 STRICT LIMIT: MAXIMUM 4 POINTS. If there are more relevant findings, discard the least important ones.
 

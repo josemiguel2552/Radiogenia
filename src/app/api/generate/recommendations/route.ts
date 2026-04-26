@@ -1,5 +1,8 @@
+export const maxDuration = 120;
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import { buildRecommendationsPrompt } from "@/lib/prompts";
@@ -95,14 +98,13 @@ export async function POST(req: NextRequest) {
     const { findingsText } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
+    const service = createServiceClient();
 
-    const { data: config } = await supabase
+    const { data: config } = await service
       .from("user_model_config")
       .select("output_language")
       .eq("user_id", user.id)
-      .single();
-
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
+      .maybeSingle();
 
     const { data: recs } = await supabase
       .from("user_recommendations")
@@ -115,7 +117,7 @@ export async function POST(req: NextRequest) {
       guideline: r.guideline_name || "",
     }));
 
-    const outputLanguage = (config.output_language || "es") as OutputLanguage;
+    const outputLanguage = (config?.output_language || "es") as OutputLanguage;
 
     const { system, user: userPrompt } = buildRecommendationsPrompt({
       findingsText,

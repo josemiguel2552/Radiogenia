@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
@@ -7,31 +8,14 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Fetch global templates (admin-managed, shared) and user's custom templates
-    const [globalRes, userRes] = await Promise.all([
-      supabase.from("global_templates").select("*").eq("is_active", true).order("name"),
-      supabase.from("user_templates").select("*").eq("user_id", user.id).order("name"),
-    ]);
+    const { data, error } = await supabase
+      .from("global_templates")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
 
-    const globals = (globalRes.data || []).map((g) => ({
-      id: g.id,
-      user_id: user.id,
-      name: g.name,
-      modality: g.modality,
-      base_template_id: g.base_template_id,
-      structure: g.structure,
-      is_default: true,
-      is_global: true,
-      created_at: g.created_at,
-    }));
-
-    const customs = (userRes.data || []).map((u) => ({
-      ...u,
-      is_default: false,
-      is_global: false,
-    }));
-
-    return NextResponse.json([...globals, ...customs]);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data || []);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -40,37 +24,18 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAdmin();
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     const body = await req.json();
-    body.user_id = user.id;
-    body.is_default = false;
-
-    const { data, error } = await supabase.from("user_templates").insert(body).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
-
-export async function PUT(req: NextRequest) {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const body = await req.json();
-    const { id, ...updates } = body;
 
     const { data, error } = await supabase
-      .from("user_templates")
-      .update(updates)
-      .eq("id", id)
-      .eq("user_id", user.id)
+      .from("global_templates")
+      .insert({
+        name: body.name,
+        modality: body.modality,
+        base_template_id: body.base_template_id ?? null,
+        structure: body.structure,
+      })
       .select()
       .single();
 
@@ -78,31 +43,58 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const supabase = await createClient();
+    const body = await req.json();
+    const { id, ...updates } = body;
+
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    delete updates.created_at;
+    updates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("global_templates")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
+    await requireAdmin();
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
+
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    // Only allow deleting user's own custom templates
     const { error } = await supabase
-      .from("user_templates")
+      .from("global_templates")
       .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("id", id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

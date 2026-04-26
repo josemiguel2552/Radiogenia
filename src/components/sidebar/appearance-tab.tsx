@@ -2,17 +2,46 @@
 
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, type UIDensity, type PanelSide, type FontFamily } from "@/lib/ui-prefs";
+import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, type UIDensity, type PanelSide, type FontFamily, type UILanguage } from "@/lib/ui-prefs";
+import { useT } from "@/lib/i18n";
 
 export function AppearanceTab() {
   const { prefs, update } = useUIPrefs();
+  const t = useT();
 
   return (
     <div className="space-y-6">
+      {/* UI language */}
+      <div>
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.ui_language")}
+        </Label>
+        <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
+          {([{ v: "es", l: "Español" }, { v: "en", l: "English" }] as { v: UILanguage; l: string }[]).map((lang) => (
+            <button
+              key={lang.v}
+              type="button"
+              onClick={() => update({ uiLanguage: lang.v })}
+              className={`px-4 py-1.5 text-xs rounded-md transition-colors ${
+                prefs.uiLanguage === lang.v
+                  ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
+              style={prefs.uiLanguage === lang.v ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
+            >
+              {lang.l}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-400 mt-2">
+          {t("app.ui_lang_hint")}
+        </p>
+      </div>
+
       {/* Accent colour */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
-          Accent colour
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.accent")}
         </Label>
         <div className="grid grid-cols-6 gap-2">
           {COLOR_PRESETS.map((p) => {
@@ -32,14 +61,14 @@ export function AppearanceTab() {
           })}
         </div>
         <p className="text-[10px] text-gray-400 mt-2">
-          Current: {prefs.colorPreset}
+          {t("app.current")}: {prefs.colorPreset}
         </p>
       </div>
 
       {/* Font family */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
-          Font family
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.font_family")}
         </Label>
         <div className="grid grid-cols-2 gap-2">
           {FONT_FAMILIES.map((f) => {
@@ -51,7 +80,7 @@ export function AppearanceTab() {
                 onClick={() => update({ fontFamily: f.value as FontFamily })}
                 className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${
                   active
-                    ? "border-transparent shadow-sm font-medium bg-accent-soft"
+                    ? "border-transparent shadow-sm font-medium bg-brand-soft"
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                 }`}
                 style={active ? { color: "hsl(var(--primary))" } : undefined}
@@ -65,8 +94,8 @@ export function AppearanceTab() {
 
       {/* Font size */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
-          Font size: {prefs.fontSize}px
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
+          {t("app.font_size")}: {prefs.fontSize}px
         </Label>
         <Slider
           value={[prefs.fontSize]}
@@ -83,8 +112,8 @@ export function AppearanceTab() {
 
       {/* UI Density */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
-          UI density
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.density")}
         </Label>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
           {(["compact", "comfortable", "spacious"] as UIDensity[]).map((d) => (
@@ -92,26 +121,26 @@ export function AppearanceTab() {
               key={d}
               type="button"
               onClick={() => update({ density: d })}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors capitalize ${
+              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                 prefs.density === d
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
               style={prefs.density === d ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
             >
-              {d}
+              {t(`app.${d}`)}
             </button>
           ))}
         </div>
         <p className="text-[10px] text-gray-400 mt-2">
-          Affects spacing, padding, and border radius across the UI.
+          {t("app.density_hint")}
         </p>
       </div>
 
       {/* Panel side */}
       <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-3 block">
-          Tools panel position
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.panel_position")}
         </Label>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
           {(["left", "right"] as PanelSide[]).map((s) => (
@@ -119,29 +148,29 @@ export function AppearanceTab() {
               key={s}
               type="button"
               onClick={() => update({ panelSide: s })}
-              className={`px-4 py-1.5 text-xs rounded-md transition-colors capitalize ${
+              className={`px-4 py-1.5 text-xs rounded-md transition-colors ${
                 prefs.panelSide === s
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
               style={prefs.panelSide === s ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
             >
-              {s}
+              {t(`app.${s}`)}
             </button>
           ))}
         </div>
         <p className="text-[10px] text-gray-400 mt-2">
-          Move the Templates/Guidelines/AI panel to the other side.
+          {t("app.panel_hint")}
         </p>
       </div>
 
       {/* Reset */}
       <button
         type="button"
-        onClick={() => update({ colorPreset: "Blue", density: "comfortable", panelSide: "right", fontSize: 14, fontFamily: "inter" })}
+        onClick={() => update({ colorPreset: "Blue", density: "comfortable", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es" })}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >
-        Reset to defaults
+        {t("app.reset_defaults")}
       </button>
     </div>
   );

@@ -1,5 +1,8 @@
+export const maxDuration = 120;
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildConclusionPrompt } from "@/lib/prompts";
@@ -14,17 +17,19 @@ export async function POST(req: NextRequest) {
     const { findingsText, clinicalInfo, modality, studyType } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
+    const service = createServiceClient();
 
-    const { data: config } = await supabase
+    const { data: config } = await service
       .from("user_model_config")
       .select("output_language, style_learning_enabled")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
+    const outputLanguage = config?.output_language || "es";
+    const styleLearning = config?.style_learning_enabled ?? true;
 
     let preferredConclusionPhrases: string[] | undefined;
-    if (config.style_learning_enabled && modality && studyType) {
+    if (styleLearning && modality && studyType) {
       try {
         const { data: exact } = await supabase
           .from("style_patterns")
@@ -63,7 +68,7 @@ export async function POST(req: NextRequest) {
     const { system, user: userPrompt } = buildConclusionPrompt({
       findingsText,
       clinicalInfo: clinicalInfo || "",
-      outputLanguage: (config.output_language || "es") as OutputLanguage,
+      outputLanguage: outputLanguage as OutputLanguage,
       preferredConclusionPhrases,
     });
 

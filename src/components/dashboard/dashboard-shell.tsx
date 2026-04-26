@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import {
   Zap,
   LogOut,
@@ -28,6 +29,7 @@ import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
 import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
+import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
 const PANEL_MIN = 240;
@@ -41,10 +43,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
   const dragging = useRef(false);
   const { prefs, preset } = useUIPrefs();
-
-  useEffect(() => {
-    fetch("/api/seed", { method: "POST" }).catch(() => {});
-  }, []);
+  const t = useT();
 
   useEffect(() => {
     const dark = localStorage.getItem("radiogenai_dark") === "1";
@@ -125,7 +124,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const resizeHandle = (
     <div
       onMouseDown={onDragStart}
-      className="w-1.5 shrink-0 cursor-col-resize group relative bg-accent-soft-hover transition-colors"
+      className="w-1.5 shrink-0 cursor-col-resize group relative bg-brand-soft-hover transition-colors"
       title="Drag to resize"
     >
       <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 transition-colors" />
@@ -146,19 +145,19 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <TabsList className="grid w-full grid-cols-4 h-9">
             <TabsTrigger value="templates" className="text-[10px] gap-1 px-1">
               <FileText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Templates</span>
+              <span className="hidden sm:inline">{t("tab.templates")}</span>
             </TabsTrigger>
             <TabsTrigger value="recommendations" className="text-[10px] gap-1 px-1">
               <BookOpen className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Guidelines</span>
+              <span className="hidden sm:inline">{t("tab.guidelines")}</span>
             </TabsTrigger>
             <TabsTrigger value="model" className="text-[10px] gap-1 px-1">
               <Cpu className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">AI</span>
+              <span className="hidden sm:inline">{t("tab.config")}</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="text-[10px] gap-1 px-1">
               <Palette className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Theme</span>
+              <span className="hidden sm:inline">{t("tab.appearance")}</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -190,31 +189,29 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
         <Separator className="bg-gray-800 w-8" />
 
-        <Button variant="ghost" size="icon" className="text-accent hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title="Dashboard"
+        <Button variant="ghost" size="icon" className="text-brand hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title={t("nav.dashboard")}
         >
           <LayoutDashboard className="h-5 w-5" />
         </Button>
 
         {role === "admin" && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg h-9 w-9"
-            title="Admin panel"
-            onClick={() => router.push("/admin")}
+          <Link
+            href="/admin"
+            className="inline-flex items-center justify-center text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg h-9 w-9 transition-colors"
+            title={t("nav.admin")}
           >
             <Shield className="h-5 w-5" />
-          </Button>
+          </Link>
         )}
 
         <div className="flex-1" />
 
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={toggleDark} title="Toggle theme">
+        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={toggleDark} title={t("nav.toggle_theme")}>
           {darkMode ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
         </Button>
 
         <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={togglePanel}
-          title={panelOpen ? "Hide tools panel" : "Show tools panel"}
+          title={panelOpen ? t("nav.hide_panel") : t("nav.show_panel")}
         >
           {panelOpen ? <PanelCloseIcon className="h-4.5 w-4.5" /> : <PanelOpenIcon className="h-4.5 w-4.5" />}
         </Button>
@@ -228,7 +225,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           {initials}
         </div>
 
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-red-400 rounded-lg h-9 w-9" onClick={handleLogout} title="Sign out">
+        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-red-400 rounded-lg h-9 w-9" onClick={handleLogout} title={t("nav.sign_out")}>
           <LogOut className="h-4.5 w-4.5" />
         </Button>
       </aside>
@@ -246,13 +243,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                 Radiogen.ai
               </h1>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                AI radiology reporting · {userName}
+                {t("dash.subtitle")} · {userName}
               </p>
             </div>
             {!panelOpen && (
               <Button variant="outline" size="sm" onClick={togglePanel} className="gap-1.5 text-xs">
                 <PanelOpenIcon className="h-3.5 w-3.5" />
-                Tools
+                {t("nav.tools")}
               </Button>
             )}
           </div>

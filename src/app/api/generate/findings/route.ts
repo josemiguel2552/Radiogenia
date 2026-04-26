@@ -1,6 +1,9 @@
+export const maxDuration = 120;
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getGlobalAIConfig, checkReportLimit } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
@@ -12,20 +15,52 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const quota = await checkReportLimit(user.id);
+    if (!quota.allowed) {
+      return NextResponse.json({
+        error: `Monthly report limit reached (${quota.used}/${quota.limit}). Upgrade your plan for more reports.`,
+        code: "LIMIT_REACHED",
+        used: quota.used,
+        limit: quota.limit,
+        plan: quota.plan,
+      }, { status: 429 });
+    }
+
     const { template, dictation, modality, studyType } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
+    const service = createServiceClient();
 
-    const { data: config } = await supabase
+    let { data: config } = await service
       .from("user_model_config")
-      .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled")
+      .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
+    if (!config) {
+      await service.from("user_model_config").upsert(
+        { user_id: user.id },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
+      const { data: retry } = await service
+        .from("user_model_config")
+        .select("findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, compact_normals")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      config = retry;
+    }
+
+    const safeConfig = {
+      findings_length: config?.findings_length || "standard",
+      normal_fields_verbosity: config?.normal_fields_verbosity || "standard",
+      paraphrase_level: config?.paraphrase_level || "light",
+      output_language: config?.output_language || "es",
+      style_learning_enabled: config?.style_learning_enabled ?? true,
+      compact_normals: config?.compact_normals ?? false,
+    };
 
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
-    if (config.style_learning_enabled) {
+    if (safeConfig.style_learning_enabled) {
       try {
         const mod = modality || "CT";
         const defaults = getDefaultsForModality(mod);
@@ -53,10 +88,11 @@ export async function POST(req: NextRequest) {
       template,
       dictation,
       modality: modality || "CT",
-      findingsLength: config.findings_length as FindingsLength,
-      normalFieldsVerbosity: config.normal_fields_verbosity as NormalFieldsVerbosity,
-      paraphraseLevel: config.paraphrase_level as ParaphraseLevel,
-      outputLanguage: (config.output_language || "es") as OutputLanguage,
+      findingsLength: safeConfig.findings_length as FindingsLength,
+      normalFieldsVerbosity: safeConfig.normal_fields_verbosity as NormalFieldsVerbosity,
+      paraphraseLevel: safeConfig.paraphrase_level as ParaphraseLevel,
+      outputLanguage: safeConfig.output_language as OutputLanguage,
+      compactNormals: safeConfig.compact_normals,
       preferredNormalPhrases,
     });
 
@@ -69,10 +105,21 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
     });
 
+    // Increment report usage via service client (bypasses RLS)
+    service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
+      if (rpcError) {
+        service
+          .from("profiles")
+          .update({ reports_used_this_month: quota.used + 1 })
+          .eq("id", user.id)
+          .then(() => {});
+      }
+    });
+
     return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "X-Output-Language": config.output_language || "es",
+        "X-Output-Language": safeConfig.output_language,
       },
     });
   } catch (error) {

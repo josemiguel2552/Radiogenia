@@ -2,14 +2,20 @@
 
 import { useState, useRef, useCallback } from "react";
 
-const SILENCE_TIMEOUT_MS = 1500;
-const MAX_CHUNK_MS = 30_000;
+const SILENCE_TIMEOUT_MS = 1200;
+const MAX_CHUNK_MS = 15_000;
+
+interface DictationQuota {
+  usedSeconds: number;
+  limitSeconds: number;
+}
 
 interface UseVoiceDictationOptions {
   language?: string;
   context?: string;
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
+  onQuotaUpdate?: (quota: DictationQuota) => void;
 }
 
 export function useVoiceDictation({
@@ -17,51 +23,88 @@ export function useVoiceDictation({
   context,
   onTranscript,
   onError,
+  onQuotaUpdate,
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chunkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chunkStartRef = useRef<number>(0);
+  const activeRef = useRef(false);
+  const pendingTranscriptions = useRef(0);
 
-  const transcribeChunk = useCallback(async (blob: Blob) => {
-    if (blob.size < 1000) return;
+  const transcribeBlob = useCallback(async (blob: Blob, durationMs: number) => {
+    if (blob.size < 500) return;
+    pendingTranscriptions.current++;
     setIsTranscribing(true);
     try {
       const formData = new FormData();
-      formData.append("audio", blob, "audio.webm");
+      formData.append("audio", blob, "dictation.webm");
       if (language) formData.append("language", language);
       if (context) formData.append("context", context);
+      formData.append("duration_seconds", String(Math.max(1, Math.round(durationMs / 1000))));
 
       const res = await fetch("/api/transcribe", { method: "POST", body: formData });
       const data = await res.json();
+
+      if (res.status === 429 && data.code === "DICTATION_LIMIT") {
+        onError?.(data.error);
+        stopInternal();
+        return;
+      }
+
       if (res.ok && data.text) {
         onTranscript(data.text);
+        if (data.dictation && onQuotaUpdate) {
+          onQuotaUpdate(data.dictation);
+        }
       } else if (data.error) {
         onError?.(data.error);
       }
     } catch (err) {
       onError?.(err instanceof Error ? err.message : "Transcription failed");
     } finally {
-      setIsTranscribing(false);
+      pendingTranscriptions.current--;
+      if (pendingTranscriptions.current <= 0) {
+        pendingTranscriptions.current = 0;
+        setIsTranscribing(false);
+      }
     }
-  }, [language, context, onTranscript, onError]);
+  }, [language, context, onTranscript, onError, onQuotaUpdate]);
 
-  const flushChunks = useCallback(() => {
-    if (chunksRef.current.length === 0) return;
-    const blob = new Blob(chunksRef.current, { type: "audio/webm;codecs=opus" });
-    chunksRef.current = [];
-    transcribeChunk(blob);
-  }, [transcribeChunk]);
+  const cycleRecorder = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (!recorder || recorder.state !== "recording" || !activeRef.current) return;
+
+    const duration = Date.now() - chunkStartRef.current;
+    recorder.stop();
+
+    const stream = streamRef.current;
+    if (!stream || !activeRef.current) return;
+
+    const mimeType = recorder.mimeType;
+    const next = new MediaRecorder(stream, { mimeType });
+    recorderRef.current = next;
+    chunkStartRef.current = Date.now();
+
+    next.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        transcribeBlob(e.data, Date.now() - chunkStartRef.current || duration);
+      }
+    };
+    next.onstop = () => {};
+    next.start();
+  }, [transcribeBlob]);
 
   const detectSilence = useCallback(() => {
     const analyser = analyserRef.current;
-    if (!analyser) return;
+    if (!analyser || !activeRef.current) return;
 
     const data = new Uint8Array(analyser.fftSize);
     analyser.getByteTimeDomainData(data);
@@ -73,11 +116,11 @@ export function useVoiceDictation({
     }
     const rms = Math.sqrt(sum / data.length);
 
-    if (rms < 0.01) {
+    if (rms < 0.015) {
       if (!silenceTimerRef.current) {
         silenceTimerRef.current = setTimeout(() => {
-          flushChunks();
           silenceTimerRef.current = null;
+          cycleRecorder();
         }, SILENCE_TIMEOUT_MS);
       }
     } else {
@@ -87,10 +130,48 @@ export function useVoiceDictation({
       }
     }
 
-    if (mediaRecorderRef.current?.state === "recording") {
-      animFrameRef.current = requestAnimationFrame(detectSilence);
+    animFrameRef.current = requestAnimationFrame(detectSilence);
+  }, [cycleRecorder]);
+
+  const stopInternal = useCallback(() => {
+    activeRef.current = false;
+
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
     }
-  }, [flushChunks]);
+    if (chunkTimerRef.current) {
+      clearTimeout(chunkTimerRef.current);
+      chunkTimerRef.current = null;
+    }
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state === "recording") {
+      const duration = Date.now() - chunkStartRef.current;
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          transcribeBlob(e.data, duration);
+        }
+      };
+      recorder.stop();
+    }
+    recorderRef.current = null;
+
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+    analyserRef.current = null;
+
+    setIsRecording(false);
+  }, [transcribeBlob]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -101,11 +182,11 @@ export function useVoiceDictation({
           sampleRate: 16000,
         },
       });
-
       streamRef.current = stream;
+      activeRef.current = true;
 
-      // Set up audio analysis for silence detection
       const audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 2048;
@@ -114,57 +195,43 @@ export function useVoiceDictation({
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
-        : "audio/webm";
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
 
-      const recorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = recorder;
-      chunksRef.current = [];
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recorderRef.current = recorder;
+      chunkStartRef.current = Date.now();
 
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          transcribeBlob(e.data, Date.now() - chunkStartRef.current);
+        }
       };
+      recorder.onstop = () => {};
 
-      recorder.onstop = () => {
-        flushChunks();
-      };
-
-      recorder.start(500);
+      recorder.start();
       setIsRecording(true);
 
-      // Force flush every MAX_CHUNK_MS even if no silence detected
-      chunkTimerRef.current = setInterval(() => {
-        if (recorder.state === "recording" && chunksRef.current.length > 0) {
-          flushChunks();
-        }
-      }, MAX_CHUNK_MS);
+      const scheduleMaxChunk = () => {
+        chunkTimerRef.current = setTimeout(() => {
+          if (activeRef.current) {
+            cycleRecorder();
+            scheduleMaxChunk();
+          }
+        }, MAX_CHUNK_MS);
+      };
+      scheduleMaxChunk();
 
-      // Start silence detection
       animFrameRef.current = requestAnimationFrame(detectSilence);
     } catch (err) {
       onError?.(err instanceof Error ? err.message : "Microphone access denied");
     }
-  }, [flushChunks, detectSilence, onError]);
+  }, [transcribeBlob, cycleRecorder, detectSilence, onError]);
 
   const stopRecording = useCallback(() => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    if (chunkTimerRef.current) {
-      clearInterval(chunkTimerRef.current);
-      chunkTimerRef.current = null;
-    }
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-    if (mediaRecorderRef.current?.state === "recording") {
-      mediaRecorderRef.current.stop();
-    }
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    setIsRecording(false);
-  }, []);
+    stopInternal();
+  }, [stopInternal]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {

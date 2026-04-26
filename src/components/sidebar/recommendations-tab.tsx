@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { UserRecommendation } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface ExtractedRec {
   trigger: string;
@@ -52,6 +53,7 @@ export function RecommendationsTab() {
   const [extractedRecs, setExtractedRecs] = useState<ExtractedRec[]>([]);
   const [reviewOpen, setReviewOpen] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   async function load() {
     setLoading(true);
@@ -132,7 +134,7 @@ export function RecommendationsTab() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this recommendation?")) return;
+    if (!confirm(t("confirm_delete_recommendation"))) return;
     await fetch(`/api/recommendations?id=${id}`, { method: "DELETE" });
     load();
   }
@@ -202,7 +204,7 @@ export function RecommendationsTab() {
   if (loading) {
     return (
       <div className="flex justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
@@ -211,9 +213,9 @@ export function RecommendationsTab() {
     <div className="space-y-3">
       {/* Header */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Guidelines</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("rec.title")}</h2>
         <p className="text-[11px] text-gray-500 dark:text-gray-400">
-          {recs.length} {recs.length === 1 ? "recommendation" : "recommendations"} · grouped by source
+          {recs.length} {recs.length === 1 ? t("rec.recommendation_singular") : t("rec.recommendations")} · {t("rec.grouped_by")}
         </p>
       </div>
 
@@ -222,7 +224,7 @@ export function RecommendationsTab() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input
-            placeholder="Search…"
+            placeholder={t("tpl.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-8 text-xs"
@@ -232,7 +234,7 @@ export function RecommendationsTab() {
           size="icon"
           variant="outline"
           onClick={() => fileRef.current?.click()}
-          title="Upload Word/PDF guidelines"
+          title={t("rec.upload_guidelines")}
           className="h-8 w-8 shrink-0"
         >
           <Upload className="h-3.5 w-3.5" />
@@ -241,7 +243,7 @@ export function RecommendationsTab() {
           size="icon"
           variant="default"
           onClick={() => setShowForm(!showForm)}
-          title="Add recommendation manually"
+          title={t("rec.add_manual")}
           className="h-8 w-8 shrink-0"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -260,27 +262,27 @@ export function RecommendationsTab() {
       {showForm && (
         <div className="space-y-2 p-3 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-800/50">
           <div>
-            <Label className="text-[11px] text-gray-500">Trigger finding</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("rec.trigger")}</Label>
             <Input
-              placeholder="e.g. Pulmonary nodule >8mm"
+              placeholder={t("rec.trigger_placeholder")}
               value={trigger}
               onChange={(e) => setTrigger(e.target.value)}
               className="h-8 text-xs"
             />
           </div>
           <div>
-            <Label className="text-[11px] text-gray-500">Recommendation</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("rec.recommendation")}</Label>
             <Textarea
-              placeholder="e.g. Follow-up chest CT in 3 months"
+              placeholder={t("rec.recommendation_placeholder")}
               value={recText}
               onChange={(e) => setRecText(e.target.value)}
               className="min-h-[60px] text-xs"
             />
           </div>
           <div>
-            <Label className="text-[11px] text-gray-500">Guideline / source</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("rec.guideline_source")}</Label>
             <Input
-              placeholder="e.g. Fleischner Society"
+              placeholder={t("rec.guideline_placeholder")}
               value={guideline}
               onChange={(e) => setGuideline(e.target.value)}
               className="h-8 text-xs"
@@ -288,10 +290,10 @@ export function RecommendationsTab() {
           </div>
           <div className="flex gap-1.5 pt-1">
             <Button size="sm" onClick={handleAdd} disabled={saving} className="h-7 text-xs">
-              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("save")}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setShowForm(false)} className="h-7 text-xs">
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         </div>
@@ -299,9 +301,9 @@ export function RecommendationsTab() {
 
       {/* Upload status */}
       {extracting && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-soft text-accent">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-soft text-brand">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          <p className="text-xs">AI is extracting recommendations…</p>
+          <p className="text-xs">{t("rec.extracting")}</p>
         </div>
       )}
 
@@ -316,7 +318,7 @@ export function RecommendationsTab() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               <span className="text-xs font-medium text-amber-900 dark:text-amber-200">
-                {extractedRecs.length} extracted, awaiting review
+                {extractedRecs.length} {t("rec.extracted_review")}
               </span>
             </div>
             <ChevronDown
@@ -334,7 +336,7 @@ export function RecommendationsTab() {
                 onClick={approveAllExtracted}
                 className="w-full h-7 text-xs gap-1.5 bg-white dark:bg-gray-900"
               >
-                <Check className="h-3 w-3 text-green-600" /> Approve all {extractedRecs.length}
+                <Check className="h-3 w-3 text-green-600" /> {t("approve_all")} {extractedRecs.length}
               </Button>
               {extractedRecs.map((r, i) => (
                 <div
@@ -357,7 +359,7 @@ export function RecommendationsTab() {
                       className="h-6 text-[10px] flex-1 gap-1 text-green-600"
                       onClick={() => approveExtracted(i)}
                     >
-                      <Check className="h-3 w-3" /> Approve
+                      <Check className="h-3 w-3" /> {t("approve")}
                     </Button>
                     <Button
                       size="sm"
@@ -381,12 +383,10 @@ export function RecommendationsTab() {
           <div className="text-center py-10 px-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
             <BookOpen className="h-10 w-10 mx-auto mb-3 text-gray-300 dark:text-gray-700" />
             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {search ? "No matching recommendations" : "No recommendations yet"}
+              {search ? t("rec.no_match") : t("rec.no_recs")}
             </p>
             <p className="text-[11px] text-gray-400 mt-1">
-              {search
-                ? "Try a different search term"
-                : "Add manually or upload guideline documents"}
+              {search ? t("rec.try_different") : t("rec.add_or_upload")}
             </p>
           </div>
         )}
@@ -410,7 +410,7 @@ export function RecommendationsTab() {
                   {grouped[group].map((r) => (
                     <div
                       key={r.id}
-                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-accent-soft hover:shadow-sm transition-all"
+                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft hover:shadow-sm transition-all"
                     >
                       <div className="flex justify-between items-start gap-1">
                         <div className="flex-1 min-w-0">
@@ -421,7 +421,7 @@ export function RecommendationsTab() {
                             {r.recommendation_text}
                           </p>
                           <Badge variant="secondary" className="text-[9px] h-4 px-1.5 mt-1">
-                            {r.source === "pdf_extracted" ? "Imported" : "Manual"}
+                            {r.source === "pdf_extracted" ? t("rec.imported") : t("rec.manual")}
                           </Badge>
                         </div>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -430,7 +430,7 @@ export function RecommendationsTab() {
                             size="icon"
                             className="h-6 w-6"
                             onClick={() => openEdit(r)}
-                            title="Edit"
+                            title={t("edit")}
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -439,7 +439,7 @@ export function RecommendationsTab() {
                             size="icon"
                             className="h-6 w-6 text-red-500 hover:text-red-600"
                             onClick={() => handleDelete(r.id)}
-                            title="Delete"
+                            title={t("delete")}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -458,15 +458,15 @@ export function RecommendationsTab() {
       <Dialog open={!!editRec} onOpenChange={(open) => { if (!open) setEditRec(null); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit recommendation</DialogTitle>
+            <DialogTitle>{t("rec.edit_dialog")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="text-xs">Trigger finding</Label>
+              <Label className="text-xs">{t("rec.trigger")}</Label>
               <Input value={editTrigger} onChange={(e) => setEditTrigger(e.target.value)} />
             </div>
             <div>
-              <Label className="text-xs">Recommendation</Label>
+              <Label className="text-xs">{t("rec.recommendation")}</Label>
               <Textarea
                 value={editRecText}
                 onChange={(e) => setEditRecText(e.target.value)}
@@ -474,16 +474,16 @@ export function RecommendationsTab() {
               />
             </div>
             <div>
-              <Label className="text-xs">Guideline / source</Label>
+              <Label className="text-xs">{t("rec.guideline_source")}</Label>
               <Input value={editGuideline} onChange={(e) => setEditGuideline(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t("cancel")}</Button>
             </DialogClose>
             <Button onClick={handleEditSave} disabled={editSaving}>
-              {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
+              {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("tpl.save_changes")}
             </Button>
           </DialogFooter>
         </DialogContent>

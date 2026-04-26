@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Check, ShieldAlert } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const TRACE_COLORS = [
   { bg: "rgba(59,130,246,0.18)",  text: "#3b82f6",  dark: "rgba(96,165,250,0.22)" },
@@ -17,6 +18,7 @@ const TRACE_COLORS = [
 ];
 
 const UNMATCHED_COLOR = { bg: "rgba(239,68,68,0.2)", text: "#ef4444", dark: "rgba(248,113,113,0.25)" };
+const HALLUCINATION_COLOR = { bg: "rgba(168,85,247,0.2)", text: "#a855f7", dark: "rgba(192,132,252,0.25)" };
 
 export interface TraceMapping {
   dictation_fragment: string;
@@ -29,13 +31,16 @@ export interface TraceUnmatched {
   reason: string;
 }
 
+export interface TraceHallucination {
+  findings_fragment: string;
+  section: string;
+  reason: string;
+}
+
 export interface TraceData {
   mappings: TraceMapping[];
   unmatched: TraceUnmatched[];
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  hallucinations: TraceHallucination[];
 }
 
 function normalizeForSearch(s: string): string {
@@ -49,16 +54,15 @@ interface HighlightSpan {
   fragment: string;
   section?: string;
   isUnmatched?: boolean;
+  isHallucination?: boolean;
 }
 
 function findBestMatch(text: string, fragment: string): { start: number; end: number } | null {
   const normalText = normalizeForSearch(text);
   const normalFrag = normalizeForSearch(fragment);
 
-  // Exact match on normalized text
   const idx = normalText.indexOf(normalFrag);
   if (idx !== -1) {
-    // Map back to original positions
     let origStart = 0, normalPos = 0;
     const lowerText = text.toLowerCase();
     while (normalPos < idx && origStart < text.length) {
@@ -84,7 +88,6 @@ function findBestMatch(text: string, fragment: string): { start: number; end: nu
     return { start, end: origEnd };
   }
 
-  // Fallback: word-level overlap search
   const fragWords = normalFrag.split(/\s+/).filter(w => w.length > 2);
   if (fragWords.length === 0) return null;
 
@@ -111,9 +114,8 @@ function findBestMatch(text: string, fragment: string): { start: number; end: nu
   return bestRange;
 }
 
-function buildHighlights(text: string, fragments: { fragment: string; colorIdx: number; section?: string; isUnmatched?: boolean }[]): HighlightSpan[] {
+function buildHighlights(text: string, fragments: { fragment: string; colorIdx: number; section?: string; isUnmatched?: boolean; isHallucination?: boolean }[]): HighlightSpan[] {
   const spans: HighlightSpan[] = [];
-  const used = new Set<number>();
 
   for (const f of fragments) {
     const match = findBestMatch(text, f.fragment);
@@ -128,7 +130,7 @@ function buildHighlights(text: string, fragments: { fragment: string; colorIdx: 
     }
     if (overlap) continue;
 
-    spans.push({ ...match, colorIdx: f.colorIdx, fragment: f.fragment, section: f.section, isUnmatched: f.isUnmatched });
+    spans.push({ ...match, colorIdx: f.colorIdx, fragment: f.fragment, section: f.section, isUnmatched: f.isUnmatched, isHallucination: f.isHallucination });
   }
 
   spans.sort((a, b) => a.start - b.start);
@@ -162,31 +164,41 @@ export function HighlightedText({
 
   return (
     <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[80px]">
-      {parts.map((p, i) =>
-        p.highlight ? (
+      {parts.map((p, i) => {
+        if (!p.highlight) return <span key={i}>{p.text}</span>;
+        const h = p.highlight;
+        const color = h.isHallucination
+          ? HALLUCINATION_COLOR
+          : h.isUnmatched
+          ? UNMATCHED_COLOR
+          : TRACE_COLORS[h.colorIdx % TRACE_COLORS.length];
+        const tooltip = h.isHallucination
+          ? `⚠ Hallucination — ${h.section}`
+          : h.isUnmatched
+          ? `⚠ Not found in findings`
+          : `→ ${h.section}`;
+        return (
           <mark
             key={i}
             className="rounded px-0.5 relative cursor-default"
             style={{
-              backgroundColor: p.highlight.isUnmatched
-                ? (isDark ? UNMATCHED_COLOR.dark : UNMATCHED_COLOR.bg)
-                : (isDark ? TRACE_COLORS[p.highlight.colorIdx % TRACE_COLORS.length].dark : TRACE_COLORS[p.highlight.colorIdx % TRACE_COLORS.length].bg),
+              backgroundColor: isDark ? color.dark : color.bg,
               color: "inherit",
-              borderBottom: `2px solid ${p.highlight.isUnmatched ? UNMATCHED_COLOR.text : TRACE_COLORS[p.highlight.colorIdx % TRACE_COLORS.length].text}`,
+              borderBottom: `2px solid ${color.text}`,
+              textDecoration: h.isHallucination ? "line-through" : undefined,
             }}
-            title={p.highlight.isUnmatched ? `⚠ Not found in findings` : `→ ${p.highlight.section}`}
+            title={tooltip}
           >
             {p.text}
           </mark>
-        ) : (
-          <span key={i}>{p.text}</span>
-        )
-      )}
+        );
+      })}
     </div>
   );
 }
 
 export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boolean }) {
+  const t = useT();
   const sections = useMemo(() => {
     const map = new Map<string, number>();
     trace.mappings.forEach((m, i) => {
@@ -197,26 +209,41 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
 
   const total = trace.mappings.length + trace.unmatched.length;
   const matched = trace.mappings.length;
+  const allGood = trace.unmatched.length === 0 && trace.hallucinations.length === 0;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-          Traceability: {matched}/{total} phrases mapped
+          {t("trace.title")}: {matched}/{total}
         </span>
-        {trace.unmatched.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
-            <AlertTriangle className="h-3 w-3" />
-            {trace.unmatched.length} unmatched
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {allGood && (
+            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+              <Check className="h-3 w-3" />
+              {t("trace.all_verified")}
+            </span>
+          )}
+          {trace.unmatched.length > 0 && (
+            <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
+              <AlertTriangle className="h-3 w-3" />
+              {trace.unmatched.length} {t("trace.omissions")}
+            </span>
+          )}
+          {trace.hallucinations.length > 0 && (
+            <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 font-medium">
+              <ShieldAlert className="h-3 w-3" />
+              {trace.hallucinations.length} {t("trace.hallucinations")}
+            </span>
+          )}
+        </div>
       </div>
       <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
         <div
           className="h-1.5 rounded-full transition-all"
           style={{
             width: `${total > 0 ? (matched / total) * 100 : 0}%`,
-            backgroundColor: trace.unmatched.length > 0 ? "#f59e0b" : "#22c55e",
+            backgroundColor: allGood ? "#22c55e" : trace.unmatched.length > 0 ? "#f59e0b" : "#a855f7",
           }}
         />
       </div>
@@ -233,18 +260,6 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
             {section}
           </span>
         ))}
-        {trace.unmatched.length > 0 && (
-          <span
-            className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium"
-            style={{
-              backgroundColor: isDark ? UNMATCHED_COLOR.dark : UNMATCHED_COLOR.bg,
-              borderBottom: `2px solid ${UNMATCHED_COLOR.text}`,
-              color: UNMATCHED_COLOR.text,
-            }}
-          >
-            Unmatched
-          </span>
-        )}
       </div>
     </div>
   );
@@ -252,7 +267,7 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
 
 export function useTraceHighlights(dictation: string, findings: string, trace: TraceData | null) {
   return useMemo(() => {
-    if (!trace) return { dictationHighlights: [], findingsHighlights: [] };
+    if (!trace) return { dictationHighlights: [] as HighlightSpan[], findingsHighlights: [] as HighlightSpan[] };
 
     const sectionColorMap = new Map<string, number>();
     let nextColor = 0;
@@ -276,11 +291,19 @@ export function useTraceHighlights(dictation: string, findings: string, trace: T
       })),
     ];
 
-    const findingsFrags = trace.mappings.map(m => ({
-      fragment: m.dictation_fragment,
-      colorIdx: sectionColorMap.get(m.section) || 0,
-      section: m.section,
-    }));
+    const findingsFrags = [
+      ...trace.mappings.map(m => ({
+        fragment: m.dictation_fragment,
+        colorIdx: sectionColorMap.get(m.section) || 0,
+        section: m.section,
+      })),
+      ...trace.hallucinations.map(h => ({
+        fragment: h.findings_fragment,
+        colorIdx: -1,
+        section: h.section,
+        isHallucination: true as const,
+      })),
+    ];
 
     return {
       dictationHighlights: buildHighlights(dictation, dictFrags),

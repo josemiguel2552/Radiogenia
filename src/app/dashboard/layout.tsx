@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { ensureProfile } from "@/lib/ensure-profile";
 
 export default async function DashboardLayout({
   children,
@@ -11,14 +12,10 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const role = await ensureProfile(user.id, user.email || "");
 
   return (
-    <DashboardShell user={user} role={profile?.role || "radiologist"}>
+    <DashboardShell user={user} role={role}>
       {children}
     </DashboardShell>
   );

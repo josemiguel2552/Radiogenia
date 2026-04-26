@@ -64,26 +64,27 @@
   }
 }
 
-/* ── Theme-aware utility classes ── */
+/* ── Brand color utilities (use "brand" to avoid Tailwind v4 "accent" conflict) ── */
 @layer utilities {
-  .text-accent { color: hsl(var(--primary)); }
-  .bg-accent { background-color: hsl(var(--primary)); }
-  .bg-accent-soft { background-color: hsl(var(--primary) / 0.08); }
-  .dark .bg-accent-soft { background-color: hsl(var(--primary) / 0.15); }
-  .bg-accent-soft-hover:hover { background-color: hsl(var(--primary) / 0.12); }
-  .dark .bg-accent-soft-hover:hover { background-color: hsl(var(--primary) / 0.2); }
-  .border-accent { border-color: hsl(var(--primary)); }
-  .border-accent-soft { border-color: hsl(var(--primary) / 0.2); }
-  .dark .border-accent-soft { border-color: hsl(var(--primary) / 0.35); }
-  .ring-accent { --tw-ring-color: hsl(var(--primary)); }
-  .from-accent { --tw-gradient-from: hsl(var(--primary)); }
-  .to-accent-dark { --tw-gradient-to: hsl(var(--primary) / 0.85); }
-  .shadow-accent { box-shadow: 0 4px 14px hsl(var(--primary) / 0.25); }
-  .accent-border { border: 2px solid hsl(var(--primary)); }
-  .accent-switch[data-state="checked"] { background-color: hsl(var(--primary)); }
-  .accent-radio[data-state="checked"] { border-color: hsl(var(--primary)); }
-  .focus-accent:focus { outline-color: hsl(var(--primary)); }
-  .focus-ring-accent:focus-visible { --tw-ring-color: hsl(var(--primary)); }
+  .text-brand { color: hsl(var(--primary)); }
+  .text-brand-fg { color: hsl(var(--primary-foreground)); }
+  .bg-brand { background-color: hsl(var(--primary)); }
+  .bg-brand-gradient { background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.85)); }
+  .bg-brand-gradient-br { background-image: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--primary) / 0.85)); }
+  .bg-brand-soft { background-color: hsl(var(--primary) / 0.08); }
+  .dark .bg-brand-soft { background-color: hsl(var(--primary) / 0.15); }
+  .bg-brand-soft-hover:hover { background-color: hsl(var(--primary) / 0.12); }
+  .dark .bg-brand-soft-hover:hover { background-color: hsl(var(--primary) / 0.2); }
+  .border-brand { border-color: hsl(var(--primary)); }
+  .border-brand-soft { border-color: hsl(var(--primary) / 0.2); }
+  .dark .border-brand-soft { border-color: hsl(var(--primary) / 0.35); }
+  .ring-brand { --tw-ring-color: hsl(var(--primary)); }
+  .shadow-brand { box-shadow: 0 4px 14px hsl(var(--primary) / 0.25); }
+  .brand-border { border: 2px solid hsl(var(--primary)); }
+  .brand-switch[data-state="checked"] { background-color: hsl(var(--primary)); }
+  .brand-radio[data-state="checked"] { border-color: hsl(var(--primary)); }
+  .focus-brand:focus { outline-color: hsl(var(--primary)); }
+  .focus-ring-brand:focus-visible { --tw-ring-color: hsl(var(--primary)); }
 }
 
 /* Recording animation */

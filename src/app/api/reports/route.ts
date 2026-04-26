@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractConclusionStyle } from "@/lib/style-learning";
-import { PLANS, type SubscriptionPlan } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function GET(req: NextRequest) {
@@ -132,31 +131,6 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Check subscription limits
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("subscription_plan, reports_used_this_month, billing_period_start")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) {
-      const plan = (profile.subscription_plan || "free") as SubscriptionPlan;
-      const planConfig = PLANS[plan];
-      const periodStart = new Date(profile.billing_period_start || Date.now());
-      const needsReset = periodStart.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
-      const used = needsReset ? 0 : (profile.reports_used_this_month || 0);
-
-      if (used >= planConfig.reports) {
-        return NextResponse.json({
-          error: "Monthly report limit reached. Upgrade your plan for more reports.",
-          code: "LIMIT_REACHED",
-          used,
-          limit: planConfig.reports,
-          plan,
-        }, { status: 429 });
-      }
-    }
-
     const body = await req.json();
 
     const reportRow: Record<string, unknown> = {
@@ -194,15 +168,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    // Increment monthly usage counter
-    const { error: rpcError } = await supabase.rpc("increment_report_usage", { uid: user.id });
-    if (rpcError) {
-      await supabase
-        .from("profiles")
-        .update({ reports_used_this_month: (profile?.reports_used_this_month || 0) + 1 })
-        .eq("id", user.id);
-    }
 
     let learnedPhrases = 0;
 

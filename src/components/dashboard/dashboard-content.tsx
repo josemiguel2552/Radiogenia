@@ -21,16 +21,20 @@ import {
   Stethoscope,
   CircleCheck,
   ArrowRight,
-  ScanSearch,
+  ShieldCheck,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { AnatomyLoader } from "./anatomy-loader";
+import { FloatingDictation } from "./floating-dictation";
+import { useT, useSection } from "@/lib/i18n";
 
 export function DashboardContent() {
   const supabase = createClient();
+  const t = useT();
+  const sec = useSection();
 
   // Templates state
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
@@ -60,6 +64,7 @@ export function DashboardContent() {
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
+  const [repairMessage, setRepairMessage] = useState<string | null>(null);
 
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
@@ -112,13 +117,16 @@ export function DashboardContent() {
     }
   }, []);
 
-  // Load templates
+  // Seed defaults (if needed) then load templates
   useEffect(() => {
-    async function load() {
+    async function seedAndLoad() {
+      try {
+        await fetch("/api/seed", { method: "POST" });
+      } catch { /* seed may already exist */ }
       const res = await fetch("/api/templates");
       if (res.ok) setTemplates(await res.json());
     }
-    load();
+    seedAndLoad();
   }, []);
 
   // Filtered data
@@ -148,8 +156,14 @@ export function DashboardContent() {
     setLoadingFindings(true);
     setLoadingConclusion(true);
     setLoadingRecs(true);
+    setFindings("");
+    setConclusion("");
+    setRecommendations("");
+    setInitialFindings("");
+    setInitialConclusion("");
     setTraceData(null);
     setTraceActive(false);
+    setRepairMessage(null);
 
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
@@ -197,7 +211,42 @@ export function DashboardContent() {
       return;
     }
 
-    // Stream conclusion + fetch recommendations in parallel
+    // Run trace+repair, conclusion, and recommendations ALL IN PARALLEL
+    const tracePromise = (async () => {
+      setLoadingTrace(true);
+      try {
+        const traceRes = await fetch("/api/generate/trace", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dictation, findings: findingsText, outputLanguage }),
+        });
+        if (traceRes.ok) {
+          const result = await traceRes.json();
+          if (!result.hallucinations) result.hallucinations = [];
+          if (!result.mappings) result.mappings = [];
+          if (!result.unmatched) result.unmatched = [];
+
+          if (result.repaired && result.corrected_findings) {
+            findingsText = cleanReport(result.corrected_findings);
+            setFindings(findingsText);
+            setInitialFindings(findingsText);
+            setRepairMessage(t("trace.auto_repaired").replace("{0}", ""));
+          }
+
+          setTraceData({
+            mappings: result.mappings,
+            unmatched: result.unmatched,
+            hallucinations: result.hallucinations,
+          });
+          setTraceActive(true);
+        }
+      } catch (e) {
+        console.error("Auto-trace failed:", e);
+      } finally {
+        setLoadingTrace(false);
+      }
+    })();
+
     const conclusionPromise = (async () => {
       try {
         const res = await fetch("/api/generate/conclusion", {
@@ -251,7 +300,7 @@ export function DashboardContent() {
         setLoadingRecs(false);
       });
 
-    await Promise.all([conclusionPromise, recsPromise]);
+    await Promise.all([tracePromise, conclusionPromise, recsPromise]);
   }
 
   function cleanReport(text: string): string {
@@ -325,29 +374,8 @@ export function DashboardContent() {
     copyText(text, id);
   }
 
-  async function runTrace() {
-    if (!dictation.trim() || !findings.trim()) return;
-    setLoadingTrace(true);
-    setTraceActive(true);
-    try {
-      const res = await fetch("/api/generate/trace", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dictation, findings }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTraceData(data);
-      }
-    } catch (e) {
-      console.error("Trace failed:", e);
-    } finally {
-      setLoadingTrace(false);
-    }
-  }
-
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-  const { dictationHighlights, findingsHighlights } = useTraceHighlights(dictation, findings, traceActive ? traceData : null);
+  const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
 
   async function saveReportQuietly() {
     if (!selectedTemplate || !findings) return;
@@ -399,6 +427,7 @@ export function DashboardContent() {
     setClinicalInfo("");
     setTraceData(null);
     setTraceActive(false);
+    setRepairMessage(null);
     localStorage.removeItem("radiogenai_draft");
   }
 
@@ -416,17 +445,17 @@ export function DashboardContent() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-accent" />
-            New report
+            <Wand2 className="h-5 w-5 text-brand" />
+            {t("dash.new_report_title")}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Pick a template, add the clinical context, dictate, and let AI assemble the report.
+            {t("dash.new_report_hint")}
           </p>
         </div>
         {hasOutput && (
           <Button variant="outline" size="sm" onClick={startNewReport} className="gap-1.5 text-xs">
             <ArrowRight className="h-3.5 w-3.5" />
-            Next report
+            {t("dash.next_report")}
           </Button>
         )}
       </div>
@@ -434,15 +463,15 @@ export function DashboardContent() {
       {/* Step 1 — Setup */}
       <StepCard
         step={1}
-        title="Study setup"
-        description="Choose modality, anatomy and template"
+        title={t("dash.study_setup")}
+        description={t("dash.study_setup_hint")}
         complete={setupReady}
         icon={<FileText className="h-4 w-4" />}
       >
         <div className="space-y-4">
           <div>
-            <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
-              Modality
+            <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
+              {t("dash.modality")}
             </Label>
             <div className="flex flex-wrap gap-1.5">
               {MODALITIES.map((mod) => (
@@ -465,25 +494,25 @@ export function DashboardContent() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">
-                Anatomical region
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">
+                {t("dash.region")}
               </Label>
               <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Any region" /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
                 <SelectContent>
                   {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 block">
-                Template
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">
+                {t("dash.template")}
               </Label>
               <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
                 <SelectTrigger className="h-9">
-                  <SelectValue placeholder={filteredTemplates.length === 0 ? "No templates available" : "Select a template"} />
+                  <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredTemplates.map((t) => (
@@ -495,14 +524,14 @@ export function DashboardContent() {
           </div>
 
           <div>
-            <Label className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 block">
-              Contrast
+            <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
+              {t("dash.contrast")}
             </Label>
             <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
               {[
-                { v: "default", l: "Default" },
-                { v: "con_contraste", l: "With contrast" },
-                { v: "sin_contraste", l: "Without contrast" },
+                { v: "default", l: t("dash.default") },
+                { v: "con_contraste", l: t("dash.with_contrast") },
+                { v: "sin_contraste", l: t("dash.without_contrast") },
               ].map((opt) => (
                 <button
                   key={opt.v}
@@ -510,7 +539,7 @@ export function DashboardContent() {
                   onClick={() => setContrastOption(opt.v)}
                   className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                     contrastOption === opt.v
-                      ? "bg-white dark:bg-gray-900 text-accent shadow-sm font-medium"
+                      ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
@@ -525,27 +554,27 @@ export function DashboardContent() {
       {/* Step 2 — Clinical context */}
       <StepCard
         step={2}
-        title="Clinical context"
-        description="Reason for the study and clinical question (optional)"
+        title={t("dash.clinical_context")}
+        description={t("dash.clinical_context_hint")}
         complete={!!clinicalInfo.trim()}
         icon={<Stethoscope className="h-4 w-4" />}
       >
         <Textarea
-          placeholder="e.g. 58-year-old male with right upper quadrant pain. Rule out cholelithiasis."
+          placeholder={t("dash.clinical_placeholder")}
           value={clinicalInfo}
           onChange={(e) => setClinicalInfo(e.target.value)}
           className="min-h-[64px] text-sm resize-none"
         />
         <p className="text-[11px] text-gray-400 mt-1.5">
-          The conclusion will prioritize answering this clinical question.
+          {t("dash.clinical_conclusion_hint")}
         </p>
       </StepCard>
 
       {/* Step 3 — Dictation */}
       <StepCard
         step={3}
-        title="Dictation"
-        description="Speak or type your findings — the AI will format them"
+        title={t("dash.dictation_title")}
+        description={t("dash.dictation_hint")}
         complete={!!dictation.trim()}
         icon={<Mic className="h-4 w-4" />}
       >
@@ -561,10 +590,10 @@ export function DashboardContent() {
             </Button>
             <div className="flex-1">
               <p className="text-xs font-medium text-gray-900 dark:text-white">
-                {isRecording ? "Listening…" : isTranscribing ? "Transcribing…" : "Voice dictation"}
+                {isRecording ? t("dash.listening") : isTranscribing ? t("dash.transcribing") : t("dash.voice_dictation")}
               </p>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                {isRecording ? "Click the mic to stop" : isTranscribing ? "Processing audio with Whisper AI" : "Click the mic to start dictating, or type below"}
+                {isRecording ? t("dash.click_to_stop") : isTranscribing ? t("dash.processing_audio") : t("dash.click_to_start")}
               </p>
             </div>
             {isRecording && (
@@ -581,46 +610,33 @@ export function DashboardContent() {
             <p className="text-xs text-red-500 dark:text-red-400 px-1">{voiceError}</p>
           )}
 
-          {traceActive && dictationHighlights.length > 0 ? (
-            <div>
-              <HighlightedText text={dictation} highlights={dictationHighlights} isDark={isDark} />
-              <button
-                type="button"
-                onClick={() => setTraceActive(false)}
-                className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1 underline underline-offset-2"
-              >
-                Back to edit
-              </button>
-            </div>
-          ) : (
-            <Textarea
-              placeholder="Type or dictate your findings here..."
-              value={dictation}
-              onChange={(e) => { setDictation(e.target.value); setTraceData(null); }}
-              className="min-h-[140px] text-sm"
-            />
-          )}
+          <Textarea
+            placeholder={t("dash.dictation_placeholder")}
+            value={dictation}
+            onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+            className="min-h-[140px] text-sm"
+          />
 
           <Button
             onClick={handleGenerate}
             disabled={!canGenerate}
-            className="w-full h-10 gap-2 bg-gradient-to-r from-accent to-accent-dark shadow-accent hover:opacity-90 disabled:opacity-50 text-white"
+            className="w-full h-10 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
           >
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Generating report…
+                {t("dash.generating")}
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                Generate report
+                {t("dash.generate")}
               </>
             )}
           </Button>
           {!setupReady && (
             <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
-              Pick a template above to enable generation.
+              {t("dash.select_template_first")}
             </p>
           )}
         </div>
@@ -632,7 +648,7 @@ export function DashboardContent() {
           <div className="flex items-center gap-2 pt-2">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
             <span className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
-              Generated report
+              {t("dash.generated_report")}
             </span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
           </div>
@@ -646,28 +662,25 @@ export function DashboardContent() {
             </Card>
           )}
 
-          {/* Trace controls */}
-          {findings && !loadingFindings && (
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={traceActive ? () => setTraceActive(false) : runTrace}
-                disabled={loadingTrace || !dictation.trim()}
-                className="gap-1.5 text-xs"
-              >
-                {loadingTrace ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <ScanSearch className="h-3.5 w-3.5" />
-                )}
-                {traceActive ? "Exit trace" : "Trace dictation"}
-              </Button>
+          {/* Verification status */}
+          {loadingTrace && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+              <span className="text-xs text-blue-700 dark:text-blue-300">
+                {t("dash.verifying")}
+              </span>
+            </div>
+          )}
+
+          {repairMessage && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+              <span className="text-xs text-amber-700 dark:text-amber-300">{repairMessage}</span>
             </div>
           )}
 
           {/* Trace legend */}
-          {traceActive && traceData && (
+          {traceData && (
             <Card>
               <CardContent className="p-3">
                 <TraceLegend trace={traceData} isDark={isDark} />
@@ -676,18 +689,18 @@ export function DashboardContent() {
           )}
 
           <OutputCard
-            title="Findings"
-            icon={<FileText className="h-4 w-4 text-accent" />}
+            title={t("dash.findings")}
+            icon={<FileText className="h-4 w-4 text-brand" />}
             loading={loadingFindings}
             value={findings}
-            onChange={(v) => { setFindings(v); setTraceData(null); }}
+            onChange={(v) => { setFindings(v); setTraceData(null); setRepairMessage(null); }}
             minHeight={170}
-            traceHighlights={traceActive ? findingsHighlights : undefined}
+            traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
             isDark={isDark}
           />
 
           <OutputCard
-            title="Conclusion"
+            title={t("dash.conclusion")}
             icon={<CircleCheck className="h-4 w-4 text-green-600" />}
             loading={loadingConclusion}
             value={conclusion}
@@ -702,7 +715,7 @@ export function DashboardContent() {
           />
 
           {/* Action bar */}
-          <Card className="sticky bottom-4 shadow-lg border-accent-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+          <Card className="sticky bottom-4 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
             <CardContent className="p-3">
               <div className="flex flex-wrap items-center gap-2 justify-between">
                 <div className="flex flex-wrap gap-1.5">
@@ -714,7 +727,7 @@ export function DashboardContent() {
                     className="gap-1.5 text-xs"
                   >
                     {copied === "f" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                    Findings
+                    {t("dash.findings")}
                   </Button>
                   <Button
                     variant="outline"
@@ -724,7 +737,7 @@ export function DashboardContent() {
                     className="gap-1.5 text-xs"
                   >
                     {copied === "fc" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                    + Conclusion
+                    {t("dash.plus_conclusion")}
                   </Button>
                   <Button
                     variant="outline"
@@ -734,23 +747,33 @@ export function DashboardContent() {
                     className="gap-1.5 text-xs"
                   >
                     {copied === "all" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                    Full report
+                    {t("dash.full_report")}
                   </Button>
                 </div>
                 <Button
                   size="sm"
                   onClick={startNewReport}
                   disabled={!findings}
-                  className="gap-1.5 text-xs bg-accent text-white hover:opacity-90"
+                  className="gap-1.5 text-xs bg-brand text-brand-fg hover:opacity-90"
                 >
                   <ArrowRight className="h-3.5 w-3.5" />
-                  Next report
+                  {t("dash.next_report")}
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
+
+      <FloatingDictation
+        language={LANG_TO_WHISPER[outputLanguage] || "es"}
+        onSendText={(text) => {
+          setDictation((prev) => {
+            const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
+            return prev + sep + text;
+          });
+        }}
+      />
     </div>
   );
 }
@@ -773,12 +796,12 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={`overflow-hidden transition-colors ${complete ? "border-accent-soft" : ""}`}>
+    <Card className={`overflow-hidden transition-colors ${complete ? "border-brand-soft" : ""}`}>
       <div className="flex items-start gap-3 px-5 pt-5">
         <div
           className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
             complete
-              ? "bg-accent text-white"
+              ? "bg-brand text-brand-fg"
               : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
           }`}
         >
@@ -824,7 +847,7 @@ function OutputCard({
           {icon}
           {title}
         </h3>
-        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
       </div>
       <CardContent className="pt-0 pb-4">
         {loading && !value ? (
@@ -838,7 +861,7 @@ function OutputCard({
             style={{ minHeight }}
           >
             {value}
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-accent animate-pulse align-text-bottom" />
+            <span className="inline-block w-0.5 h-4 ml-0.5 bg-brand animate-pulse align-text-bottom" />
           </div>
         ) : showTrace ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
@@ -901,23 +924,24 @@ function RecommendationsCard({
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const hasStructured = parsed.length > 0 && !editing;
   const noRecs = !loading && value.trim() && parsed.length === 0 && !editing;
+  const t = useT();
 
   return (
     <Card>
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
           <Lightbulb className="h-4 w-4 text-amber-600" />
-          Recommendations
+          {t("dash.recommendations")}
         </h3>
         <div className="flex items-center gap-1.5">
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
           {!loading && value.trim() && (
             <button
               type="button"
               onClick={() => setEditing(!editing)}
               className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
             >
-              {editing ? "View" : "Edit"}
+              {editing ? t("view") : t("edit")}
             </button>
           )}
         </div>
@@ -961,7 +985,7 @@ function RecommendationsCard({
                       <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
                         <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />
                         <p className="text-xs text-gray-600 dark:text-gray-300">
-                          <span className="font-medium" style={{ color: color.border }}>Finding: </span>
+                          <span className="font-medium" style={{ color: color.border }}>{t("dash.finding_label")}: </span>
                           {rec.finding}
                         </p>
                       </div>
