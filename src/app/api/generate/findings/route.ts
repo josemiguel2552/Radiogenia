@@ -8,7 +8,7 @@ import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
-import { translateSectionLabel, translateTemplate } from "@/lib/section-translate";
+import { translateSectionLabel, translateTemplate, enforceOutputLanguage } from "@/lib/section-translate";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[findings] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
-    const stream = await generateAIStream({
+    const rawStream = await generateAIStream({
       provider: effectiveProvider,
       modelName: effectiveModel,
       apiKey: effectiveKey,
@@ -185,7 +185,28 @@ export async function POST(req: NextRequest) {
 
     incrementUsage();
 
-    return new Response(stream, { headers: responseHeaders });
+    if (outLang !== "en") {
+      const reader = rawStream.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+      fullText += decoder.decode();
+      const enforced = enforceOutputLanguage(fullText, outLang);
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(enforced));
+          controller.close();
+        },
+      });
+      return new Response(body, { headers: responseHeaders });
+    }
+
+    return new Response(rawStream, { headers: responseHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

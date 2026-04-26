@@ -266,16 +266,16 @@ ${PARAPHRASE_INSTRUCTIONS[lang][params.paraphraseLevel]}`;
     const block = lang === "es"
       ? `FRASES DE NORMALIDAD PREFERIDAS DEL RADIÓLOGO para cada sección anatómica.
 Reglas de uso:
-- Si el dictado NO menciona una sección y existe una frase preferida para ella, úsala LITERALMENTE tal como aparece.
+- Si el dictado NO menciona una sección y existe una frase preferida para ella, úsala como guía de estilo y nivel de detalle. Si la frase está en otro idioma, TRADÚCELA al español manteniendo exactamente el mismo significado y nivel de detalle.
 - Si el dictado describe un hallazgo en esa sección, IGNORA la frase preferida y redacta el hallazgo dictado.
 - NUNCA introduzcas información clínica que no esté en el dictado.
-- Estas frases definen exactamente cómo el radiólogo quiere que se expresen las secciones normales.`
+- RECUERDA: TODA la salida debe estar en español. Si una frase preferida está en inglés, tradúcela al español.`
       : `RADIOLOGIST'S PREFERRED NORMALITY PHRASES for each anatomical section.
 Rules:
-- If the dictation does NOT mention a section and a preferred phrase exists for it, use it LITERALLY as written.
+- If the dictation does NOT mention a section and a preferred phrase exists for it, use it as a style and detail guide. If the phrase is in a different language, TRANSLATE it to ${LANGUAGE_LABEL[lang]} keeping the exact same meaning and level of detail.
 - If the dictation describes a finding in that section, IGNORE the preferred phrase and write the dictated finding.
 - NEVER introduce clinical information that is not in the dictation.
-- These phrases define exactly how the radiologist wants normal sections to be worded.`;
+- REMEMBER: ALL output must be in ${LANGUAGE_LABEL[lang]}. Translate any phrase that is not already in ${LANGUAGE_LABEL[lang]}.`;
 
     system += `\n\n${block}\n`;
     params.preferredNormalPhrases.forEach((p) => {

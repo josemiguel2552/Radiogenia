@@ -1,6 +1,7 @@
 import { generateAI } from "@/lib/ai-provider";
 import type { GlobalAIConfig } from "@/lib/auth-helpers";
 import { resolveApiKey } from "@/lib/auth-helpers";
+import { enforceOutputLanguage } from "@/lib/section-translate";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 interface ComboParams {
@@ -78,7 +79,8 @@ REGLAS:
 10. ${length}
 11. TRADUCE los nombres de las secciones del template al español.${phraseBlock ? `
 
-FRASES DE NORMALIDAD PREFERIDAS — úsalas LITERALMENTE para secciones no mencionadas:
+FRASES DE NORMALIDAD PREFERIDAS — guías de estilo para secciones no mencionadas.
+Si una frase está en inglés, TRADÚCELA al español manteniendo el mismo significado y nivel de detalle. TODA la salida debe estar en español sin excepción:
 ${phraseBlock}` : ""}`;
 
     const user = `SECCIONES DEL TEMPLATE:\n${params.template}\n\nDICTADO:\n${params.dictation}`;
@@ -123,7 +125,8 @@ RULES:
 9. ${length}
 10. TRANSLATE section names to ${l}.${phraseBlock ? `
 
-PREFERRED NORMALITY PHRASES — use LITERALLY for unmentioned sections:
+PREFERRED NORMALITY PHRASES — style guide for unmentioned sections.
+If a phrase is in a different language, TRANSLATE it to ${l} keeping the same meaning and detail level. ALL output must be in ${l} without exception:
 ${phraseBlock}` : ""}`;
 
   const user = `TEMPLATE SECTIONS:\n${params.template}\n\nDICTATION:\n${params.dictation}`;
@@ -136,14 +139,16 @@ function buildValidatorPrompt(dictation: string, mappingJson: string, lang: Outp
   if (lang === "es") {
     const system = `Eres un auditor de calidad de informes radiológicos. Recibes el dictado original y un JSON con el mapping de hallazgos.
 
-TU ÚNICA TAREA — buscar estos 3 tipos de error:
+TU ÚNICA TAREA — buscar estos 4 tipos de error:
 1. OMISIONES: un dato clínico del dictado no aparece en el mapping.
 2. ALUCINACIONES: el mapping contiene un hallazgo clínico específico que NO está en el dictado. Las frases de normalidad para secciones no mencionadas NO son alucinaciones. La sección "Otros hallazgos" con hallazgos que SÍ están en el dictado NO es una alucinación — es una sección legítima para hallazgos que no encajan en el template.
 3. ERRORES DE SECCIÓN: un hallazgo está en la sección anatómica incorrecta.
+4. IDIOMA INCORRECTO: TODA la salida (labels y textos) debe estar en ESPAÑOL. Si un label o texto está en inglés u otro idioma, corrígelo traduciéndolo al español. Esto incluye frases de normalidad como "No significant abnormalities", "Normal in size", etc. — TODAS deben estar en español.
 
 REGLAS:
 - NO rehaces el mapping completo. SOLO devuelves correcciones.
 - Cada corrección: section_label, action (replace|add_finding|remove_hallucination), corrected_text (texto corregido en español), reason.
+- Para errores de idioma usa action "replace" y en reason indica "wrong_language".
 - Si no hay errores: {"status":"validated","corrections":[]}
 - Si hay errores: {"status":"corrected","corrections":[...]}
 - Devuelve SOLO JSON válido.`;
@@ -160,14 +165,16 @@ REGLAS:
 
   const system = `You are a radiology report QC auditor. You receive the original dictation and a JSON mapping.
 
-CHECK FOR 3 ERROR TYPES ONLY:
+CHECK FOR 4 ERROR TYPES:
 1. OMISSIONS: dictation content missing from mapping.
 2. HALLUCINATIONS: specific clinical finding in mapping NOT in dictation. Normal phrases for unmentioned sections are NOT hallucinations. The "Additional findings" section containing findings that ARE in the dictation is NOT a hallucination — it is a legitimate catch-all for findings that do not fit any template section.
 3. WRONG SECTION: finding in incorrect anatomical section.
+4. WRONG LANGUAGE: ALL output (labels and text) must be in ${l}. If any label or text is in a different language, correct it by translating to ${l}. This includes normality phrases like "No significant abnormalities", "Normal in size" etc. — ALL must be in ${l}.
 
 RULES:
 - Do NOT redo the mapping. ONLY output corrections.
 - Each correction: section_label, action (replace|add_finding|remove_hallucination), corrected_text (in ${l}), reason.
+- For language errors use action "replace" and reason "wrong_language".
 - No errors: {"status":"validated","corrections":[]}
 - Errors found: {"status":"corrected","corrections":[...]}
 - Return ONLY valid JSON.`;
@@ -308,5 +315,6 @@ export async function runComboFindings(
     ? applyCorrections(parsed.sections, validatorResult.corrections)
     : parsed.sections;
 
-  return sectionsToText(finalSections, params.compactNormals, params.outputLanguage);
+  const rawText = sectionsToText(finalSections, params.compactNormals, params.outputLanguage);
+  return enforceOutputLanguage(rawText, params.outputLanguage);
 }
