@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
@@ -35,6 +36,7 @@ interface GlobalConfig {
   recommendations_model: string | null;
   trace_provider: string | null;
   trace_model: string | null;
+  findings_combo_enabled: boolean;
   updated_at: string;
 }
 
@@ -108,6 +110,9 @@ export default function AdminPage() {
     trace: { provider: "", model: "" },
   });
 
+  // Combo pipeline
+  const [findingsCombo, setFindingsCombo] = useState(false);
+
   // Fine-tuning
   const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
   const [ftUploading, setFtUploading] = useState(false);
@@ -156,6 +161,7 @@ export default function AdminPage() {
         recommendations: { provider: d.recommendations_provider || "", model: d.recommendations_model || "" },
         trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
       });
+      setFindingsCombo(!!d.findings_combo_enabled);
     }
 
     try {
@@ -179,7 +185,7 @@ export default function AdminPage() {
     setConfigError("");
     setConfigSuccess(false);
     try {
-      const body: Record<string, string> = { provider, model_name: modelName };
+      const body: Record<string, string | boolean> = { provider, model_name: modelName, findings_combo_enabled: findingsCombo };
       if (apiKey && apiKey !== "••••••••") body.api_key = apiKey;
       if (whisperKey && whisperKey !== "••••••••") body.whisper_api_key = whisperKey;
       if (anthropicKey && anthropicKey !== "••••••••") body.anthropic_api_key = anthropicKey;
@@ -848,6 +854,77 @@ export default function AdminPage() {
                     </div>
                   );
                 })()}
+              </CardContent>
+            </Card>
+
+            {/* ── Combo GPT-4 Mini + DeepSeek Reasoner ── */}
+            <Card className={findingsCombo ? "ring-2 ring-emerald-500/30" : ""}>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Shield className="h-4 w-4 text-emerald-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Combo: GPT-4 Mini + DeepSeek Reasoner</h2>
+                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Active</Badge>}
+              </div>
+              <CardContent className="pt-0 space-y-3 max-w-xl">
+                <p className="text-xs text-gray-500">
+                  Two-stage findings pipeline that reduces omissions and hallucinations. Stage 1: GPT-4o-mini maps the dictation to template sections as structured JSON with evidence. Stage 2: DeepSeek Reasoner validates the mapping, correcting any errors without redoing the full generation.
+                </p>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">Enable combo pipeline for Findings</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Overrides the Findings task override above. Requires OpenAI + DeepSeek API keys.
+                    </p>
+                  </div>
+                  <Switch checked={findingsCombo} onCheckedChange={setFindingsCombo} />
+                </div>
+
+                {findingsCombo && (
+                  <div className="space-y-2 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
+                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Pipeline stages</p>
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">GPT-4o-mini — Mapper</p>
+                        <p className="text-[10px] text-gray-500">Maps dictation → template sections as structured JSON with evidence links.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">2</div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">DeepSeek Reasoner — Validator</p>
+                        <p className="text-[10px] text-gray-500">Validates mapping against dictation. Corrects omissions, hallucinations, and misattributions only.</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1.5">
+                      <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                      Conclusion, recommendations, and traceability use their own configured models — unaffected by this pipeline.
+                    </div>
+
+                    {/* Key requirement indicators */}
+                    <div className="mt-2 space-y-1">
+                      {(() => {
+                        const hasOpenAI = (apiKey && apiKey !== "••••••••" && provider === "openai") || (whisperKey && whisperKey !== "••••••••");
+                        const hasDeepSeek = (apiKey && apiKey !== "••••••••" && provider === "deepseek") || (deepseekKey && deepseekKey !== "••••••••");
+                        return (
+                          <>
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              {hasOpenAI ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
+                              <span className={hasOpenAI ? "text-green-600 dark:text-green-400" : "text-red-500"}>
+                                OpenAI API key {hasOpenAI ? "configured" : "— required (set main key or Whisper key)"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              {hasDeepSeek ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
+                              <span className={hasDeepSeek ? "text-green-600 dark:text-green-400" : "text-red-500"}>
+                                DeepSeek API key {hasDeepSeek ? "configured" : "— required (set main key or DeepSeek provider key)"}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

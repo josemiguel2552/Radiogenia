@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, checkReportLimit } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
+import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
@@ -84,6 +85,54 @@ export async function POST(req: NextRequest) {
       } catch { /* ignore */ }
     }
 
+    // Increment report usage (fire-and-forget)
+    const incrementUsage = () => {
+      service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
+        if (rpcError) {
+          service
+            .from("profiles")
+            .update({ reports_used_this_month: quota.used + 1 })
+            .eq("id", user.id)
+            .then(() => {});
+        }
+      });
+    };
+
+    const responseHeaders = {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Output-Language": safeConfig.output_language,
+    };
+
+    // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek Reasoner validator ──
+    if (globalConfig.findingsComboEnabled) {
+      console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek Reasoner, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
+
+      const comboResult = await runComboFindings(globalConfig, {
+        template,
+        dictation,
+        modality: modality || "CT",
+        findingsLength: safeConfig.findings_length as FindingsLength,
+        normalFieldsVerbosity: safeConfig.normal_fields_verbosity as NormalFieldsVerbosity,
+        paraphraseLevel: safeConfig.paraphrase_level as ParaphraseLevel,
+        outputLanguage: safeConfig.output_language as OutputLanguage,
+        compactNormals: safeConfig.compact_normals,
+        preferredNormalPhrases,
+      });
+
+      incrementUsage();
+
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(comboResult));
+          controller.close();
+        },
+      });
+
+      return new Response(body, { headers: responseHeaders });
+    }
+
+    // ── Standard single-model streaming pipeline ──
     const { system, user: userPrompt } = buildFindingsPrompt({
       template,
       dictation,
@@ -119,23 +168,9 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
     });
 
-    // Increment report usage via service client (bypasses RLS)
-    service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
-      if (rpcError) {
-        service
-          .from("profiles")
-          .update({ reports_used_this_month: quota.used + 1 })
-          .eq("id", user.id)
-          .then(() => {});
-      }
-    });
+    incrementUsage();
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Output-Language": safeConfig.output_language,
-      },
-    });
+    return new Response(stream, { headers: responseHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

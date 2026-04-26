@@ -20,6 +20,7 @@ export interface GlobalAIConfig {
   customBaseUrl?: string;
   whisperApiKey?: string;
   providerKeys?: Partial<Record<AIProvider, string>>;
+  findingsComboEnabled?: boolean;
   taskOverrides?: {
     findings?: TaskModelOverride;
     conclusion?: TaskModelOverride;
@@ -101,6 +102,7 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     customBaseUrl: data.custom_base_url || undefined,
     whisperApiKey,
     providerKeys: Object.keys(providerKeys).length > 0 ? providerKeys : undefined,
+    findingsComboEnabled: !!data.findings_combo_enabled,
     taskOverrides: Object.keys(taskOverrides).length > 0 ? taskOverrides : undefined,
   };
 }
