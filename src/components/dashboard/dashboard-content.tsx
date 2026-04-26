@@ -28,6 +28,7 @@ import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { AnatomyLoader } from "./anatomy-loader";
 import { FloatingDictation } from "./floating-dictation";
 import { useT, useSection } from "@/lib/i18n";
@@ -72,9 +73,10 @@ export function DashboardContent() {
 
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
+  const whisperLang = LANG_TO_WHISPER[outputLanguage] || "es";
   const { isRecording, isTranscribing, toggleRecording } = useVoiceDictation({
-    language: LANG_TO_WHISPER[outputLanguage] || "es",
-    context: "Radiology report dictation. Medical terminology.",
+    language: whisperLang,
+    context: getWhisperPrompt(whisperLang),
     onTranscript: (text) => {
       setDictation((prev) => {
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";

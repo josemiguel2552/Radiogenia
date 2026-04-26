@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, MicOff, X, Minimize2, Maximize2, Send, Loader2, GripVertical, Keyboard } from "lucide-react";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
+import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { useT } from "@/lib/i18n";
 
 interface FloatingDictationProps {
@@ -32,7 +33,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
 
   const { isRecording, isTranscribing, toggleRecording, stopRecording } = useVoiceDictation({
     language,
-    context: "Radiology report dictation. Medical terminology.",
+    context: getWhisperPrompt(language),
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, language);
       setBuffer((prev) => {

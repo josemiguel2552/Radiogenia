@@ -2,8 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 
-const SILENCE_TIMEOUT_MS = 1200;
-const MAX_CHUNK_MS = 15_000;
+const SILENCE_TIMEOUT_MS = 1500;
+const MAX_CHUNK_MS = 30_000;
 
 interface DictationQuota {
   usedSeconds: number;
@@ -38,6 +38,7 @@ export function useVoiceDictation({
   const chunkStartRef = useRef<number>(0);
   const activeRef = useRef(false);
   const pendingTranscriptions = useRef(0);
+  const priorTranscriptRef = useRef("");
 
   const transcribeBlob = useCallback(async (blob: Blob, durationMs: number) => {
     if (blob.size < 500) return;
@@ -47,7 +48,10 @@ export function useVoiceDictation({
       const formData = new FormData();
       formData.append("audio", blob, "dictation.webm");
       if (language) formData.append("language", language);
-      if (context) formData.append("context", context);
+      const promptContext = priorTranscriptRef.current
+        ? `${context || ""}\n${priorTranscriptRef.current.slice(-500)}`
+        : context || "";
+      if (promptContext) formData.append("context", promptContext);
       formData.append("duration_seconds", String(Math.max(1, Math.round(durationMs / 1000))));
 
       const res = await fetch("/api/transcribe", { method: "POST", body: formData });
@@ -60,6 +64,7 @@ export function useVoiceDictation({
       }
 
       if (res.ok && data.text) {
+        priorTranscriptRef.current += " " + data.text;
         onTranscript(data.text);
         if (data.dictation && onQuotaUpdate) {
           onQuotaUpdate(data.dictation);
@@ -184,6 +189,7 @@ export function useVoiceDictation({
       });
       streamRef.current = stream;
       activeRef.current = true;
+      priorTranscriptRef.current = "";
 
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;

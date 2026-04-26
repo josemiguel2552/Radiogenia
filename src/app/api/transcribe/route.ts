@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
     whisperForm.append("file", audioFile, fileName);
     whisperForm.append("model", "whisper-1");
     whisperForm.append("response_format", "text");
+    whisperForm.append("temperature", "0");
     if (language) whisperForm.append("language", language);
     if (context) whisperForm.append("prompt", context);
 
