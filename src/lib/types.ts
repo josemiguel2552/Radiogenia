@@ -207,7 +207,7 @@ export const SECTIONS = [
 ] as const;
 
 export const PROVIDERS: { value: AIProvider; label: string; models: string[] }[] = [
-  { value: "claude", label: "Claude (Anthropic)", models: ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"] },
+  { value: "claude", label: "Claude (Anthropic)", models: ["claude-sonnet-4-6-20250514", "claude-haiku-4-5-20251001"] },
   { value: "openai", label: "GPT (OpenAI)", models: ["gpt-4o", "gpt-4o-mini"] },
   { value: "deepseek", label: "DeepSeek", models: ["deepseek-chat", "deepseek-reasoner"] },
   { value: "gemini", label: "Gemini (Google)", models: ["gemini-1.5-pro", "gemini-2.0-flash"] },
