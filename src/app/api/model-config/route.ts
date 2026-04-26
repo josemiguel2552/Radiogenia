@@ -66,10 +66,10 @@ export async function PUT(req: NextRequest) {
     delete body.style_sample_count;
     delete body.role;
 
-    const { data, error } = await supabase
+    const service = createServiceClient();
+    const { data, error } = await service
       .from("user_model_config")
-      .update(body)
-      .eq("user_id", user.id)
+      .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })
       .select()
       .single();
 

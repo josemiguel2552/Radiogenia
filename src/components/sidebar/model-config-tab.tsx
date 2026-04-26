@@ -139,11 +139,14 @@ export function ModelConfigTab() {
     }
     delete body.api_key_encrypted;
 
-    await fetch("/api/model-config", {
+    const res = await fetch("/api/model-config", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (!res.ok) {
+      console.error("Failed to save config:", await res.text());
+    }
     setDirty(false);
     setSaving(false);
     load();
