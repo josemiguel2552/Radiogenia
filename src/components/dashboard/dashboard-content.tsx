@@ -31,12 +31,14 @@ import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { AnatomyLoader } from "./anatomy-loader";
 import { FloatingDictation } from "./floating-dictation";
-import { useT, useSection } from "@/lib/i18n";
+import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 
 export function DashboardContent() {
   const supabase = createClient();
   const t = useT();
   const sec = useSection();
+  const tplName = useTemplateName();
+  const modName = useModality();
 
   // Templates state
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
@@ -351,7 +353,7 @@ export function DashboardContent() {
 
   function getStudyTitle(): string {
     if (!selectedTemplate) return "";
-    let title = selectedTemplate.name;
+    let title = tplName(selectedTemplate.name);
     const cl = CONTRAST_LABELS[outputLanguage] || CONTRAST_LABELS.es;
     if (contrastOption === "con_contraste") title += " " + cl.with;
     else if (contrastOption === "sin_contraste") title += " " + cl.without;
@@ -461,9 +463,9 @@ export function DashboardContent() {
           >
             <Stethoscope className="h-3.5 w-3.5 text-brand" />
             <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 truncate flex-1 min-w-0">
-              {selectedModality && <Badge variant="secondary" className="text-[10px] h-5 flex-shrink-0">{selectedModality}</Badge>}
+              {selectedModality && <Badge variant="secondary" className="text-[10px] h-5 flex-shrink-0">{modName(selectedModality)}</Badge>}
               {selectedTemplate ? (
-                <span className="truncate font-medium">{selectedTemplate.name}</span>
+                <span className="truncate font-medium">{tplName(selectedTemplate.name)}</span>
               ) : (
                 <span className="text-gray-400">{t("dash.select_template_first")}</span>
               )}
@@ -549,7 +551,7 @@ export function DashboardContent() {
                       setSelectedTemplateId("");
                     }}
                   >
-                    {mod}
+                    {modName(mod)}
                   </Button>
                 ))}
               </div>
@@ -569,7 +571,7 @@ export function DashboardContent() {
                 </SelectTrigger>
                 <SelectContent>
                   {filteredTemplates.map((tpl) => (
-                    <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
+                    <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

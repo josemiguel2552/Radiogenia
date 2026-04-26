@@ -619,3 +619,78 @@ export function useSection() {
 export function translateSection(name: string, lang: UILanguage): string {
   return sections[lang]?.[name] ?? name;
 }
+
+// Template name translations
+const templateNames: Record<UILanguage, Record<string, string>> = {
+  es: {},
+  en: {
+    "Radiografía de tórax": "Chest X-ray",
+    "Radiografía de abdomen": "Abdominal X-ray",
+    "Radiografía de tobillo": "Ankle X-ray",
+    "Radiografía de pie": "Foot X-ray",
+    "Radiografía de cráneo": "Skull X-ray",
+    "Radiografía de columna cervical": "Cervical spine X-ray",
+    "Radiografía de columna torácica": "Thoracic spine X-ray",
+    "Radiografía de columna lumbar": "Lumbar spine X-ray",
+    "Radiografía de pelvis": "Pelvis X-ray",
+    "TC de cráneo": "Head CT",
+    "TC de cuello": "Neck CT",
+    "TC de cabeza y cuello": "Head and neck CT",
+    "TC de cuello y tórax": "Neck and chest CT",
+    "TC de tórax": "Chest CT",
+    "TC de tórax y abdomen": "Chest and abdomen CT",
+    "TC de abdomen": "Abdominal CT",
+    "TC de tórax, abdomen y pelvis": "Chest, abdomen and pelvis CT",
+    "AngioTC de miembros inferiores": "Lower extremity CT angiography",
+    "RM de abdomen": "Abdominal MRI",
+    "RM de hígado": "Liver MRI",
+    "RM de páncreas": "Pancreas MRI",
+    "RM de pelvis femenina": "Female pelvis MRI",
+    "RM cardíaca": "Cardiac MRI",
+    "RM cerebral": "Brain MRI",
+    "RM de cuello": "Neck MRI",
+    "RM de rodilla": "Knee MRI",
+    "RM de pie": "Foot MRI",
+    "RM de tobillo": "Ankle MRI",
+    "RM de hombro": "Shoulder MRI",
+    "RM de columna cervical": "Cervical spine MRI",
+    "RM de columna torácica": "Thoracic spine MRI",
+    "RM de columna lumbar": "Lumbar spine MRI",
+    "RM de articulaciones sacroilíacas": "Sacroiliac joints MRI",
+    "RM de columna completa": "Whole spine MRI",
+    "Mamografía": "Mammography",
+    "Ecografía de abdomen": "Abdominal ultrasound",
+    "Ecografía de cuello": "Neck ultrasound",
+    "Ecografía de tiroides": "Thyroid ultrasound",
+    "Ecografía de mama": "Breast ultrasound",
+    "Ecografía de partes blandas": "Soft tissue ultrasound",
+    "Doppler de cuello": "Carotid Doppler",
+    "Doppler venoso de miembros inferiores": "Lower extremity venous Doppler",
+    "Doppler arterial de miembros inferiores": "Lower extremity arterial Doppler",
+    "Doppler venoso de miembros superiores": "Upper extremity venous Doppler",
+  },
+};
+
+const modalityNames: Record<UILanguage, Record<string, string>> = {
+  es: {
+    CT: "TC",
+    MRI: "RM",
+    Ultrasound: "Ecografía",
+    XRay: "Radiografía",
+    Mammography: "Mamografía",
+    Procedures: "Procedimientos",
+  },
+  en: {},
+};
+
+export function useTemplateName() {
+  const { prefs } = useUIPrefs();
+  const lang = (prefs.uiLanguage || "es") as UILanguage;
+  return useCallback((name: string) => templateNames[lang]?.[name] ?? name, [lang]);
+}
+
+export function useModality() {
+  const { prefs } = useUIPrefs();
+  const lang = (prefs.uiLanguage || "es") as UILanguage;
+  return useCallback((name: string) => modalityNames[lang]?.[name] ?? name, [lang]);
+}

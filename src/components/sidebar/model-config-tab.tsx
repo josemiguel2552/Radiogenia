@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PROVIDERS, LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
 import { buildFullPromptPreview } from "@/lib/prompts";
-import { useT, useSection } from "@/lib/i18n";
+import { useT, useSection, useModality } from "@/lib/i18n";
 
 interface ModelConfig {
   provider: AIProvider;
@@ -41,6 +41,7 @@ interface NormalityPhraseRow {
 export function ModelConfigTab() {
   const t = useT();
   const sec = useSection();
+  const modName = useModality();
   const [config, setConfig] = useState<ModelConfig | null>(null);
   const [userRole, setUserRole] = useState<"admin" | "radiologist">("radiologist");
   const [loading, setLoading] = useState(true);
@@ -414,7 +415,7 @@ export function ModelConfigTab() {
             </p>
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">{selectedModality}</span> — {normalityPhrases.length} {t("cfg.sections")}
+                <span className="font-semibold">{modName(selectedModality)}</span> — {normalityPhrases.length} {t("cfg.sections")}
               </span>
               <Badge variant={customizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
                 {customizedCount}/{normalityPhrases.length} {t("cfg.customized")}
@@ -627,7 +628,7 @@ export function ModelConfigTab() {
               <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MODALITIES.filter((m) => m !== "Procedures").map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                  <SelectItem key={m} value={m}>{modName(m)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

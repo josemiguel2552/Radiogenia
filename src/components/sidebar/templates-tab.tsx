@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
-import { useT, useSection } from "@/lib/i18n";
+import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 
 interface ExtractedTemplate {
   title: string;
@@ -47,6 +47,8 @@ export function TemplatesTab() {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const t = useT();
   const sec = useSection();
+  const tplName = useTemplateName();
+  const modName = useModality();
 
   // Word upload
   const fileRef = useRef<HTMLInputElement>(null);
@@ -63,11 +65,15 @@ export function TemplatesTab() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = templates.filter((t) =>
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.modality.toLowerCase().includes(search.toLowerCase()) ||
-    (t.structure?.section || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = templates.filter((tmpl) => {
+    const q = search.toLowerCase();
+    return tmpl.name.toLowerCase().includes(q) ||
+      tplName(tmpl.name).toLowerCase().includes(q) ||
+      tmpl.modality.toLowerCase().includes(q) ||
+      modName(tmpl.modality).toLowerCase().includes(q) ||
+      (tmpl.structure?.section || "").toLowerCase().includes(q) ||
+      sec(tmpl.structure?.section || "").toLowerCase().includes(q);
+  });
 
   const grouped = filtered.reduce<Record<string, UserTemplate[]>>((acc, t) => {
     const section = t.structure?.section || "Other";
@@ -287,10 +293,10 @@ export function TemplatesTab() {
                   key={i}
                   className="p-2.5 border border-amber-200/60 dark:border-amber-900/40 rounded-md bg-white dark:bg-gray-900"
                 >
-                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{ext.title}</p>
+                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{tplName(ext.title)}</p>
                   <div className="flex gap-1 mt-1">
-                    <Badge variant="secondary" className="text-[10px]">{ext.technique}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{ext.section}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{modName(ext.technique)}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{sec(ext.section)}</Badge>
                   </div>
                   <div className="flex gap-1 mt-2">
                     <Button
@@ -355,11 +361,11 @@ export function TemplatesTab() {
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                            {tpl.name}
+                            {tplName(tpl.name)}
                           </p>
                           <div className="flex items-center gap-1 mt-1">
                             <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                              {tpl.modality}
+                              {modName(tpl.modality)}
                             </Badge>
                             {tpl.is_global ? (
                               <Badge variant="outline" className="text-[9px] h-4 px-1.5">
