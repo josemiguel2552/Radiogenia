@@ -95,11 +95,12 @@ export function DashboardContent() {
     if (recommendations && !loadingRecs) setRecsOpen(true);
   }, [recommendations, loadingRecs]);
 
-  // Autosave draft
+  // Autosave draft with timestamp
   useEffect(() => {
     const interval = setInterval(() => {
       if (dictation || findings || conclusion || recommendations || clinicalInfo) {
         localStorage.setItem("radiogenai_draft", JSON.stringify({
+          savedAt: Date.now(),
           clinicalInfo, dictation, findings, conclusion, recommendations,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
           initialFindings, initialConclusion,
@@ -109,25 +110,29 @@ export function DashboardContent() {
     return () => clearInterval(interval);
   }, [clinicalInfo, dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
 
-  // Load draft on mount
+  // Load draft on mount — discard if older than 15 minutes
   useEffect(() => {
-    const draft = localStorage.getItem("radiogenai_draft");
-    if (draft) {
-      try {
-        const d = JSON.parse(draft);
-        if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
-        if (d.dictation) setDictation(d.dictation);
-        if (d.findings) setFindings(d.findings);
-        if (d.conclusion) setConclusion(d.conclusion);
-        if (d.recommendations) setRecommendations(d.recommendations);
-        if (d.selectedModality) setSelectedModality(d.selectedModality);
-        if (d.selectedSection) setSelectedSection(d.selectedSection);
-        if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
-        if (d.contrastOption) setContrastOption(d.contrastOption);
-        if (d.initialFindings) setInitialFindings(d.initialFindings);
-        if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
-      } catch { /* ignore corrupt draft */ }
-    }
+    const raw = localStorage.getItem("radiogenai_draft");
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      const age = Date.now() - (d.savedAt || 0);
+      if (age > 15 * 60 * 1000) {
+        localStorage.removeItem("radiogenai_draft");
+        return;
+      }
+      if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
+      if (d.dictation) setDictation(d.dictation);
+      if (d.findings) setFindings(d.findings);
+      if (d.conclusion) setConclusion(d.conclusion);
+      if (d.recommendations) setRecommendations(d.recommendations);
+      if (d.selectedModality) setSelectedModality(d.selectedModality);
+      if (d.selectedSection) setSelectedSection(d.selectedSection);
+      if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
+      if (d.contrastOption) setContrastOption(d.contrastOption);
+      if (d.initialFindings) setInitialFindings(d.initialFindings);
+      if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
+    } catch { /* ignore corrupt draft */ }
   }, []);
 
   // Seed defaults (if needed) then load templates

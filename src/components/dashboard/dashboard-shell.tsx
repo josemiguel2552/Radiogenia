@@ -103,6 +103,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
   async function handleLogout() {
     const supabase = createClient();
+    localStorage.removeItem("radiogenai_draft");
     await supabase.auth.signOut();
     router.push("/auth/login");
     router.refresh();
