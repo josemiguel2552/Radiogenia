@@ -254,6 +254,14 @@ create table if not exists public.global_model_config (
   model_name text default 'deepseek-chat',
   api_key_encrypted text default '',
   custom_base_url text default '',
+  findings_provider text,
+  findings_model text,
+  conclusion_provider text,
+  conclusion_model text,
+  recommendations_provider text,
+  recommendations_model text,
+  trace_provider text,
+  trace_model text,
   updated_at timestamptz not null default now(),
   updated_by uuid references auth.users(id)
 );

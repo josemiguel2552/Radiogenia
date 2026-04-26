@@ -43,6 +43,16 @@ export async function PUT(req: NextRequest) {
     if (body.model_name) updates.model_name = body.model_name;
     if (body.custom_base_url !== undefined) updates.custom_base_url = body.custom_base_url;
 
+    const taskFields = [
+      "findings_provider", "findings_model",
+      "conclusion_provider", "conclusion_model",
+      "recommendations_provider", "recommendations_model",
+      "trace_provider", "trace_model",
+    ];
+    for (const field of taskFields) {
+      if (field in body) updates[field] = body[field] || null;
+    }
+
     if (body.api_key && body.api_key !== "••••••••") {
       updates.api_key_encrypted = encrypt(body.api_key);
     }

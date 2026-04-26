@@ -130,9 +130,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ text: userPrompt });
     }
 
+    const taskModel = globalConfig.taskOverrides?.recommendations;
     const raw = await generateAI({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
+      provider: taskModel?.provider || globalConfig.provider,
+      modelName: taskModel?.modelName || globalConfig.modelName,
       apiKey: globalConfig.apiKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,

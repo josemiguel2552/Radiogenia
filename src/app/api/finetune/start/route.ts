@@ -1,32 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await requireAdmin();
+
+    const globalConfig = await getGlobalAIConfig();
+    if (globalConfig.provider !== "openai") {
+      return NextResponse.json({ error: "Fine-tuning requires OpenAI as the global provider." }, { status: 400 });
+    }
+    const apiKey = globalConfig.apiKey;
 
     const { fileId, baseModel, suffix } = await req.json();
     if (!fileId) return NextResponse.json({ error: "Missing fileId" }, { status: 400 });
 
-    const { data: config } = await supabase
-      .from("user_model_config")
-      .select("api_key_encrypted")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!config) return NextResponse.json({ error: "No model config" }, { status: 400 });
-
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-
-    // Create fine-tuning job
     const body: Record<string, unknown> = {
       training_file: fileId,
       model: baseModel || "gpt-4o-mini-2024-07-18",

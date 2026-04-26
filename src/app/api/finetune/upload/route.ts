@@ -1,31 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await requireAdmin();
 
-    // Get API key
-    const { data: config } = await supabase
-      .from("user_model_config")
-      .select("api_key_encrypted, provider")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!config || config.provider !== "openai") {
-      return NextResponse.json({ error: "Fine-tuning is only available with OpenAI. Select OpenAI as your provider first." }, { status: 400 });
+    const globalConfig = await getGlobalAIConfig();
+    if (globalConfig.provider !== "openai") {
+      return NextResponse.json({ error: "Fine-tuning requires OpenAI as the global provider." }, { status: 400 });
     }
-
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
+    const apiKey = globalConfig.apiKey;
 
     // Get uploaded file
     const formData = await req.formData();

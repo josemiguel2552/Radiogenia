@@ -12,6 +12,7 @@ import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, Crown, RefreshCw,
+  Upload, GraduationCap, ChevronDown,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 
@@ -22,8 +23,27 @@ interface GlobalConfig {
   api_key_encrypted: string;
   whisper_api_key_encrypted: string;
   custom_base_url: string;
+  findings_provider: string | null;
+  findings_model: string | null;
+  conclusion_provider: string | null;
+  conclusion_model: string | null;
+  recommendations_provider: string | null;
+  recommendations_model: string | null;
+  trace_provider: string | null;
+  trace_model: string | null;
   updated_at: string;
 }
+
+interface FtJob {
+  jobId: string;
+  status: string;
+  fineTunedModel: string | null;
+  model: string;
+  createdAt: number;
+  finishedAt: number | null;
+}
+
+type TaskKey = "findings" | "conclusion" | "recommendations" | "trace";
 
 interface UserRow {
   id: string;
@@ -72,6 +92,25 @@ export default function AdminPage() {
   const [configError, setConfigError] = useState("");
   const [configSuccess, setConfigSuccess] = useState(false);
 
+  // Per-task model overrides
+  const [taskOverrides, setTaskOverrides] = useState<Record<TaskKey, { provider: string; model: string }>>({
+    findings: { provider: "", model: "" },
+    conclusion: { provider: "", model: "" },
+    recommendations: { provider: "", model: "" },
+    trace: { provider: "", model: "" },
+  });
+
+  // Fine-tuning
+  const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
+  const [ftUploading, setFtUploading] = useState(false);
+  const [ftStarting, setFtStarting] = useState(false);
+  const [ftFileId, setFtFileId] = useState<string | null>(null);
+  const [ftExamples, setFtExamples] = useState(0);
+  const [ftSuffix, setFtSuffix] = useState("radiogenai");
+  const [ftBaseModel, setFtBaseModel] = useState("gpt-4o-mini-2024-07-18");
+  const [ftError, setFtError] = useState("");
+  const [ftChecking, setFtChecking] = useState(false);
+
   // Users
   const [users, setUsers] = useState<UserRow[]>([]);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
@@ -99,7 +138,21 @@ export default function AdminPage() {
       setApiKey(d.api_key_encrypted || "");
       setWhisperKey(d.whisper_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
+      setTaskOverrides({
+        findings: { provider: d.findings_provider || "", model: d.findings_model || "" },
+        conclusion: { provider: d.conclusion_provider || "", model: d.conclusion_model || "" },
+        recommendations: { provider: d.recommendations_provider || "", model: d.recommendations_model || "" },
+        trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
+      });
     }
+
+    try {
+      const ftRes = await fetch("/api/finetune/status");
+      if (ftRes?.ok) {
+        const ftData = await ftRes.json();
+        setFtJobs(ftData.jobs || []);
+      }
+    } catch { /* fine-tune listing may fail if not OpenAI */ }
     if (usersRes?.ok) {
       const d = await usersRes.json();
       setUsers(d.users || []);
@@ -118,6 +171,12 @@ export default function AdminPage() {
       if (apiKey && apiKey !== "••••••••") body.api_key = apiKey;
       if (whisperKey && whisperKey !== "••••••••") body.whisper_api_key = whisperKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
+
+      for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+        const o = taskOverrides[task];
+        body[`${task}_provider`] = o.provider || "";
+        body[`${task}_model`] = o.model || "";
+      }
 
       const res = await fetch("/api/admin/config", {
         method: "PUT",
@@ -156,6 +215,69 @@ export default function AdminPage() {
       setTestResult((await res.json()).ok ?? false);
     } catch { setTestResult(false); }
     setTesting(false);
+  }
+
+  function updateTaskOverride(task: TaskKey, field: "provider" | "model", value: string) {
+    setTaskOverrides((prev) => ({
+      ...prev,
+      [task]: { ...prev[task], [field]: value },
+    }));
+  }
+
+  async function handleFtUpload(file: File) {
+    setFtUploading(true);
+    setFtError("");
+    setFtFileId(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) { setFtError(data.error || "Upload failed"); return; }
+      setFtFileId(data.fileId);
+      setFtExamples(data.validExamples);
+    } catch (e) {
+      setFtError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setFtUploading(false);
+    }
+  }
+
+  async function handleFtStart() {
+    if (!ftFileId) return;
+    setFtStarting(true);
+    setFtError("");
+    try {
+      const res = await fetch("/api/finetune/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setFtError(data.error || "Failed to start"); return; }
+      setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null }, ...prev]);
+      setFtFileId(null);
+    } catch (e) {
+      setFtError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setFtStarting(false);
+    }
+  }
+
+  async function handleFtCheckStatus(jobId: string) {
+    setFtChecking(true);
+    try {
+      const res = await fetch("/api/finetune/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFtJobs((prev) => prev.map((j) => j.jobId === jobId ? { ...j, status: data.status, fineTunedModel: data.fineTunedModel, finishedAt: data.finishedAt } : j));
+      }
+    } catch { /* ignore */ }
+    setFtChecking(false);
   }
 
   async function handleSaveUser() {
@@ -449,121 +571,294 @@ export default function AdminPage() {
 
         {/* ═══ AI CONFIG ═══ */}
         {tab === "ai" && (
-          <Card>
-            <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-              <Plug className="h-4 w-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Global AI Configuration</h2>
-            </div>
-            <CardContent className="space-y-4 pt-0 max-w-xl">
-              <p className="text-xs text-gray-500">
-                This model and API key are used for all radiologists on the platform.
-              </p>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Provider</Label>
-                <Select value={provider} onValueChange={(v) => {
-                  setProvider(v);
-                  const prov = PROVIDERS.find((p) => p.value === v);
-                  if (prov?.models.length) setModelName(prov.models[0]);
-                  setTestResult(null);
-                }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PROVIDERS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4">
+            {/* ── Default model + keys ── */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Plug className="h-4 w-4 text-blue-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Default Model & API Keys</h2>
               </div>
+              <CardContent className="space-y-4 pt-0 max-w-xl">
+                <p className="text-xs text-gray-500">
+                  Default provider used for all tasks unless overridden below.
+                </p>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Model</Label>
-                {selectedProvider && selectedProvider.models.length > 0 ? (
-                  <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {selectedProvider.models.map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <input
-                    type="text" value={modelName}
-                    onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="Model name"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Provider</Label>
+                    <Select value={provider} onValueChange={(v) => {
+                      setProvider(v);
+                      const prov = PROVIDERS.find((p) => p.value === v);
+                      if (prov?.models.length) setModelName(prov.models[0]);
+                      setTestResult(null);
+                    }}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PROVIDERS.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Model</Label>
+                    {selectedProvider && selectedProvider.models.length > 0 ? (
+                      <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {selectedProvider.models.map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <input type="text" value={modelName}
+                        onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
+                        className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                        placeholder="Model name" />
+                    )}
+                  </div>
+                </div>
+
+                {provider === "custom" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Custom Base URL</Label>
+                    <input type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)}
+                      className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                      placeholder="https://your-endpoint.com/v1" />
+                  </div>
                 )}
-              </div>
 
-              {provider === "custom" && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Custom Base URL</Label>
-                  <input
-                    type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="https://your-endpoint.com/v1"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">API Key</Label>
+                    <div className="relative">
+                      <input type={showKey ? "text" : "password"} value={apiKey}
+                        onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
+                        className="w-full h-9 px-3 pr-9 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                        placeholder="API key" />
+                      <button type="button" onClick={() => setShowKey(!showKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Whisper Key (voice)</Label>
+                    <div className="relative">
+                      <input type={showWhisperKey ? "text" : "password"} value={whisperKey}
+                        onChange={(e) => setWhisperKey(e.target.value)}
+                        className="w-full h-9 px-3 pr-9 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                        placeholder="sk-..." />
+                      <button type="button" onClick={() => setShowWhisperKey(!showWhisperKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showWhisperKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">API Key</Label>
-                <div className="relative">
-                  <input
-                    type={showKey ? "text" : "password"} value={apiKey}
-                    onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
-                    className="w-full px-3 py-2 pr-10 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="Enter API key"
-                  />
-                  <button type="button" onClick={() => setShowKey(!showKey)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" size="sm" onClick={handleTestConnection}
+                    disabled={testing || !apiKey || apiKey === "••••••••"} className="gap-1.5">
+                    {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                     testResult === true ? <Check className="h-3.5 w-3.5 text-green-600" /> :
+                     testResult === false ? <X className="h-3.5 w-3.5 text-red-500" /> :
+                     <Plug className="h-3.5 w-3.5" />}
+                    {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test"}
+                  </Button>
+                  <Button size="sm" onClick={handleSaveConfig} disabled={saving}
+                    className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white">
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                    Save all
+                  </Button>
                 </div>
-              </div>
+                {configError && <p className="text-xs text-red-500">{configError}</p>}
+                {configSuccess && <p className="text-xs text-green-600">Configuration saved.</p>}
+                {config?.updated_at && (
+                  <p className="text-[11px] text-gray-400">Last updated: {new Date(config.updated_at).toLocaleString()}</p>
+                )}
+              </CardContent>
+            </Card>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Whisper API Key (OpenAI — voice dictation)</Label>
-                <div className="relative">
-                  <input
-                    type={showWhisperKey ? "text" : "password"} value={whisperKey}
-                    onChange={(e) => setWhisperKey(e.target.value)}
-                    className="w-full px-3 py-2 pr-10 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="sk-... (OpenAI key for Whisper)"
-                  />
-                  <button type="button" onClick={() => setShowWhisperKey(!showWhisperKey)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showWhisperKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+            {/* ── Per-task model overrides ── */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Zap className="h-4 w-4 text-amber-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Per-Task Model Overrides</h2>
+              </div>
+              <CardContent className="pt-0 space-y-3">
+                <p className="text-xs text-gray-500">
+                  Assign a different model to each task. Leave empty to use the default above. All tasks share the same API key.
+                </p>
+                {([
+                  { key: "findings" as TaskKey, label: "Findings", desc: "Structured report generation" },
+                  { key: "conclusion" as TaskKey, label: "Conclusion", desc: "Clinical conclusion synthesis" },
+                  { key: "recommendations" as TaskKey, label: "Recommendations", desc: "Guideline-based recommendations" },
+                  { key: "trace" as TaskKey, label: "Traceability", desc: "Dictation ↔ findings verification" },
+                ]).map(({ key, label, desc }) => {
+                  const o = taskOverrides[key];
+                  const taskProv = PROVIDERS.find((p) => p.value === o.provider);
+                  return (
+                    <div key={key} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-900 dark:text-white">{label}</p>
+                          <p className="text-[10px] text-gray-400">{desc}</p>
+                        </div>
+                        {o.provider && o.model ? (
+                          <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-gray-400">Default</Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-[140px_1fr_auto] gap-2 items-end">
+                        <Select value={o.provider || "default"} onValueChange={(v) => {
+                          const val = v === "default" ? "" : v;
+                          updateTaskOverride(key, "provider", val);
+                          if (val) {
+                            const p = PROVIDERS.find((pp) => pp.value === val);
+                            if (p?.models.length) updateTaskOverride(key, "model", p.models[0]);
+                          } else {
+                            updateTaskOverride(key, "model", "");
+                          }
+                        }}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Default</SelectItem>
+                            {PROVIDERS.map((p) => (
+                              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {o.provider ? (
+                          taskProv && taskProv.models.length > 0 ? (
+                            <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Model" /></SelectTrigger>
+                              <SelectContent>
+                                {taskProv.models.map((m) => (
+                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <input type="text" value={o.model}
+                              onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
+                              className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                              placeholder="Model name" />
+                          )
+                        ) : (
+                          <div className="h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                            {modelName}
+                          </div>
+                        )}
+                        {o.provider && (
+                          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-gray-400 hover:text-red-500"
+                            onClick={() => { updateTaskOverride(key, "provider", ""); updateTaskOverride(key, "model", ""); }}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {/* ── Fine-tuning (OpenAI) ── */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Fine-Tuning (OpenAI)</h2>
+              </div>
+              <CardContent className="pt-0 space-y-4 max-w-xl">
+                <p className="text-xs text-gray-500">
+                  Upload JSONL training examples, start a fine-tuning job, then assign the resulting model to any task above.
+                </p>
+
+                {/* Step 1: Upload */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">1. Upload training data</Label>
+                  <div className="flex gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 h-9 px-3 border-2 border-dashed rounded-md cursor-pointer text-xs text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors dark:border-gray-700 dark:hover:border-purple-500">
+                      <Upload className="h-3.5 w-3.5" />
+                      {ftUploading ? "Uploading..." : ftFileId ? `${ftExamples} examples ready` : "Choose .jsonl file"}
+                      <input type="file" accept=".jsonl,.txt,.json" className="hidden"
+                        onChange={(e) => { if (e.target.files?.[0]) handleFtUpload(e.target.files[0]); }} />
+                    </label>
+                  </div>
+                  {ftFileId && <p className="text-[10px] text-green-600">File uploaded: {ftFileId}</p>}
                 </div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">Separate OpenAI key used only for voice-to-text. Independent of the text generation provider above.</p>
-              </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={handleTestConnection}
-                  disabled={testing || !apiKey || apiKey === "••••••••"} className="gap-1.5">
-                  {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
-                   testResult === true ? <Check className="h-3.5 w-3.5 text-green-600" /> :
-                   testResult === false ? <X className="h-3.5 w-3.5 text-red-500" /> :
-                   <Plug className="h-3.5 w-3.5" />}
-                  {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test connection"}
-                </Button>
-                <Button size="sm" onClick={handleSaveConfig} disabled={saving}
-                  className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white">
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  Save configuration
-                </Button>
-              </div>
+                {/* Step 2: Configure & start */}
+                {ftFileId && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">2. Configure & start job</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Base model</Label>
+                        <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
+                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Suffix</Label>
+                        <input type="text" value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)}
+                          className="w-full h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                          placeholder="radiogenai" />
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={handleFtStart} disabled={ftStarting}
+                      className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white">
+                      {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                      Start fine-tuning
+                    </Button>
+                  </div>
+                )}
 
-              {configError && <p className="text-xs text-red-500">{configError}</p>}
-              {configSuccess && <p className="text-xs text-green-600">Configuration saved successfully.</p>}
-              {config?.updated_at && (
-                <p className="text-[11px] text-gray-400">Last updated: {new Date(config.updated_at).toLocaleString()}</p>
-              )}
-            </CardContent>
-          </Card>
+                {ftError && <p className="text-xs text-red-500">{ftError}</p>}
+
+                {/* Step 3: Jobs list */}
+                {ftJobs.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Fine-tuning jobs</Label>
+                    <div className="space-y-1.5">
+                      {ftJobs.map((job) => (
+                        <div key={job.jobId} className="flex items-center gap-2 p-2 rounded-md border text-xs dark:border-gray-700">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-mono text-[10px] text-gray-500 truncate">{job.jobId}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{job.model}</p>
+                          </div>
+                          <Badge variant={job.status === "succeeded" ? "default" : job.status === "failed" ? "destructive" : "secondary"}
+                            className="text-[10px] flex-shrink-0">
+                            {job.status}
+                          </Badge>
+                          {job.fineTunedModel && (
+                            <Badge variant="outline" className="text-[10px] text-purple-600 flex-shrink-0 max-w-[140px] truncate">
+                              {job.fineTunedModel}
+                            </Badge>
+                          )}
+                          {job.status !== "succeeded" && job.status !== "failed" && (
+                            <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => handleFtCheckStatus(job.jobId)}
+                              disabled={ftChecking}>
+                              <RefreshCw className={`h-3 w-3 ${ftChecking ? "animate-spin" : ""}`} />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      Once a job succeeds, copy the fine-tuned model name and assign it to any task above.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* ═══ PLANS ═══ */}

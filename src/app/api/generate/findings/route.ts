@@ -96,9 +96,10 @@ export async function POST(req: NextRequest) {
       preferredNormalPhrases,
     });
 
+    const taskModel = globalConfig.taskOverrides?.findings;
     const stream = await generateAIStream({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
+      provider: taskModel?.provider || globalConfig.provider,
+      modelName: taskModel?.modelName || globalConfig.modelName,
       apiKey: globalConfig.apiKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,

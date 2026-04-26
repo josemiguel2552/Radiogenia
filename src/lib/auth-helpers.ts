@@ -8,12 +8,23 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+export interface TaskModelOverride {
+  provider: AIProvider;
+  modelName: string;
+}
+
 export interface GlobalAIConfig {
   provider: AIProvider;
   modelName: string;
   apiKey: string;
   customBaseUrl?: string;
   whisperApiKey?: string;
+  taskOverrides?: {
+    findings?: TaskModelOverride;
+    conclusion?: TaskModelOverride;
+    recommendations?: TaskModelOverride;
+    trace?: TaskModelOverride;
+  };
 }
 
 export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
@@ -43,12 +54,27 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     whisperApiKey = data.whisper_api_key_encrypted ? decrypt(data.whisper_api_key_encrypted) : "";
   } catch { /* optional field */ }
 
+  const taskOverrides: GlobalAIConfig["taskOverrides"] = {};
+  if (data.findings_provider && data.findings_model) {
+    taskOverrides.findings = { provider: data.findings_provider as AIProvider, modelName: data.findings_model };
+  }
+  if (data.conclusion_provider && data.conclusion_model) {
+    taskOverrides.conclusion = { provider: data.conclusion_provider as AIProvider, modelName: data.conclusion_model };
+  }
+  if (data.recommendations_provider && data.recommendations_model) {
+    taskOverrides.recommendations = { provider: data.recommendations_provider as AIProvider, modelName: data.recommendations_model };
+  }
+  if (data.trace_provider && data.trace_model) {
+    taskOverrides.trace = { provider: data.trace_provider as AIProvider, modelName: data.trace_model };
+  }
+
   return {
     provider: data.provider as AIProvider,
     modelName: data.model_name,
     apiKey,
     customBaseUrl: data.custom_base_url || undefined,
     whisperApiKey,
+    taskOverrides: Object.keys(taskOverrides).length > 0 ? taskOverrides : undefined,
   };
 }
 

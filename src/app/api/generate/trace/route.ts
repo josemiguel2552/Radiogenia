@@ -45,9 +45,10 @@ If no repair was needed, set "repaired": false, "corrected_findings": null, and 
 
     const userMsg = `DICTATION:\n${dictation}\n\nSTRUCTURED FINDINGS:\n${findings}`;
 
+    const taskModel = globalConfig.taskOverrides?.trace;
     const raw = await generateAI({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
+      provider: taskModel?.provider || globalConfig.provider,
+      modelName: taskModel?.modelName || globalConfig.modelName,
       apiKey: globalConfig.apiKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
