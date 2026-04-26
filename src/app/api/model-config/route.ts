@@ -67,6 +67,15 @@ export async function PUT(req: NextRequest) {
     delete body.style_sample_count;
     delete body.role;
 
+    // Non-admins cannot change provider, model, or API key
+    const role = await getUserRole(user.id);
+    if (role !== "admin") {
+      delete body.provider;
+      delete body.model_name;
+      delete body.custom_base_url;
+      delete body.api_key_encrypted;
+    }
+
     const service = createServiceClient();
 
     // Try upsert; if a column is missing (migration not applied), retry without it

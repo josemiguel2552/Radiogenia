@@ -134,10 +134,21 @@ export function ModelConfigTab() {
     if (!config) return;
     setSaving(true);
     const body: Record<string, unknown> = { ...config };
-    if (apiKey && apiKey !== "••••••••") {
-      body.api_key = apiKey;
+
+    // Only admins can change provider/model/API key
+    if (userRole === "admin") {
+      if (apiKey && apiKey !== "••••••••") {
+        body.api_key = apiKey;
+      }
     }
     delete body.api_key_encrypted;
+
+    // Radiologists only save writing prefs + style learning
+    if (userRole !== "admin") {
+      delete body.provider;
+      delete body.model_name;
+      delete body.custom_base_url;
+    }
 
     const res = await fetch("/api/model-config", {
       method: "PUT",
@@ -680,9 +691,11 @@ export function ModelConfigTab() {
         <Button onClick={handleSave} disabled={saving || !dirty} className="flex-1 h-10">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cfg.save_config")}
         </Button>
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setShowPrompt(true)} title={t("cfg.preview_prompt")}>
-          <Eye className="h-4 w-4" />
-        </Button>
+        {userRole === "admin" && (
+          <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setShowPrompt(true)} title={t("cfg.preview_prompt")}>
+            <Eye className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Prompt Preview Dialog */}
