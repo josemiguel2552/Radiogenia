@@ -147,11 +147,12 @@ HALLAZGOS NEGATIVOS DICTADOS:
 Cuando el radiólogo dicta explícitamente la AUSENCIA de un hallazgo (ej: "no masa colónica", "sin evidencia de TEP", "no disección aórtica", "no se identifica litiasis"), esto es un hallazgo negativo relevante y DEBE incluirse en la sección anatómica correspondiente. No lo omitas ni lo sustituyas por una frase genérica de normalidad. Reproduce fielmente la negación dictada.
 
 REGLAS OBLIGATORIAS:
-1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna. No añadas secciones que no estén en el template.
+1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna.
 2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template. Esto incluye tanto hallazgos positivos como hallazgos negativos dictados por el radiólogo.
 3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
+6. Si un hallazgo dictado NO encaja en NINGUNA sección del template, añade una sección final llamada "Otros hallazgos" al final del informe con TODOS los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo dictado por falta de sección adecuada.
 
 FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
@@ -162,11 +163,12 @@ FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - NO añadas encabezados como "HALLAZGOS", "FINDINGS" ni agrupaciones. Solo la lista plana de secciones.
 - TRADUCE los nombres de las secciones del template al ${l}.
 
-Ejemplo — si el template tiene las secciones Liver, Gallbladder, Bile ducts, Pancreas (en ese orden), la salida debe ser EXACTAMENTE:
+Ejemplo — si el template tiene las secciones Liver, Gallbladder, Bile ducts, Pancreas (en ese orden) y el dictado menciona nódulos tiroideos, la salida debe ser EXACTAMENTE:
 Hígado: De tamaño y morfología normales.
 Vesícula biliar: De paredes finas, sin litiasis.
 Vía biliar: De calibre normal.
-Páncreas: De tamaño y morfología normales.`;
+Páncreas: De tamaño y morfología normales.
+Otros hallazgos: Se identifican nódulos tiroideos bilaterales de aspecto inespecífico.`;
   }
 
   return `You are an expert radiologist writing structured reports. Your task is to take the radiologist's dictation and distribute it into the anatomical sections of the provided template.
@@ -187,11 +189,12 @@ DICTATED NEGATIVE FINDINGS:
 When the radiologist explicitly dictates the ABSENCE of a finding (e.g. "no colonic mass", "no CT evidence of acute pulmonary embolism", "no aortic dissection", "no lithiasis identified"), this is a relevant negative finding and MUST be included in the corresponding anatomical section. Do not omit it or replace it with a generic normality phrase. Faithfully reproduce the dictated negation.
 
 MANDATORY RULES:
-1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any. Do not add sections not in the template.
+1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any.
 2. Place each dictated finding in the correct anatomical section of the template. This includes both positive findings AND negative findings explicitly dictated by the radiologist.
 3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
 4. Do NOT invent pathological findings that the radiologist did not dictate.
 5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
+6. If a dictated finding does NOT fit ANY template section, add a final section called "Additional findings" at the end of the report with ALL orphan findings grouped together. NEVER omit a dictated finding due to lack of a matching section.
 
 OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Each section is exactly ONE line with the format: "Anatomical section: Description."
@@ -202,11 +205,12 @@ OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Do NOT add headings like "FINDINGS" or groupings. Only the flat list of sections.
 - TRANSLATE section names from the template into ${l}.
 
-Example — if the template has sections Liver, Gallbladder, Bile ducts, Pancreas (in that order), the output must be EXACTLY:
+Example — if the template has sections Liver, Gallbladder, Bile ducts, Pancreas (in that order) and the dictation mentions thyroid nodules, the output must be EXACTLY:
 Liver: Normal in size and morphology.
 Gallbladder: Thin-walled, no lithiasis.
 Bile ducts: Normal caliber.
-Pancreas: Normal in size and morphology.`;
+Pancreas: Normal in size and morphology.
+Additional findings: Bilateral thyroid nodules of nonspecific appearance are identified.`;
 }
 
 function modalityTerminology(modality: string, lang: OutputLanguage): string {

@@ -72,10 +72,11 @@ REGLAS:
 4. NUNCA inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. NUNCA escribas "no valorado", "no evaluado", "no descrito" en ninguna sección.
 6. Coloca cada hallazgo en la sección anatómica correcta.
-7. Devuelve SOLO JSON válido — sin markdown, sin comentarios.
-8. ${paraphrase}
-9. ${length}
-10. TRADUCE los nombres de las secciones del template al español.${phraseBlock ? `
+7. Si un hallazgo dictado NO encaja en NINGUNA sección del template, añade una entrada adicional al final del array con label "Otros hallazgos", source "dictation" y todos los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo por falta de sección.
+8. Devuelve SOLO JSON válido — sin markdown, sin comentarios.
+9. ${paraphrase}
+10. ${length}
+11. TRADUCE los nombres de las secciones del template al español.${phraseBlock ? `
 
 FRASES DE NORMALIDAD PREFERIDAS — úsalas LITERALMENTE para secciones no mencionadas:
 ${phraseBlock}` : ""}`;
@@ -116,10 +117,11 @@ RULES:
    - "normal_default": section NOT mentioned. Write professional normality phrase for ${params.modality}. "evidence" = null.
 4. NEVER invent findings not in the dictation.
 5. NEVER write "not assessed" / "not evaluated".
-6. Return ONLY valid JSON.
-7. ${paraphrase}
-8. ${length}
-9. TRANSLATE section names to ${l}.${phraseBlock ? `
+6. If a dictated finding does NOT fit ANY template section, add an extra entry at the end of the array with label "Additional findings", source "dictation", grouping all orphan findings. NEVER omit a finding due to lack of a matching section.
+7. Return ONLY valid JSON.
+8. ${paraphrase}
+9. ${length}
+10. TRANSLATE section names to ${l}.${phraseBlock ? `
 
 PREFERRED NORMALITY PHRASES — use LITERALLY for unmentioned sections:
 ${phraseBlock}` : ""}`;
