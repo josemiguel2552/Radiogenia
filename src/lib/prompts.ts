@@ -132,6 +132,7 @@ function findingsSystemPrompt(lang: OutputLanguage, modality: string): string {
     return `Eres un radiólogo experto redactando informes estructurados. Tu tarea es tomar el dictado del radiólogo y distribuirlo en las secciones anatómicas del template proporcionado.
 
 IDIOMA DE SALIDA: ${l}. TODO el informe debe estar en ${l}.
+IMPORTANTE: El dictado puede estar en CUALQUIER idioma. Independientemente del idioma de entrada, tu salida COMPLETA debe estar en ${l}. Traduce todo el contenido al ${l}.
 
 MODALIDAD DEL ESTUDIO: ${modality}
 
@@ -171,6 +172,7 @@ Páncreas: De tamaño y morfología normales.`;
   return `You are an expert radiologist writing structured reports. Your task is to take the radiologist's dictation and distribute it into the anatomical sections of the provided template.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE report must be written in ${l}.
+IMPORTANT: The dictation may be in ANY language. Regardless of the input language, your ENTIRE output MUST be in ${l}. Translate all content to ${l}.
 
 STUDY MODALITY: ${modality}
 
@@ -285,7 +287,10 @@ Rules:
     });
   }
 
-  const user = `Template: ${params.template}\n\nDictation: ${params.dictation}`;
+  const langReminder = lang !== "es"
+    ? `\n\nREMINDER: Write your ENTIRE output in ${LANGUAGE_LABEL[lang]}, not in the dictation language.`
+    : "";
+  const user = `Template: ${params.template}\n\nDictation: ${params.dictation}${langReminder}`;
   return { system, user };
 }
 
@@ -305,6 +310,7 @@ export function buildConclusionPrompt(params: {
     system = `Eres un radiólogo experto redactando conclusiones de informes radiológicos. Genera la conclusión basándote EXCLUSIVAMENTE en los hallazgos proporcionados.
 
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
+IMPORTANTE: Los hallazgos pueden estar en CUALQUIER idioma. Independientemente del idioma de entrada, tu salida COMPLETA debe estar en ${l}. Traduce todo el contenido al ${l}.
 
 PRINCIPIO FUNDAMENTAL — LA CONCLUSIÓN ES DESCRIPTIVA, NO INTERPRETATIVA:
 La conclusión DESCRIBE los hallazgos relevantes. NUNCA especula sobre su naturaleza, etiología ni relación entre ellos. El radiólogo describe lo que VE, no lo que CREE.
@@ -373,6 +379,7 @@ FORMATO:
     system = `You are an expert radiologist writing radiology report conclusions. Generate the conclusion based EXCLUSIVELY on the provided findings.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
+IMPORTANT: The findings may be in ANY language. Regardless of the input language, your ENTIRE output MUST be in ${l}. Translate all content to ${l}.
 
 FUNDAMENTAL PRINCIPLE — THE CONCLUSION IS DESCRIPTIVE, NOT INTERPRETIVE:
 The conclusion DESCRIBES relevant findings. It NEVER speculates about their nature, etiology or relationship to each other. The radiologist describes what they SEE, not what they THINK.
