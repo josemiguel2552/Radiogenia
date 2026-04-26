@@ -25,6 +25,7 @@ const PERIOD_KEYS: Record<string, string> = {
 export function StatsPanel() {
   const t = useT();
   const [reports, setReports] = useState<ReportStat[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("month");
   const [expanded, setExpanded] = useState(false);
@@ -34,6 +35,13 @@ export function StatsPanel() {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (data) setSub({ used: data.used, limit: data.limit, plan: data.plan });
+      })
+      .catch(() => {});
+
+    fetch("/api/reports")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (Array.isArray(data)) setTotalCount(data.length);
       })
       .catch(() => {});
   }, []);
@@ -91,6 +99,9 @@ export function StatsPanel() {
         )}
         <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
           <FileText className="h-3.5 w-3.5" />
+          {totalCount !== null && (
+            <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span>
+          )}
           <span className="text-xs">{t("stats.this_month")}</span>
         </div>
         <ChevronDown className={`h-3.5 w-3.5 text-gray-400 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`} />

@@ -138,7 +138,7 @@ function buildValidatorPrompt(dictation: string, mappingJson: string, lang: Outp
 
 TU ÚNICA TAREA — buscar estos 3 tipos de error:
 1. OMISIONES: un dato clínico del dictado no aparece en el mapping.
-2. ALUCINACIONES: el mapping contiene un hallazgo clínico específico que NO está en el dictado. Las frases de normalidad para secciones no mencionadas NO son alucinaciones.
+2. ALUCINACIONES: el mapping contiene un hallazgo clínico específico que NO está en el dictado. Las frases de normalidad para secciones no mencionadas NO son alucinaciones. La sección "Otros hallazgos" con hallazgos que SÍ están en el dictado NO es una alucinación — es una sección legítima para hallazgos que no encajan en el template.
 3. ERRORES DE SECCIÓN: un hallazgo está en la sección anatómica incorrecta.
 
 REGLAS:
@@ -162,7 +162,7 @@ REGLAS:
 
 CHECK FOR 3 ERROR TYPES ONLY:
 1. OMISSIONS: dictation content missing from mapping.
-2. HALLUCINATIONS: specific clinical finding in mapping NOT in dictation. Normal phrases for unmentioned sections are NOT hallucinations.
+2. HALLUCINATIONS: specific clinical finding in mapping NOT in dictation. Normal phrases for unmentioned sections are NOT hallucinations. The "Additional findings" section containing findings that ARE in the dictation is NOT a hallucination — it is a legitimate catch-all for findings that do not fit any template section.
 3. WRONG SECTION: finding in incorrect anatomical section.
 
 RULES:

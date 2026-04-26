@@ -34,6 +34,8 @@ export async function GET(req: NextRequest) {
       overrides.map((o) => [`${o.modality}|${o.section_label}`, o.phrase])
     );
 
+    const defaultKeys = new Set(defaults.map((d) => `${d.modality}|${d.section_label}`));
+
     const merged = defaults.map((d) => {
       const key = `${d.modality}|${d.section_label}`;
       const userPhrase = overrideMap.get(key);
@@ -45,6 +47,19 @@ export async function GET(req: NextRequest) {
         is_customized: userPhrase != null,
       };
     });
+
+    for (const o of overrides) {
+      const key = `${o.modality}|${o.section_label}`;
+      if (!defaultKeys.has(key)) {
+        merged.push({
+          modality: o.modality,
+          section_label: o.section_label,
+          default_phrase: o.phrase,
+          phrase: o.phrase,
+          is_customized: true,
+        });
+      }
+    }
 
     return NextResponse.json(merged);
   } catch (error) {

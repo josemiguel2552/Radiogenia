@@ -114,13 +114,15 @@ const COMPACT_NORMALS_INSTRUCTION: Record<string, string> = {
   es: `FORMATO COMPACTO DE NORMALIDAD:
 Se ha solicitado un informe compacto. Debes reorganizar la salida así:
 1. PRIMERO: escribe SOLO las secciones que tienen hallazgos mencionados por el radiólogo (positivos o negativos dictados), cada una en su formato estructurado habitual ("Sección: Descripción.").
-2. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (sin etiquetas de sección, sin viñetas, sin saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Este párrafo debe decir algo como: "El resto de las estructuras evaluadas (nombrar las secciones) no muestran alteraciones significativas." o una variante natural y profesional. NO listes cada sección individualmente — redacta un texto fluido que las englobe.
+2. Si hay hallazgos que no encajan en ninguna sección del template, escribe la sección "Otros hallazgos: ..." con todos esos hallazgos agrupados, ANTES del párrafo final de normalidad.
+3. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (sin etiquetas de sección, sin viñetas, sin saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Este párrafo debe decir algo como: "El resto de las estructuras evaluadas (nombrar las secciones) no muestran alteraciones significativas." o una variante natural y profesional. NO listes cada sección individualmente — redacta un texto fluido que las englobe.
 El párrafo final de normalidad debe ser breve y natural. No repitas "es normal" para cada órgano.`,
 
   en: `COMPACT NORMALITY FORMAT:
 A compact report has been requested. Reorganize the output as follows:
 1. FIRST: write ONLY the sections that have findings mentioned by the radiologist (positive or dictated negative findings), each in the usual structured format ("Section: Description.").
-2. THEN: at the end, write a SINGLE running paragraph (no section labels, no bullets, no internal line breaks) grouping ALL the normal unmentioned sections. This paragraph should say something like: "The remaining evaluated structures (name the sections) show no significant abnormalities." or a natural, professional variation. Do NOT list each section individually — write a flowing text that encompasses them all.
+2. If there are findings that do not fit any template section, write the section "Additional findings: ..." with all those findings grouped together, BEFORE the final normality paragraph.
+3. THEN: at the end, write a SINGLE running paragraph (no section labels, no bullets, no internal line breaks) grouping ALL the normal unmentioned sections. This paragraph should say something like: "The remaining evaluated structures (name the sections) show no significant abnormalities." or a natural, professional variation. Do NOT list each section individually — write a flowing text that encompasses them all.
 The final normality paragraph should be brief and natural. Do not repeat "is normal" for each organ.`,
 };
 

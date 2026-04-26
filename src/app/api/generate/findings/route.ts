@@ -8,6 +8,7 @@ import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
+import { translateSectionLabel } from "@/lib/section-translate";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       try {
         const mod = modality || "CT";
         const defaults = getDefaultsForModality(mod);
+        const defaultKeys = new Set(defaults.map((d) => d.section_label));
 
         let overrides: { section_label: string; phrase: string }[] = [];
         try {
@@ -77,11 +79,21 @@ export async function POST(req: NextRequest) {
         } catch { /* table may not exist */ }
 
         const overrideMap = new Map(overrides.map((o) => [o.section_label, o.phrase]));
+        const outLang = safeConfig.output_language as OutputLanguage;
 
         preferredNormalPhrases = defaults.map((d) => ({
-          label: d.section_label,
+          label: translateSectionLabel(d.section_label, outLang),
           phrase: overrideMap.get(d.section_label) ?? d.phrase,
         }));
+
+        for (const o of overrides) {
+          if (!defaultKeys.has(o.section_label)) {
+            preferredNormalPhrases.push({
+              label: translateSectionLabel(o.section_label, outLang),
+              phrase: o.phrase,
+            });
+          }
+        }
       } catch { /* ignore */ }
     }
 
