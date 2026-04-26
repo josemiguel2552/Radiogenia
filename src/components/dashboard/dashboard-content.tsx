@@ -188,6 +188,7 @@ export function DashboardContent() {
 
     // Stream findings — text appears progressively
     let findingsText = "";
+    let findingsFailed = false;
     try {
       const res = await fetch("/api/generate/findings", {
         method: "POST",
@@ -218,7 +219,7 @@ export function DashboardContent() {
           setFindings(cleanReport(findingsText));
         }
         if (streamError) {
-          findingsText = "";
+          findingsFailed = true;
           setFindings("Error: " + streamError);
         } else {
           findingsText = cleanReport(findingsText);
@@ -226,16 +227,18 @@ export function DashboardContent() {
           setFindings(findingsText);
         }
       } else {
+        findingsFailed = true;
         const data = await res.json().catch(() => ({ error: "Generation failed" }));
         setFindings(data.error || "Error generating findings");
       }
     } catch (e) {
+      findingsFailed = true;
       setFindings("Error: " + (e instanceof Error ? e.message : "Unknown error"));
     }
     setLoadingFindings(false);
 
-    if (!findingsText) {
-      setFindings(t("error.empty_generation"));
+    if (findingsFailed || !findingsText) {
+      if (!findingsFailed) setFindings(t("error.empty_generation"));
       setLoadingConclusion(false);
       setLoadingRecs(false);
       return;
