@@ -318,6 +318,7 @@ export function LandingPage() {
           <div className="flex items-center gap-6 text-xs text-gray-500">
             <a href="#features" className="hover:text-gray-300 transition-colors">Features</a>
             <a href="#pricing" className="hover:text-gray-300 transition-colors">Pricing</a>
+            <Link href="/legal" className="hover:text-gray-300 transition-colors">Legal</Link>
             <Link href="/auth/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
           </div>
           <p className="text-xs text-gray-600">

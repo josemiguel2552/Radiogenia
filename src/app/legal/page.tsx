@@ -6,7 +6,7 @@ export default function LegalPage() {
     <div className="min-h-screen bg-[#0a0a1a] text-gray-300">
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="flex items-center gap-3 mb-10">
-          <Link href="/auth/register" className="text-gray-500 hover:text-white transition-colors">
+          <Link href="/" className="text-gray-500 hover:text-white transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex items-center gap-2">

@@ -30,6 +30,7 @@ import { TemplatesTab } from "@/components/sidebar/templates-tab";
 import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
+import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
@@ -250,6 +251,8 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         )}
 
         <div className="flex-1" />
+
+        <HelpDialog />
 
         <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={toggleDark} title={t("nav.toggle_theme")}>
           {darkMode ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
