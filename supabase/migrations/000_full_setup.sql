@@ -72,6 +72,7 @@ create table if not exists public.user_model_config (
   style_learning_enabled boolean default true,
   style_sample_count integer default 0,
   few_shot_count integer default 3,
+  compact_normals boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

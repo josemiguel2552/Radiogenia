@@ -33,6 +33,7 @@ export async function GET() {
 
     if (data) {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
+      if (data.compact_normals === undefined) data.compact_normals = false;
     }
 
     const role = await getUserRole(user.id);
@@ -67,11 +68,24 @@ export async function PUT(req: NextRequest) {
     delete body.role;
 
     const service = createServiceClient();
-    const { data, error } = await service
+
+    // Try upsert; if a column is missing (migration not applied), retry without it
+    let result = await service
       .from("user_model_config")
       .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })
       .select()
       .single();
+
+    if (result.error?.message?.includes("column")) {
+      delete body.compact_normals;
+      result = await service
+        .from("user_model_config")
+        .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })
+        .select()
+        .single();
+    }
+
+    const { data, error } = result;
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
