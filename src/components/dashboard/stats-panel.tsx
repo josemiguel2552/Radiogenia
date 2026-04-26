@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Activity, FileText, ChevronDown, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BarChart3, FileText, Calendar, Activity } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { useT } from "@/lib/i18n";
 
 interface ReportStat {
@@ -27,6 +27,7 @@ export function StatsPanel() {
   const [reports, setReports] = useState<ReportStat[]>([]);
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("month");
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     fetch("/api/subscription")
@@ -38,6 +39,7 @@ export function StatsPanel() {
   }, []);
 
   useEffect(() => {
+    if (!expanded) return;
     async function load() {
       const now = new Date();
       let from = "";
@@ -52,98 +54,83 @@ export function StatsPanel() {
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         from = monthAgo.toISOString();
       }
-
       const params = from ? `?from=${from}` : "";
       const res = await fetch(`/api/reports${params}`);
       if (res.ok) setReports(await res.json());
     }
     load();
-  }, [period]);
+  }, [period, expanded]);
 
-  // Calculate stats
-  const totalReports = reports.length;
   const modalityCounts: Record<string, number> = {};
   reports.forEach((r) => {
     modalityCounts[r.modality] = (modalityCounts[r.modality] || 0) + 1;
   });
-
   const maxCount = Math.max(...Object.values(modalityCounts), 1);
   const usagePct = sub ? Math.min(100, Math.round((sub.used / sub.limit) * 100)) : 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-          <BarChart3 className="h-5 w-5 text-brand" />
-          {t("stats.title")}
-        </h2>
-        <div className="flex gap-1">
-          {(["today", "week", "month", "all"] as const).map((p) => (
-            <Button key={p} variant={period === p ? "default" : "ghost"} size="sm" onClick={() => setPeriod(p)} className="text-xs">
-              {t(PERIOD_KEYS[p])}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Monthly usage card */}
+    <div>
+      {/* Compact summary row */}
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-4 px-1 py-1.5 text-sm group"
+      >
         {sub && (
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-full bg-brand-soft">
-                <Activity className="h-5 w-5 text-brand" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{sub.used}<span className="text-sm font-normal text-gray-400">/{sub.limit}</span></p>
-                <p className="text-xs text-gray-500">{t("stats.this_month")}</p>
-                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-1.5">
-                  <div
-                    className={`h-1.5 rounded-full transition-all ${usagePct >= 90 ? "bg-red-500" : usagePct >= 70 ? "bg-amber-500" : "bg-brand"}`}
-                    style={{ width: `${usagePct}%` }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-2">
+            <Activity className={`h-3.5 w-3.5 ${usagePct >= 90 ? "text-red-500" : usagePct >= 70 ? "text-amber-500" : "text-brand"}`} />
+            <span className="font-semibold text-gray-900 dark:text-white">{sub.used}</span>
+            <span className="text-gray-400">/ {sub.limit}</span>
+            <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+              <div
+                className={`h-1.5 rounded-full ${usagePct >= 90 ? "bg-red-500" : usagePct >= 70 ? "bg-amber-500" : "bg-brand"}`}
+                style={{ width: `${usagePct}%` }}
+              />
+            </div>
+          </div>
         )}
+        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+          <FileText className="h-3.5 w-3.5" />
+          <span className="text-xs">{t("stats.this_month")}</span>
+        </div>
+        <ChevronDown className={`h-3.5 w-3.5 text-gray-400 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
 
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-brand-soft">
-              <FileText className="h-5 w-5 text-brand" />
+      {/* Expanded details */}
+      {expanded && (
+        <Card className="mt-2">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex gap-1">
+              {(["today", "week", "month", "all"] as const).map((p) => (
+                <Button key={p} variant={period === p ? "default" : "ghost"} size="sm" onClick={() => setPeriod(p)} className="text-xs h-7">
+                  {t(PERIOD_KEYS[p])}
+                </Button>
+              ))}
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalReports}</p>
-              <p className="text-xs text-gray-500">{t("stats.total_reports")}</p>
-            </div>
+
+            {Object.keys(modalityCounts).length > 0 ? (
+              <div className="space-y-2">
+                {Object.entries(modalityCounts).map(([mod, count]) => (
+                  <div key={mod}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{mod}</span>
+                      <span className="text-xs font-bold text-gray-900 dark:text-white">{count}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                      <div className="bg-brand h-1.5 rounded-full transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400 text-xs">
+                <Calendar className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
+                {t("stats.no_reports")}
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Modality breakdown */}
-        {Object.entries(modalityCounts).slice(0, sub ? 2 : 3).map(([mod, count]) => (
-          <Card key={mod}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{mod}</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">{count}</span>
-              </div>
-              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
-                <div className="bg-brand h-2 rounded-full transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {Object.keys(modalityCounts).length === 0 && (
-          <Card className={sub ? "col-span-2" : "col-span-3"}>
-            <CardContent className="p-4 text-center text-gray-400 text-sm">
-              <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              {t("stats.no_reports")}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      )}
     </div>
   );
 }

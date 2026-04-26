@@ -213,6 +213,40 @@ function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProv
   });
 }
 
+function withKeepalive(source: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const reader = source.getReader();
+  const encoder = new TextEncoder();
+  const HEARTBEAT_MS = 10_000;
+
+  return new ReadableStream({
+    async start(controller) {
+      let alive = true;
+      const heartbeat = setInterval(() => {
+        if (alive) {
+          try { controller.enqueue(encoder.encode(" ")); } catch { /* closed */ }
+        }
+      }, HEARTBEAT_MS);
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+      } catch (e) {
+        controller.error(e);
+      } finally {
+        alive = false;
+        clearInterval(heartbeat);
+        controller.close();
+      }
+    },
+    cancel() {
+      reader.cancel();
+    },
+  });
+}
+
 export async function generateAIStream(params: GenerateParams): Promise<ReadableStream<Uint8Array>> {
   const { provider, modelName } = params;
   const config = getProviderConfig(params);
@@ -252,7 +286,7 @@ export async function generateAIStream(params: GenerateParams): Promise<Readable
     });
   }
 
-  return parseSSEToTextStream(response.body, provider);
+  return withKeepalive(parseSSEToTextStream(response.body, provider));
 }
 
 export async function testConnection(params: Omit<GenerateParams, "system" | "user">): Promise<boolean> {
