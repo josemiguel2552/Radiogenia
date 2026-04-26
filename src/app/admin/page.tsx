@@ -350,33 +350,33 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-12 md:h-14 flex items-center gap-3 md:gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
               <Zap className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="font-bold text-gray-900 dark:text-white">Radiogen.ai</span>
+            <span className="font-bold text-gray-900 dark:text-white hidden sm:inline">Radiogen.ai</span>
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
               Admin
             </Badge>
           </div>
-          <Button variant="ghost" size="icon" className="ml-auto" onClick={loadAll} title="Refresh">
+          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Tab navigation */}
-        <div className="flex gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl w-fit">
+      <div className="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-6">
+        {/* Tab navigation — scrollable on mobile */}
+        <div className="flex gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl overflow-x-auto w-full md:w-fit scrollbar-hide">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                 tab === t.key
                   ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -488,11 +488,11 @@ export default function AdminPage() {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Role</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Plan</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Usage</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Usage</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Total</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Joined</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Joined</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Actions</th>
                     </tr>
                   </thead>
@@ -509,7 +509,7 @@ export default function AdminPage() {
                               <p className="text-[11px] text-gray-500">{u.email}</p>
                             </div>
                           </td>
-                          <td className="py-3 px-2">
+                          <td className="py-3 px-2 hidden sm:table-cell">
                             <Badge
                               variant={u.role === "admin" ? "default" : "secondary"}
                               className="text-[10px]"
@@ -535,7 +535,7 @@ export default function AdminPage() {
                               </Badge>
                             )}
                           </td>
-                          <td className="py-3 px-2 text-right">
+                          <td className="py-3 px-2 text-right hidden md:table-cell">
                             {u.role !== "admin" && (
                               <div className="inline-flex items-center gap-2">
                                 <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -556,7 +556,7 @@ export default function AdminPage() {
                               {u.report_count}
                             </span>
                           </td>
-                          <td className="py-3 px-2 text-right text-gray-500 text-[11px]">
+                          <td className="py-3 px-2 text-right text-gray-500 text-[11px] hidden md:table-cell">
                             {new Date(u.created_at).toLocaleDateString()}
                           </td>
                           <td className="py-3 px-2 text-right">
@@ -603,7 +603,7 @@ export default function AdminPage() {
                   Default provider used for all tasks unless overridden below.
                 </p>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Provider</Label>
                     <Select value={provider} onValueChange={(v) => {
@@ -649,7 +649,7 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">API Key</Label>
                     <div className="relative">
@@ -732,7 +732,7 @@ export default function AdminPage() {
                           <Badge variant="outline" className="text-[10px] text-gray-400">Default</Badge>
                         )}
                       </div>
-                      <div className="grid grid-cols-[140px_1fr_auto] gap-2 items-end">
+                      <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
                         <Select value={o.provider || "default"} onValueChange={(v) => {
                           const val = v === "default" ? "" : v;
                           updateTaskOverride(key, "provider", val);

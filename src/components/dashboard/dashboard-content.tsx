@@ -447,14 +447,14 @@ export function DashboardContent() {
   const canGenerate = setupReady && dictation.trim() && !isGenerating;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       <StatsPanel />
 
       {/* ── Input: study setup (left) + dictation (right) ── */}
       {setupCollapsed ? (
         <div className="space-y-3">
           <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
             onClick={() => setSetupCollapsed(false)}
           >
             <Stethoscope className="h-3.5 w-3.5 text-brand" />
@@ -482,12 +482,12 @@ export function DashboardContent() {
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
-                  className="min-h-[180px] text-sm pr-14"
+                  className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
                 />
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"
-                  className={`absolute top-2 right-2 h-8 w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
                   onClick={toggleRecording}
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -504,7 +504,7 @@ export function DashboardContent() {
               <Button
                 onClick={handleGenerate}
                 disabled={!canGenerate}
-                className="w-full h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+                className="w-full h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
               >
                 {isGenerating ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
@@ -623,12 +623,12 @@ export function DashboardContent() {
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
-                  className="min-h-[200px] h-full text-sm pr-14 resize-none"
+                  className="min-h-[160px] md:min-h-[200px] h-full text-sm pr-14 resize-none"
                 />
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"
-                  className={`absolute top-2 right-2 h-8 w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
                   onClick={toggleRecording}
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -645,7 +645,7 @@ export function DashboardContent() {
               <Button
                 onClick={handleGenerate}
                 disabled={!canGenerate}
-                className="w-full h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+                className="w-full h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
               >
                 {isGenerating ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
@@ -717,24 +717,24 @@ export function DashboardContent() {
           />
 
           {/* Action bar */}
-          <Card className="sticky bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
-            <CardContent className="p-2.5">
+          <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+            <CardContent className="p-2 md:p-2.5">
               <div className="flex flex-wrap items-center gap-1.5 justify-between">
                 <div className="flex flex-wrap gap-1">
-                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")} disabled={!findings} className="gap-1 text-xs h-7">
+                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "f" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.findings")}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-7">
+                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.plus_conclusion")}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-7">
+                  <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.full_report")}
                   </Button>
                 </div>
-                <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-7 bg-brand text-brand-fg hover:opacity-90">
+                <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90">
                   <ArrowRight className="h-3 w-3" />
                   {t("dash.next_report")}
                 </Button>
