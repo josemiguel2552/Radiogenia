@@ -197,7 +197,7 @@ export default function AdminPage() {
       for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
         if (task === "findings" && findingsCombo) {
           body.findings_provider = "combo";
-          body.findings_model = "gpt4mini+deepseek-reasoner";
+          body.findings_model = "gpt4mini+deepseek-v3";
           continue;
         }
         const o = taskOverrides[task];
@@ -871,16 +871,16 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* ── Combo GPT-4 Mini + DeepSeek Reasoner ── */}
+            {/* ── Combo GPT-4 Mini + DeepSeek V3 ── */}
             <Card className={findingsCombo ? "ring-2 ring-emerald-500/30" : ""}>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Shield className="h-4 w-4 text-emerald-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Combo: GPT-4 Mini + DeepSeek Reasoner</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Combo: GPT-4 Mini + DeepSeek V3</h2>
                 {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Active</Badge>}
               </div>
               <CardContent className="pt-0 space-y-3 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Two-stage findings pipeline that reduces omissions and hallucinations. Stage 1: GPT-4o-mini maps the dictation to template sections as structured JSON with evidence. Stage 2: DeepSeek Reasoner validates the mapping, correcting any errors without redoing the full generation.
+                  Two-stage findings pipeline that reduces omissions and hallucinations. Stage 1: GPT-4o-mini maps the dictation to template sections as structured JSON with evidence. Stage 2: DeepSeek V3 validates the mapping, correcting any errors without redoing the full generation.
                 </p>
                 <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                   <div>
@@ -905,7 +905,7 @@ export default function AdminPage() {
                     <div className="flex items-start gap-2">
                       <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">2</div>
                       <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">DeepSeek Reasoner — Validator</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">DeepSeek V3 — Validator</p>
                         <p className="text-[10px] text-gray-500">Validates mapping against dictation. Corrects omissions, hallucinations, and misattributions only.</p>
                       </div>
                     </div>

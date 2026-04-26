@@ -30,7 +30,7 @@ export interface GlobalAIConfig {
 }
 
 export const COMBO_PROVIDER_VALUE = "combo";
-export const COMBO_MODEL_VALUE = "gpt4mini+deepseek-reasoner";
+export const COMBO_MODEL_VALUE = "gpt4mini+deepseek-v3";
 
 export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider): string {
   if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider]!;

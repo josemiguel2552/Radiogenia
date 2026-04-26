@@ -103,9 +103,9 @@ export async function POST(req: NextRequest) {
       "X-Output-Language": safeConfig.output_language,
     };
 
-    // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek Reasoner validator ──
+    // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek V3 validator ──
     if (globalConfig.findingsComboEnabled) {
-      console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek Reasoner, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
+      console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek V3, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
       const comboResult = await runComboFindings(globalConfig, {
         template,

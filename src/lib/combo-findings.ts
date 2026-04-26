@@ -237,7 +237,7 @@ export async function runComboFindings(
   const deepseekKey = resolveApiKey(globalConfig, "deepseek");
 
   if (!openaiKey) throw new Error("No OpenAI API key configured for combo pipeline (GPT-4 Mini).");
-  if (!deepseekKey) throw new Error("No DeepSeek API key configured for combo pipeline (Reasoner).");
+  if (!deepseekKey) throw new Error("No DeepSeek API key configured for combo pipeline.");
 
   const t0 = Date.now();
 
@@ -272,13 +272,13 @@ export async function runComboFindings(
 
   console.log(`[combo] Stage 1 — ${parsed.sections.length} sections, ${parsed.sections.filter((s) => s.source === "dictation").length} from dictation`);
 
-  // ── Stage 2: DeepSeek Reasoner validates/corrects ──
+  // ── Stage 2: DeepSeek V3 validates/corrects ──
   const validator = buildValidatorPrompt(params.dictation, jsonMatch[0], params.outputLanguage);
-  console.log(`[combo] Stage 2 — DeepSeek Reasoner validating...`);
+  console.log(`[combo] Stage 2 — DeepSeek V3 validating...`);
 
   const validatorRaw = await generateAI({
     provider: "deepseek",
-    modelName: "deepseek-reasoner",
+    modelName: "deepseek-chat",
     apiKey: deepseekKey,
     system: validator.system,
     user: validator.user,
