@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Loader2, Check, Eye, Upload, RefreshCw, Sparkles,
-  Plug, Wand2, GraduationCap, Brain, Pencil, X, RotateCcw, Search, Trash2,
+  Plug, Wand2, GraduationCap, Brain, Pencil, X, RotateCcw, Search,
 } from "lucide-react";
 import { PROVIDERS, LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
 import { buildFullPromptPreview } from "@/lib/prompts";
@@ -26,8 +26,6 @@ interface ModelConfig {
   normal_fields_verbosity: NormalFieldsVerbosity;
   paraphrase_level: ParaphraseLevel;
   output_language: OutputLanguage;
-  style_learning_enabled: boolean;
-  style_sample_count: number;
   few_shot_count: number;
   compact_normals: boolean;
 }
@@ -59,18 +57,6 @@ export function ModelConfigTab() {
   const [normalitySearch, setNormalitySearch] = useState("");
   const [savingPhrase, setSavingPhrase] = useState<string | null>(null);
 
-  // Style patterns (learned phrases)
-  interface StyleGroup {
-    modality: string;
-    study_type: string;
-    report_count: number;
-    normal_phrases: { id: string; phrase: string; frequency: number; last_seen_at: string }[];
-    conclusion_phrases: { id: string; phrase: string; frequency: number; last_seen_at: string }[];
-  }
-  const [styleGroups, setStyleGroups] = useState<StyleGroup[]>([]);
-  const [showLearnedPhrases, setShowLearnedPhrases] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<StyleGroup | null>(null);
-  const [deletingPhrase, setDeletingPhrase] = useState<string | null>(null);
 
   // Prompt preview
   const [showPrompt, setShowPrompt] = useState(false);
@@ -110,19 +96,9 @@ export function ModelConfigTab() {
     } catch { /* ignore */ }
   }, [selectedModality]);
 
-  const loadStylePatterns = useCallback(async () => {
-    try {
-      const res = await fetch("/api/style-patterns");
-      if (res.ok) {
-        const data = await res.json();
-        setStyleGroups(data.groups || []);
-      }
-    } catch { /* table may not exist */ }
-  }, []);
 
   useEffect(() => { load(); }, []);
   useEffect(() => { loadNormality(); }, [loadNormality]);
-  useEffect(() => { loadStylePatterns(); }, [loadStylePatterns]);
 
   function update(field: string, value: string | boolean | number) {
     if (!config) return;
@@ -199,28 +175,6 @@ export function ModelConfigTab() {
     setSavingPhrase(null);
   }
 
-  async function handleDeletePhrase(id: string) {
-    setDeletingPhrase(id);
-    await fetch(`/api/style-patterns?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    await loadStylePatterns();
-    setDeletingPhrase(null);
-    if (selectedGroup) {
-      setSelectedGroup((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          normal_phrases: prev.normal_phrases.filter((p) => p.id !== id),
-          conclusion_phrases: prev.conclusion_phrases.filter((p) => p.id !== id),
-        };
-      });
-    }
-  }
-
-  async function handleResetGroup(modality: string, studyType: string) {
-    await fetch(`/api/style-patterns?group=${encodeURIComponent(modality + "|" + studyType)}`, { method: "DELETE" });
-    await loadStylePatterns();
-    setSelectedGroup(null);
-  }
 
   // Fine-tuning functions
   async function loadFtJobs() {
@@ -446,86 +400,30 @@ export function ModelConfigTab() {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Style Learning */}
-        <AccordionItem value="style">
+        {/* Normality Phrases */}
+        <AccordionItem value="normality">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              {t("cfg.style_learning")}
+              <Brain className="h-3.5 w-3.5 text-emerald-500" />
+              {t("cfg.normality")}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {t("cfg.normality_desc")}
+            </p>
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs">{t("cfg.normality_use")}</Label>
-                <p className="text-[10px] text-gray-400">{t("cfg.style_learning_desc")}</p>
-              </div>
-              <Switch checked={config.style_learning_enabled} onCheckedChange={(v) => update("style_learning_enabled", v)} />
+              <span className="text-xs text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">{selectedModality}</span> — {normalityPhrases.length} {t("cfg.sections")}
+              </span>
+              <Badge variant={customizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
+                {customizedCount}/{normalityPhrases.length} {t("cfg.customized")}
+              </Badge>
             </div>
-
-            {/* Learned phrases summary */}
-            {config.style_learning_enabled && (
-              <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-                {styleGroups.length > 0 ? (
-                  <>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {t("cfg.style_learning_summary").replace("{0}", String(styleGroups.length))}
-                    </p>
-                    <div className="space-y-1">
-                      {styleGroups.slice(0, 5).map((g) => (
-                        <div
-                          key={`${g.modality}|${g.study_type}`}
-                          className="flex items-center justify-between py-1 px-2 rounded text-xs hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                          onClick={() => { setSelectedGroup(g); setShowLearnedPhrases(true); }}
-                        >
-                          <span className="text-gray-700 dark:text-gray-300 truncate">
-                            <span className="font-medium">{g.modality}</span>
-                            <span className="text-gray-400 mx-1">/</span>
-                            {g.study_type}
-                          </span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge variant="secondary" className="text-[9px]">{Math.min(g.report_count, 10)}/10</Badge>
-                            <span className="text-[10px] text-gray-400">{g.normal_phrases.length + g.conclusion_phrases.length} {t("cfg.phrases_learned")}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {styleGroups.length > 5 && (
-                        <Button size="sm" variant="ghost" className="w-full text-xs text-brand" onClick={() => setShowLearnedPhrases(true)}>
-                          {t("cfg.view_all")} ({styleGroups.length})
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-[10px] text-gray-400 text-center py-2">
-                    {t("cfg.no_patterns")}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Normality phrases sub-section */}
-            <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Brain className="h-3 w-3 text-emerald-500" />
-                <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("cfg.normality")}</span>
-              </div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                {t("cfg.normality_desc")}
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold">{selectedModality}</span> — {normalityPhrases.length} {t("cfg.sections")}
-                </span>
-                <Badge variant={customizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
-                  {customizedCount}/{normalityPhrases.length} {t("cfg.customized")}
-                </Badge>
-              </div>
-              <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowNormality(true)}>
-                <Pencil className="h-3 w-3" />
-                {t("cfg.edit_normality")}
-              </Button>
-            </div>
+            <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowNormality(true)}>
+              <Pencil className="h-3 w-3" />
+              {t("cfg.edit_normality")}
+            </Button>
           </AccordionContent>
         </AccordionItem>
 
@@ -711,7 +609,7 @@ export function ModelConfigTab() {
               normalFieldsVerbosity: config.normal_fields_verbosity,
               paraphraseLevel: config.paraphrase_level,
               outputLanguage: config.output_language,
-              styleSamplesCount: config.style_learning_enabled ? config.few_shot_count : 0,
+              styleSamplesCount: config.few_shot_count || 0,
             })}
           </pre>
         </DialogContent>
@@ -764,77 +662,6 @@ export function ModelConfigTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Learned Phrases Dialog */}
-      <Dialog open={showLearnedPhrases} onOpenChange={(open) => { setShowLearnedPhrases(open); if (!open) setSelectedGroup(null); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{t("cfg.learned_phrases")}</DialogTitle>
-          </DialogHeader>
-
-          {selectedGroup ? (
-            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{selectedGroup.modality} / {selectedGroup.study_type}</span>
-                  <p className="text-[10px] text-gray-400">{selectedGroup.report_count} {t("cfg.reports_stored")}</p>
-                </div>
-                <Button size="sm" variant="outline" className="text-xs text-red-500 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20 gap-1"
-                  onClick={() => handleResetGroup(selectedGroup.modality, selectedGroup.study_type)}
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  {t("cfg.reset_study_type")}
-                </Button>
-              </div>
-
-              {selectedGroup.conclusion_phrases.length > 0 && (
-                <div>
-                  <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.conclusion_phrases_label")}</Label>
-                  <div className="space-y-1">
-                    {selectedGroup.conclusion_phrases.map((p) => (
-                      <LearnedPhraseRow key={p.id} phrase={p} deleting={deletingPhrase === p.id} onDelete={() => handleDeletePhrase(p.id)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup.normal_phrases.length > 0 && (
-                <div>
-                  <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.normal_phrases_label")}</Label>
-                  <div className="space-y-1">
-                    {selectedGroup.normal_phrases.map((p) => (
-                      <LearnedPhraseRow key={p.id} phrase={p} deleting={deletingPhrase === p.id} onDelete={() => handleDeletePhrase(p.id)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup.normal_phrases.length === 0 && selectedGroup.conclusion_phrases.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
-              )}
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
-              {styleGroups.length > 0 ? styleGroups.map((g) => (
-                <div
-                  key={`${g.modality}|${g.study_type}`}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                  onClick={() => setSelectedGroup(g)}
-                >
-                  <div>
-                    <span className="text-xs font-medium text-gray-900 dark:text-white">{g.modality} / {g.study_type}</span>
-                    <p className="text-[10px] text-gray-400">{g.report_count} {t("cfg.reports_stored")}</p>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {g.normal_phrases.length + g.conclusion_phrases.length} {t("cfg.phrases_learned")}
-                  </Badge>
-                </div>
-              )) : (
-                <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -922,57 +749,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   );
 }
 
-function SegmentedPill({ value, options, onChange }: {
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(opt.value)}
-          className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-            value === opt.value
-              ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
-function LearnedPhraseRow({ phrase, deleting, onDelete }: {
-  phrase: { id: string; phrase: string; frequency: number; last_seen_at: string };
-  deleting: boolean;
-  onDelete: () => void;
-}) {
-  const t = useT();
-  return (
-    <div className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50">
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-700 dark:text-gray-300">{phrase.phrase}</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">
-          {t("cfg.frequency")}: {phrase.frequency}
-        </p>
-      </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-5 w-5 text-gray-400 hover:text-red-500 flex-shrink-0"
-        onClick={onDelete}
-        disabled={deleting}
-      >
-        {deleting ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-      </Button>
-    </div>
-  );
-}
 
 function FtStep({ n, label, active, children }: {
   n: number;
