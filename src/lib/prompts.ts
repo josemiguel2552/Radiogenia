@@ -330,22 +330,38 @@ Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la c
 
 ESTRUCTURA DE LA CONCLUSIÓN:
 1. ${hasClinical ? "Punto 1: respuesta a la pregunta clínica." : "Solo hallazgos clínicamente SIGNIFICATIVOS."}
-2. AGRUPA hallazgos que probablemente compartan la misma patología de base en un MISMO punto. Por ejemplo: lesión pulmonar + adenopatías mediastínicas + derrame pleural pueden ir juntos si sugieren un mismo proceso; diverticulitis colónica + adenopatías mesentéricas pueden ir juntos. El objetivo es que cada punto represente un "problema" clínico coherente, no una lista desgranada de hallazgos individuales.
-3. Hallazgos que NO tengan relación fisiopatológica razonable entre sí van en puntos SEPARADOS.
+2. Cada punto representa un PROBLEMA CLÍNICO COMPLETO, NO un hallazgo individual. AGRUPA hallazgos de DISTINTAS secciones anatómicas que formen parte del mismo cuadro clínico.
+3. Hallazgos sin relación fisiopatológica razonable van en puntos SEPARADOS.
 4. Ordenados de MAYOR a MENOR relevancia clínica.
 5. Los hallazgos de ESCASA relevancia clínica NO se incluyen.
 6. Si todo es normal: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
 
-EJEMPLO CORRECTO (lesión pulmonar + adenopatías + derrame + diverticulitis + adenopatías mesentéricas):
-1. Masa pulmonar de 35 mm en lóbulo superior derecho con adenopatías mediastínicas patológicas y pequeño derrame pleural ipsilateral.
+AGRUPACIÓN INTELIGENTE — REGLA CLAVE:
+Los hallazgos del informe están organizados por secciones anatómicas (pulmones, corazón, mediastino, etc.), pero un mismo problema clínico puede afectar MÚLTIPLES secciones. Tu trabajo es REAGRUPAR esos hallazgos dispersos en puntos clínicamente coherentes. Cada punto debe dar al clínico una imagen completa del problema, no fragmentos sueltos.
+
+Patrones frecuentes que DEBES agrupar en un solo punto:
+- Tromboembolismo pulmonar: defectos de llenado en arterias pulmonares + infartos pulmonares + sobrecarga de cavidades derechas + reflujo a venas suprahepáticas
+- Proceso tumoral: masa/lesión + adenopatías regionales + derrame + posibles implantes/metástasis
+- Politraumatismo torácico: fracturas costales + neumotórax + contusión pulmonar + derrame pleural + desviación mediastínica
+- Insuficiencia cardíaca: cardiomegalia + derrame pleural bilateral + edema/redistribución vascular pulmonar
+- Patología infecciosa: consolidación + broncograma aéreo + derrame paraneumónico + adenopatías reactivas
+
+COMPARACIÓN CON ESTUDIOS PREVIOS:
+Si los hallazgos mencionan comparaciones con estudios previos ("aumento de tamaño", "estable", "nueva lesión", "disminución"), inclúyelas en la conclusión — son CRÍTICAS para la toma de decisiones. Intégralas junto al hallazgo correspondiente, no como frase suelta.
+
+EJEMPLO CORRECTO (TEP con infartos y repercusión cardíaca):
+1. Defectos de repleción en arterias pulmonares lobares y segmentarias bilaterales, con áreas de infarto pulmonar en lóbulo inferior derecho y signos de sobrecarga de cavidades derechas con reflujo de contraste a venas suprahepáticas.
+
+EJEMPLO CORRECTO (progresión tumoral):
+1. Masa pulmonar en lóbulo superior derecho de 35 mm, aumentada respecto al estudio previo (22 mm), con adenopatías mediastínicas patológicas y nuevo derrame pleural ipsilateral.
 2. Signos de diverticulitis aguda en sigma con adenopatías mesentéricas reactivas adyacentes.
 
 EJEMPLO INCORRECTO:
-1. Masa pulmonar de 35 mm, probablemente neoplásica. ← MAL: especula sobre la naturaleza / da un diagnóstico.
-2. Adenopatías mediastínicas. ← MAL: separó un hallazgo que probablemente está relacionado con la masa.
-3. Derrame pleural, probablemente secundario a la masa. ← MAL: relación causal especulativa explícita.
-4. Diverticulitis aguda. ← Bien como concepto, pero le faltan las adenopatías asociadas.
-5. Adenopatías mesentéricas. ← MAL: deberían ir agrupadas con la diverticulitis.
+1. Defectos de repleción en arterias pulmonares. ← MAL: separó del resto del cuadro de TEP.
+2. Áreas de infarto pulmonar en LID. ← MAL: está relacionado con el punto anterior.
+3. Dilatación de cavidades derechas. ← MAL: forma parte del mismo cuadro tromboembólico.
+4. Masa pulmonar de 35 mm, probablemente neoplásica. ← MAL: especula sobre la naturaleza.
+5. Adenopatías mediastínicas. ← MAL: separó un hallazgo relacionado con la masa.
 
 LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Si hay más hallazgos relevantes, descarta los menos importantes.
 
@@ -382,22 +398,38 @@ Clinical data from the referring physician is provided. The FIRST point of the c
 
 CONCLUSION STRUCTURE:
 1. ${hasClinical ? "Point 1: answer to the clinical question." : "Only clinically SIGNIFICANT findings."}
-2. GROUP findings that likely share the same underlying pathology into a SINGLE point. For example: lung mass + mediastinal lymphadenopathy + pleural effusion may go together if they suggest a single process; colonic diverticulitis + mesenteric lymphadenopathy may go together. The goal is for each point to represent a coherent clinical "problem", not a broken-down list of individual findings.
-3. Findings that have NO reasonable pathophysiological relationship go in SEPARATE points.
+2. Each point represents a COMPLETE CLINICAL PROBLEM, NOT an individual finding. GROUP findings from DIFFERENT anatomical sections that form part of the same clinical picture.
+3. Findings with NO reasonable pathophysiological relationship go in SEPARATE points.
 4. Ordered from MOST to LEAST clinically relevant.
 5. Findings of LOW clinical relevance are NOT included.
 6. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
 
-CORRECT EXAMPLE (lung mass + lymphadenopathy + effusion + diverticulitis + mesenteric nodes):
-1. 35 mm pulmonary mass in the right upper lobe with pathological mediastinal lymphadenopathy and small ipsilateral pleural effusion.
+INTELLIGENT GROUPING — KEY RULE:
+Findings in the report are organized by anatomical sections (lungs, heart, mediastinum, etc.), but a single clinical problem can affect MULTIPLE sections. Your job is to REGROUP those scattered findings into clinically coherent points. Each point should give the clinician a complete picture of the problem, not isolated fragments.
+
+Common patterns that MUST be grouped into a single point:
+- Pulmonary embolism: filling defects in pulmonary arteries + pulmonary infarcts + right heart strain + contrast reflux into hepatic veins
+- Tumor process: mass/lesion + regional lymphadenopathy + effusion + possible implants/metastases
+- Thoracic polytrauma: rib fractures + pneumothorax + pulmonary contusion + pleural effusion + mediastinal shift
+- Heart failure: cardiomegaly + bilateral pleural effusions + pulmonary edema/vascular redistribution
+- Infectious pathology: consolidation + air bronchograms + parapneumonic effusion + reactive lymphadenopathy
+
+COMPARISON WITH PRIOR STUDIES:
+If findings mention comparisons with prior studies ("increased in size", "stable", "new lesion", "decreased"), include them in the conclusion — they are CRITICAL for clinical decision-making. Integrate them alongside the corresponding finding, not as a standalone phrase.
+
+CORRECT EXAMPLE (PE with infarcts and cardiac repercussion):
+1. Filling defects in bilateral lobar and segmental pulmonary arteries, with areas of pulmonary infarction in the right lower lobe and signs of right heart strain with contrast reflux into the hepatic veins.
+
+CORRECT EXAMPLE (tumor progression):
+1. Pulmonary mass in the right upper lobe measuring 35 mm, increased compared to prior study (22 mm), with pathological mediastinal lymphadenopathy and new ipsilateral pleural effusion.
 2. Signs of acute diverticulitis in the sigmoid colon with adjacent reactive mesenteric lymphadenopathy.
 
 INCORRECT EXAMPLE:
-1. 35 mm pulmonary mass, likely neoplastic. ← WRONG: speculates about nature / gives a diagnosis.
-2. Mediastinal lymphadenopathy. ← WRONG: separated a finding that is likely related to the mass.
-3. Pleural effusion, probably secondary to the mass. ← WRONG: explicit speculative causal relationship.
-4. Acute diverticulitis. ← Correct concept, but missing the associated lymphadenopathy.
-5. Mesenteric lymphadenopathy. ← WRONG: should be grouped with the diverticulitis.
+1. Filling defects in pulmonary arteries. ← WRONG: separated from the rest of the PE picture.
+2. Areas of pulmonary infarction in RLL. ← WRONG: related to the point above.
+3. Right heart dilatation. ← WRONG: part of the same thromboembolic picture.
+4. 35 mm pulmonary mass, likely neoplastic. ← WRONG: speculates about nature.
+5. Mediastinal lymphadenopathy. ← WRONG: separated a finding related to the mass.
 
 STRICT LIMIT: MAXIMUM 4 POINTS. If there are more relevant findings, discard the least important ones.
 
