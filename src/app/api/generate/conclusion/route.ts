@@ -74,10 +74,21 @@ export async function POST(req: NextRequest) {
 
     const taskModel = globalConfig.taskOverrides?.conclusion;
     const effectiveProvider = taskModel?.provider || globalConfig.provider;
+    const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);
+
+    if (!effectiveKey) {
+      return NextResponse.json(
+        { error: `No API key configured for provider "${effectiveProvider}".` },
+        { status: 500 },
+      );
+    }
+
+    console.log(`[conclusion] provider=${effectiveProvider}, model=${taskModel?.modelName || globalConfig.modelName}, keyLen=${effectiveKey.length}`);
+
     const stream = await generateAIStream({
       provider: effectiveProvider,
       modelName: taskModel?.modelName || globalConfig.modelName,
-      apiKey: resolveApiKey(globalConfig, effectiveProvider),
+      apiKey: effectiveKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,

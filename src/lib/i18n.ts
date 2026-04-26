@@ -81,6 +81,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "trace.omissions": "omisiones",
     "trace.hallucinations": "alucinaciones",
     "trace.auto_repaired": "Se integraron {0} hallazgo(s) omitido(s) automáticamente",
+    "error.empty_generation": "No se pudo generar el informe. Compruebe la configuración del modelo de IA o inténtelo de nuevo.",
     // Navigation
     "nav.dashboard": "Panel principal",
     "nav.admin": "Panel de administración",
@@ -270,6 +271,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "trace.omissions": "omissions",
     "trace.hallucinations": "hallucinations",
     "trace.auto_repaired": "{0} omitted finding(s) were auto-integrated",
+    "error.empty_generation": "Could not generate the report. Check the AI model configuration or try again.",
     "nav.dashboard": "Dashboard",
     "nav.admin": "Admin panel",
     "nav.toggle_theme": "Toggle theme",

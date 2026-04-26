@@ -166,15 +166,33 @@ function extractStreamToken(parsed: any, provider: AIProvider, eventType: string
   }
 }
 
+function extractSSEError(parsed: Record<string, unknown>, provider: AIProvider, eventType: string): string | null {
+  if (eventType === "error") {
+    const err = parsed as { error?: { message?: string }; message?: string };
+    return err.error?.message || err.message || "Stream error";
+  }
+  if (provider === "openai" || provider === "deepseek" || provider === "custom") {
+    const obj = parsed as { error?: { message?: string } };
+    if (obj.error?.message) return obj.error.message;
+  }
+  if (provider === "gemini") {
+    const obj = parsed as { error?: { message?: string } };
+    if (obj.error?.message) return obj.error.message;
+  }
+  return null;
+}
+
 function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProvider): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   const reader = body.getReader();
   const decoder = new TextDecoder();
+  const ERROR_PREFIX = "__STREAM_ERROR__:";
 
   return new ReadableStream({
     async start(controller) {
       let buffer = "";
       let eventType = "";
+      let hasTokens = false;
 
       try {
         while (true) {
@@ -199,8 +217,14 @@ function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProv
 
             try {
               const parsed = JSON.parse(data);
+              const errMsg = extractSSEError(parsed, provider, eventType);
+              if (errMsg) {
+                controller.enqueue(encoder.encode(ERROR_PREFIX + errMsg));
+                break;
+              }
               const token = extractStreamToken(parsed, provider, eventType);
               if (token) {
+                hasTokens = true;
                 controller.enqueue(encoder.encode(token));
               }
             } catch { /* skip unparseable SSE lines */ }

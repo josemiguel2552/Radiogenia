@@ -205,15 +205,26 @@ export function DashboardContent() {
         setOutputLanguage(lang);
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
+        let streamError = "";
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          findingsText += decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value, { stream: true });
+          if (chunk.includes("__STREAM_ERROR__:")) {
+            streamError = chunk.split("__STREAM_ERROR__:")[1] || "AI provider error";
+            break;
+          }
+          findingsText += chunk;
           setFindings(cleanReport(findingsText));
         }
-        findingsText = cleanReport(findingsText);
-        setInitialFindings(findingsText);
-        setFindings(findingsText);
+        if (streamError) {
+          findingsText = "";
+          setFindings("Error: " + streamError);
+        } else {
+          findingsText = cleanReport(findingsText);
+          setInitialFindings(findingsText);
+          setFindings(findingsText);
+        }
       } else {
         const data = await res.json().catch(() => ({ error: "Generation failed" }));
         setFindings(data.error || "Error generating findings");
@@ -224,6 +235,7 @@ export function DashboardContent() {
     setLoadingFindings(false);
 
     if (!findingsText) {
+      setFindings(t("error.empty_generation"));
       setLoadingConclusion(false);
       setLoadingRecs(false);
       return;
@@ -282,15 +294,25 @@ export function DashboardContent() {
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let text = "";
+          let streamError = "";
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            text += decoder.decode(value, { stream: true });
+            const chunk = decoder.decode(value, { stream: true });
+            if (chunk.includes("__STREAM_ERROR__:")) {
+              streamError = chunk.split("__STREAM_ERROR__:")[1] || "AI provider error";
+              break;
+            }
+            text += chunk;
             setConclusion(cleanReport(text));
           }
-          const cleaned = cleanReport(text);
-          setInitialConclusion(cleaned);
-          setConclusion(cleaned);
+          if (streamError) {
+            setConclusion("Error: " + streamError);
+          } else {
+            const cleaned = cleanReport(text);
+            setInitialConclusion(cleaned);
+            setConclusion(cleaned);
+          }
         } else {
           const data = await res.json().catch(() => ({ error: "Generation failed" }));
           setConclusion(data.error || "Error generating conclusion");

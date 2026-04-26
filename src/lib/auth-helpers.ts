@@ -29,9 +29,12 @@ export interface GlobalAIConfig {
 }
 
 export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider): string {
-  if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider];
+  if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider]!;
   if (taskProvider === "openai" && config.provider !== "openai" && config.whisperApiKey) {
     return config.whisperApiKey;
+  }
+  if (taskProvider !== config.provider && taskProvider !== "openai") {
+    console.warn(`[resolveApiKey] No specific key for "${taskProvider}", falling back to main provider key (${config.provider})`);
   }
   return config.apiKey;
 }
