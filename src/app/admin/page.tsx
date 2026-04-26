@@ -22,6 +22,10 @@ interface GlobalConfig {
   model_name: string;
   api_key_encrypted: string;
   whisper_api_key_encrypted: string;
+  anthropic_api_key_encrypted: string;
+  google_api_key_encrypted: string;
+  deepseek_api_key_encrypted: string;
+  custom_api_key_encrypted: string;
   custom_base_url: string;
   findings_provider: string | null;
   findings_model: string | null;
@@ -84,6 +88,10 @@ export default function AdminPage() {
   const [apiKey, setApiKey] = useState("");
   const [whisperKey, setWhisperKey] = useState("");
   const [customUrl, setCustomUrl] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [googleKey, setGoogleKey] = useState("");
+  const [deepseekKey, setDeepseekKey] = useState("");
+  const [customProvKey, setCustomProvKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [showWhisperKey, setShowWhisperKey] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -137,6 +145,10 @@ export default function AdminPage() {
       setModelName(d.model_name || "deepseek-chat");
       setApiKey(d.api_key_encrypted || "");
       setWhisperKey(d.whisper_api_key_encrypted || "");
+      setAnthropicKey(d.anthropic_api_key_encrypted || "");
+      setGoogleKey(d.google_api_key_encrypted || "");
+      setDeepseekKey(d.deepseek_api_key_encrypted || "");
+      setCustomProvKey(d.custom_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
       setTaskOverrides({
         findings: { provider: d.findings_provider || "", model: d.findings_model || "" },
@@ -170,6 +182,10 @@ export default function AdminPage() {
       const body: Record<string, string> = { provider, model_name: modelName };
       if (apiKey && apiKey !== "••••••••") body.api_key = apiKey;
       if (whisperKey && whisperKey !== "••••••••") body.whisper_api_key = whisperKey;
+      if (anthropicKey && anthropicKey !== "••••••••") body.anthropic_api_key = anthropicKey;
+      if (googleKey && googleKey !== "••••••••") body.google_api_key = googleKey;
+      if (deepseekKey && deepseekKey !== "••••••••") body.deepseek_api_key = deepseekKey;
+      if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
       for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
@@ -190,6 +206,10 @@ export default function AdminPage() {
         setConfig(d);
         setApiKey(d.api_key_encrypted || "");
         setWhisperKey(d.whisper_api_key_encrypted || "");
+        setAnthropicKey(d.anthropic_api_key_encrypted || "");
+        setGoogleKey(d.google_api_key_encrypted || "");
+        setDeepseekKey(d.deepseek_api_key_encrypted || "");
+        setCustomProvKey(d.custom_api_key_encrypted || "");
         setConfigSuccess(true);
         setTimeout(() => setConfigSuccess(false), 3000);
       }
@@ -644,7 +664,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Whisper Key (voice)</Label>
+                    <Label className="text-xs">OpenAI / Whisper Key</Label>
                     <div className="relative">
                       <input type={showWhisperKey ? "text" : "password"} value={whisperKey}
                         onChange={(e) => setWhisperKey(e.target.value)}
@@ -689,7 +709,7 @@ export default function AdminPage() {
               </div>
               <CardContent className="pt-0 space-y-3">
                 <p className="text-xs text-gray-500">
-                  Assign a different model to each task. Leave empty to use the default above. All tasks share the same API key.
+                  Assign a different model to each task. Leave empty to use the default above.
                 </p>
                 {([
                   { key: "findings" as TaskKey, label: "Findings", desc: "Structured report generation" },
@@ -762,6 +782,72 @@ export default function AdminPage() {
                     </div>
                   );
                 })}
+
+                {/* Provider API keys — show fields for providers that need a separate key */}
+                {(() => {
+                  // Collect all providers in use across task overrides that differ from default
+                  const extraProviders = new Set<string>();
+                  for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+                    const p = taskOverrides[task].provider;
+                    if (p && p !== provider) extraProviders.add(p);
+                  }
+
+                  const keyConfig: { prov: string; label: string; value: string; setter: (v: string) => void; hint?: string }[] = [
+                    { prov: "claude", label: "Anthropic (Claude)", value: anthropicKey, setter: setAnthropicKey },
+                    { prov: "gemini", label: "Google (Gemini)", value: googleKey, setter: setGoogleKey },
+                    { prov: "deepseek", label: "DeepSeek", value: deepseekKey, setter: setDeepseekKey },
+                    { prov: "custom", label: "Custom Endpoint", value: customProvKey, setter: setCustomProvKey },
+                    { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: "Uses the Whisper key above" },
+                  ];
+
+                  // Show fields only for providers different from the default (main key covers default)
+                  const toShow = keyConfig.filter((k) => extraProviders.has(k.prov));
+
+                  if (toShow.length === 0) return null;
+
+                  return (
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-3.5 w-3.5 text-blue-500" />
+                        <Label className="text-xs font-semibold text-gray-900 dark:text-white">Provider API Keys</Label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        The main API key covers {PROVIDERS.find((p) => p.value === provider)?.label || provider}. Add keys for any other providers used above.
+                      </p>
+                      <div className="space-y-2">
+                        {toShow.map((k) => {
+                          const isSaved = k.value === "••••••••";
+                          return (
+                            <div key={k.prov} className="flex items-center gap-2">
+                              <Label className="text-xs text-gray-600 dark:text-gray-400 w-32 flex-shrink-0">{k.label}</Label>
+                              {k.hint ? (
+                                <div className="flex-1 h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                                  {isSaved ? "Configured (Whisper key)" : k.hint}
+                                </div>
+                              ) : (
+                                <>
+                                  <input
+                                    type="password"
+                                    value={k.value}
+                                    onChange={(e) => k.setter(e.target.value)}
+                                    className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                                    placeholder={isSaved ? "••••••••  (saved)" : "API key"}
+                                  />
+                                  {k.value && !isSaved && (
+                                    <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                  )}
+                                  {isSaved && (
+                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">Saved</Badge>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 

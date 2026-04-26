@@ -452,3 +452,29 @@ begin
   where id = uid;
 end;
 $$ language plpgsql security definer;
+
+
+-- ##########################################################
+-- 011 — Per-task model overrides
+-- ##########################################################
+
+alter table public.global_model_config
+  add column if not exists findings_provider text,
+  add column if not exists findings_model text,
+  add column if not exists conclusion_provider text,
+  add column if not exists conclusion_model text,
+  add column if not exists recommendations_provider text,
+  add column if not exists recommendations_model text,
+  add column if not exists trace_provider text,
+  add column if not exists trace_model text;
+
+
+-- ##########################################################
+-- 012 — Per-provider API keys
+-- ##########################################################
+
+alter table public.global_model_config
+  add column if not exists anthropic_api_key_encrypted text,
+  add column if not exists google_api_key_encrypted text,
+  add column if not exists deepseek_api_key_encrypted text,
+  add column if not exists custom_api_key_encrypted text;

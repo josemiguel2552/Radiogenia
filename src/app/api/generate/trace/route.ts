@@ -2,7 +2,7 @@ export const maxDuration = 120;
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 
 export async function POST(req: NextRequest) {
@@ -46,10 +46,11 @@ If no repair was needed, set "repaired": false, "corrected_findings": null, and 
     const userMsg = `DICTATION:\n${dictation}\n\nSTRUCTURED FINDINGS:\n${findings}`;
 
     const taskModel = globalConfig.taskOverrides?.trace;
+    const effectiveProvider = taskModel?.provider || globalConfig.provider;
     const raw = await generateAI({
-      provider: taskModel?.provider || globalConfig.provider,
+      provider: effectiveProvider,
       modelName: taskModel?.modelName || globalConfig.modelName,
-      apiKey: globalConfig.apiKey,
+      apiKey: resolveApiKey(globalConfig, effectiveProvider),
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userMsg,

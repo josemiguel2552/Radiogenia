@@ -3,7 +3,7 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig, checkReportLimit } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, checkReportLimit } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
@@ -97,10 +97,11 @@ export async function POST(req: NextRequest) {
     });
 
     const taskModel = globalConfig.taskOverrides?.findings;
+    const effectiveProvider = taskModel?.provider || globalConfig.provider;
     const stream = await generateAIStream({
-      provider: taskModel?.provider || globalConfig.provider,
+      provider: effectiveProvider,
       modelName: taskModel?.modelName || globalConfig.modelName,
-      apiKey: globalConfig.apiKey,
+      apiKey: resolveApiKey(globalConfig, effectiveProvider),
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,

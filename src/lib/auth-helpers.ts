@@ -19,12 +19,21 @@ export interface GlobalAIConfig {
   apiKey: string;
   customBaseUrl?: string;
   whisperApiKey?: string;
+  providerKeys?: Partial<Record<AIProvider, string>>;
   taskOverrides?: {
     findings?: TaskModelOverride;
     conclusion?: TaskModelOverride;
     recommendations?: TaskModelOverride;
     trace?: TaskModelOverride;
   };
+}
+
+export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider): string {
+  if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider];
+  if (taskProvider === "openai" && config.provider !== "openai" && config.whisperApiKey) {
+    return config.whisperApiKey;
+  }
+  return config.apiKey;
 }
 
 export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
@@ -54,6 +63,20 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     whisperApiKey = data.whisper_api_key_encrypted ? decrypt(data.whisper_api_key_encrypted) : "";
   } catch { /* optional field */ }
 
+  const providerKeys: Partial<Record<AIProvider, string>> = {};
+  const keyMap: [string, AIProvider][] = [
+    ["anthropic_api_key_encrypted", "claude"],
+    ["google_api_key_encrypted", "gemini"],
+    ["deepseek_api_key_encrypted", "deepseek"],
+    ["custom_api_key_encrypted", "custom"],
+  ];
+  for (const [col, prov] of keyMap) {
+    try {
+      const val = data[col] ? decrypt(data[col]) : "";
+      if (val) providerKeys[prov] = val;
+    } catch { /* optional */ }
+  }
+
   const taskOverrides: GlobalAIConfig["taskOverrides"] = {};
   if (data.findings_provider && data.findings_model) {
     taskOverrides.findings = { provider: data.findings_provider as AIProvider, modelName: data.findings_model };
@@ -74,6 +97,7 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     apiKey,
     customBaseUrl: data.custom_base_url || undefined,
     whisperApiKey,
+    providerKeys: Object.keys(providerKeys).length > 0 ? providerKeys : undefined,
     taskOverrides: Object.keys(taskOverrides).length > 0 ? taskOverrides : undefined,
   };
 }
