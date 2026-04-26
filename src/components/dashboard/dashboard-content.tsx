@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+
 import {
   FileText,
   Mic,
@@ -16,12 +16,12 @@ import {
   Copy,
   Check,
   Sparkles,
-  Wand2,
   Lightbulb,
   Stethoscope,
   CircleCheck,
   ArrowRight,
   ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -45,6 +45,7 @@ export function DashboardContent() {
 
   // Clinical info state
   const [clinicalInfo, setClinicalInfo] = useState("");
+  const [clinicalOpen, setClinicalOpen] = useState(false);
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -437,110 +438,65 @@ export function DashboardContent() {
   const canGenerate = setupReady && dictation.trim() && !isGenerating;
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
+    <div className="space-y-4">
       <StatsPanel />
 
-      {/* Workflow header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-brand" />
-            {t("dash.new_report_title")}
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {t("dash.new_report_hint")}
-          </p>
-        </div>
-        {hasOutput && (
-          <Button variant="outline" size="sm" onClick={startNewReport} className="gap-1.5 text-xs">
-            <ArrowRight className="h-3.5 w-3.5" />
-            {t("dash.next_report")}
-          </Button>
-        )}
-      </div>
-
-      {/* Step 1 — Setup */}
-      <StepCard
-        step={1}
-        title={t("dash.study_setup")}
-        description={t("dash.study_setup_hint")}
-        complete={setupReady}
-        icon={<FileText className="h-4 w-4" />}
-      >
-        <div className="space-y-4">
-          <div>
-            <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
-              {t("dash.modality")}
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {MODALITIES.map((mod) => (
-                <Button
-                  key={mod}
-                  variant={selectedModality === mod ? "default" : "outline"}
-                  size="sm"
-                  className="h-8 px-3 text-xs"
-                  onClick={() => {
-                    setSelectedModality(selectedModality === mod ? "" : mod);
-                    setSelectedSection("");
-                    setSelectedTemplateId("");
-                  }}
-                >
-                  {mod}
-                </Button>
-              ))}
-            </div>
+      {/* ── Input card: setup + clinical + dictation ── */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          {/* Modality chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {MODALITIES.map((mod) => (
+              <Button
+                key={mod}
+                variant={selectedModality === mod ? "default" : "outline"}
+                size="sm"
+                className="h-7 px-2.5 text-xs"
+                onClick={() => {
+                  setSelectedModality(selectedModality === mod ? "" : mod);
+                  setSelectedSection("");
+                  setSelectedTemplateId("");
+                }}
+              >
+                {mod}
+              </Button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">
-                {t("dash.region")}
-              </Label>
-              <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-                <SelectTrigger className="h-9"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
-                <SelectContent>
-                  {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
-                    <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">
-                {t("dash.template")}
-              </Label>
-              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredTemplates.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
-              {t("dash.contrast")}
-            </Label>
+          {/* Region + Template + Contrast row */}
+          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+            <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
+              <SelectContent>
+                {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
+                  <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredTemplates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
               {[
                 { v: "default", l: t("dash.default") },
-                { v: "con_contraste", l: t("dash.with_contrast") },
-                { v: "sin_contraste", l: t("dash.without_contrast") },
+                { v: "con_contraste", l: "C+" },
+                { v: "sin_contraste", l: "C−" },
               ].map((opt) => (
                 <button
                   key={opt.v}
                   type="button"
                   onClick={() => setContrastOption(opt.v)}
-                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
                     contrastOption === opt.v
                       ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   {opt.l}
@@ -548,90 +504,67 @@ export function DashboardContent() {
               ))}
             </div>
           </div>
-        </div>
-      </StepCard>
 
-      {/* Step 2 — Clinical context */}
-      <StepCard
-        step={2}
-        title={t("dash.clinical_context")}
-        description={t("dash.clinical_context_hint")}
-        complete={!!clinicalInfo.trim()}
-        icon={<Stethoscope className="h-4 w-4" />}
-      >
-        <Textarea
-          placeholder={t("dash.clinical_placeholder")}
-          value={clinicalInfo}
-          onChange={(e) => setClinicalInfo(e.target.value)}
-          className="min-h-[64px] text-sm resize-none"
-        />
-        <p className="text-[11px] text-gray-400 mt-1.5">
-          {t("dash.clinical_conclusion_hint")}
-        </p>
-      </StepCard>
+          {/* Clinical context — collapsible */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setClinicalOpen(!clinicalOpen)}
+              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            >
+              <Stethoscope className="h-3 w-3" />
+              {t("dash.clinical_context")}
+              {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-brand" />}
+              <ChevronDown className={`h-3 w-3 transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
+            </button>
+            {clinicalOpen && (
+              <Textarea
+                placeholder={t("dash.clinical_placeholder")}
+                value={clinicalInfo}
+                onChange={(e) => setClinicalInfo(e.target.value)}
+                className="mt-2 min-h-[48px] text-sm resize-none"
+              />
+            )}
+          </div>
 
-      {/* Step 3 — Dictation */}
-      <StepCard
-        step={3}
-        title={t("dash.dictation_title")}
-        description={t("dash.dictation_hint")}
-        complete={!!dictation.trim()}
-        icon={<Mic className="h-4 w-4" />}
-      >
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          {/* Dictation */}
+          <div className="relative">
+            <Textarea
+              placeholder={t("dash.dictation_placeholder")}
+              value={dictation}
+              onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+              className="min-h-[120px] text-sm pr-14"
+            />
             <Button
-              variant={isRecording ? "destructive" : "default"}
+              variant={isRecording ? "destructive" : "secondary"}
               size="icon"
-              className={`relative h-10 w-10 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+              className={`absolute top-2 right-2 h-8 w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
               onClick={toggleRecording}
             >
-              {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </Button>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-gray-900 dark:text-white">
-                {isRecording ? t("dash.listening") : isTranscribing ? t("dash.transcribing") : t("dash.voice_dictation")}
-              </p>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                {isRecording ? t("dash.click_to_stop") : isTranscribing ? t("dash.processing_audio") : t("dash.click_to_start")}
-              </p>
-            </div>
-            {isRecording && (
-              <Badge className="bg-red-500 text-white animate-pulse">REC</Badge>
-            )}
-            {!isRecording && isTranscribing && (
-              <Badge className="bg-blue-500 text-white animate-pulse gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Processing
-              </Badge>
+            {(isRecording || isTranscribing) && (
+              <div className="absolute bottom-2 right-2">
+                <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                  {isRecording ? "REC" : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                </Badge>
+              </div>
             )}
           </div>
           {voiceError && (
-            <p className="text-xs text-red-500 dark:text-red-400 px-1">{voiceError}</p>
+            <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>
           )}
 
-          <Textarea
-            placeholder={t("dash.dictation_placeholder")}
-            value={dictation}
-            onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
-            className="min-h-[140px] text-sm"
-          />
-
+          {/* Generate */}
           <Button
             onClick={handleGenerate}
             disabled={!canGenerate}
-            className="w-full h-10 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+            className="w-full h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
           >
             {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t("dash.generating")}
-              </>
+              <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
             ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                {t("dash.generate")}
-              </>
+              <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
             )}
           </Button>
           {!setupReady && (
@@ -639,73 +572,52 @@ export function DashboardContent() {
               {t("dash.select_template_first")}
             </p>
           )}
-        </div>
-      </StepCard>
+        </CardContent>
+      </Card>
 
-      {/* Output */}
+      {/* ── Output ── */}
       {hasOutput && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 pt-2">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
-            <span className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
-              {t("dash.generated_report")}
-            </span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
-          </div>
-
-          {/* Anatomy animation — shown only during initial wait (no text yet) */}
+        <div className="space-y-3">
           {isGenerating && !findings && !conclusion && !recommendations && (
-            <Card>
-              <CardContent className="p-0">
-                <AnatomyLoader />
-              </CardContent>
-            </Card>
+            <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
           )}
 
-          {/* Verification status */}
           {loadingTrace && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
               <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
-              <span className="text-xs text-blue-700 dark:text-blue-300">
-                {t("dash.verifying")}
-              </span>
+              <span className="text-xs text-blue-700 dark:text-blue-300">{t("dash.verifying")}</span>
             </div>
           )}
 
           {repairMessage && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
               <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
               <span className="text-xs text-amber-700 dark:text-amber-300">{repairMessage}</span>
             </div>
           )}
 
-          {/* Trace legend */}
           {traceData && (
-            <Card>
-              <CardContent className="p-3">
-                <TraceLegend trace={traceData} isDark={isDark} />
-              </CardContent>
-            </Card>
+            <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
           )}
 
           <OutputCard
             title={t("dash.findings")}
-            icon={<FileText className="h-4 w-4 text-brand" />}
+            icon={<FileText className="h-3.5 w-3.5 text-brand" />}
             loading={loadingFindings}
             value={findings}
             onChange={(v) => { setFindings(v); setTraceData(null); setRepairMessage(null); }}
-            minHeight={170}
+            minHeight={140}
             traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
             isDark={isDark}
           />
 
           <OutputCard
             title={t("dash.conclusion")}
-            icon={<CircleCheck className="h-4 w-4 text-green-600" />}
+            icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
             loading={loadingConclusion}
             value={conclusion}
             onChange={setConclusion}
-            minHeight={90}
+            minHeight={70}
           />
 
           <RecommendationsCard
@@ -715,48 +627,25 @@ export function DashboardContent() {
           />
 
           {/* Action bar */}
-          <Card className="sticky bottom-4 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
-            <CardContent className="p-3">
-              <div className="flex flex-wrap items-center gap-2 justify-between">
-                <div className="flex flex-wrap gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyFormatted("findings")}
-                    disabled={!findings}
-                    className="gap-1.5 text-xs"
-                  >
-                    {copied === "f" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+          <Card className="sticky bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+            <CardContent className="p-2.5">
+              <div className="flex flex-wrap items-center gap-1.5 justify-between">
+                <div className="flex flex-wrap gap-1">
+                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")} disabled={!findings} className="gap-1 text-xs h-7">
+                    {copied === "f" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.findings")}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyFormatted("findings_conclusion")}
-                    disabled={!findings || !conclusion}
-                    className="gap-1.5 text-xs"
-                  >
-                    {copied === "fc" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-7">
+                    {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.plus_conclusion")}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyFormatted("full")}
-                    disabled={!findings}
-                    className="gap-1.5 text-xs"
-                  >
-                    {copied === "all" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-7">
+                    {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.full_report")}
                   </Button>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={startNewReport}
-                  disabled={!findings}
-                  className="gap-1.5 text-xs bg-brand text-brand-fg hover:opacity-90"
-                >
-                  <ArrowRight className="h-3.5 w-3.5" />
+                <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-7 bg-brand text-brand-fg hover:opacity-90">
+                  <ArrowRight className="h-3 w-3" />
                   {t("dash.next_report")}
                 </Button>
               </div>
@@ -780,46 +669,6 @@ export function DashboardContent() {
 
 /* ────────── Helper components ────────── */
 
-function StepCard({
-  step,
-  title,
-  description,
-  complete,
-  icon,
-  children,
-}: {
-  step: number;
-  title: string;
-  description: string;
-  complete: boolean;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className={`overflow-hidden transition-colors ${complete ? "border-brand-soft" : ""}`}>
-      <div className="flex items-start gap-3 px-5 pt-5">
-        <div
-          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-            complete
-              ? "bg-brand text-brand-fg"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-          }`}
-        >
-          {complete ? <Check className="h-4 w-4" /> : step}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-            {icon}
-            {title}
-          </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>
-        </div>
-      </div>
-      <CardContent className="pt-4 pl-[3.75rem] pr-5 pb-5">{children}</CardContent>
-    </Card>
-  );
-}
-
 function OutputCard({
   title,
   icon,
@@ -842,14 +691,14 @@ function OutputCard({
   const showTrace = traceHighlights && traceHighlights.length > 0;
   return (
     <Card>
-      <div className="flex items-center justify-between px-5 pt-4 pb-2">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
           {icon}
           {title}
         </h3>
-        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
       </div>
-      <CardContent className="pt-0 pb-4">
+      <CardContent className="pt-0 px-4 pb-3">
         {loading && !value ? (
           <div
             className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
@@ -928,13 +777,13 @@ function RecommendationsCard({
 
   return (
     <Card>
-      <div className="flex items-center justify-between px-5 pt-4 pb-2">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-          <Lightbulb className="h-4 w-4 text-amber-600" />
+      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+          <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
           {t("dash.recommendations")}
         </h3>
         <div className="flex items-center gap-1.5">
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
+          {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
           {!loading && value.trim() && (
             <button
               type="button"
@@ -946,7 +795,7 @@ function RecommendationsCard({
           )}
         </div>
       </div>
-      <CardContent className="pt-0 pb-4">
+      <CardContent className="pt-0 px-4 pb-3">
         {loading ? (
           <div
             className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
