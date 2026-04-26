@@ -52,7 +52,6 @@ export async function PUT(req: NextRequest) {
     if (body.provider) updates.provider = body.provider;
     if (body.model_name) updates.model_name = body.model_name;
     if (body.custom_base_url !== undefined) updates.custom_base_url = body.custom_base_url;
-    if (body.findings_combo_enabled !== undefined) updates.findings_combo_enabled = !!body.findings_combo_enabled;
 
     const taskFields = [
       "findings_provider", "findings_model",

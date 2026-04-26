@@ -29,6 +29,9 @@ export interface GlobalAIConfig {
   };
 }
 
+export const COMBO_PROVIDER_VALUE = "combo";
+export const COMBO_MODEL_VALUE = "gpt4mini+deepseek-reasoner";
+
 export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider): string {
   if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider]!;
   if (taskProvider === "openai" && config.provider !== "openai" && config.whisperApiKey) {
@@ -82,7 +85,7 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
 
   const taskOverrides: GlobalAIConfig["taskOverrides"] = {};
-  if (data.findings_provider && data.findings_model) {
+  if (data.findings_provider && data.findings_model && data.findings_provider !== COMBO_PROVIDER_VALUE) {
     taskOverrides.findings = { provider: data.findings_provider as AIProvider, modelName: data.findings_model };
   }
   if (data.conclusion_provider && data.conclusion_model) {
@@ -102,7 +105,7 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     customBaseUrl: data.custom_base_url || undefined,
     whisperApiKey,
     providerKeys: Object.keys(providerKeys).length > 0 ? providerKeys : undefined,
-    findingsComboEnabled: !!data.findings_combo_enabled,
+    findingsComboEnabled: data.findings_provider === COMBO_PROVIDER_VALUE,
     taskOverrides: Object.keys(taskOverrides).length > 0 ? taskOverrides : undefined,
   };
 }

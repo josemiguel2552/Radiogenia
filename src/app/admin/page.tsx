@@ -36,7 +36,6 @@ interface GlobalConfig {
   recommendations_model: string | null;
   trace_provider: string | null;
   trace_model: string | null;
-  findings_combo_enabled: boolean;
   updated_at: string;
 }
 
@@ -155,13 +154,14 @@ export default function AdminPage() {
       setDeepseekKey(d.deepseek_api_key_encrypted || "");
       setCustomProvKey(d.custom_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
+      const isCombo = d.findings_provider === "combo";
       setTaskOverrides({
-        findings: { provider: d.findings_provider || "", model: d.findings_model || "" },
+        findings: isCombo ? { provider: "", model: "" } : { provider: d.findings_provider || "", model: d.findings_model || "" },
         conclusion: { provider: d.conclusion_provider || "", model: d.conclusion_model || "" },
         recommendations: { provider: d.recommendations_provider || "", model: d.recommendations_model || "" },
         trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
       });
-      setFindingsCombo(!!d.findings_combo_enabled);
+      setFindingsCombo(isCombo);
     }
 
     try {
@@ -185,7 +185,7 @@ export default function AdminPage() {
     setConfigError("");
     setConfigSuccess(false);
     try {
-      const body: Record<string, string | boolean> = { provider, model_name: modelName, findings_combo_enabled: findingsCombo };
+      const body: Record<string, string> = { provider, model_name: modelName };
       if (apiKey && apiKey !== "••••••••") body.api_key = apiKey;
       if (whisperKey && whisperKey !== "••••••••") body.whisper_api_key = whisperKey;
       if (anthropicKey && anthropicKey !== "••••••••") body.anthropic_api_key = anthropicKey;
@@ -195,6 +195,11 @@ export default function AdminPage() {
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
       for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+        if (task === "findings" && findingsCombo) {
+          body.findings_provider = "combo";
+          body.findings_model = "gpt4mini+deepseek-reasoner";
+          continue;
+        }
         const o = taskOverrides[task];
         body[`${task}_provider`] = o.provider || "";
         body[`${task}_model`] = o.model || "";
@@ -723,21 +728,29 @@ export default function AdminPage() {
                   { key: "recommendations" as TaskKey, label: "Recommendations", desc: "Guideline-based recommendations" },
                   { key: "trace" as TaskKey, label: "Traceability", desc: "Dictation ↔ findings verification" },
                 ]).map(({ key, label, desc }) => {
+                  const isComboOverride = key === "findings" && findingsCombo;
                   const o = taskOverrides[key];
                   const taskProv = PROVIDERS.find((p) => p.value === o.provider);
                   return (
-                    <div key={key} className="rounded-lg border p-3 space-y-2">
+                    <div key={key} className={`rounded-lg border p-3 space-y-2 ${isComboOverride ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}`}>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-semibold text-gray-900 dark:text-white">{label}</p>
                           <p className="text-[10px] text-gray-400">{desc}</p>
                         </div>
-                        {o.provider && o.model ? (
+                        {isComboOverride ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Combo active</Badge>
+                        ) : o.provider && o.model ? (
                           <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] text-gray-400">Default</Badge>
                         )}
                       </div>
+                      {isComboOverride ? (
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                          Managed by Combo pipeline below. Disable combo to set a custom model.
+                        </p>
+                      ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
                         <Select value={o.provider || "default"} onValueChange={(v) => {
                           const val = v === "default" ? "" : v;
@@ -785,6 +798,7 @@ export default function AdminPage() {
                           </Button>
                         )}
                       </div>
+                      )}
                     </div>
                   );
                 })}
