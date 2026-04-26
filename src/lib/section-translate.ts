@@ -300,3 +300,19 @@ export function translateSectionLabel(name: string, lang: OutputLanguage): strin
   if (lang === "es") return ES[name] ?? name;
   return name;
 }
+
+export function translateTemplate(template: string, lang: OutputLanguage): string {
+  if (lang === "en" || !template) return template;
+  const dict = lang === "es" ? ES : null;
+  if (!dict) return template;
+
+  return template.replace(
+    /(\*{2,3})([^*]+)\1/g,
+    (match, stars: string, label: string) => {
+      const trimmed = label.trim();
+      const translated = dict[trimmed];
+      if (!translated) return match;
+      return `${stars}${translated}${stars}`;
+    },
+  );
+}

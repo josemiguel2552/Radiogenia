@@ -8,7 +8,7 @@ import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
-import { translateSectionLabel } from "@/lib/section-translate";
+import { translateSectionLabel, translateTemplate } from "@/lib/section-translate";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -110,6 +110,9 @@ export async function POST(req: NextRequest) {
       });
     };
 
+    const outLang = safeConfig.output_language as OutputLanguage;
+    const translatedTemplate = translateTemplate(template, outLang);
+
     const responseHeaders = {
       "Content-Type": "text/plain; charset=utf-8",
       "X-Output-Language": safeConfig.output_language,
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest) {
       console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek V3, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
       const comboResult = await runComboFindings(globalConfig, {
-        template,
+        template: translatedTemplate,
         dictation,
         modality: modality || "CT",
         findingsLength: safeConfig.findings_length as FindingsLength,
@@ -146,7 +149,7 @@ export async function POST(req: NextRequest) {
 
     // ── Standard single-model streaming pipeline ──
     const { system, user: userPrompt } = buildFindingsPrompt({
-      template,
+      template: translatedTemplate,
       dictation,
       modality: modality || "CT",
       findingsLength: safeConfig.findings_length as FindingsLength,
