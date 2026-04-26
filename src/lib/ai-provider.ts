@@ -7,12 +7,13 @@ interface GenerateParams {
   customBaseUrl?: string;
   system: string;
   user: string;
+  maxTokens?: number;
 }
 
 interface ProviderConfig {
   url: string;
   headers: Record<string, string>;
-  buildBody: (model: string, system: string, user: string) => object;
+  buildBody: (model: string, system: string, user: string, maxTokens: number) => object;
   extractText: (data: unknown) => string;
 }
 
@@ -28,9 +29,9 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           "anthropic-version": "2023-06-01",
           "content-type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
           system,
           messages: [{ role: "user", content: user }],
@@ -48,13 +49,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
         }),
         extractText: (data: unknown) => {
@@ -70,13 +71,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
         }),
         extractText: (data: unknown) => {
@@ -89,10 +90,10 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
       return {
         url: `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
         headers: { "Content-Type": "application/json" },
-        buildBody: (_model, system, user) => ({
+        buildBody: (_model, system, user, maxTokens) => ({
           system_instruction: { parts: [{ text: system }] },
           contents: [{ parts: [{ text: user }] }],
-          generationConfig: { maxOutputTokens: 4096, temperature: 0 },
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0 },
         }),
         extractText: (data: unknown) => {
           const d = data as { candidates: { content: { parts: { text: string }[] } }[] };
@@ -107,13 +108,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
         }),
         extractText: (data: unknown) => {
@@ -126,7 +127,8 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
 
 export async function generateAI(params: GenerateParams): Promise<string> {
   const config = getProviderConfig(params);
-  const body = config.buildBody(params.modelName, params.system, params.user);
+  const maxTokens = params.maxTokens || 4096;
+  const body = config.buildBody(params.modelName, params.system, params.user, maxTokens);
 
   const response = await fetch(config.url, {
     method: "POST",
@@ -250,7 +252,8 @@ function withKeepalive(source: ReadableStream<Uint8Array>): ReadableStream<Uint8
 export async function generateAIStream(params: GenerateParams): Promise<ReadableStream<Uint8Array>> {
   const { provider, modelName } = params;
   const config = getProviderConfig(params);
-  const body = config.buildBody(modelName, params.system, params.user);
+  const maxTokens = params.maxTokens || 4096;
+  const body = config.buildBody(modelName, params.system, params.user, maxTokens);
 
   let url = config.url;
   let requestBody: object;

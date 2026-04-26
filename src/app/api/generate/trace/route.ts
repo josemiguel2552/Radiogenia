@@ -52,6 +52,7 @@ If no repair was needed, set "repaired": false, "corrected_findings": null, and 
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userMsg,
+      maxTokens: 8192,
     });
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
