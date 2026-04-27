@@ -157,6 +157,7 @@ export default function AdminPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditFilter, setAuditFilter] = useState<string>("all");
   const [auditLoading, setAuditLoading] = useState(false);
+  const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
 
   // Training data
   interface TrainingRow {
@@ -184,6 +185,7 @@ export default function AdminPage() {
   const [trainingCorrectionsOnly, setTrainingCorrectionsOnly] = useState(false);
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [trainingError, setTrainingError] = useState<string | null>(null);
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -448,16 +450,20 @@ export default function AdminPage() {
 
   async function loadTrainingData() {
     setTrainingLoading(true);
+    setTrainingError(null);
     try {
       const params = new URLSearchParams({ limit: "200" });
       if (trainingModality !== "all") params.set("modality", trainingModality);
       if (trainingCorrectionsOnly) params.set("corrections_only", "true");
       const res = await fetch(`/api/admin/training-data?${params}`);
-      if (res.ok) {
-        const d = await res.json();
-        setTrainingData(d.reports || []);
+      const d = await res.json();
+      if (d.error) {
+        setTrainingError(d.error);
       }
-    } catch { /* ignore */ }
+      setTrainingData(d.reports || []);
+    } catch (e) {
+      setTrainingError(e instanceof Error ? e.message : "Failed to load training data");
+    }
     setTrainingLoading(false);
   }
 
@@ -1270,7 +1276,7 @@ export default function AdminPage() {
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
                 <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
                 <div className="ml-auto flex gap-1">
-                  {["all", "generate_findings", "save_report", "report_error"].map((f) => (
+                  {["all", "generate_findings", "generate_conclusion", "save_report", "report_error"].map((f) => (
                     <Button
                       key={f}
                       variant={auditFilter === f ? "default" : "outline"}
@@ -1278,7 +1284,7 @@ export default function AdminPage() {
                       className="h-7 text-xs"
                       onClick={() => setAuditFilter(f)}
                     >
-                      {f === "all" ? "All" : f === "generate_findings" ? "Generations" : f === "save_report" ? "Saves" : "Errors"}
+                      {f === "all" ? "All" : f === "generate_findings" ? "Findings" : f === "generate_conclusion" ? "Conclusions" : f === "save_report" ? "Saves" : "Errors"}
                     </Button>
                   ))}
                 </div>
@@ -1299,49 +1305,118 @@ export default function AdminPage() {
                     <tbody>
                       {auditLogs
                         .filter((l) => auditFilter === "all" || l.action === auditFilter)
-                        .map((log) => (
-                        <tr key={log.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                          <td className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap">
-                            {new Date(log.created_at).toLocaleString()}
-                          </td>
-                          <td className="py-2.5 px-2">
-                            <div>
-                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate max-w-[120px]">{log.user_name}</p>
-                              <p className="text-[10px] text-gray-500 truncate max-w-[120px]">{log.user_email}</p>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-2">
-                            <Badge
-                              variant={log.action === "report_error" ? "destructive" : "secondary"}
-                              className="text-[10px]"
+                        .map((log) => {
+                        const meta = log.metadata as Record<string, unknown>;
+                        const hasDetail = !!(meta?.raw_dictation || meta?.generated_findings || meta?.note);
+                        const hasTraceIssues = (Number(meta?.trace_unmatched) || 0) > 0 || (Number(meta?.trace_hallucinations) || 0) > 0;
+                        const isExpanded = expandedAuditId === log.id;
+                        return (
+                        <tr key={log.id} className="border-b border-gray-50 dark:border-gray-800/50">
+                          <td colSpan={6} className="p-0">
+                            <button
+                              type="button"
+                              className={`w-full text-left flex items-center hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors ${hasDetail || hasTraceIssues ? "cursor-pointer" : "cursor-default"}`}
+                              onClick={() => (hasDetail || hasTraceIssues) && setExpandedAuditId(isExpanded ? null : log.id)}
                             >
-                              {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
-                              {log.action.replace(/_/g, " ")}
-                            </Badge>
-                            {log.had_corrections && (
-                              <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                              <span className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap w-[140px] shrink-0">
+                                {new Date(log.created_at).toLocaleString()}
+                              </span>
+                              <span className="py-2.5 px-2 w-[130px] shrink-0">
+                                <span className="block text-xs font-medium text-gray-900 dark:text-white truncate">{log.user_name}</span>
+                                <span className="block text-[10px] text-gray-500 truncate">{log.user_email}</span>
+                              </span>
+                              <span className="py-2.5 px-2 shrink-0">
+                                <Badge
+                                  variant={log.action === "report_error" ? "destructive" : "secondary"}
+                                  className="text-[10px]"
+                                >
+                                  {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
+                                  {log.action.replace(/_/g, " ")}
+                                </Badge>
+                                {log.had_corrections && (
+                                  <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                                )}
+                              </span>
+                              <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:inline w-[140px] shrink-0">
+                                {log.provider && log.model ? `${log.provider} / ${log.model}` : "—"}
+                              </span>
+                              <span className="py-2.5 px-2 text-xs text-gray-500 text-right hidden md:inline w-[60px] shrink-0">
+                                {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : "—"}
+                              </span>
+                              <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 flex-1 min-w-0 truncate">
+                                {(() => {
+                                  if (log.action === "report_error" && meta?.note) return String(meta.note);
+                                  const parts: string[] = [];
+                                  if (meta?.study_type) parts.push(String(meta.study_type));
+                                  if (typeof meta?.trace_mappings === "number") {
+                                    parts.push(`${meta.trace_mappings} ok, ${meta.trace_unmatched || 0} omit, ${meta.trace_hallucinations || 0} halluc`);
+                                  }
+                                  return parts.length > 0 ? parts.join(" · ") : "—";
+                                })()}
+                              </span>
+                              {(hasDetail || hasTraceIssues) && (
+                                <span className="py-2.5 px-2 shrink-0">
+                                  <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+                                </span>
+                              )}
+                            </button>
+
+                            {isExpanded && (hasDetail || hasTraceIssues) && (
+                              <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
+                                {!!meta?.note && (
+                                  <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                                    <span className="font-medium">Error report:</span> {String(meta.note)}
+                                  </div>
+                                )}
+
+                                {hasTraceIssues && (
+                                  <div className="flex gap-3 text-xs">
+                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} matched</Badge>
+                                    {(Number(meta.trace_unmatched) || 0) > 0 && (
+                                      <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                        {Number(meta.trace_unmatched)} omissions
+                                      </Badge>
+                                    )}
+                                    {(Number(meta.trace_hallucinations) || 0) > 0 && (
+                                      <Badge variant="destructive" className="text-[10px]">
+                                        {Number(meta.trace_hallucinations)} hallucinations
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+
+                                {!!meta?.raw_dictation && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Dictation input</p>
+                                    <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                      {String(meta.raw_dictation)}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {!!meta?.generated_findings && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Generated findings</p>
+                                    <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                      {String(meta.generated_findings)}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {!!meta?.generated_conclusion && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">Generated conclusion</p>
+                                    <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                      {String(meta.generated_conclusion)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </td>
-                          <td className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:table-cell">
-                            {log.provider && log.model ? `${log.provider} / ${log.model}` : "—"}
-                          </td>
-                          <td className="py-2.5 px-2 text-xs text-gray-500 text-right hidden md:table-cell">
-                            {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : "—"}
-                          </td>
-                          <td className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 max-w-[260px]">
-                            {(() => {
-                              const meta = log.metadata as Record<string, unknown>;
-                              if (log.action === "report_error" && meta?.note) return String(meta.note);
-                              const parts: string[] = [];
-                              if (meta?.study_type) parts.push(String(meta.study_type));
-                              if (typeof meta?.trace_mappings === "number") {
-                                parts.push(`${meta.trace_mappings} ok, ${meta.trace_unmatched || 0} omit, ${meta.trace_hallucinations || 0} halluc`);
-                              }
-                              return parts.length > 0 ? parts.join(" · ") : "—";
-                            })()}
-                          </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                       {auditLogs.filter((l) => auditFilter === "all" || l.action === auditFilter).length === 0 && (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
@@ -1393,17 +1468,22 @@ export default function AdminPage() {
                 </div>
               </div>
               <CardContent className="pt-0">
+                {trainingError && (
+                  <div className="mb-3 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                    <span className="font-medium">Error loading training data:</span> {trainingError}
+                  </div>
+                )}
                 {trainingLoading ? (
                   <div className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400 mb-2" />
                     <p className="text-xs text-gray-400">Loading training data...</p>
                   </div>
-                ) : trainingData.length === 0 ? (
+                ) : trainingData.length === 0 && !trainingError ? (
                   <div className="text-center py-8 text-gray-400 text-xs">
                     <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     No training data yet — reports are saved automatically when radiologists generate reports
                   </div>
-                ) : (
+                ) : trainingData.length === 0 ? null : (
                   <div className="space-y-2">
                     {trainingData.map((r) => {
                       const isExpanded = expandedReportId === r.id;

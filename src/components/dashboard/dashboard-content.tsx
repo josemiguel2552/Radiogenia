@@ -463,7 +463,7 @@ export function DashboardContent() {
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
 
-    // Log trace quality metrics
+    // Log trace quality metrics — include dictation + generated text so admin can review
     if (traceStats.mappings > 0 || traceStats.unmatched > 0 || traceStats.hallucinations > 0) {
       fetch("/api/audit-logs", {
         method: "POST",
@@ -478,6 +478,9 @@ export function DashboardContent() {
             trace_mappings: traceStats.mappings,
             trace_unmatched: traceStats.unmatched,
             trace_hallucinations: traceStats.hallucinations,
+            raw_dictation: dictation?.slice(0, 2000) || "",
+            generated_findings: findingsText?.slice(0, 3000) || "",
+            generated_conclusion: conclusionText?.slice(0, 1500) || "",
           },
         }),
       }).catch(() => {});
@@ -757,6 +760,9 @@ export function DashboardContent() {
             modality: selectedTemplate?.modality,
             had_findings: !!findings,
             had_conclusion: !!conclusion,
+            raw_dictation: dictation?.slice(0, 2000) || "",
+            generated_findings: initialFindings?.slice(0, 3000) || "",
+            generated_conclusion: initialConclusion?.slice(0, 1500) || "",
           },
         }),
       });

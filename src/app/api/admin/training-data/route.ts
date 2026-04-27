@@ -18,6 +18,10 @@ const MIN_COLUMNS =
   "id, user_id, study_type, modality, contrast_option, raw_dictation, " +
   "findings_text, conclusion_text, recommendations_text, created_at";
 
+const BARE_COLUMNS =
+  "id, user_id, study_type, modality, raw_dictation, " +
+  "findings_text, conclusion_text, created_at";
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
@@ -30,8 +34,9 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Number(url.searchParams.get("limit")) || 100, 500);
 
     let rows: Record<string, unknown>[] | null = null;
+    const errors: string[] = [];
 
-    for (const cols of [FULL_COLUMNS, MID_COLUMNS, MIN_COLUMNS]) {
+    for (const cols of [FULL_COLUMNS, MID_COLUMNS, MIN_COLUMNS, BARE_COLUMNS]) {
       let query = supabase
         .from("reports")
         .select(cols)
@@ -48,21 +53,30 @@ export async function GET(req: NextRequest) {
         rows = (data || []) as unknown as Record<string, unknown>[];
         break;
       }
+      errors.push(`[${cols.slice(0, 30)}...]: ${error.message}`);
     }
 
     if (!rows) {
-      return NextResponse.json({ reports: [], total: 0 });
+      return NextResponse.json({
+        reports: [],
+        total: 0,
+        error: `Failed to query reports table. Tried ${errors.length} column sets. Errors: ${errors.join(" | ")}`,
+      }, { status: 500 });
     }
 
     const userIds = [...new Set(rows.map((r) => r.user_id as string))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, email, name")
-      .in("id", userIds.length > 0 ? userIds : ["__none__"]);
+    let profileMap = new Map<string, { email?: string; name?: string }>();
 
-    const profileMap = new Map(
-      (profiles || []).map((p: { id: string; email: string; name: string }) => [p.id, p]),
-    );
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email, name")
+        .in("id", userIds);
+
+      profileMap = new Map(
+        (profiles || []).map((p: { id: string; email: string; name: string }) => [p.id, p]),
+      );
+    }
 
     const enriched = rows.map((r) => ({
       ...r,
@@ -76,7 +90,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message, reports: [], total: 0 }, { status });
   }
 }
 
