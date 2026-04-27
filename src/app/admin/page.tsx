@@ -14,7 +14,7 @@ import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
-  Upload, GraduationCap, ChevronDown, ClipboardList, Flag,
+  Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 
@@ -156,6 +156,32 @@ export default function AdminPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditFilter, setAuditFilter] = useState<string>("all");
   const [auditLoading, setAuditLoading] = useState(false);
+
+  // Training data
+  interface TrainingRow {
+    id: string;
+    user_email: string | null;
+    user_name: string | null;
+    study_type: string;
+    modality: string;
+    raw_dictation: string;
+    initial_findings_text: string | null;
+    initial_conclusion_text: string | null;
+    findings_text: string;
+    conclusion_text: string;
+    had_corrections: boolean;
+    provider_used: string | null;
+    model_used: string | null;
+    error_reported: boolean;
+    error_report_note: string | null;
+    created_at: string;
+  }
+  const [trainingData, setTrainingData] = useState<TrainingRow[]>([]);
+  const [trainingLoading, setTrainingLoading] = useState(false);
+  const [trainingModality, setTrainingModality] = useState<string>("all");
+  const [trainingCorrectionsOnly, setTrainingCorrectionsOnly] = useState(false);
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -409,6 +435,41 @@ export default function AdminPage() {
       setCreateError("Network error");
     }
     setCreatingUser(false);
+  }
+
+  async function loadTrainingData() {
+    setTrainingLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "200" });
+      if (trainingModality !== "all") params.set("modality", trainingModality);
+      if (trainingCorrectionsOnly) params.set("corrections_only", "true");
+      const res = await fetch(`/api/admin/training-data?${params}`);
+      if (res.ok) {
+        const d = await res.json();
+        setTrainingData(d.reports || []);
+      }
+    } catch { /* ignore */ }
+    setTrainingLoading(false);
+  }
+
+  async function handleExportJsonl() {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ format: "jsonl", limit: "500" });
+      if (trainingModality !== "all") params.set("modality", trainingModality);
+      if (trainingCorrectionsOnly) params.set("corrections_only", "true");
+      const res = await fetch(`/api/admin/training-data?${params}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `radiogenai-training-${new Date().toISOString().slice(0, 10)}.jsonl`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch { /* ignore */ }
+    setExporting(false);
   }
 
   const radiologists = users.filter((u) => u.role !== "admin");
@@ -1278,6 +1339,124 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Training Data */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
+                <Database className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Training Data</h2>
+                <Badge variant="secondary" className="text-xs">{trainingData.length} reports</Badge>
+                <div className="ml-auto flex flex-wrap gap-1.5 items-center">
+                  <Select value={trainingModality} onValueChange={(v) => setTrainingModality(v)}>
+                    <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All modalities</SelectItem>
+                      <SelectItem value="CT">CT</SelectItem>
+                      <SelectItem value="MRI">MRI</SelectItem>
+                      <SelectItem value="XRay">XRay</SelectItem>
+                      <SelectItem value="Ultrasound">Ultrasound</SelectItem>
+                      <SelectItem value="Mammography">Mammography</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <label className="flex items-center gap-1 text-xs text-gray-500">
+                    <input
+                      type="checkbox"
+                      checked={trainingCorrectionsOnly}
+                      onChange={(e) => setTrainingCorrectionsOnly(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Corrections only
+                  </label>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadTrainingData} disabled={trainingLoading}>
+                    {trainingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Load
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportJsonl} disabled={exporting || trainingData.length === 0}>
+                    {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                    Export JSONL
+                  </Button>
+                </div>
+              </div>
+              <CardContent className="pt-0">
+                {trainingData.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-xs">
+                    <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    Press &quot;Load&quot; to fetch report data for training evaluation
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {trainingData.map((r) => {
+                      const isExpanded = expandedReportId === r.id;
+                      const findingsChanged = r.initial_findings_text && r.initial_findings_text !== r.findings_text;
+                      const conclusionChanged = r.initial_conclusion_text && r.initial_conclusion_text !== r.conclusion_text;
+                      return (
+                        <div key={r.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+                            onClick={() => setExpandedReportId(isExpanded ? null : r.id)}
+                          >
+                            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+                            <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                              <Badge variant="secondary" className="text-[10px]">{r.modality}</Badge>
+                              <span className="text-xs font-medium text-gray-900 dark:text-white truncate">{r.study_type}</span>
+                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">corrected</Badge>}
+                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />error</Badge>}
+                            </div>
+                            <span className="text-[10px] text-gray-400 shrink-0">
+                              {r.user_name || r.user_email || "—"} · {new Date(r.created_at).toLocaleDateString()}
+                            </span>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
+                              {r.error_report_note && (
+                                <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                                  <span className="font-medium">Error report:</span> {r.error_report_note}
+                                </div>
+                              )}
+
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Dictation (input)</p>
+                                <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">{r.raw_dictation || "—"}</pre>
+                              </div>
+
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">
+                                    AI Generated {findingsChanged && <span className="text-amber-500 normal-case">(modified by radiologist)</span>}
+                                  </p>
+                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+{r.initial_findings_text || r.findings_text || "—"}
+{"\n\n---\n\n"}
+{r.initial_conclusion_text || r.conclusion_text || "—"}
+                                  </pre>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">
+                                    Final Report {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">(corrected)</span>}
+                                  </p>
+                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+{r.findings_text || "—"}
+{"\n\n---\n\n"}
+{r.conclusion_text || "—"}
+                                  </pre>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3 text-[10px] text-gray-400">
+                                {r.provider_used && <span>Provider: {r.provider_used}</span>}
+                                {r.model_used && <span>Model: {r.model_used}</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
