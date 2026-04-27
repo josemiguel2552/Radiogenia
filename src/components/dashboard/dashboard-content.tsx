@@ -163,10 +163,12 @@ export function DashboardContent() {
   // Flush corrected report to server when user hides tab or closes page
   useEffect(() => {
     function handleVisibility() {
-      if (document.visibilityState === "hidden" && lastSavedReportId && reportDirtyRef.current) {
+      if (document.visibilityState !== "hidden") return;
+
+      // Flush report edits to the reports table
+      if (lastSavedReportId && reportDirtyRef.current) {
         const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
         const findingsChanged = !!(initialFindings && findings !== initialFindings);
-        const hadCorrections = conclusionChanged || findingsChanged;
         reportDirtyRef.current = false;
         navigator.sendBeacon(
           "/api/reports",
@@ -175,18 +177,23 @@ export function DashboardContent() {
             id: lastSavedReportId,
             findings_text: findings,
             conclusion_text: conclusion,
-            had_corrections: hadCorrections,
+            had_corrections: conclusionChanged || findingsChanged,
           })], { type: "application/json" }),
         );
+      }
 
-        if (hadCorrections && !correctionLoggedRef.current) {
+      // Log corrections independently — works even if report save failed
+      if (!correctionLoggedRef.current) {
+        const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
+        const findingsChanged = !!(initialFindings && findings !== initialFindings);
+        if (conclusionChanged || findingsChanged) {
           correctionLoggedRef.current = true;
           const tpl = templates.find((t) => t.id === selectedTemplateId);
           navigator.sendBeacon(
             "/api/audit-logs",
             new Blob([JSON.stringify({
               action: "correction_logged",
-              report_id: lastSavedReportId,
+              report_id: lastSavedReportId || null,
               had_corrections: true,
               metadata: {
                 study_type: tpl?.name || "",
@@ -273,7 +280,8 @@ export function DashboardContent() {
   async function handleGenerate() {
     if (!selectedTemplate || !dictation.trim()) return;
 
-    // Flush any pending corrections from the previous report before starting a new generation
+    // Log any pending corrections from the previous report before starting a new generation
+    logCorrectionIfNeeded();
     if (lastSavedReportId && reportDirtyRef.current) {
       await flushCorrections();
     }
@@ -627,6 +635,7 @@ export function DashboardContent() {
   }
 
   async function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
+    logCorrectionIfNeeded();
     await flushCorrections();
     // Refresh signature in case user changed it in the sidebar
     try {
@@ -721,6 +730,35 @@ export function DashboardContent() {
     }
   }
 
+  function logCorrectionIfNeeded() {
+    if (correctionLoggedRef.current) return;
+    const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
+    const findingsChanged = !!(initialFindings && findings !== initialFindings);
+    if (!conclusionChanged && !findingsChanged) return;
+
+    correctionLoggedRef.current = true;
+    const tpl = templates.find((t) => t.id === selectedTemplateId);
+    fetch("/api/audit-logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "correction_logged",
+        report_id: lastSavedReportId || null,
+        had_corrections: true,
+        metadata: {
+          study_type: tpl?.name || "",
+          modality: tpl?.modality || "",
+          conclusion_changed: conclusionChanged,
+          findings_changed: findingsChanged,
+          original_conclusion: initialConclusion || "",
+          corrected_conclusion: conclusionChanged ? conclusion : "",
+          original_findings: findingsChanged ? (initialFindings || "").slice(0, 3000) : "",
+          corrected_findings: findingsChanged ? (findings || "").slice(0, 3000) : "",
+        },
+      }),
+    }).catch(() => {});
+  }
+
   async function flushCorrections() {
     if (!lastSavedReportId || !reportDirtyRef.current) return;
 
@@ -741,34 +779,10 @@ export function DashboardContent() {
         }),
       });
     } catch { /* non-critical */ }
-
-    if (hadCorrections && !correctionLoggedRef.current) {
-      correctionLoggedRef.current = true;
-      try {
-        await fetch("/api/audit-logs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "correction_logged",
-            report_id: lastSavedReportId,
-            had_corrections: true,
-            metadata: {
-              study_type: selectedTemplate?.name || "",
-              modality: selectedTemplate?.modality || "",
-              conclusion_changed: conclusionChanged,
-              findings_changed: findingsChanged,
-              original_conclusion: initialConclusion || "",
-              corrected_conclusion: conclusionChanged ? conclusion : "",
-              original_findings: findingsChanged ? initialFindings?.slice(0, 3000) : "",
-              corrected_findings: findingsChanged ? findings?.slice(0, 3000) : "",
-            },
-          }),
-        });
-      } catch { /* non-critical */ }
-    }
   }
 
   async function startNewReport() {
+    logCorrectionIfNeeded();
     if (findings) {
       if (!lastSavedReportId) await saveReportQuietly();
       else await flushCorrections();
