@@ -1,11 +1,72 @@
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig, checkDocumentLimit } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, type GlobalAIConfig } from "@/lib/auth-helpers";
+import { checkDocumentLimit } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
+import type { AIProvider } from "@/lib/types";
+
+const LIGHT_MODELS: Record<AIProvider, string> = {
+  claude: "claude-haiku-4-5-20251001",
+  openai: "gpt-4o-mini",
+  deepseek: "deepseek-chat",
+  gemini: "gemini-2.0-flash",
+  custom: "",
+};
+
+const CHUNK_SIZE = 12_000;
+
+const SYSTEM_PROMPT = `Extract clinical recommendations from the text below. Return ONLY a valid JSON array.
+Each object must have:
+- "trigger": the finding/condition (short, e.g. "Pulmonary nodule >8mm")
+- "recommendation": the recommended action (short)
+- "guideline": the guideline name/source
+If no recommendations are found, return [].`;
+
+function pickLightModel(config: GlobalAIConfig): { provider: AIProvider; modelName: string; apiKey: string } {
+  const recsOverride = config.taskOverrides?.recommendations;
+  if (recsOverride) {
+    return {
+      provider: recsOverride.provider,
+      modelName: recsOverride.modelName,
+      apiKey: resolveApiKey(config, recsOverride.provider),
+    };
+  }
+
+  const provider = config.provider;
+  const lightModel = LIGHT_MODELS[provider] || config.modelName;
+
+  return { provider, modelName: lightModel, apiKey: config.apiKey };
+}
+
+function splitIntoChunks(text: string, chunkSize: number): string[] {
+  const chunks: string[] = [];
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+interface Recommendation {
+  trigger: string;
+  recommendation: string;
+  guideline: string;
+  keywords?: string;
+  supported_report_types?: string;
+}
+
+function deduplicateRecs(recs: Recommendation[]): Recommendation[] {
+  const seen = new Set<string>();
+  return recs.filter((r) => {
+    const key = `${r.trigger.toLowerCase().trim()}|${r.recommendation.toLowerCase().trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,49 +100,50 @@ export async function POST(req: NextRequest) {
     }
 
     if (!docText.trim()) {
-      return NextResponse.json({ error: "Document is empty" }, { status: 400 });
+      return NextResponse.json({ error: "Document is empty or could not be read" }, { status: 400 });
     }
 
     const globalConfig = await getGlobalAIConfig();
+    const { provider, modelName, apiKey } = pickLightModel(globalConfig);
 
-    const system = `You are a radiology clinical guidelines expert. Extract structured recommendations from the provided clinical guideline document.
+    const chunks = splitIntoChunks(docText, CHUNK_SIZE);
+    const allRecs: Recommendation[] = [];
 
-The document may have sections with "Finding", "Recommendation", "Keywords", "Description", "Supported Report Types", etc.
+    for (const chunk of chunks) {
+      try {
+        const text = await generateAI({
+          provider,
+          modelName,
+          apiKey,
+          customBaseUrl: globalConfig.customBaseUrl,
+          system: SYSTEM_PROMPT,
+          user: chunk,
+          maxTokens: 4096,
+        });
 
-For each recommendation found, return a JSON object with:
-- "trigger": the finding/condition that triggers this recommendation (concise, e.g. "Nódulo pulmonar sólido >8mm")
-- "recommendation": the recommended action (e.g. "TC torácico control en 3 meses")
-- "guideline": the name of the guideline/source (e.g. "ACR Incidental Findings", "Fleischner Society")
-- "keywords": comma-separated keywords for matching (from the document if available)
-- "supported_report_types": list of report types where this recommendation applies (from the document if available)
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Array.isArray(parsed)) {
+            allRecs.push(...parsed.filter((r: Recommendation) => r.trigger && r.recommendation));
+          }
+        }
+      } catch (e) {
+        console.error("Chunk extraction error:", e instanceof Error ? e.message : e);
+      }
+    }
 
-Return ONLY valid JSON array. Example:
-[
-  {
-    "trigger": "Lipid-Rich Adenoma (≤ 10 HU or Signal Drop)",
-    "recommendation": "Benign — no follow-up",
-    "guideline": "ACR Incidental Adrenal Mass",
-    "keywords": "≤10 HU, lipid-rich, myelolipoma",
-    "supported_report_types": "Abdomen CT scan, Thorax CT scan"
-  }
-]`;
+    if (allRecs.length === 0) {
+      return NextResponse.json({
+        error: "No recommendations could be extracted from this document. Try a document with structured clinical guidelines.",
+      }, { status: 400 });
+    }
 
-    const text = await generateAI({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
-      apiKey: globalConfig.apiKey,
-      customBaseUrl: globalConfig.customBaseUrl,
-      system,
-      user: `Extract all recommendations from this clinical guideline document:\n\n${docText.substring(0, 20000)}`,
-    });
-
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return NextResponse.json({ error: "Could not parse AI response" }, { status: 500 });
-
-    const recommendations = JSON.parse(jsonMatch[0]);
+    const recommendations = deduplicateRecs(allRecs);
     return NextResponse.json({ recommendations });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Recommendations upload error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -288,11 +288,12 @@ export function TemplatesTab() {
     load();
   }
 
-  async function handleDuplicate(t: UserTemplate) {
+  async function handleDuplicate(tmpl: UserTemplate) {
+    const displayName = tplName(tmpl.name);
     await fetch("/api/templates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: t.name + " (copy)", modality: t.modality, base_template_id: t.base_template_id, structure: t.structure }),
+      body: JSON.stringify({ name: displayName + " (copy)", modality: tmpl.modality, base_template_id: tmpl.base_template_id, structure: tmpl.structure }),
     });
     load();
   }

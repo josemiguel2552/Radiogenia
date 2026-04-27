@@ -137,35 +137,53 @@ export function ModelConfigTab() {
   async function handleSaveSig() {
     if (!sigLabel.trim() || !sigBody.trim()) return;
     setSavingSig(true);
-    if (editingSig) {
-      await fetch("/api/signatures", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editingSig.id, label: sigLabel, body: sigBody }),
-      });
-    } else {
-      await fetch("/api/signatures", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: sigLabel, body: sigBody }),
-      });
+    try {
+      const res = editingSig
+        ? await fetch("/api/signatures", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: editingSig.id, label: sigLabel, body: sigBody }),
+          })
+        : await fetch("/api/signatures", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ label: sigLabel, body: sigBody }),
+          });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed" }));
+        console.error("Signature save error:", err);
+        setSavingSig(false);
+        return;
+      }
+      setSigLabel(""); setSigBody(""); setShowAddSig(false); setEditingSig(null);
+      await loadSignatures();
+    } catch (e) {
+      console.error("Signature save error:", e);
     }
-    setSigLabel(""); setSigBody(""); setShowAddSig(false); setEditingSig(null);
     setSavingSig(false);
-    await loadSignatures();
   }
 
   async function handleToggleSigActive(sig: Signature) {
-    await fetch("/api/signatures", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: sig.id, is_active: !sig.is_active }),
-    });
+    try {
+      const res = await fetch("/api/signatures", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sig.id, is_active: !sig.is_active }),
+      });
+      if (!res.ok) console.error("Toggle signature error:", await res.text());
+    } catch (e) {
+      console.error("Toggle signature error:", e);
+    }
     await loadSignatures();
   }
 
   async function handleDeleteSig(id: string) {
-    await fetch(`/api/signatures?id=${id}`, { method: "DELETE" });
+    try {
+      const res = await fetch(`/api/signatures?id=${id}`, { method: "DELETE" });
+      if (!res.ok) console.error("Delete signature error:", await res.text());
+    } catch (e) {
+      console.error("Delete signature error:", e);
+    }
     await loadSignatures();
   }
 
