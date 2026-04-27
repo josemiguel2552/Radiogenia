@@ -1,5 +1,4 @@
 // Polyfill DOMMatrix for Node.js — required by pdfjs-dist (used by pdf-parse).
-// Only needed for text extraction; rendering features are unused.
 if (typeof globalThis.DOMMatrix === "undefined") {
   class DOMMatrixPoly {
     m11 = 1; m12 = 0; m13 = 0; m14 = 0;
@@ -37,7 +36,30 @@ if (typeof globalThis.DOMMatrix === "undefined") {
   (globalThis as any).DOMMatrixReadOnly = DOMMatrixPoly;
 }
 
+// Point pdfjs-dist to the correct worker file path.
+// The legacy build references ./pdf.worker.mjs relative to legacy/build/,
+// but the actual worker lives at pdfjs-dist/build/pdf.worker.mjs.
+import path from "path";
+
+function resolveWorkerSrc(): string {
+  try {
+    const pdfjsPath = require.resolve("pdfjs-dist/legacy/build/pdf.mjs");
+    return path.resolve(path.dirname(pdfjsPath), "..", "..", "build", "pdf.worker.mjs");
+  } catch {
+    return "";
+  }
+}
+
+let workerConfigured = false;
+
 export async function extractPdfText(buffer: Buffer): Promise<string> {
+  if (!workerConfigured) {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pdfjs as any).GlobalWorkerOptions.workerSrc = resolveWorkerSrc();
+    workerConfigured = true;
+  }
+
   const { PDFParse } = await import("pdf-parse");
   const data = new Uint8Array(buffer);
   const parser = new PDFParse({ data });
