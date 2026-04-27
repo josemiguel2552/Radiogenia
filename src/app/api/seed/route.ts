@@ -18,13 +18,19 @@ export async function POST() {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
-    // Seed global templates if the table is empty (first user to hit this)
-    const { count: globalCount } = await supabase
+    // Fetch existing base_template_ids to determine which templates are missing
+    const { data: existing } = await supabase
       .from("global_templates")
-      .select("*", { count: "exact", head: true });
+      .select("base_template_id");
 
-    if (!globalCount || globalCount === 0) {
-      const payload = DEFAULT_TEMPLATES.map((t) => ({
+    const existingIds = new Set(
+      (existing ?? []).map((r: { base_template_id: number }) => r.base_template_id)
+    );
+
+    const missing = DEFAULT_TEMPLATES.filter((t) => !existingIds.has(t.id));
+
+    if (missing.length > 0) {
+      const payload = missing.map((t) => ({
         name: t.title,
         modality: t.technique,
         base_template_id: t.id,
