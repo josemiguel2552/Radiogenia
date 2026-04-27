@@ -37,7 +37,15 @@ if (typeof globalThis.DOMMatrix === "undefined") {
 }
 
 export async function extractPdfText(buffer: Buffer): Promise<string> {
-  // Use pdfjs-dist directly — avoids pdf-parse's worker dependency entirely.
+  // Pre-load the worker module into globalThis so pdfjs-dist uses it on the
+  // main thread instead of trying to spawn/import a separate worker file.
+  // This avoids "Cannot find module pdf.worker.mjs" in serverless environments.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!(globalThis as any).pdfjsWorker) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).pdfjsWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
 

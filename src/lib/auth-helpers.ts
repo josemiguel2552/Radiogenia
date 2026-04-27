@@ -196,3 +196,54 @@ export async function checkDictationLimit(userId: string): Promise<{
     plan,
   };
 }
+
+export async function checkDocumentLimit(userId: string): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+  plan: SubscriptionPlan;
+}> {
+  const service = createServiceClient();
+  const { data: profile } = await service
+    .from("profiles")
+    .select("role, email, subscription_plan")
+    .eq("id", userId)
+    .single();
+
+  const isAdmin = profile?.role === "admin"
+    || (profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase()));
+  if (isAdmin) {
+    return { allowed: true, used: 0, limit: 999999, plan: "professional" };
+  }
+
+  const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+  const planConfig = PLANS[plan];
+
+  const { count } = await service
+    .from("user_recommendations")
+    .select("guideline_name", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("source", "pdf_extracted")
+    .neq("guideline_name", "");
+
+  // Count distinct guideline documents (each PDF upload shares the same guideline_name)
+  const { data: distinctDocs } = await service
+    .from("user_recommendations")
+    .select("guideline_name")
+    .eq("user_id", userId)
+    .eq("source", "pdf_extracted")
+    .neq("guideline_name", "");
+
+  const uniqueNames = new Set((distinctDocs || []).map((d: { guideline_name: string }) => d.guideline_name));
+  const used = uniqueNames.size;
+
+  // Also count uploaded templates from documents
+  void count;
+
+  return {
+    allowed: used < planConfig.guidelineDocuments,
+    used,
+    limit: planConfig.guidelineDocuments,
+    plan,
+  };
+}

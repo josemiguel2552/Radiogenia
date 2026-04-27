@@ -8,6 +8,7 @@ export interface PlanConfig {
   reports: number;
   tokensPerReport: number;
   dictationMinutes: number;
+  guidelineDocuments: number;
   features: string[];
   highlight?: boolean;
 }
@@ -20,12 +21,14 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
     reports: 50,
     tokensPerReport: 10000,
     dictationMinutes: 30,
+    guidelineDocuments: 2,
     features: [
       "50 reports/month",
       "All modalities",
       "30 min voice dictation/month",
       "Style learning",
       "Custom templates",
+      "2 guideline documents",
     ],
   },
   starter: {
@@ -35,6 +38,7 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
     reports: 150,
     tokensPerReport: 10000,
     dictationMinutes: 300,
+    guidelineDocuments: 5,
     highlight: true,
     features: [
       "150 reports/month",
@@ -42,6 +46,7 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
       "300 min voice dictation/month",
       "Style learning",
       "Custom templates",
+      "5 guideline documents",
       "Priority support",
     ],
   },
@@ -52,12 +57,14 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
     reports: 400,
     tokensPerReport: 10000,
     dictationMinutes: 500,
+    guidelineDocuments: 15,
     features: [
       "400 reports/month",
       "All modalities",
       "500 min voice dictation/month",
       "Style learning",
       "Custom templates",
+      "15 guideline documents",
       "Priority support",
       "API access",
       "Bulk export",

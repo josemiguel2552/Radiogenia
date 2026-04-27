@@ -2,7 +2,7 @@ export const maxDuration = 120;
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, checkDocumentLimit } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
@@ -12,6 +12,13 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const docLimit = await checkDocumentLimit(user.id);
+    if (!docLimit.allowed) {
+      return NextResponse.json({
+        error: `Document limit reached (${docLimit.used}/${docLimit.limit}). Upgrade your plan to upload more documents.`,
+      }, { status: 429 });
+    }
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
