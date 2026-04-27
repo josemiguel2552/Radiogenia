@@ -1,5 +1,5 @@
 export interface PiiMatch {
-  type: "dni" | "nie" | "phone" | "email" | "ssn";
+  type: "dni" | "nie" | "phone" | "email" | "ssn" | "name";
   value: string;
   index: number;
 }
@@ -242,8 +242,8 @@ function detectEmail(text: string): PiiMatch[] {
 function detectSsn(text: string): PiiMatch[] {
   const results: PiiMatch[] = [];
 
-  // Formatted: XX/XXXXXXXX/XX  or  XX-XXXXXXXX-XX
-  const formatted = /(?<!\d)(\d{2})[/-](\d{8})[/-](\d{2})(?!\d)/g;
+  // Formatted: XX/XXXXXXXX/XX  or  XX-XXXXXXXX-XX  or  XX XXXXXXXX XX
+  const formatted = /(?<!\d)(\d{2})[/\s-](\d{8})[/\s-](\d{2})(?!\d)/g;
   let m: RegExpExecArray | null;
   while ((m = formatted.exec(text)) !== null) {
     const fullMatch = m[0];
@@ -252,9 +252,33 @@ function detectSsn(text: string): PiiMatch[] {
     if (followedByMedicalUnit(text, idx + fullMatch.length)) continue;
     if (insideDateOrTime(text, idx, idx + fullMatch.length)) continue;
 
-    // First two digits should be a valid province code (01‑52)
     const province = parseInt(m[1], 10);
     if (province < 1 || province > 52) continue;
+
+    results.push({ type: "ssn", value: fullMatch, index: idx });
+  }
+
+  // Partially grouped: XX XXXX XXXX XX or similar groupings with spaces/dashes
+  const grouped = /(?<!\d)(\d{2})[\s/-](\d{3,4})[\s/-](\d{3,4})[\s/-](\d{2})(?!\d)/g;
+  while ((m = grouped.exec(text)) !== null) {
+    const fullMatch = m[0];
+    const idx = m.index;
+    const digits = fullMatch.replace(/\D/g, "");
+    if (digits.length !== 12) continue;
+
+    if (followedByMedicalUnit(text, idx + fullMatch.length)) continue;
+    if (insideDateOrTime(text, idx, idx + fullMatch.length)) continue;
+
+    const province = parseInt(digits.slice(0, 2), 10);
+    if (province < 1 || province > 52) continue;
+
+    const overlaps = results.some(
+      (r) =>
+        r.type === "ssn" &&
+        ((idx >= r.index && idx < r.index + r.value.length) ||
+          (r.index >= idx && r.index < idx + fullMatch.length)),
+    );
+    if (overlaps) continue;
 
     results.push({ type: "ssn", value: fullMatch, index: idx });
   }
@@ -271,7 +295,6 @@ function detectSsn(text: string): PiiMatch[] {
     const province = parseInt(fullMatch.slice(0, 2), 10);
     if (province < 1 || province > 52) continue;
 
-    // Avoid overlap with formatted matches
     const overlaps = results.some(
       (r) =>
         r.type === "ssn" &&
@@ -283,6 +306,100 @@ function detectSsn(text: string): PiiMatch[] {
     results.push({ type: "ssn", value: fullMatch, index: idx });
   }
 
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Person names
+// ---------------------------------------------------------------------------
+const SPANISH_NAMES = new Set([
+  "abel","abraham","ada","adela","adrián","adriana","agustín","agustina","aída",
+  "alba","alberto","alejandra","alejandro","alejo","alfonso","alfredo","alicia",
+  "alma","almudena","alonso","álvaro","amalia","amanda","amparo","ana","andrea",
+  "andrés","ángel","ángela","ángeles","aníbal","anna","antonia","antonio","araceli",
+  "ariadna","arturo","asunción","aurora","bárbara","beatriz","belén","benito",
+  "bernardo","blanca","boris","camila","carlos","carmen","carolina","catalina",
+  "cecilia","celia","césar","clara","claudia","clemente","concepción","consuelo",
+  "cristian","cristina","cruz","daniel","daniela","darío","david","débora","delia",
+  "diana","diego","dolores","domingo","doris","dulce","edgar","eduardo","elena",
+  "elías","elisa","eloísa","elvira","emilia","emiliano","emilio","emma","enrique",
+  "ernesto","esperanza","esteban","esther","estrella","eugenia","eugenio","eva",
+  "fabián","fabiola","federico","felipe","félix","fernanda","fernando","fidel",
+  "flor","flora","francisco","gabriel","gabriela","gema","gerardo","germán",
+  "gilberto","gisela","gloria","gonzalo","graciela","guadalupe","guillermo",
+  "gustavo","héctor","hernán","hugo","humberto","ignacio","inés","inma","inmaculada",
+  "irene","iris","isaac","isabel","ismael","iván","jacinto","jacobo","jaime",
+  "javier","jesús","joaquín","joel","jorge","josé","josefa","josefina","juan",
+  "juana","judith","julia","julián","julieta","julio","karen","karla","laura",
+  "leandro","leonor","leticia","lilia","liliana","lidia","lorena","lorenzo",
+  "lourdes","lucas","lucía","luciano","luis","luisa","luz","magdalena","manuel",
+  "manuela","marcela","marcelo","marcos","margarita","maría","mariana","mario",
+  "marta","martín","mateo","matías","mauricio","mercedes","micaela","miguel",
+  "milagros","miriam","mónica","montserrat","nadia","natalia","néstor","nicolás",
+  "nieves","noemí","nora","norma","nuria","octavio","olga","olivia","óscar",
+  "pablo","paloma","pamela","patricia","patricio","paula","pedro","penélope",
+  "pepita","pilar","práxedes","rafael","ramiro","ramón","raquel","raúl","rebeca",
+  "regina","remedios","renata","ricardo","rita","roberto","rocío","rodrigo","rosa",
+  "rosalía","rosario","rubén","ruth","sabrina","salvador","samuel","sandra",
+  "santiago","sara","sebastián","sergio","silvia","simón","sofía","soledad",
+  "sonia","susana","tamara","tatiana","teresa","tomás","trinidad","úrsula",
+  "valentina","valentín","valeria","vanesa","verónica","vicente","victoria",
+  "virginia","víctor","violeta","yolanda","zacarías"
+]);
+
+function normalizeForLookup(word: string): string {
+  return word.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+function isKnownName(word: string): boolean {
+  return SPANISH_NAMES.has(normalizeForLookup(word)) || SPANISH_NAMES.has(word.toLowerCase());
+}
+
+const CAPITALIZED_WORD = /[A-ZÁÉÍÓÚÑÀÈÌÒÙÜ][a-záéíóúñàèìòùüç]+/;
+const CONNECTORS = /^(?:de|del|la|las|los|y)$/;
+
+function detectNames(text: string): PiiMatch[] {
+  const results: PiiMatch[] = [];
+  // Find a known first name followed by at least one capitalized surname
+  const re = new RegExp(
+    `(?<![A-Za-zÀ-ÿ])(${CAPITALIZED_WORD.source})` +
+    `((?:\\s+(?:de(?:l)?|la|las|los|y))*\\s+${CAPITALIZED_WORD.source})+`,
+    "g"
+  );
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const fullMatch = m[0].trim();
+    const words = fullMatch.split(/\s+/);
+
+    // Find the first known name in the sequence
+    let nameStart = -1;
+    for (let i = 0; i < words.length - 1; i++) {
+      if (CONNECTORS.test(words[i].toLowerCase())) continue;
+      if (isKnownName(words[i])) {
+        nameStart = i;
+        break;
+      }
+    }
+    if (nameStart === -1) continue;
+
+    // Check there's at least one capitalized non-connector word after the name
+    let hasSurname = false;
+    for (let i = nameStart + 1; i < words.length; i++) {
+      if (!CONNECTORS.test(words[i].toLowerCase())) {
+        hasSurname = true;
+        break;
+      }
+    }
+    if (!hasSurname) continue;
+
+    // Build the matched substring from nameStart onward
+    const nameWords = words.slice(nameStart);
+    const nameStr = nameWords.join(" ");
+    const offset = fullMatch.indexOf(nameWords[0], words.slice(0, nameStart).join(" ").length);
+    const nameIndex = m.index + offset;
+
+    results.push({ type: "name", value: nameStr, index: nameIndex });
+  }
   return results;
 }
 
@@ -305,6 +422,7 @@ export function detectPii(text: string): PiiMatch[] {
     ...detectPhone(text),
     ...detectEmail(text),
     ...detectSsn(text),
+    ...detectNames(text),
   ];
 
   // Sort by index (stable — Array.prototype.sort is stable in ES2019+)
