@@ -4,7 +4,7 @@
  * real vocabulary dramatically improves recognition of technical terms.
  */
 
-const PROMPT_ES = `Informe de radiología. Dictado médico con terminología radiológica.
+const PROMPT_ES = `Informe de radiología. Dictado médico en español con terminología radiológica. Transcribir exclusivamente en español.
 
 Hígado de tamaño normal, ecoestructura homogénea, sin lesiones focales. Vesícula biliar normodistendida, de paredes finas, sin litiasis. Vía biliar no dilatada. Páncreas de morfología normal, sin alteraciones. Bazo homogéneo, de tamaño normal. Riñones de tamaño y morfología normales, con buena diferenciación corticomedular, sin ectasia piélica ni litiasis. Aorta abdominal de calibre normal. No se observa líquido libre intraperitoneal.
 
@@ -18,7 +18,7 @@ Articulación de morfología conservada. Superficies articulares congruentes. Li
 
 TC, RM, RX, ecografía, mamografía, densitometría, PET-TC, angio-TC, angio-RM, TCMD. Axial, coronal, sagital, T1, T2, FLAIR, difusión, ADC, contraste intravenoso, gadolinio, secuencias potenciadas. Hipointenso, hiperintenso, isointenso, hipoecoico, hiperecoico, anecoico. Milímetros, centímetros, Hounsfield.`;
 
-const PROMPT_EN = `Radiology report. Medical dictation with radiological terminology.
+const PROMPT_EN = `Radiology report. Medical dictation in English with radiological terminology. Transcribe exclusively in English.
 
 Liver is normal in size with homogeneous echotexture, no focal lesions identified. Gallbladder is normally distended with thin walls, no cholelithiasis. Common bile duct is not dilated. Pancreas is normal in morphology without abnormality. Spleen is homogeneous and normal in size. Kidneys are normal in size and morphology with good corticomedullary differentiation, no hydronephrosis or nephrolithiasis. Abdominal aorta is normal in caliber. No free intraperitoneal fluid.
 
@@ -32,7 +32,7 @@ Joint morphology is preserved. Articular surfaces are congruent. Ligaments are i
 
 CT, MRI, radiograph, ultrasound, mammography, DEXA, PET-CT, CTA, MRA, MDCT. Axial, coronal, sagittal, T1-weighted, T2-weighted, FLAIR, diffusion, ADC, intravenous contrast, gadolinium. Hypointense, hyperintense, isointense, hypoechoic, hyperechoic, anechoic. Millimeters, centimeters, Hounsfield units.`;
 
-const PROMPT_PT = `Relatório de radiologia. Ditado médico com terminologia radiológica.
+const PROMPT_PT = `Relatório de radiologia. Ditado médico em português com terminologia radiológica. Transcrever exclusivamente em português.
 
 Fígado de dimensões normais, ecoestrutura homogénea, sem lesões focais. Vesícula biliar normodistendida, paredes finas, sem litíase. Via biliar não dilatada. Pâncreas de morfologia normal. Baço homogéneo, de dimensões normais. Rins de dimensões e morfologia normais, boa diferenciação corticomedular, sem ectasia piélica nem litíase. Aorta abdominal de calibre normal. Sem líquido livre intraperitoneal.
 

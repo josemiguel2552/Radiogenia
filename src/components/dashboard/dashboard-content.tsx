@@ -31,6 +31,7 @@ import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { getWhisperPrompt } from "@/lib/whisper-prompts";
+import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
 import { FloatingDictation } from "./floating-dictation";
 import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
@@ -97,7 +98,8 @@ export function DashboardContent() {
   const { isRecording, isTranscribing, toggleRecording } = useVoiceDictation({
     language: whisperLang,
     context: getWhisperPrompt(whisperLang),
-    onTranscript: (text) => {
+    onTranscript: (rawText) => {
+      const text = processVoiceCommands(rawText, whisperLang);
       setDictation((prev) => {
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
         return prev + sep + text;
