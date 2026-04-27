@@ -272,6 +272,23 @@ export function DashboardContent() {
     }
     setLoadingFindings(false);
 
+    // Audit: log findings generation
+    if (!findingsFailed && findingsText) {
+      fetch("/api/audit-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_findings",
+          duration_ms: Date.now() - generateStartRef.current,
+          metadata: {
+            study_type: studyName,
+            modality: selectedTemplate.modality,
+            findings_length: findingsText.length,
+          },
+        }),
+      }).catch(() => {});
+    }
+
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
       setLoadingConclusion(false);
@@ -350,6 +367,20 @@ export function DashboardContent() {
             const cleaned = cleanReport(text);
             setInitialConclusion(cleaned);
             setConclusion(cleaned);
+            // Audit: log conclusion generation
+            fetch("/api/audit-logs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "generate_conclusion",
+                duration_ms: Date.now() - generateStartRef.current,
+                metadata: {
+                  study_type: studyName,
+                  modality: selectedTemplate.modality,
+                  conclusion_length: cleaned.length,
+                },
+              }),
+            }).catch(() => {});
           }
         } else {
           const data = await res.json().catch(() => ({ error: "Generation failed" }));
@@ -493,7 +524,26 @@ export function DashboardContent() {
       });
       if (res.ok) {
         const saved = await res.json();
-        if (saved?.id) setLastSavedReportId(saved.id);
+        if (saved?.id) {
+          setLastSavedReportId(saved.id);
+          // Audit: log report save
+          fetch("/api/audit-logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "save_report",
+              report_id: saved.id,
+              provider: config?.provider || null,
+              model: config?.model_name || null,
+              duration_ms: generationDurationMs,
+              had_corrections: hadCorrections,
+              metadata: {
+                study_type: studyName,
+                modality: selectedTemplate.modality,
+              },
+            }),
+          }).catch(() => {});
+        }
       } else {
         console.error("Failed to save report:", await res.text());
       }
