@@ -38,6 +38,54 @@ export async function GET() {
   }
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const supabase = createServiceClient();
+    const { email, password, subscription_plan } = await req.json();
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "email and password required" }, { status: 400 });
+    }
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+    const plan = ["free", "starter", "professional"].includes(subscription_plan)
+      ? subscription_plan
+      : "free";
+
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+
+    if (authError || !authData.user) {
+      return NextResponse.json(
+        { error: authError?.message || "Failed to create user" },
+        { status: 400 },
+      );
+    }
+
+    const userId = authData.user.id;
+
+    await supabase.from("profiles").upsert({
+      id: userId,
+      email,
+      role: "radiologist",
+      subscription_plan: plan,
+    });
+
+    await supabase.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
+
+    return NextResponse.json({ ok: true, userId });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
 export async function PUT(req: NextRequest) {
   try {
     await requireAdmin();

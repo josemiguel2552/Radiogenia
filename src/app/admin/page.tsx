@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -12,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
-  BarChart3, Trash2, UserCog, Crown, RefreshCw,
+  BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
@@ -130,6 +131,12 @@ export default function AdminPage() {
   const [editPlan, setEditPlan] = useState("");
   const [savingUser, setSavingUser] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<UserRow | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createPlan, setCreatePlan] = useState("free");
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -339,6 +346,43 @@ export default function AdminPage() {
     loadAll();
   }
 
+  async function handleCreateUser() {
+    setCreateError("");
+    if (!createEmail || !createPassword) {
+      setCreateError("Email and password are required");
+      return;
+    }
+    if (createPassword.length < 6) {
+      setCreateError("Password must be at least 6 characters");
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: createEmail,
+          password: createPassword,
+          subscription_plan: createPlan,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateError(data.error || "Failed to create user");
+      } else {
+        setCreateOpen(false);
+        setCreateEmail("");
+        setCreatePassword("");
+        setCreatePlan("free");
+        loadAll();
+      }
+    } catch {
+      setCreateError("Network error");
+    }
+    setCreatingUser(false);
+  }
+
   const radiologists = users.filter((u) => u.role !== "admin");
   const totalReports = users.reduce((s, u) => s + u.report_count, 0);
 
@@ -491,7 +535,15 @@ export default function AdminPage() {
             <div className="flex items-center gap-2 px-5 pt-5 pb-3">
               <Users className="h-4 w-4 text-blue-500" />
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">User Management</h2>
-              <Badge variant="secondary" className="ml-auto text-xs">{radiologists.length} radiologists</Badge>
+              <Badge variant="secondary" className="text-xs">{radiologists.length} radiologists</Badge>
+              <Button
+                size="sm"
+                className="ml-auto gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                onClick={() => { setCreateOpen(true); setCreateError(""); }}
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Add User
+              </Button>
             </div>
             <CardContent className="pt-0">
               <div className="overflow-x-auto">
@@ -1175,6 +1227,61 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create user dialog */}
+      <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input
+                type="email"
+                placeholder="user@example.com"
+                value={createEmail}
+                onChange={(e) => setCreateEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Password</Label>
+              <Input
+                type="password"
+                placeholder="Min. 6 characters"
+                value={createPassword}
+                onChange={(e) => setCreatePassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Plan</Label>
+              <Select value={createPlan} onValueChange={setCreatePlan}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free (50 reports/mo)</SelectItem>
+                  <SelectItem value="starter">Starter — €9.99 (150 reports/mo)</SelectItem>
+                  <SelectItem value="professional">Professional — €14.99 (400 reports/mo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {createError && (
+              <p className="text-xs text-red-500 flex items-center gap-1">
+                <X className="h-3 w-3" /> {createError}
+              </p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                onClick={handleCreateUser}
+                disabled={creatingUser}
+              >
+                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
