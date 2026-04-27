@@ -58,6 +58,8 @@ export function ModelConfigTab() {
   const [sigLabel, setSigLabel] = useState("");
   const [sigBody, setSigBody] = useState("");
   const [savingSig, setSavingSig] = useState(false);
+  const [sigError, setSigError] = useState<string | null>(null);
+  const [sigSetupNeeded, setSigSetupNeeded] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -80,7 +82,20 @@ export function ModelConfigTab() {
   const loadSignatures = useCallback(async () => {
     try {
       const res = await fetch("/api/signatures");
-      if (res.ok) setSignatures(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setSignatures(data);
+          setSigSetupNeeded(false);
+        } else if (data?.error === "SETUP_REQUIRED") {
+          setSigSetupNeeded(true);
+        }
+      } else {
+        const data = await res.json().catch(() => null);
+        if (data?.error === "SETUP_REQUIRED") {
+          setSigSetupNeeded(true);
+        }
+      }
     } catch { /* ignore */ }
   }, []);
 
@@ -137,6 +152,7 @@ export function ModelConfigTab() {
   async function handleSaveSig() {
     if (!sigLabel.trim() || !sigBody.trim()) return;
     setSavingSig(true);
+    setSigError(null);
     try {
       const res = editingSig
         ? await fetch("/api/signatures", {
@@ -150,15 +166,21 @@ export function ModelConfigTab() {
             body: JSON.stringify({ label: sigLabel, body: sigBody }),
           });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Failed" }));
-        console.error("Signature save error:", err);
+        const err = await res.json().catch(() => ({ error: "Failed to save" }));
+        if (err.error === "SETUP_REQUIRED") {
+          setSigSetupNeeded(true);
+          setSigError("Run migration 015_signatures.sql in the Supabase SQL Editor.");
+        } else {
+          setSigError(err.error || "Failed to save signature");
+        }
         setSavingSig(false);
         return;
       }
       setSigLabel(""); setSigBody(""); setShowAddSig(false); setEditingSig(null);
+      setSigError(null);
       await loadSignatures();
-    } catch (e) {
-      console.error("Signature save error:", e);
+    } catch {
+      setSigError("Network error saving signature");
     }
     setSavingSig(false);
   }
@@ -290,12 +312,21 @@ export function ModelConfigTab() {
               {t("sig.desc")}
             </p>
 
-            {signatures.length === 0 ? (
+            {sigSetupNeeded && (
+              <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">Setup required</p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                  Run migration <code className="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 rounded">015_signatures.sql</code> in the Supabase SQL Editor to enable signatures.
+                </p>
+              </div>
+            )}
+
+            {!sigSetupNeeded && signatures.length === 0 ? (
               <div className="text-center py-3">
                 <p className="text-xs text-gray-400">{t("sig.no_signatures")}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{t("sig.no_signatures_hint")}</p>
               </div>
-            ) : (
+            ) : !sigSetupNeeded && (
               <div className="space-y-1.5">
                 {signatures.map((sig) => (
                   <div
@@ -443,8 +474,11 @@ export function ModelConfigTab() {
                 </div>
               </div>
             )}
+            {sigError && (
+              <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{sigError}</p>
+            )}
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => { setShowAddSig(false); setEditingSig(null); }}>
+              <Button variant="outline" size="sm" onClick={() => { setShowAddSig(false); setEditingSig(null); setSigError(null); }}>
                 {t("cancel")}
               </Button>
               <Button size="sm" onClick={handleSaveSig} disabled={savingSig || !sigLabel.trim() || !sigBody.trim()}>
