@@ -416,7 +416,7 @@ export function TemplatesTab() {
 
       <input
         type="file"
-        accept=".docx,.doc"
+        accept=".docx,.doc,.pdf"
         ref={fileRef}
         onChange={handleWordUpload}
         className="hidden"

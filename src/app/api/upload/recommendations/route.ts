@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import mammoth from "mammoth";
+import { extractPdfText } from "@/lib/pdf-extract";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +17,6 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File;
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
-    // Parse Word or PDF
     let docText = "";
     const fileName = file.name.toLowerCase();
 
@@ -26,10 +26,7 @@ export async function POST(req: NextRequest) {
       docText = result.value;
     } else if (fileName.endsWith(".pdf")) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require("pdf-parse");
-      const pdfData = await pdfParse(buffer);
-      docText = pdfData.text;
+      docText = await extractPdfText(buffer);
     } else {
       return NextResponse.json({ error: "Unsupported file type. Use .docx or .pdf" }, { status: 400 });
     }
@@ -71,7 +68,6 @@ Return ONLY valid JSON array. Example:
       user: `Extract all recommendations from this clinical guideline document:\n\n${docText.substring(0, 20000)}`,
     });
 
-    // Parse JSON response
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return NextResponse.json({ error: "Could not parse AI response" }, { status: 500 });
 
