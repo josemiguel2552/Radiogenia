@@ -120,7 +120,12 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "help.config_desc": "En la pestaña 'Config IA' del panel lateral puedes personalizar: longitud de hallazgos, frases de normalidad preferidas, idioma de salida y modo compacto.",
     "help.legal_title": "Aviso legal",
     "help.legal_desc": "Este software es una herramienta de redacción de informes. No genera diagnósticos autónomos ni recomendaciones clínicas. Toda la responsabilidad clínica recae en el radiólogo.",
-    // Sidebar tabs
+    // Top navigation tabs
+    "nav.reports": "Informes",
+    "nav.templates": "Plantillas",
+    "nav.guidelines": "Guías clínicas",
+    "nav.config": "Configuración",
+    // Sidebar tabs (legacy keys kept for compat)
     "tab.templates": "Plantillas", "tab.guidelines": "Guías clínicas",
     "tab.config": "Config. IA", "tab.appearance": "Apariencia",
     // Templates tab
@@ -344,6 +349,12 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "help.config_desc": "In the 'AI Config' tab of the side panel you can customize: findings length, preferred normality phrases, output language, and compact mode.",
     "help.legal_title": "Legal notice",
     "help.legal_desc": "This software is a report drafting tool. It does not generate autonomous diagnoses or clinical recommendations. All clinical responsibility lies with the radiologist.",
+    // Top navigation tabs
+    "nav.reports": "Reports",
+    "nav.templates": "Templates",
+    "nav.guidelines": "Guidelines",
+    "nav.config": "Settings",
+    // Sidebar tabs (legacy keys kept for compat)
     "tab.templates": "Templates", "tab.guidelines": "Guidelines",
     "tab.config": "AI Config", "tab.appearance": "Appearance",
     "tpl.title": "Templates",

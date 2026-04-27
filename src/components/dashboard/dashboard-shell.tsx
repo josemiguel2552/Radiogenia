@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import {
   Zap,
@@ -20,8 +19,7 @@ import {
   Sun,
   FileText,
   BookOpen,
-  Cpu,
-  Palette,
+  Settings,
   Shield,
   X,
   Menu,
@@ -35,6 +33,8 @@ import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
+type ActiveView = "dashboard" | "templates" | "recommendations";
+
 const PANEL_MIN = 240;
 const PANEL_MAX = 600;
 const PANEL_DEFAULT = 320;
@@ -43,7 +43,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const router = useRouter();
   const [panelOpen, setPanelOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [mobileDrawerTab, setMobileDrawerTab] = useState("templates");
+  const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [darkMode, setDarkMode] = useState(false);
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
   const dragging = useRef(false);
@@ -62,7 +62,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     if (savedWidth) setPanelWidth(Math.max(PANEL_MIN, Math.min(PANEL_MAX, Number(savedWidth))));
   }, []);
 
-  // Lock body scroll when mobile drawer is open
   useEffect(() => {
     if (mobileDrawerOpen) {
       document.body.style.overflow = "hidden";
@@ -123,11 +122,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     localStorage.setItem("radiogenai_panel", next ? "1" : "0");
   }
 
-  function openMobileDrawer(tab?: string) {
-    if (tab) setMobileDrawerTab(tab);
-    setMobileDrawerOpen(true);
-  }
-
   const userName = user.user_metadata?.name || user.email?.split("@")[0] || "Doctor";
   const initials = userName
     .split(" ")
@@ -152,48 +146,26 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     </div>
   );
 
-  /* ── Sidebar panel content (shared between desktop & mobile drawer) ── */
-  const sidebarTabs = (
-    <Tabs value={mobileDrawerOpen ? mobileDrawerTab : undefined} defaultValue="templates" className="flex-1 flex flex-col" onValueChange={(v) => setMobileDrawerTab(v)}>
-      <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-gray-800">
-        <TabsList className="grid w-full grid-cols-4 h-9">
-          <TabsTrigger value="templates" className="text-[10px] gap-1 px-1">
-            <FileText className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{t("tab.templates")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="recommendations" className="text-[10px] gap-1 px-1">
-            <BookOpen className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{t("tab.guidelines")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="model" className="text-[10px] gap-1 px-1">
-            <Cpu className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{t("tab.config")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="text-[10px] gap-1 px-1">
-            <Palette className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{t("tab.appearance")}</span>
-          </TabsTrigger>
-        </TabsList>
-      </div>
-      <ScrollArea className="flex-1">
-        <TabsContent value="templates" className="p-4 mt-0">
-          <TemplatesTab />
-        </TabsContent>
-        <TabsContent value="recommendations" className="p-4 mt-0">
-          <RecommendationsTab />
-        </TabsContent>
-        <TabsContent value="model" className="p-4 mt-0">
+  /* ── Sidebar config panel (merged Appearance + AI Config) ── */
+  const sidebarContent = (
+    <ScrollArea className="flex-1">
+      <div className="p-4 space-y-6">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+            <Settings className="h-3.5 w-3.5" />
+            {t("nav.config")}
+          </h3>
           <ModelConfigTab />
-        </TabsContent>
-        <TabsContent value="appearance" className="p-4 mt-0">
-          <AppearanceTab />
-        </TabsContent>
-      </ScrollArea>
-    </Tabs>
+        </div>
+        <Separator />
+        <AppearanceTab />
+      </div>
+    </ScrollArea>
   );
 
   /* ── Desktop sidebar panel ────────────────────────────────── */
-  const desktopSidebarPanel = panelOpen && (
+  const showSidebar = panelOpen && activeView === "dashboard";
+  const desktopSidebarPanel = showSidebar && (
     <aside
       className="hidden md:flex shrink-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col overflow-y-auto overflow-x-hidden"
       style={{
@@ -201,11 +173,11 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         [panelSide === "right" ? "borderLeftWidth" : "borderRightWidth"]: "1px",
       }}
     >
-      {sidebarTabs}
+      {sidebarContent}
     </aside>
   );
 
-  /* ── Mobile drawer overlay ─────────────────────────────── */
+  /* ── Mobile drawer overlay (config only) ─────────────────── */
   const mobileDrawer = mobileDrawerOpen && (
     <div className="fixed inset-0 z-50 md:hidden">
       <div
@@ -214,21 +186,48 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       />
       <aside className="absolute inset-y-0 right-0 w-[85vw] max-w-[380px] bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("nav.tools")}</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("nav.config")}</span>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileDrawerOpen(false)}>
             <X className="h-4 w-4" />
           </Button>
         </div>
         <div className="flex-1 overflow-hidden flex flex-col">
-          {sidebarTabs}
+          {sidebarContent}
         </div>
       </aside>
     </div>
   );
 
+  /* ── Top navigation tabs ── */
+  const topTabs: { key: ActiveView; label: string; icon: React.ReactNode }[] = [
+    { key: "dashboard", label: t("nav.reports"), icon: <LayoutDashboard className="h-4 w-4" /> },
+    { key: "templates", label: t("nav.templates"), icon: <FileText className="h-4 w-4" /> },
+    { key: "recommendations", label: t("nav.guidelines"), icon: <BookOpen className="h-4 w-4" /> },
+  ];
+
+  /* ── Main content based on active view ── */
+  const mainContent = (() => {
+    switch (activeView) {
+      case "templates":
+        return (
+          <div className="max-w-4xl mx-auto">
+            <TemplatesTab />
+          </div>
+        );
+      case "recommendations":
+        return (
+          <div className="max-w-4xl mx-auto">
+            <RecommendationsTab />
+          </div>
+        );
+      default:
+        return children;
+    }
+  })();
+
   return (
     <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-gray-50 dark:bg-gray-950">
-      {/* Desktop left rail — hidden on mobile */}
+      {/* Desktop left rail */}
       <aside className="hidden md:flex w-14 bg-gray-900 dark:bg-black flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
         <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center shadow-lg`}>
           <Zap className="h-4.5 w-4.5 text-white" />
@@ -236,8 +235,31 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
         <Separator className="bg-gray-800 w-8" />
 
-        <Button variant="ghost" size="icon" className="text-brand hover:bg-gray-800 hover:text-white rounded-lg h-9 w-9" title={t("nav.dashboard")}>
+        <Button
+          variant="ghost" size="icon"
+          className={`rounded-lg h-9 w-9 ${activeView === "dashboard" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
+          onClick={() => setActiveView("dashboard")}
+          title={t("nav.reports")}
+        >
           <LayoutDashboard className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="ghost" size="icon"
+          className={`rounded-lg h-9 w-9 ${activeView === "templates" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
+          onClick={() => setActiveView("templates")}
+          title={t("nav.templates")}
+        >
+          <FileText className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="ghost" size="icon"
+          className={`rounded-lg h-9 w-9 ${activeView === "recommendations" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
+          onClick={() => setActiveView("recommendations")}
+          title={t("nav.guidelines")}
+        >
+          <BookOpen className="h-5 w-5" />
         </Button>
 
         {role === "admin" && (
@@ -258,11 +280,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           {darkMode ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
         </Button>
 
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={togglePanel}
-          title={panelOpen ? t("nav.hide_panel") : t("nav.show_panel")}
-        >
-          {panelOpen ? <PanelCloseIcon className="h-4.5 w-4.5" /> : <PanelOpenIcon className="h-4.5 w-4.5" />}
-        </Button>
+        {activeView === "dashboard" && (
+          <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={togglePanel}
+            title={panelOpen ? t("nav.hide_panel") : t("nav.show_panel")}
+          >
+            {panelOpen ? <PanelCloseIcon className="h-4.5 w-4.5" /> : <PanelOpenIcon className="h-4.5 w-4.5" />}
+          </Button>
+        )}
 
         <Separator className="bg-gray-800 w-8" />
 
@@ -280,15 +304,14 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
       {/* Desktop panel on the left (if configured) */}
       {panelSide === "left" && desktopSidebarPanel}
-      {panelSide === "left" && panelOpen && resizeHandle}
+      {panelSide === "left" && showSidebar && resizeHandle}
 
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0">
-        {/* Mobile header */}
+        {/* Header with top tabs */}
         <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-6xl mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              {/* Mobile logo — small inline */}
               <div className={`md:hidden h-7 w-7 rounded-lg bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center shadow-sm flex-shrink-0`}>
                 <Zap className="h-3.5 w-3.5 text-white" />
               </div>
@@ -301,55 +324,79 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                 </p>
               </div>
             </div>
+
+            {/* Desktop top tabs */}
+            <nav className="hidden md:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              {topTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveView(tab.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    activeView === tab.key
+                      ? "bg-white dark:bg-gray-900 text-brand shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              {/* Desktop: show panel toggle when panel closed */}
-              {!panelOpen && (
+              {activeView === "dashboard" && !panelOpen && (
                 <Button variant="outline" size="sm" onClick={togglePanel} className="gap-1.5 text-xs hidden md:flex">
                   <PanelOpenIcon className="h-3.5 w-3.5" />
-                  {t("nav.tools")}
+                  {t("nav.config")}
                 </Button>
               )}
-              {/* Mobile: tools button */}
-              <Button variant="outline" size="sm" onClick={() => openMobileDrawer()} className="gap-1.5 text-xs md:hidden h-8">
-                <Menu className="h-3.5 w-3.5" />
-                {t("nav.tools")}
+              <Button variant="outline" size="sm" onClick={() => setMobileDrawerOpen(true)} className="gap-1.5 text-xs md:hidden h-8">
+                <Settings className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
         </header>
 
-        <div className="p-3 md:p-6 max-w-6xl mx-auto">{children}</div>
+        <div className="p-3 md:p-6 max-w-6xl mx-auto">{mainContent}</div>
       </main>
 
       {/* Desktop panel on the right (if configured) */}
-      {panelSide === "right" && panelOpen && resizeHandle}
+      {panelSide === "right" && showSidebar && resizeHandle}
       {panelSide === "right" && desktopSidebarPanel}
 
       {/* ── Mobile bottom navigation ── */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 safe-area-bottom">
         <div className="flex items-center justify-around h-14 px-2">
           <button
-            className="flex flex-col items-center gap-0.5 text-brand py-1.5 px-3 min-w-[56px]"
-            title={t("nav.dashboard")}
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}
+            onClick={() => setActiveView("dashboard")}
           >
             <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[9px] font-medium">{t("nav.dashboard")}</span>
+            <span className="text-[9px] font-medium">{t("nav.reports")}</span>
           </button>
 
           <button
-            className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
-            onClick={() => openMobileDrawer("templates")}
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "templates" ? "text-brand" : "text-gray-500"}`}
+            onClick={() => setActiveView("templates")}
           >
             <FileText className="h-5 w-5" />
-            <span className="text-[9px]">{t("tab.templates")}</span>
+            <span className="text-[9px]">{t("nav.templates")}</span>
+          </button>
+
+          <button
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
+            onClick={() => setActiveView("recommendations")}
+          >
+            <BookOpen className="h-5 w-5" />
+            <span className="text-[9px]">{t("nav.guidelines")}</span>
           </button>
 
           <button
             className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
-            onClick={() => openMobileDrawer("model")}
+            onClick={() => setMobileDrawerOpen(true)}
           >
-            <Cpu className="h-5 w-5" />
-            <span className="text-[9px]">{t("tab.config")}</span>
+            <Settings className="h-5 w-5" />
+            <span className="text-[9px]">{t("nav.config")}</span>
           </button>
 
           {role === "admin" && (
@@ -364,14 +411,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
           <button
             className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
-            onClick={toggleDark}
-          >
-            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            <span className="text-[9px]">{darkMode ? "Light" : "Dark"}</span>
-          </button>
-
-          <button
-            className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
@@ -380,7 +419,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         </div>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer (config only) */}
       {mobileDrawer}
     </div>
   );
