@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, report_id, provider, model, duration_ms, had_corrections, metadata } = body;
 
-    const validActions = ["generate_findings", "generate_conclusion", "save_report", "report_error"];
+    const validActions = ["generate_findings", "generate_conclusion", "save_report", "report_error", "correction_logged"];
     if (!action || !validActions.includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }

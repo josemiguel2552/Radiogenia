@@ -99,6 +99,7 @@ export function DashboardContent() {
   const [generationDurationMs, setGenerationDurationMs] = useState<number | null>(null);
   const [lastSavedReportId, setLastSavedReportId] = useState<string | null>(null);
   const reportDirtyRef = useRef(false);
+  const correctionLoggedRef = useRef(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
@@ -163,10 +164,9 @@ export function DashboardContent() {
   useEffect(() => {
     function handleVisibility() {
       if (document.visibilityState === "hidden" && lastSavedReportId && reportDirtyRef.current) {
-        const hadCorrections = !!(
-          (initialFindings && findings !== initialFindings) ||
-          (initialConclusion && conclusion !== initialConclusion)
-        );
+        const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
+        const findingsChanged = !!(initialFindings && findings !== initialFindings);
+        const hadCorrections = conclusionChanged || findingsChanged;
         reportDirtyRef.current = false;
         navigator.sendBeacon(
           "/api/reports",
@@ -178,11 +178,34 @@ export function DashboardContent() {
             had_corrections: hadCorrections,
           })], { type: "application/json" }),
         );
+
+        if (hadCorrections && !correctionLoggedRef.current) {
+          correctionLoggedRef.current = true;
+          const tpl = templates.find((t) => t.id === selectedTemplateId);
+          navigator.sendBeacon(
+            "/api/audit-logs",
+            new Blob([JSON.stringify({
+              action: "correction_logged",
+              report_id: lastSavedReportId,
+              had_corrections: true,
+              metadata: {
+                study_type: tpl?.name || "",
+                modality: tpl?.modality || "",
+                conclusion_changed: conclusionChanged,
+                findings_changed: findingsChanged,
+                original_conclusion: initialConclusion || "",
+                corrected_conclusion: conclusionChanged ? conclusion : "",
+                original_findings: findingsChanged ? (initialFindings || "").slice(0, 3000) : "",
+                corrected_findings: findingsChanged ? (findings || "").slice(0, 3000) : "",
+              },
+            })], { type: "application/json" }),
+          );
+        }
       }
     }
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, [lastSavedReportId, findings, conclusion, initialFindings, initialConclusion]);
+  }, [lastSavedReportId, findings, conclusion, initialFindings, initialConclusion, templates, selectedTemplateId]);
 
   // Load draft on mount — discard if older than 15 minutes
   useEffect(() => {
@@ -260,6 +283,7 @@ export function DashboardContent() {
     generateStartRef.current = Date.now();
     setGenerationDurationMs(null);
     setLastSavedReportId(null);
+    correctionLoggedRef.current = false;
     setErrorReported(false);
     setLoadingFindings(true);
     setLoadingConclusion(true);
@@ -700,10 +724,9 @@ export function DashboardContent() {
   async function flushCorrections() {
     if (!lastSavedReportId || !reportDirtyRef.current) return;
 
-    const hadCorrections = !!(
-      (initialFindings && findings !== initialFindings) ||
-      (initialConclusion && conclusion !== initialConclusion)
-    );
+    const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
+    const findingsChanged = !!(initialFindings && findings !== initialFindings);
+    const hadCorrections = conclusionChanged || findingsChanged;
 
     reportDirtyRef.current = false;
     try {
@@ -718,6 +741,31 @@ export function DashboardContent() {
         }),
       });
     } catch { /* non-critical */ }
+
+    if (hadCorrections && !correctionLoggedRef.current) {
+      correctionLoggedRef.current = true;
+      try {
+        await fetch("/api/audit-logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "correction_logged",
+            report_id: lastSavedReportId,
+            had_corrections: true,
+            metadata: {
+              study_type: selectedTemplate?.name || "",
+              modality: selectedTemplate?.modality || "",
+              conclusion_changed: conclusionChanged,
+              findings_changed: findingsChanged,
+              original_conclusion: initialConclusion || "",
+              corrected_conclusion: conclusionChanged ? conclusion : "",
+              original_findings: findingsChanged ? initialFindings?.slice(0, 3000) : "",
+              corrected_findings: findingsChanged ? findings?.slice(0, 3000) : "",
+            },
+          }),
+        });
+      } catch { /* non-critical */ }
+    }
   }
 
   async function startNewReport() {
@@ -742,6 +790,7 @@ export function DashboardContent() {
     setGenerationDurationMs(null);
     setLastSavedReportId(null);
     setErrorReported(false);
+    correctionLoggedRef.current = false;
     localStorage.removeItem("radiogenai_draft");
   }
 

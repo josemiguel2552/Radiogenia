@@ -1276,7 +1276,7 @@ export default function AdminPage() {
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
                 <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
                 <div className="ml-auto flex gap-1">
-                  {["all", "generate_findings", "generate_conclusion", "save_report", "report_error"].map((f) => (
+                  {["all", "generate_findings", "generate_conclusion", "correction_logged", "save_report", "report_error"].map((f) => (
                     <Button
                       key={f}
                       variant={auditFilter === f ? "default" : "outline"}
@@ -1284,7 +1284,7 @@ export default function AdminPage() {
                       className="h-7 text-xs"
                       onClick={() => setAuditFilter(f)}
                     >
-                      {f === "all" ? "All" : f === "generate_findings" ? "Findings" : f === "generate_conclusion" ? "Conclusions" : f === "save_report" ? "Saves" : "Errors"}
+                      {f === "all" ? "All" : f === "generate_findings" ? "Findings" : f === "generate_conclusion" ? "Conclusions" : f === "correction_logged" ? "Corrections" : f === "save_report" ? "Saves" : "Errors"}
                     </Button>
                   ))}
                 </div>
@@ -1307,7 +1307,8 @@ export default function AdminPage() {
                         .filter((l) => auditFilter === "all" || l.action === auditFilter)
                         .map((log) => {
                         const meta = log.metadata as Record<string, unknown>;
-                        const hasDetail = !!(meta?.raw_dictation || meta?.generated_findings || meta?.note);
+                        const isCorrection = log.action === "correction_logged";
+                        const hasDetail = !!(meta?.raw_dictation || meta?.generated_findings || meta?.note || isCorrection);
                         const hasTraceIssues = (Number(meta?.trace_unmatched) || 0) > 0 || (Number(meta?.trace_hallucinations) || 0) > 0;
                         const isExpanded = expandedAuditId === log.id;
                         return (
@@ -1328,13 +1329,19 @@ export default function AdminPage() {
                               <span className="py-2.5 px-2 shrink-0">
                                 <Badge
                                   variant={log.action === "report_error" ? "destructive" : "secondary"}
-                                  className="text-[10px]"
+                                  className={`text-[10px] ${isCorrection ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : ""}`}
                                 >
                                   {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
-                                  {log.action.replace(/_/g, " ")}
+                                  {isCorrection ? "correction" : log.action.replace(/_/g, " ")}
                                 </Badge>
-                                {log.had_corrections && (
+                                {log.had_corrections && !isCorrection && (
                                   <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                                )}
+                                {isCorrection && !!meta?.conclusion_changed && (
+                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">conclusion</Badge>
+                                )}
+                                {isCorrection && !!meta?.findings_changed && (
+                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">findings</Badge>
                                 )}
                               </span>
                               <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:inline w-[140px] shrink-0">
@@ -1346,6 +1353,12 @@ export default function AdminPage() {
                               <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 flex-1 min-w-0 truncate">
                                 {(() => {
                                   if (log.action === "report_error" && meta?.note) return String(meta.note);
+                                  if (isCorrection) {
+                                    const parts: string[] = [];
+                                    if (meta?.study_type) parts.push(String(meta.study_type));
+                                    if (meta?.modality) parts.push(String(meta.modality));
+                                    return parts.length > 0 ? parts.join(" · ") : "Radiologist correction";
+                                  }
                                   const parts: string[] = [];
                                   if (meta?.study_type) parts.push(String(meta.study_type));
                                   if (typeof meta?.trace_mappings === "number") {
@@ -1403,12 +1416,46 @@ export default function AdminPage() {
                                   </div>
                                 )}
 
-                                {!!meta?.generated_conclusion && (
+                                {!!meta?.generated_conclusion && !isCorrection && (
                                   <div>
                                     <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">Generated conclusion</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.generated_conclusion)}
                                     </pre>
+                                  </div>
+                                )}
+
+                                {isCorrection && !!meta?.conclusion_changed && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original conclusion (AI)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.original_conclusion || "—")}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Corrected conclusion (radiologist)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-blue-200 dark:border-blue-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.corrected_conclusion || "—")}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {isCorrection && !!meta?.findings_changed && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original findings (AI)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.original_findings || "—")}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">Corrected findings (radiologist)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-purple-200 dark:border-purple-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.corrected_findings || "—")}
+                                      </pre>
+                                    </div>
                                   </div>
                                 )}
                               </div>
