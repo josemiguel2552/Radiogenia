@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, checkDictationLimit } from "@/lib/auth-helpers";
+import { getWhisperPrompt } from "@/lib/whisper-prompts";
+import { postprocessWhisper } from "@/lib/whisper-postprocess";
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,7 +61,15 @@ export async function POST(req: NextRequest) {
     whisperForm.append("response_format", "text");
     whisperForm.append("temperature", "0");
     if (language) whisperForm.append("language", language);
-    if (context) whisperForm.append("prompt", context);
+
+    // Construct prompt: prior transcript first (continuation context),
+    // domain vocabulary LAST so it falls within Whisper's 224-token window.
+    const domainPrompt = getWhisperPrompt(language || "es");
+    const priorContext = context ? context.slice(-200) : "";
+    const whisperPrompt = priorContext
+      ? `${priorContext}\n${domainPrompt}`
+      : domainPrompt;
+    whisperForm.append("prompt", whisperPrompt);
 
     const res = await fetch(`${baseUrl}/audio/transcriptions`, {
       method: "POST",
@@ -89,9 +99,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const text = await res.text();
+    const rawText = await res.text();
+    const text = postprocessWhisper(rawText);
     return NextResponse.json({
-      text: text.trim(),
+      text,
       dictation: {
         usedSeconds: quota.usedSeconds + Math.ceil(durationSeconds),
         limitSeconds: quota.limitSeconds,

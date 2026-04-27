@@ -1,42 +1,43 @@
 /**
- * Rich domain-specific prompts for Whisper.
- * Whisper uses the `prompt` parameter as conditioning text — including
- * real vocabulary dramatically improves recognition of technical terms.
+ * Compact domain-specific prompts for Whisper.
+ *
+ * Whisper uses the `prompt` parameter as conditioning text and truncates
+ * to the LAST 224 tokens. These prompts are kept short (~150 tokens)
+ * and placed AFTER prior-transcript context on the server, so they
+ * always fall within the surviving window.
+ *
+ * Focus: dense pathological vocabulary that Whisper commonly mangles.
  */
 
-const PROMPT_ES = `Informe de radiología. Dictado médico en español con terminología radiológica. Transcribir exclusivamente en español.
+const PROMPT_ES = `Informe de radiología. Dictado médico en español.
+colelitiasis, colecistitis, coledocolitiasis, hepatomegalia, esteatosis, cirrosis, esplenomegalia, hidronefrosis, nefrolitiasis, diverticulosis, diverticulitis, linfadenopatía, apendicitis, ascitis, pancreatitis.
+atelectasia, consolidación, derrame pleural, neumotórax, bronquiectasias, enfisema, derrame pericárdico, cardiomegalia, tromboembolismo pulmonar.
+estenosis, trombosis, aneurisma, calcificación, aterosclerosis, disección, oclusión.
+espondilosis, espondilolistesis, hernia discal, protrusión, extrusión, osteofito, estenosis foraminal, fractura, subluxación.
+rotura meniscal, ligamento cruzado, ligamento colateral, tendinopatía, bursitis, condromalacia.
+subfrénico, periesplénico, perihepático, perirrenal, retroperitoneal, mesentérico, intraperitoneal.
+TC, RM, ecografía, FLAIR, T1, T2, difusión, ADC, gadolinio, Hounsfield.
+hipointenso, hiperintenso, hipoecoico, hiperecoico, anecoico, heterogéneo, homogéneo, diferenciación corticomedular.`;
 
-Hígado de tamaño normal, ecoestructura homogénea, sin lesiones focales. Vesícula biliar normodistendida, de paredes finas, sin litiasis. Vía biliar no dilatada. Páncreas de morfología normal, sin alteraciones. Bazo homogéneo, de tamaño normal. Riñones de tamaño y morfología normales, con buena diferenciación corticomedular, sin ectasia piélica ni litiasis. Aorta abdominal de calibre normal. No se observa líquido libre intraperitoneal.
+const PROMPT_EN = `Radiology report. Medical dictation in English.
+cholelithiasis, cholecystitis, choledocholithiasis, hepatomegaly, steatosis, cirrhosis, splenomegaly, hydronephrosis, nephrolithiasis, diverticulosis, diverticulitis, lymphadenopathy, appendicitis, ascites, pancreatitis.
+atelectasis, consolidation, pleural effusion, pneumothorax, bronchiectasis, emphysema, pericardial effusion, cardiomegaly, pulmonary embolism, ground-glass opacity.
+stenosis, thrombosis, aneurysm, calcification, atherosclerosis, dissection, occlusion.
+spondylosis, spondylolisthesis, disc herniation, protrusion, extrusion, osteophyte, foraminal stenosis, fracture, subluxation.
+meniscal tear, cruciate ligament, collateral ligament, tendinopathy, bursitis, chondromalacia.
+subphrenic, perisplenic, perihepatic, perinephric, retroperitoneal, mesenteric, intraperitoneal.
+CT, MRI, ultrasound, FLAIR, T1-weighted, T2-weighted, diffusion-weighted, ADC, gadolinium, Hounsfield units.
+hypointense, hyperintense, hypoechoic, hyperechoic, anechoic, heterogeneous, homogeneous, corticomedullary differentiation.`;
 
-Parénquima pulmonar sin consolidaciones ni infiltrados. No se observan nódulos pulmonares. Mediastino sin adenopatías significativas. Silueta cardíaca de tamaño normal. No hay derrame pleural ni pericárdico. Estructuras vasculares de calibre normal. Tráquea y bronquios principales permeables.
-
-Cerebro de morfología normal. Sistema ventricular de tamaño y configuración normales. No se observan lesiones intra ni extraaxiales. Estructuras de la línea media centradas. Fosa posterior sin alteraciones. Senos paranasales y celdillas mastoideas neumatizados.
-
-Columna vertebral con altura y señal de los cuerpos vertebrales conservadas. Discos intervertebrales sin protrusiones significativas. Canal raquídeo de amplitud normal. Médula espinal de señal normal.
-
-Articulación de morfología conservada. Superficies articulares congruentes. Ligamentos íntegros. Meniscos de morfología y señal normales. No se observa derrame articular significativo.
-
-TC, RM, RX, ecografía, mamografía, densitometría, PET-TC, angio-TC, angio-RM, TCMD. Axial, coronal, sagital, T1, T2, FLAIR, difusión, ADC, contraste intravenoso, gadolinio, secuencias potenciadas. Hipointenso, hiperintenso, isointenso, hipoecoico, hiperecoico, anecoico. Milímetros, centímetros, Hounsfield.`;
-
-const PROMPT_EN = `Radiology report. Medical dictation in English with radiological terminology. Transcribe exclusively in English.
-
-Liver is normal in size with homogeneous echotexture, no focal lesions identified. Gallbladder is normally distended with thin walls, no cholelithiasis. Common bile duct is not dilated. Pancreas is normal in morphology without abnormality. Spleen is homogeneous and normal in size. Kidneys are normal in size and morphology with good corticomedullary differentiation, no hydronephrosis or nephrolithiasis. Abdominal aorta is normal in caliber. No free intraperitoneal fluid.
-
-Lung parenchyma is clear without consolidation or infiltrates. No pulmonary nodules identified. Mediastinum without significant lymphadenopathy. Cardiac silhouette is normal in size. No pleural or pericardial effusion. Vascular structures are normal in caliber. Trachea and main bronchi are patent.
-
-Brain is normal in morphology. Ventricular system is normal in size and configuration. No intra-axial or extra-axial lesions identified. Midline structures are central. Posterior fossa without abnormality. Paranasal sinuses and mastoid air cells are well pneumatized.
-
-Vertebral column with preserved vertebral body height and signal. Intervertebral discs without significant protrusions. Spinal canal is normal in caliber. Spinal cord signal is normal.
-
-Joint morphology is preserved. Articular surfaces are congruent. Ligaments are intact. Menisci are normal in morphology and signal. No significant joint effusion.
-
-CT, MRI, radiograph, ultrasound, mammography, DEXA, PET-CT, CTA, MRA, MDCT. Axial, coronal, sagittal, T1-weighted, T2-weighted, FLAIR, diffusion, ADC, intravenous contrast, gadolinium. Hypointense, hyperintense, isointense, hypoechoic, hyperechoic, anechoic. Millimeters, centimeters, Hounsfield units.`;
-
-const PROMPT_PT = `Relatório de radiologia. Ditado médico em português com terminologia radiológica. Transcrever exclusivamente em português.
-
-Fígado de dimensões normais, ecoestrutura homogénea, sem lesões focais. Vesícula biliar normodistendida, paredes finas, sem litíase. Via biliar não dilatada. Pâncreas de morfologia normal. Baço homogéneo, de dimensões normais. Rins de dimensões e morfologia normais, boa diferenciação corticomedular, sem ectasia piélica nem litíase. Aorta abdominal de calibre normal. Sem líquido livre intraperitoneal.
-
-TC, RM, RX, ecografia, mamografia, densitometria, PET-TC, angio-TC. Axial, coronal, sagital, T1, T2, FLAIR, difusão, ADC, contraste endovenoso, gadolínio. Hipointenso, hiperintenso, isointenso. Milímetros, centímetros, Hounsfield.`;
+const PROMPT_PT = `Relatório de radiologia. Ditado médico em português.
+colelitíase, colecistite, coledocolitíase, hepatomegalia, esteatose, cirrose, esplenomegalia, hidronefrose, nefrolitíase, diverticulose, diverticulite, linfadenopatia, apendicite, ascite, pancreatite.
+atelectasia, consolidação, derrame pleural, pneumotórax, bronquiectasias, enfisema, derrame pericárdico, cardiomegalia, tromboembolismo pulmonar.
+estenose, trombose, aneurisma, calcificação, aterosclerose, dissecção, oclusão.
+espondilose, espondilolistese, hérnia discal, protrusão, extrusão, osteófito, estenose foraminal, fratura, subluxação.
+rotura meniscal, ligamento cruzado, ligamento colateral, tendinopatia, bursite, condromalácia.
+subfrénico, periesplénico, peri-hepático, perirrenal, retroperitoneal, mesentérico, intraperitoneal.
+TC, RM, ecografia, FLAIR, T1, T2, difusão, ADC, gadolínio, Hounsfield.
+hipointenso, hiperintenso, hipoecóico, hiperecóico, anecóico, heterogéneo, homogéneo, diferenciação corticomedular.`;
 
 const PROMPTS: Record<string, string> = {
   es: PROMPT_ES,
