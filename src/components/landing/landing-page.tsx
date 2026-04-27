@@ -4,9 +4,10 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Mic, FileText, Brain, Sparkles, Layout, Shield,
-  ChevronRight, Check, Zap, ArrowRight,
+  ChevronRight, Check, ArrowRight,
 } from "lucide-react";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
+import { Logo } from "@/components/ui/logo";
 
 function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -85,12 +86,7 @@ export function LandingPage() {
       >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center shadow-lg shadow-teal-500/20">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-lg font-bold tracking-tight">
-              Radiogen<span className="text-teal-400">.AI</span>
-            </span>
+            <Logo size="md" forceDark />
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -307,14 +303,7 @@ export function LandingPage() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/5 py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center">
-              <Zap className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold">
-              Radiogen<span className="text-teal-500">.AI</span>
-            </span>
-          </div>
+          <Logo size="sm" forceDark />
           <div className="flex items-center gap-6 text-xs text-gray-500">
             <a href="#features" className="hover:text-gray-300 transition-colors">Features</a>
             <a href="#pricing" className="hover:text-gray-300 transition-colors">Pricing</a>

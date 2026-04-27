@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Loader2, ArrowLeft, Mail } from "lucide-react";
+import { Loader2, ArrowLeft, Mail } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -35,15 +36,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
       <div className="w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">
-              Radiogen<span className="text-teal-400">.AI</span>
-            </span>
-          </div>
+        <div className="flex justify-center">
+          <Logo size="md" forceDark />
         </div>
 
         {sent ? (

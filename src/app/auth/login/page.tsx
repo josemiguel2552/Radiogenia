@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,13 +48,8 @@ export default function LoginPage() {
         <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px] animate-float-slow" />
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[100px] animate-float-slower" />
         <div className="relative z-10 max-w-md text-center px-8">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center shadow-xl shadow-teal-500/25">
-              <Zap className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-3xl font-bold text-white tracking-tight">
-              Radiogen<span className="text-teal-400">.AI</span>
-            </span>
+          <div className="flex items-center justify-center mb-8">
+            <Logo size="lg" forceDark />
           </div>
           <p className="text-lg text-gray-300 leading-relaxed">
             AI-powered radiology reporting.
@@ -67,15 +63,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
-          <div className="flex lg:hidden flex-col items-center gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center">
-                <Zap className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">
-                Radiogen<span className="text-teal-400">.AI</span>
-              </span>
-            </div>
+          <div className="flex lg:hidden justify-center mb-4">
+            <Logo size="md" forceDark />
           </div>
 
           <div>

@@ -3,10 +3,11 @@
 interface LogoProps {
   size?: "sm" | "md" | "lg";
   variant?: "full" | "icon";
+  forceDark?: boolean;
   className?: string;
 }
 
-export function Logo({ size = "md", variant = "full", className = "" }: LogoProps) {
+export function Logo({ size = "md", variant = "full", forceDark = false, className = "" }: LogoProps) {
   const sizes = {
     sm: { icon: 20, text: "text-sm", gap: "gap-1.5" },
     md: { icon: 24, text: "text-lg", gap: "gap-2" },
@@ -23,9 +24,7 @@ export function Logo({ size = "md", variant = "full", className = "" }: LogoProp
       xmlns="http://www.w3.org/2000/svg"
       className="flex-shrink-0"
     >
-      {/* Rounded square background */}
       <rect width="32" height="32" rx="7" fill="url(#logo-grad)" />
-      {/* Stylised "R" letterform with scan-line motif */}
       <path
         d="M10 8h7a5 5 0 0 1 0 10h-3l5 6"
         stroke="white"
@@ -35,7 +34,6 @@ export function Logo({ size = "md", variant = "full", className = "" }: LogoProp
         fill="none"
       />
       <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round" />
-      {/* AI dot accent */}
       <circle cx="24" cy="24" r="2.2" fill="#5EEAD4" />
       <defs>
         <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
@@ -48,12 +46,15 @@ export function Logo({ size = "md", variant = "full", className = "" }: LogoProp
 
   if (variant === "icon") return <span className={className}>{icon}</span>;
 
+  const textColor = forceDark ? "text-white" : "text-[#1E3A5F] dark:text-white";
+  const accentColor = forceDark ? "text-teal-400" : "text-teal-600 dark:text-teal-400";
+
   return (
     <span className={`inline-flex items-center ${s.gap} ${className}`}>
       {icon}
       <span className={`${s.text} font-bold tracking-tight`}>
-        <span className="text-[#1E3A5F] dark:text-white">Radiogen</span>
-        <span className="text-teal-600 dark:text-teal-400">.AI</span>
+        <span className={textColor}>Radiogen</span>
+        <span className={accentColor}>.AI</span>
       </span>
     </span>
   );
