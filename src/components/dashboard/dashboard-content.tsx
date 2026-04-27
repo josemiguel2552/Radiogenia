@@ -552,8 +552,8 @@ export function DashboardContent() {
     setTimeout(() => setCopied(null), 2000);
   }
 
-  function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
-    flushCorrections();
+  async function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
+    await flushCorrections();
     const title = getStudyTitle();
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);

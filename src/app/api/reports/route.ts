@@ -246,12 +246,20 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       delete reportRow.clinical_context;
-      delete reportRow.initial_findings_text;
-      delete reportRow.initial_conclusion_text;
       delete reportRow.generation_duration_ms;
       delete reportRow.provider_used;
       delete reportRow.model_used;
       delete reportRow.had_corrections;
+      ({ data, error } = await supabase
+        .from("reports")
+        .insert(reportRow)
+        .select()
+        .single());
+    }
+
+    if (error) {
+      delete reportRow.initial_findings_text;
+      delete reportRow.initial_conclusion_text;
       ({ data, error } = await supabase
         .from("reports")
         .insert(reportRow)

@@ -242,6 +242,13 @@ export default function AdminPage() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  useEffect(() => {
+    if (tab === "audit" && trainingData.length === 0 && !trainingLoading) {
+      loadTrainingData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
   async function handleSaveConfig() {
     setSaving(true);
     setConfigError("");
@@ -1381,10 +1388,15 @@ export default function AdminPage() {
                 </div>
               </div>
               <CardContent className="pt-0">
-                {trainingData.length === 0 ? (
+                {trainingLoading ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400 mb-2" />
+                    <p className="text-xs text-gray-400">Loading training data...</p>
+                  </div>
+                ) : trainingData.length === 0 ? (
                   <div className="text-center py-8 text-gray-400 text-xs">
                     <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    Press &quot;Load&quot; to fetch report data for training evaluation
+                    No training data yet — reports are saved automatically when radiologists generate reports
                   </div>
                 ) : (
                   <div className="space-y-2">

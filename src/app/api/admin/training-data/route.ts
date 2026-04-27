@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 
+const FULL_COLUMNS =
+  "id, user_id, study_type, modality, contrast_option, raw_dictation, clinical_context, " +
+  "findings_text, conclusion_text, recommendations_text, " +
+  "initial_findings_text, initial_conclusion_text, " +
+  "generation_duration_ms, provider_used, model_used, had_corrections, " +
+  "error_reported, error_report_note, created_at";
+
+const MID_COLUMNS =
+  "id, user_id, study_type, modality, contrast_option, raw_dictation, " +
+  "findings_text, conclusion_text, recommendations_text, " +
+  "initial_findings_text, initial_conclusion_text, created_at";
+
+const MIN_COLUMNS =
+  "id, user_id, study_type, modality, contrast_option, raw_dictation, " +
+  "findings_text, conclusion_text, recommendations_text, created_at";
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
@@ -13,54 +29,42 @@ export async function GET(req: NextRequest) {
     const correctionsOnly = url.searchParams.get("corrections_only") === "true";
     const limit = Math.min(Number(url.searchParams.get("limit")) || 100, 500);
 
-    let query = supabase
-      .from("reports")
-      .select(
-        "id, user_id, study_type, modality, contrast_option, raw_dictation, clinical_context, " +
-        "findings_text, conclusion_text, recommendations_text, " +
-        "initial_findings_text, initial_conclusion_text, " +
-        "generation_duration_ms, provider_used, model_used, had_corrections, " +
-        "error_reported, error_report_note, created_at"
-      )
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    let rows: Record<string, unknown>[] | null = null;
 
-    if (modality) query = query.eq("modality", modality);
-    if (correctionsOnly) query = query.eq("had_corrections", true);
+    for (const cols of [FULL_COLUMNS, MID_COLUMNS, MIN_COLUMNS]) {
+      let query = supabase
+        .from("reports")
+        .select(cols)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-    const { data: reports, error } = await query;
-    if (error) {
-      if (error.message?.includes("initial_") || error.message?.includes("generation_")) {
-        let fallbackQuery = supabase
-          .from("reports")
-          .select(
-            "id, user_id, study_type, modality, contrast_option, raw_dictation, " +
-            "findings_text, conclusion_text, recommendations_text, created_at"
-          )
-          .order("created_at", { ascending: false })
-          .limit(limit);
-        if (modality) fallbackQuery = fallbackQuery.eq("modality", modality);
-        const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-        if (fallbackError) return NextResponse.json({ error: fallbackError.message }, { status: 500 });
-        const fb = (fallbackData || []) as unknown as Record<string, unknown>[];
-        if (format === "jsonl") return exportJsonl(fb);
-        return NextResponse.json({ reports: fb, total: fb.length });
+      if (modality) query = query.eq("modality", modality);
+      if (correctionsOnly && cols.includes("had_corrections")) {
+        query = query.eq("had_corrections", true);
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+
+      const { data, error } = await query;
+      if (!error) {
+        rows = (data || []) as unknown as Record<string, unknown>[];
+        break;
+      }
     }
 
-    const rows = (reports || []) as unknown as Record<string, unknown>[];
+    if (!rows) {
+      return NextResponse.json({ reports: [], total: 0 });
+    }
+
     const userIds = [...new Set(rows.map((r) => r.user_id as string))];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, email, name")
-      .in("id", userIds);
+      .in("id", userIds.length > 0 ? userIds : ["__none__"]);
 
     const profileMap = new Map(
       (profiles || []).map((p: { id: string; email: string; name: string }) => [p.id, p]),
     );
 
-    const enriched = rows.map((r: Record<string, unknown>) => ({
+    const enriched = rows.map((r) => ({
       ...r,
       user_email: (profileMap.get(r.user_id as string) as { email?: string })?.email || null,
       user_name: (profileMap.get(r.user_id as string) as { name?: string })?.name || null,
