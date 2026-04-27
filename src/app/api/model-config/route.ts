@@ -34,6 +34,7 @@ export async function GET() {
     if (data) {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
       if (data.compact_normals === undefined) data.compact_normals = false;
+      if (!data.dictation_language) data.dictation_language = "auto";
     }
 
     const role = await getUserRole(user.id);
@@ -87,6 +88,7 @@ export async function PUT(req: NextRequest) {
 
     if (result.error?.message?.includes("column")) {
       delete body.compact_normals;
+      delete body.dictation_language;
       result = await service
         .from("user_model_config")
         .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })

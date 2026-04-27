@@ -128,6 +128,7 @@ export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
 export type ParaphraseLevel = "none" | "light" | "free";
 export type OutputLanguage = "es" | "en" | "pt" | "fr" | "de" | "it";
+export type DictationLanguage = OutputLanguage | "auto";
 
 export interface UserModelConfig {
   id: string;
@@ -140,6 +141,7 @@ export interface UserModelConfig {
   normal_fields_verbosity: NormalFieldsVerbosity;
   paraphrase_level: ParaphraseLevel;
   output_language: OutputLanguage;
+  dictation_language: DictationLanguage;
   style_learning_enabled: boolean;
   style_sample_count: number;
   few_shot_count: number;
@@ -238,4 +240,9 @@ export const LANGUAGES: { value: OutputLanguage; label: string }[] = [
   { value: "fr", label: "Français" },
   { value: "de", label: "Deutsch" },
   { value: "it", label: "Italiano" },
+];
+
+export const DICTATION_LANGUAGES: { value: DictationLanguage; label: string }[] = [
+  { value: "auto", label: "Auto-detect" },
+  ...LANGUAGES,
 ];

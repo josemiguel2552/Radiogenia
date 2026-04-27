@@ -12,6 +12,7 @@ interface DictationQuota {
 
 interface UseVoiceDictationOptions {
   language?: string;
+  studyContext?: string;
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
@@ -19,6 +20,7 @@ interface UseVoiceDictationOptions {
 
 export function useVoiceDictation({
   language,
+  studyContext,
   onTranscript,
   onError,
   onQuotaUpdate,
@@ -46,8 +48,7 @@ export function useVoiceDictation({
       const formData = new FormData();
       formData.append("audio", blob, "dictation.webm");
       if (language) formData.append("language", language);
-      // Send only prior transcript as context — the server appends domain
-      // vocabulary at the end so it falls within Whisper's 224-token window.
+      if (studyContext) formData.append("study_context", studyContext);
       const priorContext = priorTranscriptRef.current.slice(-200);
       if (priorContext) formData.append("context", priorContext);
       formData.append("duration_seconds", String(Math.max(1, Math.round(durationMs / 1000))));
@@ -79,7 +80,7 @@ export function useVoiceDictation({
         setIsTranscribing(false);
       }
     }
-  }, [language, onTranscript, onError, onQuotaUpdate]);
+  }, [language, studyContext, onTranscript, onError, onQuotaUpdate]);
 
   const cycleRecorder = useCallback(() => {
     const recorder = recorderRef.current;

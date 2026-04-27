@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const audioFile = formData.get("audio") as File | null;
     const language = (formData.get("language") as string) || "";
+    const studyContext = (formData.get("study_context") as string) || "";
     const context = (formData.get("context") as string) || "";
     const durationSeconds = Math.max(0, Math.min(120, Number(formData.get("duration_seconds")) || 0));
 
@@ -62,14 +63,15 @@ export async function POST(req: NextRequest) {
     whisperForm.append("temperature", "0");
     if (language) whisperForm.append("language", language);
 
-    // Construct prompt: prior transcript first (continuation context),
-    // domain vocabulary LAST so it falls within Whisper's 224-token window.
+    // Construct prompt: prior transcript → study context → domain vocabulary.
+    // Whisper keeps the LAST 224 tokens of the prompt, so domain vocab goes last.
     const domainPrompt = getWhisperPrompt(language || "es");
     const priorContext = context ? context.slice(-200) : "";
-    const whisperPrompt = priorContext
-      ? `${priorContext}\n${domainPrompt}`
-      : domainPrompt;
-    whisperForm.append("prompt", whisperPrompt);
+    const parts: string[] = [];
+    if (priorContext) parts.push(priorContext);
+    if (studyContext) parts.push(studyContext);
+    parts.push(domainPrompt);
+    whisperForm.append("prompt", parts.join("\n"));
 
     const res = await fetch(`${baseUrl}/audio/transcriptions`, {
       method: "POST",

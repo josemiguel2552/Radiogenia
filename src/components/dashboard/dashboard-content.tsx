@@ -74,6 +74,7 @@ export function DashboardContent() {
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
+  const [dictationLanguage, setDictationLanguage] = useState<string>("auto");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
@@ -105,9 +106,16 @@ export function DashboardContent() {
 
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
-  const whisperLang = LANG_TO_WHISPER[outputLanguage] || "es";
+  const whisperLang = dictationLanguage === "auto"
+    ? (LANG_TO_WHISPER[outputLanguage] || "es")
+    : (LANG_TO_WHISPER[dictationLanguage] || dictationLanguage);
+  const whisperTemplate = templates.find((t) => t.id === selectedTemplateId);
+  const whisperStudyContext = whisperTemplate
+    ? `Dictation: ${whisperTemplate.modality} — ${whisperTemplate.name}`
+    : undefined;
   const { isRecording, isTranscribing, toggleRecording } = useVoiceDictation({
-    language: whisperLang,
+    language: dictationLanguage === "auto" ? undefined : whisperLang,
+    studyContext: whisperStudyContext,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, whisperLang);
       setDictation((prev) => {
@@ -201,7 +209,7 @@ export function DashboardContent() {
     } catch { /* ignore corrupt draft */ }
   }, []);
 
-  // Seed defaults (if needed) then load templates
+  // Seed defaults (if needed) then load templates + user config
   useEffect(() => {
     async function seedAndLoad() {
       try {
@@ -209,6 +217,13 @@ export function DashboardContent() {
       } catch { /* seed may already exist */ }
       const res = await fetch("/api/templates");
       if (res.ok) setTemplates(await res.json());
+      try {
+        const cfgRes = await fetch("/api/model-config");
+        if (cfgRes.ok) {
+          const cfg = await cfgRes.json();
+          if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+        }
+      } catch { /* ignore */ }
     }
     seedAndLoad();
   }, []);
@@ -1101,7 +1116,7 @@ export function DashboardContent() {
       )}
 
       <FloatingDictation
-        language={LANG_TO_WHISPER[outputLanguage] || "es"}
+        language={whisperLang}
         onSendText={(text) => {
           setDictation((prev) => {
             const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";

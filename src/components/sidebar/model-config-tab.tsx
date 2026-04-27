@@ -13,7 +13,7 @@ import {
   Loader2, Check, Wand2, Brain, Pencil, X, RotateCcw, Search,
   PenLine, Plus, Trash2,
 } from "lucide-react";
-import { LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
+import { LANGUAGES, DICTATION_LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
 import { useT, useModality } from "@/lib/i18n";
 
 interface ModelConfig {
@@ -25,6 +25,7 @@ interface ModelConfig {
   normal_fields_verbosity: NormalFieldsVerbosity;
   paraphrase_level: ParaphraseLevel;
   output_language: OutputLanguage;
+  dictation_language: string;
   compact_normals: boolean;
 }
 
@@ -256,13 +257,25 @@ export function ModelConfigTab() {
               <Switch checked={!!config.compact_normals} onCheckedChange={(v) => update("compact_normals", v)} />
             </div>
 
-            {/* Language */}
+            {/* Report language */}
             <div>
               <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.output_language")}</Label>
               <Select value={config.output_language} onValueChange={(v) => update("output_language", v)}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Dictation language */}
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.dictation_language")}</Label>
+              <p className="text-[10px] text-gray-400 mb-1.5">{t("cfg.dictation_language_hint")}</p>
+              <Select value={config.dictation_language || "auto"} onValueChange={(v) => update("dictation_language", v)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DICTATION_LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
