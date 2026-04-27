@@ -142,6 +142,14 @@ export function RecommendationsTab() {
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const MAX_SIZE_MB = 50;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      alert(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${MAX_SIZE_MB} MB.`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+
     setExtracting(true);
     setExtractedRecs([]);
 
@@ -155,8 +163,17 @@ export function RecommendationsTab() {
         setExtractedRecs(data.recommendations || []);
         setReviewOpen(true);
       } else {
-        const data = await res.json();
-        alert("Error: " + (data.error || "Upload failed"));
+        const text = await res.text();
+        let errorMsg: string;
+        try {
+          const data = JSON.parse(text);
+          errorMsg = data.error || `Upload failed (${res.status})`;
+        } catch {
+          errorMsg = res.status === 413
+            ? "File too large. Try a smaller PDF (< 10 MB)."
+            : text.slice(0, 120) || `Upload failed (${res.status})`;
+        }
+        alert("Error: " + errorMsg);
       }
     } catch (err) {
       alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));

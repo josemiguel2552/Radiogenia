@@ -81,7 +81,16 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const formData = await req.formData();
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      if (msg.includes("size") || msg.includes("too large") || msg.includes("limit")) {
+        return NextResponse.json({ error: "File too large. Try a smaller document." }, { status: 413 });
+      }
+      return NextResponse.json({ error: "Could not read uploaded file: " + msg }, { status: 400 });
+    }
     const file = formData.get("file") as File;
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
