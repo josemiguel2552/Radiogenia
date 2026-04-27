@@ -195,7 +195,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   /* ── Desktop sidebar panel ────────────────────────────────── */
   const desktopSidebarPanel = panelOpen && (
     <aside
-      className="hidden md:flex min-w-0 shrink-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col overflow-hidden"
+      className="hidden md:flex shrink-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col overflow-y-auto overflow-x-hidden"
       style={{
         width: panelWidth,
         [panelSide === "right" ? "borderLeftWidth" : "borderRightWidth"]: "1px",
@@ -212,7 +212,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => setMobileDrawerOpen(false)}
       />
-      <aside className="absolute inset-y-0 right-0 w-full max-w-[340px] bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+      <aside className="absolute inset-y-0 right-0 w-[85vw] max-w-[380px] bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
           <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("nav.tools")}</span>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileDrawerOpen(false)}>

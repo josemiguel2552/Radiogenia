@@ -26,7 +26,6 @@ import {
   ArrowDown,
   Indent,
   Outdent,
-  GripVertical,
   FolderOpen,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
@@ -150,47 +149,50 @@ function SectionEditor({ fields, onChange }: { fields: TemplateField[]; onChange
   }, [fields, onChange]);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {fields.map((f, idx) => {
         const isParent = f.indent === 0 && fields[idx + 1]?.indent === 1;
         const isChild = f.indent === 1;
 
         return (
-          <div key={f.id} className={`flex items-center gap-1 group ${isChild ? "ml-6" : ""}`}>
-            <GripVertical className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0 hidden sm:block" />
+          <div key={f.id} className={`group rounded-md border border-transparent hover:border-gray-200 dark:hover:border-gray-700 p-1 ${isChild ? "ml-5" : ""}`}>
+            <div className="flex items-center gap-1">
+              {isParent ? (
+                <FolderOpen className="h-3.5 w-3.5 text-brand shrink-0" />
+              ) : (
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isChild ? "bg-gray-300 dark:bg-gray-600" : "bg-gray-400 dark:bg-gray-500"}`} />
+              )}
 
-            {isParent ? (
-              <FolderOpen className="h-3.5 w-3.5 text-brand shrink-0" />
-            ) : (
-              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isChild ? "bg-gray-300 dark:bg-gray-600" : "bg-gray-400 dark:bg-gray-500"}`} />
-            )}
+              <Input
+                value={f.label}
+                onChange={(e) => updateLabel(f.id, e.target.value)}
+                placeholder={t("tpl.section_name_placeholder")}
+                className={`h-7 text-xs flex-1 min-w-0 ${isParent ? "font-semibold" : ""}`}
+                autoFocus={!f.label}
+              />
 
-            <Input
-              value={f.label}
-              onChange={(e) => updateLabel(f.id, e.target.value)}
-              placeholder={t("tpl.section_name_placeholder")}
-              className={`h-8 text-xs flex-1 min-w-0 ${isParent ? "font-semibold" : ""}`}
-              autoFocus={!f.label}
-            />
+              <div className="flex gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveUp(f.id)} disabled={idx === 0}>
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveDown(f.id)} disabled={idx === fields.length - 1}>
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600" onClick={() => remove(f.id)} disabled={fields.length <= 1}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
 
-            <div className="flex gap-0.5 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => indentField(f.id)} disabled={f.indent >= 1} title={t("tpl.make_group")}>
-                <Indent className="h-3 w-3" />
+            <div className="flex gap-0.5 mt-0.5 ml-5">
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 text-gray-500" onClick={() => indentField(f.id)} disabled={f.indent >= 1}>
+                <Indent className="h-2.5 w-2.5" /> {t("tpl.make_group")}
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => outdentField(f.id)} disabled={f.indent <= 0} title={t("tpl.make_field")}>
-                <Outdent className="h-3 w-3" />
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 text-gray-500" onClick={() => outdentField(f.id)} disabled={f.indent <= 0}>
+                <Outdent className="h-2.5 w-2.5" /> {t("tpl.make_field")}
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveUp(f.id)} disabled={idx === 0}>
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveDown(f.id)} disabled={idx === fields.length - 1}>
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-brand" onClick={() => addAfter(f.id)} title={t("tpl.add_below")}>
-                <Plus className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600" onClick={() => remove(f.id)} disabled={fields.length <= 1}>
-                <Trash2 className="h-3 w-3" />
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 text-brand" onClick={() => addAfter(f.id)}>
+                <Plus className="h-2.5 w-2.5" /> {t("tpl.add_below")}
               </Button>
             </div>
           </div>
@@ -547,7 +549,7 @@ export function TemplatesTab() {
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           {!tpl.is_global && (
                             <Button
                               variant="ghost"
@@ -592,7 +594,7 @@ export function TemplatesTab() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{t("tpl.edit_dialog")}</DialogTitle>
           </DialogHeader>
@@ -601,7 +603,7 @@ export function TemplatesTab() {
               <Label className="text-xs">{t("tpl.name")}</Label>
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">{t("tpl.modality")}</Label>
                 <Select value={editModality} onValueChange={setEditModality}>
