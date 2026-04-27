@@ -329,6 +329,9 @@ export function DashboardContent() {
     }
 
     // Run trace+repair, conclusion, and recommendations ALL IN PARALLEL
+    let conclusionText = "";
+    let recsText = "";
+
     const tracePromise = (async () => {
       setLoadingTrace(true);
       try {
@@ -397,6 +400,7 @@ export function DashboardContent() {
             setConclusion("Error: " + streamError);
           } else {
             const cleaned = cleanReport(text);
+            conclusionText = cleaned;
             setInitialConclusion(cleaned);
             setConclusion(cleaned);
             // Audit: log conclusion generation
@@ -432,7 +436,8 @@ export function DashboardContent() {
     })
       .then((r) => r.json())
       .then((data) => {
-        setRecommendations(data.text ? cleanReport(data.text) : data.error || "");
+        recsText = data.text ? cleanReport(data.text) : "";
+        setRecommendations(recsText || data.error || "");
       })
       .catch((e) => {
         setRecommendations("Error: " + e.message);
@@ -445,8 +450,56 @@ export function DashboardContent() {
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
 
-    // Auto-save the report with initial AI output for training data
-    saveReportQuietly();
+    // Auto-save using local variables (React state is stale in this closure)
+    if (findingsText && selectedTemplate) {
+      try {
+        const { data: config } = await supabase.from("user_model_config").select("*").single();
+        const res = await fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            study_type: studyName,
+            modality: selectedTemplate.modality,
+            contrast_option: contrastOption,
+            raw_dictation: dictation,
+            clinical_context: clinicalInfo || "",
+            findings_text: findingsText,
+            conclusion_text: conclusionText,
+            recommendations_text: recsText,
+            initial_findings_text: findingsText,
+            initial_conclusion_text: conclusionText,
+            template_snapshot: selectedTemplate.structure,
+            model_config_snapshot: config,
+            generation_duration_ms: durationMs,
+            provider_used: config?.provider || null,
+            model_used: config?.model_name || null,
+            had_corrections: false,
+          }),
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          if (saved?.id) {
+            setLastSavedReportId(saved.id);
+            reportDirtyRef.current = false;
+            fetch("/api/audit-logs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "save_report",
+                report_id: saved.id,
+                provider: config?.provider || null,
+                model: config?.model_name || null,
+                duration_ms: durationMs,
+                had_corrections: false,
+                metadata: { study_type: studyName, modality: selectedTemplate.modality },
+              }),
+            }).catch(() => {});
+          }
+        }
+      } catch (e) {
+        console.error("Failed to auto-save report:", e);
+      }
+    }
   }
 
   function cleanReport(text: string): string {
