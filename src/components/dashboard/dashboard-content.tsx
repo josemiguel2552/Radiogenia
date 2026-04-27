@@ -100,6 +100,16 @@ export function DashboardContent() {
   const [lastSavedReportId, setLastSavedReportId] = useState<string | null>(null);
   const reportDirtyRef = useRef(false);
   const correctionLoggedRef = useRef(false);
+  // Refs for unmount/beforeunload — always hold latest values
+  const correctionSnapshotRef = useRef({
+    lastSavedReportId: null as string | null,
+    initialConclusion: "",
+    conclusion: "",
+    initialFindings: "",
+    findings: "",
+    templateName: "",
+    modality: "",
+  });
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
@@ -160,59 +170,86 @@ export function DashboardContent() {
     return () => clearInterval(interval);
   }, [clinicalInfo, dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
 
-  // Flush corrected report to server when user hides tab or closes page
+  // Keep snapshot ref in sync for unmount / beforeunload / visibilitychange
   useEffect(() => {
-    function handleVisibility() {
-      if (document.visibilityState !== "hidden") return;
+    const tpl = templates.find((t) => t.id === selectedTemplateId);
+    correctionSnapshotRef.current = {
+      lastSavedReportId,
+      initialConclusion,
+      conclusion,
+      initialFindings,
+      findings,
+      templateName: tpl?.name || "",
+      modality: tpl?.modality || "",
+    };
+  }, [lastSavedReportId, initialConclusion, conclusion, initialFindings, findings, templates, selectedTemplateId]);
+
+  // Flush corrections on visibilitychange, beforeunload, and component unmount
+  useEffect(() => {
+    function flushViaBeacon() {
+      const s = correctionSnapshotRef.current;
 
       // Flush report edits to the reports table
-      if (lastSavedReportId && reportDirtyRef.current) {
-        const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
-        const findingsChanged = !!(initialFindings && findings !== initialFindings);
+      if (s.lastSavedReportId && reportDirtyRef.current) {
+        const conclusionChanged = !!(s.initialConclusion && s.conclusion !== s.initialConclusion);
+        const findingsChanged = !!(s.initialFindings && s.findings !== s.initialFindings);
         reportDirtyRef.current = false;
         navigator.sendBeacon(
           "/api/reports",
           new Blob([JSON.stringify({
             _method: "PATCH",
-            id: lastSavedReportId,
-            findings_text: findings,
-            conclusion_text: conclusion,
+            id: s.lastSavedReportId,
+            findings_text: s.findings,
+            conclusion_text: s.conclusion,
             had_corrections: conclusionChanged || findingsChanged,
           })], { type: "application/json" }),
         );
       }
 
-      // Log corrections independently — works even if report save failed
+      // Log corrections independently
       if (!correctionLoggedRef.current) {
-        const conclusionChanged = !!(initialConclusion && conclusion !== initialConclusion);
-        const findingsChanged = !!(initialFindings && findings !== initialFindings);
+        const conclusionChanged = !!(s.initialConclusion && s.conclusion !== s.initialConclusion);
+        const findingsChanged = !!(s.initialFindings && s.findings !== s.initialFindings);
         if (conclusionChanged || findingsChanged) {
           correctionLoggedRef.current = true;
-          const tpl = templates.find((t) => t.id === selectedTemplateId);
           navigator.sendBeacon(
             "/api/audit-logs",
             new Blob([JSON.stringify({
               action: "correction_logged",
-              report_id: lastSavedReportId || null,
+              report_id: s.lastSavedReportId || null,
               had_corrections: true,
               metadata: {
-                study_type: tpl?.name || "",
-                modality: tpl?.modality || "",
+                study_type: s.templateName,
+                modality: s.modality,
                 conclusion_changed: conclusionChanged,
                 findings_changed: findingsChanged,
-                original_conclusion: initialConclusion || "",
-                corrected_conclusion: conclusionChanged ? conclusion : "",
-                original_findings: findingsChanged ? (initialFindings || "").slice(0, 3000) : "",
-                corrected_findings: findingsChanged ? (findings || "").slice(0, 3000) : "",
+                original_conclusion: s.initialConclusion || "",
+                corrected_conclusion: conclusionChanged ? s.conclusion : "",
+                original_findings: findingsChanged ? s.initialFindings.slice(0, 3000) : "",
+                corrected_findings: findingsChanged ? s.findings.slice(0, 3000) : "",
               },
             })], { type: "application/json" }),
           );
         }
       }
     }
+
+    function handleVisibility() {
+      if (document.visibilityState === "hidden") flushViaBeacon();
+    }
+    function handleBeforeUnload() {
+      flushViaBeacon();
+    }
+
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, [lastSavedReportId, findings, conclusion, initialFindings, initialConclusion, templates, selectedTemplateId]);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Component unmount (e.g. switching to templates/recommendations view)
+      flushViaBeacon();
+    };
+  }, []);
 
   // Load draft on mount — discard if older than 15 minutes
   useEffect(() => {
