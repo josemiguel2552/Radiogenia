@@ -11,8 +11,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Loader2, Check, Wand2, Brain, Pencil, X, RotateCcw, Search,
+  PenLine, Plus, Trash2,
 } from "lucide-react";
-import { LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
+import { LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
 import { useT, useModality } from "@/lib/i18n";
 
 interface ModelConfig {
@@ -50,6 +51,14 @@ export function ModelConfigTab() {
   const [normalitySearch, setNormalitySearch] = useState("");
   const [savingPhrase, setSavingPhrase] = useState<string | null>(null);
 
+  // Signatures
+  const [signatures, setSignatures] = useState<Signature[]>([]);
+  const [showAddSig, setShowAddSig] = useState(false);
+  const [editingSig, setEditingSig] = useState<Signature | null>(null);
+  const [sigLabel, setSigLabel] = useState("");
+  const [sigBody, setSigBody] = useState("");
+  const [savingSig, setSavingSig] = useState(false);
+
   async function load() {
     setLoading(true);
     const res = await fetch("/api/model-config");
@@ -68,8 +77,16 @@ export function ModelConfigTab() {
     } catch { /* ignore */ }
   }, [selectedModality]);
 
+  const loadSignatures = useCallback(async () => {
+    try {
+      const res = await fetch("/api/signatures");
+      if (res.ok) setSignatures(await res.json());
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => { load(); }, []);
   useEffect(() => { loadNormality(); }, [loadNormality]);
+  useEffect(() => { loadSignatures(); }, [loadSignatures]);
 
   function update(field: string, value: string | boolean | number) {
     if (!config) return;
@@ -115,6 +132,41 @@ export function ModelConfigTab() {
     await fetch(`/api/normality-phrases?modality=${encodeURIComponent(modality)}&section_label=${encodeURIComponent(sectionLabel)}`, { method: "DELETE" });
     await loadNormality(modality);
     setSavingPhrase(null);
+  }
+
+  async function handleSaveSig() {
+    if (!sigLabel.trim() || !sigBody.trim()) return;
+    setSavingSig(true);
+    if (editingSig) {
+      await fetch("/api/signatures", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingSig.id, label: sigLabel, body: sigBody }),
+      });
+    } else {
+      await fetch("/api/signatures", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: sigLabel, body: sigBody }),
+      });
+    }
+    setSigLabel(""); setSigBody(""); setShowAddSig(false); setEditingSig(null);
+    setSavingSig(false);
+    await loadSignatures();
+  }
+
+  async function handleToggleSigActive(sig: Signature) {
+    await fetch("/api/signatures", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: sig.id, is_active: !sig.is_active }),
+    });
+    await loadSignatures();
+  }
+
+  async function handleDeleteSig(id: string) {
+    await fetch(`/api/signatures?id=${id}`, { method: "DELETE" });
+    await loadSignatures();
   }
 
   if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
@@ -204,6 +256,87 @@ export function ModelConfigTab() {
           </AccordionContent>
         </AccordionItem>
 
+        {/* Signatures */}
+        <AccordionItem value="signatures">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <PenLine className="h-3.5 w-3.5 text-blue-500" />
+              {t("sig.title")}
+              {signatures.some((s) => s.is_active) && (
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              )}
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pt-1">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {t("sig.desc")}
+            </p>
+
+            {signatures.length === 0 ? (
+              <div className="text-center py-3">
+                <p className="text-xs text-gray-400">{t("sig.no_signatures")}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{t("sig.no_signatures_hint")}</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {signatures.map((sig) => (
+                  <div
+                    key={sig.id}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      sig.is_active
+                        ? "border-green-500/40 bg-green-50 dark:bg-green-900/10"
+                        : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSigActive(sig)}
+                        className={`h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          sig.is_active
+                            ? "border-green-500 bg-green-500"
+                            : "border-gray-300 dark:border-gray-600 hover:border-green-400"
+                        }`}
+                        title={sig.is_active ? t("sig.active") : t("sig.set_active")}
+                      >
+                        {sig.is_active && <Check className="h-2.5 w-2.5 text-white" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">{sig.label}</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 block truncate">{sig.body.split("\n")[0]}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <Button
+                          variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-brand"
+                          onClick={() => { setEditingSig(sig); setSigLabel(sig.label); setSigBody(sig.body); setShowAddSig(true); }}
+                          title={t("edit")}
+                        >
+                          <Pencil className="h-2.5 w-2.5" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500"
+                          onClick={() => { if (confirm(t("sig.confirm_delete"))) handleDeleteSig(sig.id); }}
+                          title={t("delete")}
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button
+              size="sm" variant="outline" className="w-full text-xs gap-1.5"
+              onClick={() => { setEditingSig(null); setSigLabel(""); setSigBody(""); setShowAddSig(true); }}
+            >
+              <Plus className="h-3 w-3" />
+              {t("sig.add")}
+            </Button>
+          </AccordionContent>
+        </AccordionItem>
+
       </Accordion>
 
       {/* Footer */}
@@ -254,6 +387,52 @@ export function ModelConfigTab() {
             {filteredPhrases.length === 0 && (
               <p className="text-xs text-gray-400 text-center py-6">{t("no_match_search")}</p>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signature Add/Edit Dialog */}
+      <Dialog open={showAddSig} onOpenChange={(v) => { setShowAddSig(v); if (!v) setEditingSig(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSig ? t("edit") : t("sig.add")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("sig.label")}</Label>
+              <Input
+                value={sigLabel}
+                onChange={(e) => setSigLabel(e.target.value)}
+                placeholder={t("sig.label_placeholder")}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("sig.body")}</Label>
+              <textarea
+                value={sigBody}
+                onChange={(e) => setSigBody(e.target.value)}
+                placeholder={t("sig.body_placeholder")}
+                rows={4}
+                className="w-full text-sm border rounded-lg px-3 py-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-brand/50"
+              />
+            </div>
+            {sigBody.trim() && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-gray-400">{t("sig.preview")}</Label>
+                <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                  <pre className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap font-sans">{sigBody}</pre>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setShowAddSig(false); setEditingSig(null); }}>
+                {t("cancel")}
+              </Button>
+              <Button size="sm" onClick={handleSaveSig} disabled={savingSig || !sigLabel.trim() || !sigBody.trim()}>
+                {savingSig ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("save")}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

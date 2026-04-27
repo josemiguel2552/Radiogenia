@@ -195,6 +195,16 @@ export interface PreferredNormalPhrase {
   phrase: string;
 }
 
+export interface Signature {
+  id: string;
+  user_id: string;
+  label: string;
+  body: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export const MODALITIES = [
   "CT",
   "MRI",

@@ -83,6 +83,16 @@ export function DashboardContent() {
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
   const [piiDismissed, setPiiDismissed] = useState(false);
 
+  // Active signature for copy
+  const activeSignatureRef = useRef<string | null>(null);
+  const refreshSignature = () => {
+    fetch("/api/signatures").then((r) => r.ok ? r.json() : []).then((sigs: { is_active: boolean; body: string }[]) => {
+      const active = sigs.find((s) => s.is_active);
+      activeSignatureRef.current = active ? active.body : null;
+    }).catch(() => {});
+  };
+  useEffect(() => { refreshSignature(); }, []);
+
   // Audit: timing + error reporting
   const generateStartRef = useRef<number>(0);
   const [generationDurationMs, setGenerationDurationMs] = useState<number | null>(null);
@@ -576,6 +586,16 @@ export function DashboardContent() {
 
   async function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
     await flushCorrections();
+    // Refresh signature in case user changed it in the sidebar
+    try {
+      const sRes = await fetch("/api/signatures");
+      if (sRes.ok) {
+        const sigs: { is_active: boolean; body: string }[] = await sRes.json();
+        const active = sigs.find((s) => s.is_active);
+        activeSignatureRef.current = active ? active.body : null;
+      }
+    } catch { /* use cached value */ }
+
     const title = getStudyTitle();
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);
@@ -590,6 +610,9 @@ export function DashboardContent() {
     }
     if (mode === "full" && cleanRecs) {
       text += "\n\n" + headers.recommendations + "\n" + cleanRecs;
+    }
+    if (mode !== "findings" && activeSignatureRef.current) {
+      text += "\n\n" + activeSignatureRef.current;
     }
 
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
