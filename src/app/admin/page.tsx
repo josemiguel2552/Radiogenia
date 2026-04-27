@@ -14,7 +14,7 @@ import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
-  Upload, GraduationCap, ChevronDown,
+  Upload, GraduationCap, ChevronDown, ClipboardList, Flag,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 
@@ -73,7 +73,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans";
+type Tab = "overview" | "users" | "ai" | "plans" | "audit";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -138,6 +138,25 @@ export default function AdminPage() {
   const [creatingUser, setCreatingUser] = useState(false);
   const [createError, setCreateError] = useState("");
 
+  // Audit logs
+  interface AuditLog {
+    id: string;
+    user_id: string;
+    user_email: string;
+    user_name: string;
+    report_id: string | null;
+    action: string;
+    provider: string | null;
+    model: string | null;
+    duration_ms: number | null;
+    had_corrections: boolean;
+    metadata: Record<string, unknown>;
+    created_at: string;
+  }
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditFilter, setAuditFilter] = useState<string>("all");
+  const [auditLoading, setAuditLoading] = useState(false);
+
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
   const loadAll = useCallback(async () => {
@@ -182,6 +201,15 @@ export default function AdminPage() {
       const d = await usersRes.json();
       setUsers(d.users || []);
     }
+
+    try {
+      const auditRes = await fetch("/api/admin/audit-logs?limit=100");
+      if (auditRes?.ok) {
+        const d = await auditRes.json();
+        setAuditLogs(d.logs || []);
+      }
+    } catch { /* audit_logs table may not exist yet */ }
+
     setLoading(false);
   }, []);
 
@@ -391,6 +419,7 @@ export default function AdminPage() {
     { key: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { key: "ai", label: "AI Config", icon: <Plug className="h-4 w-4" /> },
     { key: "plans", label: "Plans", icon: <CreditCard className="h-4 w-4" /> },
+    { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -1158,6 +1187,96 @@ export default function AdminPage() {
                     <p>Starter: ~92% margin</p>
                     <p>Professional: ~87% margin</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ═══ AUDIT LOGS ═══ */}
+        {tab === "audit" && (
+          <div className="space-y-4">
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <ClipboardList className="h-4 w-4 text-blue-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
+                <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
+                <div className="ml-auto flex gap-1">
+                  {["all", "report_error", "save_report"].map((f) => (
+                    <Button
+                      key={f}
+                      variant={auditFilter === f ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setAuditFilter(f)}
+                    >
+                      {f === "all" ? "All" : f === "report_error" ? "Errors" : "Saves"}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <CardContent className="pt-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-gray-800">
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Date</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Action</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Provider / Model</th>
+                        <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Duration</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs
+                        .filter((l) => auditFilter === "all" || l.action === auditFilter)
+                        .map((log) => (
+                        <tr key={log.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                          <td className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap">
+                            {new Date(log.created_at).toLocaleString()}
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <div>
+                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate max-w-[120px]">{log.user_name}</p>
+                              <p className="text-[10px] text-gray-500 truncate max-w-[120px]">{log.user_email}</p>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <Badge
+                              variant={log.action === "report_error" ? "destructive" : "secondary"}
+                              className="text-[10px]"
+                            >
+                              {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
+                              {log.action.replace(/_/g, " ")}
+                            </Badge>
+                            {log.had_corrections && (
+                              <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:table-cell">
+                            {log.provider && log.model ? `${log.provider} / ${log.model}` : "—"}
+                          </td>
+                          <td className="py-2.5 px-2 text-xs text-gray-500 text-right hidden md:table-cell">
+                            {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : "—"}
+                          </td>
+                          <td className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 max-w-[200px] truncate">
+                            {log.action === "report_error" && (log.metadata as { note?: string })?.note
+                              ? (log.metadata as { note: string }).note
+                              : (log.metadata as { study_type?: string })?.study_type || "—"
+                            }
+                          </td>
+                        </tr>
+                      ))}
+                      {auditLogs.filter((l) => auditFilter === "all" || l.action === auditFilter).length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
+                            No audit logs yet
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>

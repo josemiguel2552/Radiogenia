@@ -108,15 +108,16 @@ export function DashboardContent() {
     onError: (err) => setVoiceError(err),
   });
 
-  // PII detection — debounced on dictation changes
+  // PII detection — debounced on dictation + clinical info changes
   useEffect(() => {
-    if (!dictation.trim()) { setPiiMatches([]); return; }
+    const combined = `${dictation}\n${clinicalInfo}`.trim();
+    if (!combined) { setPiiMatches([]); return; }
     const timer = setTimeout(() => {
-      setPiiMatches(detectPii(dictation));
+      setPiiMatches(detectPii(combined));
       setPiiDismissed(false);
     }, 500);
     return () => clearTimeout(timer);
-  }, [dictation]);
+  }, [dictation, clinicalInfo]);
 
   // Auto-open recommendations when they arrive
   useEffect(() => {
@@ -553,8 +554,8 @@ export function DashboardContent() {
   const isGenerating = loadingFindings || loadingConclusion || loadingRecs;
   const hasOutput = findings || conclusion || recommendations || isGenerating;
   const setupReady = !!selectedTemplate;
-  const canGenerate = setupReady && dictation.trim() && !isGenerating;
   const showPiiWarning = piiMatches.length > 0 && !piiDismissed && dictation.trim();
+  const canGenerate = setupReady && dictation.trim() && !isGenerating && !showPiiWarning;
 
   const piiWarningBanner = showPiiWarning ? (
     <div className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-2.5 space-y-1.5">
