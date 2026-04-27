@@ -22,6 +22,13 @@ const ARTIFACT_RULES: [RegExp, string][] = [
   // Period-space-period artifacts
   [/\.\s+\./g, "."],
 
+  // Whisper confuses "nueva línea" with "nueve" → outputs "9" in non-numeric context
+  // Standalone "9" between words (not part of a measurement like "9 mm" or "9.5")
+  [/(?<=\.\s*)9(?=\s+[A-Za-zÁ-Úá-ú])/g, "\n"],
+  [/(?<=[a-záéíóúñ]\s+)9(?=\s+[A-Za-zÁ-Úá-ú])/gi, "\n"],
+  // "nueve línea" / "nueve linea" that slipped past voice-commands (e.g. different casing or spacing)
+  [/\bnueve l[ií]nea\b/gi, "\n"],
+
   // Whisper sometimes adds "Thank you." or "Thanks for watching." at the end
   [/\s*(?:Thank you\.?|Thanks for watching\.?|Gracias\.?)\s*$/i, ""],
 
