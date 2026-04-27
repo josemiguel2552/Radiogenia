@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 import {
-  Zap,
   LogOut,
   LayoutDashboard,
   PanelRightOpen,
@@ -229,9 +229,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-gray-50 dark:bg-gray-950">
       {/* Desktop left rail */}
       <aside className="hidden md:flex w-14 bg-gray-900 dark:bg-black flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
-        <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center shadow-lg`}>
-          <Zap className="h-4.5 w-4.5 text-white" />
-        </div>
+        <Logo size="sm" variant="icon" />
 
         <Separator className="bg-gray-800 w-8" />
 
@@ -312,12 +310,12 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-6xl mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`md:hidden h-7 w-7 rounded-lg bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center shadow-sm flex-shrink-0`}>
-                <Zap className="h-3.5 w-3.5 text-white" />
-              </div>
+              <Logo size="sm" variant="icon" className="md:hidden" />
               <div className="min-w-0">
-                <h1 className="text-base md:text-lg font-bold tracking-tight text-gray-900 dark:text-white truncate">
-                  Radiogen.ai
+                <Logo size="sm" className="hidden md:inline-flex" />
+                <h1 className="md:hidden text-base font-bold tracking-tight text-gray-900 dark:text-white truncate">
+                  <span className="text-[#1E3A5F] dark:text-white">Radiogen</span>
+                  <span className="text-teal-600 dark:text-teal-400">.AI</span>
                 </h1>
                 <p className="text-[10px] md:text-[11px] text-gray-500 dark:text-gray-400 truncate">
                   {userName}

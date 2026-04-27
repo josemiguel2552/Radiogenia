@@ -73,11 +73,11 @@ export default function RegisterPage() {
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-float-slower" />
         <div className="relative z-10 max-w-md text-center px-8">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-xl shadow-purple-500/25">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center shadow-xl shadow-teal-500/25">
               <Zap className="h-6 w-6 text-white" />
             </div>
             <span className="text-3xl font-bold text-white tracking-tight">
-              Radiogen<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">.ai</span>
+              Radiogen<span className="text-teal-400">.AI</span>
             </span>
           </div>
           <p className="text-lg text-gray-300 leading-relaxed">
@@ -94,11 +94,11 @@ export default function RegisterPage() {
           {/* Mobile logo */}
           <div className="flex lg:hidden flex-col items-center gap-2 mb-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center">
                 <Zap className="h-4 w-4 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Radiogen<span className="text-gray-500">.ai</span>
+                Radiogen<span className="text-teal-400">.AI</span>
               </span>
             </div>
           </div>
@@ -184,7 +184,7 @@ export default function RegisterPage() {
                   <Link href="/legal" target="_blank" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
                     Terms of Use, Privacy Policy and Liability Disclaimer
                   </Link>.
-                  I understand that Radiogen.ai is a report drafting tool and does not generate autonomous diagnoses or recommendations. All clinical responsibility lies with the radiologist.
+                  I understand that Radiogen.AI is a report drafting assistant. Generated texts are indicative drafts that should be reviewed and validated before clinical use.
                 </span>
               </label>
             </div>
@@ -195,7 +195,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold shadow-lg shadow-purple-500/20"
+              className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
               disabled={loading || !accepted}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}

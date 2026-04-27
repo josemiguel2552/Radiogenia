@@ -654,11 +654,11 @@ export function DashboardContent() {
           </Card>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3">
-          {/* Left: Study setup */}
-          <Card className="flex flex-col">
-            <CardContent className="p-3 space-y-2.5 flex-1">
-              <div className="flex items-center justify-between">
+        <div className="space-y-3">
+          {/* Study setup — horizontal strip */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
                   {t("dash.study_setup")}
@@ -672,13 +672,14 @@ export function DashboardContent() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-1">
+              {/* Row 1: Modality pills */}
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {MODALITIES.map((mod) => (
                   <Button
                     key={mod}
                     variant={selectedModality === mod ? "default" : "outline"}
                     size="sm"
-                    className="h-6 px-2 text-[10px]"
+                    className="h-7 px-2.5 text-[11px]"
                     onClick={() => {
                       setSelectedModality(selectedModality === mod ? "" : mod);
                       setSelectedSection("");
@@ -690,47 +691,51 @@ export function DashboardContent() {
                 ))}
               </div>
 
-              <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
-                <SelectContent>
-                  {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
-                    <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Row 2: Region + Template + Contrast — responsive grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
+                  <SelectContent>
+                    {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
+                      <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredTemplates.map((tpl) => (
-                    <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTemplates.map((tpl) => (
+                      <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800 w-full">
-                {[
-                  { v: "default", l: t("dash.default") },
-                  { v: "con_contraste", l: "C+" },
-                  { v: "sin_contraste", l: "C−" },
-                ].map((opt) => (
-                  <button
-                    key={opt.v}
-                    type="button"
-                    onClick={() => setContrastOption(opt.v)}
-                    className={`flex-1 px-2 py-1 text-xs rounded-md transition-colors ${
-                      contrastOption === opt.v
-                        ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                  >
-                    {opt.l}
-                  </button>
-                ))}
+                <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
+                  {[
+                    { v: "default", l: t("dash.default") },
+                    { v: "con_contraste", l: "C+" },
+                    { v: "sin_contraste", l: "C−" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setContrastOption(opt.v)}
+                      className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
+                        contrastOption === opt.v
+                          ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
               </div>
 
+              {/* Row 3: Clinical context (collapsible) */}
               <div>
                 <button
                   type="button"
@@ -746,22 +751,22 @@ export function DashboardContent() {
                     placeholder={t("dash.clinical_placeholder")}
                     value={clinicalInfo}
                     onChange={(e) => setClinicalInfo(e.target.value)}
-                    className="mt-1.5 min-h-[48px] text-xs resize-none"
+                    className="mt-2 min-h-[56px] text-xs resize-none"
                   />
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Right: Dictation + Generate */}
-          <Card className="flex flex-col">
-            <CardContent className="p-3 flex flex-col flex-1 gap-2.5">
-              <div className="relative flex-1">
+          {/* Dictation + Generate */}
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="relative">
                 <Textarea
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
-                  className="min-h-[160px] md:min-h-[200px] h-full text-sm pr-14 resize-none"
+                  className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
                 />
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}

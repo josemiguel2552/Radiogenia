@@ -37,11 +37,11 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center">
               <Zap className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-bold text-white">
-              Radiogen<span className="text-gray-500">.ai</span>
+              Radiogen<span className="text-teal-400">.AI</span>
             </span>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function ForgotPasswordPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold shadow-lg shadow-purple-500/20"
+                className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
                 disabled={loading}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}

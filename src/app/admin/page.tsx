@@ -500,10 +500,10 @@ export default function AdminPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center flex-shrink-0">
               <Zap className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="font-bold text-gray-900 dark:text-white hidden sm:inline">Radiogen.ai</span>
+            <span className="font-bold hidden sm:inline"><span className="text-[#1E3A5F] dark:text-white">Radiogen</span><span className="text-teal-600 dark:text-teal-400">.AI</span></span>
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
               Admin
             </Badge>

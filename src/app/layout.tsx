@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Radiogen.ai — AI Radiology Reports",
+  title: "Radiogen.AI — AI Radiology Reports",
   description: "AI-powered structured radiology report generator",
 };
 
