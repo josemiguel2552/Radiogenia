@@ -3,6 +3,7 @@
 -- but if SUPABASE_SERVICE_KEY is misconfigured, this policy ensures access.
 
 -- Admin can read all reports
+drop policy if exists "admins read all reports" on public.reports;
 create policy "admins read all reports" on public.reports
   for select using (
     exists (
@@ -12,6 +13,7 @@ create policy "admins read all reports" on public.reports
   );
 
 -- Admin can read all audit_logs
+drop policy if exists "admins read all audit_logs" on public.audit_logs;
 create policy "admins read all audit_logs" on public.audit_logs
   for select using (
     exists (
