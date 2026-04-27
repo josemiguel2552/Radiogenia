@@ -165,6 +165,7 @@ export default function AdminPage() {
     study_type: string;
     modality: string;
     raw_dictation: string;
+    clinical_context: string | null;
     initial_findings_text: string | null;
     initial_conclusion_text: string | null;
     findings_text: string;
@@ -1419,7 +1420,10 @@ export default function AdminPage() {
                               )}
 
                               <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Dictation (input)</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Input (dictation + clinical context)</p>
+                                {r.clinical_context && (
+                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-20 overflow-y-auto mb-1.5 text-gray-500">{r.clinical_context}</pre>
+                                )}
                                 <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">{r.raw_dictation || "—"}</pre>
                               </div>
 

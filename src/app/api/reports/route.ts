@@ -138,6 +138,61 @@ async function ensureStylePatternsTable(supabase: SupabaseClient) {
   return !error;
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await req.json();
+    const { id, findings_text, conclusion_text, had_corrections } = body;
+    if (!id) return NextResponse.json({ error: "Missing report id" }, { status: 400 });
+
+    const update: Record<string, unknown> = {};
+    if (findings_text !== undefined) update.findings_text = findings_text;
+    if (conclusion_text !== undefined) update.conclusion_text = conclusion_text;
+    if (had_corrections !== undefined) update.had_corrections = had_corrections;
+
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const { error } = await supabase
+      .from("reports")
+      .update(update)
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Re-run style learning with updated text
+    if (findings_text || conclusion_text) {
+      const tableExists = await ensureStylePatternsTable(supabase);
+      if (tableExists) {
+        const { data: report } = await supabase
+          .from("reports")
+          .select("modality, study_type, conclusion_text")
+          .eq("id", id)
+          .single();
+        if (report) {
+          try {
+            await learnFromReport(supabase, user.id, {
+              modality: report.modality,
+              study_type: report.study_type,
+              conclusion_text: report.conclusion_text || "",
+            });
+          } catch { /* non-critical */ }
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -146,12 +201,27 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
+    // sendBeacon can only POST, so we tunnel PATCH via _method
+    if (body._method === "PATCH") {
+      const { id, findings_text, conclusion_text, had_corrections } = body;
+      if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+      const update: Record<string, unknown> = {};
+      if (findings_text !== undefined) update.findings_text = findings_text;
+      if (conclusion_text !== undefined) update.conclusion_text = conclusion_text;
+      if (had_corrections !== undefined) update.had_corrections = had_corrections;
+      if (Object.keys(update).length > 0) {
+        await supabase.from("reports").update(update).eq("id", id).eq("user_id", user.id);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     const reportRow: Record<string, unknown> = {
       user_id: user.id,
       study_type: body.study_type,
       modality: body.modality,
       contrast_option: body.contrast_option || "default",
       raw_dictation: body.raw_dictation || "",
+      clinical_context: body.clinical_context || "",
       findings_text: body.findings_text || "",
       conclusion_text: body.conclusion_text || "",
       recommendations_text: body.recommendations_text || "",
@@ -175,6 +245,7 @@ export async function POST(req: NextRequest) {
       .single());
 
     if (error) {
+      delete reportRow.clinical_context;
       delete reportRow.initial_findings_text;
       delete reportRow.initial_conclusion_text;
       delete reportRow.generation_duration_ms;

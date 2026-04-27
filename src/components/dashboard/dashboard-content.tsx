@@ -87,6 +87,7 @@ export function DashboardContent() {
   const generateStartRef = useRef<number>(0);
   const [generationDurationMs, setGenerationDurationMs] = useState<number | null>(null);
   const [lastSavedReportId, setLastSavedReportId] = useState<string | null>(null);
+  const reportDirtyRef = useRef(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
@@ -140,6 +141,31 @@ export function DashboardContent() {
     }, 30000);
     return () => clearInterval(interval);
   }, [clinicalInfo, dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
+
+  // Flush corrected report to server when user hides tab or closes page
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "hidden" && lastSavedReportId && reportDirtyRef.current) {
+        const hadCorrections = !!(
+          (initialFindings && findings !== initialFindings) ||
+          (initialConclusion && conclusion !== initialConclusion)
+        );
+        reportDirtyRef.current = false;
+        navigator.sendBeacon(
+          "/api/reports",
+          new Blob([JSON.stringify({
+            _method: "PATCH",
+            id: lastSavedReportId,
+            findings_text: findings,
+            conclusion_text: conclusion,
+            had_corrections: hadCorrections,
+          })], { type: "application/json" }),
+        );
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [lastSavedReportId, findings, conclusion, initialFindings, initialConclusion]);
 
   // Load draft on mount — discard if older than 15 minutes
   useEffect(() => {
@@ -199,6 +225,11 @@ export function DashboardContent() {
   // Generate report
   async function handleGenerate() {
     if (!selectedTemplate || !dictation.trim()) return;
+
+    // Flush any pending corrections from the previous report before starting a new generation
+    if (lastSavedReportId && reportDirtyRef.current) {
+      await flushCorrections();
+    }
 
     const templateText = selectedTemplate.structure?.template || "";
 
@@ -410,7 +441,11 @@ export function DashboardContent() {
       });
 
     await Promise.all([tracePromise, conclusionPromise, recsPromise]);
-    setGenerationDurationMs(Date.now() - generateStartRef.current);
+    const durationMs = Date.now() - generateStartRef.current;
+    setGenerationDurationMs(durationMs);
+
+    // Auto-save the report with initial AI output for training data
+    saveReportQuietly();
   }
 
   function cleanReport(text: string): string {
@@ -464,6 +499,7 @@ export function DashboardContent() {
   }
 
   function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
+    flushCorrections();
     const title = getStudyTitle();
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);
@@ -489,16 +525,12 @@ export function DashboardContent() {
 
   async function saveReportQuietly() {
     if (!selectedTemplate || !findings) return;
+    if (lastSavedReportId) return;
 
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
 
     const { data: config } = await supabase.from("user_model_config").select("*").single();
-
-    const hadCorrections = !!(
-      (initialFindings && findings !== initialFindings) ||
-      (initialConclusion && conclusion !== initialConclusion)
-    );
 
     try {
       const res = await fetch("/api/reports", {
@@ -509,6 +541,7 @@ export function DashboardContent() {
           modality: selectedTemplate.modality,
           contrast_option: contrastOption,
           raw_dictation: dictation,
+          clinical_context: clinicalInfo || "",
           findings_text: findings,
           conclusion_text: conclusion,
           recommendations_text: recommendations,
@@ -519,14 +552,14 @@ export function DashboardContent() {
           generation_duration_ms: generationDurationMs,
           provider_used: config?.provider || null,
           model_used: config?.model_name || null,
-          had_corrections: hadCorrections,
+          had_corrections: false,
         }),
       });
       if (res.ok) {
         const saved = await res.json();
         if (saved?.id) {
           setLastSavedReportId(saved.id);
-          // Audit: log report save
+          reportDirtyRef.current = false;
           fetch("/api/audit-logs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -536,27 +569,44 @@ export function DashboardContent() {
               provider: config?.provider || null,
               model: config?.model_name || null,
               duration_ms: generationDurationMs,
-              had_corrections: hadCorrections,
-              metadata: {
-                study_type: studyName,
-                modality: selectedTemplate.modality,
-              },
+              had_corrections: false,
+              metadata: { study_type: studyName, modality: selectedTemplate.modality },
             }),
           }).catch(() => {});
         }
-      } else {
-        console.error("Failed to save report:", await res.text());
       }
     } catch (e) {
       console.error("Failed to save report:", e);
     }
   }
 
+  async function flushCorrections() {
+    if (!lastSavedReportId || !reportDirtyRef.current) return;
+
+    const hadCorrections = !!(
+      (initialFindings && findings !== initialFindings) ||
+      (initialConclusion && conclusion !== initialConclusion)
+    );
+
+    reportDirtyRef.current = false;
+    try {
+      await fetch("/api/reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: lastSavedReportId,
+          findings_text: findings,
+          conclusion_text: conclusion,
+          had_corrections: hadCorrections,
+        }),
+      });
+    } catch { /* non-critical */ }
+  }
+
   async function startNewReport() {
-    // Auto-save the current report (and trigger style learning) before clearing
     if (findings) {
-      await saveReportQuietly();
-      // Notify sidebar to refresh style learning stats
+      if (!lastSavedReportId) await saveReportQuietly();
+      else await flushCorrections();
       window.dispatchEvent(new Event("radiogenai:report-saved"));
     }
     setDictation("");
@@ -889,7 +939,7 @@ export function DashboardContent() {
             icon={<FileText className="h-3.5 w-3.5 text-brand" />}
             loading={loadingFindings}
             value={findings}
-            onChange={(v) => { setFindings(v); setTraceData(null); setRepairMessage(null); }}
+            onChange={(v) => { setFindings(v); reportDirtyRef.current = true; setTraceData(null); setRepairMessage(null); }}
             minHeight={140}
             traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
             isDark={isDark}
@@ -900,7 +950,7 @@ export function DashboardContent() {
             icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
             loading={loadingConclusion}
             value={conclusion}
-            onChange={setConclusion}
+            onChange={(v) => { setConclusion(v); reportDirtyRef.current = true; }}
             minHeight={70}
           />
 

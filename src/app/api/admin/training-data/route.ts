@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("reports")
       .select(
-        "id, user_id, study_type, modality, contrast_option, raw_dictation, " +
+        "id, user_id, study_type, modality, contrast_option, raw_dictation, clinical_context, " +
         "findings_text, conclusion_text, recommendations_text, " +
         "initial_findings_text, initial_conclusion_text, " +
         "generation_duration_ms, provider_used, model_used, had_corrections, " +
@@ -81,6 +81,7 @@ function exportJsonl(reports: Record<string, unknown>[]) {
     JSON.stringify({
       study_type: r.study_type,
       modality: r.modality,
+      clinical_context: r.clinical_context || "",
       dictation: r.raw_dictation,
       ai_findings: r.initial_findings_text || r.findings_text,
       ai_conclusion: r.initial_conclusion_text || r.conclusion_text,
