@@ -159,6 +159,10 @@ export async function POST(req: NextRequest) {
       model_config_snapshot: body.model_config_snapshot || null,
       initial_findings_text: body.initial_findings_text || null,
       initial_conclusion_text: body.initial_conclusion_text || null,
+      generation_duration_ms: body.generation_duration_ms || null,
+      provider_used: body.provider_used || null,
+      model_used: body.model_used || null,
+      had_corrections: body.had_corrections || false,
     };
 
     let data;
@@ -170,9 +174,13 @@ export async function POST(req: NextRequest) {
       .select()
       .single());
 
-    if (error && error.message?.includes("initial_")) {
+    if (error) {
       delete reportRow.initial_findings_text;
       delete reportRow.initial_conclusion_text;
+      delete reportRow.generation_duration_ms;
+      delete reportRow.provider_used;
+      delete reportRow.model_used;
+      delete reportRow.had_corrections;
       ({ data, error } = await supabase
         .from("reports")
         .insert(reportRow)

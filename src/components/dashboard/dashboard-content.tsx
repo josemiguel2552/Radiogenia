@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronRight,
+  AlertTriangle,
+  Flag,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -32,6 +34,9 @@ import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { AnatomyLoader } from "./anatomy-loader";
 import { FloatingDictation } from "./floating-dictation";
 import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
+import { detectPii, type PiiMatch } from "@/lib/pii-detect";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -73,6 +78,19 @@ export function DashboardContent() {
   const [loadingTrace, setLoadingTrace] = useState(false);
   const [repairMessage, setRepairMessage] = useState<string | null>(null);
 
+  // PII detection
+  const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
+  const [piiDismissed, setPiiDismissed] = useState(false);
+
+  // Audit: timing + error reporting
+  const generateStartRef = useRef<number>(0);
+  const [generationDurationMs, setGenerationDurationMs] = useState<number | null>(null);
+  const [lastSavedReportId, setLastSavedReportId] = useState<string | null>(null);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorNote, setErrorNote] = useState("");
+  const [errorReported, setErrorReported] = useState(false);
+  const [reportingError, setReportingError] = useState(false);
+
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
   const whisperLang = LANG_TO_WHISPER[outputLanguage] || "es";
@@ -89,6 +107,16 @@ export function DashboardContent() {
     },
     onError: (err) => setVoiceError(err),
   });
+
+  // PII detection — debounced on dictation changes
+  useEffect(() => {
+    if (!dictation.trim()) { setPiiMatches([]); return; }
+    const timer = setTimeout(() => {
+      setPiiMatches(detectPii(dictation));
+      setPiiDismissed(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [dictation]);
 
   // Auto-open recommendations when they arrive
   useEffect(() => {
@@ -171,6 +199,10 @@ export function DashboardContent() {
 
     const templateText = selectedTemplate.structure?.template || "";
 
+    generateStartRef.current = Date.now();
+    setGenerationDurationMs(null);
+    setLastSavedReportId(null);
+    setErrorReported(false);
     setLoadingFindings(true);
     setLoadingConclusion(true);
     setLoadingRecs(true);
@@ -344,6 +376,7 @@ export function DashboardContent() {
       });
 
     await Promise.all([tracePromise, conclusionPromise, recsPromise]);
+    setGenerationDurationMs(Date.now() - generateStartRef.current);
   }
 
   function cleanReport(text: string): string {
@@ -428,6 +461,11 @@ export function DashboardContent() {
 
     const { data: config } = await supabase.from("user_model_config").select("*").single();
 
+    const hadCorrections = !!(
+      (initialFindings && findings !== initialFindings) ||
+      (initialConclusion && conclusion !== initialConclusion)
+    );
+
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
@@ -444,9 +482,16 @@ export function DashboardContent() {
           initial_conclusion_text: initialConclusion || null,
           template_snapshot: selectedTemplate.structure,
           model_config_snapshot: config,
+          generation_duration_ms: generationDurationMs,
+          provider_used: config?.provider || null,
+          model_used: config?.model_name || null,
+          had_corrections: hadCorrections,
         }),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const saved = await res.json();
+        if (saved?.id) setLastSavedReportId(saved.id);
+      } else {
         console.error("Failed to save report:", await res.text());
       }
     } catch (e) {
@@ -472,13 +517,70 @@ export function DashboardContent() {
     setTraceActive(false);
     setRepairMessage(null);
     setRecsOpen(false);
+    setPiiMatches([]);
+    setPiiDismissed(false);
+    setGenerationDurationMs(null);
+    setLastSavedReportId(null);
+    setErrorReported(false);
     localStorage.removeItem("radiogenai_draft");
+  }
+
+  async function handleReportError() {
+    setReportingError(true);
+    try {
+      await fetch("/api/audit-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "report_error",
+          report_id: lastSavedReportId,
+          metadata: {
+            note: errorNote,
+            study_type: selectedTemplate?.name,
+            modality: selectedTemplate?.modality,
+            had_findings: !!findings,
+            had_conclusion: !!conclusion,
+          },
+        }),
+      });
+      setErrorReported(true);
+      setErrorDialogOpen(false);
+      setErrorNote("");
+    } catch { /* ignore */ }
+    setReportingError(false);
   }
 
   const isGenerating = loadingFindings || loadingConclusion || loadingRecs;
   const hasOutput = findings || conclusion || recommendations || isGenerating;
   const setupReady = !!selectedTemplate;
   const canGenerate = setupReady && dictation.trim() && !isGenerating;
+  const showPiiWarning = piiMatches.length > 0 && !piiDismissed && dictation.trim();
+
+  const piiWarningBanner = showPiiWarning ? (
+    <div className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-2.5 space-y-1.5">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">{t("pii.warning_title")}</p>
+          <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">{t("pii.warning_detail")}</p>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {piiMatches.map((m, i) => (
+              <Badge key={i} variant="outline" className="text-[10px] border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300">
+                {t(`pii.type.${m.type}`)}: {m.value}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => setPiiDismissed(true)}
+        className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 underline underline-offset-2"
+      >
+        {t("pii.proceed")}
+      </button>
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-3 md:space-y-4">
@@ -535,6 +637,7 @@ export function DashboardContent() {
                 )}
               </div>
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+              {piiWarningBanner}
               <Button
                 onClick={handleGenerate}
                 disabled={!canGenerate}
@@ -676,6 +779,7 @@ export function DashboardContent() {
                 )}
               </div>
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+              {piiWarningBanner}
               <Button
                 onClick={handleGenerate}
                 disabled={!canGenerate}
@@ -767,6 +871,16 @@ export function DashboardContent() {
                     {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.full_report")}
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setErrorDialogOpen(true); setErrorNote(""); }}
+                    disabled={!findings || errorReported}
+                    className="gap-1 text-xs h-8 md:h-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    {errorReported ? <Check className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
+                    {t("dash.report_error")}
+                  </Button>
                 </div>
                 <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90">
                   <ArrowRight className="h-3 w-3" />
@@ -787,6 +901,38 @@ export function DashboardContent() {
           });
         }}
       />
+
+      {/* Report error dialog */}
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="h-4 w-4 text-red-500" />
+              {t("dash.report_error_title")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder={t("dash.report_error_placeholder")}
+              value={errorNote}
+              onChange={(e) => setErrorNote(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setErrorDialogOpen(false)}>
+                {t("cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={handleReportError}
+                disabled={reportingError}
+              >
+                {reportingError ? <Loader2 className="h-4 w-4 animate-spin" /> : t("dash.report_error_send")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
