@@ -25,6 +25,7 @@ import {
   ChevronRight,
   AlertTriangle,
   Flag,
+  Pencil,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -942,6 +943,7 @@ export function DashboardContent() {
             onChange={(v) => { setFindings(v); reportDirtyRef.current = true; setTraceData(null); setRepairMessage(null); }}
             minHeight={140}
             traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
+            traceLocked={loadingTrace}
             isDark={isDark}
           />
 
@@ -1055,6 +1057,7 @@ function OutputCard({
   onChange,
   minHeight,
   traceHighlights,
+  traceLocked,
   isDark,
 }: {
   title: string;
@@ -1064,8 +1067,10 @@ function OutputCard({
   onChange: (v: string) => void;
   minHeight: number;
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
+  traceLocked?: boolean;
   isDark?: boolean;
 }) {
+  const t = useT();
   const showTrace = traceHighlights && traceHighlights.length > 0;
   return (
     <Card>
@@ -1074,7 +1079,19 @@ function OutputCard({
           {icon}
           {title}
         </h3>
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
+        <div className="flex items-center gap-2">
+          {showTrace && !traceLocked && (
+            <button
+              type="button"
+              onClick={() => onChange(value)}
+              className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              {t("edit")}
+            </button>
+          )}
+          {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
+        </div>
       </div>
       <CardContent className="pt-0 px-4 pb-3">
         {loading && !value ? (
