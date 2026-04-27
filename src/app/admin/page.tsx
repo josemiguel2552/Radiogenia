@@ -1270,7 +1270,7 @@ export default function AdminPage() {
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
                 <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
                 <div className="ml-auto flex gap-1">
-                  {["all", "report_error", "save_report"].map((f) => (
+                  {["all", "generate_findings", "save_report", "report_error"].map((f) => (
                     <Button
                       key={f}
                       variant={auditFilter === f ? "default" : "outline"}
@@ -1278,7 +1278,7 @@ export default function AdminPage() {
                       className="h-7 text-xs"
                       onClick={() => setAuditFilter(f)}
                     >
-                      {f === "all" ? "All" : f === "report_error" ? "Errors" : "Saves"}
+                      {f === "all" ? "All" : f === "generate_findings" ? "Generations" : f === "save_report" ? "Saves" : "Errors"}
                     </Button>
                   ))}
                 </div>
@@ -1328,11 +1328,17 @@ export default function AdminPage() {
                           <td className="py-2.5 px-2 text-xs text-gray-500 text-right hidden md:table-cell">
                             {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : "—"}
                           </td>
-                          <td className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 max-w-[200px] truncate">
-                            {log.action === "report_error" && (log.metadata as { note?: string })?.note
-                              ? (log.metadata as { note: string }).note
-                              : (log.metadata as { study_type?: string })?.study_type || "—"
-                            }
+                          <td className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 max-w-[260px]">
+                            {(() => {
+                              const meta = log.metadata as Record<string, unknown>;
+                              if (log.action === "report_error" && meta?.note) return String(meta.note);
+                              const parts: string[] = [];
+                              if (meta?.study_type) parts.push(String(meta.study_type));
+                              if (typeof meta?.trace_mappings === "number") {
+                                parts.push(`${meta.trace_mappings} ok, ${meta.trace_unmatched || 0} omit, ${meta.trace_hallucinations || 0} halluc`);
+                              }
+                              return parts.length > 0 ? parts.join(" · ") : "—";
+                            })()}
                           </td>
                         </tr>
                       ))}

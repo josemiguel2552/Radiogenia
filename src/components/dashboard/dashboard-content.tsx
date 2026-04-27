@@ -304,23 +304,6 @@ export function DashboardContent() {
     }
     setLoadingFindings(false);
 
-    // Audit: log findings generation
-    if (!findingsFailed && findingsText) {
-      fetch("/api/audit-logs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "generate_findings",
-          duration_ms: Date.now() - generateStartRef.current,
-          metadata: {
-            study_type: studyName,
-            modality: selectedTemplate.modality,
-            findings_length: findingsText.length,
-          },
-        }),
-      }).catch(() => {});
-    }
-
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
       setLoadingConclusion(false);
@@ -331,6 +314,7 @@ export function DashboardContent() {
     // Run trace+repair, conclusion, and recommendations ALL IN PARALLEL
     let conclusionText = "";
     let recsText = "";
+    let traceStats = { mappings: 0, unmatched: 0, hallucinations: 0 };
 
     const tracePromise = (async () => {
       setLoadingTrace(true);
@@ -345,6 +329,12 @@ export function DashboardContent() {
           if (!result.hallucinations) result.hallucinations = [];
           if (!result.mappings) result.mappings = [];
           if (!result.unmatched) result.unmatched = [];
+
+          traceStats = {
+            mappings: result.mappings.length,
+            unmatched: result.unmatched.length,
+            hallucinations: result.hallucinations.length,
+          };
 
           if (result.repaired && result.corrected_findings) {
             findingsText = cleanReport(result.corrected_findings);
@@ -450,10 +440,35 @@ export function DashboardContent() {
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
 
+    // Log trace quality metrics
+    if (traceStats.mappings > 0 || traceStats.unmatched > 0 || traceStats.hallucinations > 0) {
+      fetch("/api/audit-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_findings",
+          duration_ms: durationMs,
+          metadata: {
+            study_type: studyName,
+            modality: selectedTemplate.modality,
+            findings_length: findingsText.length,
+            trace_mappings: traceStats.mappings,
+            trace_unmatched: traceStats.unmatched,
+            trace_hallucinations: traceStats.hallucinations,
+          },
+        }),
+      }).catch(() => {});
+    }
+
     // Auto-save using local variables (React state is stale in this closure)
     if (findingsText && selectedTemplate) {
+      let config: Record<string, unknown> | null = null;
       try {
-        const { data: config } = await supabase.from("user_model_config").select("*").single();
+        const { data } = await supabase.from("user_model_config").select("*").single();
+        config = data;
+      } catch { /* config is optional for the save */ }
+
+      try {
         const res = await fetch("/api/reports", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -471,8 +486,8 @@ export function DashboardContent() {
             template_snapshot: selectedTemplate.structure,
             model_config_snapshot: config,
             generation_duration_ms: durationMs,
-            provider_used: config?.provider || null,
-            model_used: config?.model_name || null,
+            provider_used: (config?.provider as string) || null,
+            model_used: (config?.model_name as string) || null,
             had_corrections: false,
           }),
         });
@@ -487,14 +502,23 @@ export function DashboardContent() {
               body: JSON.stringify({
                 action: "save_report",
                 report_id: saved.id,
-                provider: config?.provider || null,
-                model: config?.model_name || null,
+                provider: (config?.provider as string) || null,
+                model: (config?.model_name as string) || null,
                 duration_ms: durationMs,
                 had_corrections: false,
-                metadata: { study_type: studyName, modality: selectedTemplate.modality },
+                metadata: {
+                  study_type: studyName,
+                  modality: selectedTemplate.modality,
+                  trace_mappings: traceStats.mappings,
+                  trace_unmatched: traceStats.unmatched,
+                  trace_hallucinations: traceStats.hallucinations,
+                },
               }),
             }).catch(() => {});
           }
+        } else {
+          const errBody = await res.text().catch(() => "");
+          console.error("Report save failed:", res.status, errBody);
         }
       } catch (e) {
         console.error("Failed to auto-save report:", e);
