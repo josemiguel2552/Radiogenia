@@ -3,7 +3,7 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig, resolveApiKey, checkReportLimit } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, checkReportLimit, incrementReportUsage } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
@@ -97,18 +97,7 @@ export async function POST(req: NextRequest) {
       } catch { /* ignore */ }
     }
 
-    // Increment report usage (fire-and-forget)
-    const incrementUsage = () => {
-      service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
-        if (rpcError) {
-          service
-            .from("profiles")
-            .update({ reports_used_this_month: quota.used + 1 })
-            .eq("id", user.id)
-            .then(() => {});
-        }
-      });
-    };
+    const incrementUsage = () => { incrementReportUsage(user.id).catch(() => {}); };
 
     const outLang = safeConfig.output_language as OutputLanguage;
     const translatedTemplate = translateTemplate(template, outLang);

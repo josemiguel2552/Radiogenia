@@ -197,6 +197,57 @@ export async function checkDictationLimit(userId: string): Promise<{
   };
 }
 
+function isBillingPeriodStale(periodStart: string | null): boolean {
+  if (!periodStart) return true;
+  return new Date(periodStart).getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
+}
+
+export async function incrementReportUsage(userId: string): Promise<void> {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("profiles")
+    .select("reports_used_this_month, dictation_seconds_used, billing_period_start")
+    .eq("id", userId)
+    .single();
+
+  if (!data) return;
+
+  const stale = isBillingPeriodStale(data.billing_period_start);
+  const { error } = await service
+    .from("profiles")
+    .update({
+      reports_used_this_month: stale ? 1 : (data.reports_used_this_month || 0) + 1,
+      ...(stale ? { dictation_seconds_used: 0, billing_period_start: new Date().toISOString() } : {}),
+    })
+    .eq("id", userId);
+
+  if (error) console.error("[incrementReportUsage]", error.message);
+}
+
+export async function incrementDictationUsage(userId: string, seconds: number): Promise<number> {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("profiles")
+    .select("dictation_seconds_used, reports_used_this_month, billing_period_start")
+    .eq("id", userId)
+    .single();
+
+  if (!data) return seconds;
+
+  const stale = isBillingPeriodStale(data.billing_period_start);
+  const newUsed = stale ? seconds : (data.dictation_seconds_used || 0) + seconds;
+  const { error } = await service
+    .from("profiles")
+    .update({
+      dictation_seconds_used: newUsed,
+      ...(stale ? { reports_used_this_month: 0, billing_period_start: new Date().toISOString() } : {}),
+    })
+    .eq("id", userId);
+
+  if (error) console.error("[incrementDictationUsage]", error.message);
+  return newUsed;
+}
+
 export async function checkDocumentLimit(userId: string): Promise<{
   allowed: boolean;
   used: number;

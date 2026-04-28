@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig, checkDictationLimit } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, checkDictationLimit, incrementDictationUsage } from "@/lib/auth-helpers";
 import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { postprocessWhisper } from "@/lib/whisper-postprocess";
 
@@ -86,20 +86,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Increment dictation usage after successful transcription
+    let newUsedSeconds = quota.usedSeconds;
     if (durationSeconds > 0) {
       const roundedSeconds = Math.ceil(durationSeconds);
-      await supabase.rpc("increment_dictation_seconds", {
-        uid: user.id,
-        seconds: roundedSeconds,
-      }).then(({ error }) => {
-        if (error) {
-          supabase
-            .from("profiles")
-            .update({ dictation_seconds_used: quota.usedSeconds + roundedSeconds })
-            .eq("id", user.id)
-            .then(() => {});
-        }
-      });
+      newUsedSeconds = await incrementDictationUsage(user.id, roundedSeconds);
     }
 
     const rawText = await res.text();
@@ -107,7 +97,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       text,
       dictation: {
-        usedSeconds: quota.usedSeconds + Math.ceil(durationSeconds),
+        usedSeconds: newUsedSeconds,
         limitSeconds: quota.limitSeconds,
       },
     });
