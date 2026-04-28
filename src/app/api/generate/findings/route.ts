@@ -97,8 +97,6 @@ export async function POST(req: NextRequest) {
       } catch { /* ignore */ }
     }
 
-    const incrementUsage = () => { incrementReportUsage(user.id).catch(() => {}); };
-
     const outLang = safeConfig.output_language as OutputLanguage;
     const translatedTemplate = translateTemplate(template, outLang);
 
@@ -106,6 +104,9 @@ export async function POST(req: NextRequest) {
       "Content-Type": "text/plain; charset=utf-8",
       "X-Output-Language": safeConfig.output_language,
     };
+
+    // Increment report usage BEFORE responding (must complete before serverless fn dies)
+    await incrementReportUsage(user.id);
 
     // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek V3 validator ──
     if (globalConfig.findingsComboEnabled) {
@@ -122,8 +123,6 @@ export async function POST(req: NextRequest) {
         compactNormals: safeConfig.compact_normals,
         preferredNormalPhrases,
       });
-
-      incrementUsage();
 
       const encoder = new TextEncoder();
       const body = new ReadableStream({
@@ -171,8 +170,6 @@ export async function POST(req: NextRequest) {
       system,
       user: userPrompt,
     });
-
-    incrementUsage();
 
     if (outLang !== "en") {
       const reader = rawStream.getReader();
