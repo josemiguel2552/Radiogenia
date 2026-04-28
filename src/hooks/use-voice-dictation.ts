@@ -17,6 +17,7 @@ interface UseVoiceDictationOptions {
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
+  onAllTranscribed?: () => void;
 }
 
 interface QueueItem {
@@ -30,6 +31,7 @@ export function useVoiceDictation({
   onTranscript,
   onError,
   onQuotaUpdate,
+  onAllTranscribed,
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -49,6 +51,9 @@ export function useVoiceDictation({
   // Sequential queue — guarantees chunks are transcribed in order
   const queueRef = useRef<QueueItem[]>([]);
   const processingRef = useRef(false);
+  const stoppedRef = useRef(false);
+  const onAllTranscribedRef = useRef(onAllTranscribed);
+  onAllTranscribedRef.current = onAllTranscribed;
 
   const processQueue = useCallback(async () => {
     if (processingRef.current) return;
@@ -113,6 +118,10 @@ export function useVoiceDictation({
 
     processingRef.current = false;
     setIsTranscribing(false);
+
+    if (stoppedRef.current && queueRef.current.length === 0) {
+      onAllTranscribedRef.current?.();
+    }
   }, [language, studyContext, onTranscript, onError, onQuotaUpdate]);
 
   const enqueueBlob = useCallback((blob: Blob, durationMs: number) => {
@@ -231,6 +240,7 @@ export function useVoiceDictation({
       });
       streamRef.current = stream;
       activeRef.current = true;
+      stoppedRef.current = false;
       priorTranscriptRef.current = "";
       lastTranscriptRef.current = "";
       queueRef.current = [];
@@ -280,6 +290,7 @@ export function useVoiceDictation({
   }, [enqueueBlob, cycleRecorder, detectSilence, onError]);
 
   const stopRecording = useCallback(() => {
+    stoppedRef.current = true;
     stopInternal();
   }, [stopInternal]);
 

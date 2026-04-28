@@ -64,6 +64,9 @@ export function DashboardContent() {
   // Dictation state
   const [dictation, setDictation] = useState("");
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [isCorrecting, setIsCorrecting] = useState(false);
+  const correctedLenRef = useRef(0);
+  const dictationRef = useRef("");
 
   // Report output state
   const [findings, setFindings] = useState("");
@@ -139,7 +142,49 @@ export function DashboardContent() {
       setVoiceError(null);
     },
     onError: (err) => setVoiceError(err),
+    onAllTranscribed: () => {
+      const full = dictationRef.current;
+      const alreadyCorrected = correctedLenRef.current;
+      const newText = full.slice(alreadyCorrected).trim();
+      if (!newText || newText.length < 3) {
+        correctedLenRef.current = full.length;
+        return;
+      }
+      setIsCorrecting(true);
+      const tpl = templates.find((t) => t.id === selectedTemplateId);
+      fetch("/api/transcribe/correct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: newText,
+          modality: tpl?.modality || "",
+          studyType: tpl?.name || "",
+          language: whisperLang,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.corrected && data.corrected !== newText) {
+            setDictation((prev) => {
+              const prefix = prev.slice(0, alreadyCorrected);
+              const suffix = prev.slice(alreadyCorrected);
+              const updated = suffix.replace(newText, data.corrected);
+              const result = prefix + updated;
+              correctedLenRef.current = result.length;
+              return result;
+            });
+          } else {
+            correctedLenRef.current = dictationRef.current.length;
+          }
+        })
+        .catch(() => {
+          correctedLenRef.current = dictationRef.current.length;
+        })
+        .finally(() => setIsCorrecting(false));
+    },
   });
+
+  useEffect(() => { dictationRef.current = dictation; }, [dictation]);
 
   // PII detection — debounced on dictation + clinical info changes
   useEffect(() => {
@@ -845,6 +890,7 @@ export function DashboardContent() {
     setLastSavedReportId(null);
     setErrorReported(false);
     correctionLoggedRef.current = false;
+    correctedLenRef.current = 0;
     localStorage.removeItem("radiogenai_draft");
   }
 
@@ -954,10 +1000,10 @@ export function DashboardContent() {
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
-                {(isRecording || isTranscribing) && (
+                {(isRecording || isTranscribing || isCorrecting) && (
                   <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
                     </Badge>
                   </div>
                 )}
@@ -1109,10 +1155,10 @@ export function DashboardContent() {
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
-                {(isRecording || isTranscribing) && (
+                {(isRecording || isTranscribing || isCorrecting) && (
                   <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
                     </Badge>
                   </div>
                 )}
