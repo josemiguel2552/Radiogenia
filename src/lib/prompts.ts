@@ -293,9 +293,9 @@ Rules:
     });
   }
 
-  const langReminder = lang !== "es"
-    ? `\n\nREMINDER: Write your ENTIRE output in ${LANGUAGE_LABEL[lang]}, not in the dictation language.`
-    : "";
+  const langReminder = lang === "es"
+    ? `\n\nIDIOMA: Tu salida COMPLETA debe estar en ${LANGUAGE_LABEL[lang]}. No mezcles con otros idiomas.`
+    : `\n\nLANGUAGE: Write your ENTIRE output in ${LANGUAGE_LABEL[lang]}, not in the dictation language. Do not mix languages.`;
   const user = `Template: ${params.template}\n\nDictation: ${params.dictation}${langReminder}`;
   return { system, user };
 }
@@ -313,159 +313,99 @@ export function buildConclusionPrompt(params: {
   let system: string;
 
   if (lang === "es") {
-    system = `Eres un radiólogo experto redactando conclusiones de informes radiológicos. Genera la conclusión basándote EXCLUSIVAMENTE en los hallazgos proporcionados.
+    system = `Redacta la CONCLUSIÓN de un informe radiológico a partir de los HALLAZGOS proporcionados.
 
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
-IMPORTANTE: Los hallazgos pueden estar en CUALQUIER idioma. Independientemente del idioma de entrada, tu salida COMPLETA debe estar en ${l}. Traduce todo el contenido al ${l}.
+Si los hallazgos están en otro idioma, traduce al ${l}.
 
-PRINCIPIO FUNDAMENTAL — LA CONCLUSIÓN ES DESCRIPTIVA, NO INTERPRETATIVA:
-La conclusión DESCRIBE los hallazgos relevantes. NUNCA especula sobre su naturaleza, etiología ni relación entre ellos. El radiólogo describe lo que VE, no lo que CREE.
+REQUISITOS:
+- Usa puntos numerados (3–6 máximo).
+- Ordena por relevancia clínica (primero lo importante).
+- Sé claro, breve y accionable.
+- Usa lenguaje prudente y descriptivo: tamaño, forma, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a previos.
 
-RESTRICCIÓN REGULATORIA — CRÍTICA:
-Este software NO es un producto sanitario clasificado (no IIA ni IIB). La conclusión SOLO puede DESCRIBIR hallazgos de imagen. Está PROHIBIDO:
-- Sugerir diagnósticos específicos ("compatible con neoplasia", "hallazgos sugestivos de linfoma", "en relación con proceso infeccioso").
-- Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM", "control en 3 meses", "valorar tratamiento", "derivar a especialista").
-- Clasificar hallazgos según sistemas de estadificación o escalas (BI-RADS, Lung-RADS, PI-RADS, TNM, etc.).
-- Emitir pronósticos o valoraciones de gravedad ("hallazgo preocupante", "proceso agresivo", "buen pronóstico").
-Usa SOLO lenguaje descriptivo morfológico: tamaño, forma, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a estudios previos.
+PROHIBIDO:
+- Emitir diagnósticos o sugerir enfermedades ("compatible con neumonía", "sugestivo de neoplasia", "en relación con cirrosis").
+- Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM", "control en 3 meses", "derivar a especialista").
+- Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
+- Usar lenguaje categórico o inferencias causales ("probablemente relacionado con...", "secundario a...", "en el contexto de...").
+- Emitir pronósticos ("hallazgo preocupante", "proceso agresivo", "buen pronóstico").
+- Añadir información no presente en los hallazgos.
+- Incluir descripciones genéricas de normalidad de órganos no destacados.
+- Especular sobre la naturaleza de un hallazgo ("posiblemente benigno", "probablemente inflamatorio").
+- Descartar patología si existe algún hallazgo indeterminado.
 
-PROHIBICIONES ABSOLUTAS:
-- NUNCA incluyas recomendaciones. Frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a..." están PROHIBIDAS.
-- NUNCA sugieras un diagnóstico específico. NO escribas "compatible con neumonía", "sugestivo de neoplasia", "en relación con cirrosis". Describe los hallazgos morfológicos sin etiquetarlos con un diagnóstico.
-- NUNCA incluyas descripciones genéricas de normalidad. Si un órgano es normal y el radiólogo no lo destacó, NO lo menciones.
-- NUNCA especules sobre la naturaleza de un hallazgo. NO escribas "probablemente inflamatorio", "posiblemente benigno", "de probable origen...", "sugiere...". Describe el hallazgo tal como aparece en los datos sin añadir interpretaciones diagnósticas.
-- NUNCA establezcas relaciones causales entre hallazgos a menos que la relación sea anatómicamente obvia e indiscutible. NO escribas "probablemente relacionado con...", "en el contexto de...", "secundario a...".
-- NUNCA descartes patología. NO escribas "sin evidencia de malignidad" si hay un hallazgo indeterminado (como un nódulo sin caracterizar). Solo puedes descartar patología si genuinamente no hay NINGÚN hallazgo que la sugiera.
-
-HALLAZGOS NEGATIVOS CON RELEVANCIA CLÍNICA:
-Si en los hallazgos aparece un hallazgo negativo que el radiólogo dictó explícitamente (ej: "sin evidencia de TEP", "no masa colónica", "no disección aórtica"), inclúyelo en la conclusión SOLO si:
-- Responde directamente a la pregunta clínica, O
-- Tiene alta relevancia clínica por el contexto del estudio.
-Ejemplo: si la pregunta clínica es "descartar TEP" y los hallazgos dicen "sin evidencia de TEP agudo", la conclusión DEBE incluir "Sin evidencia de tromboembolismo pulmonar agudo."
+HALLAZGOS NEGATIVOS:
+Si el radiólogo dictó explícitamente un hallazgo negativo relevante ("sin evidencia de TEP", "no masa colónica"), inclúyelo SOLO si responde a la pregunta clínica o tiene alta relevancia.
 
 ${hasClinical ? `PREGUNTA CLÍNICA:
-Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la conclusión debe responder directamente a esa pregunta basándose en los hallazgos.
-- Si los hallazgos responden claramente: usa lenguaje descriptivo morfológico directo ("Se identifica...", "Se observa...")
-- Si no permiten responder con certeza: "No se identifican hallazgos significativos respecto a..."
-- Si hay un hallazgo indeterminado relacionado con la pregunta: descríbelo morfológicamente sin especular sobre su naturaleza ni sugerir un diagnóstico.` : ""}
+El primer punto debe responder a la pregunta clínica del médico solicitante basándose en los hallazgos.
+- Si los hallazgos responden claramente: lenguaje descriptivo directo.
+- Si no permiten responder: "No se identifican hallazgos significativos respecto a..."
+- Si hay hallazgo indeterminado: descríbelo sin especular.` : ""}
 
-ESTRUCTURA DE LA CONCLUSIÓN:
-1. ${hasClinical ? "Punto 1: respuesta a la pregunta clínica." : "Solo hallazgos clínicamente SIGNIFICATIVOS."}
-2. Cada punto representa un PROBLEMA CLÍNICO COMPLETO, NO un hallazgo individual. AGRUPA hallazgos de DISTINTAS secciones anatómicas que formen parte del mismo cuadro clínico.
-3. Hallazgos sin relación fisiopatológica razonable van en puntos SEPARADOS.
-4. Ordenados de MAYOR a MENOR relevancia clínica.
-5. Los hallazgos de ESCASA relevancia clínica NO se incluyen.
-6. Si todo es normal: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
+AGRUPACIÓN:
+Cada punto = un PROBLEMA CLÍNICO COMPLETO, no un hallazgo individual. Agrupa hallazgos de distintas secciones anatómicas si forman parte del mismo cuadro:
+- TEP: defectos de llenado + infartos + sobrecarga derecha → un solo punto.
+- Tumor: masa + adenopatías + derrame + metástasis → un solo punto.
+- Politrauma: fracturas + neumotórax + contusión + derrame → un solo punto.
+Hallazgos sin relación van en puntos separados.
 
-AGRUPACIÓN INTELIGENTE — REGLA CLAVE:
-Los hallazgos del informe están organizados por secciones anatómicas (pulmones, corazón, mediastino, etc.), pero un mismo problema clínico puede afectar MÚLTIPLES secciones. Tu trabajo es REAGRUPAR esos hallazgos dispersos en puntos clínicamente coherentes. Cada punto debe dar al clínico una imagen completa del problema, no fragmentos sueltos.
+COMPARACIONES CON PREVIOS:
+Si los hallazgos mencionan cambios respecto a estudios previos ("aumento", "estable", "nueva lesión"), inclúyelos junto al hallazgo correspondiente.
 
-Patrones frecuentes que DEBES agrupar en un solo punto:
-- Tromboembolismo pulmonar: defectos de llenado en arterias pulmonares + infartos pulmonares + sobrecarga de cavidades derechas + reflujo a venas suprahepáticas
-- Proceso tumoral: masa/lesión + adenopatías regionales + derrame + posibles implantes/metástasis
-- Politraumatismo torácico: fracturas costales + neumotórax + contusión pulmonar + derrame pleural + desviación mediastínica
-- Insuficiencia cardíaca: cardiomegalia + derrame pleural bilateral + edema/redistribución vascular pulmonar
-- Patología infecciosa: consolidación + broncograma aéreo + derrame paraneumónico + adenopatías reactivas
-
-COMPARACIÓN CON ESTUDIOS PREVIOS:
-Si los hallazgos mencionan comparaciones con estudios previos ("aumento de tamaño", "estable", "nueva lesión", "disminución"), inclúyelas en la conclusión — son CRÍTICAS para la toma de decisiones. Intégralas junto al hallazgo correspondiente, no como frase suelta.
-
-EJEMPLO CORRECTO (TEP con infartos y repercusión cardíaca):
-1. Defectos de repleción en arterias pulmonares lobares y segmentarias bilaterales, con áreas de infarto pulmonar en lóbulo inferior derecho y signos de sobrecarga de cavidades derechas con reflujo de contraste a venas suprahepáticas.
-
-EJEMPLO CORRECTO (progresión tumoral):
-1. Masa pulmonar en lóbulo superior derecho de 35 mm, aumentada respecto al estudio previo (22 mm), con adenopatías mediastínicas patológicas y nuevo derrame pleural ipsilateral.
-2. Signos de diverticulitis aguda en sigma con adenopatías mesentéricas reactivas adyacentes.
-
-EJEMPLO INCORRECTO:
-1. Defectos de repleción en arterias pulmonares. ← MAL: separó del resto del cuadro.
-2. Áreas de infarto pulmonar en LID. ← MAL: está relacionado con el punto anterior.
-3. Dilatación de cavidades derechas. ← MAL: forma parte del mismo cuadro.
-4. Masa pulmonar de 35 mm, probablemente neoplásica. Se recomienda biopsia. ← MAL: sugiere diagnóstico y recomienda acción.
-5. Adenopatías mediastínicas. ← MAL: separó un hallazgo relacionado con la masa.
-
-LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Si hay más hallazgos relevantes, descarta los menos importantes.
+Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
 
 FORMATO:
-- Puntos numerados (1. 2. 3. 4.). Texto plano.
+- Puntos numerados (1. 2. 3.). Texto plano.
 - NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".`;
   } else {
-    system = `You are an expert radiologist writing radiology report conclusions. Generate the conclusion based EXCLUSIVELY on the provided findings.
+    system = `Write the CONCLUSION of a radiology report based on the provided FINDINGS.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
-IMPORTANT: The findings may be in ANY language. Regardless of the input language, your ENTIRE output MUST be in ${l}. Translate all content to ${l}.
+If findings are in another language, translate to ${l}.
 
-FUNDAMENTAL PRINCIPLE — THE CONCLUSION IS DESCRIPTIVE, NOT INTERPRETIVE:
-The conclusion DESCRIBES relevant findings. It NEVER speculates about their nature, etiology or relationship to each other. The radiologist describes what they SEE, not what they THINK.
+REQUIREMENTS:
+- Use numbered points (3–6 maximum).
+- Order by clinical relevance (most important first).
+- Be clear, brief, and actionable.
+- Use prudent, descriptive language: size, shape, location, density/signal, relationship to adjacent structures, changes compared to prior studies.
 
-REGULATORY RESTRICTION — CRITICAL:
-This software is NOT a classified medical device (not IIA or IIB). The conclusion may ONLY DESCRIBE imaging findings. The following are FORBIDDEN:
-- Suggesting specific diagnoses ("consistent with neoplasm", "findings suggestive of lymphoma", "related to infectious process").
-- Recommending clinical actions ("biopsy recommended", "further evaluation with MRI", "follow-up in 3 months", "consider treatment", "refer to specialist").
-- Classifying findings according to staging systems or scales (BI-RADS, Lung-RADS, PI-RADS, TNM, etc.).
-- Issuing prognoses or severity assessments ("concerning finding", "aggressive process", "good prognosis").
-Use ONLY descriptive morphological language: size, shape, location, density/signal, relationship to adjacent structures, changes compared to prior studies.
+FORBIDDEN:
+- Suggesting diagnoses or diseases ("consistent with pneumonia", "suggestive of neoplasm", "related to cirrhosis").
+- Recommending clinical actions ("biopsy recommended", "further evaluation with MRI", "follow-up in 3 months", "refer to specialist").
+- Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
+- Categorical language or causal inferences ("likely related to...", "secondary to...", "in the context of...").
+- Issuing prognoses ("concerning finding", "aggressive process", "good prognosis").
+- Adding information not present in the findings.
+- Including generic normality descriptions for organs not highlighted.
+- Speculating about the nature of a finding ("possibly benign", "likely inflammatory").
+- Ruling out pathology if any indeterminate finding exists.
 
-ABSOLUTE PROHIBITIONS:
-- NEVER include recommendations. Phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." are FORBIDDEN.
-- NEVER suggest a specific diagnosis. Do NOT write "consistent with pneumonia", "suggestive of neoplasm", "related to cirrhosis". Describe the morphological findings without labeling them with a diagnosis.
-- NEVER include generic normality descriptions. If an organ is normal and the radiologist did not highlight it, do NOT mention it.
-- NEVER speculate about the nature of a finding. Do NOT write "possibly inflammatory", "likely benign", "probably related to...", "suggestive of...". Describe the finding as it appears in the data without adding diagnostic interpretations.
-- NEVER establish causal relationships between findings unless the relationship is anatomically obvious and indisputable. Do NOT write "likely related to...", "in the context of...", "secondary to...".
-- NEVER rule out pathology. Do NOT write "no evidence of malignancy" if there is an indeterminate finding (e.g. an uncharacterized nodule). You may only rule out pathology if there genuinely is NO finding that suggests it.
-
-CLINICALLY RELEVANT NEGATIVE FINDINGS:
-If the findings include a negative finding that the radiologist explicitly dictated (e.g. "no CT evidence of acute pulmonary embolism", "no colonic mass", "no aortic dissection"), include it in the conclusion ONLY if:
-- It directly answers the clinical question, OR
-- It has high clinical relevance given the study context.
-Example: if the clinical question is "rule out PE" and the findings state "no CT evidence of acute pulmonary embolism", the conclusion MUST include "No CT evidence of acute pulmonary embolism."
+NEGATIVE FINDINGS:
+If the radiologist explicitly dictated a relevant negative finding ("no CT evidence of PE", "no colonic mass"), include it ONLY if it answers the clinical question or has high clinical relevance.
 
 ${hasClinical ? `CLINICAL QUESTION:
-Clinical data from the referring physician is provided. The FIRST point of the conclusion must directly answer that clinical question based on the findings.
-- If findings clearly answer: use direct morphological descriptive language ("Identified...", "Observed...")
+The first point must answer the referring physician's clinical question based on the findings.
+- If findings clearly answer: use direct descriptive language.
 - If inconclusive: "No significant findings regarding..."
-- If there is an indeterminate finding related to the question: describe it morphologically without speculating about its nature or suggesting a diagnosis.` : ""}
+- If there is an indeterminate finding: describe it without speculating.` : ""}
 
-CONCLUSION STRUCTURE:
-1. ${hasClinical ? "Point 1: answer to the clinical question." : "Only clinically SIGNIFICANT findings."}
-2. Each point represents a COMPLETE CLINICAL PROBLEM, NOT an individual finding. GROUP findings from DIFFERENT anatomical sections that form part of the same clinical picture.
-3. Findings with NO reasonable pathophysiological relationship go in SEPARATE points.
-4. Ordered from MOST to LEAST clinically relevant.
-5. Findings of LOW clinical relevance are NOT included.
-6. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
-
-INTELLIGENT GROUPING — KEY RULE:
-Findings in the report are organized by anatomical sections (lungs, heart, mediastinum, etc.), but a single clinical problem can affect MULTIPLE sections. Your job is to REGROUP those scattered findings into clinically coherent points. Each point should give the clinician a complete picture of the problem, not isolated fragments.
-
-Common patterns that MUST be grouped into a single point:
-- Pulmonary embolism: filling defects in pulmonary arteries + pulmonary infarcts + right heart strain + contrast reflux into hepatic veins
-- Tumor process: mass/lesion + regional lymphadenopathy + effusion + possible implants/metastases
-- Thoracic polytrauma: rib fractures + pneumothorax + pulmonary contusion + pleural effusion + mediastinal shift
-- Heart failure: cardiomegaly + bilateral pleural effusions + pulmonary edema/vascular redistribution
-- Infectious pathology: consolidation + air bronchograms + parapneumonic effusion + reactive lymphadenopathy
+GROUPING:
+Each point = a COMPLETE CLINICAL PROBLEM, not an individual finding. Group findings from different anatomical sections if they form part of the same clinical picture:
+- PE: filling defects + infarcts + right heart strain → one single point.
+- Tumor: mass + lymphadenopathy + effusion + metastases → one single point.
+- Polytrauma: fractures + pneumothorax + contusion + effusion → one single point.
+Unrelated findings go in separate points.
 
 COMPARISON WITH PRIOR STUDIES:
-If findings mention comparisons with prior studies ("increased in size", "stable", "new lesion", "decreased"), include them in the conclusion — they are CRITICAL for clinical decision-making. Integrate them alongside the corresponding finding, not as a standalone phrase.
+If findings mention changes compared to prior studies ("increased", "stable", "new lesion"), include them alongside the corresponding finding.
 
-CORRECT EXAMPLE (PE with infarcts and cardiac repercussion):
-1. Filling defects in bilateral lobar and segmental pulmonary arteries, with areas of pulmonary infarction in the right lower lobe and signs of right heart strain with contrast reflux into the hepatic veins.
-
-CORRECT EXAMPLE (tumor progression):
-1. Pulmonary mass in the right upper lobe measuring 35 mm, increased compared to prior study (22 mm), with pathological mediastinal lymphadenopathy and new ipsilateral pleural effusion.
-2. Signs of acute diverticulitis in the sigmoid colon with adjacent reactive mesenteric lymphadenopathy.
-
-INCORRECT EXAMPLE:
-1. Filling defects in pulmonary arteries. ← WRONG: separated from the rest of the picture.
-2. Areas of pulmonary infarction in RLL. ← WRONG: related to the point above.
-3. Right heart dilatation. ← WRONG: part of the same picture.
-4. 35 mm pulmonary mass, likely neoplastic. Biopsy recommended. ← WRONG: suggests diagnosis and recommends action.
-5. Mediastinal lymphadenopathy. ← WRONG: separated a finding related to the mass.
-
-STRICT LIMIT: MAXIMUM 4 POINTS. If there are more relevant findings, discard the least important ones.
+If no relevant findings: write the equivalent of "Examination within normal limits" in ${l}.
 
 FORMAT:
-- Numbered points (1. 2. 3. 4.). Plain text.
+- Numbered points (1. 2. 3.). Plain text.
 - Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".`;
   }
@@ -485,6 +425,15 @@ Rules:
     params.preferredConclusionPhrases.forEach((p, i) => {
       system += `\n--- ${i + 1} ---\n${p}`;
     });
+  }
+
+  // Final language enforcement
+  if (lang !== "es" && lang !== "en") {
+    system += `\n\nCRITICAL LANGUAGE REMINDER: Your ENTIRE output must be in ${l}. Not a single word in Spanish or English. Translate ALL medical terminology to ${l}.`;
+  } else if (lang === "es") {
+    system += `\n\nRECORDATORIO DE IDIOMA: Tu salida COMPLETA debe estar en ${l}. No mezcles con inglés ni otros idiomas. Traduce toda terminología al ${l}.`;
+  } else {
+    system += `\n\nLANGUAGE REMINDER: Your ENTIRE output must be in ${l}. Do not mix with Spanish or other languages. Translate all terminology to ${l}.`;
   }
 
   let userMsg = "";
