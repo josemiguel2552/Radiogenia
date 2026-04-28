@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType } = await req.json();
+    const { template, dictation, modality, studyType, paraphraseOverride } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const safeConfig = {
       findings_length: config?.findings_length || "standard",
       normal_fields_verbosity: config?.normal_fields_verbosity || "standard",
-      paraphrase_level: config?.paraphrase_level || "light",
+      paraphrase_level: paraphraseOverride || config?.paraphrase_level || "light",
       output_language: config?.output_language || "es",
       style_learning_enabled: config?.style_learning_enabled ?? true,
       compact_normals: config?.compact_normals ?? false,

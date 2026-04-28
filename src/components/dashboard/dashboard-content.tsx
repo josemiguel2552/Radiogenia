@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Flag,
   Pencil,
+  Wand2,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
@@ -58,6 +59,7 @@ export function DashboardContent() {
   const [clinicalOpen, setClinicalOpen] = useState(false);
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [recsOpen, setRecsOpen] = useState(false);
+  const [lightParaphrase, setLightParaphrase] = useState(false);
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -357,6 +359,7 @@ export function DashboardContent() {
           dictation,
           modality: selectedTemplate.modality,
           studyType: studyName,
+          ...(lightParaphrase ? { paraphraseOverride: "light" } : {}),
         }),
       });
 
@@ -972,6 +975,14 @@ export function DashboardContent() {
                   <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
                 )}
               </Button>
+              <button
+                type="button"
+                onClick={() => setLightParaphrase(!lightParaphrase)}
+                className={`flex items-center gap-1.5 text-[11px] transition-colors ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
+              >
+                <Wand2 className="h-3 w-3" />
+                {t("dash.light_paraphrase")}
+              </button>
             </CardContent>
           </Card>
         </div>
@@ -1119,6 +1130,14 @@ export function DashboardContent() {
                   <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
                 )}
               </Button>
+              <button
+                type="button"
+                onClick={() => setLightParaphrase(!lightParaphrase)}
+                className={`flex items-center gap-1.5 text-[11px] transition-colors ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
+              >
+                <Wand2 className="h-3 w-3" />
+                {t("dash.light_paraphrase")}
+              </button>
               {!setupReady && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
                   {t("dash.select_template_first")}
