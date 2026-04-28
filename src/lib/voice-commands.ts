@@ -1,6 +1,11 @@
 "use client";
 
 const COMMANDS_ES: [RegExp, string][] = [
+  // Whisper mishears "punto, nueva línea" as "línea peritoneal" / "peritoneal line"
+  [/,?\s*\bl[ií]nea peritoneal\b,?\s*/gi, ".\n"],
+  [/,?\s*\bperitoneal line\b,?\s*/gi, ".\n"],
+  [/\bpunto,?\s*nueva l[ií]nea\b/gi, ".\n"],
+  [/\bpunto,?\s*nuevo p[aá]rrafo\b/gi, ".\n\n"],
   [/\bpunto y coma\b/gi, ";"],
   [/\bpunto y aparte\b/gi, "\n\n"],
   [/\bpunto y seguido\b/gi, ". "],
@@ -34,6 +39,15 @@ const COMMANDS_ES: [RegExp, string][] = [
 ];
 
 const COMMANDS_EN: [RegExp, string][] = [
+  // Whisper commonly mishears "period, new line" as "peritoneal line"
+  [/,?\s*\bperitoneal line\b,?\s*/gi, ".\n"],
+  [/,?\s*\bperitoneal line\b\.?\s*/gi, ".\n"],
+  // Combined voice commands (must precede individual patterns)
+  [/\bperiod new line\b/gi, ".\n"],
+  [/\bperiod next line\b/gi, ".\n"],
+  [/\bperiod,?\s*new line\b/gi, ".\n"],
+  [/\bperiod,?\s*next line\b/gi, ".\n"],
+  [/\bperiod new paragraph\b/gi, ".\n\n"],
   [/\bsemicolon\b/gi, ";"],
   [/\bnew paragraph\b/gi, "\n\n"],
   [/\bellipsis\b/gi, "..."],
