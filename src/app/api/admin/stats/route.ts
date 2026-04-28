@@ -30,7 +30,7 @@ export async function GET() {
       if (plan in planCounts) planCounts[plan as keyof typeof planCounts]++;
     }
 
-    const mrr = planCounts.starter * 9.99 + planCounts.professional * 14.99;
+    const mrr = planCounts.starter * 7.99 + planCounts.professional * 15.99;
 
     const reportsThisMonth = allReports.filter((r) => {
       const d = new Date(r.created_at);

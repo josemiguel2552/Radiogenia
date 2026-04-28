@@ -1257,9 +1257,9 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium text-gray-900 dark:text-white">Margins</p>
-                    <p>Free: marketing cost (~€0.25/user/mo)</p>
-                    <p>Starter: ~92% margin</p>
-                    <p>Professional: ~87% margin</p>
+                    <p>Free: marketing cost (~€0.03/user/mo)</p>
+                    <p>Starter: ~87% margin</p>
+                    <p>Professional: ~75% margin</p>
                   </div>
                 </div>
               </CardContent>
@@ -1638,9 +1638,9 @@ export default function AdminPage() {
                 <Select value={editPlan} onValueChange={setEditPlan}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="free">Free (50 reports/mo)</SelectItem>
-                    <SelectItem value="starter">Starter — €9.99 (150 reports/mo)</SelectItem>
-                    <SelectItem value="professional">Professional — €14.99 (400 reports/mo)</SelectItem>
+                    <SelectItem value="free">Free (30 reports/mo)</SelectItem>
+                    <SelectItem value="starter">Starter — €7.99 (150 reports/mo)</SelectItem>
+                    <SelectItem value="professional">Professional — €15.99 (400 reports/mo)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

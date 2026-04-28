@@ -1372,7 +1372,7 @@ export function DashboardContent() {
                       setLimitDialogOpen(false);
                     }}
                   >
-                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")}
+                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")} (+90 min dictado)
                   </Button>
                 </div>
               </div>
