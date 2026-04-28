@@ -142,7 +142,8 @@ PRINCIPIO FUNDAMENTAL — SECCIONES NO MENCIONADAS:
 El radiólogo solo dicta lo anormal o lo que quiere destacar. Si el radiólogo NO menciona una sección del template, significa que la evaluó y es NORMAL. En su lugar, describe normalidad radiológica apropiada para ese órgano/estructura y esta modalidad.
 
 FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ninguna circunstancia):
-"no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
+- "no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
+- Muletillas verbales: "se observa", "se evidencia", "se identifica", "se aprecia", "se demuestra", "se detecta", "se visualiza", "cabe destacar", "llama la atención", "noted", "observed", "identified", "seen", "demonstrated", "visualized". Escribe directamente el hallazgo sin verbos introductorios. Ej: "Nódulo hepático de 12 mm en segmento VI." en vez de "Se observa un nódulo hepático de 12 mm en segmento VI."
 Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
 
 HALLAZGOS NEGATIVOS DICTADOS:
@@ -170,7 +171,7 @@ Hígado: De tamaño y morfología normales.
 Vesícula biliar: De paredes finas, sin litiasis.
 Vía biliar: De calibre normal.
 Páncreas: De tamaño y morfología normales.
-Otros hallazgos: Se identifican nódulos tiroideos bilaterales de aspecto inespecífico.`;
+Otros hallazgos: Nódulos tiroideos bilaterales de aspecto inespecífico.`;
   }
 
   return `You are an expert radiologist writing structured reports. Your task is to take the radiologist's dictation and distribute it into the anatomical sections of the provided template.
@@ -184,7 +185,8 @@ FUNDAMENTAL PRINCIPLE — UNMENTIONED SECTIONS:
 The radiologist only dictates abnormal or noteworthy findings. If the radiologist does NOT mention a section from the template, it means they evaluated it and it is NORMAL. Instead, describe appropriate radiological normality for that organ/structure and this modality.
 
 ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any circumstance):
-"not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
+- "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
+- Filler verbs: "noted", "observed", "identified", "seen", "demonstrated", "visualized", "detected", "appreciated", "is noted", "is observed", "is seen", "are identified", "se observa", "se identifica", "se evidencia". Write findings directly without introductory verbs. E.g.: "12 mm hepatic nodule in segment VI." instead of "A 12 mm hepatic nodule is noted in segment VI."
 If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
 
 DICTATED NEGATIVE FINDINGS:
@@ -212,7 +214,7 @@ Liver: Normal in size and morphology.
 Gallbladder: Thin-walled, no lithiasis.
 Bile ducts: Normal caliber.
 Pancreas: Normal in size and morphology.
-Additional findings: Bilateral thyroid nodules of nonspecific appearance are identified.`;
+Additional findings: Bilateral thyroid nodules of nonspecific appearance.`;
 }
 
 function modalityTerminology(modality: string, lang: OutputLanguage): string {
