@@ -206,24 +206,19 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   ];
 
   /* ── Main content based on active view ── */
-  const mainContent = (() => {
-    switch (activeView) {
-      case "templates":
-        return (
-          <div className="max-w-4xl mx-auto">
-            <TemplatesTab />
-          </div>
-        );
-      case "recommendations":
-        return (
-          <div className="max-w-4xl mx-auto">
-            <RecommendationsTab />
-          </div>
-        );
-      default:
-        return children;
-    }
-  })();
+  const mainContent = (
+    <>
+      <div className={activeView === "dashboard" ? "" : "hidden"}>
+        {children}
+      </div>
+      <div className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}>
+        <TemplatesTab />
+      </div>
+      <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}>
+        <RecommendationsTab />
+      </div>
+    </>
+  );
 
   return (
     <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-gray-50 dark:bg-gray-950">
@@ -348,6 +343,9 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                   {t("nav.config")}
                 </Button>
               )}
+              <Button variant="ghost" size="icon" onClick={toggleDark} className="h-8 w-8 md:hidden text-gray-500">
+                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setMobileDrawerOpen(true)} className="gap-1.5 text-xs md:hidden h-8">
                 <Settings className="h-3.5 w-3.5" />
               </Button>
