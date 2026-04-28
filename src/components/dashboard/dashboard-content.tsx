@@ -151,7 +151,21 @@ export function DashboardContent() {
       setVoiceError(null);
     },
     onError: (err) => setVoiceError(err),
-    onAllTranscribed: () => {
+  });
+
+  // Post-dictation correction: when recording stops and all transcription
+  // finishes, correct only the new (uncorrected) text via gpt-4o-mini.
+  const wasRecordingRef = useRef(false);
+  useEffect(() => {
+    if (isRecording || isTranscribing) {
+      wasRecordingRef.current = true;
+      return;
+    }
+    if (!wasRecordingRef.current) return;
+    // Small delay to let the last chunk's ondataavailable fire and process
+    const timer = setTimeout(() => {
+      if (isRecording || isTranscribing) return;
+      wasRecordingRef.current = false;
       const full = dictationRef.current;
       const alreadyCorrected = correctedLenRef.current;
       const newText = full.slice(alreadyCorrected).trim();
@@ -190,8 +204,9 @@ export function DashboardContent() {
           correctedLenRef.current = dictationRef.current.length;
         })
         .finally(() => setIsCorrecting(false));
-    },
-  });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [isRecording, isTranscribing]);
 
   useEffect(() => { dictationRef.current = dictation; }, [dictation]);
 

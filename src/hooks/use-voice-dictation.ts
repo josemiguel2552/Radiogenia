@@ -5,6 +5,7 @@ import { useState, useRef, useCallback } from "react";
 const SILENCE_TIMEOUT_MS = 2500;
 const MAX_CHUNK_MS = 25_000;
 const MIN_BLOB_SIZE = 1000;
+const LEVEL_THROTTLE_MS = 80;
 
 interface DictationQuota {
   usedSeconds: number;
@@ -18,7 +19,6 @@ interface UseVoiceDictationOptions {
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
-  onAllTranscribed?: () => void;
 }
 
 interface QueueItem {
@@ -33,7 +33,6 @@ export function useVoiceDictation({
   onTranscript,
   onError,
   onQuotaUpdate,
-  onAllTranscribed,
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -50,13 +49,11 @@ export function useVoiceDictation({
   const activeRef = useRef(false);
   const priorTranscriptRef = useRef("");
   const lastTranscriptRef = useRef("");
+  const lastLevelUpdateRef = useRef(0);
 
   // Sequential queue — guarantees chunks are transcribed in order
   const queueRef = useRef<QueueItem[]>([]);
   const processingRef = useRef(false);
-  const stoppedRef = useRef(false);
-  const onAllTranscribedRef = useRef(onAllTranscribed);
-  onAllTranscribedRef.current = onAllTranscribed;
 
   const processQueue = useCallback(async () => {
     if (processingRef.current) return;
@@ -93,7 +90,6 @@ export function useVoiceDictation({
           if (lastTranscriptRef.current && text) {
             const prev = lastTranscriptRef.current.toLowerCase();
             const prevWords = prev.split(/\s+/);
-            // Check last 4-8 words of previous transcript for overlap
             for (let overlap = Math.min(8, prevWords.length); overlap >= 3; overlap--) {
               const tail = prevWords.slice(-overlap).join(" ");
               const cur = text.toLowerCase();
@@ -122,10 +118,6 @@ export function useVoiceDictation({
 
     processingRef.current = false;
     setIsTranscribing(false);
-
-    if (stoppedRef.current && queueRef.current.length === 0) {
-      onAllTranscribedRef.current?.();
-    }
   }, [language, studyContext, templateSections, onTranscript, onError, onQuotaUpdate]);
 
   const enqueueBlob = useCallback((blob: Blob, durationMs: number) => {
@@ -171,13 +163,18 @@ export function useVoiceDictation({
       sum += v * v;
     }
     const rms = Math.sqrt(sum / data.length);
-    setAudioLevel(Math.min(1, rms * 8));
+
+    // Throttle state updates to ~12fps to avoid excessive re-renders
+    const now = Date.now();
+    if (now - lastLevelUpdateRef.current > LEVEL_THROTTLE_MS) {
+      lastLevelUpdateRef.current = now;
+      setAudioLevel(Math.min(1, rms * 8));
+    }
 
     if (rms < 0.015) {
       if (!silenceTimerRef.current) {
         silenceTimerRef.current = setTimeout(() => {
           silenceTimerRef.current = null;
-          // Only cycle if enough audio has been captured (> 2s)
           const elapsed = Date.now() - chunkStartRef.current;
           if (elapsed > 2000) {
             cycleRecorder();
@@ -246,7 +243,6 @@ export function useVoiceDictation({
       });
       streamRef.current = stream;
       activeRef.current = true;
-      stoppedRef.current = false;
       priorTranscriptRef.current = "";
       lastTranscriptRef.current = "";
       queueRef.current = [];
@@ -296,7 +292,6 @@ export function useVoiceDictation({
   }, [enqueueBlob, cycleRecorder, detectSilence, onError]);
 
   const stopRecording = useCallback(() => {
-    stoppedRef.current = true;
     stopInternal();
   }, [stopInternal]);
 
