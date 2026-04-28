@@ -155,7 +155,11 @@ export function DashboardContent() {
         .catch(() => {});
     };
     window.addEventListener("radiogenai:report-saved", refresh);
-    return () => window.removeEventListener("radiogenai:report-saved", refresh);
+    window.addEventListener("radiogenai:report-generated", refresh);
+    return () => {
+      window.removeEventListener("radiogenai:report-saved", refresh);
+      window.removeEventListener("radiogenai:report-generated", refresh);
+    };
   }, []);
 
   // Whisper voice dictation
@@ -187,6 +191,9 @@ export function DashboardContent() {
       });
       setTraceData(null);
       setVoiceError(null);
+    },
+    onQuotaUpdate: (quota) => {
+      setSubDictUsedMin(Math.round(quota.usedSeconds / 60));
     },
     onError: (err) => {
       if (err.includes("Dictation limit") || err.includes("Límite de dictado") || err.includes("dictation")) {
