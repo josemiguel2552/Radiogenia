@@ -2,9 +2,10 @@
 
 import { useState, useRef, useCallback } from "react";
 
-const SILENCE_TIMEOUT_MS = 2500;
-const MAX_CHUNK_MS = 25_000;
-const MIN_BLOB_SIZE = 1000;
+const SILENCE_TIMEOUT_MS = 4000;
+const MAX_CHUNK_MS = 55_000;
+const MIN_BLOB_SIZE = 2000;
+const MIN_CHUNK_DURATION_MS = 3000;
 const LEVEL_THROTTLE_MS = 80;
 
 interface DictationQuota {
@@ -121,7 +122,7 @@ export function useVoiceDictation({
   }, [language, studyContext, templateSections, onTranscript, onError, onQuotaUpdate]);
 
   const enqueueBlob = useCallback((blob: Blob, durationMs: number) => {
-    if (blob.size < MIN_BLOB_SIZE) return;
+    if (blob.size < MIN_BLOB_SIZE || durationMs < 800) return;
     queueRef.current.push({ blob, durationMs });
     processQueue();
   }, [processQueue]);
@@ -176,7 +177,7 @@ export function useVoiceDictation({
         silenceTimerRef.current = setTimeout(() => {
           silenceTimerRef.current = null;
           const elapsed = Date.now() - chunkStartRef.current;
-          if (elapsed > 2000) {
+          if (elapsed > MIN_CHUNK_DURATION_MS) {
             cycleRecorder();
           }
         }, SILENCE_TIMEOUT_MS);
