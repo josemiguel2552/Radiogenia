@@ -29,7 +29,6 @@ import {
   Wand2,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
@@ -122,6 +121,42 @@ export function DashboardContent() {
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
   const [reportingError, setReportingError] = useState(false);
+
+  // Subscription usage (inline — replaces StatsPanel)
+  const [subPlan, setSubPlan] = useState<string>("free");
+  const [subReportsUsed, setSubReportsUsed] = useState(0);
+  const [subReportsLimit, setSubReportsLimit] = useState(30);
+  const [subDictUsedMin, setSubDictUsedMin] = useState(0);
+  const [subDictLimitMin, setSubDictLimitMin] = useState(30);
+  const [subLoaded, setSubLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/subscription")
+      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then((data) => {
+        setSubPlan(data.plan || "free");
+        setSubReportsUsed(data.used ?? 0);
+        setSubReportsLimit(data.limit ?? 30);
+        setSubDictUsedMin(data.dictation?.usedMinutes ?? 0);
+        setSubDictLimitMin(data.dictation?.limitMinutes ?? 30);
+        setSubLoaded(true);
+      })
+      .catch(() => setSubLoaded(true));
+
+    const refresh = () => {
+      fetch("/api/subscription")
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data) {
+            setSubReportsUsed(data.used ?? 0);
+            setSubDictUsedMin(data.dictation?.usedMinutes ?? 0);
+          }
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("radiogenai:report-saved", refresh);
+    return () => window.removeEventListener("radiogenai:report-saved", refresh);
+  }, []);
 
   // Whisper voice dictation
   const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
@@ -1004,9 +1039,34 @@ export function DashboardContent() {
     </div>
   ) : null;
 
+  const rPct = subReportsLimit > 0 ? Math.min(100, Math.round((subReportsUsed / subReportsLimit) * 100)) : 0;
+  const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
+
   return (
     <div className="space-y-3 md:space-y-4">
-      <StatsPanel />
+      {/* ── Usage bar ── */}
+      <div className="rounded-lg border bg-white dark:bg-gray-900 px-3 py-2.5 flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+            {t("stats.plan")}: <span className="text-gray-700 dark:text-gray-200 capitalize">{subPlan}</span>
+          </span>
+          <span className="text-[10px] text-gray-400">{t("stats.this_month")}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <FileText className={`h-3.5 w-3.5 flex-shrink-0 ${rPct >= 90 ? "text-red-500" : rPct >= 70 ? "text-amber-500" : "text-brand"}`} />
+          <span className="text-xs font-semibold text-gray-900 dark:text-white w-16">{subReportsUsed}<span className="font-normal text-gray-400">/{subReportsLimit}</span></span>
+          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div className={`h-1.5 rounded-full transition-all ${rPct >= 90 ? "bg-red-500" : rPct >= 70 ? "bg-amber-500" : "bg-brand"}`} style={{ width: `${rPct}%` }} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Mic className={`h-3.5 w-3.5 flex-shrink-0 ${dPct >= 90 ? "text-red-500" : dPct >= 70 ? "text-amber-500" : "text-violet-500"}`} />
+          <span className="text-xs font-semibold text-gray-900 dark:text-white w-16">{subDictUsedMin}<span className="font-normal text-gray-400">/{subDictLimitMin} min</span></span>
+          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div className={`h-1.5 rounded-full transition-all ${dPct >= 90 ? "bg-red-500" : dPct >= 70 ? "bg-amber-500" : "bg-violet-500"}`} style={{ width: `${dPct}%` }} />
+          </div>
+        </div>
+      </div>
 
       {/* ── Input: study setup (left) + dictation (right) ── */}
       {setupCollapsed ? (
