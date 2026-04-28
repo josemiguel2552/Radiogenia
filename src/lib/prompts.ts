@@ -318,43 +318,47 @@ export function buildConclusionPrompt(params: {
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
 Si los hallazgos están en otro idioma, traduce al ${l}.
 
-REQUISITOS:
-- Usa puntos numerados (3–6 máximo).
+ESTILO:
+- Telegráfico: frases cortas, sin palabras de relleno. NUNCA uses muletillas como "se observa", "se identifica", "noted", "presence of", "no significant findings regarding", "no significant abnormalities in".
+- Directo: ve al grano. Ejemplo: "No parenchymal consolidation." en vez de "No significant findings regarding consolidation in the lung parenchyma."
+- Usa el MÍNIMO de puntos necesarios (máximo 6). Si 2 puntos bastan, usa 2. No rellenes para llegar a un número.
 - Ordena por relevancia clínica (primero lo importante).
-- Sé claro, breve y accionable.
-- Usa lenguaje prudente y descriptivo: tamaño, forma, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a previos.
+- Lenguaje prudente y descriptivo: tamaño, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a previos.
 
 PROHIBIDO:
-- Emitir diagnósticos o sugerir enfermedades ("compatible con neumonía", "sugestivo de neoplasia", "en relación con cirrosis").
-- Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM", "control en 3 meses", "derivar a especialista").
+- Emitir diagnósticos o sugerir enfermedades ("compatible con neumonía", "sugestivo de neoplasia").
+- Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM", "control en 3 meses").
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
-- Usar lenguaje categórico o inferencias causales ("probablemente relacionado con...", "secundario a...", "en el contexto de...").
-- Emitir pronósticos ("hallazgo preocupante", "proceso agresivo", "buen pronóstico").
+- Lenguaje categórico o inferencias causales ("probablemente relacionado con...", "secundario a...").
+- Pronósticos ("hallazgo preocupante", "proceso agresivo", "buen pronóstico").
 - Añadir información no presente en los hallazgos.
-- Incluir descripciones genéricas de normalidad de órganos no destacados.
 - Especular sobre la naturaleza de un hallazgo ("posiblemente benigno", "probablemente inflamatorio").
 - Descartar patología si existe algún hallazgo indeterminado.
 
+REGLA CRÍTICA — NO ENUMERAR NORMALIDAD:
+NUNCA listes órganos o estructuras normales. Si un órgano no tiene hallazgo patológico, NO lo menciones en la conclusión. Un punto que diga "No se observan alteraciones en aorta, corazón, pericardio, diafragma..." está PROHIBIDO. La conclusión SOLO contiene hallazgos positivos (patológicos) y, si aplica, la respuesta negativa a la pregunta clínica.
+
 HALLAZGOS NEGATIVOS:
-Si el radiólogo dictó explícitamente un hallazgo negativo relevante ("sin evidencia de TEP", "no masa colónica"), inclúyelo SOLO si responde a la pregunta clínica o tiene alta relevancia.
+Incluye un hallazgo negativo SOLO si el radiólogo lo dictó explícitamente Y responde a la pregunta clínica (ej: pregunta "descartar TEP" → "Sin evidencia de TEP").
 
 ${hasClinical ? `PREGUNTA CLÍNICA:
-El primer punto debe responder a la pregunta clínica del médico solicitante basándose en los hallazgos.
-- Si los hallazgos responden claramente: lenguaje descriptivo directo.
-- Si no permiten responder: "No se identifican hallazgos significativos respecto a..."
+El primer punto responde a la pregunta clínica. Sé breve:
+- Si responde claramente: lenguaje descriptivo directo.
+- Si no hay hallazgos: frase corta negativa (ej: "Sin consolidación parenquimatosa.").
 - Si hay hallazgo indeterminado: descríbelo sin especular.` : ""}
 
-AGRUPACIÓN:
-Cada punto = un PROBLEMA CLÍNICO COMPLETO, no un hallazgo individual. Agrupa hallazgos de distintas secciones anatómicas si forman parte del mismo cuadro:
+AGRUPACIÓN — REGLA CLAVE:
+Cada punto = un PROBLEMA CLÍNICO COMPLETO. Agrupa TODOS los hallazgos relacionados en un solo punto, aunque vengan de secciones anatómicas distintas:
+- Tumor: masa + adenopatías + derrame + metástasis → TODO en un solo punto.
 - TEP: defectos de llenado + infartos + sobrecarga derecha → un solo punto.
-- Tumor: masa + adenopatías + derrame + metástasis → un solo punto.
 - Politrauma: fracturas + neumotórax + contusión + derrame → un solo punto.
-Hallazgos sin relación van en puntos separados.
+Ejemplo correcto: "Masa hiliar izquierda de 54 mm con adenopatías mediastínicas, supraclaviculares ipsilaterales y pequeño derrame pleural izquierdo."
+Ejemplo incorrecto: separar masa, adenopatías y derrame en 3 puntos distintos.
 
 COMPARACIONES CON PREVIOS:
-Si los hallazgos mencionan cambios respecto a estudios previos ("aumento", "estable", "nueva lesión"), inclúyelos junto al hallazgo correspondiente.
+Si hay cambios respecto a estudios previos, inclúyelos junto al hallazgo correspondiente.
 
-Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
+Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
 FORMATO:
 - Puntos numerados (1. 2. 3.). Texto plano.
@@ -366,43 +370,47 @@ FORMATO:
 OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
 If findings are in another language, translate to ${l}.
 
-REQUIREMENTS:
-- Use numbered points (3–6 maximum).
+STYLE:
+- Telegraphic: short phrases, no filler words. NEVER use padding like "noted", "presence of", "no significant findings regarding", "no significant abnormalities in the".
+- Direct: get to the point. Example: "No parenchymal consolidation." instead of "No significant findings regarding consolidation in the lung parenchyma."
+- Use the MINIMUM number of points needed (maximum 6). If 2 points suffice, use 2. Do NOT pad to reach a number.
 - Order by clinical relevance (most important first).
-- Be clear, brief, and actionable.
-- Use prudent, descriptive language: size, shape, location, density/signal, relationship to adjacent structures, changes compared to prior studies.
+- Prudent, descriptive language: size, location, density/signal, relationship to adjacent structures, changes compared to prior studies.
 
 FORBIDDEN:
-- Suggesting diagnoses or diseases ("consistent with pneumonia", "suggestive of neoplasm", "related to cirrhosis").
-- Recommending clinical actions ("biopsy recommended", "further evaluation with MRI", "follow-up in 3 months", "refer to specialist").
+- Suggesting diagnoses or diseases ("consistent with pneumonia", "suggestive of neoplasm").
+- Recommending clinical actions ("biopsy recommended", "further evaluation with MRI", "follow-up in 3 months").
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
-- Categorical language or causal inferences ("likely related to...", "secondary to...", "in the context of...").
+- Categorical language or causal inferences ("likely related to...", "secondary to...").
 - Issuing prognoses ("concerning finding", "aggressive process", "good prognosis").
 - Adding information not present in the findings.
-- Including generic normality descriptions for organs not highlighted.
 - Speculating about the nature of a finding ("possibly benign", "likely inflammatory").
 - Ruling out pathology if any indeterminate finding exists.
 
+CRITICAL RULE — DO NOT LIST NORMAL STRUCTURES:
+NEVER list normal organs or structures. If an organ has no pathological finding, do NOT mention it in the conclusion. A point saying "No significant abnormalities in the aorta, heart, pericardium, diaphragm..." is FORBIDDEN. The conclusion contains ONLY positive (pathological) findings and, if applicable, the negative answer to the clinical question.
+
 NEGATIVE FINDINGS:
-If the radiologist explicitly dictated a relevant negative finding ("no CT evidence of PE", "no colonic mass"), include it ONLY if it answers the clinical question or has high clinical relevance.
+Include a negative finding ONLY if the radiologist explicitly dictated it AND it answers the clinical question (e.g., question "rule out PE" → "No evidence of PE").
 
 ${hasClinical ? `CLINICAL QUESTION:
-The first point must answer the referring physician's clinical question based on the findings.
-- If findings clearly answer: use direct descriptive language.
-- If inconclusive: "No significant findings regarding..."
+The first point answers the clinical question. Be brief:
+- If findings clearly answer: direct descriptive language.
+- If no findings: short negative phrase (e.g., "No parenchymal consolidation.").
 - If there is an indeterminate finding: describe it without speculating.` : ""}
 
-GROUPING:
-Each point = a COMPLETE CLINICAL PROBLEM, not an individual finding. Group findings from different anatomical sections if they form part of the same clinical picture:
+GROUPING — KEY RULE:
+Each point = a COMPLETE CLINICAL PROBLEM. Group ALL related findings into one single point, even if they come from different anatomical sections:
+- Tumor: mass + lymphadenopathy + effusion + metastases → ALL in one single point.
 - PE: filling defects + infarcts + right heart strain → one single point.
-- Tumor: mass + lymphadenopathy + effusion + metastases → one single point.
 - Polytrauma: fractures + pneumothorax + contusion + effusion → one single point.
-Unrelated findings go in separate points.
+Correct example: "Left hilar mass measuring 54 mm with associated left mediastinal, supraclavicular lymphadenopathy and small left pleural effusion."
+Incorrect example: separating mass, lymphadenopathy, and effusion into 3 different points.
 
 COMPARISON WITH PRIOR STUDIES:
-If findings mention changes compared to prior studies ("increased", "stable", "new lesion"), include them alongside the corresponding finding.
+If findings mention changes compared to prior studies, include them alongside the corresponding finding.
 
-If no relevant findings: write the equivalent of "Examination within normal limits" in ${l}.
+If no relevant findings: "${hasClinical ? "No significant findings regarding the clinical question." : "Examination within normal limits."}"
 
 FORMAT:
 - Numbered points (1. 2. 3.). Plain text.
