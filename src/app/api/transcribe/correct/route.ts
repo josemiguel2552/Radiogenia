@@ -16,10 +16,7 @@ export async function POST(req: NextRequest) {
 
     const globalConfig = await getGlobalAIConfig();
 
-    const taskModel = globalConfig.taskOverrides?.findings;
-    const provider = taskModel?.provider || globalConfig.provider;
-    const modelName = taskModel?.modelName || globalConfig.modelName;
-    const apiKey = resolveApiKey(globalConfig, provider);
+    const apiKey = resolveApiKey(globalConfig, "openai");
 
     const isEs = !language || language.startsWith("es");
 
@@ -50,10 +47,9 @@ RULES:
 - Respond ONLY with the corrected text, no explanations or comments.`;
 
     const corrected = await generateAI({
-      provider,
-      modelName,
+      provider: "openai",
+      modelName: "gpt-4o-mini",
       apiKey,
-      customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: text,
       maxTokens: Math.max(512, Math.ceil(text.length * 1.2)),

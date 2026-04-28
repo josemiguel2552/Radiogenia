@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const audioFile = formData.get("audio") as File | null;
     const language = (formData.get("language") as string) || "";
     const studyContext = (formData.get("study_context") as string) || "";
+    const templateSections = (formData.get("template_sections") as string) || "";
     const context = (formData.get("context") as string) || "";
     const durationSeconds = Math.max(0, Math.min(120, Number(formData.get("duration_seconds")) || 0));
 
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     // Construct prompt: prior transcript → study context → domain vocabulary.
     // Whisper keeps the LAST 224 tokens of the prompt, so domain vocab goes last.
-    const domainPrompt = getWhisperPrompt(language || "es");
+    const domainPrompt = getWhisperPrompt(language || "es", templateSections || undefined);
     const priorContext = context ? context.slice(-200) : "";
     const parts: string[] = [];
     if (priorContext) parts.push(priorContext);

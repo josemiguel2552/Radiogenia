@@ -129,9 +129,18 @@ export function DashboardContent() {
   const whisperStudyContext = whisperTemplate
     ? `Dictation: ${whisperTemplate.modality} — ${whisperTemplate.name}`
     : undefined;
-  const { isRecording, isTranscribing, toggleRecording } = useVoiceDictation({
+  const whisperTemplateSections = useMemo(() => {
+    if (!whisperTemplate?.structure?.template) return undefined;
+    const lines = whisperTemplate.structure.template.split("\n");
+    const sections = lines
+      .map((l) => l.split(":")[0]?.trim())
+      .filter((s) => s && s.length > 1 && s.length < 60);
+    return sections.length > 0 ? sections.join(", ") : undefined;
+  }, [whisperTemplate]);
+  const { isRecording, isTranscribing, audioLevel, toggleRecording } = useVoiceDictation({
     language: dictationLanguage === "auto" ? undefined : whisperLang,
     studyContext: whisperStudyContext,
+    templateSections: whisperTemplateSections,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, whisperLang);
       setDictation((prev) => {
@@ -995,7 +1004,8 @@ export function DashboardContent() {
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"
-                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
+                  style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
                   onClick={toggleRecording}
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -1150,7 +1160,8 @@ export function DashboardContent() {
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"
-                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full ${isRecording ? "recording-pulse" : ""}`}
+                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
+                  style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
                   onClick={toggleRecording}
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}

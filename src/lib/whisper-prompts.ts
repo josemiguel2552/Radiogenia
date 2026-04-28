@@ -52,6 +52,8 @@ const PROMPTS: Record<string, string> = {
   pt: PROMPT_PT,
 };
 
-export function getWhisperPrompt(language: string): string {
-  return PROMPTS[language] || PROMPTS["es"];
+export function getWhisperPrompt(language: string, templateSections?: string): string {
+  const base = PROMPTS[language] || PROMPTS["es"];
+  if (!templateSections) return base;
+  return base + "\n" + templateSections;
 }

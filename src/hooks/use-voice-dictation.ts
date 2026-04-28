@@ -14,6 +14,7 @@ interface DictationQuota {
 interface UseVoiceDictationOptions {
   language?: string;
   studyContext?: string;
+  templateSections?: string;
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
@@ -28,6 +29,7 @@ interface QueueItem {
 export function useVoiceDictation({
   language,
   studyContext,
+  templateSections,
   onTranscript,
   onError,
   onQuotaUpdate,
@@ -35,6 +37,7 @@ export function useVoiceDictation({
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -67,6 +70,7 @@ export function useVoiceDictation({
         formData.append("audio", item.blob, "dictation.webm");
         if (language) formData.append("language", language);
         if (studyContext) formData.append("study_context", studyContext);
+        if (templateSections) formData.append("template_sections", templateSections);
         const priorContext = priorTranscriptRef.current.slice(-200);
         if (priorContext) formData.append("context", priorContext);
         formData.append("duration_seconds", String(Math.max(1, Math.round(item.durationMs / 1000))));
@@ -122,7 +126,7 @@ export function useVoiceDictation({
     if (stoppedRef.current && queueRef.current.length === 0) {
       onAllTranscribedRef.current?.();
     }
-  }, [language, studyContext, onTranscript, onError, onQuotaUpdate]);
+  }, [language, studyContext, templateSections, onTranscript, onError, onQuotaUpdate]);
 
   const enqueueBlob = useCallback((blob: Blob, durationMs: number) => {
     if (blob.size < MIN_BLOB_SIZE) return;
@@ -167,6 +171,7 @@ export function useVoiceDictation({
       sum += v * v;
     }
     const rms = Math.sqrt(sum / data.length);
+    setAudioLevel(Math.min(1, rms * 8));
 
     if (rms < 0.015) {
       if (!silenceTimerRef.current) {
@@ -227,6 +232,7 @@ export function useVoiceDictation({
     analyserRef.current = null;
 
     setIsRecording(false);
+    setAudioLevel(0);
   }, [enqueueBlob]);
 
   const startRecording = useCallback(async () => {
@@ -305,6 +311,7 @@ export function useVoiceDictation({
   return {
     isRecording,
     isTranscribing,
+    audioLevel,
     toggleRecording,
     startRecording,
     stopRecording,
