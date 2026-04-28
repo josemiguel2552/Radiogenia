@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
+  ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
@@ -59,6 +59,7 @@ interface UserRow {
   role: string;
   subscription_plan: string;
   reports_used_this_month: number;
+  dictation_seconds_used: number;
   created_at: string;
   report_count: number;
 }
@@ -70,6 +71,7 @@ interface Stats {
   activeThisMonth: number;
   planCounts: { free: number; starter: number; professional: number };
   mrr: number;
+  totalDictationMinutes: number;
   reportsPerDay: Record<string, number>;
   modalityCounts: Record<string, number>;
 }
@@ -549,10 +551,11 @@ export default function AdminPage() {
         {/* ═══ OVERVIEW ═══ */}
         {tab === "overview" && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label="Total Users" value={stats?.totalUsers ?? radiologists.length} />
               <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label="Total Reports" value={stats?.totalReports ?? totalReports} />
               <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label="Reports This Month" value={stats?.reportsThisMonth ?? 0} />
+              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label="Dictation (min)" value={`${stats?.totalDictationMinutes ?? 0} min`} />
               <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`€${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
             </div>
 
@@ -656,7 +659,8 @@ export default function AdminPage() {
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Plan</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Usage</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Reports/mo</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">Dictation/mo</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Total</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Joined</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Actions</th>
@@ -667,6 +671,9 @@ export default function AdminPage() {
                       const plan = (u.subscription_plan || "free") as SubscriptionPlan;
                       const planConfig = PLANS[plan];
                       const usagePct = u.role === "admin" ? 0 : Math.round(((u.reports_used_this_month || 0) / planConfig.reports) * 100);
+                      const dictUsedMin = Math.round((u.dictation_seconds_used || 0) / 60);
+                      const dictLimitMin = planConfig.dictationMinutes;
+                      const dictPct = u.role === "admin" ? 0 : (dictLimitMin > 0 ? Math.round((dictUsedMin / dictLimitMin) * 100) : 0);
                       return (
                         <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                           <td className="py-3 px-2">
@@ -704,14 +711,29 @@ export default function AdminPage() {
                           <td className="py-3 px-2 text-right hidden md:table-cell">
                             {u.role !== "admin" && (
                               <div className="inline-flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                   <div
                                     className={`h-full rounded-full ${usagePct > 80 ? "bg-red-500" : usagePct > 50 ? "bg-amber-500" : "bg-green-500"}`}
                                     style={{ width: `${Math.min(usagePct, 100)}%` }}
                                   />
                                 </div>
-                                <span className="text-[10px] text-gray-500 w-16 text-right">
+                                <span className="text-[10px] text-gray-500 w-14 text-right">
                                   {u.reports_used_this_month || 0}/{planConfig.reports}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-right hidden lg:table-cell">
+                            {u.role !== "admin" && (
+                              <div className="inline-flex items-center gap-2">
+                                <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${dictPct > 80 ? "bg-red-500" : dictPct > 50 ? "bg-amber-500" : "bg-violet-500"}`}
+                                    style={{ width: `${Math.min(dictPct, 100)}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-gray-500 w-16 text-right">
+                                  {dictUsedMin}/{dictLimitMin}m
                                 </span>
                               </div>
                             )}

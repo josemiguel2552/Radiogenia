@@ -9,7 +9,7 @@ export async function GET() {
 
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, role, subscription_plan, reports_used_this_month, created_at");
+      .select("id, role, subscription_plan, reports_used_this_month, dictation_seconds_used, created_at");
 
     const { data: reports } = await supabase
       .from("reports")
@@ -24,10 +24,12 @@ export async function GET() {
     const activeThisMonth = users.filter((u) => u.role !== "admin" && (u.reports_used_this_month || 0) > 0).length;
 
     const planCounts = { free: 0, starter: 0, professional: 0 };
+    let totalDictationMinutes = 0;
     for (const u of users) {
       if (u.role === "admin") continue;
       const plan = u.subscription_plan || "free";
       if (plan in planCounts) planCounts[plan as keyof typeof planCounts]++;
+      totalDictationMinutes += Math.round((u.dictation_seconds_used || 0) / 60);
     }
 
     const mrr = planCounts.starter * 7.99 + planCounts.professional * 15.99;
@@ -73,6 +75,7 @@ export async function GET() {
       activeThisMonth,
       planCounts,
       mrr: Math.round(mrr * 100) / 100,
+      totalDictationMinutes,
       reportsPerDay,
       modalityCounts,
       usersPerDay,
