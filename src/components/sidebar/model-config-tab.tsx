@@ -11,9 +11,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Loader2, Check, Wand2, Brain, Pencil, X, RotateCcw, Search,
-  PenLine, Plus, Trash2,
+  PenLine, Plus, Trash2, Sparkles, ChevronRight,
 } from "lucide-react";
-import { LANGUAGES, DICTATION_LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
+import { LANGUAGES, DICTATION_LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature, type StylePattern } from "@/lib/types";
 import { useT, useModality } from "@/lib/i18n";
 
 interface ModelConfig {
@@ -52,6 +52,19 @@ export function ModelConfigTab() {
   const [normalitySearch, setNormalitySearch] = useState("");
   const [savingPhrase, setSavingPhrase] = useState<string | null>(null);
 
+  // Style learning
+  interface StyleGroup {
+    modality: string;
+    study_type: string;
+    report_count: number;
+    normal_phrases: StylePattern[];
+    conclusion_phrases: StylePattern[];
+  }
+  const [styleGroups, setStyleGroups] = useState<StyleGroup[]>([]);
+  const [styleTotalReports, setStyleTotalReports] = useState(0);
+  const [showLearnedPhrases, setShowLearnedPhrases] = useState(false);
+  const [selectedStyleGroup, setSelectedStyleGroup] = useState<StyleGroup | null>(null);
+
   // Signatures
   const [signatures, setSignatures] = useState<Signature[]>([]);
   const [showAddSig, setShowAddSig] = useState(false);
@@ -80,6 +93,17 @@ export function ModelConfigTab() {
     } catch { /* ignore */ }
   }, [selectedModality]);
 
+  const loadStylePatterns = useCallback(async () => {
+    try {
+      const res = await fetch("/api/style-patterns");
+      if (res.ok) {
+        const data = await res.json();
+        setStyleGroups(data.groups || []);
+        setStyleTotalReports(data.total_reports || 0);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   const loadSignatures = useCallback(async () => {
     try {
       const res = await fetch("/api/signatures");
@@ -102,6 +126,7 @@ export function ModelConfigTab() {
 
   useEffect(() => { load(); }, []);
   useEffect(() => { loadNormality(); }, [loadNormality]);
+  useEffect(() => { loadStylePatterns(); }, [loadStylePatterns]);
   useEffect(() => { loadSignatures(); }, [loadSignatures]);
 
   function update(field: string, value: string | boolean | number) {
@@ -148,6 +173,27 @@ export function ModelConfigTab() {
     await fetch(`/api/normality-phrases?modality=${encodeURIComponent(modality)}&section_label=${encodeURIComponent(sectionLabel)}`, { method: "DELETE" });
     await loadNormality(modality);
     setSavingPhrase(null);
+  }
+
+  async function handleDeleteStylePhrase(id: string) {
+    await fetch(`/api/style-patterns?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    await loadStylePatterns();
+    if (selectedStyleGroup) {
+      setSelectedStyleGroup((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          normal_phrases: prev.normal_phrases.filter((p) => p.id !== id),
+          conclusion_phrases: prev.conclusion_phrases.filter((p) => p.id !== id),
+        };
+      });
+    }
+  }
+
+  async function handleResetStyleGroup(modality: string, studyType: string) {
+    await fetch(`/api/style-patterns?group=${encodeURIComponent(`${modality}|${studyType}`)}`, { method: "DELETE" });
+    setSelectedStyleGroup(null);
+    await loadStylePatterns();
   }
 
   async function handleSaveSig() {
@@ -309,6 +355,82 @@ export function ModelConfigTab() {
           </AccordionContent>
         </AccordionItem>
 
+        {/* Style Learning */}
+        <AccordionItem value="style-learning">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              {t("cfg.style_learning")}
+              {styleGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0).length > 0 && (
+                <Badge variant="secondary" className="text-[10px] ml-1">
+                  {styleGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0).length}
+                </Badge>
+              )}
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pt-1">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {t("cfg.style_learning_desc")}
+            </p>
+
+            {(() => {
+              const groupsWithPhrases = styleGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0);
+              const studyTypeCount = groupsWithPhrases.length;
+
+              if (studyTypeCount === 0) {
+                return (
+                  <div className="text-center py-4">
+                    <Sparkles className="h-6 w-6 mx-auto mb-1.5 text-gray-300 dark:text-gray-600" />
+                    <p className="text-xs text-gray-400">{t("cfg.no_patterns")}</p>
+                  </div>
+                );
+              }
+
+              const displayGroups = groupsWithPhrases.slice(0, 5);
+              return (
+                <>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    {t("cfg.style_learning_summary").replace("{0}", String(studyTypeCount))}
+                  </p>
+
+                  <div className="space-y-1">
+                    {displayGroups.map((g) => {
+                      const phraseCount = g.normal_phrases.length + g.conclusion_phrases.length;
+                      return (
+                        <button
+                          key={`${g.modality}|${g.study_type}`}
+                          type="button"
+                          className="w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50"
+                          onClick={() => { setSelectedStyleGroup(g); setShowLearnedPhrases(true); }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
+                              {modName(g.modality)} — {g.study_type}
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                              {Math.min(g.report_count, 10)} {t("cfg.reports_stored")} · {phraseCount} {t("cfg.phrases_learned").toLowerCase()}
+                            </span>
+                          </div>
+                          <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {groupsWithPhrases.length > 5 && (
+                    <Button
+                      size="sm" variant="ghost" className="w-full text-xs text-gray-500"
+                      onClick={() => { setSelectedStyleGroup(null); setShowLearnedPhrases(true); }}
+                    >
+                      {t("cfg.view_all")} ({groupsWithPhrases.length})
+                    </Button>
+                  )}
+                </>
+              );
+            })()}
+          </AccordionContent>
+        </AccordionItem>
+
         {/* Signatures */}
         <AccordionItem value="signatures">
           <AccordionTrigger className="text-sm font-semibold">
@@ -448,6 +570,129 @@ export function ModelConfigTab() {
             ))}
             {filteredPhrases.length === 0 && (
               <p className="text-xs text-gray-400 text-center py-6">{t("no_match_search")}</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Learned Phrases Dialog */}
+      <Dialog open={showLearnedPhrases} onOpenChange={(v) => { setShowLearnedPhrases(v); if (!v) setSelectedStyleGroup(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{t("cfg.learned_phrases")}</DialogTitle>
+          </DialogHeader>
+
+          {selectedStyleGroup ? (
+            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {modName(selectedStyleGroup.modality)} — {selectedStyleGroup.study_type}
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    {Math.min(selectedStyleGroup.report_count, 10)} {t("cfg.reports_stored")}
+                  </p>
+                </div>
+                <Button
+                  size="sm" variant="outline" className="text-xs text-red-600 hover:text-red-700 h-7 gap-1"
+                  onClick={() => {
+                    if (confirm(t("cfg.reset_study_type") + "?")) {
+                      handleResetStyleGroup(selectedStyleGroup.modality, selectedStyleGroup.study_type);
+                    }
+                  }}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  {t("cfg.reset_study_type")}
+                </Button>
+              </div>
+
+              {selectedStyleGroup.normal_phrases.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-2">{t("cfg.normal_phrases_label")}</p>
+                  <div className="space-y-1">
+                    {selectedStyleGroup.normal_phrases.slice(0, 10).map((p) => (
+                      <div key={p.id} className="flex items-start gap-2 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50">
+                        <div className="flex-1 min-w-0">
+                          {p.label && <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 block">{p.label}</span>}
+                          <span className="text-xs text-gray-700 dark:text-gray-300 block">{p.phrase}</span>
+                          <span className="text-[10px] text-gray-400 mt-0.5 block">×{p.frequency} {t("cfg.frequency")}</span>
+                        </div>
+                        <Button
+                          variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500 flex-shrink-0"
+                          onClick={() => handleDeleteStylePhrase(p.id)}
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedStyleGroup.conclusion_phrases.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-2">{t("cfg.conclusion_phrases_label")}</p>
+                  <div className="space-y-1">
+                    {selectedStyleGroup.conclusion_phrases.slice(0, 10).map((p) => (
+                      <div key={p.id} className="flex items-start gap-2 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs text-gray-700 dark:text-gray-300 block">{p.phrase}</span>
+                          <span className="text-[10px] text-gray-400 mt-0.5 block">×{p.frequency} {t("cfg.frequency")}</span>
+                        </div>
+                        <Button
+                          variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500 flex-shrink-0"
+                          onClick={() => handleDeleteStylePhrase(p.id)}
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedStyleGroup.normal_phrases.length === 0 && selectedStyleGroup.conclusion_phrases.length === 0 && (
+                <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
+              {styleGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0).map((g) => {
+                const phraseCount = g.normal_phrases.length + g.conclusion_phrases.length;
+                return (
+                  <button
+                    key={`${g.modality}|${g.study_type}`}
+                    type="button"
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50"
+                    onClick={() => setSelectedStyleGroup(g)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
+                        {modName(g.modality)} — {g.study_type}
+                      </span>
+                      <span className="text-[10px] text-gray-400">
+                        {Math.min(g.report_count, 10)} {t("cfg.reports_stored")} · {phraseCount} {t("cfg.phrases_learned").toLowerCase()}
+                      </span>
+                    </div>
+                    <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                  </button>
+                );
+              })}
+              {styleGroups.filter((g) => g.normal_phrases.length + g.conclusion_phrases.length > 0).length === 0 && (
+                <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2 border-t border-gray-100 dark:border-gray-800">
+            {selectedStyleGroup ? (
+              <Button size="sm" variant="ghost" className="text-xs" onClick={() => setSelectedStyleGroup(null)}>
+                ← {t("cfg.view_all")}
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setShowLearnedPhrases(false)}>
+                {t("close")}
+              </Button>
             )}
           </div>
         </DialogContent>
