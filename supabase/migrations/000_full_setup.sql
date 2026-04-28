@@ -489,7 +489,7 @@ create table if not exists public.audit_logs (
   user_id uuid not null references auth.users(id) on delete cascade,
   report_id uuid references public.reports(id) on delete set null,
   action text not null check (action in (
-    'generate_findings', 'generate_conclusion', 'save_report', 'report_error'
+    'generate_findings', 'generate_conclusion', 'save_report', 'report_error', 'correction_logged'
   )),
   provider text,
   model text,
@@ -547,7 +547,50 @@ create index if not exists signatures_user_idx on public.signatures (user_id);
 
 alter table public.signatures enable row level security;
 
+drop policy if exists "users manage own signatures" on public.signatures;
 create policy "users manage own signatures"
   on public.signatures for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+
+-- ##########################################################
+-- 016 — Dictation language preference
+-- ##########################################################
+
+alter table public.user_model_config
+  add column if not exists dictation_language text default 'auto';
+
+
+-- ##########################################################
+-- 017 — Admin access to all reports & audit logs
+-- ##########################################################
+
+drop policy if exists "admins read all reports" on public.reports;
+create policy "admins read all reports" on public.reports
+  for select using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
+drop policy if exists "admins read all audit_logs" on public.audit_logs;
+create policy "admins read all audit_logs" on public.audit_logs
+  for select using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
+
+-- ##########################################################
+-- 018 — Allow correction_logged action in audit_logs
+-- ##########################################################
+
+ALTER TABLE public.audit_logs DROP CONSTRAINT IF EXISTS audit_logs_action_check;
+ALTER TABLE public.audit_logs ADD CONSTRAINT audit_logs_action_check
+  CHECK (action IN (
+    'generate_findings', 'generate_conclusion', 'save_report', 'report_error', 'correction_logged'
+  ));
