@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Activity, FileText, ChevronDown, Calendar } from "lucide-react";
+import { Activity, FileText, Mic, ChevronDown, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useT } from "@/lib/i18n";
@@ -16,6 +16,8 @@ interface SubInfo {
   used: number;
   limit: number;
   plan: string;
+  dictationUsedMin: number;
+  dictationLimitMin: number;
 }
 
 const PERIOD_KEYS: Record<string, string> = {
@@ -35,7 +37,13 @@ export function StatsPanel() {
     fetch("/api/subscription")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (data) setSub({ used: data.used, limit: data.limit, plan: data.plan });
+        if (data) setSub({
+          used: data.used,
+          limit: data.limit,
+          plan: data.plan,
+          dictationUsedMin: data.dictation?.usedMinutes ?? 0,
+          dictationLimitMin: data.dictation?.limitMinutes ?? 0,
+        });
       })
       .catch(() => {});
 
@@ -87,6 +95,7 @@ export function StatsPanel() {
   });
   const maxCount = Math.max(...Object.values(modalityCounts), 1);
   const usagePct = sub ? Math.min(100, Math.round((sub.used / sub.limit) * 100)) : 0;
+  const dictPct = sub && sub.dictationLimitMin > 0 ? Math.min(100, Math.round((sub.dictationUsedMin / sub.dictationLimitMin) * 100)) : 0;
 
   return (
     <div>
@@ -94,29 +103,41 @@ export function StatsPanel() {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-4 px-1 py-1.5 text-sm group"
+        className="w-full flex flex-col gap-1.5 px-1 py-1.5 text-sm group text-left"
       >
         {sub && (
-          <div className="flex items-center gap-2">
-            <Activity className={`h-3.5 w-3.5 ${usagePct >= 90 ? "text-red-500" : usagePct >= 70 ? "text-amber-500" : "text-brand"}`} />
-            <span className="font-semibold text-gray-900 dark:text-white">{sub.used}</span>
-            <span className="text-gray-400">/ {sub.limit}</span>
-            <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-              <div
-                className={`h-1.5 rounded-full ${usagePct >= 90 ? "bg-red-500" : usagePct >= 70 ? "bg-amber-500" : "bg-brand"}`}
-                style={{ width: `${usagePct}%` }}
-              />
+          <>
+            {/* Plan badge */}
+            <div className="flex items-center justify-between w-full">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">{t("stats.plan")}: <span className="text-gray-700 dark:text-gray-200">{sub.plan}</span></span>
+              <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
             </div>
-          </div>
+            {/* Reports usage */}
+            <div className="flex items-center gap-2 w-full">
+              <FileText className={`h-3.5 w-3.5 flex-shrink-0 ${usagePct >= 90 ? "text-red-500" : usagePct >= 70 ? "text-amber-500" : "text-brand"}`} />
+              <span className="text-xs font-semibold text-gray-900 dark:text-white">{sub.used}<span className="font-normal text-gray-400">/{sub.limit}</span></span>
+              <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full transition-all ${usagePct >= 90 ? "bg-red-500" : usagePct >= 70 ? "bg-amber-500" : "bg-brand"}`}
+                  style={{ width: `${usagePct}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-gray-400 flex-shrink-0">{t("stats.this_month")}</span>
+            </div>
+            {/* Dictation usage */}
+            <div className="flex items-center gap-2 w-full">
+              <Mic className={`h-3.5 w-3.5 flex-shrink-0 ${dictPct >= 90 ? "text-red-500" : dictPct >= 70 ? "text-amber-500" : "text-violet-500"}`} />
+              <span className="text-xs font-semibold text-gray-900 dark:text-white">{sub.dictationUsedMin}<span className="font-normal text-gray-400">/{sub.dictationLimitMin} min</span></span>
+              <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full transition-all ${dictPct >= 90 ? "bg-red-500" : dictPct >= 70 ? "bg-amber-500" : "bg-violet-500"}`}
+                  style={{ width: `${dictPct}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-gray-400 flex-shrink-0">{t("stats.dictation_used")}</span>
+            </div>
+          </>
         )}
-        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-          <FileText className="h-3.5 w-3.5" />
-          {totalCount !== null && (
-            <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span>
-          )}
-          <span className="text-xs">{t("stats.total_reports")}</span>
-        </div>
-        <ChevronDown className={`h-3.5 w-3.5 text-gray-400 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
 
       {/* Expanded details */}

@@ -117,6 +117,7 @@ export function DashboardContent() {
   });
   const [limitDialogOpen, setLimitDialogOpen] = useState(false);
   const [limitInfo, setLimitInfo] = useState<{ used: number; limit: number; plan: string } | null>(null);
+  const [limitType, setLimitType] = useState<"reports" | "dictation">("reports");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
@@ -152,7 +153,23 @@ export function DashboardContent() {
       setTraceData(null);
       setVoiceError(null);
     },
-    onError: (err) => setVoiceError(err),
+    onError: (err) => {
+      if (err.includes("Dictation limit") || err.includes("Límite de dictado") || err.includes("dictation")) {
+        const subRes = fetch("/api/subscription").then((r) => r.ok ? r.json() : null);
+        subRes.then((data) => {
+          if (data) {
+            setLimitType("dictation");
+            setLimitInfo({
+              used: data.dictation?.usedMinutes ?? 0,
+              limit: data.dictation?.limitMinutes ?? 0,
+              plan: data.plan || "free",
+            });
+            setLimitDialogOpen(true);
+          }
+        });
+      }
+      setVoiceError(err);
+    },
   });
 
   // Post-dictation correction: when recording stops and all transcription
@@ -463,6 +480,7 @@ export function DashboardContent() {
       } else if (res.status === 429) {
         findingsFailed = true;
         const data = await res.json().catch(() => ({}));
+        setLimitType("reports");
         setLimitInfo({ used: data.used || 0, limit: data.limit || 0, plan: data.plan || "free" });
         setLimitDialogOpen(true);
       } else {
@@ -1330,23 +1348,26 @@ export function DashboardContent() {
         }}
       />
 
-      {/* Report error dialog */}
+      {/* Limit reached dialog (reports or dictation) */}
       <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
-              {t("limit.title")}
+              {t(limitType === "dictation" ? "limit.title_dictation" : "limit.title")}
             </DialogTitle>
           </DialogHeader>
           {limitInfo && (() => {
             const plan = limitInfo.plan as SubscriptionPlan;
             const planLabel = PLANS[plan]?.label || plan;
             const nextPlan = plan === "free" ? "starter" : plan === "starter" ? "professional" : null;
+            const descKey = limitType === "dictation" ? "limit.desc_dictation" : "limit.desc";
+            const usedLabel = limitType === "dictation" ? `${limitInfo.used} min` : String(limitInfo.used);
+            const limitLabel = limitType === "dictation" ? `${limitInfo.limit} min` : String(limitInfo.limit);
             return (
               <div className="space-y-4">
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  {t("limit.desc").replace("{used}", String(limitInfo.used)).replace("{limit}", String(limitInfo.limit)).replace("{plan}", planLabel)}
+                  {t(descKey).replace("{used}", usedLabel).replace("{limit}", limitLabel).replace("{plan}", planLabel)}
                 </p>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div className="h-2 rounded-full bg-red-500" style={{ width: "100%" }} />
@@ -1361,18 +1382,18 @@ export function DashboardContent() {
                       }}
                     >
                       <Sparkles className="h-4 w-4" />
-                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} informes/mes) €{PLANS[nextPlan].price}/mes
+                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} inf. + {PLANS[nextPlan].dictationMinutes} min) €{PLANS[nextPlan].price}/mes
                     </Button>
                   )}
                   <Button
                     variant="outline"
                     className="w-full gap-2"
                     onClick={() => {
-                      window.open("mailto:info@radiogen.ai?subject=Buy 100 extra reports&body=I'd like to purchase 100 extra reports for my current billing period.", "_blank");
+                      window.open("mailto:info@radiogen.ai?subject=Buy extra reports&body=I'd like to purchase 100 extra reports + 90 min dictation for my current billing period.", "_blank");
                       setLimitDialogOpen(false);
                     }}
                   >
-                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")} (+90 min dictado)
+                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")} (+90 min)
                   </Button>
                 </div>
               </div>
