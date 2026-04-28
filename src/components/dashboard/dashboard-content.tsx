@@ -28,7 +28,7 @@ import {
   Pencil,
   Wand2,
 } from "lucide-react";
-import { MODALITIES, SECTIONS, type UserTemplate } from "@/lib/types";
+import { MODALITIES, SECTIONS, PLANS, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { StatsPanel } from "./stats-panel";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -115,6 +115,8 @@ export function DashboardContent() {
     templateName: "",
     modality: "",
   });
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<{ used: number; limit: number; plan: string } | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
@@ -456,7 +458,13 @@ export function DashboardContent() {
           findingsText = cleanReport(findingsText);
           setInitialFindings(findingsText);
           setFindings(findingsText);
+          window.dispatchEvent(new Event("radiogenai:report-generated"));
         }
+      } else if (res.status === 429) {
+        findingsFailed = true;
+        const data = await res.json().catch(() => ({}));
+        setLimitInfo({ used: data.used || 0, limit: data.limit || 0, plan: data.plan || "free" });
+        setLimitDialogOpen(true);
       } else {
         findingsFailed = true;
         const data = await res.json().catch(() => ({ error: "Generation failed" }));
@@ -1323,6 +1331,56 @@ export function DashboardContent() {
       />
 
       {/* Report error dialog */}
+      <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              {t("limit.title")}
+            </DialogTitle>
+          </DialogHeader>
+          {limitInfo && (() => {
+            const plan = limitInfo.plan as SubscriptionPlan;
+            const planLabel = PLANS[plan]?.label || plan;
+            const nextPlan = plan === "free" ? "starter" : plan === "starter" ? "professional" : null;
+            return (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {t("limit.desc").replace("{used}", String(limitInfo.used)).replace("{limit}", String(limitInfo.limit)).replace("{plan}", planLabel)}
+                </p>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="h-2 rounded-full bg-red-500" style={{ width: "100%" }} />
+                </div>
+                <div className="space-y-2">
+                  {nextPlan && (
+                    <Button
+                      className="w-full gap-2 bg-brand-gradient text-brand-fg hover:opacity-90"
+                      onClick={() => {
+                        window.open(`mailto:info@radiogen.ai?subject=Upgrade to ${PLANS[nextPlan].label}&body=I'd like to upgrade from ${planLabel} to ${PLANS[nextPlan].label} (€${PLANS[nextPlan].price}/month).`, "_blank");
+                        setLimitDialogOpen(false);
+                      }}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} informes/mes) €{PLANS[nextPlan].price}/mes
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => {
+                      window.open("mailto:info@radiogen.ai?subject=Buy 100 extra reports&body=I'd like to purchase 100 extra reports for my current billing period.", "_blank");
+                      setLimitDialogOpen(false);
+                    }}
+                  >
+                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>

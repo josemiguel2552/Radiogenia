@@ -29,6 +29,7 @@ export function StatsPanel() {
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("month");
   const [expanded, setExpanded] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetch("/api/subscription")
@@ -44,6 +45,17 @@ export function StatsPanel() {
         if (data && typeof data.count === "number") setTotalCount(data.count);
       })
       .catch(() => {});
+  }, [refreshKey]);
+
+  // Refresh stats when a report is generated or saved
+  useEffect(() => {
+    const refresh = () => setRefreshKey((k) => k + 1);
+    window.addEventListener("radiogenai:report-saved", refresh);
+    window.addEventListener("radiogenai:report-generated", refresh);
+    return () => {
+      window.removeEventListener("radiogenai:report-saved", refresh);
+      window.removeEventListener("radiogenai:report-generated", refresh);
+    };
   }, []);
 
   useEffect(() => {
