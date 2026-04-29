@@ -4,10 +4,11 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Mic, FileText, Brain, Sparkles, Layout, Shield,
-  ChevronRight, Check, ArrowRight,
+  ChevronRight, Check, ArrowRight, Globe,
 } from "lucide-react";
-import { PLANS, type SubscriptionPlan } from "@/lib/types";
+import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
+import { usePublicLang, type PublicLang } from "@/lib/public-i18n";
 
 function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -22,43 +23,13 @@ function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   }, [ref]);
 }
 
-const FEATURES = [
-  {
-    icon: Mic,
-    title: "Voice Dictation",
-    desc: "Dictate findings naturally. AI transcribes and structures your report in real time.",
-    color: "from-blue-500 to-indigo-600",
-  },
-  {
-    icon: FileText,
-    title: "Structured Reports",
-    desc: "104+ templates across all modalities. Every section filled automatically from your dictation.",
-    color: "from-violet-500 to-purple-600",
-  },
-  {
-    icon: Brain,
-    title: "Style Learning",
-    desc: "The AI learns your preferred phrasing for normal findings and conclusions over time.",
-    color: "from-purple-500 to-pink-500",
-  },
-  {
-    icon: Sparkles,
-    title: "Smart Conclusions",
-    desc: "Automatic conclusions and evidence-based recommendations from your findings.",
-    color: "from-indigo-500 to-blue-600",
-  },
-  {
-    icon: Layout,
-    title: "Custom Templates",
-    desc: "Create and customize templates for any study type. Your structure, your way.",
-    color: "from-blue-600 to-cyan-500",
-  },
-  {
-    icon: Shield,
-    title: "Clinical Safety",
-    desc: "Zero hallucinations policy. AI only uses what you dictate. Full traceability.",
-    color: "from-violet-600 to-indigo-500",
-  },
+const FEATURE_KEYS = [
+  { icon: Mic, key: "voice", color: "from-blue-500 to-indigo-600" },
+  { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
+  { icon: Brain, key: "style", color: "from-purple-500 to-pink-500" },
+  { icon: Sparkles, key: "conclusions", color: "from-indigo-500 to-blue-600" },
+  { icon: Layout, key: "templates", color: "from-blue-600 to-cyan-500" },
+  { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
 ];
 
 const PLAN_ORDER: SubscriptionPlan[] = ["free", "starter", "professional"];
@@ -66,6 +37,7 @@ const PLAN_ORDER: SubscriptionPlan[] = ["free", "starter", "professional"];
 export function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  const { lang, setLang, t } = usePublicLang();
   useMouseGlow(heroRef);
 
   useEffect(() => {
@@ -89,21 +61,22 @@ export function LandingPage() {
             <Logo size="md" forceDark />
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#features" className="hover:text-white transition-colors">{t("nav.features")}</a>
+            <a href="#pricing" className="hover:text-white transition-colors">{t("nav.pricing")}</a>
           </div>
           <div className="flex items-center gap-3">
+            <LangToggle lang={lang} setLang={setLang} />
             <Link
               href="/auth/login"
               className="text-sm text-gray-300 hover:text-white transition-colors px-4 py-2"
             >
-              Sign in
+              {t("nav.signin")}
             </Link>
             <Link
               href="/auth/register"
               className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-5 py-2 rounded-full transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
             >
-              Get started free
+              {t("nav.get_started")}
             </Link>
           </div>
         </div>
@@ -115,7 +88,6 @@ export function LandingPage() {
         className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden"
         style={{ "--mx": "50%", "--my": "50%" } as React.CSSProperties}
       >
-        {/* Animated gradient mesh background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),rgba(99,102,241,0.15)_0%,transparent_60%)] transition-[background] duration-100" />
           <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] animate-float-slow" />
@@ -123,7 +95,6 @@ export function LandingPage() {
           <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] bg-indigo-500/8 rounded-full blur-[100px] animate-float-medium" />
         </div>
 
-        {/* Grid pattern overlay */}
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -135,19 +106,18 @@ export function LandingPage() {
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-sm text-gray-300 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-            AI-powered radiology reporting
+            {lang === "es" ? "Informes radiológicos con IA" : "AI-powered radiology reporting"}
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-            Radiology reports{" "}
+            {lang === "es" ? "Informes radiológicos " : "Radiology reports "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-              in seconds
+              {lang === "es" ? "en segundos" : "in seconds"}
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Dictate your findings, and AI generates structured, publication-ready reports.
-            Learns your style. Zero hallucinations. 104+ templates across all modalities.
+            {t("hero.subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -155,36 +125,34 @@ export function LandingPage() {
               href="/auth/register"
               className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
             >
-              Start free — 30 reports/month
+              {t("hero.cta_primary")}
               <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <a
               href="#features"
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-6 py-3.5 rounded-full border border-white/10 hover:border-white/20 transition-all backdrop-blur-sm"
             >
-              See how it works
+              {t("hero.cta_secondary")}
               <ChevronRight className="h-3.5 w-3.5" />
             </a>
           </div>
 
-          {/* Trust badges */}
           <div className="mt-16 flex items-center justify-center gap-8 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-green-500" />
-              No credit card required
+              {t("hero.badge_no_card")}
             </span>
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-green-500" />
-              HIPAA-conscious design
+              {t("hero.badge_hipaa")}
             </span>
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-green-500" />
-              AES-256 encryption
+              {t("hero.badge_encrypt")}
             </span>
           </div>
         </div>
 
-        {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1.5">
             <div className="w-1.5 h-2.5 bg-white/40 rounded-full animate-scroll-dot" />
@@ -197,20 +165,36 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Everything you need to{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                report faster
-              </span>
+              {lang === "es" ? (
+                <>
+                  Todo lo que necesitas para{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    informar más rápido
+                  </span>
+                </>
+              ) : (
+                <>
+                  Everything you need to{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    report faster
+                  </span>
+                </>
+              )}
             </h2>
             <p className="text-gray-400 max-w-xl mx-auto">
-              From dictation to structured report in one seamless flow.
-              Designed by radiologists, for radiologists.
+              {t("feat.subtitle")}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map((f) => (
-              <FeatureCard key={f.title} {...f} />
+            {FEATURE_KEYS.map((f) => (
+              <FeatureCard
+                key={f.key}
+                icon={f.icon}
+                title={t(`feat.${f.key}.title`)}
+                desc={t(`feat.${f.key}.desc`)}
+                color={f.color}
+              />
             ))}
           </div>
         </div>
@@ -221,22 +205,18 @@ export function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/20 to-transparent" />
         <div className="relative max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            Three steps to your report
+            {t("how.title")}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { n: "01", title: "Dictate", desc: "Speak your findings naturally or type them. The AI transcribes in real time." },
-              { n: "02", title: "Generate", desc: "AI structures your dictation into a complete report using your preferred template." },
-              { n: "03", title: "Review & Save", desc: "Edit anything, save. The platform learns your style for next time." },
-            ].map((step) => (
-              <div key={step.n} className="text-center">
+            {(["step1", "step2", "step3"] as const).map((step, i) => (
+              <div key={step} className="text-center">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/5 mb-4">
                   <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                    {step.n}
+                    {String(i + 1).padStart(2, "0")}
                   </span>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{step.desc}</p>
+                <h3 className="text-lg font-semibold mb-2">{t(`how.${step}.title`)}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{t(`how.${step}.desc`)}</p>
               </div>
             ))}
           </div>
@@ -248,15 +228,25 @@ export function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Simple,{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                transparent
-              </span>{" "}
-              pricing
+              {lang === "es" ? (
+                <>
+                  Precios simples y{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    transparentes
+                  </span>
+                </>
+              ) : (
+                <>
+                  Simple,{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    transparent
+                  </span>{" "}
+                  pricing
+                </>
+              )}
             </h2>
             <p className="text-gray-400 max-w-xl mx-auto">
-              Start free. Upgrade when you need more reports.
-              Every plan includes all features.
+              {t("pricing.subtitle")}{" "}{t("pricing.all_features")}
             </p>
           </div>
 
@@ -264,17 +254,14 @@ export function LandingPage() {
             {PLAN_ORDER.map((key) => {
               const plan = PLANS[key];
               return (
-                <PricingCard key={key} plan={plan} planKey={key} />
+                <PricingCard key={key} plan={plan} planKey={key} t={t} lang={lang} />
               );
             })}
           </div>
 
-          {/* Token economics note */}
           <div className="mt-12 text-center">
             <p className="text-xs text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              Each report uses approximately 10,000 tokens (~8,000 input + ~2,000 output).
-              Cost per report: ~$0.005 with DeepSeek. Plans are calculated to provide
-              maximum value while maintaining service quality. All plans include the same AI model and features.
+              {t("pricing.note")}
             </p>
           </div>
         </div>
@@ -284,16 +271,15 @@ export function LandingPage() {
       <section className="relative py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <div className="p-12 rounded-3xl bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-white/5 backdrop-blur-sm">
-            <h2 className="text-3xl font-bold mb-4">Ready to report faster?</h2>
+            <h2 className="text-3xl font-bold mb-4">{t("cta.title")}</h2>
             <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-              Join radiologists who save hours every week with AI-powered reporting.
-              Start with 50 free reports — no credit card needed.
+              {t("cta.subtitle")}
             </p>
             <Link
               href="/auth/register"
               className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40"
             >
-              Get started free
+              {t("cta.button")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -305,10 +291,10 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <Logo size="sm" forceDark />
           <div className="flex items-center gap-6 text-xs text-gray-500">
-            <a href="#features" className="hover:text-gray-300 transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-gray-300 transition-colors">Pricing</a>
-            <Link href="/legal" className="hover:text-gray-300 transition-colors">Legal</Link>
-            <Link href="/auth/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
+            <a href="#features" className="hover:text-gray-300 transition-colors">{t("nav.features")}</a>
+            <a href="#pricing" className="hover:text-gray-300 transition-colors">{t("nav.pricing")}</a>
+            <Link href="/legal" className="hover:text-gray-300 transition-colors">{t("footer.legal")}</Link>
+            <Link href="/auth/login" className="hover:text-gray-300 transition-colors">{t("nav.signin")}</Link>
           </div>
           <p className="text-xs text-gray-600">
             &copy; {new Date().getFullYear()} Radiogen.AI
@@ -316,6 +302,19 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function LangToggle({ lang, setLang }: { lang: PublicLang; setLang: (l: PublicLang) => void }) {
+  return (
+    <button
+      onClick={() => setLang(lang === "es" ? "en" : "es")}
+      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
+      aria-label="Toggle language"
+    >
+      <Globe className="h-3.5 w-3.5" />
+      {lang === "es" ? "EN" : "ES"}
+    </button>
   );
 }
 
@@ -336,7 +335,12 @@ function FeatureCard({ icon: Icon, title, desc, color }: {
   );
 }
 
-function PricingCard({ plan, planKey }: { plan: typeof PLANS["free"]; planKey: string }) {
+function PricingCard({ plan, planKey, t, lang }: {
+  plan: typeof PLANS["free"];
+  planKey: string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  lang: PublicLang;
+}) {
   const isHighlight = plan.highlight;
 
   return (
@@ -350,7 +354,7 @@ function PricingCard({ plan, planKey }: { plan: typeof PLANS["free"]; planKey: s
       {isHighlight && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
-            Most popular
+            {t("pricing.most_popular")}
           </span>
         </div>
       )}
@@ -359,11 +363,11 @@ function PricingCard({ plan, planKey }: { plan: typeof PLANS["free"]; planKey: s
         <h3 className="text-lg font-semibold mb-1">{plan.label}</h3>
         <div className="flex items-baseline gap-1">
           {plan.price === 0 ? (
-            <span className="text-4xl font-bold">Free</span>
+            <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : "Free"}</span>
           ) : (
             <>
-              <span className="text-4xl font-bold">&euro;{plan.price}</span>
-              <span className="text-sm text-gray-400">/month</span>
+              <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
+              <span className="text-sm text-gray-400">{t("pricing.per_month")}</span>
             </>
           )}
         </div>
@@ -373,7 +377,7 @@ function PricingCard({ plan, planKey }: { plan: typeof PLANS["free"]; planKey: s
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-gray-300">
             <Check className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-            {f}
+            {t(f)}
           </li>
         ))}
       </ul>
@@ -388,7 +392,9 @@ function PricingCard({ plan, planKey }: { plan: typeof PLANS["free"]; planKey: s
             : "bg-white/5 hover:bg-white/10 border border-white/10"
         }`}
       >
-        {plan.price === 0 ? "Get started free" : `Subscribe — €${plan.price}/mo`}
+        {plan.price === 0
+          ? t("pricing.free_cta")
+          : `${t("pricing.subscribe_cta")} — ${CURRENCY}${plan.price}${t("pricing.per_month")}`}
       </Link>
     </div>
   );

@@ -6,10 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Mail } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Globe } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { usePublicLang } from "@/lib/public-i18n";
 
 export default function ForgotPasswordPage() {
+  const { lang, setLang, t } = usePublicLang();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -36,8 +38,17 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
       <div className="w-full max-w-md space-y-8">
-        <div className="flex justify-center">
-          <Logo size="md" forceDark />
+        <div className="flex items-center justify-between">
+          <div className="flex justify-center flex-1">
+            <Logo size="md" forceDark />
+          </div>
+          <button
+            onClick={() => setLang(lang === "es" ? "en" : "es")}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {lang === "es" ? "EN" : "ES"}
+          </button>
         </div>
 
         {sent ? (
@@ -45,35 +56,34 @@ export default function ForgotPasswordPage() {
             <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
               <Mail className="h-6 w-6 text-blue-400" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Check your email</h1>
+            <h1 className="text-2xl font-bold text-white">{t("auth.check_email")}</h1>
             <p className="text-sm text-gray-400">
-              We sent a password reset link to <span className="text-white font-medium">{email}</span>.
-              Click the link in the email to set a new password.
+              {t("auth.reset_sent", { email })}
             </p>
             <Link
               href="/auth/login"
               className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to sign in
+              {t("auth.back_signin")}
             </Link>
           </div>
         ) : (
           <>
             <div>
-              <h1 className="text-2xl font-bold text-white mb-1">Reset your password</h1>
+              <h1 className="text-2xl font-bold text-white mb-1">{t("auth.reset_title")}</h1>
               <p className="text-sm text-gray-400">
-                Enter your email and we&apos;ll send you a link to reset your password.
+                {t("auth.reset_subtitle")}
               </p>
             </div>
 
             <form onSubmit={handleReset} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300 text-sm">Email</Label>
+                <Label htmlFor="email" className="text-gray-300 text-sm">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@hospital.com"
+                  placeholder={t("auth.email_placeholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -90,7 +100,7 @@ export default function ForgotPasswordPage() {
                 className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
                 disabled={loading}
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("auth.send_link")}
               </Button>
             </form>
 
@@ -100,7 +110,7 @@ export default function ForgotPasswordPage() {
                 className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Back to sign in
+                {t("auth.back_signin")}
               </Link>
             </p>
           </>

@@ -1444,12 +1444,12 @@ export function DashboardContent() {
                     <Button
                       className="w-full gap-2 bg-brand-gradient text-brand-fg hover:opacity-90"
                       onClick={() => {
-                        window.open(`mailto:info@radiogen.ai?subject=Upgrade to ${PLANS[nextPlan].label}&body=I'd like to upgrade from ${planLabel} to ${PLANS[nextPlan].label} (€${PLANS[nextPlan].price}/month).`, "_blank");
+                        window.open(`mailto:info@radiogen.ai?subject=Upgrade to ${PLANS[nextPlan].label}&body=I'd like to upgrade from ${planLabel} to ${PLANS[nextPlan].label} ($${PLANS[nextPlan].price}/month).`, "_blank");
                         setLimitDialogOpen(false);
                       }}
                     >
                       <Sparkles className="h-4 w-4" />
-                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} inf. + {PLANS[nextPlan].dictationMinutes} min) €{PLANS[nextPlan].price}/mes
+                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} inf. + {PLANS[nextPlan].dictationMinutes} min) ${PLANS[nextPlan].price}/mo
                     </Button>
                   )}
                   <Button

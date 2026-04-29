@@ -1,6 +1,8 @@
 export type UserRole = "admin" | "radiologist";
 export type SubscriptionPlan = "free" | "starter" | "professional";
 
+export const CURRENCY = "$";
+
 export interface PlanConfig {
   name: string;
   label: string;
@@ -23,12 +25,12 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
     dictationMinutes: 30,
     guidelineDocuments: 2,
     features: [
-      "30 reports/month",
-      "All modalities",
-      "30 min voice dictation/month",
-      "Style learning",
-      "Custom templates",
-      "2 guideline documents",
+      "plan.feat.reports_30",
+      "plan.feat.all_modalities",
+      "plan.feat.dictation_30",
+      "plan.feat.style_learning",
+      "plan.feat.custom_templates",
+      "plan.feat.guidelines_2",
     ],
   },
   starter: {
@@ -41,13 +43,13 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
     guidelineDocuments: 5,
     highlight: true,
     features: [
-      "150 reports/month",
-      "All modalities",
-      "120 min voice dictation/month",
-      "Style learning",
-      "Custom templates",
-      "5 guideline documents",
-      "Priority support",
+      "plan.feat.reports_150",
+      "plan.feat.all_modalities",
+      "plan.feat.dictation_120",
+      "plan.feat.style_learning",
+      "plan.feat.custom_templates",
+      "plan.feat.guidelines_5",
+      "plan.feat.priority_support",
     ],
   },
   professional: {
@@ -59,15 +61,15 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
     dictationMinutes: 300,
     guidelineDocuments: 15,
     features: [
-      "400 reports/month",
-      "All modalities",
-      "300 min voice dictation/month",
-      "Style learning",
-      "Custom templates",
-      "15 guideline documents",
-      "Priority support",
-      "API access",
-      "Bulk export",
+      "plan.feat.reports_400",
+      "plan.feat.all_modalities",
+      "plan.feat.dictation_300",
+      "plan.feat.style_learning",
+      "plan.feat.custom_templates",
+      "plan.feat.guidelines_15",
+      "plan.feat.priority_support",
+      "plan.feat.api_access",
+      "plan.feat.bulk_export",
     ],
   },
 };

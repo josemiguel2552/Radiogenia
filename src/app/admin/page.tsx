@@ -556,7 +556,7 @@ export default function AdminPage() {
               <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label="Total Reports" value={stats?.totalReports ?? totalReports} />
               <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label="Reports This Month" value={stats?.reportsThisMonth ?? 0} />
               <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label="Dictation (min)" value={`${stats?.totalDictationMinutes ?? 0} min`} />
-              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`€${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
+              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -1243,16 +1243,16 @@ export default function AdminPage() {
                       <div className="text-xs text-gray-500 space-y-1">
                         <p>{plan.reports} reports/month</p>
                         <p>~{plan.tokensPerReport.toLocaleString()} tokens/report</p>
-                        <p>Cost/report: ~€0.005</p>
+                        <p>Cost/report: ~$0.005</p>
                       </div>
                       <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-500">Revenue</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">€{revenue.toFixed(2)}/mo</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">${revenue.toFixed(2)}/mo</span>
                         </div>
                         <div className="flex items-center justify-between text-xs mt-1">
                           <span className="text-gray-500">AI cost</span>
-                          <span className="text-gray-600 dark:text-gray-400">~€{(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
+                          <span className="text-gray-600 dark:text-gray-400">~${(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
                         </div>
                       </div>
                     </CardContent>
@@ -1279,7 +1279,7 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium text-gray-900 dark:text-white">Margins</p>
-                    <p>Free: marketing cost (~€0.03/user/mo)</p>
+                    <p>Free: marketing cost (~$0.03/user/mo)</p>
                     <p>Starter: ~87% margin</p>
                     <p>Professional: ~75% margin</p>
                   </div>
@@ -1661,8 +1661,8 @@ export default function AdminPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="free">Free (30 reports/mo)</SelectItem>
-                    <SelectItem value="starter">Starter — €7.99 (150 reports/mo)</SelectItem>
-                    <SelectItem value="professional">Professional — €15.99 (400 reports/mo)</SelectItem>
+                    <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
+                    <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1729,8 +1729,8 @@ export default function AdminPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="free">Free (50 reports/mo)</SelectItem>
-                  <SelectItem value="starter">Starter — €9.99 (150 reports/mo)</SelectItem>
-                  <SelectItem value="professional">Professional — €14.99 (400 reports/mo)</SelectItem>
+                  <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
+                  <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
