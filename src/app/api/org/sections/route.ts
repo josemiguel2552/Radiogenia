@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getOrgMembership } from "@/lib/auth-helpers";
+import { requireOrgMembership, requireOrgRole } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
@@ -8,34 +8,16 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const membership = await requireOrgMembership(user.id);
+
     const { data, error } = await supabase
-      .from("user_recommendations")
+      .from("org_sections")
       .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .eq("org_id", membership.org_id)
+      .order("display_order");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    const personal = (data || []).map((r) => ({ ...r, is_org: false }));
-
-    // Merge org recommendations if user is in an organization
-    let orgRecs: typeof personal = [];
-    try {
-      const membership = await getOrgMembership(user.id);
-      if (membership) {
-        const { data: orgData } = await supabase
-          .from("org_recommendations")
-          .select("*, org_sections(name)")
-          .eq("org_id", membership.org_id);
-
-        orgRecs = (orgData || []).map((r) => {
-          const sec = r.org_sections as unknown as { name: string } | null;
-          return { ...r, org_sections: undefined, is_org: true, section_name: sec?.name || "" };
-        });
-      }
-    } catch { /* org tables may not exist */ }
-
-    return NextResponse.json([...orgRecs, ...personal]);
+    return NextResponse.json(data || []);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -48,18 +30,19 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await req.json();
+    const membership = await requireOrgRole(user.id, { chief: true });
+    const { name, slug, display_order } = await req.json();
 
-    // Support batch insert for PDF extraction
-    if (Array.isArray(body)) {
-      const items = body.map((item) => ({ ...item, user_id: user.id }));
-      const { data, error } = await supabase.from("user_recommendations").insert(items).select();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json(data);
+    if (!name || !slug) {
+      return NextResponse.json({ error: "Missing name or slug" }, { status: 400 });
     }
 
-    body.user_id = user.id;
-    const { data, error } = await supabase.from("user_recommendations").insert(body).select().single();
+    const { data, error } = await supabase
+      .from("org_sections")
+      .insert({ org_id: membership.org_id, name, slug, display_order: display_order || 0 })
+      .select()
+      .single();
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
   } catch (error) {
@@ -74,19 +57,23 @@ export async function PUT(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await req.json();
-    const { id, ...updates } = body;
+    await requireOrgRole(user.id, { chief: true });
+    const { id, name, slug, display_order } = await req.json();
 
-    const { data, error } = await supabase
-      .from("user_recommendations")
-      .update(updates)
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .select()
-      .single();
+    if (!id) return NextResponse.json({ error: "Missing section id" }, { status: 400 });
+
+    const update: Record<string, unknown> = {};
+    if (name !== undefined) update.name = name;
+    if (slug !== undefined) update.slug = slug;
+    if (display_order !== undefined) update.display_order = display_order;
+
+    const { error } = await supabase
+      .from("org_sections")
+      .update(update)
+      .eq("id", id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -99,18 +86,15 @@ export async function DELETE(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    await requireOrgRole(user.id, { chief: true });
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    const { error } = await supabase
-      .from("user_recommendations")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
+    if (!id) return NextResponse.json({ error: "Missing section id" }, { status: 400 });
 
+    const { error } = await supabase.from("org_sections").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

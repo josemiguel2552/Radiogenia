@@ -248,3 +248,115 @@ export const DICTATION_LANGUAGES: { value: DictationLanguage; label: string }[] 
   { value: "auto", label: "Auto-detect" },
   ...LANGUAGES,
 ];
+
+/* ── Hospital / Organization types ─────────────────────────── */
+
+export type SectionRole = "section_chief" | "section_editor" | "radiologist";
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  billing_email: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  max_seats: number;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrgSection {
+  id: string;
+  org_id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+  created_at: string;
+}
+
+export interface OrgMember {
+  id: string;
+  org_id: string;
+  user_id: string;
+  section_id: string | null;
+  is_org_chief: boolean;
+  section_role: SectionRole;
+  is_active: boolean;
+  joined_at: string;
+  deactivated_at: string | null;
+  // Joined fields from queries
+  user_email?: string;
+  user_name?: string;
+  section_name?: string;
+}
+
+export interface OrgMembership {
+  org_id: string;
+  org_name: string;
+  section_id: string | null;
+  section_name: string | null;
+  is_org_chief: boolean;
+  section_role: SectionRole;
+}
+
+export interface OrgTemplate {
+  id: string;
+  org_id: string;
+  section_id: string;
+  name: string;
+  modality: string;
+  base_template_id: number | null;
+  structure: unknown;
+  section_name?: string;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrgNormalityPhrase {
+  id: string;
+  org_id: string;
+  section_id: string;
+  modality: string;
+  section_label: string;
+  phrase: string;
+  created_by: string | null;
+  updated_at: string;
+}
+
+export interface OrgRecommendation {
+  id: string;
+  org_id: string;
+  section_id: string;
+  trigger_keyword: string;
+  recommendation_text: string;
+  source: "manual" | "pdf_extracted";
+  guideline_name: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type SupportTicketCategory = "error" | "question" | "complaint" | "general";
+export type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export interface SupportTicket {
+  id: string;
+  org_id: string | null;
+  user_id: string;
+  subject: string;
+  body: string;
+  category: SupportTicketCategory;
+  status: SupportTicketStatus;
+  admin_reply: string | null;
+  admin_user_id: string | null;
+  replied_at: string | null;
+  created_at: string;
+  // Joined fields
+  user_email?: string;
+  user_name?: string;
+  org_name?: string;
+}

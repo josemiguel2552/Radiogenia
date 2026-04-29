@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { decrypt } from "@/lib/encryption";
-import { PLANS, type AIProvider, type UserRole, type SubscriptionPlan } from "@/lib/types";
+import { PLANS, type AIProvider, type UserRole, type SubscriptionPlan, type OrgMembership, type SectionRole } from "@/lib/types";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
@@ -139,7 +139,7 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan, reports_used_this_month, billing_period_start")
+    .select("role, email, subscription_plan, reports_used_this_month, billing_period_start, org_id")
     .eq("id", userId)
     .single();
 
@@ -147,6 +147,10 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
     || (profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase()));
   if (isAdmin) {
     return { allowed: true, used: 0, limit: 999999, plan: "professional" };
+  }
+
+  if (profile?.org_id) {
+    return { allowed: true, used: profile.reports_used_this_month || 0, limit: 999999, plan: "professional" };
   }
 
   const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
@@ -172,7 +176,7 @@ export async function checkDictationLimit(userId: string): Promise<{
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan, dictation_seconds_used, billing_period_start")
+    .select("role, email, subscription_plan, dictation_seconds_used, billing_period_start, org_id")
     .eq("id", userId)
     .single();
 
@@ -180,6 +184,10 @@ export async function checkDictationLimit(userId: string): Promise<{
     || (profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase()));
   if (isAdmin) {
     return { allowed: true, usedSeconds: 0, limitSeconds: 999999 * 60, plan: "professional" };
+  }
+
+  if (profile?.org_id) {
+    return { allowed: true, usedSeconds: profile.dictation_seconds_used || 0, limitSeconds: 999999 * 60, plan: "professional" };
   }
 
   const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
@@ -257,13 +265,17 @@ export async function checkDocumentLimit(userId: string): Promise<{
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan")
+    .select("role, email, subscription_plan, org_id")
     .eq("id", userId)
     .single();
 
   const isAdmin = profile?.role === "admin"
     || (profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase()));
   if (isAdmin) {
+    return { allowed: true, used: 0, limit: 999999, plan: "professional" };
+  }
+
+  if (profile?.org_id) {
     return { allowed: true, used: 0, limit: 999999, plan: "professional" };
   }
 
@@ -297,4 +309,65 @@ export async function checkDocumentLimit(userId: string): Promise<{
     limit: planConfig.guidelineDocuments,
     plan,
   };
+}
+
+/* ── Organization membership helpers ─────────────────────────── */
+
+export async function getOrgMembership(userId: string): Promise<OrgMembership | null> {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("org_members")
+    .select("org_id, section_id, is_org_chief, section_role, organizations(name), org_sections(name)")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const org = data.organizations as unknown as { name: string } | null;
+  const sec = data.org_sections as unknown as { name: string } | null;
+
+  return {
+    org_id: data.org_id,
+    org_name: org?.name || "",
+    section_id: data.section_id,
+    section_name: sec?.name || null,
+    is_org_chief: data.is_org_chief,
+    section_role: data.section_role as SectionRole,
+  };
+}
+
+export async function requireOrgMembership(userId: string): Promise<OrgMembership> {
+  const membership = await getOrgMembership(userId);
+  if (!membership) throw new Error("User is not a member of any organization");
+  return membership;
+}
+
+export async function requireOrgRole(
+  userId: string,
+  opts: { chief?: boolean; sectionRoles?: SectionRole[]; sectionId?: string },
+): Promise<OrgMembership> {
+  const membership = await requireOrgMembership(userId);
+
+  if (opts.chief && membership.is_org_chief) return membership;
+
+  if (opts.sectionRoles?.includes(membership.section_role)) {
+    if (!opts.sectionId || membership.section_id === opts.sectionId) {
+      return membership;
+    }
+  }
+
+  if (membership.is_org_chief) return membership;
+
+  throw new Error("Insufficient org permissions");
+}
+
+async function isOrgMember(userId: string): Promise<boolean> {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("profiles")
+    .select("org_id")
+    .eq("id", userId)
+    .single();
+  return !!data?.org_id;
 }
