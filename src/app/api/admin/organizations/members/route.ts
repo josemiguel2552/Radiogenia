@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     const { data, error } = await service
       .from("org_members")
       .select("*, profiles(email, name), org_sections(name)")
-      .eq("org_id", orgId);
+      .eq("org_id", orgId)
+      .order("joined_at");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -42,32 +43,19 @@ export async function POST(req: NextRequest) {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { org_id, email, section_id, section_role, is_org_chief } = await req.json();
+    const { org_id, email, name, password, section_id, section_role, is_org_chief } = await req.json();
     if (!org_id || !email) {
       return NextResponse.json({ error: "Missing org_id or email" }, { status: 400 });
     }
 
-    // Look up user by email
-    const { data: profile, error: profileError } = await service
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
     // Check seat limit
-    const { data: org, error: orgError } = await service
+    const { data: org } = await service
       .from("organizations")
       .select("max_seats")
       .eq("id", org_id)
       .single();
 
-    if (orgError || !org) {
-      return NextResponse.json({ error: "Organization not found" }, { status: 404 });
-    }
+    if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
 
     const { count } = await service
       .from("org_members")
@@ -76,29 +64,82 @@ export async function POST(req: NextRequest) {
       .eq("is_active", true);
 
     if ((count ?? 0) >= org.max_seats) {
-      return NextResponse.json({ error: "Seat limit reached" }, { status: 409 });
+      return NextResponse.json({ error: "Se ha alcanzado el límite de plazas" }, { status: 409 });
     }
 
-    // Upsert member (allows reactivation of previously deactivated members)
+    let userId: string;
+
+    // Check if user already exists
+    const { data: existingProfile } = await service
+      .from("profiles")
+      .select("id")
+      .eq("email", email.trim().toLowerCase())
+      .maybeSingle();
+
+    if (existingProfile) {
+      userId = existingProfile.id;
+    } else {
+      // Create new user account
+      if (!password || password.length < 6) {
+        return NextResponse.json({ error: "Se requiere contraseña (mínimo 6 caracteres) para crear un usuario nuevo" }, { status: 400 });
+      }
+
+      const { data: authData, error: authError } = await service.auth.admin.createUser({
+        email: email.trim().toLowerCase(),
+        password,
+        email_confirm: true,
+        user_metadata: { name: name?.trim() || "" },
+      });
+
+      if (authError || !authData.user) {
+        const msg = authError?.message || "Error al crear el usuario";
+        return NextResponse.json({ error: msg }, { status: 400 });
+      }
+
+      userId = authData.user.id;
+
+      // Ensure profile exists (trigger should create it, but be safe)
+      await service.from("profiles").upsert({
+        id: userId,
+        email: email.trim().toLowerCase(),
+        name: name?.trim() || "",
+        role: "radiologist",
+        subscription_plan: "free",
+      });
+
+      // Ensure model config exists
+      await service.from("user_model_config").upsert(
+        { user_id: userId },
+        { onConflict: "user_id" },
+      );
+    }
+
+    // Upsert org membership (allows reactivation)
     const { data, error } = await service
       .from("org_members")
       .upsert(
         {
           org_id,
-          user_id: profile.id,
+          user_id: userId,
           section_id: section_id || null,
           section_role: section_role || "radiologist",
           is_org_chief: is_org_chief ?? false,
           is_active: true,
           deactivated_at: null,
         },
-        { onConflict: "org_id,user_id" }
+        { onConflict: "org_id,user_id" },
       )
       .select()
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+
+    return NextResponse.json({
+      ...data,
+      user_created: !existingProfile,
+      user_email: email.trim().toLowerCase(),
+      user_name: name?.trim() || existingProfile ? undefined : name?.trim(),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -114,7 +155,7 @@ export async function PUT(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "Missing member id" }, { status: 400 });
 
     const update: Record<string, unknown> = {};
-    if (section_id !== undefined) update.section_id = section_id;
+    if (section_id !== undefined) update.section_id = section_id || null;
     if (section_role !== undefined) update.section_role = section_role;
     if (is_org_chief !== undefined) update.is_org_chief = is_org_chief;
 
@@ -124,6 +165,32 @@ export async function PUT(req: NextRequest) {
     }
 
     const { error } = await service.from("org_members").update(update).eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+// PATCH — Reset password for a member
+export async function PATCH(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const service = createServiceClient();
+
+    const { user_id, new_password } = await req.json();
+    if (!user_id || !new_password) {
+      return NextResponse.json({ error: "Missing user_id or new_password" }, { status: 400 });
+    }
+    if (new_password.length < 6) {
+      return NextResponse.json({ error: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 });
+    }
+
+    const { error } = await service.auth.admin.updateUserById(user_id, {
+      password: new_password,
+    });
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (error) {

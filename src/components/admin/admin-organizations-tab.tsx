@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Loader2, Plus, Pencil, Trash2, Users, Building2, ArrowLeft,
-  UserPlus, Shield, Crown, Check, X,
+  UserPlus, Shield, Crown, Check, X, KeyRound, Eye, EyeOff,
 } from "lucide-react";
 import type { Organization, OrgSection, SectionRole } from "@/lib/types";
 
@@ -58,12 +58,25 @@ export function AdminOrganizationsTab() {
   // Member form
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [isNewUser, setIsNewUser] = useState(true);
+  const [memberName, setMemberName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
+  const [memberPassword, setMemberPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [memberSectionId, setMemberSectionId] = useState("");
   const [memberRole, setMemberRole] = useState<SectionRole>("radiologist");
   const [memberIsChief, setMemberIsChief] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
   const [memberError, setMemberError] = useState("");
+  const [memberSuccess, setMemberSuccess] = useState("");
+
+  // Password reset
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetMember, setResetMember] = useState<MemberRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetSuccess, setResetSuccess] = useState("");
 
   const loadOrgs = useCallback(async () => {
     setLoading(true);
@@ -173,28 +186,65 @@ export function AdminOrganizationsTab() {
   // ── Members ──
   function openAddMember() {
     setEditingMember(null);
+    setIsNewUser(true);
+    setMemberName("");
     setMemberEmail("");
+    setMemberPassword("");
+    setShowPassword(false);
     setMemberSectionId(sections[0]?.id || "");
     setMemberRole("radiologist");
     setMemberIsChief(false);
     setMemberError("");
+    setMemberSuccess("");
     setShowMemberForm(true);
   }
 
   function openEditMember(m: MemberRow) {
     setEditingMember(m);
+    setIsNewUser(false);
+    setMemberName(m.user_name || "");
     setMemberEmail(m.user_email || "");
+    setMemberPassword("");
     setMemberSectionId(m.section_id || "");
     setMemberRole(m.section_role);
     setMemberIsChief(m.is_org_chief);
     setMemberError("");
+    setMemberSuccess("");
     setShowMemberForm(true);
+  }
+
+  function openPasswordReset(m: MemberRow) {
+    setResetMember(m);
+    setNewPassword("");
+    setResetError("");
+    setResetSuccess("");
+    setShowPasswordReset(true);
+  }
+
+  async function handleResetPassword() {
+    if (!resetMember || !newPassword) return;
+    setResettingPassword(true);
+    setResetError("");
+    setResetSuccess("");
+    const res = await fetch("/api/admin/organizations/members", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: resetMember.user_id, new_password: newPassword }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setResetError(data.error || "Error");
+    } else {
+      setResetSuccess(`Contraseña actualizada para ${resetMember.user_name || resetMember.user_email}`);
+    }
+    setResettingPassword(false);
   }
 
   async function handleSaveMember() {
     if (!selectedOrg) return;
     setSavingMember(true);
     setMemberError("");
+    setMemberSuccess("");
 
     if (editingMember) {
       const res = await fetch("/api/admin/organizations/members", {
@@ -219,21 +269,42 @@ export function AdminOrganizationsTab() {
         setSavingMember(false);
         return;
       }
+      if (isNewUser && (!memberPassword || memberPassword.length < 6)) {
+        setMemberError("La contraseña debe tener al menos 6 caracteres");
+        setSavingMember(false);
+        return;
+      }
+
+      const body: Record<string, unknown> = {
+        org_id: selectedOrg.id,
+        email: memberEmail.trim().toLowerCase(),
+        section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
+        section_role: memberRole,
+        is_org_chief: memberIsChief,
+      };
+      if (isNewUser) {
+        body.name = memberName.trim();
+        body.password = memberPassword;
+      }
+
       const res = await fetch("/api/admin/organizations/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          org_id: selectedOrg.id,
-          email: memberEmail.trim().toLowerCase(),
-          section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
-          section_role: memberRole,
-          is_org_chief: memberIsChief,
-        }),
+        body: JSON.stringify(body),
       });
+
       if (!res.ok) {
         const data = await res.json();
-        setMemberError(data.error === "User not found" ? "No existe un usuario registrado con ese email" : data.error || "Error");
+        setMemberError(data.error || "Error");
         setSavingMember(false);
+        return;
+      }
+
+      const result = await res.json();
+      if (result.user_created) {
+        setMemberSuccess(`Cuenta creada. Email: ${memberEmail.trim().toLowerCase()} / Contraseña: ${memberPassword}`);
+        setSavingMember(false);
+        await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
         return;
       }
     }
@@ -376,8 +447,11 @@ export function AdminOrganizationsTab() {
                           </Badge>
                           {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">Inactivo</Badge>}
                           <div className="flex gap-0.5 flex-shrink-0">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} title="Editar rol">
                               <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" onClick={() => openPasswordReset(m)} title="Cambiar contraseña">
+                              <KeyRound className="h-3 w-3" />
                             </Button>
                             <Button
                               variant="ghost" size="icon"
@@ -425,75 +499,201 @@ export function AdminOrganizationsTab() {
         </Dialog>
 
         {/* Member form dialog */}
-        <Dialog open={showMemberForm} onOpenChange={setShowMemberForm}>
+        <Dialog open={showMemberForm} onOpenChange={(open) => { setShowMemberForm(open); if (!open) setMemberSuccess(""); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingMember ? "Editar miembro" : "Añadir miembro al hospital"}</DialogTitle>
+            </DialogHeader>
+
+            {memberSuccess ? (
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">Cuenta creada correctamente</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 font-mono select-all">{memberSuccess}</p>
+                  <p className="text-[10px] text-green-500 mt-2">Copia estas credenciales y comunícalas al usuario. No se volverán a mostrar.</p>
+                </div>
+                <Button size="sm" className="w-full" onClick={() => { setShowMemberForm(false); setMemberSuccess(""); }}>Cerrar</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Mode toggle — only when adding, not editing */}
+                {!editingMember && (
+                  <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-900 rounded-lg">
+                    <button
+                      onClick={() => setIsNewUser(true)}
+                      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        isNewUser ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500"
+                      }`}
+                    >
+                      Crear cuenta nueva
+                    </button>
+                    <button
+                      onClick={() => setIsNewUser(false)}
+                      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        !isNewUser ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500"
+                      }`}
+                    >
+                      Usuario existente
+                    </button>
+                  </div>
+                )}
+
+                {/* Editing — show who */}
+                {editingMember && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
+                    <div className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                      editingMember.is_org_chief ? "bg-purple-500" : "bg-gray-400"
+                    }`}>
+                      {(editingMember.user_name || editingMember.user_email || "?")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{editingMember.user_name || editingMember.user_email}</span>
+                      {editingMember.user_name && <span className="text-[10px] text-gray-400 ml-1.5">{editingMember.user_email}</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Name — only for new user creation */}
+                {!editingMember && isNewUser && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nombre completo</Label>
+                    <Input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Dr. García López" className="h-9" />
+                  </div>
+                )}
+
+                {/* Email */}
+                {!editingMember && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Email</Label>
+                    <Input value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} placeholder="doctor@hospital.com" className="h-9" type="email" />
+                    {!isNewUser && <p className="text-[10px] text-gray-400">El usuario ya debe tener cuenta en Radiogenia</p>}
+                  </div>
+                )}
+
+                {/* Password — only for new user creation */}
+                {!editingMember && isNewUser && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Contraseña</Label>
+                    <div className="relative">
+                      <Input
+                        value={memberPassword}
+                        onChange={(e) => setMemberPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className="h-9 pr-9"
+                        type={showPassword ? "text" : "password"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-gray-400">Comunica estas credenciales al radiólogo tras crearlas</p>
+                  </div>
+                )}
+
+                {/* Section */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Sección</Label>
+                  <Select value={memberSectionId} onValueChange={setMemberSectionId}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin sección</SelectItem>
+                      {sections.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Role */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Rol</Label>
+                  <Select value={memberRole} onValueChange={(v) => setMemberRole(v as SectionRole)}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="radiologist">Radiólogo</SelectItem>
+                      <SelectItem value="section_editor">Editor de sección</SelectItem>
+                      <SelectItem value="section_chief">Jefe de sección</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Org chief checkbox */}
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input type="checkbox" checked={memberIsChief} onChange={(e) => setMemberIsChief(e.target.checked)} className="rounded border-gray-300" />
+                  <div>
+                    <span className="font-medium">Jefe de servicio</span>
+                    <span className="text-gray-400 ml-1">(acceso total al hospital)</span>
+                  </div>
+                </label>
+
+                {memberError && (
+                  <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{memberError}</p>
+                )}
+
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={handleSaveMember} disabled={savingMember}>
+                    {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : isNewUser ? "Crear cuenta y añadir" : "Añadir"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Password reset dialog */}
+        <Dialog open={showPasswordReset} onOpenChange={(open) => { setShowPasswordReset(open); if (!open) setResetSuccess(""); }}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>{editingMember ? "Editar miembro" : "Añadir miembro"}</DialogTitle>
+              <DialogTitle>Restablecer contraseña</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {!editingMember && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Email del usuario</Label>
-                  <Input
-                    value={memberEmail}
-                    onChange={(e) => setMemberEmail(e.target.value)}
-                    placeholder="doctor@hospital.com"
-                    className="h-9"
-                    type="email"
-                  />
-                  <p className="text-[10px] text-gray-400">El usuario debe estar registrado en Radiogenia</p>
+            {resetMember && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {resetMember.user_name || resetMember.user_email}
+                  </span>
+                  {resetMember.user_name && <span className="text-[10px] text-gray-400">{resetMember.user_email}</span>}
                 </div>
-              )}
-              {editingMember && (
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {editingMember.user_name || editingMember.user_email}
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label className="text-xs">Sección</Label>
-                <Select value={memberSectionId} onValueChange={setMemberSectionId}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin sección</SelectItem>
-                    {sections.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                {resetSuccess ? (
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                      <p className="text-xs text-green-700 dark:text-green-300">{resetSuccess}</p>
+                      <p className="text-xs font-mono mt-1 select-all text-green-600">{newPassword}</p>
+                      <p className="text-[10px] text-green-500 mt-1">Comunica la nueva contraseña al usuario.</p>
+                    </div>
+                    <Button size="sm" className="w-full" onClick={() => setShowPasswordReset(false)}>Cerrar</Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Nueva contraseña</Label>
+                      <Input
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className="h-9"
+                        type="text"
+                      />
+                    </div>
+                    {resetError && (
+                      <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{resetError}</p>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" size="sm" onClick={() => setShowPasswordReset(false)}>Cancelar</Button>
+                      <Button size="sm" onClick={handleResetPassword} disabled={resettingPassword || newPassword.length < 6}>
+                        {resettingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Cambiar contraseña"}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Rol en la sección</Label>
-                <Select value={memberRole} onValueChange={(v) => setMemberRole(v as SectionRole)}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="radiologist">Radiólogo</SelectItem>
-                    <SelectItem value="section_editor">Editor de sección</SelectItem>
-                    <SelectItem value="section_chief">Jefe de sección</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <label className="flex items-center gap-2 text-xs cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={memberIsChief}
-                  onChange={(e) => setMemberIsChief(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                <div>
-                  <span className="font-medium">Jefe de servicio</span>
-                  <span className="text-gray-400 ml-1">(acceso total al hospital)</span>
-                </div>
-              </label>
-              {memberError && (
-                <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{memberError}</p>
-              )}
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
-                <Button size="sm" onClick={handleSaveMember} disabled={savingMember}>
-                  {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : "Añadir"}
-                </Button>
-              </div>
-            </div>
+            )}
           </DialogContent>
         </Dialog>
 
