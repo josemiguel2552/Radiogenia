@@ -14,7 +14,8 @@ import {
   PenLine, Plus, Trash2,
 } from "lucide-react";
 import { LANGUAGES, DICTATION_LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
-import { useT, useModality } from "@/lib/i18n";
+import { useT, useModality, useSection } from "@/lib/i18n";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 interface ModelConfig {
   provider: AIProvider;
@@ -40,6 +41,9 @@ interface NormalityPhraseRow {
 export function ModelConfigTab() {
   const t = useT();
   const modName = useModality();
+  const secName = useSection();
+  const { prefs } = useUIPrefs();
+  const uiLang = (prefs.uiLanguage || "es") as "es" | "en";
   const [config, setConfig] = useState<ModelConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,10 +79,10 @@ export function ModelConfigTab() {
   const loadNormality = useCallback(async (mod?: string) => {
     const m = mod || selectedModality;
     try {
-      const res = await fetch(`/api/normality-phrases?modality=${encodeURIComponent(m)}`);
+      const res = await fetch(`/api/normality-phrases?modality=${encodeURIComponent(m)}&lang=${uiLang}`);
       if (res.ok) setNormalityPhrases(await res.json());
     } catch { /* ignore */ }
-  }, [selectedModality]);
+  }, [selectedModality, uiLang]);
 
   const loadSignatures = useCallback(async () => {
     try {
@@ -215,7 +219,10 @@ export function ModelConfigTab() {
   const langLabel = LANGUAGES.find((l) => l.value === config.output_language)?.label || config.output_language;
   const customizedCount = normalityPhrases.filter((p) => p.is_customized).length;
   const filteredPhrases = normalitySearch
-    ? normalityPhrases.filter((p) => p.section_label.toLowerCase().includes(normalitySearch.toLowerCase()))
+    ? normalityPhrases.filter((p) => {
+        const q = normalitySearch.toLowerCase();
+        return p.section_label.toLowerCase().includes(q) || secName(p.section_label).toLowerCase().includes(q);
+      })
     : normalityPhrases;
 
   return (
@@ -444,6 +451,7 @@ export function ModelConfigTab() {
                 saving={savingPhrase === p.section_label}
                 onSave={(phrase) => handleSaveNormalityPhrase(p.modality, p.section_label, phrase)}
                 onReset={() => handleResetNormalityPhrase(p.modality, p.section_label)}
+                translateLabel={secName}
               />
             ))}
             {filteredPhrases.length === 0 && (
@@ -508,11 +516,12 @@ export function ModelConfigTab() {
 
 /* ────────── Helper components ────────── */
 
-function NormalityPhraseRow({ row, saving, onSave, onReset }: {
+function NormalityPhraseRow({ row, saving, onSave, onReset, translateLabel }: {
   row: NormalityPhraseRow;
   saving: boolean;
   onSave: (phrase: string) => void;
   onReset: () => void;
+  translateLabel: (name: string) => string;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -538,7 +547,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   if (editing) {
     return (
       <div className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 space-y-1.5 bg-gray-50 dark:bg-gray-800">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{row.section_label}</span>
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{translateLabel(row.section_label)}</span>
         <textarea
           ref={inputRef}
           value={draft}
@@ -565,7 +574,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   return (
     <div className={`flex items-start gap-2 p-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-emerald-500" : ""}`}>
       <div className="flex-1 min-w-0">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{row.section_label}</span>
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{translateLabel(row.section_label)}</span>
         <span className="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{row.phrase}</span>
       </div>
       <div className="flex items-center gap-0.5 flex-shrink-0 pt-0.5">
