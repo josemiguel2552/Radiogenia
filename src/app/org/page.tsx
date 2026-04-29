@@ -72,12 +72,13 @@ export default function OrgDashboard() {
 
   // Member form
   const [showMemberForm, setShowMemberForm] = useState(false);
-  const [memberUserId, setMemberUserId] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
   const [memberSectionId, setMemberSectionId] = useState("");
   const [memberRole, setMemberRole] = useState<SectionRole>("radiologist");
   const [memberIsChief, setMemberIsChief] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [memberError, setMemberError] = useState("");
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
 
@@ -133,26 +134,29 @@ export default function OrgDashboard() {
 
   function openAddMember() {
     setEditingMember(null);
-    setMemberUserId("");
+    setMemberEmail("");
     setMemberSectionId(orgData?.sections[0]?.id || "");
     setMemberRole("radiologist");
     setMemberIsChief(false);
+    setMemberError("");
     setShowMemberForm(true);
   }
 
   function openEditMember(m: MemberRow) {
     setEditingMember(m);
-    setMemberUserId(m.user_id);
+    setMemberEmail(m.user_email || "");
     setMemberSectionId(m.section_id || "");
     setMemberRole(m.section_role);
     setMemberIsChief(m.is_org_chief);
+    setMemberError("");
     setShowMemberForm(true);
   }
 
   async function handleSaveMember() {
     setSavingMember(true);
+    setMemberError("");
     if (editingMember) {
-      await fetch("/api/org/members", {
+      const res = await fetch("/api/org/members", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,17 +166,34 @@ export default function OrgDashboard() {
           is_org_chief: isOrgChief ? memberIsChief : undefined,
         }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        setMemberError(data.error || "Error");
+        setSavingMember(false);
+        return;
+      }
     } else {
-      await fetch("/api/org/members", {
+      if (!memberEmail.trim()) {
+        setMemberError("Introduce el email del usuario");
+        setSavingMember(false);
+        return;
+      }
+      const res = await fetch("/api/org/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: memberUserId.trim(),
+          email: memberEmail.trim().toLowerCase(),
           section_id: memberSectionId || null,
           section_role: memberRole,
           is_org_chief: isOrgChief ? memberIsChief : false,
         }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        setMemberError(data.error === "User not found" ? "No existe un usuario registrado con ese email" : data.error || "Error");
+        setSavingMember(false);
+        return;
+      }
     }
     setSavingMember(false);
     setShowMemberForm(false);
@@ -501,13 +522,15 @@ export default function OrgDashboard() {
           <div className="space-y-4">
             {!editingMember && (
               <div className="space-y-1.5">
-                <Label className="text-xs">User ID (UUID de Supabase Auth)</Label>
+                <Label className="text-xs">Email del usuario</Label>
                 <Input
-                  value={memberUserId}
-                  onChange={(e) => setMemberUserId(e.target.value)}
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                  className="h-9 font-mono text-[11px]"
+                  value={memberEmail}
+                  onChange={(e) => setMemberEmail(e.target.value)}
+                  placeholder="doctor@hospital.com"
+                  className="h-9"
+                  type="email"
                 />
+                <p className="text-[10px] text-gray-400">El usuario debe estar registrado en Radiogenia</p>
               </div>
             )}
             <div className="space-y-1.5">
@@ -543,9 +566,12 @@ export default function OrgDashboard() {
                 Jefe de servicio (acceso a toda la organización)
               </label>
             )}
+            {memberError && (
+              <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{memberError}</p>
+            )}
             <div className="flex gap-2 justify-end">
               <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
-              <Button size="sm" onClick={handleSaveMember} disabled={savingMember || (!editingMember && !memberUserId.trim())}>
+              <Button size="sm" onClick={handleSaveMember} disabled={savingMember || (!editingMember && !memberEmail.trim())}>
                 {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : "Añadir"}
               </Button>
             </div>

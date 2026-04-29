@@ -50,9 +50,22 @@ export async function POST(req: NextRequest) {
       sectionRoles: ["section_chief"],
     });
 
-    const { user_id, section_id, section_role, is_org_chief } = await req.json();
-    if (!user_id || !section_id) {
-      return NextResponse.json({ error: "Missing user_id or section_id" }, { status: 400 });
+    const { user_id, email, section_id, section_role, is_org_chief } = await req.json();
+
+    let resolvedUserId = user_id;
+    if (!resolvedUserId && email) {
+      const service = createServiceClient();
+      const { data: profile } = await service
+        .from("profiles")
+        .select("id")
+        .eq("email", email.trim().toLowerCase())
+        .single();
+      if (!profile) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      resolvedUserId = profile.id;
+    }
+
+    if (!resolvedUserId) {
+      return NextResponse.json({ error: "Missing user_id or email" }, { status: 400 });
     }
 
     // Section chiefs can only add radiologists/editors to their own section
@@ -87,7 +100,7 @@ export async function POST(req: NextRequest) {
       .from("org_members")
       .upsert({
         org_id: membership.org_id,
-        user_id,
+        user_id: resolvedUserId,
         section_id,
         section_role: section_role || "radiologist",
         is_org_chief: is_org_chief || false,
