@@ -23,6 +23,8 @@ import {
   Shield,
   X,
   Menu,
+  Building2,
+  MessageSquare,
 } from "lucide-react";
 import { TemplatesTab } from "@/components/sidebar/templates-tab";
 import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
@@ -49,6 +51,21 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const dragging = useRef(false);
   const { prefs, preset } = useUIPrefs();
   const t = useT();
+
+  // Org membership (lightweight check)
+  const [orgInfo, setOrgInfo] = useState<{ isChief: boolean; isMember: boolean } | null>(null);
+  useEffect(() => {
+    fetch("/api/org").then((r) => r.ok ? r.json() : null).then((data) => {
+      if (data?.membership) {
+        setOrgInfo({
+          isChief: data.membership.is_org_chief || data.membership.section_role === "section_chief",
+          isMember: true,
+        });
+      } else {
+        setOrgInfo({ isChief: false, isMember: false });
+      }
+    }).catch(() => setOrgInfo({ isChief: false, isMember: false }));
+  }, []);
 
   useEffect(() => {
     const dark = localStorage.getItem("radiogenai_dark") === "1";
@@ -265,7 +282,27 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           </Link>
         )}
 
+        {orgInfo?.isChief && (
+          <Link
+            href="/org"
+            className="inline-flex items-center justify-center text-blue-400 hover:bg-gray-800 hover:text-blue-300 rounded-lg h-9 w-9 transition-colors"
+            title="Hospital"
+          >
+            <Building2 className="h-5 w-5" />
+          </Link>
+        )}
+
         <div className="flex-1" />
+
+        {orgInfo?.isMember && (
+          <Link
+            href="/support"
+            className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9 transition-colors"
+            title="Soporte"
+          >
+            <MessageSquare className="h-4.5 w-4.5" />
+          </Link>
+        )}
 
         <HelpDialog />
 

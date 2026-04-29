@@ -15,9 +15,12 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
+  Building2, MessageSquare,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
+import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
+import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 
 interface GlobalConfig {
   id: string;
@@ -76,7 +79,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "audit";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "support" | "audit";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -497,6 +500,8 @@ export default function AdminPage() {
     { key: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { key: "ai", label: "AI Config", icon: <Plug className="h-4 w-4" /> },
     { key: "plans", label: "Plans", icon: <CreditCard className="h-4 w-4" /> },
+    { key: "orgs", label: "Hospitals", icon: <Building2 className="h-4 w-4" /> },
+    { key: "support", label: "Support", icon: <MessageSquare className="h-4 w-4" /> },
     { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
@@ -1288,6 +1293,12 @@ export default function AdminPage() {
             </Card>
           </div>
         )}
+
+        {/* ═══ HOSPITALS ═══ */}
+        {tab === "orgs" && <AdminOrganizationsTab />}
+
+        {/* ═══ SUPPORT ═══ */}
+        {tab === "support" && <AdminSupportTab />}
 
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (
