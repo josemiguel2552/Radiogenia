@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Loader2, Check, Wand2, Brain, Pencil, X, RotateCcw, Search,
-  PenLine, Plus, Trash2, Sparkles,
+  PenLine, Plus, Trash2,
 } from "lucide-react";
 import { LANGUAGES, DICTATION_LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
 import { useT, useModality, useSection } from "@/lib/i18n";
@@ -66,19 +66,6 @@ export function ModelConfigTab() {
   const [sigError, setSigError] = useState<string | null>(null);
   const [sigSetupNeeded, setSigSetupNeeded] = useState(false);
 
-  // Style learning
-  interface StyleGroup {
-    modality: string;
-    study_type: string;
-    report_count: number;
-    normal_phrases: { id: string; phrase: string; frequency: number; label: string | null }[];
-    conclusion_phrases: { id: string; phrase: string; frequency: number; label: string | null }[];
-  }
-  const [styleGroups, setStyleGroups] = useState<StyleGroup[]>([]);
-  const [styleTotalReports, setStyleTotalReports] = useState(0);
-  const [showStyleDialog, setShowStyleDialog] = useState(false);
-  const [deletingPatternId, setDeletingPatternId] = useState<string | null>(null);
-
   async function load() {
     setLoading(true);
     const res = await fetch("/api/model-config");
@@ -117,21 +104,9 @@ export function ModelConfigTab() {
     } catch { /* ignore */ }
   }, []);
 
-  const loadStylePatterns = useCallback(async () => {
-    try {
-      const res = await fetch("/api/style-patterns");
-      if (res.ok) {
-        const data = await res.json();
-        setStyleGroups(data.groups || []);
-        setStyleTotalReports(data.total_reports || 0);
-      }
-    } catch { /* ignore */ }
-  }, []);
-
   useEffect(() => { load(); }, []);
   useEffect(() => { loadNormality(); }, [loadNormality]);
   useEffect(() => { loadSignatures(); }, [loadSignatures]);
-  useEffect(() => { loadStylePatterns(); }, [loadStylePatterns]);
 
   function update(field: string, value: string | boolean | number) {
     if (!config) return;
@@ -177,18 +152,6 @@ export function ModelConfigTab() {
     await fetch(`/api/normality-phrases?modality=${encodeURIComponent(modality)}&section_label=${encodeURIComponent(sectionLabel)}`, { method: "DELETE" });
     await loadNormality(modality);
     setSavingPhrase(null);
-  }
-
-  async function handleDeleteStylePattern(id: string) {
-    setDeletingPatternId(id);
-    await fetch(`/api/style-patterns?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    await loadStylePatterns();
-    setDeletingPatternId(null);
-  }
-
-  async function handleResetStyleGroup(modality: string, studyType: string) {
-    await fetch(`/api/style-patterns?group=${encodeURIComponent(modality + "|" + studyType)}`, { method: "DELETE" });
-    await loadStylePatterns();
   }
 
   async function handleSaveSig() {
@@ -350,69 +313,6 @@ export function ModelConfigTab() {
               <Pencil className="h-3 w-3" />
               {t("cfg.edit_normality")}
             </Button>
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* Style Learning */}
-        <AccordionItem value="style-learning">
-          <AccordionTrigger className="text-sm font-semibold">
-            <span className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              {t("cfg.style_learning")}
-            </span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-3 pt-1">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">
-              {t("cfg.style_learning_desc")}
-            </p>
-
-            {styleGroups.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-xs text-gray-400">{t("cfg.no_patterns")}</p>
-              </div>
-            ) : (
-              <>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {t("cfg.style_learning_summary").replace("{0}", String(styleGroups.filter((g) => g.normal_phrases.length > 0 || g.conclusion_phrases.length > 0).length))}
-                </p>
-
-                <div className="space-y-1">
-                  {styleGroups.slice(0, 5).map((g) => {
-                    const phraseCount = g.normal_phrases.length + g.conclusion_phrases.length;
-                    return (
-                      <div
-                        key={`${g.modality}|${g.study_type}`}
-                        className="flex items-center gap-2 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50 text-xs"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-gray-700 dark:text-gray-200 block truncate">
-                            {modName(g.modality)} — {g.study_type}
-                          </span>
-                        </div>
-                        <Badge variant="secondary" className="text-[9px] flex-shrink-0">
-                          {Math.min(g.report_count, 10)}/10
-                        </Badge>
-                        {phraseCount > 0 && (
-                          <Badge className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
-                            {phraseCount} {phraseCount === 1 ? "phrase" : "phrases"}
-                          </Badge>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {styleGroups.length > 5 && (
-                    <p className="text-[10px] text-gray-400 text-center">
-                      +{styleGroups.length - 5} more
-                    </p>
-                  )}
-                </div>
-
-                <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowStyleDialog(true)}>
-                  <Sparkles className="h-3 w-3" />
-                  {t("cfg.view_all")}
-                </Button>
-              </>
-            )}
           </AccordionContent>
         </AccordionItem>
 
@@ -606,90 +506,6 @@ export function ModelConfigTab() {
                 {savingSig ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("save")}
               </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Learned Phrases Dialog */}
-      <Dialog open={showStyleDialog} onOpenChange={setShowStyleDialog}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{t("cfg.learned_phrases")}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
-            {styleGroups.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
-            ) : (
-              styleGroups.map((g) => {
-                const key = `${g.modality}|${g.study_type}`;
-                const hasPatterns = g.normal_phrases.length > 0 || g.conclusion_phrases.length > 0;
-                if (!hasPatterns) return null;
-                return (
-                  <div key={key} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                        {modName(g.modality)} — {g.study_type}
-                        <span className="ml-2 text-[10px] font-normal text-gray-400">
-                          ({Math.min(g.report_count, 10)} {t("cfg.reports_stored").toLowerCase()})
-                        </span>
-                      </h4>
-                      <Button
-                        variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => { if (confirm(t("cfg.reset_study_type") + "?")) handleResetStyleGroup(g.modality, g.study_type); }}
-                      >
-                        <RotateCcw className="h-2.5 w-2.5 mr-1" />
-                        {t("cfg.reset_study_type")}
-                      </Button>
-                    </div>
-
-                    {g.normal_phrases.length > 0 && (
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("cfg.normal_phrases_label")}</span>
-                        {g.normal_phrases.slice(0, 10).map((p) => (
-                          <div key={p.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 group">
-                            <div className="flex-1 min-w-0">
-                              {p.label && <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 block">{secName(p.label)}</span>}
-                              <span className="text-xs text-gray-700 dark:text-gray-300 block">{p.phrase}</span>
-                            </div>
-                            <span className="text-[9px] text-gray-400 flex-shrink-0 pt-0.5">×{p.frequency}</span>
-                            <Button
-                              variant="ghost" size="icon" className="h-5 w-5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              onClick={() => handleDeleteStylePattern(p.id)}
-                              disabled={deletingPatternId === p.id}
-                            >
-                              {deletingPatternId === p.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {g.conclusion_phrases.length > 0 && (
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("cfg.conclusion_phrases_label")}</span>
-                        {g.conclusion_phrases.slice(0, 5).map((p) => (
-                          <div key={p.id} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 group">
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs text-gray-700 dark:text-gray-300 block line-clamp-3">{p.phrase}</span>
-                            </div>
-                            <span className="text-[9px] text-gray-400 flex-shrink-0 pt-0.5">×{p.frequency}</span>
-                            <Button
-                              variant="ghost" size="icon" className="h-5 w-5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              onClick={() => handleDeleteStylePattern(p.id)}
-                              disabled={deletingPatternId === p.id}
-                            >
-                              {deletingPatternId === p.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="border-b border-gray-100 dark:border-gray-800" />
-                  </div>
-                );
-              })
-            )}
           </div>
         </DialogContent>
       </Dialog>
