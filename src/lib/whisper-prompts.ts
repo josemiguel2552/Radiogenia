@@ -21,7 +21,7 @@ Hidronefrosis, hidrouréter, nefrolitiasis, urolitiasis, cálculo renal, pielone
 Apendicitis, apéndice, apendicular, periapendicular, diverticulitis, colecistitis, colelitiasis, pancreatitis, obstrucción intestinal, invaginación, vólvulo.
 Esplenomegalia, hepatomegalia, hepatoesplenomegalia, ascitis, líquido libre, cambios inflamatorios, mesentérico, omental, peritoneal.
 Espondilolistesis, hernia discal, protrusión, extrusión, osteofito, estenosis foraminal, estenosis del canal.
-Adenopatía, adenopatías patológicas, ganglio linfático, conglomerado adenopático.
+Adenopatía, adenopatías patológicas, ganglio linfático, conglomerado adenopático, supraclavicular, infraclavicular, axilar, mediastínico, hiliar, retroperitoneal, inguinal, cervical, submandibular, subcarinal.
 TC, RM, ecografía, FLAIR, difusión, ADC, gadolinio, Hounsfield.
 Hipoecoico, hiperecoico, anecoico, homogéneo, heterogéneo, bien delimitado, mal delimitado, contornos lobulados, márgenes irregulares.
 Segmento IVB, segmento V, segmento VI, segmento VII, segmento VIII, lóbulo caudado, lóbulo derecho, lóbulo izquierdo.`;
@@ -37,7 +37,7 @@ Hydronephrosis, hydroureter, nephrolithiasis, urolithiasis, renal calculus, pyel
 Appendicitis, appendix, appendiceal, periappendiceal, diverticulitis, cholecystitis, cholelithiasis, pancreatitis, bowel obstruction, intussusception, volvulus.
 Splenomegaly, hepatomegaly, hepatosplenomegaly, ascites, free fluid, fat stranding, inflammatory changes, mesenteric, omental, peritoneal.
 Spondylolisthesis, disc herniation, protrusion, extrusion, osteophyte, foraminal stenosis, central canal stenosis.
-Lymphadenopathy, pathological lymph nodes, conglomerate lymphadenopathy.
+Lymphadenopathy, pathological lymph nodes, conglomerate lymphadenopathy, supraclavicular, infraclavicular, axillary, mediastinal, hilar, retroperitoneal, inguinal, cervical, submandibular, subcarinal.
 CT, MRI, ultrasound, FLAIR, diffusion-weighted, ADC, gadolinium, Hounsfield units.
 Hypoechoic, hyperechoic, anechoic, homogeneous, heterogeneous, well-circumscribed, ill-defined, lobulated contours, irregular margins.
 Segment IVB, segment V, segment VI, segment VII, segment VIII, caudate lobe, right lobe, left lobe.`;

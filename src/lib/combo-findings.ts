@@ -50,7 +50,7 @@ function buildMapperPrompt(params: ComboParams): { system: string; user: string 
     paraphrase = params.paraphraseLevel === "none"
       ? "Transcribe literalmente los hallazgos dictados. No cambies palabras."
       : params.paraphraseLevel === "light"
-        ? "Puedes corregir gramática y sintaxis. No cambies datos clínicos ni medidas."
+        ? "Puedes corregir gramática, sintaxis y errores de terminología médica (ej: 'supracolicular'→'supraclavicular'). Usa el término anatómico correcto según el contexto y la modalidad. No cambies datos clínicos ni medidas."
         : "Puedes reformular con estilo radiológico profesional. Mantén todos los datos clínicos.";
     length = params.findingsLength === "concise"
       ? "Redacta cada sección de forma concisa en una frase."
@@ -97,7 +97,7 @@ ${phraseBlock}` : ""}`;
   paraphrase = params.paraphraseLevel === "none"
     ? "Transcribe dictated findings literally."
     : params.paraphraseLevel === "light"
-      ? "Fix grammar/syntax only. Preserve all clinical data."
+      ? "Fix grammar, syntax, and medical terminology errors (e.g. 'supracolicular'→'supraclavicular'). Use the correct anatomical term based on context and modality. Preserve all clinical data."
       : "Rephrase in professional radiological style. Preserve all clinical data.";
   length = params.findingsLength === "concise"
     ? "Keep each section concise — one sentence."
