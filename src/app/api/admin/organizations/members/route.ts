@@ -15,16 +15,23 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await service
       .from("org_members")
-      .select("*, profiles(email, name), org_sections(name)")
+      .select("*, org_sections(name)")
       .eq("org_id", orgId)
       .order("joined_at");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    const userIds = (data || []).map((m) => m.user_id as string);
+    const { data: profiles } = userIds.length > 0
+      ? await service.from("profiles").select("id, email, name").in("id", userIds)
+      : { data: [] };
+
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
     const mapped = (data || []).map((m) => {
-      const profile = m.profiles as { email: string; name: string } | null;
+      const profile = profileMap.get(m.user_id);
       const section = m.org_sections as { name: string } | null;
-      const { profiles: _p, org_sections: _s, ...rest } = m;
+      const { org_sections: _s, ...rest } = m;
       return {
         ...rest,
         user_email: profile?.email ?? null,
@@ -33,7 +40,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    console.log("[admin/org/members GET]", orgId, "→", (mapped || []).length, "members");
+    console.log("[admin/org/members GET]", orgId, "→", mapped.length, "members");
     return NextResponse.json(mapped, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });
