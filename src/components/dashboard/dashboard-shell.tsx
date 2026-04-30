@@ -58,7 +58,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     fetch("/api/org", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((data) => {
       if (data?.membership) {
         setOrgInfo({
-          isChief: data.membership.is_org_chief || data.membership.section_role === "section_chief",
+          isChief: data.membership.is_org_chief || data.membership.section_role === "section_chief" || data.membership.section_role === "section_editor",
           isMember: true,
         });
       } else {

@@ -17,7 +17,7 @@ export default async function OrgLayout({ children }: { children: React.ReactNod
 
   if (!member) redirect("/dashboard");
 
-  const hasAccess = member.is_org_chief || member.section_role === "section_chief";
+  const hasAccess = member.is_org_chief || member.section_role === "section_chief" || member.section_role === "section_editor";
   if (!hasAccess) redirect("/dashboard");
 
   return <>{children}</>;

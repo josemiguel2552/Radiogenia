@@ -59,7 +59,7 @@ interface StatsData {
 
 export default function OrgDashboard() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("stats");
+  const [tab, setTab] = useState<Tab>("sections");
   const [loading, setLoading] = useState(true);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -102,6 +102,10 @@ export default function OrgDashboard() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
+  const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
+  const isSectionEditor = !isOrgChief && orgData?.membership.section_role === "section_editor";
+  const canManageMembers = isOrgChief || isSectionChief;
+  const canViewStats = isOrgChief || isSectionChief;
 
   const loadOrg = useCallback(async () => {
     try {
@@ -340,11 +344,17 @@ export default function OrgDashboard() {
     );
   }
 
-  const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
+  const ALL_TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "stats", label: "Estadísticas", icon: <BarChart3 className="h-4 w-4" /> },
     { key: "members", label: "Miembros", icon: <Users className="h-4 w-4" /> },
     { key: "sections", label: "Secciones", icon: <Building2 className="h-4 w-4" /> },
   ];
+
+  const TABS = ALL_TABS.filter((t) => {
+    if (t.key === "stats" && !canViewStats) return false;
+    if (t.key === "members" && !canManageMembers) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -358,8 +368,8 @@ export default function OrgDashboard() {
             <span className="text-sm font-semibold text-gray-900 dark:text-white truncate hidden sm:inline">
               {orgData.organization.name}
             </span>
-            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px]">
-              {isOrgChief ? "Jefe de Servicio" : "Jefe de Sección"}
+            <Badge className={`text-[10px] ${isOrgChief ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : isSectionChief ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"}`}>
+              {isOrgChief ? "Jefe de Servicio" : isSectionChief ? "Jefe de Sección" : "Editor de Sección"}
             </Badge>
           </div>
           <span className="ml-auto text-[11px] text-gray-400">
@@ -547,7 +557,11 @@ export default function OrgDashboard() {
               )}
             </div>
 
-            {orgData.sections.length === 0 ? (
+            {(() => {
+              const visibleSections = isOrgChief
+                ? orgData.sections
+                : orgData.sections.filter((s) => s.id === orgData.membership.section_id);
+              return visibleSections.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-10">
                   <Building2 className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
@@ -557,7 +571,7 @@ export default function OrgDashboard() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {orgData.sections.map((s) => {
+                {visibleSections.map((s) => {
                   const isExpanded = expandedSection === s.id;
                   const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
                   const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
@@ -576,9 +590,11 @@ export default function OrgDashboard() {
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{s.name}</h4>
                           <div className="flex items-center gap-3 mt-0.5">
+                            {canManageMembers && (
                             <span className="text-[10px] text-gray-400 flex items-center gap-1">
                               <Users className="h-3 w-3" /> {sMembers.length}
                             </span>
+                            )}
                             <span className="text-[10px] text-gray-400 flex items-center gap-1">
                               <Layers className="h-3 w-3" /> {sTemplates.length} plantillas
                             </span>
@@ -602,7 +618,8 @@ export default function OrgDashboard() {
                       {/* Expanded content */}
                       {isExpanded && (
                         <div className="border-t border-gray-100 dark:border-gray-800">
-                          {/* ── Members sub-section ── */}
+                          {/* ── Members sub-section (chiefs only) ── */}
+                          {canManageMembers && (
                           <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                             <div className="flex items-center justify-between mb-2">
                               <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
@@ -629,6 +646,7 @@ export default function OrgDashboard() {
                               </div>
                             )}
                           </div>
+                          )}
 
                           {/* ── Templates sub-section ── */}
                           <div className="p-4 border-b border-gray-100 dark:border-gray-800">
@@ -707,7 +725,8 @@ export default function OrgDashboard() {
                   );
                 })}
               </div>
-            )}
+            );
+            })()}
           </div>
         )}
       </div>
