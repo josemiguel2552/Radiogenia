@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ArrowLeft, Loader2, Users, Building2, FileText, BarChart3,
   Plus, Pencil, Trash2, UserPlus, ChevronDown,
-  Check, X, BookOpen, Download,
+  Check, X, BookOpen, Download, Upload,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
@@ -98,6 +98,11 @@ export default function OrgDashboard() {
   const [recGuideline, setRecGuideline] = useState("");
   const [savingRec, setSavingRec] = useState(false);
   const [recError, setRecError] = useState("");
+
+  // AI upload
+  const [uploadingRecs, setUploadingRecs] = useState<string | null>(null);
+  const [uploadingTpls, setUploadingTpls] = useState<string | null>(null);
+  const [uploadMsg, setUploadMsg] = useState("");
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates" | "recs">>({});
@@ -313,6 +318,34 @@ export default function OrgDashboard() {
     if (!confirm("¿Eliminar esta recomendación?")) return;
     await fetch(`/api/org/recommendations?id=${id}`, { method: "DELETE" });
     await loadRecs();
+  }
+
+  async function handleUploadRecs(file: File, sectionId: string) {
+    setUploadingRecs(sectionId);
+    setUploadMsg("");
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("section_id", sectionId);
+    const res = await fetch("/api/org/upload-recommendations", { method: "POST", body: fd });
+    const data = await res.json();
+    setUploadingRecs(null);
+    if (!res.ok) { setUploadMsg(data.error || "Error al procesar"); return; }
+    setUploadMsg(`${data.saved} recomendaciones extraídas y guardadas`);
+    await loadRecs();
+  }
+
+  async function handleUploadTpls(file: File, sectionId: string) {
+    setUploadingTpls(sectionId);
+    setUploadMsg("");
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("section_id", sectionId);
+    const res = await fetch("/api/org/upload-templates", { method: "POST", body: fd });
+    const data = await res.json();
+    setUploadingTpls(null);
+    if (!res.ok) { setUploadMsg(data.error || "Error al procesar"); return; }
+    setUploadMsg(`${data.saved} plantillas extraídas y guardadas`);
+    await loadTemplates();
   }
 
   const roleLabel = (role: string, chief: boolean) => {
@@ -701,21 +734,41 @@ export default function OrgDashboard() {
                           {/* ── TEMPLATES ── */}
                           {sub === "templates" && (
                             <div>
-                              <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                                 <p className="text-xs text-gray-500">{sTemplates.length} plantilla{sTemplates.length !== 1 ? "s" : ""} compartida{sTemplates.length !== 1 ? "s" : ""}</p>
-                                <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                  onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
-                                  <Download className="h-3.5 w-3.5" /> Importar del catálogo
-                                </Button>
+                                <div className="flex gap-2">
+                                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    {uploadingTpls === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-violet-500" />}
+                                    {uploadingTpls === s.id ? "Procesando..." : "Extraer de Word"}
+                                    <input type="file" accept=".docx,.doc,.pdf" className="hidden" disabled={!!uploadingTpls}
+                                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTpls(f, s.id); e.target.value = ""; }} />
+                                  </label>
+                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                    onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
+                                    <Download className="h-3.5 w-3.5" /> Catálogo
+                                  </Button>
+                                </div>
                               </div>
+                              {uploadMsg && uploadingTpls === null && !uploadingRecs && (
+                                <div className="mb-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">{uploadMsg}</div>
+                              )}
                               {sTemplates.length === 0 ? (
                                 <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
                                   <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                  <p className="text-xs text-gray-400 mb-3">Sin plantillas en esta sección</p>
-                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                    onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
-                                    <Download className="h-3 w-3" /> Importar plantillas
-                                  </Button>
+                                  <p className="text-xs text-gray-400 mb-1">Sin plantillas en esta sección</p>
+                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Sube un archivo Word con plantillas y la IA las extraerá, o importa desde el catálogo.</p>
+                                  <div className="flex gap-2 justify-center">
+                                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                      {uploadingTpls === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-violet-500" />}
+                                      Extraer de Word
+                                      <input type="file" accept=".docx,.doc,.pdf" className="hidden" disabled={!!uploadingTpls}
+                                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTpls(f, s.id); e.target.value = ""; }} />
+                                    </label>
+                                    <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                      onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
+                                      <Download className="h-3 w-3" /> Catálogo
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -741,22 +794,41 @@ export default function OrgDashboard() {
                           {/* ── RECOMMENDATIONS ── */}
                           {sub === "recs" && (
                             <div>
-                              <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                                 <p className="text-xs text-gray-500">{sRecs.length} guía{sRecs.length !== 1 ? "s" : ""} clínica{sRecs.length !== 1 ? "s" : ""}</p>
-                                <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                  onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
-                                  <Plus className="h-3.5 w-3.5" /> Nueva guía
-                                </Button>
+                                <div className="flex gap-2">
+                                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    {uploadingRecs === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-amber-500" />}
+                                    {uploadingRecs === s.id ? "Procesando..." : "Extraer de PDF"}
+                                    <input type="file" accept=".pdf,.docx,.doc" className="hidden" disabled={!!uploadingRecs}
+                                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadRecs(f, s.id); e.target.value = ""; }} />
+                                  </label>
+                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                    onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
+                                    <Plus className="h-3.5 w-3.5" /> Manual
+                                  </Button>
+                                </div>
                               </div>
+                              {uploadMsg && uploadingRecs === null && !uploadingTpls && (
+                                <div className="mb-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">{uploadMsg}</div>
+                              )}
                               {sRecs.length === 0 ? (
                                 <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
                                   <BookOpen className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
                                   <p className="text-xs text-gray-400 mb-1">Sin guías clínicas</p>
-                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Añade recomendaciones basadas en hallazgos para que se sugieran automáticamente al redactar informes.</p>
-                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                    onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
-                                    <Plus className="h-3 w-3" /> Añadir guía
-                                  </Button>
+                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Sube un PDF con guías clínicas y la IA extraerá las recomendaciones, o añádelas manualmente.</p>
+                                  <div className="flex gap-2 justify-center">
+                                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                      {uploadingRecs === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-amber-500" />}
+                                      Extraer de PDF
+                                      <input type="file" accept=".pdf,.docx,.doc" className="hidden" disabled={!!uploadingRecs}
+                                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadRecs(f, s.id); e.target.value = ""; }} />
+                                    </label>
+                                    <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                      onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
+                                      <Plus className="h-3 w-3" /> Manual
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="space-y-2">
