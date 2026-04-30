@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Loader2, Plus, Pencil, Trash2, Users, Building2, ArrowLeft,
   UserPlus, Shield, Crown, Check, X, KeyRound, Eye, EyeOff,
+  Network, Settings,
 } from "lucide-react";
 import type { Organization, OrgSection, SectionRole } from "@/lib/types";
 
@@ -49,6 +50,7 @@ export function AdminOrganizationsTab() {
   const [sections, setSections] = useState<OrgSection[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailTab, setDetailTab] = useState<"chart" | "manage">("chart");
 
   // Section form
   const [showSectionForm, setShowSectionForm] = useState(false);
@@ -343,11 +345,17 @@ export function AdminOrganizationsTab() {
   // ════════════════════════════════════════════
   // DETAIL VIEW — Managing a specific org
   // ════════════════════════════════════════════
+
+  const activeMembers = members.filter((m) => m.is_active);
+  const chiefs = activeMembers.filter((m) => m.is_org_chief);
+  const unassigned = activeMembers.filter((m) => !m.section_id && !m.is_org_chief);
+
   if (selectedOrg) {
     return (
       <div className="space-y-4">
+        {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedOrg(null)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedOrg(null); setDetailTab("chart"); }}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
@@ -360,115 +368,318 @@ export function AdminOrganizationsTab() {
           </Button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl w-fit">
+          <button
+            onClick={() => setDetailTab("chart")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
+              detailTab === "chart" ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Network className="h-3.5 w-3.5" />
+            Organigrama
+          </button>
+          <button
+            onClick={() => setDetailTab("manage")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
+              detailTab === "manage" ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Gestión
+          </button>
+        </div>
+
         {loadingDetail ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-blue-500" /></div>
         ) : (
           <>
-            {/* ── Sections ── */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Secciones ({sections.length})</h3>
-                <Button size="sm" onClick={() => { setSectionName(""); setShowSectionForm(true); }} className="gap-1.5">
-                  <Plus className="h-3.5 w-3.5" />
-                  Nueva sección
-                </Button>
-              </div>
+            {/* ═══════ ORGANIGRAMA TAB ═══════ */}
+            {detailTab === "chart" && (
+              <div className="space-y-6">
+                {members.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-12">
+                      <Network className="h-10 w-10 mx-auto text-gray-300 mb-3" />
+                      <p className="text-sm text-gray-500">El organigrama aparecerá cuando añadas miembros</p>
+                      <Button size="sm" className="mt-4 gap-1.5" onClick={() => setDetailTab("manage")}>
+                        <Settings className="h-3.5 w-3.5" />
+                        Ir a Gestión
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="overflow-x-auto pb-4">
+                    <div className="flex flex-col items-center min-w-fit">
+                      {/* Hospital top node */}
+                      <div className="px-5 py-3 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white text-center shadow-lg">
+                        <Building2 className="h-5 w-5 mx-auto mb-1" />
+                        <p className="text-sm font-bold">{selectedOrg.name}</p>
+                        <p className="text-[10px] opacity-80">{activeMembers.length} miembros activos</p>
+                      </div>
 
-              {sections.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-6">
-                    <p className="text-xs text-gray-400">No hay secciones. Crea las secciones del servicio de radiología.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {sections.map((s) => {
-                    const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
-                    return (
-                      <Card key={s.id}>
-                        <CardContent className="p-3 flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-4 w-4 text-blue-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{s.name}</span>
-                            <span className="text-[10px] text-gray-400">{sMembers.length} miembros</span>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 flex-shrink-0" onClick={() => handleDeleteSection(s.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      {/* Connector line down */}
+                      {chiefs.length > 0 && <div className="w-px h-6 bg-gray-300 dark:bg-gray-700" />}
 
-            {/* ── Members ── */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Miembros ({members.filter((m) => m.is_active).length} activos)
-                </h3>
-                <Button size="sm" onClick={openAddMember} className="gap-1.5">
-                  <UserPlus className="h-3.5 w-3.5" />
-                  Añadir miembro
-                </Button>
-              </div>
-
-              {members.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-6">
-                    <p className="text-xs text-gray-400">No hay miembros. Añade al jefe de servicio primero.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-1.5">
-                  {members.map((m) => (
-                    <Card key={m.id} className={!m.is_active ? "opacity-50" : ""}>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
-                            m.is_org_chief ? "bg-purple-500" : m.section_role === "section_chief" ? "bg-blue-500" : "bg-gray-400"
-                          }`}>
-                            {(m.user_name || m.user_email || "?")[0].toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
-                              {m.user_name || m.user_email}
-                            </span>
-                            <span className="text-[10px] text-gray-400 block truncate">
-                              {m.section_name || "Sin sección"} {m.user_name ? `· ${m.user_email}` : ""}
-                            </span>
-                          </div>
-                          <Badge className={`text-[9px] flex-shrink-0 ${roleColor(m.section_role, m.is_org_chief)}`}>
-                            {roleLabel(m.section_role, m.is_org_chief)}
-                          </Badge>
-                          {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">Inactivo</Badge>}
-                          <div className="flex gap-0.5 flex-shrink-0">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} title="Editar rol">
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" onClick={() => openPasswordReset(m)} title="Cambiar contraseña">
-                              <KeyRound className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost" size="icon"
-                              className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
-                              onClick={() => handleToggleMember(m)}
-                              title={m.is_active ? "Desactivar" : "Reactivar"}
+                      {/* Chiefs row */}
+                      {chiefs.length > 0 && (
+                        <div className="flex gap-3 justify-center flex-wrap">
+                          {chiefs.map((c) => (
+                            <button key={c.id} onClick={() => openEditMember(c)}
+                              className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 hover:border-purple-400 transition-colors cursor-pointer"
                             >
-                              {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
-                            </Button>
+                              <div className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                {(c.user_name || c.user_email || "?")[0].toUpperCase()}
+                              </div>
+                              <div className="text-left">
+                                <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">{c.user_name || c.user_email}</p>
+                                <p className="text-[10px] text-purple-600 dark:text-purple-400">Jefe de Servicio</p>
+                              </div>
+                              <Pencil className="h-3 w-3 text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Connector to sections */}
+                      {sections.length > 0 && <div className="w-px h-6 bg-gray-300 dark:bg-gray-700" />}
+
+                      {/* Horizontal rail connecting sections */}
+                      {sections.length > 1 && (
+                        <div className="flex items-start justify-center">
+                          <div className="h-px bg-gray-300 dark:bg-gray-700" style={{ width: `${Math.max((sections.length - 1) * 220, 200)}px` }} />
+                        </div>
+                      )}
+
+                      {/* Section columns */}
+                      {sections.length > 0 && (
+                        <div className="flex gap-4 justify-center flex-wrap mt-0">
+                          {sections.map((s) => {
+                            const sMembers = activeMembers.filter((m) => m.section_id === s.id && !m.is_org_chief);
+                            const sChief = sMembers.find((m) => m.section_role === "section_chief");
+                            const sEditors = sMembers.filter((m) => m.section_role === "section_editor");
+                            const sRads = sMembers.filter((m) => m.section_role === "radiologist");
+
+                            return (
+                              <div key={s.id} className="flex flex-col items-center w-48">
+                                {/* Connector down from rail */}
+                                {sections.length > 1 && <div className="w-px h-4 bg-gray-300 dark:bg-gray-700" />}
+
+                                {/* Section header */}
+                                <div className="w-full px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-center">
+                                  <p className="text-[11px] font-bold text-blue-800 dark:text-blue-200">{s.name}</p>
+                                  <p className="text-[9px] text-blue-500">{sMembers.length} miembros</p>
+                                </div>
+
+                                {/* Members in this section */}
+                                {sMembers.length > 0 && <div className="w-px h-3 bg-gray-200 dark:bg-gray-800" />}
+
+                                <div className="w-full space-y-1">
+                                  {/* Section chief */}
+                                  {sChief && (
+                                    <button onClick={() => openEditMember(sChief)}
+                                      className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-50/50 dark:bg-blue-950/30 border border-transparent hover:border-blue-300 dark:hover:border-blue-700 transition-colors cursor-pointer"
+                                    >
+                                      <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                        {(sChief.user_name || sChief.user_email || "?")[0].toUpperCase()}
+                                      </div>
+                                      <div className="flex-1 text-left min-w-0">
+                                        <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{sChief.user_name || sChief.user_email}</p>
+                                        <p className="text-[9px] text-blue-500">Jefe de Sección</p>
+                                      </div>
+                                    </button>
+                                  )}
+
+                                  {/* Editors */}
+                                  {sEditors.map((e) => (
+                                    <button key={e.id} onClick={() => openEditMember(e)}
+                                      className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer"
+                                    >
+                                      <div className="h-6 w-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                        {(e.user_name || e.user_email || "?")[0].toUpperCase()}
+                                      </div>
+                                      <div className="flex-1 text-left min-w-0">
+                                        <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{e.user_name || e.user_email}</p>
+                                        <p className="text-[9px] text-amber-500">Editor</p>
+                                      </div>
+                                    </button>
+                                  ))}
+
+                                  {/* Radiologists */}
+                                  {sRads.map((r) => (
+                                    <button key={r.id} onClick={() => openEditMember(r)}
+                                      className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer"
+                                    >
+                                      <div className="h-6 w-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                        {(r.user_name || r.user_email || "?")[0].toUpperCase()}
+                                      </div>
+                                      <div className="flex-1 text-left min-w-0">
+                                        <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 truncate">{r.user_name || r.user_email}</p>
+                                        <p className="text-[9px] text-gray-400">Radiólogo</p>
+                                      </div>
+                                    </button>
+                                  ))}
+
+                                  {sMembers.length === 0 && (
+                                    <p className="text-[10px] text-gray-400 text-center py-2 italic">Sin miembros</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Unassigned members */}
+                      {unassigned.length > 0 && (
+                        <div className="mt-6 w-full">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Sin sección asignada</span>
+                            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                          </div>
+                          <div className="flex gap-2 flex-wrap justify-center">
+                            {unassigned.map((u) => (
+                              <button key={u.id} onClick={() => openEditMember(u)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
+                              >
+                                <div className="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                  {(u.user_name || u.user_email || "?")[0].toUpperCase()}
+                                </div>
+                                <span className="text-[11px] text-gray-600 dark:text-gray-400">{u.user_name || u.user_email}</span>
+                              </button>
+                            ))}
                           </div>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick action bar */}
+                <div className="flex gap-2 justify-center pt-2">
+                  <Button size="sm" variant="outline" onClick={openAddMember} className="gap-1.5">
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Añadir miembro
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setSectionName(""); setShowSectionForm(true); }} className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" />
+                    Nueva sección
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════ GESTIÓN TAB ═══════ */}
+            {detailTab === "manage" && (
+              <>
+                {/* ── Sections ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Secciones ({sections.length})</h3>
+                    <Button size="sm" onClick={() => { setSectionName(""); setShowSectionForm(true); }} className="gap-1.5">
+                      <Plus className="h-3.5 w-3.5" />
+                      Nueva sección
+                    </Button>
+                  </div>
+
+                  {sections.length === 0 ? (
+                    <Card>
+                      <CardContent className="text-center py-6">
+                        <p className="text-xs text-gray-400">No hay secciones. Crea las secciones del servicio de radiología.</p>
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {sections.map((s) => {
+                        const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
+                        return (
+                          <Card key={s.id}>
+                            <CardContent className="p-3 flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                                <Building2 className="h-4 w-4 text-blue-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{s.name}</span>
+                                <span className="text-[10px] text-gray-400">{sMembers.length} miembros</span>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 flex-shrink-0" onClick={() => handleDeleteSection(s.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* ── Members ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Miembros ({activeMembers.length} activos{members.length > activeMembers.length ? `, ${members.length - activeMembers.length} inactivos` : ""})
+                    </h3>
+                    <Button size="sm" onClick={openAddMember} className="gap-1.5">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Añadir miembro
+                    </Button>
+                  </div>
+
+                  {members.length === 0 ? (
+                    <Card>
+                      <CardContent className="text-center py-6">
+                        <p className="text-xs text-gray-400">No hay miembros. Añade al jefe de servicio primero.</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {members.map((m) => (
+                        <Card key={m.id} className={!m.is_active ? "opacity-50" : ""}>
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
+                                m.is_org_chief ? "bg-purple-500" : m.section_role === "section_chief" ? "bg-blue-500" : m.section_role === "section_editor" ? "bg-amber-500" : "bg-gray-400"
+                              }`}>
+                                {(m.user_name || m.user_email || "?")[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
+                                  {m.user_name || m.user_email}
+                                </span>
+                                <span className="text-[10px] text-gray-400 block truncate">
+                                  {m.section_name || "Sin sección"} {m.user_name ? `· ${m.user_email}` : ""}
+                                </span>
+                              </div>
+                              <Badge className={`text-[9px] flex-shrink-0 ${roleColor(m.section_role, m.is_org_chief)}`}>
+                                {roleLabel(m.section_role, m.is_org_chief)}
+                              </Badge>
+                              {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">Inactivo</Badge>}
+                              <div className="flex gap-0.5 flex-shrink-0">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} title="Editar rol">
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" onClick={() => openPasswordReset(m)} title="Cambiar contraseña">
+                                  <KeyRound className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
+                                  onClick={() => handleToggleMember(m)}
+                                  title={m.is_active ? "Desactivar" : "Reactivar"}
+                                >
+                                  {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
 
