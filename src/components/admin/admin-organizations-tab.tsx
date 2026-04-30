@@ -56,6 +56,7 @@ export function AdminOrganizationsTab() {
   const [showSectionForm, setShowSectionForm] = useState(false);
   const [sectionName, setSectionName] = useState("");
   const [savingSection, setSavingSection] = useState(false);
+  const [sectionError, setSectionError] = useState("");
 
   // Member form
   const [showMemberForm, setShowMemberForm] = useState(false);
@@ -98,9 +99,12 @@ export function AdminOrganizationsTab() {
         fetch(`/api/admin/organizations/sections?org_id=${org.id}`),
         fetch(`/api/admin/organizations/members?org_id=${org.id}`),
       ]);
-      if (secRes.ok) setSections(await secRes.json());
-      if (memRes.ok) setMembers(await memRes.json());
-    } catch { /* ignore */ }
+      setSections(secRes.ok ? await secRes.json() : []);
+      setMembers(memRes.ok ? await memRes.json() : []);
+    } catch {
+      setSections([]);
+      setMembers([]);
+    }
     setLoadingDetail(false);
   }, []);
 
@@ -167,21 +171,37 @@ export function AdminOrganizationsTab() {
   async function handleCreateSection() {
     if (!sectionName.trim() || !selectedOrg) return;
     setSavingSection(true);
+    setSectionError("");
     const slug = sectionName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "");
-    await fetch("/api/admin/organizations/sections", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ org_id: selectedOrg.id, name: sectionName.trim(), slug }),
-    });
-    setSavingSection(false);
-    setShowSectionForm(false);
-    setSectionName("");
-    await loadOrgDetail(selectedOrg);
+    try {
+      const res = await fetch("/api/admin/organizations/sections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ org_id: selectedOrg.id, name: sectionName.trim(), slug }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        setSectionError(data.error || "Error al crear la sección");
+        setSavingSection(false);
+        return;
+      }
+      setSavingSection(false);
+      setShowSectionForm(false);
+      setSectionName("");
+      await loadOrgDetail(selectedOrg);
+    } catch (e) {
+      setSectionError("Error de red al crear la sección");
+      setSavingSection(false);
+    }
   }
 
   async function handleDeleteSection(id: string) {
     if (!confirm("Eliminar sección? Los miembros quedarán sin sección asignada.")) return;
-    await fetch(`/api/admin/organizations/sections?id=${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/organizations/sections?id=${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Error" }));
+      alert(data.error || "Error al eliminar la sección");
+    }
     if (selectedOrg) await loadOrgDetail(selectedOrg);
   }
 
@@ -248,72 +268,79 @@ export function AdminOrganizationsTab() {
     setMemberError("");
     setMemberSuccess("");
 
-    if (editingMember) {
-      const res = await fetch("/api/admin/organizations/members", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: editingMember.id,
+    try {
+      if (editingMember) {
+        const res = await fetch("/api/admin/organizations/members", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingMember.id,
+            section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
+            section_role: memberRole,
+            is_org_chief: memberIsChief,
+          }),
+        });
+        const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        if (!res.ok) {
+          setMemberError(data.error || "Error al actualizar miembro");
+          setSavingMember(false);
+          return;
+        }
+        setSavingMember(false);
+        setShowMemberForm(false);
+        await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
+      } else {
+        if (!memberEmail.trim()) {
+          setMemberError("Introduce el email del usuario");
+          setSavingMember(false);
+          return;
+        }
+        if (isNewUser && (!memberPassword || memberPassword.length < 6)) {
+          setMemberError("La contraseña debe tener al menos 6 caracteres");
+          setSavingMember(false);
+          return;
+        }
+
+        const body: Record<string, unknown> = {
+          org_id: selectedOrg.id,
+          email: memberEmail.trim().toLowerCase(),
           section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
           section_role: memberRole,
           is_org_chief: memberIsChief,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setMemberError(data.error || "Error");
-        setSavingMember(false);
-        return;
-      }
-    } else {
-      if (!memberEmail.trim()) {
-        setMemberError("Introduce el email del usuario");
-        setSavingMember(false);
-        return;
-      }
-      if (isNewUser && (!memberPassword || memberPassword.length < 6)) {
-        setMemberError("La contraseña debe tener al menos 6 caracteres");
-        setSavingMember(false);
-        return;
-      }
+        };
+        if (isNewUser) {
+          body.name = memberName.trim();
+          body.password = memberPassword;
+        }
 
-      const body: Record<string, unknown> = {
-        org_id: selectedOrg.id,
-        email: memberEmail.trim().toLowerCase(),
-        section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
-        section_role: memberRole,
-        is_org_chief: memberIsChief,
-      };
-      if (isNewUser) {
-        body.name = memberName.trim();
-        body.password = memberPassword;
-      }
+        const res = await fetch("/api/admin/organizations/members", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const result = await res.json().catch(() => ({ error: `Error ${res.status}` }));
 
-      const res = await fetch("/api/admin/organizations/members", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+        if (!res.ok) {
+          setMemberError(result.error || "Error al añadir miembro");
+          setSavingMember(false);
+          return;
+        }
 
-      if (!res.ok) {
-        const data = await res.json();
-        setMemberError(data.error || "Error");
+        if (result.user_created) {
+          setMemberSuccess(`Cuenta creada. Email: ${memberEmail.trim().toLowerCase()} / Contraseña: ${memberPassword}`);
+          setSavingMember(false);
+          await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
+          return;
+        }
+
         setSavingMember(false);
-        return;
-      }
-
-      const result = await res.json();
-      if (result.user_created) {
-        setMemberSuccess(`Cuenta creada. Email: ${memberEmail.trim().toLowerCase()} / Contraseña: ${memberPassword}`);
-        setSavingMember(false);
+        setShowMemberForm(false);
         await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
-        return;
       }
+    } catch (e) {
+      setMemberError("Error de red al guardar");
+      setSavingMember(false);
     }
-
-    setSavingMember(false);
-    setShowMemberForm(false);
-    await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
   }
 
   async function handleToggleMember(m: MemberRow) {
@@ -684,7 +711,7 @@ export function AdminOrganizationsTab() {
         )}
 
         {/* Section form dialog */}
-        <Dialog open={showSectionForm} onOpenChange={setShowSectionForm}>
+        <Dialog open={showSectionForm} onOpenChange={(open) => { setShowSectionForm(open); if (!open) setSectionError(""); }}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>Nueva sección</DialogTitle>
@@ -699,6 +726,9 @@ export function AdminOrganizationsTab() {
                   className="h-9"
                 />
               </div>
+              {sectionError && (
+                <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{sectionError}</p>
+              )}
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>Cancelar</Button>
                 <Button size="sm" onClick={handleCreateSection} disabled={savingSection || !sectionName.trim()}>

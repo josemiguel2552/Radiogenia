@@ -41,10 +41,14 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("[admin/org/sections POST] insert error:", error.message, { org_id, name, slug });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[admin/org/sections POST] exception:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -115,24 +115,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Upsert org membership (allows reactivation)
+    const memberPayload = {
+      org_id,
+      user_id: userId,
+      section_id: section_id || null,
+      section_role: section_role || "radiologist",
+      is_org_chief: is_org_chief ?? false,
+      is_active: true,
+      deactivated_at: null,
+    };
+
     const { data, error } = await service
       .from("org_members")
-      .upsert(
-        {
-          org_id,
-          user_id: userId,
-          section_id: section_id || null,
-          section_role: section_role || "radiologist",
-          is_org_chief: is_org_chief ?? false,
-          is_active: true,
-          deactivated_at: null,
-        },
-        { onConflict: "org_id,user_id" },
-      )
+      .upsert(memberPayload, { onConflict: "org_id,user_id" })
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("[admin/org/members POST] upsert error:", error.message, memberPayload);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({
       ...data,
