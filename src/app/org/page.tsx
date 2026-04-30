@@ -11,14 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Users, Building2, FileText, BarChart3,
-  Plus, Pencil, Trash2, UserPlus, Shield, Crown, ChevronDown,
-  Check, X, BookOpen, Download,
+  Plus, Pencil, Trash2, UserPlus, Shield, Crown, ChevronDown, ChevronRight,
+  Check, X, BookOpen, Download, Sparkles, Layers,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
 import type { OrgMembership, OrgSection, OrgTemplate, OrgRecommendation, SectionRole } from "@/lib/types";
 
-type Tab = "stats" | "members" | "sections" | "templates" | "recommendations";
+type Tab = "stats" | "members" | "sections";
 
 interface OrgData {
   membership: OrgMembership;
@@ -98,6 +98,8 @@ export default function OrgDashboard() {
   const [recGuideline, setRecGuideline] = useState("");
   const [savingRec, setSavingRec] = useState(false);
   const [recError, setRecError] = useState("");
+
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
 
@@ -342,8 +344,6 @@ export default function OrgDashboard() {
     { key: "stats", label: "Estadísticas", icon: <BarChart3 className="h-4 w-4" /> },
     { key: "members", label: "Miembros", icon: <Users className="h-4 w-4" /> },
     { key: "sections", label: "Secciones", icon: <Building2 className="h-4 w-4" /> },
-    { key: "templates", label: "Plantillas", icon: <FileText className="h-4 w-4" /> },
-    { key: "recommendations", label: "Recomendaciones", icon: <BookOpen className="h-4 w-4" /> },
   ];
 
   return (
@@ -534,7 +534,7 @@ export default function OrgDashboard() {
           </div>
         )}
 
-        {/* ═══ SECTIONS ═══ */}
+        {/* ═══ SECTIONS (unified: members + templates + recommendations) ═══ */}
         {tab === "sections" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -547,157 +547,166 @@ export default function OrgDashboard() {
               )}
             </div>
 
-            <div className="space-y-2">
-              {orgData.sections.map((s) => {
-                const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
-                return (
-                  <Card key={s.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+            {orgData.sections.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-10">
+                  <Building2 className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">No hay secciones creadas</p>
+                  <p className="text-[11px] text-gray-400">Crea la primera sección para organizar plantillas, recomendaciones y miembros.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {orgData.sections.map((s) => {
+                  const isExpanded = expandedSection === s.id;
+                  const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
+                  const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
+                  const sRecs = orgRecs.filter((r) => r.section_id === s.id);
+
+                  return (
+                    <Card key={s.id} className="overflow-hidden">
+                      {/* Section header — clickable to expand/collapse */}
+                      <button
+                        onClick={() => setExpandedSection(isExpanded ? null : s.id)}
+                        className="w-full text-left p-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
                           <Building2 className="h-5 w-5 text-blue-500" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{s.name}</h4>
-                          <p className="text-[10px] text-gray-400">{sMembers.length} miembros</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <Users className="h-3 w-3" /> {sMembers.length}
+                            </span>
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <Layers className="h-3 w-3" /> {sTemplates.length} plantillas
+                            </span>
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <Sparkles className="h-3 w-3" /> {sRecs.length} recomendaciones
+                            </span>
+                          </div>
                         </div>
                         {isOrgChief && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDeleteSection(s.id)}>
+                          <Button
+                            variant="ghost" size="icon"
+                            className="h-8 w-8 text-red-400 hover:text-red-500 flex-shrink-0"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }}
+                          >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                      </div>
-                      {sMembers.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1">
-                          {sMembers.map((m) => (
-                            <div key={m.id} className="flex items-center gap-2 text-xs">
-                              <span className="text-gray-700 dark:text-gray-300 flex-1 truncate">{m.user_name || m.user_email}</span>
-                              <Badge className={`text-[8px] ${roleColor(m.section_role, m.is_org_chief)}`}>
-                                {roleLabel(m.section_role, m.is_org_chief)}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {/* ═══ TEMPLATES ═══ */}
-        {tab === "templates" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Plantillas compartidas ({orgTemplates.length})
-              </h3>
-              <Button size="sm" onClick={() => { setImportSectionId(orgData.sections[0]?.id || ""); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }} className="gap-1.5">
-                <Download className="h-3.5 w-3.5" />
-                Importar plantillas
-              </Button>
-            </div>
+                        <ChevronDown className={`h-4 w-4 text-gray-400 flex-shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                      </button>
 
-            {orgData.sections.length === 0 ? (
-              <Card><CardContent className="text-center py-8">
-                <p className="text-xs text-gray-400">Crea secciones primero para asignar plantillas</p>
-              </CardContent></Card>
-            ) : orgTemplates.length === 0 ? (
-              <Card><CardContent className="text-center py-8">
-                <FileText className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-xs text-gray-400">No hay plantillas compartidas. Importa desde el catálogo global.</p>
-              </CardContent></Card>
-            ) : (
-              orgData.sections.map((s) => {
-                const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
-                if (sTemplates.length === 0) return null;
-                return (
-                  <div key={s.id}>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
-                      <Building2 className="h-3 w-3" />
-                      {s.name} ({sTemplates.length})
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                      {sTemplates.map((t) => (
-                        <Card key={t.id}>
-                          <CardContent className="p-3 flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center flex-shrink-0">
-                              <FileText className="h-4 w-4 text-teal-500" />
+                      {/* Expanded content */}
+                      {isExpanded && (
+                        <div className="border-t border-gray-100 dark:border-gray-800">
+                          {/* ── Members sub-section ── */}
+                          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                                <Users className="h-3 w-3" /> Miembros ({sMembers.length})
+                              </h5>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
-                              <span className="text-[10px] text-gray-400">{t.modality}</span>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* ═══ RECOMMENDATIONS ═══ */}
-        {tab === "recommendations" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Recomendaciones compartidas ({orgRecs.length})
-              </h3>
-              <Button size="sm" onClick={() => { setRecSectionId(orgData.sections[0]?.id || ""); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }} className="gap-1.5">
-                <Plus className="h-3.5 w-3.5" />
-                Nueva recomendación
-              </Button>
-            </div>
-
-            {orgData.sections.length === 0 ? (
-              <Card><CardContent className="text-center py-8">
-                <p className="text-xs text-gray-400">Crea secciones primero para asignar recomendaciones</p>
-              </CardContent></Card>
-            ) : orgRecs.length === 0 ? (
-              <Card><CardContent className="text-center py-8">
-                <BookOpen className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-xs text-gray-400">No hay recomendaciones compartidas. Añade guías clínicas para el servicio.</p>
-              </CardContent></Card>
-            ) : (
-              orgData.sections.map((s) => {
-                const sRecs = orgRecs.filter((r) => r.section_id === s.id);
-                if (sRecs.length === 0) return null;
-                return (
-                  <div key={s.id}>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
-                      <Building2 className="h-3 w-3" />
-                      {s.name} ({sRecs.length})
-                    </h4>
-                    <div className="space-y-1.5 mb-4">
-                      {sRecs.map((r) => (
-                        <Card key={r.id}>
-                          <CardContent className="p-3">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-[9px]">{r.trigger_keyword}</Badge>
-                                  {r.guideline_name && <span className="text-[9px] text-gray-400">{r.guideline_name}</span>}
-                                </div>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{r.recommendation_text}</p>
+                            {sMembers.length === 0 ? (
+                              <p className="text-[11px] text-gray-400 py-2">Sin miembros asignados a esta sección.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {sMembers.map((m) => (
+                                  <div key={m.id} className="flex items-center gap-2 text-xs py-1">
+                                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${
+                                      m.is_org_chief ? "bg-purple-500" : m.section_role === "section_chief" ? "bg-blue-500" : "bg-gray-400"
+                                    }`}>
+                                      {(m.user_name || m.user_email || "?")[0].toUpperCase()}
+                                    </div>
+                                    <span className="text-gray-700 dark:text-gray-300 flex-1 truncate">{m.user_name || m.user_email}</span>
+                                    <Badge className={`text-[8px] ${roleColor(m.section_role, m.is_org_chief)}`}>
+                                      {roleLabel(m.section_role, m.is_org_chief)}
+                                    </Badge>
+                                  </div>
+                                ))}
                               </div>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
-                                <Trash2 className="h-3 w-3" />
+                            )}
+                          </div>
+
+                          {/* ── Templates sub-section ── */}
+                          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                                <Layers className="h-3 w-3" /> Plantillas ({sTemplates.length})
+                              </h5>
+                              <Button
+                                variant="outline" size="sm"
+                                className="h-7 text-[11px] gap-1"
+                                onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}
+                              >
+                                <Download className="h-3 w-3" />
+                                Importar
                               </Button>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
+                            {sTemplates.length === 0 ? (
+                              <p className="text-[11px] text-gray-400 py-2">Sin plantillas. Importa desde el catálogo global.</p>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                                {sTemplates.map((t) => (
+                                  <div key={t.id} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                                    <FileText className="h-3.5 w-3.5 text-teal-500 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-[11px] font-medium text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
+                                      <span className="text-[10px] text-gray-400">{t.modality}</span>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-500 flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                                      <Trash2 className="h-2.5 w-2.5" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ── Recommendations sub-section ── */}
+                          <div className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                                <Sparkles className="h-3 w-3" /> Recomendaciones ({sRecs.length})
+                              </h5>
+                              <Button
+                                variant="outline" size="sm"
+                                className="h-7 text-[11px] gap-1"
+                                onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}
+                              >
+                                <Plus className="h-3 w-3" />
+                                Añadir
+                              </Button>
+                            </div>
+                            {sRecs.length === 0 ? (
+                              <p className="text-[11px] text-gray-400 py-2">Sin recomendaciones. Añade guías clínicas para esta sección.</p>
+                            ) : (
+                              <div className="space-y-1.5">
+                                {sRecs.map((r) => (
+                                  <div key={r.id} className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-[9px]">{r.trigger_keyword}</Badge>
+                                        {r.guideline_name && <span className="text-[9px] text-gray-400">{r.guideline_name}</span>}
+                                      </div>
+                                      <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2">{r.recommendation_text}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-500 flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
+                                      <Trash2 className="h-2.5 w-2.5" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
