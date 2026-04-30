@@ -84,7 +84,7 @@ export default function OrgDashboard() {
 
   const loadOrg = useCallback(async () => {
     try {
-      const res = await fetch("/api/org");
+      const res = await fetch("/api/org", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         if (data.membership) setOrgData(data);
@@ -94,14 +94,14 @@ export default function OrgDashboard() {
 
   const loadMembers = useCallback(async () => {
     try {
-      const res = await fetch("/api/org/members");
+      const res = await fetch("/api/org/members", { cache: "no-store" });
       if (res.ok) setMembers(await res.json());
     } catch { /* ignore */ }
   }, []);
 
   const loadStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/org/stats");
+      const res = await fetch("/api/org/stats", { cache: "no-store" });
       if (res.ok) setStats(await res.json());
     } catch { /* ignore */ }
   }, []);

@@ -55,7 +55,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   // Org membership (lightweight check)
   const [orgInfo, setOrgInfo] = useState<{ isChief: boolean; isMember: boolean } | null>(null);
   useEffect(() => {
-    fetch("/api/org").then((r) => r.ok ? r.json() : null).then((data) => {
+    fetch("/api/org", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((data) => {
       if (data?.membership) {
         setOrgInfo({
           isChief: data.membership.is_org_chief || data.membership.section_role === "section_chief",
@@ -439,6 +439,16 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
             >
               <Shield className="h-5 w-5" />
               <span className="text-[9px]">Admin</span>
+            </Link>
+          )}
+
+          {orgInfo?.isChief && (
+            <Link
+              href="/org"
+              className="flex flex-col items-center gap-0.5 text-blue-400 py-1.5 px-3 min-w-[56px]"
+            >
+              <Building2 className="h-5 w-5" />
+              <span className="text-[9px]">Hospital</span>
             </Link>
           )}
 

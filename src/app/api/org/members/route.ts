@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireOrgMembership, requireOrgRole } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -10,29 +12,38 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const membership = await requireOrgMembership(user.id);
+    const service = createServiceClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await service
       .from("org_members")
-      .select("*, profiles(email, name), org_sections(name)")
+      .select("*, org_sections(name)")
       .eq("org_id", membership.org_id)
       .order("joined_at");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    const userIds = (data || []).map((m) => m.user_id as string);
+    const { data: profiles } = userIds.length > 0
+      ? await service.from("profiles").select("id, email, name").in("id", userIds)
+      : { data: [] };
+
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
     const members = (data || []).map((m) => {
-      const profile = m.profiles as unknown as { email: string; name: string } | null;
-      const section = m.org_sections as unknown as { name: string } | null;
+      const profile = profileMap.get(m.user_id);
+      const section = m.org_sections as { name: string } | null;
+      const { org_sections: _s, ...rest } = m;
       return {
-        ...m,
-        profiles: undefined,
-        org_sections: undefined,
+        ...rest,
         user_email: profile?.email || "",
         user_name: profile?.name || "",
         section_name: section?.name || null,
       };
     });
 
-    return NextResponse.json(members);
+    return NextResponse.json(members, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -51,10 +62,10 @@ export async function POST(req: NextRequest) {
     });
 
     const { user_id, email, section_id, section_role, is_org_chief } = await req.json();
+    const service = createServiceClient();
 
     let resolvedUserId = user_id;
     if (!resolvedUserId && email) {
-      const service = createServiceClient();
       const { data: profile } = await service
         .from("profiles")
         .select("id")
@@ -68,7 +79,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing user_id or email" }, { status: 400 });
     }
 
-    // Section chiefs can only add radiologists/editors to their own section
     if (!membership.is_org_chief) {
       if (section_id !== membership.section_id) {
         return NextResponse.json({ error: "Cannot add members to another section" }, { status: 403 });
@@ -78,8 +88,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check seat limit
-    const service = createServiceClient();
     const { data: org } = await service
       .from("organizations")
       .select("max_seats")
@@ -96,7 +104,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Seat limit reached" }, { status: 429 });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await service
       .from("org_members")
       .upsert({
         org_id: membership.org_id,
@@ -132,7 +140,6 @@ export async function PUT(req: NextRequest) {
     const { id, section_id, section_role, is_org_chief, is_active } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing member id" }, { status: 400 });
 
-    // Validate permissions for non-chiefs
     if (!membership.is_org_chief) {
       if (is_org_chief !== undefined || section_role === "section_chief") {
         return NextResponse.json({ error: "Cannot modify chief roles" }, { status: 403 });
@@ -148,7 +155,8 @@ export async function PUT(req: NextRequest) {
       update.deactivated_at = is_active ? null : new Date().toISOString();
     }
 
-    const { error } = await supabase
+    const service = createServiceClient();
+    const { error } = await service
       .from("org_members")
       .update(update)
       .eq("id", id)

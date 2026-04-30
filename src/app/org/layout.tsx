@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
 
 export default async function OrgLayout({ children }: { children: React.ReactNode }) {
@@ -6,7 +7,8 @@ export default async function OrgLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: member } = await supabase
+  const service = createServiceClient();
+  const { data: member } = await service
     .from("org_members")
     .select("is_org_chief, section_role")
     .eq("user_id", user.id)
