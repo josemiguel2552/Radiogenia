@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Users, Building2, FileText, BarChart3,
-  Plus, Pencil, Trash2, UserPlus, Shield, Crown, ChevronDown, ChevronRight,
-  Check, X, BookOpen, Download, Sparkles, Layers,
+  Plus, Pencil, Trash2, UserPlus, ChevronDown,
+  Check, X, BookOpen, Download,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
@@ -100,6 +100,7 @@ export default function OrgDashboard() {
   const [recError, setRecError] = useState("");
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates" | "recs">>({});
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
   const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
@@ -328,6 +329,18 @@ export default function OrgDashboard() {
     return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
   };
 
+  const modalityColor = (mod: string) => {
+    const m = mod?.toLowerCase() || "";
+    if (m.includes("ct") || m.includes("tc")) return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
+    if (m.includes("mr") || m.includes("rm")) return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300";
+    if (m.includes("us") || m.includes("eco") || m.includes("ultra")) return "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300";
+    if (m.includes("rx") || m.includes("xray") || m.includes("ray")) return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
+    if (m.includes("mamo") || m.includes("mamm")) return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300";
+    return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
+  };
+
+  const getSubTab = (sectionId: string) => sectionSubTab[sectionId] || (canManageMembers ? "team" : "templates");
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -356,38 +369,62 @@ export default function OrgDashboard() {
     return true;
   });
 
+  const visibleSections = isOrgChief
+    ? orgData.sections
+    : orgData.sections.filter((s) => s.id === orgData.membership.section_id);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <header className="sticky top-0 z-20 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 h-12 md:h-14 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2 min-w-0">
-            <Logo size="sm" variant="icon" className="sm:hidden" />
-            <span className="text-sm font-semibold text-gray-900 dark:text-white truncate hidden sm:inline">
-              {orgData.organization.name}
+      {/* ── Hero header ── */}
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-900 dark:via-indigo-900 dark:to-gray-950">
+        <div className="max-w-5xl mx-auto px-4 md:px-6">
+          <div className="flex items-center gap-3 pt-4 pb-2">
+            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <span className="ml-auto text-[11px] text-blue-200">
+              {orgData.active_members}/{orgData.organization.max_seats} plazas
             </span>
-            <Badge className={`text-[10px] ${isOrgChief ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : isSectionChief ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"}`}>
+          </div>
+          <div className="pb-5 pl-1">
+            <div className="flex items-center gap-3 mb-1">
+              <Building2 className="h-7 w-7 text-white/80" />
+              <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{orgData.organization.name}</h1>
+            </div>
+            <Badge className={`text-[10px] mt-1 ${isOrgChief ? "bg-white/20 text-white border-white/20" : isSectionChief ? "bg-white/20 text-white border-white/20" : "bg-white/20 text-white border-white/20"}`}>
               {isOrgChief ? "Jefe de Servicio" : isSectionChief ? "Jefe de Sección" : "Editor de Sección"}
             </Badge>
+            {canViewStats && stats && (
+              <div className="flex gap-6 mt-4">
+                <div>
+                  <p className="text-2xl font-bold text-white">{stats.total_members}</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Radiólogos</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{stats.total_reports_this_month}</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Informes/mes</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{orgData.sections.length}</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Secciones</p>
+                </div>
+              </div>
+            )}
           </div>
-          <span className="ml-auto text-[11px] text-gray-400">
-            {orgData.active_members}/{orgData.organization.max_seats} plazas
-          </span>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-5xl mx-auto px-3 md:px-6 py-4 md:py-6">
-        <div className="flex gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl overflow-x-auto w-fit scrollbar-hide">
+        {/* ── Nav tabs ── */}
+        <div className="flex gap-1 mb-5 p-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-x-auto w-fit scrollbar-hide">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                 tab === t.key
-                  ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
               {t.icon}
@@ -544,189 +581,215 @@ export default function OrgDashboard() {
           </div>
         )}
 
-        {/* ═══ SECTIONS (unified: members + templates + recommendations) ═══ */}
+        {/* ═══ SECTIONS ═══ */}
         {tab === "sections" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Secciones</h3>
-              {isOrgChief && (
-                <Button size="sm" onClick={() => { setSectionName(""); setSectionSlug(""); setShowSectionForm(true); }} className="gap-1.5">
-                  <Plus className="h-3.5 w-3.5" />
-                  Nueva sección
+          <div className="space-y-5">
+            {isOrgChief && (
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">{visibleSections.length} secciones</p>
+                <Button size="sm" onClick={() => { setSectionName(""); setSectionSlug(""); setShowSectionForm(true); }} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-3.5 w-3.5" /> Nueva sección
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
 
-            {(() => {
-              const visibleSections = isOrgChief
-                ? orgData.sections
-                : orgData.sections.filter((s) => s.id === orgData.membership.section_id);
-              return visibleSections.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-10">
-                  <Building2 className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">No hay secciones creadas</p>
-                  <p className="text-[11px] text-gray-400">Crea la primera sección para organizar plantillas, recomendaciones y miembros.</p>
+            {visibleSections.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="text-center py-14">
+                  <div className="h-16 w-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-4">
+                    <Building2 className="h-8 w-8 text-blue-400" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No hay secciones creadas</p>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">Crea la primera sección para organizar plantillas, recomendaciones y equipo.</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
-                {visibleSections.map((s) => {
-                  const isExpanded = expandedSection === s.id;
-                  const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
-                  const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
-                  const sRecs = orgRecs.filter((r) => r.section_id === s.id);
+              visibleSections.map((s) => {
+                const isExpanded = expandedSection === s.id || visibleSections.length === 1;
+                const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
+                const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
+                const sRecs = orgRecs.filter((r) => r.section_id === s.id);
+                const sub = getSubTab(s.id);
 
-                  return (
-                    <Card key={s.id} className="overflow-hidden">
-                      {/* Section header — clickable to expand/collapse */}
-                      <button
-                        onClick={() => setExpandedSection(isExpanded ? null : s.id)}
-                        className="w-full text-left p-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-5 w-5 text-blue-500" />
+                return (
+                  <Card key={s.id} className="overflow-hidden shadow-sm">
+                    {/* Section gradient header */}
+                    <button
+                      onClick={() => visibleSections.length > 1 && setExpandedSection(isExpanded && visibleSections.length > 1 ? null : s.id)}
+                      className={`w-full text-left px-5 py-4 bg-gradient-to-r from-slate-50 to-blue-50/50 dark:from-gray-900 dark:to-blue-950/30 border-b border-gray-100 dark:border-gray-800 ${visibleSections.length > 1 ? "cursor-pointer hover:from-slate-100 hover:to-blue-50 dark:hover:from-gray-800 dark:hover:to-blue-950/40" : ""} transition-colors`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-11 w-11 rounded-xl bg-blue-100 dark:bg-blue-800/40 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{s.name}</h4>
-                          <div className="flex items-center gap-3 mt-0.5">
+                          <h4 className="text-base font-bold text-gray-900 dark:text-white">{s.name}</h4>
+                          <div className="flex items-center gap-4 mt-1">
                             {canManageMembers && (
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <Users className="h-3 w-3" /> {sMembers.length}
-                            </span>
+                              <span className="text-[11px] text-gray-500 flex items-center gap-1"><Users className="h-3 w-3 text-blue-400" /> {sMembers.length}</span>
                             )}
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <Layers className="h-3 w-3" /> {sTemplates.length} plantillas
-                            </span>
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <Sparkles className="h-3 w-3" /> {sRecs.length} recomendaciones
-                            </span>
+                            <span className="text-[11px] text-gray-500 flex items-center gap-1"><FileText className="h-3 w-3 text-teal-400" /> {sTemplates.length}</span>
+                            <span className="text-[11px] text-gray-500 flex items-center gap-1"><BookOpen className="h-3 w-3 text-amber-400" /> {sRecs.length}</span>
                           </div>
                         </div>
                         {isOrgChief && (
-                          <Button
-                            variant="ghost" size="icon"
-                            className="h-8 w-8 text-red-400 hover:text-red-500 flex-shrink-0"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <ChevronDown className={`h-4 w-4 text-gray-400 flex-shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                      </button>
+                        {visibleSections.length > 1 && (
+                          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        )}
+                      </div>
+                    </button>
 
-                      {/* Expanded content */}
-                      {isExpanded && (
-                        <div className="border-t border-gray-100 dark:border-gray-800">
-                          {/* ── Members sub-section (chiefs only) ── */}
+                    {/* Expanded: sub-tabs + content */}
+                    {isExpanded && (
+                      <div>
+                        {/* Sub-tab bar */}
+                        <div className="flex gap-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950">
                           {canManageMembers && (
-                          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-                            <div className="flex items-center justify-between mb-2">
-                              <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-                                <Users className="h-3 w-3" /> Miembros ({sMembers.length})
-                              </h5>
-                            </div>
-                            {sMembers.length === 0 ? (
-                              <p className="text-[11px] text-gray-400 py-2">Sin miembros asignados a esta sección.</p>
+                            <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "team" })}
+                              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "team" ? "border-blue-500 text-blue-600 dark:text-blue-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+                              <Users className="h-3.5 w-3.5" /> Equipo
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "team" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sMembers.length}</span>
+                            </button>
+                          )}
+                          <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "templates" })}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "templates" ? "border-teal-500 text-teal-600 dark:text-teal-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+                            <FileText className="h-3.5 w-3.5" /> Plantillas
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "templates" ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sTemplates.length}</span>
+                          </button>
+                          <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "recs" })}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "recs" ? "border-amber-500 text-amber-600 dark:text-amber-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+                            <BookOpen className="h-3.5 w-3.5" /> Guías
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "recs" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sRecs.length}</span>
+                          </button>
+                        </div>
+
+                        {/* Sub-tab content */}
+                        <div className="p-5">
+                          {/* ── TEAM ── */}
+                          {sub === "team" && canManageMembers && (
+                            sMembers.length === 0 ? (
+                              <div className="text-center py-8">
+                                <Users className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                                <p className="text-xs text-gray-400">Sin miembros en esta sección</p>
+                              </div>
                             ) : (
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 {sMembers.map((m) => (
-                                  <div key={m.id} className="flex items-center gap-2 text-xs py-1">
-                                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${
-                                      m.is_org_chief ? "bg-purple-500" : m.section_role === "section_chief" ? "bg-blue-500" : "bg-gray-400"
+                                  <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+                                    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                                      m.is_org_chief ? "bg-purple-500" : m.section_role === "section_chief" ? "bg-blue-500" : m.section_role === "section_editor" ? "bg-amber-500" : "bg-gray-400"
                                     }`}>
                                       {(m.user_name || m.user_email || "?")[0].toUpperCase()}
                                     </div>
-                                    <span className="text-gray-700 dark:text-gray-300 flex-1 truncate">{m.user_name || m.user_email}</span>
-                                    <Badge className={`text-[8px] ${roleColor(m.section_role, m.is_org_chief)}`}>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 block truncate">{m.user_name || m.user_email}</span>
+                                      {m.user_name && <span className="text-[10px] text-gray-400 block truncate">{m.user_email}</span>}
+                                    </div>
+                                    <Badge className={`text-[9px] ${roleColor(m.section_role, m.is_org_chief)}`}>
                                       {roleLabel(m.section_role, m.is_org_chief)}
                                     </Badge>
                                   </div>
                                 ))}
                               </div>
-                            )}
-                          </div>
+                            )
                           )}
 
-                          {/* ── Templates sub-section ── */}
-                          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-                            <div className="flex items-center justify-between mb-2">
-                              <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-                                <Layers className="h-3 w-3" /> Plantillas ({sTemplates.length})
-                              </h5>
-                              <Button
-                                variant="outline" size="sm"
-                                className="h-7 text-[11px] gap-1"
-                                onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}
-                              >
-                                <Download className="h-3 w-3" />
-                                Importar
-                              </Button>
-                            </div>
-                            {sTemplates.length === 0 ? (
-                              <p className="text-[11px] text-gray-400 py-2">Sin plantillas. Importa desde el catálogo global.</p>
-                            ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                                {sTemplates.map((t) => (
-                                  <div key={t.id} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
-                                    <FileText className="h-3.5 w-3.5 text-teal-500 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                      <span className="text-[11px] font-medium text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
-                                      <span className="text-[10px] text-gray-400">{t.modality}</span>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-500 flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </Button>
-                                  </div>
-                                ))}
+                          {/* ── TEMPLATES ── */}
+                          {sub === "templates" && (
+                            <div>
+                              <div className="flex items-center justify-between mb-4">
+                                <p className="text-xs text-gray-500">{sTemplates.length} plantilla{sTemplates.length !== 1 ? "s" : ""} compartida{sTemplates.length !== 1 ? "s" : ""}</p>
+                                <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                  onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
+                                  <Download className="h-3.5 w-3.5" /> Importar del catálogo
+                                </Button>
                               </div>
-                            )}
-                          </div>
-
-                          {/* ── Recommendations sub-section ── */}
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h5 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-                                <Sparkles className="h-3 w-3" /> Recomendaciones ({sRecs.length})
-                              </h5>
-                              <Button
-                                variant="outline" size="sm"
-                                className="h-7 text-[11px] gap-1"
-                                onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}
-                              >
-                                <Plus className="h-3 w-3" />
-                                Añadir
-                              </Button>
-                            </div>
-                            {sRecs.length === 0 ? (
-                              <p className="text-[11px] text-gray-400 py-2">Sin recomendaciones. Añade guías clínicas para esta sección.</p>
-                            ) : (
-                              <div className="space-y-1.5">
-                                {sRecs.map((r) => (
-                                  <div key={r.id} className="flex items-start gap-2 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-0.5">
-                                        <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-[9px]">{r.trigger_keyword}</Badge>
-                                        {r.guideline_name && <span className="text-[9px] text-gray-400">{r.guideline_name}</span>}
+                              {sTemplates.length === 0 ? (
+                                <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
+                                  <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                                  <p className="text-xs text-gray-400 mb-3">Sin plantillas en esta sección</p>
+                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                    onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
+                                    <Download className="h-3 w-3" /> Importar plantillas
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {sTemplates.map((t) => (
+                                    <div key={t.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-sm transition-all">
+                                      <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                                        <FileText className="h-4 w-4 text-teal-500" />
                                       </div>
-                                      <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2">{r.recommendation_text}</p>
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
+                                        <Badge className={`text-[9px] mt-0.5 ${modalityColor(t.modality)}`}>{t.modality}</Badge>
+                                      </div>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-500 flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ── RECOMMENDATIONS ── */}
+                          {sub === "recs" && (
+                            <div>
+                              <div className="flex items-center justify-between mb-4">
+                                <p className="text-xs text-gray-500">{sRecs.length} guía{sRecs.length !== 1 ? "s" : ""} clínica{sRecs.length !== 1 ? "s" : ""}</p>
+                                <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                  onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
+                                  <Plus className="h-3.5 w-3.5" /> Nueva guía
+                                </Button>
                               </div>
-                            )}
-                          </div>
+                              {sRecs.length === 0 ? (
+                                <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
+                                  <BookOpen className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                                  <p className="text-xs text-gray-400 mb-1">Sin guías clínicas</p>
+                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Añade recomendaciones basadas en hallazgos para que se sugieran automáticamente al redactar informes.</p>
+                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                                    onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
+                                    <Plus className="h-3 w-3" /> Añadir guía
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {sRecs.map((r) => (
+                                    <div key={r.id} className="group p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-sm transition-all">
+                                      <div className="flex items-start gap-3">
+                                        <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                          <BookOpen className="h-4 w-4 text-amber-500" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-semibold">{r.trigger_keyword}</Badge>
+                                            {r.guideline_name && <span className="text-[10px] text-gray-400 italic">{r.guideline_name}</span>}
+                                          </div>
+                                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{r.recommendation_text}</p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            );
-            })()}
+                      </div>
+                    )}
+                  </Card>
+                );
+              })
+            )}
           </div>
         )}
       </div>
