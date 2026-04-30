@@ -12,12 +12,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ArrowLeft, Loader2, Users, Building2, FileText, BarChart3,
   Plus, Pencil, Trash2, UserPlus, Shield, Crown, ChevronDown,
-  Check, X,
+  Check, X, BookOpen, Download,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import type { OrgMembership, OrgSection, SectionRole } from "@/lib/types";
+import { DEFAULT_TEMPLATES } from "@/lib/templates";
+import type { OrgMembership, OrgSection, OrgTemplate, OrgRecommendation, SectionRole } from "@/lib/types";
 
-type Tab = "stats" | "members" | "sections";
+type Tab = "stats" | "members" | "sections" | "templates" | "recommendations";
 
 interface OrgData {
   membership: OrgMembership;
@@ -80,6 +81,24 @@ export default function OrgDashboard() {
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
   const [memberError, setMemberError] = useState("");
 
+  // Templates
+  const [orgTemplates, setOrgTemplates] = useState<OrgTemplate[]>([]);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importSectionId, setImportSectionId] = useState("");
+  const [importSearch, setImportSearch] = useState("");
+  const [importSelected, setImportSelected] = useState<Set<number>>(new Set());
+  const [importing, setImporting] = useState(false);
+
+  // Recommendations
+  const [orgRecs, setOrgRecs] = useState<OrgRecommendation[]>([]);
+  const [showRecForm, setShowRecForm] = useState(false);
+  const [recSectionId, setRecSectionId] = useState("");
+  const [recTrigger, setRecTrigger] = useState("");
+  const [recText, setRecText] = useState("");
+  const [recGuideline, setRecGuideline] = useState("");
+  const [savingRec, setSavingRec] = useState(false);
+  const [recError, setRecError] = useState("");
+
   const isOrgChief = orgData?.membership.is_org_chief || false;
 
   const loadOrg = useCallback(async () => {
@@ -106,9 +125,23 @@ export default function OrgDashboard() {
     } catch { /* ignore */ }
   }, []);
 
+  const loadTemplates = useCallback(async () => {
+    try {
+      const res = await fetch("/api/org/templates", { cache: "no-store" });
+      if (res.ok) setOrgTemplates(await res.json());
+    } catch { /* ignore */ }
+  }, []);
+
+  const loadRecs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/org/recommendations", { cache: "no-store" });
+      if (res.ok) setOrgRecs(await res.json());
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
-    Promise.all([loadOrg(), loadMembers(), loadStats()]).finally(() => setLoading(false));
-  }, [loadOrg, loadMembers, loadStats]);
+    Promise.all([loadOrg(), loadMembers(), loadStats(), loadTemplates(), loadRecs()]).finally(() => setLoading(false));
+  }, [loadOrg, loadMembers, loadStats, loadTemplates, loadRecs]);
 
   async function handleSaveSection() {
     if (!sectionName.trim()) return;
@@ -209,6 +242,72 @@ export default function OrgDashboard() {
     await Promise.all([loadMembers(), loadStats(), loadOrg()]);
   }
 
+  // ── Templates ──
+  async function handleImportTemplates() {
+    if (!importSectionId || importSelected.size === 0) return;
+    setImporting(true);
+    for (const tplId of importSelected) {
+      const tpl = DEFAULT_TEMPLATES.find((t) => t.id === tplId);
+      if (!tpl) continue;
+      await fetch("/api/org/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section_id: importSectionId,
+          name: tpl.title,
+          modality: tpl.technique,
+          structure: tpl,
+        }),
+      });
+    }
+    setImporting(false);
+    setShowImportDialog(false);
+    setImportSelected(new Set());
+    setImportSearch("");
+    await loadTemplates();
+  }
+
+  async function handleDeleteTemplate(id: string) {
+    if (!confirm("¿Eliminar esta plantilla compartida?")) return;
+    await fetch(`/api/org/templates?id=${id}`, { method: "DELETE" });
+    await loadTemplates();
+  }
+
+  // ── Recommendations ──
+  async function handleSaveRec() {
+    if (!recSectionId || !recTrigger.trim() || !recText.trim()) return;
+    setSavingRec(true);
+    setRecError("");
+    const res = await fetch("/api/org/recommendations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        section_id: recSectionId,
+        trigger_keyword: recTrigger.trim(),
+        recommendation_text: recText.trim(),
+        guideline_name: recGuideline.trim(),
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Error" }));
+      setRecError(data.error || "Error al crear");
+      setSavingRec(false);
+      return;
+    }
+    setSavingRec(false);
+    setShowRecForm(false);
+    setRecTrigger("");
+    setRecText("");
+    setRecGuideline("");
+    await loadRecs();
+  }
+
+  async function handleDeleteRec(id: string) {
+    if (!confirm("¿Eliminar esta recomendación?")) return;
+    await fetch(`/api/org/recommendations?id=${id}`, { method: "DELETE" });
+    await loadRecs();
+  }
+
   const roleLabel = (role: string, chief: boolean) => {
     if (chief) return "Jefe de Servicio";
     if (role === "section_chief") return "Jefe de Sección";
@@ -243,6 +342,8 @@ export default function OrgDashboard() {
     { key: "stats", label: "Estadísticas", icon: <BarChart3 className="h-4 w-4" /> },
     { key: "members", label: "Miembros", icon: <Users className="h-4 w-4" /> },
     { key: "sections", label: "Secciones", icon: <Building2 className="h-4 w-4" /> },
+    { key: "templates", label: "Plantillas", icon: <FileText className="h-4 w-4" /> },
+    { key: "recommendations", label: "Recomendaciones", icon: <BookOpen className="h-4 w-4" /> },
   ];
 
   return (
@@ -485,6 +586,121 @@ export default function OrgDashboard() {
             </div>
           </div>
         )}
+        {/* ═══ TEMPLATES ═══ */}
+        {tab === "templates" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Plantillas compartidas ({orgTemplates.length})
+              </h3>
+              <Button size="sm" onClick={() => { setImportSectionId(orgData.sections[0]?.id || ""); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }} className="gap-1.5">
+                <Download className="h-3.5 w-3.5" />
+                Importar plantillas
+              </Button>
+            </div>
+
+            {orgData.sections.length === 0 ? (
+              <Card><CardContent className="text-center py-8">
+                <p className="text-xs text-gray-400">Crea secciones primero para asignar plantillas</p>
+              </CardContent></Card>
+            ) : orgTemplates.length === 0 ? (
+              <Card><CardContent className="text-center py-8">
+                <FileText className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-xs text-gray-400">No hay plantillas compartidas. Importa desde el catálogo global.</p>
+              </CardContent></Card>
+            ) : (
+              orgData.sections.map((s) => {
+                const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
+                if (sTemplates.length === 0) return null;
+                return (
+                  <div key={s.id}>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+                      <Building2 className="h-3 w-3" />
+                      {s.name} ({sTemplates.length})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                      {sTemplates.map((t) => (
+                        <Card key={t.id}>
+                          <CardContent className="p-3 flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center flex-shrink-0">
+                              <FileText className="h-4 w-4 text-teal-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
+                              <span className="text-[10px] text-gray-400">{t.modality}</span>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* ═══ RECOMMENDATIONS ═══ */}
+        {tab === "recommendations" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Recomendaciones compartidas ({orgRecs.length})
+              </h3>
+              <Button size="sm" onClick={() => { setRecSectionId(orgData.sections[0]?.id || ""); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }} className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" />
+                Nueva recomendación
+              </Button>
+            </div>
+
+            {orgData.sections.length === 0 ? (
+              <Card><CardContent className="text-center py-8">
+                <p className="text-xs text-gray-400">Crea secciones primero para asignar recomendaciones</p>
+              </CardContent></Card>
+            ) : orgRecs.length === 0 ? (
+              <Card><CardContent className="text-center py-8">
+                <BookOpen className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-xs text-gray-400">No hay recomendaciones compartidas. Añade guías clínicas para el servicio.</p>
+              </CardContent></Card>
+            ) : (
+              orgData.sections.map((s) => {
+                const sRecs = orgRecs.filter((r) => r.section_id === s.id);
+                if (sRecs.length === 0) return null;
+                return (
+                  <div key={s.id}>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+                      <Building2 className="h-3 w-3" />
+                      {s.name} ({sRecs.length})
+                    </h4>
+                    <div className="space-y-1.5 mb-4">
+                      {sRecs.map((r) => (
+                        <Card key={r.id}>
+                          <CardContent className="p-3">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-[9px]">{r.trigger_keyword}</Badge>
+                                  {r.guideline_name && <span className="text-[9px] text-gray-400">{r.guideline_name}</span>}
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{r.recommendation_text}</p>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
 
       {/* Section form dialog */}
@@ -573,6 +789,117 @@ export default function OrgDashboard() {
               <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
               <Button size="sm" onClick={handleSaveMember} disabled={savingMember || (!editingMember && !memberEmail.trim())}>
                 {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : "Añadir"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import templates dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Importar plantillas al servicio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Sección destino</Label>
+              <Select value={importSectionId} onValueChange={setImportSectionId}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                <SelectContent>
+                  {orgData.sections.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Input
+              value={importSearch}
+              onChange={(e) => setImportSearch(e.target.value)}
+              placeholder="Buscar plantilla..."
+              className="h-9 text-xs"
+            />
+            <div className="flex-1 overflow-y-auto border rounded-lg divide-y divide-gray-100 dark:divide-gray-800">
+              {DEFAULT_TEMPLATES
+                .filter((t) => !importSearch || t.title.toLowerCase().includes(importSearch.toLowerCase()) || t.technique.toLowerCase().includes(importSearch.toLowerCase()))
+                .map((t) => {
+                  const alreadyImported = orgTemplates.some((ot) => ot.section_id === importSectionId && ot.name === t.title);
+                  return (
+                    <label key={t.id} className={`flex items-center gap-3 px-3 py-2 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${alreadyImported ? "opacity-40" : ""}`}>
+                      <input
+                        type="checkbox"
+                        disabled={alreadyImported}
+                        checked={importSelected.has(t.id)}
+                        onChange={(e) => {
+                          const next = new Set(importSelected);
+                          if (e.target.checked) next.add(t.id); else next.delete(t.id);
+                          setImportSelected(next);
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-gray-800 dark:text-gray-200 block truncate">{t.title}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t.technique}</Badge>
+                      <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t.section}</Badge>
+                    </label>
+                  );
+                })}
+            </div>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] text-gray-400">{importSelected.size} seleccionadas</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowImportDialog(false)}>Cancelar</Button>
+                <Button size="sm" onClick={handleImportTemplates} disabled={importing || importSelected.size === 0 || !importSectionId}>
+                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `Importar (${importSelected.size})`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recommendation form dialog */}
+      <Dialog open={showRecForm} onOpenChange={setShowRecForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nueva recomendación</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Sección</Label>
+              <Select value={recSectionId} onValueChange={setRecSectionId}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                <SelectContent>
+                  {orgData.sections.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Hallazgo trigger</Label>
+              <Input value={recTrigger} onChange={(e) => setRecTrigger(e.target.value)} placeholder="nódulo pulmonar" className="h-9 text-xs" />
+              <p className="text-[10px] text-gray-400">Hallazgo que activa esta recomendación</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Texto de la recomendación</Label>
+              <textarea
+                value={recText}
+                onChange={(e) => setRecText(e.target.value)}
+                placeholder="Seguimiento con TC de baja dosis en 12 meses según criterios Fleischner..."
+                className="w-full h-20 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Guía / Fuente (opcional)</Label>
+              <Input value={recGuideline} onChange={(e) => setRecGuideline(e.target.value)} placeholder="Fleischner Society 2017" className="h-9 text-xs" />
+            </div>
+            {recError && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{recError}</p>}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowRecForm(false)}>Cancelar</Button>
+              <Button size="sm" onClick={handleSaveRec} disabled={savingRec || !recTrigger.trim() || !recText.trim() || !recSectionId}>
+                {savingRec ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Crear"}
               </Button>
             </div>
           </div>
