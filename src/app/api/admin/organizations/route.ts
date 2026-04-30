@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await requireAdmin();
@@ -25,7 +27,9 @@ export async function GET() {
       return { ...org, active_members: count || 0 };
     }));
 
-    return NextResponse.json(enriched);
+    return NextResponse.json(enriched, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

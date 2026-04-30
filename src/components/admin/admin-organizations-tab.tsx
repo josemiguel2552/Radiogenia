@@ -84,7 +84,7 @@ export function AdminOrganizationsTab() {
   const loadOrgs = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/organizations");
+      const res = await fetch("/api/admin/organizations", { cache: "no-store" });
       if (res.ok) setOrgs(await res.json());
     } catch { /* ignore */ }
     setLoading(false);
@@ -92,16 +92,29 @@ export function AdminOrganizationsTab() {
 
   useEffect(() => { loadOrgs(); }, [loadOrgs]);
 
+  const [detailError, setDetailError] = useState("");
+
   const loadOrgDetail = useCallback(async (org: OrgWithMembers) => {
     setLoadingDetail(true);
+    setDetailError("");
     try {
       const [secRes, memRes] = await Promise.all([
-        fetch(`/api/admin/organizations/sections?org_id=${org.id}`),
-        fetch(`/api/admin/organizations/members?org_id=${org.id}`),
+        fetch(`/api/admin/organizations/sections?org_id=${org.id}`, { cache: "no-store" }),
+        fetch(`/api/admin/organizations/members?org_id=${org.id}`, { cache: "no-store" }),
       ]);
+      if (!secRes.ok) {
+        const err = await secRes.json().catch(() => ({ error: `HTTP ${secRes.status}` }));
+        setDetailError(`Secciones: ${err.error || secRes.statusText}`);
+      }
+      if (!memRes.ok) {
+        const err = await memRes.json().catch(() => ({ error: `HTTP ${memRes.status}` }));
+        setDetailError((prev) => prev ? `${prev} | Miembros: ${err.error || memRes.statusText}` : `Miembros: ${err.error || memRes.statusText}`);
+      }
       setSections(secRes.ok ? await secRes.json() : []);
       setMembers(memRes.ok ? await memRes.json() : []);
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error de red";
+      setDetailError(msg);
       setSections([]);
       setMembers([]);
     }
@@ -416,6 +429,12 @@ export function AdminOrganizationsTab() {
             Gestión
           </button>
         </div>
+
+        {detailError && (
+          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-xs text-red-600 dark:text-red-400">{detailError}</p>
+          </div>
+        )}
 
         {loadingDetail ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-blue-500" /></div>

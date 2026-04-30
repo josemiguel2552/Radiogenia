@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
@@ -18,7 +20,10 @@ export async function GET(req: NextRequest) {
       .order("display_order", { ascending: true });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+    console.log("[admin/org/sections GET]", orgId, "→", (data || []).length, "sections");
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -45,6 +50,7 @@ export async function POST(req: NextRequest) {
       console.error("[admin/org/sections POST] insert error:", error.message, { org_id, name, slug });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    console.log("[admin/org/sections POST] created:", data?.id, { org_id, name, slug });
     return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
