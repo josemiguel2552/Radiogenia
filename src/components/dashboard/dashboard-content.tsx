@@ -1205,6 +1205,12 @@ export function DashboardContent() {
                   </SelectTrigger>
                   <SelectContent>
                     {(() => {
+                      const hasOrgTemplates = filteredTemplates.some((tp) => tp.is_org);
+                      if (!hasOrgTemplates) {
+                        return filteredTemplates.map((tpl) => (
+                          <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
+                        ));
+                      }
                       const own = filteredTemplates.filter((tp) => !tp.is_global && !tp.is_org);
                       const sectionGroups = new Map<string, typeof filteredTemplates>();
                       filteredTemplates.filter((tp) => tp.is_org).forEach((tp) => {

@@ -238,7 +238,8 @@ export function TemplatesTab() {
   const [extractedTemplates, setExtractedTemplates] = useState<ExtractedTemplate[]>([]);
   const [reviewOpen, setReviewOpen] = useState(true);
 
-  // Org template catalog
+  // Org template catalog (only for hospital members)
+  const [hasOrg, setHasOrg] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -252,7 +253,13 @@ export function TemplatesTab() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    fetch("/api/org", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setHasOrg(!!data?.membership))
+      .catch(() => {});
+  }, []);
 
   const filtered = templates.filter((tmpl) => {
     const q = search.toLowerCase();
@@ -442,15 +449,17 @@ export function TemplatesTab() {
             className="pl-8 h-8 text-xs"
           />
         </div>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={openCatalog}
-          title="Importar de sección"
-          className="h-8 w-8 shrink-0"
-        >
-          <Building2 className="h-3.5 w-3.5" />
-        </Button>
+        {hasOrg && (
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={openCatalog}
+            title="Importar de sección"
+            className="h-8 w-8 shrink-0"
+          >
+            <Building2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           size="icon"
           variant="outline"
