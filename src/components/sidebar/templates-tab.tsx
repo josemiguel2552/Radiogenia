@@ -40,6 +40,15 @@ interface ExtractedTemplate {
   template: string;
 }
 
+interface CatalogItem {
+  id: string;
+  name: string;
+  modality: string;
+  section_id: string;
+  section_name: string;
+  imported: boolean;
+}
+
 interface TemplateField {
   id: string;
   label: string;
@@ -230,7 +239,6 @@ export function TemplatesTab() {
   const [reviewOpen, setReviewOpen] = useState(true);
 
   // Org template catalog
-  interface CatalogItem { id: string; name: string; modality: string; section_id: string; section_name: string; imported: boolean; }
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);

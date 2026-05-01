@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -48,7 +50,19 @@ export async function POST(req: NextRequest) {
     }
 
     const service = createServiceClient();
-    const rows = orgTemplateIds.map((id) => ({
+
+    const { data: valid } = await service
+      .from("org_templates")
+      .select("id")
+      .eq("org_id", membership.org_id)
+      .in("id", orgTemplateIds);
+
+    const validIds = (valid || []).map((r: { id: string }) => r.id);
+    if (validIds.length === 0) {
+      return NextResponse.json({ error: "No valid templates found" }, { status: 400 });
+    }
+
+    const rows = validIds.map((id) => ({
       user_id: user.id,
       org_template_id: id,
     }));
@@ -59,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ success: true, imported: orgTemplateIds.length });
+    return NextResponse.json({ success: true, imported: validIds.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
