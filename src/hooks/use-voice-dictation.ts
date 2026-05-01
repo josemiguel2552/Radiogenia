@@ -172,7 +172,11 @@ export function useVoiceDictation({
       utterance_end_ms: "1500",
       vad_events: "true",
     });
-    if (language) params.set("language", language);
+    if (language) {
+      params.set("language", language);
+    } else {
+      params.set("detect_language", "true");
+    }
 
     const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`, ["token", apiKey]);
     wsRef.current = ws;

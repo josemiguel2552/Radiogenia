@@ -183,7 +183,7 @@ export function DashboardContent() {
     return sections.length > 0 ? sections.join(", ") : undefined;
   }, [whisperTemplate]);
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
-    language: dictationLanguage === "auto" ? undefined : whisperLang,
+    language: whisperLang,
     studyContext: whisperStudyContext,
     templateSections: whisperTemplateSections,
     onTranscript: (rawText) => {
