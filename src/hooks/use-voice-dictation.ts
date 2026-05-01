@@ -27,6 +27,7 @@ interface UseVoiceDictationOptions {
   onInterim?: (text: string) => void;
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
+  onRecordingDone?: () => void;
 }
 
 interface QueueItem {
@@ -54,6 +55,7 @@ export function useVoiceDictation({
   onInterim,
   onError,
   onQuotaUpdate,
+  onRecordingDone,
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -230,6 +232,39 @@ export function useVoiceDictation({
       sample_rate: "16000",
       diarize: "false",
     });
+
+    // Boost medical radiology terms that Deepgram frequently misrecognizes
+    if (language === "es") {
+      const keywords = [
+        "nódulo:5", "nódulos:5", "lóbulo:5", "lóbulos:5",
+        "pleural:5", "derrame pleural:5", "hilar:5", "hiliar:5",
+        "adenopatía:5", "adenopatías:5", "parénquima:3",
+        "milímetros:3", "centímetros:3",
+        "hepático:3", "hepática:3", "esplénico:3", "esplénica:3",
+        "renal:3", "renales:3", "suprarrenal:3",
+        "aorta:3", "aórtico:3", "aórtica:3",
+        "mediastino:3", "mediastínico:3", "mediastínica:3",
+        "pericárdico:3", "pericárdica:3",
+        "peritoneal:3", "retroperitoneal:3",
+        "intersticial:3", "parenquimatoso:3", "parenquimatosa:3",
+        "neumotórax:5", "hemotórax:5", "atelectasia:5",
+        "consolidación:3", "opacidad:3", "opacidades:3",
+        "hipodensidad:3", "hiperdensidad:3", "hipodensa:3", "hiperdensa:3",
+        "hipointensa:3", "hiperintensa:3", "hipointenso:3", "hiperintenso:3",
+        "calcificación:3", "calcificaciones:3",
+        "trombosis:3", "estenosis:3", "aneurisma:3",
+        "hepatomegalia:3", "esplenomegalia:3",
+        "hidronefrosis:3", "litiasis:3", "nefrolitiasis:3",
+        "divertículo:3", "divertículos:3", "diverticulosis:3",
+        "hernia:3", "eventración:3",
+        "vertebral:3", "vertebrales:3", "intervertebral:3",
+        "supraclavicular:3", "infraclavicular:3", "axilar:3",
+        "inguinal:3", "mesentérico:3", "mesentérica:3",
+        "ecoestructura:3", "ecogénico:3", "ecogénica:3",
+        "eje corto:3", "eje largo:3",
+      ];
+      keywords.forEach((kw) => params.append("keywords", kw));
+    }
 
     const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`, ["token", apiKey]);
     wsRef.current = ws;
@@ -525,12 +560,15 @@ export function useVoiceDictation({
       }
       recorderRef.current = null;
 
+      // Wait for final results from Deepgram, then close
       setTimeout(() => {
         const ws = wsRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "CloseStream" }));
         }
         cleanup();
+        // Fire after cleanup so all state is settled
+        setTimeout(() => onRecordingDone?.(), 50);
       }, 300);
     } else {
       const recorder = recorderRef.current;
@@ -552,8 +590,9 @@ export function useVoiceDictation({
       analyserRef.current = null;
       setIsRecording(false);
       setAudioLevel(0);
+      setTimeout(() => onRecordingDone?.(), 50);
     }
-  }, [cleanup, enqueueBlob, reportStreamingUsage]);
+  }, [cleanup, enqueueBlob, reportStreamingUsage, onRecordingDone]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {

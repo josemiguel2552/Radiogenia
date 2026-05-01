@@ -21,32 +21,60 @@ export async function POST(req: NextRequest) {
     const isEs = !language || language.startsWith("es");
 
     const system = isEs
-      ? `Eres un corrector de transcripciones de dictados radiológicos. El texto fue transcrito por Whisper y puede contener errores fonéticos o de reconocimiento.
+      ? `Eres un corrector de transcripciones de dictados radiológicos en español. El texto fue transcrito por reconocimiento de voz y contiene errores fonéticos frecuentes.
 
-TU TAREA: Corrige SOLO errores de transcripción (fonéticos, ortográficos, terminología médica mal reconocida). NO cambies el contenido clínico, NO añadas palabras, NO reformules frases, NO cambies el orden.
+TU TAREA: Corrige SOLO errores de transcripción. NO cambies el contenido clínico, NO añadas palabras, NO reformules frases, NO cambies el orden.
 
 CONTEXTO: ${modality ? `Modalidad: ${modality}.` : ""} ${studyType ? `Estudio: ${studyType}.` : ""}
 
+ERRORES FRECUENTES DE VOZ→TEXTO EN RADIOLOGÍA (corrige siempre):
+- "no dura/nodura/no duro" → "nódulo"
+- "laburo/lavuro/laboral" (en contexto pulmonar) → "lóbulo"
+- "floral/flora/florar" (en contexto de derrame) → "pleural"
+- "iliar/ileal" (en contexto de adenopatía) → "hilar"
+- "parenquima" → "parénquima"
+- "ecostructura" → "ecoestructura"
+- "hipo intenso/hipo intenso" → "hipointenso"
+- "hiper intenso" → "hiperintenso"
+- "supra colicular/supracolicular" → "supraclavicular"
+- "infra colicular/infracolicular" → "infraclavicular"
+- "para colicular" → "paraclavicular"
+- "media estino/media es tino" → "mediastino"
+- "peri cardio/pericardio" → "pericárdico"
+- "retro peritoneal/retro peritonear" → "retroperitoneal"
+- "neumo tórax" → "neumotórax"
+- "hemo tórax" → "hemotórax"
+- "atelec tasia/atelectasia" → "atelectasia"
+- "hepato megalia" → "hepatomegalia"
+- "espleno megalia" → "esplenomegalia"
+- "hidro nefrosis" → "hidronefrosis"
+- "litia sis" → "litiasis"
+- "diverti culosis" → "diverticulosis"
+
 REGLAS:
-- Corrige términos médicos mal transcritos por su equivalente más probable según la modalidad y tipo de estudio (ej: "parenquima" → "parénquima", "ecostructura" → "ecoestructura", "hipointenso en T1" si dice "hipo intenso en T uno", "artrosis" en contexto abdominal → "hidronefrosis", "supracolicular" → "supraclavicular", "infra colicular" → "infraclavicular", "para colicular" → "paraclavicular").
-- Usa la modalidad/tipo de estudio para desambiguar términos: ej. en TC abdominal, "artrosis" probablemente es "hidronefrosis".
-- Corrige errores fonéticos obvios en contexto radiológico.
-- Mantén EXACTAMENTE la misma estructura, puntuación, saltos de línea y comandos de voz.
+- Usa la modalidad y tipo de estudio para desambiguar homófonos.
+- Corrige unidades: "5 milímetros" → "5 mm", "3 centímetros" → "3 cm" si el contexto es medida radiológica.
+- Mantén EXACTAMENTE la misma estructura, puntuación y saltos de línea.
 - Si el texto ya está correcto, devuélvelo tal cual.
-- Responde SOLO con el texto corregido, sin explicaciones ni comentarios.`
-      : `You are a radiology dictation transcription corrector. The text was transcribed by Whisper and may contain phonetic or recognition errors.
+- Responde SOLO con el texto corregido.`
+      : `You are a radiology dictation transcription corrector. The text was transcribed by speech recognition and may contain phonetic errors.
 
 YOUR TASK: Fix ONLY transcription errors (phonetic, spelling, misrecognized medical terminology). Do NOT change clinical content, do NOT add words, do NOT rephrase, do NOT reorder.
 
 CONTEXT: ${modality ? `Modality: ${modality}.` : ""} ${studyType ? `Study: ${studyType}.` : ""}
 
+COMMON SPEECH-TO-TEXT ERRORS IN RADIOLOGY:
+- "pare nkima/parenchyma" → "parenchyma"
+- "hypo intense in T one" → "hypointense on T1"
+- "new frosts" → "nephrosis"
+- Fix compound medical terms split by speech recognition.
+- Convert spelled-out measurements: "5 millimeters" → "5 mm", "3 centimeters" → "3 cm".
+
 RULES:
-- Fix misrecognized medical terms to their most likely equivalent given the modality and study type (e.g. "pare nkima" → "parenchyma", "hypo intense in T one" → "hypointense on T1", "arthrosis" in abdomen context → "hydronephrosis", "new frosts" → "nephrosis", "supracolicular" → "supraclavicular", "infracolicular" → "infraclavicular").
-- Use the modality/study type to disambiguate terms: e.g. in abdominal CT, "arthrosis" is likely "hydronephrosis"; "no arthritis" near kidney context is likely "no hydronephrosis".
-- Fix obvious phonetic errors in radiology context.
-- Keep EXACTLY the same structure, punctuation, line breaks and voice commands.
+- Use modality/study type to disambiguate homophone errors.
+- Keep EXACTLY the same structure, punctuation, line breaks.
 - If the text is already correct, return it as-is.
-- Respond ONLY with the corrected text, no explanations or comments.`;
+- Respond ONLY with the corrected text.`;
 
     const corrected = await generateAI({
       provider: "openai",
