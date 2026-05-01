@@ -29,7 +29,7 @@ import {
   Wand2,
   GraduationCap,
 } from "lucide-react";
-import { MODALITIES, SECTIONS, PLANS, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
+import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
@@ -80,7 +80,7 @@ export function DashboardContent() {
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
-  const [dictationLanguage, setDictationLanguage] = useState<string>("auto");
+  const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
@@ -165,11 +165,19 @@ export function DashboardContent() {
     };
   }, []);
 
-  // Whisper voice dictation
-  const LANG_TO_WHISPER: Record<string, string> = { es: "es", en: "en", pt: "pt", fr: "fr", de: "de", it: "it" };
-  const whisperLang = dictationLanguage === "auto"
-    ? (LANG_TO_WHISPER[outputLanguage] || "es")
-    : (LANG_TO_WHISPER[dictationLanguage] || dictationLanguage);
+  // Resolve dictation language — always explicit (never "auto" to the engine)
+  const resolvedDictLang = dictationLanguage === "auto"
+    ? (outputLanguage || "es")
+    : dictationLanguage;
+
+  const changeDictLang = (lang: string) => {
+    setDictationLanguage(lang);
+    fetch("/api/model-config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dictation_language: lang }),
+    }).catch(() => {});
+  };
   const whisperTemplate = templates.find((t) => t.id === selectedTemplateId);
   const whisperStudyContext = whisperTemplate
     ? `Dictation: ${whisperTemplate.modality} — ${whisperTemplate.name}`
@@ -183,11 +191,11 @@ export function DashboardContent() {
     return sections.length > 0 ? sections.join(", ") : undefined;
   }, [whisperTemplate]);
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
-    language: whisperLang,
+    language: resolvedDictLang,
     studyContext: whisperStudyContext,
     templateSections: whisperTemplateSections,
     onTranscript: (rawText) => {
-      const text = processVoiceCommands(rawText, whisperLang);
+      const text = processVoiceCommands(rawText, resolvedDictLang);
       setDictation((prev) => {
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
         return prev + sep + text;
@@ -247,7 +255,7 @@ export function DashboardContent() {
           text: newText,
           modality: tpl?.modality || "",
           studyType: tpl?.name || "",
-          language: whisperLang,
+          language: resolvedDictLang,
         }),
       })
         .then((r) => r.json())
@@ -1117,6 +1125,24 @@ export function DashboardContent() {
 
           <Card>
             <CardContent className="p-3 space-y-2.5">
+              {/* Language selector */}
+              <div className="flex items-center gap-1">
+                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+                {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                  <button
+                    key={l.value}
+                    type="button"
+                    onClick={() => changeDictLang(l.value)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                      resolvedDictLang === l.value
+                        ? "bg-brand text-white"
+                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {l.value.toUpperCase()}
+                  </button>
+                ))}
+              </div>
               <div className="relative">
                 <Textarea
                   placeholder={t("dash.dictation_placeholder")}
@@ -1314,6 +1340,24 @@ export function DashboardContent() {
           {/* Dictation + Generate */}
           <Card>
             <CardContent className="p-4 space-y-3">
+              {/* Language selector */}
+              <div className="flex items-center gap-1">
+                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+                {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                  <button
+                    key={l.value}
+                    type="button"
+                    onClick={() => changeDictLang(l.value)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                      resolvedDictLang === l.value
+                        ? "bg-brand text-white"
+                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {l.value.toUpperCase()}
+                  </button>
+                ))}
+              </div>
               <div className="relative">
                 <Textarea
                   placeholder={t("dash.dictation_placeholder")}
@@ -1468,7 +1512,7 @@ export function DashboardContent() {
       )}
 
       <FloatingDictation
-        language={whisperLang}
+        language={resolvedDictLang}
         onSendText={(text) => {
           setDictation((prev) => {
             const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";

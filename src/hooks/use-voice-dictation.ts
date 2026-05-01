@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 const LEVEL_THROTTLE_MS = 80;
 
@@ -10,13 +10,17 @@ const MAX_CHUNK_MS = 25_000;
 const MIN_BLOB_SIZE = 2000;
 const MIN_CHUNK_DURATION_MS = 1500;
 
+// ── Deepgram tuning ──
+const DG_TIMESLICE_MS = 100;
+const DG_KEEPALIVE_MS = 8000;
+
 interface DictationQuota {
   usedSeconds: number;
   limitSeconds: number;
 }
 
 interface UseVoiceDictationOptions {
-  language?: string;
+  language: string;
   studyContext?: string;
   templateSections?: string;
   onTranscript: (text: string) => void;
@@ -31,6 +35,16 @@ interface QueueItem {
 }
 
 type Provider = "deepgram" | "whisper";
+
+interface CachedToken {
+  provider: Provider;
+  key?: string;
+  quota?: { usedSeconds: number; limitSeconds: number };
+  ts: number;
+}
+
+// Token valid for 4 minutes (keys don't rotate often)
+const TOKEN_TTL_MS = 4 * 60 * 1000;
 
 export function useVoiceDictation({
   language,
@@ -60,6 +74,9 @@ export function useVoiceDictation({
   const dgStartRef = useRef(0);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── Pre-fetched token ──
+  const cachedTokenRef = useRef<CachedToken | null>(null);
+
   // ── Whisper fallback refs ──
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chunkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,6 +85,37 @@ export function useVoiceDictation({
   const lastTranscriptRef = useRef("");
   const queueRef = useRef<QueueItem[]>([]);
   const processingRef = useRef(false);
+
+  // ── Pre-fetch token on mount for instant start ──
+  const fetchToken = useCallback(async (): Promise<CachedToken | null> => {
+    const cached = cachedTokenRef.current;
+    if (cached && Date.now() - cached.ts < TOKEN_TTL_MS) return cached;
+
+    try {
+      const res = await fetch("/api/transcribe/token", { method: "POST" });
+      if (res.status === 429) {
+        const data = await res.json();
+        onError?.(data?.error || "Dictation limit reached");
+        return null;
+      }
+      if (!res.ok) return null;
+      const data = await res.json();
+      const token: CachedToken = {
+        provider: data.provider || "whisper",
+        key: data.key,
+        quota: data.quota,
+        ts: Date.now(),
+      };
+      cachedTokenRef.current = token;
+      return token;
+    } catch {
+      return null;
+    }
+  }, [onError]);
+
+  useEffect(() => {
+    fetchToken();
+  }, [fetchToken]);
 
   // ══════════════════════════════════════════════════════════════
   // Audio level meter (shared by both providers)
@@ -100,11 +148,17 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   const initAudio = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 16000,
+        channelCount: 1,
+      },
     });
     streamRef.current = stream;
 
-    const audioCtx = new AudioContext();
+    const audioCtx = new AudioContext({ sampleRate: 16000 });
     audioCtxRef.current = audioCtx;
     const source = audioCtx.createMediaStreamSource(stream);
     const analyser = audioCtx.createAnalyser();
@@ -155,28 +209,27 @@ export function useVoiceDictation({
   }, []);
 
   // ══════════════════════════════════════════════════════════════
-  // DEEPGRAM: WebSocket streaming
+  // DEEPGRAM: WebSocket streaming (optimized for low latency)
   // ══════════════════════════════════════════════════════════════
   const startDeepgram = useCallback(async (apiKey: string) => {
     const stream = await initAudio();
     activeRef.current = true;
     dgStartRef.current = Date.now();
 
-    // Build Deepgram WebSocket URL
     const params = new URLSearchParams({
       model: "nova-3",
+      language,
       smart_format: "true",
       punctuate: "true",
+      numerals: "true",
       interim_results: "true",
-      endpointing: "300",
-      utterance_end_ms: "1500",
+      endpointing: "200",
+      utterance_end_ms: "1200",
       vad_events: "true",
+      channels: "1",
+      sample_rate: "16000",
+      diarize: "false",
     });
-    if (language) {
-      params.set("language", language);
-    } else {
-      params.set("detect_language", "true");
-    }
 
     const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`, ["token", apiKey]);
     wsRef.current = ws;
@@ -199,16 +252,15 @@ export function useVoiceDictation({
         }
       };
 
-      recorder.start(250);
+      recorder.start(DG_TIMESLICE_MS);
       setIsRecording(true);
       animFrameRef.current = requestAnimationFrame(runLevelMeter);
 
-      // Keep-alive every 8 seconds
       keepAliveRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "KeepAlive" }));
         }
-      }, 8000);
+      }, DG_KEEPALIVE_MS);
     };
 
     ws.onmessage = (event) => {
@@ -239,9 +291,8 @@ export function useVoiceDictation({
       cleanup();
     };
 
-    ws.onclose = (event) => {
+    ws.onclose = () => {
       if (activeRef.current) {
-        // Unexpected close — report usage and stop
         reportStreamingUsage();
         cleanup();
       }
@@ -445,21 +496,16 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   const startRecording = useCallback(async () => {
     try {
-      // Check which provider to use
-      const tokenRes = await fetch("/api/transcribe/token", { method: "POST" });
-      const tokenData = tokenRes.ok ? await tokenRes.json() : null;
+      // Use cached token for instant start; fetch fresh only if stale
+      const token = await fetchToken();
+      if (!token) return;
 
-      if (tokenRes.status === 429) {
-        onError?.(tokenData?.error || "Dictation limit reached");
-        return;
-      }
-
-      if (tokenData?.provider === "deepgram" && tokenData.key) {
+      if (token.provider === "deepgram" && token.key) {
         providerRef.current = "deepgram";
-        if (tokenData.quota && onQuotaUpdate) {
-          onQuotaUpdate(tokenData.quota);
+        if (token.quota && onQuotaUpdate) {
+          onQuotaUpdate(token.quota);
         }
-        await startDeepgram(tokenData.key);
+        await startDeepgram(token.key);
       } else {
         providerRef.current = "whisper";
         await startWhisper();
@@ -467,13 +513,12 @@ export function useVoiceDictation({
     } catch (err) {
       onError?.(err instanceof Error ? err.message : "Microphone access denied");
     }
-  }, [startDeepgram, startWhisper, onError, onQuotaUpdate]);
+  }, [fetchToken, startDeepgram, startWhisper, onError, onQuotaUpdate]);
 
   const stopRecording = useCallback(() => {
     if (providerRef.current === "deepgram") {
       reportStreamingUsage();
 
-      // Flush final audio: stop recorder, then close WebSocket after a small delay
       const recorder = recorderRef.current;
       if (recorder && recorder.state === "recording") {
         recorder.stop();
@@ -486,9 +531,8 @@ export function useVoiceDictation({
           ws.send(JSON.stringify({ type: "CloseStream" }));
         }
         cleanup();
-      }, 500);
+      }, 300);
     } else {
-      // Whisper: enqueue last chunk then cleanup
       const recorder = recorderRef.current;
       if (recorder && recorder.state === "recording") {
         const duration = Date.now() - chunkStartRef.current;
