@@ -30,7 +30,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
     }
   }, []);
 
-  const { isRecording, isTranscribing, toggleRecording, stopRecording } = useVoiceDictation({
+  const { isRecording, isTranscribing, interimText, toggleRecording, stopRecording } = useVoiceDictation({
     language,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, language);
@@ -47,6 +47,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
       setVoiceError(null);
       if (!expanded) setExpanded(true);
     },
+    onInterim: () => { if (!expanded) setExpanded(true); },
     onError: (err) => setVoiceError(err),
   });
 
@@ -218,6 +219,10 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
               <Keyboard className="h-3 w-3" />
               {t("dash.float_selection_hint")}
             </p>
+          )}
+
+          {interimText && isRecording && (
+            <p className="text-[10px] text-blue-500 dark:text-blue-400 mt-1 italic truncate">{interimText}</p>
           )}
 
           {voiceError && (

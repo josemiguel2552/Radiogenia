@@ -179,7 +179,7 @@ export function DashboardContent() {
       .filter((s) => s && s.length > 1 && s.length < 60);
     return sections.length > 0 ? sections.join(", ") : undefined;
   }, [whisperTemplate]);
-  const { isRecording, isTranscribing, audioLevel, toggleRecording } = useVoiceDictation({
+  const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: dictationLanguage === "auto" ? undefined : whisperLang,
     studyContext: whisperStudyContext,
     templateSections: whisperTemplateSections,
@@ -192,6 +192,7 @@ export function DashboardContent() {
       setTraceData(null);
       setVoiceError(null);
     },
+    onInterim: () => {},
     onQuotaUpdate: (quota) => {
       setSubDictUsedMin(Math.round(quota.usedSeconds / 60));
     },
@@ -1121,11 +1122,17 @@ export function DashboardContent() {
                 {(isRecording || isTranscribing || isCorrecting) && (
                   <div className="absolute bottom-2 right-2">
                     <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
                     </Badge>
                   </div>
                 )}
               </div>
+              {interimText && isRecording && (
+                <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                  <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
+                </div>
+              )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <Button
@@ -1312,11 +1319,17 @@ export function DashboardContent() {
                 {(isRecording || isTranscribing || isCorrecting) && (
                   <div className="absolute bottom-2 right-2">
                     <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Whisper</>}
+                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
                     </Badge>
                   </div>
                 )}
               </div>
+              {interimText && isRecording && (
+                <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                  <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
+                </div>
+              )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <Button
