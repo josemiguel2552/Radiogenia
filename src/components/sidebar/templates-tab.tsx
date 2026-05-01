@@ -541,7 +541,11 @@ export function TemplatesTab() {
                             <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
                               {modName(tpl.modality)}
                             </Badge>
-                            {tpl.is_global ? (
+                            {tpl.is_org ? (
+                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-teal-300 text-teal-600 dark:border-teal-700 dark:text-teal-400">
+                                {tpl.section_name || "Hospital"}
+                              </Badge>
+                            ) : tpl.is_global ? (
                               <Badge variant="outline" className="text-[9px] h-4 px-1.5">
                                 {t("global")}
                               </Badge>
@@ -551,7 +555,7 @@ export function TemplatesTab() {
                           </div>
                         </div>
                         <div className="flex gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          {!tpl.is_global && (
+                          {!tpl.is_global && !tpl.is_org && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -571,7 +575,7 @@ export function TemplatesTab() {
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          {!tpl.is_global && !tpl.is_default && (
+                          {!tpl.is_global && !tpl.is_default && !tpl.is_org && (
                             <Button
                               variant="ghost"
                               size="icon"

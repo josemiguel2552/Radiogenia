@@ -112,6 +112,8 @@ export interface UserTemplate {
   structure: Template;
   is_default: boolean;
   is_global?: boolean;
+  is_org?: boolean;
+  section_name?: string;
   created_at: string;
 }
 

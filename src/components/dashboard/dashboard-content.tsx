@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import {
   FileText,
@@ -1204,9 +1204,38 @@ export function DashboardContent() {
                     <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredTemplates.map((tpl) => (
-                      <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
-                    ))}
+                    {(() => {
+                      const own = filteredTemplates.filter((tp) => !tp.is_global && !tp.is_org);
+                      const sectionGroups = new Map<string, typeof filteredTemplates>();
+                      filteredTemplates.filter((tp) => tp.is_org).forEach((tp) => {
+                        const key = tp.section_name || "Hospital";
+                        if (!sectionGroups.has(key)) sectionGroups.set(key, []);
+                        sectionGroups.get(key)!.push(tp);
+                      });
+                      const global = filteredTemplates.filter((tp) => tp.is_global && !tp.is_org);
+                      return (
+                        <>
+                          {own.length > 0 && (
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider">Mis plantillas</SelectLabel>
+                              {own.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
+                            </SelectGroup>
+                          )}
+                          {Array.from(sectionGroups.entries()).map(([secName, tpls]) => (
+                            <SelectGroup key={secName}>
+                              <SelectLabel className="text-[10px] text-teal-600 dark:text-teal-400 uppercase tracking-wider">{secName}</SelectLabel>
+                              {tpls.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
+                            </SelectGroup>
+                          ))}
+                          {global.length > 0 && (
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] text-gray-400 uppercase tracking-wider">Globales</SelectLabel>
+                              {global.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
+                            </SelectGroup>
+                          )}
+                        </>
+                      );
+                    })()}
                   </SelectContent>
                 </Select>
 
