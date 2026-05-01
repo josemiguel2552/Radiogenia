@@ -32,7 +32,7 @@ const FEATURE_KEYS = [
   { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
 ];
 
-const PLAN_ORDER: SubscriptionPlan[] = ["free", "starter", "professional"];
+const PLAN_ORDER: SubscriptionPlan[] = ["free", "resident", "starter", "professional"];
 
 export function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -250,7 +250,7 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid md:grid-cols-4 gap-5 items-start">
             {PLAN_ORDER.map((key) => {
               const plan = PLANS[key];
               return (
@@ -348,6 +348,8 @@ function PricingCard({ plan, planKey, t, lang }: {
       className={`relative p-6 rounded-2xl transition-all duration-300 ${
         isHighlight
           ? "bg-gradient-to-b from-blue-500/10 to-purple-500/10 border-2 border-blue-500/30 shadow-xl shadow-blue-500/10 scale-[1.02]"
+          : planKey === "resident"
+          ? "bg-gradient-to-b from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 shadow-lg shadow-green-500/10"
           : "bg-white/[0.02] border border-white/5 hover:border-white/10"
       }`}
     >
@@ -355,6 +357,13 @@ function PricingCard({ plan, planKey, t, lang }: {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
             {t("pricing.most_popular")}
+          </span>
+        </div>
+      )}
+      {planKey === "resident" && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-green-500 to-emerald-600 rounded-full">
+            {lang === "es" ? "Residentes" : "Residents"}
           </span>
         </div>
       )}
@@ -383,17 +392,19 @@ function PricingCard({ plan, planKey, t, lang }: {
       </ul>
 
       <Link
-        href="/auth/register"
+        href={planKey === "resident" ? "/auth/register?plan=resident" : "/auth/register"}
         className={`block text-center text-sm font-semibold py-3 rounded-xl transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
-            : planKey === "professional"
-            ? "bg-white/5 hover:bg-white/10 border border-white/10"
+            : planKey === "resident"
+            ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 shadow-lg shadow-green-500/20"
             : "bg-white/5 hover:bg-white/10 border border-white/10"
         }`}
       >
         {plan.price === 0
           ? t("pricing.free_cta")
+          : planKey === "resident"
+          ? lang === "es" ? "Verificar y suscribirse" : "Verify & subscribe"
           : `${t("pricing.subscribe_cta")} — ${CURRENCY}${plan.price}${t("pricing.per_month")}`}
       </Link>
     </div>

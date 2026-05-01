@@ -21,6 +21,7 @@ import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
 import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
 import { AdminSupportTab } from "@/components/admin/admin-support-tab";
+import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 
 interface GlobalConfig {
   id: string;
@@ -72,14 +73,14 @@ interface Stats {
   totalReports: number;
   reportsThisMonth: number;
   activeThisMonth: number;
-  planCounts: { free: number; starter: number; professional: number };
+  planCounts: { free: number; resident: number; starter: number; professional: number };
   mrr: number;
   totalDictationMinutes: number;
   reportsPerDay: Record<string, number>;
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "support" | "audit";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -501,6 +502,7 @@ export default function AdminPage() {
     { key: "ai", label: "AI Config", icon: <Plug className="h-4 w-4" /> },
     { key: "plans", label: "Plans", icon: <CreditCard className="h-4 w-4" /> },
     { key: "orgs", label: "Hospitals", icon: <Building2 className="h-4 w-4" /> },
+    { key: "residents", label: "Residents", icon: <GraduationCap className="h-4 w-4" /> },
     { key: "support", label: "Support", icon: <MessageSquare className="h-4 w-4" /> },
     { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
   ];
@@ -1296,6 +1298,9 @@ export default function AdminPage() {
 
         {/* ═══ HOSPITALS ═══ */}
         {tab === "orgs" && <AdminOrganizationsTab />}
+
+        {/* ═══ RESIDENTS ═══ */}
+        {tab === "residents" && <AdminResidentsTab />}
 
         {/* ═══ SUPPORT ═══ */}
         {tab === "support" && <AdminSupportTab />}

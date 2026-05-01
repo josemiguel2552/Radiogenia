@@ -1,5 +1,5 @@
 export type UserRole = "admin" | "radiologist";
-export type SubscriptionPlan = "free" | "starter" | "professional";
+export type SubscriptionPlan = "free" | "resident" | "starter" | "professional";
 
 export const CURRENCY = "$";
 
@@ -31,6 +31,24 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
       "plan.feat.style_learning",
       "plan.feat.custom_templates",
       "plan.feat.guidelines_2",
+    ],
+  },
+  resident: {
+    name: "resident",
+    label: "Residente",
+    price: 4.99,
+    reports: 150,
+    tokensPerReport: 10000,
+    dictationMinutes: 120,
+    guidelineDocuments: 5,
+    features: [
+      "plan.feat.reports_150",
+      "plan.feat.all_modalities",
+      "plan.feat.dictation_120",
+      "plan.feat.style_learning",
+      "plan.feat.custom_templates",
+      "plan.feat.guidelines_5",
+      "plan.feat.resident_verified",
     ],
   },
   starter: {
@@ -361,4 +379,22 @@ export interface SupportTicket {
   user_email?: string;
   user_name?: string;
   org_name?: string;
+}
+
+export type ResidentVerificationStatus = "pending" | "approved" | "rejected";
+
+export interface ResidentVerification {
+  id: string;
+  user_id: string;
+  document_url: string;
+  residency_start: string;
+  residency_end: string;
+  institution_name: string;
+  status: ResidentVerificationStatus;
+  admin_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  user_email?: string;
+  user_name?: string;
 }

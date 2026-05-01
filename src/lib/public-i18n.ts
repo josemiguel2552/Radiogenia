@@ -77,6 +77,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "plan.feat.priority_support": "Soporte prioritario",
     "plan.feat.api_access": "Acceso API",
     "plan.feat.bulk_export": "Exportación masiva",
+    "plan.feat.resident_verified": "Precio exclusivo residentes (verificado)",
     // CTA
     "cta.title": "¿Listo para informar más rápido?",
     "cta.subtitle": "Únete a los radiólogos que ahorran horas cada semana con informes asistidos por IA.",
@@ -215,6 +216,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "plan.feat.priority_support": "Priority support",
     "plan.feat.api_access": "API access",
     "plan.feat.bulk_export": "Bulk export",
+    "plan.feat.resident_verified": "Exclusive resident pricing (verified)",
     // CTA
     "cta.title": "Ready to report faster?",
     "cta.subtitle": "Join radiologists who save hours every week with AI-assisted reporting.",

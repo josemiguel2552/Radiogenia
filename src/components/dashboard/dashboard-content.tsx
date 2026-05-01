@@ -27,6 +27,7 @@ import {
   Flag,
   Pencil,
   Wand2,
+  GraduationCap,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -38,6 +39,7 @@ import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 import { detectPii, type PiiMatch } from "@/lib/pii-detect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ResidentVerificationForm } from "@/components/resident-verification-form";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -121,6 +123,7 @@ export function DashboardContent() {
   const [errorNote, setErrorNote] = useState("");
   const [errorReported, setErrorReported] = useState(false);
   const [reportingError, setReportingError] = useState(false);
+  const [residentDialogOpen, setResidentDialogOpen] = useState(false);
 
   // Subscription usage (inline — replaces StatsPanel)
   const [subPlan, setSubPlan] = useState<string>("free");
@@ -1058,7 +1061,18 @@ export function DashboardContent() {
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
             {t("stats.plan")}: <span className="text-gray-700 dark:text-gray-200 capitalize">{subPlan}</span>
           </span>
-          <span className="text-[10px] text-gray-400">{t("stats.this_month")}</span>
+          <div className="flex items-center gap-2">
+            {subPlan === "free" && (
+              <button
+                type="button"
+                className="text-[10px] text-green-600 dark:text-green-400 hover:underline"
+                onClick={() => setResidentDialogOpen(true)}
+              >
+                Residente?
+              </button>
+            )}
+            <span className="text-[10px] text-gray-400">{t("stats.this_month")}</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <FileText className={`h-3.5 w-3.5 flex-shrink-0 ${rPct >= 90 ? "text-red-500" : rPct >= 70 ? "text-amber-500" : "text-brand"}`} />
@@ -1475,7 +1489,7 @@ export function DashboardContent() {
           {limitInfo && (() => {
             const plan = limitInfo.plan as SubscriptionPlan;
             const planLabel = PLANS[plan]?.label || plan;
-            const nextPlan = plan === "free" ? "starter" : plan === "starter" ? "professional" : null;
+            const nextPlan = plan === "free" ? "starter" : plan === "resident" ? "starter" : plan === "starter" ? "professional" : null;
             const descKey = limitType === "dictation" ? "limit.desc_dictation" : "limit.desc";
             const usedLabel = limitType === "dictation" ? `${limitInfo.used} min` : String(limitInfo.used);
             const limitLabel = limitType === "dictation" ? `${limitInfo.limit} min` : String(limitInfo.limit);
@@ -1498,6 +1512,19 @@ export function DashboardContent() {
                     >
                       <Sparkles className="h-4 w-4" />
                       {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} inf. + {PLANS[nextPlan].dictationMinutes} min) ${PLANS[nextPlan].price}/mo
+                    </Button>
+                  )}
+                  {plan === "free" && (
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-900/20"
+                      onClick={() => {
+                        setLimitDialogOpen(false);
+                        setResidentDialogOpen(true);
+                      }}
+                    >
+                      <GraduationCap className="h-4 w-4" />
+                      Residente? — 150 inf. + 120 min $4.99/mo
                     </Button>
                   )}
                   <Button
@@ -1545,6 +1572,20 @@ export function DashboardContent() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Resident verification dialog */}
+      <Dialog open={residentDialogOpen} onOpenChange={setResidentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <ResidentVerificationForm
+            onStatusChange={(status) => {
+              if (status === "approved") {
+                setSubPlan("resident");
+                setResidentDialogOpen(false);
+              }
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>
