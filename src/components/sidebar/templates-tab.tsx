@@ -27,6 +27,7 @@ import {
   Indent,
   Outdent,
   FolderOpen,
+  Building2,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
@@ -228,6 +229,14 @@ export function TemplatesTab() {
   const [extractedTemplates, setExtractedTemplates] = useState<ExtractedTemplate[]>([]);
   const [reviewOpen, setReviewOpen] = useState(true);
 
+  // Org template catalog
+  interface CatalogItem { id: string; name: string; modality: string; section_id: string; section_name: string; imported: boolean; }
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+
   async function load() {
     setLoading(true);
     const res = await fetch("/api/templates");
@@ -366,6 +375,36 @@ export function TemplatesTab() {
     setExtractedTemplates((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  async function openCatalog() {
+    setCatalogOpen(true);
+    setCatalogLoading(true);
+    setCatalogSearch("");
+    try {
+      const res = await fetch("/api/templates/catalog");
+      if (res.ok) setCatalog(await res.json());
+    } catch { /* ignore */ }
+    setCatalogLoading(false);
+  }
+
+  async function toggleImport(item: CatalogItem) {
+    setToggling((prev) => new Set(prev).add(item.id));
+    try {
+      if (item.imported) {
+        await fetch(`/api/templates/imports?org_template_id=${item.id}`, { method: "DELETE" });
+      } else {
+        await fetch("/api/templates/imports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ org_template_id: item.id }),
+        });
+      }
+      setCatalog((prev) =>
+        prev.map((c) => c.id === item.id ? { ...c, imported: !c.imported } : c),
+      );
+    } catch { /* ignore */ }
+    setToggling((prev) => { const next = new Set(prev); next.delete(item.id); return next; });
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -395,6 +434,15 @@ export function TemplatesTab() {
             className="pl-8 h-8 text-xs"
           />
         </div>
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={openCatalog}
+          title="Importar de sección"
+          className="h-8 w-8 shrink-0"
+        >
+          <Building2 className="h-3.5 w-3.5" />
+        </Button>
         <Button
           size="icon"
           variant="outline"
@@ -660,6 +708,126 @@ export function TemplatesTab() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("tpl.save_changes")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Catalog Dialog — browse & import org templates */}
+      <Dialog open={catalogOpen} onOpenChange={(open) => { if (!open) { setCatalogOpen(false); load(); } }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-teal-600" />
+              Plantillas de sección
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input
+              placeholder="Buscar plantilla..."
+              value={catalogSearch}
+              onChange={(e) => setCatalogSearch(e.target.value)}
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0 max-h-[60vh]">
+            {catalogLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+              </div>
+            ) : catalog.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 text-xs">
+                No hay plantillas de sección disponibles
+              </div>
+            ) : (() => {
+              const q = catalogSearch.toLowerCase();
+              const filtered = catalog.filter((c) =>
+                c.name.toLowerCase().includes(q) ||
+                tplName(c.name).toLowerCase().includes(q) ||
+                c.modality.toLowerCase().includes(q) ||
+                modName(c.modality).toLowerCase().includes(q) ||
+                c.section_name.toLowerCase().includes(q)
+              );
+              const grouped = new Map<string, CatalogItem[]>();
+              filtered.forEach((c) => {
+                const key = c.section_name || "Hospital";
+                if (!grouped.has(key)) grouped.set(key, []);
+                grouped.get(key)!.push(c);
+              });
+              const importedCount = catalog.filter((c) => c.imported).length;
+
+              return (
+                <div className="space-y-3 pr-3 pb-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {importedCount} importada{importedCount !== 1 ? "s" : ""}
+                    </Badge>
+                    <span className="text-[10px] text-gray-400">
+                      de {catalog.length} disponible{catalog.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {filtered.length === 0 && (
+                    <p className="text-center text-xs text-gray-400 py-6">Sin resultados</p>
+                  )}
+
+                  {Array.from(grouped.entries()).map(([secName, items]) => (
+                    <div key={secName}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                          {secName}
+                        </span>
+                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                      </div>
+
+                      <div className="space-y-1">
+                        {items.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`flex items-center justify-between gap-2 p-2 rounded-md border transition-all ${
+                              item.imported
+                                ? "border-teal-300 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10"
+                                : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                {tplName(item.name)}
+                              </p>
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1.5 mt-0.5">
+                                {modName(item.modality)}
+                              </Badge>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={item.imported ? "default" : "outline"}
+                              className={`h-7 px-3 text-[11px] shrink-0 ${
+                                item.imported
+                                  ? "bg-teal-600 hover:bg-teal-700 text-white"
+                                  : "text-teal-600 border-teal-300 hover:bg-teal-50 dark:border-teal-800 dark:hover:bg-teal-900/20"
+                              }`}
+                              disabled={toggling.has(item.id)}
+                              onClick={() => toggleImport(item)}
+                            >
+                              {toggling.has(item.id) ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : item.imported ? (
+                                <><Check className="h-3 w-3 mr-1" /> Importada</>
+                              ) : (
+                                <><Plus className="h-3 w-3 mr-1" /> Importar</>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

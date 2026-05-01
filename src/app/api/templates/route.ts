@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getDefaultPhrase } from "@/lib/normality-defaults";
 import { getOrgMembership } from "@/lib/auth-helpers";
 
@@ -69,33 +70,44 @@ export async function GET() {
       is_global: false,
     }));
 
-    // Merge org templates if user belongs to an organization
+    // Merge only imported org templates
     let orgTemplates: typeof globals = [];
     try {
       const membership = await getOrgMembership(user.id);
       if (membership) {
-        const { data: orgData } = await supabase
-          .from("org_templates")
-          .select("*, org_sections(name)")
-          .eq("org_id", membership.org_id)
-          .order("name");
+        const service = createServiceClient();
+        const { data: imports } = await service
+          .from("user_template_imports")
+          .select("org_template_id")
+          .eq("user_id", user.id);
 
-        orgTemplates = (orgData || []).map((t) => {
-          const sec = t.org_sections as unknown as { name: string } | null;
-          return {
-            id: t.id,
-            user_id: user.id,
-            name: t.name,
-            modality: t.modality,
-            base_template_id: t.base_template_id,
-            structure: t.structure,
-            is_default: true,
-            is_global: false,
-            is_org: true,
-            section_name: sec?.name || "",
-            created_at: t.created_at,
-          };
-        });
+        const importedIds = (imports || []).map((r: { org_template_id: string }) => r.org_template_id);
+
+        if (importedIds.length > 0) {
+          const { data: orgData } = await supabase
+            .from("org_templates")
+            .select("*, org_sections(name)")
+            .eq("org_id", membership.org_id)
+            .in("id", importedIds)
+            .order("name");
+
+          orgTemplates = (orgData || []).map((t) => {
+            const sec = t.org_sections as unknown as { name: string } | null;
+            return {
+              id: t.id,
+              user_id: user.id,
+              name: t.name,
+              modality: t.modality,
+              base_template_id: t.base_template_id,
+              structure: t.structure,
+              is_default: true,
+              is_global: false,
+              is_org: true,
+              section_name: sec?.name || "",
+              created_at: t.created_at,
+            };
+          });
+        }
       }
     } catch { /* org tables may not exist */ }
 
