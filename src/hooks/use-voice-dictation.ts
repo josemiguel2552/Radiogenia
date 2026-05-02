@@ -273,30 +273,39 @@ export function useVoiceDictation({
       } catch { /* ignore non-JSON */ }
     };
 
+    let wsErrored = false;
+
     ws.onerror = () => {
-      const canRetry = retryCountRef.current < MAX_RETRIES;
-      cleanup();
-      if (canRetry) {
-        retryCountRef.current++;
-        const delay = retryCountRef.current * 1000;
-        setTimeout(() => {
-          fetchToken().then((token) => {
-            if (token && startDeepgramRef.current) startDeepgramRef.current(token.key);
-          });
-        }, delay);
-      } else {
-        retryCountRef.current = 0;
-        onError?.("No se pudo conectar al servicio de dictado. Verifica tu conexión a internet.");
-      }
+      wsErrored = true;
     };
 
     ws.onclose = (ev) => {
-      if (activeRef.current) {
-        reportStreamingUsage();
-        if (ev.code === 1008 || ev.code === 1003) {
-          onError?.("Clave de Deepgram inválida o expirada. Revisa la configuración.");
+      if (!activeRef.current && !wsErrored) return;
+
+      reportStreamingUsage();
+      cleanup();
+
+      const isAuthError = ev.code === 1008 || ev.code === 1003 || ev.code === 403 || ev.code === 1006;
+
+      if (wsErrored && !isAuthError) {
+        const canRetry = retryCountRef.current < MAX_RETRIES;
+        if (canRetry) {
+          retryCountRef.current++;
+          const delay = retryCountRef.current * 1000;
+          setTimeout(() => {
+            cachedTokenRef.current = null;
+            fetchToken().then((token) => {
+              if (token && startDeepgramRef.current) startDeepgramRef.current(token.key);
+            });
+          }, delay);
+          return;
         }
-        cleanup();
+      }
+
+      retryCountRef.current = 0;
+      cachedTokenRef.current = null;
+      if (isAuthError || wsErrored) {
+        onError?.("Clave de Deepgram inválida o expirada. Genera una nueva en console.deepgram.com y configúrala en Vercel.");
       }
     };
   }, [language, initAudio, runLevelMeter, cleanup, onTranscript, onInterim, onError, fetchToken]);
