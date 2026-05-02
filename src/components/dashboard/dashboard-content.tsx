@@ -183,18 +183,6 @@ export function DashboardContent() {
       body: JSON.stringify({ dictation_language: lang }),
     }).catch(() => {});
   };
-  const whisperTemplate = templates.find((t) => t.id === selectedTemplateId);
-  const whisperStudyContext = whisperTemplate
-    ? `Dictation: ${whisperTemplate.modality} — ${whisperTemplate.name}`
-    : undefined;
-  const whisperTemplateSections = useMemo(() => {
-    if (!whisperTemplate?.structure?.template) return undefined;
-    const lines = whisperTemplate.structure.template.split("\n");
-    const sections = lines
-      .map((l) => l.split(":")[0]?.trim())
-      .filter((s) => s && s.length > 1 && s.length < 60);
-    return sections.length > 0 ? sections.join(", ") : undefined;
-  }, [whisperTemplate]);
   const correctUncorrectedTextFn = useRef((immediate?: boolean) => {
     if (correctingRef.current && !immediate) return;
     const full = dictationRef.current;
@@ -254,8 +242,6 @@ export function DashboardContent() {
 
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
-    studyContext: whisperStudyContext,
-    templateSections: whisperTemplateSections,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, resolvedDictLang);
       setDictation((prev) => {

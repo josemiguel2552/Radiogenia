@@ -12,7 +12,7 @@ export async function POST() {
 
     const dgKey = process.env.DEEPGRAM_API_KEY;
     if (!dgKey) {
-      return NextResponse.json({ provider: "whisper" });
+      return NextResponse.json({ error: "Deepgram API key not configured" }, { status: 500 });
     }
 
     const quota = await checkDictationLimit(user.id);
@@ -24,7 +24,6 @@ export async function POST() {
     }
 
     return NextResponse.json({
-      provider: "deepgram",
       key: dgKey,
       quota: {
         usedSeconds: quota.usedSeconds,
