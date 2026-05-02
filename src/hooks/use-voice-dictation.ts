@@ -285,9 +285,17 @@ export function useVoiceDictation({
       reportStreamingUsage();
       cleanup();
 
-      const isAuthError = ev.code === 1008 || ev.code === 1003 || ev.code === 403 || ev.code === 1006;
+      // 1008 = Policy Violation (Deepgram's auth rejection)
+      const isAuthError = ev.code === 1008;
 
-      if (wsErrored && !isAuthError) {
+      if (isAuthError) {
+        retryCountRef.current = 0;
+        cachedTokenRef.current = null;
+        onError?.("Clave de Deepgram inválida o expirada. Genera una nueva en console.deepgram.com y configúrala en Vercel.");
+        return;
+      }
+
+      if (wsErrored) {
         const canRetry = retryCountRef.current < MAX_RETRIES;
         if (canRetry) {
           retryCountRef.current++;
@@ -300,12 +308,8 @@ export function useVoiceDictation({
           }, delay);
           return;
         }
-      }
-
-      retryCountRef.current = 0;
-      cachedTokenRef.current = null;
-      if (isAuthError || wsErrored) {
-        onError?.("Clave de Deepgram inválida o expirada. Genera una nueva en console.deepgram.com y configúrala en Vercel.");
+        retryCountRef.current = 0;
+        onError?.("No se pudo conectar al servicio de dictado. Reintenta en unos segundos.");
       }
     };
   }, [language, initAudio, runLevelMeter, cleanup, onTranscript, onInterim, onError, fetchToken]);
