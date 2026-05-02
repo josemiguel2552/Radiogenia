@@ -62,7 +62,7 @@ export function useVoiceDictation({
 
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
-  const startDeepgramRef = useRef<((key: string, skipKeywords?: boolean) => Promise<void>) | null>(null);
+  const startDeepgramRef = useRef<((key: string) => Promise<void>) | null>(null);
 
   // ── Pre-fetch token on mount for instant start ──
   const fetchToken = useCallback(async (silent = false): Promise<CachedToken | null> => {
@@ -194,7 +194,7 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   // DEEPGRAM: WebSocket streaming (optimized for low latency)
   // ══════════════════════════════════════════════════════════════
-  const startDeepgram = useCallback(async (apiKey: string, skipKeywords = false) => {
+  const startDeepgram = useCallback(async (apiKey: string) => {
     const stream = await initAudio();
     activeRef.current = true;
     dgStartRef.current = Date.now();
@@ -214,10 +214,8 @@ export function useVoiceDictation({
       diarize: "false",
     });
 
-    if (!skipKeywords) {
-      const keywords = getRadiologyKeywords(language);
-      keywords.forEach((kw) => params.append("keywords", kw));
-    }
+    const keywords = getRadiologyKeywords(language);
+    keywords.forEach((kw) => params.append("keywords", kw));
 
     const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`, ["token", apiKey]);
     wsRef.current = ws;
@@ -301,12 +299,11 @@ export function useVoiceDictation({
         const canRetry = retryCountRef.current < MAX_RETRIES;
         if (canRetry) {
           retryCountRef.current++;
-          const skipKw = retryCountRef.current >= 1;
           const delay = retryCountRef.current * 1000;
           setTimeout(() => {
             cachedTokenRef.current = null;
             fetchToken().then((token) => {
-              if (token && startDeepgramRef.current) startDeepgramRef.current(token.key, skipKw);
+              if (token && startDeepgramRef.current) startDeepgramRef.current(token.key);
             });
           }, delay);
           return;
