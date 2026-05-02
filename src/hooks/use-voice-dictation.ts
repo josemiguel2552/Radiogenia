@@ -62,7 +62,7 @@ export function useVoiceDictation({
 
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
-  const startDeepgramRef = useRef<((key: string) => Promise<void>) | null>(null);
+  const startDeepgramRef = useRef<((key: string, skipKeywords?: boolean) => Promise<void>) | null>(null);
 
   // ── Pre-fetch token on mount for instant start ──
   const fetchToken = useCallback(async (silent = false): Promise<CachedToken | null> => {
@@ -194,7 +194,7 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   // DEEPGRAM: WebSocket streaming (optimized for low latency)
   // ══════════════════════════════════════════════════════════════
-  const startDeepgram = useCallback(async (apiKey: string) => {
+  const startDeepgram = useCallback(async (apiKey: string, skipKeywords = false) => {
     const stream = await initAudio();
     activeRef.current = true;
     dgStartRef.current = Date.now();
@@ -214,8 +214,10 @@ export function useVoiceDictation({
       diarize: "false",
     });
 
-    const keywords = getRadiologyKeywords(language);
-    keywords.forEach((kw) => params.append("keywords", kw));
+    if (!skipKeywords) {
+      const keywords = getRadiologyKeywords(language);
+      keywords.forEach((kw) => params.append("keywords", kw));
+    }
 
     const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`, ["token", apiKey]);
     wsRef.current = ws;
@@ -303,7 +305,7 @@ export function useVoiceDictation({
           setTimeout(() => {
             cachedTokenRef.current = null;
             fetchToken().then((token) => {
-              if (token && startDeepgramRef.current) startDeepgramRef.current(token.key);
+              if (token && startDeepgramRef.current) startDeepgramRef.current(token.key, true);
             });
           }, delay);
           return;
