@@ -309,7 +309,7 @@ export function useVoiceDictation({
           return;
         }
         retryCountRef.current = 0;
-        onError?.("No se pudo conectar al servicio de dictado. Reintenta en unos segundos.");
+        onError?.(`Error de conexión con Deepgram (código: ${ev.code}, razón: ${ev.reason || "desconocida"}). Reintenta en unos segundos.`);
       }
     };
   }, [language, initAudio, runLevelMeter, cleanup, onTranscript, onInterim, onError, fetchToken]);
