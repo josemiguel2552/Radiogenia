@@ -3,7 +3,7 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildConclusionPrompt } from "@/lib/prompts";
 import type { OutputLanguage } from "@/lib/types";
@@ -72,10 +72,23 @@ export async function POST(req: NextRequest) {
       preferredConclusionPhrases,
     });
 
+    const taskModel = globalConfig.taskOverrides?.conclusion;
+    const effectiveProvider = taskModel?.provider || globalConfig.provider;
+    const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);
+
+    if (!effectiveKey) {
+      return NextResponse.json(
+        { error: `No API key configured for provider "${effectiveProvider}".` },
+        { status: 500 },
+      );
+    }
+
+    console.log(`[conclusion] provider=${effectiveProvider}, model=${taskModel?.modelName || globalConfig.modelName}, keyLen=${effectiveKey.length}`);
+
     const stream = await generateAIStream({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
-      apiKey: globalConfig.apiKey,
+      provider: effectiveProvider,
+      modelName: taskModel?.modelName || globalConfig.modelName,
+      apiKey: effectiveKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,

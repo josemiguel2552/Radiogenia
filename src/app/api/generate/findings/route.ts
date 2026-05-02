@@ -3,10 +3,12 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig, checkReportLimit } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, checkReportLimit, incrementReportUsage } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildFindingsPrompt } from "@/lib/prompts";
+import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
+import { translateSectionLabel, translateTemplate, enforceOutputLanguage } from "@/lib/section-translate";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType } = await req.json();
+    const { template, dictation, modality, studyType, paraphraseOverride } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
     const safeConfig = {
       findings_length: config?.findings_length || "standard",
       normal_fields_verbosity: config?.normal_fields_verbosity || "standard",
-      paraphrase_level: config?.paraphrase_level || "light",
+      paraphrase_level: paraphraseOverride || config?.paraphrase_level || "light",
       output_language: config?.output_language || "es",
       style_learning_enabled: config?.style_learning_enabled ?? true,
       compact_normals: config?.compact_normals ?? false,
@@ -64,6 +66,7 @@ export async function POST(req: NextRequest) {
       try {
         const mod = modality || "CT";
         const defaults = getDefaultsForModality(mod);
+        const defaultKeys = new Set(defaults.map((d) => d.section_label));
 
         let overrides: { section_label: string; phrase: string }[] = [];
         try {
@@ -76,16 +79,65 @@ export async function POST(req: NextRequest) {
         } catch { /* table may not exist */ }
 
         const overrideMap = new Map(overrides.map((o) => [o.section_label, o.phrase]));
+        const outLang = safeConfig.output_language as OutputLanguage;
 
         preferredNormalPhrases = defaults.map((d) => ({
-          label: d.section_label,
+          label: translateSectionLabel(d.section_label, outLang),
           phrase: overrideMap.get(d.section_label) ?? d.phrase,
         }));
+
+        for (const o of overrides) {
+          if (!defaultKeys.has(o.section_label)) {
+            preferredNormalPhrases.push({
+              label: translateSectionLabel(o.section_label, outLang),
+              phrase: o.phrase,
+            });
+          }
+        }
       } catch { /* ignore */ }
     }
 
+    const outLang = safeConfig.output_language as OutputLanguage;
+    const translatedTemplate = translateTemplate(template, outLang);
+
+    const responseHeaders = {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Output-Language": safeConfig.output_language,
+    };
+
+    // Increment report usage BEFORE responding (must complete before serverless fn dies)
+    await incrementReportUsage(user.id);
+
+    // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek V3 validator ──
+    if (globalConfig.findingsComboEnabled) {
+      console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek V3, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
+
+      const comboResult = await runComboFindings(globalConfig, {
+        template: translatedTemplate,
+        dictation,
+        modality: modality || "CT",
+        findingsLength: safeConfig.findings_length as FindingsLength,
+        normalFieldsVerbosity: safeConfig.normal_fields_verbosity as NormalFieldsVerbosity,
+        paraphraseLevel: safeConfig.paraphrase_level as ParaphraseLevel,
+        outputLanguage: safeConfig.output_language as OutputLanguage,
+        compactNormals: safeConfig.compact_normals,
+        preferredNormalPhrases,
+      });
+
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(comboResult));
+          controller.close();
+        },
+      });
+
+      return new Response(body, { headers: responseHeaders });
+    }
+
+    // ── Standard single-model streaming pipeline ──
     const { system, user: userPrompt } = buildFindingsPrompt({
-      template,
+      template: translatedTemplate,
       dictation,
       modality: modality || "CT",
       findingsLength: safeConfig.findings_length as FindingsLength,
@@ -96,32 +148,51 @@ export async function POST(req: NextRequest) {
       preferredNormalPhrases,
     });
 
-    const stream = await generateAIStream({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
-      apiKey: globalConfig.apiKey,
+    const taskModel = globalConfig.taskOverrides?.findings;
+    const effectiveProvider = taskModel?.provider || globalConfig.provider;
+    const effectiveModel = taskModel?.modelName || globalConfig.modelName;
+    const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);
+
+    if (!effectiveKey) {
+      return NextResponse.json(
+        { error: `No API key configured for provider "${effectiveProvider}". Contact your administrator.` },
+        { status: 500 },
+      );
+    }
+
+    console.log(`[findings] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
+
+    const rawStream = await generateAIStream({
+      provider: effectiveProvider,
+      modelName: effectiveModel,
+      apiKey: effectiveKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
     });
 
-    // Increment report usage via service client (bypasses RLS)
-    service.rpc("increment_report_usage", { uid: user.id }).then(({ error: rpcError }) => {
-      if (rpcError) {
-        service
-          .from("profiles")
-          .update({ reports_used_this_month: quota.used + 1 })
-          .eq("id", user.id)
-          .then(() => {});
+    if (outLang !== "en") {
+      const reader = rawStream.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
       }
-    });
+      fullText += decoder.decode();
+      const enforced = enforceOutputLanguage(fullText, outLang);
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(enforced));
+          controller.close();
+        },
+      });
+      return new Response(body, { headers: responseHeaders });
+    }
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Output-Language": safeConfig.output_language,
-      },
-    });
+    return new Response(rawStream, { headers: responseHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

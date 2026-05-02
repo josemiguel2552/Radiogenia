@@ -5,15 +5,23 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ArrowLeft, Shield, Plug, Users, Loader2, Check, X,
+  ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
-  BarChart3, Trash2, UserCog, Crown, RefreshCw,
+  BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
+  Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
+  Building2, MessageSquare,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
+import { Logo } from "@/components/ui/logo";
+import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
+import { AdminSupportTab } from "@/components/admin/admin-support-tab";
+import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 
 interface GlobalConfig {
   id: string;
@@ -21,9 +29,32 @@ interface GlobalConfig {
   model_name: string;
   api_key_encrypted: string;
   whisper_api_key_encrypted: string;
+  anthropic_api_key_encrypted: string;
+  google_api_key_encrypted: string;
+  deepseek_api_key_encrypted: string;
+  custom_api_key_encrypted: string;
   custom_base_url: string;
+  findings_provider: string | null;
+  findings_model: string | null;
+  conclusion_provider: string | null;
+  conclusion_model: string | null;
+  recommendations_provider: string | null;
+  recommendations_model: string | null;
+  trace_provider: string | null;
+  trace_model: string | null;
   updated_at: string;
 }
+
+interface FtJob {
+  jobId: string;
+  status: string;
+  fineTunedModel: string | null;
+  model: string;
+  createdAt: number;
+  finishedAt: number | null;
+}
+
+type TaskKey = "findings" | "conclusion" | "recommendations" | "trace";
 
 interface UserRow {
   id: string;
@@ -32,6 +63,7 @@ interface UserRow {
   role: string;
   subscription_plan: string;
   reports_used_this_month: number;
+  dictation_seconds_used: number;
   created_at: string;
   report_count: number;
 }
@@ -41,13 +73,14 @@ interface Stats {
   totalReports: number;
   reportsThisMonth: number;
   activeThisMonth: number;
-  planCounts: { free: number; starter: number; professional: number };
+  planCounts: { free: number; resident: number; starter: number; professional: number };
   mrr: number;
+  totalDictationMinutes: number;
   reportsPerDay: Record<string, number>;
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -64,6 +97,10 @@ export default function AdminPage() {
   const [apiKey, setApiKey] = useState("");
   const [whisperKey, setWhisperKey] = useState("");
   const [customUrl, setCustomUrl] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [googleKey, setGoogleKey] = useState("");
+  const [deepseekKey, setDeepseekKey] = useState("");
+  const [customProvKey, setCustomProvKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [showWhisperKey, setShowWhisperKey] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -72,6 +109,28 @@ export default function AdminPage() {
   const [configError, setConfigError] = useState("");
   const [configSuccess, setConfigSuccess] = useState(false);
 
+  // Per-task model overrides
+  const [taskOverrides, setTaskOverrides] = useState<Record<TaskKey, { provider: string; model: string }>>({
+    findings: { provider: "", model: "" },
+    conclusion: { provider: "", model: "" },
+    recommendations: { provider: "", model: "" },
+    trace: { provider: "", model: "" },
+  });
+
+  // Combo pipeline
+  const [findingsCombo, setFindingsCombo] = useState(false);
+
+  // Fine-tuning
+  const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
+  const [ftUploading, setFtUploading] = useState(false);
+  const [ftStarting, setFtStarting] = useState(false);
+  const [ftFileId, setFtFileId] = useState<string | null>(null);
+  const [ftExamples, setFtExamples] = useState(0);
+  const [ftSuffix, setFtSuffix] = useState("radiogenai");
+  const [ftBaseModel, setFtBaseModel] = useState("gpt-4o-mini-2024-07-18");
+  const [ftError, setFtError] = useState("");
+  const [ftChecking, setFtChecking] = useState(false);
+
   // Users
   const [users, setUsers] = useState<UserRow[]>([]);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
@@ -79,6 +138,60 @@ export default function AdminPage() {
   const [editPlan, setEditPlan] = useState("");
   const [savingUser, setSavingUser] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<UserRow | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createPlan, setCreatePlan] = useState("free");
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [createError, setCreateError] = useState("");
+
+  // Audit logs
+  interface AuditLog {
+    id: string;
+    user_id: string;
+    user_email: string;
+    user_name: string;
+    report_id: string | null;
+    action: string;
+    provider: string | null;
+    model: string | null;
+    duration_ms: number | null;
+    had_corrections: boolean;
+    metadata: Record<string, unknown>;
+    created_at: string;
+  }
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditFilter, setAuditFilter] = useState<string>("all");
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
+
+  // Training data
+  interface TrainingRow {
+    id: string;
+    user_email: string | null;
+    user_name: string | null;
+    study_type: string;
+    modality: string;
+    raw_dictation: string;
+    clinical_context: string | null;
+    initial_findings_text: string | null;
+    initial_conclusion_text: string | null;
+    findings_text: string;
+    conclusion_text: string;
+    had_corrections: boolean;
+    provider_used: string | null;
+    model_used: string | null;
+    error_reported: boolean;
+    error_report_note: string | null;
+    created_at: string;
+  }
+  const [trainingData, setTrainingData] = useState<TrainingRow[]>([]);
+  const [trainingLoading, setTrainingLoading] = useState(false);
+  const [trainingModality, setTrainingModality] = useState<string>("all");
+  const [trainingCorrectionsOnly, setTrainingCorrectionsOnly] = useState(false);
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [trainingError, setTrainingError] = useState<string | null>(null);
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -98,16 +211,52 @@ export default function AdminPage() {
       setModelName(d.model_name || "deepseek-chat");
       setApiKey(d.api_key_encrypted || "");
       setWhisperKey(d.whisper_api_key_encrypted || "");
+      setAnthropicKey(d.anthropic_api_key_encrypted || "");
+      setGoogleKey(d.google_api_key_encrypted || "");
+      setDeepseekKey(d.deepseek_api_key_encrypted || "");
+      setCustomProvKey(d.custom_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
+      const isCombo = d.findings_provider === "combo";
+      setTaskOverrides({
+        findings: isCombo ? { provider: "", model: "" } : { provider: d.findings_provider || "", model: d.findings_model || "" },
+        conclusion: { provider: d.conclusion_provider || "", model: d.conclusion_model || "" },
+        recommendations: { provider: d.recommendations_provider || "", model: d.recommendations_model || "" },
+        trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
+      });
+      setFindingsCombo(isCombo);
     }
+
+    try {
+      const ftRes = await fetch("/api/finetune/status");
+      if (ftRes?.ok) {
+        const ftData = await ftRes.json();
+        setFtJobs(ftData.jobs || []);
+      }
+    } catch { /* fine-tune listing may fail if not OpenAI */ }
     if (usersRes?.ok) {
       const d = await usersRes.json();
       setUsers(d.users || []);
     }
+
+    try {
+      const auditRes = await fetch("/api/admin/audit-logs?limit=100");
+      if (auditRes?.ok) {
+        const d = await auditRes.json();
+        setAuditLogs(d.logs || []);
+      }
+    } catch { /* audit_logs table may not exist yet */ }
+
     setLoading(false);
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  useEffect(() => {
+    if (tab === "audit" && trainingData.length === 0 && !trainingLoading) {
+      loadTrainingData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   async function handleSaveConfig() {
     setSaving(true);
@@ -117,7 +266,22 @@ export default function AdminPage() {
       const body: Record<string, string> = { provider, model_name: modelName };
       if (apiKey && apiKey !== "••••••••") body.api_key = apiKey;
       if (whisperKey && whisperKey !== "••••••••") body.whisper_api_key = whisperKey;
+      if (anthropicKey && anthropicKey !== "••••••••") body.anthropic_api_key = anthropicKey;
+      if (googleKey && googleKey !== "••••••••") body.google_api_key = googleKey;
+      if (deepseekKey && deepseekKey !== "••••••••") body.deepseek_api_key = deepseekKey;
+      if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
+
+      for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+        if (task === "findings" && findingsCombo) {
+          body.findings_provider = "combo";
+          body.findings_model = "gpt4mini+deepseek-v3";
+          continue;
+        }
+        const o = taskOverrides[task];
+        body[`${task}_provider`] = o.provider || "";
+        body[`${task}_model`] = o.model || "";
+      }
 
       const res = await fetch("/api/admin/config", {
         method: "PUT",
@@ -131,6 +295,10 @@ export default function AdminPage() {
         setConfig(d);
         setApiKey(d.api_key_encrypted || "");
         setWhisperKey(d.whisper_api_key_encrypted || "");
+        setAnthropicKey(d.anthropic_api_key_encrypted || "");
+        setGoogleKey(d.google_api_key_encrypted || "");
+        setDeepseekKey(d.deepseek_api_key_encrypted || "");
+        setCustomProvKey(d.custom_api_key_encrypted || "");
         setConfigSuccess(true);
         setTimeout(() => setConfigSuccess(false), 3000);
       }
@@ -156,6 +324,69 @@ export default function AdminPage() {
       setTestResult((await res.json()).ok ?? false);
     } catch { setTestResult(false); }
     setTesting(false);
+  }
+
+  function updateTaskOverride(task: TaskKey, field: "provider" | "model", value: string) {
+    setTaskOverrides((prev) => ({
+      ...prev,
+      [task]: { ...prev[task], [field]: value },
+    }));
+  }
+
+  async function handleFtUpload(file: File) {
+    setFtUploading(true);
+    setFtError("");
+    setFtFileId(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) { setFtError(data.error || "Upload failed"); return; }
+      setFtFileId(data.fileId);
+      setFtExamples(data.validExamples);
+    } catch (e) {
+      setFtError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setFtUploading(false);
+    }
+  }
+
+  async function handleFtStart() {
+    if (!ftFileId) return;
+    setFtStarting(true);
+    setFtError("");
+    try {
+      const res = await fetch("/api/finetune/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setFtError(data.error || "Failed to start"); return; }
+      setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null }, ...prev]);
+      setFtFileId(null);
+    } catch (e) {
+      setFtError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setFtStarting(false);
+    }
+  }
+
+  async function handleFtCheckStatus(jobId: string) {
+    setFtChecking(true);
+    try {
+      const res = await fetch("/api/finetune/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFtJobs((prev) => prev.map((j) => j.jobId === jobId ? { ...j, status: data.status, fineTunedModel: data.fineTunedModel, finishedAt: data.finishedAt } : j));
+      }
+    } catch { /* ignore */ }
+    setFtChecking(false);
   }
 
   async function handleSaveUser() {
@@ -186,6 +417,82 @@ export default function AdminPage() {
     loadAll();
   }
 
+  async function handleCreateUser() {
+    setCreateError("");
+    if (!createEmail || !createPassword) {
+      setCreateError("Email and password are required");
+      return;
+    }
+    if (createPassword.length < 6) {
+      setCreateError("Password must be at least 6 characters");
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: createEmail,
+          password: createPassword,
+          subscription_plan: createPlan,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateError(data.error || "Failed to create user");
+      } else {
+        setCreateOpen(false);
+        setCreateEmail("");
+        setCreatePassword("");
+        setCreatePlan("free");
+        loadAll();
+      }
+    } catch {
+      setCreateError("Network error");
+    }
+    setCreatingUser(false);
+  }
+
+  async function loadTrainingData() {
+    setTrainingLoading(true);
+    setTrainingError(null);
+    try {
+      const params = new URLSearchParams({ limit: "200" });
+      if (trainingModality !== "all") params.set("modality", trainingModality);
+      if (trainingCorrectionsOnly) params.set("corrections_only", "true");
+      const res = await fetch(`/api/admin/training-data?${params}`);
+      const d = await res.json();
+      if (d.error) {
+        setTrainingError(d.error);
+      }
+      setTrainingData(d.reports || []);
+    } catch (e) {
+      setTrainingError(e instanceof Error ? e.message : "Failed to load training data");
+    }
+    setTrainingLoading(false);
+  }
+
+  async function handleExportJsonl() {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ format: "jsonl", limit: "500" });
+      if (trainingModality !== "all") params.set("modality", trainingModality);
+      if (trainingCorrectionsOnly) params.set("corrections_only", "true");
+      const res = await fetch(`/api/admin/training-data?${params}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `radiogenai-training-${new Date().toISOString().slice(0, 10)}.jsonl`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch { /* ignore */ }
+    setExporting(false);
+  }
+
   const radiologists = users.filter((u) => u.role !== "admin");
   const totalReports = users.reduce((s, u) => s + u.report_count, 0);
 
@@ -194,6 +501,10 @@ export default function AdminPage() {
     { key: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { key: "ai", label: "AI Config", icon: <Plug className="h-4 w-4" /> },
     { key: "plans", label: "Plans", icon: <CreditCard className="h-4 w-4" /> },
+    { key: "orgs", label: "Hospitals", icon: <Building2 className="h-4 w-4" /> },
+    { key: "residents", label: "Residents", icon: <GraduationCap className="h-4 w-4" /> },
+    { key: "support", label: "Support", icon: <MessageSquare className="h-4 w-4" /> },
+    { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -208,33 +519,31 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-12 md:h-14 flex items-center gap-3 md:gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Zap className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="font-bold text-gray-900 dark:text-white">Radiogen.ai</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <Logo size="sm" variant="icon" className="sm:hidden" />
+            <Logo size="sm" className="hidden sm:inline-flex" />
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
               Admin
             </Badge>
           </div>
-          <Button variant="ghost" size="icon" className="ml-auto" onClick={loadAll} title="Refresh">
+          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Tab navigation */}
-        <div className="flex gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl w-fit">
+      <div className="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-6">
+        {/* Tab navigation — scrollable on mobile */}
+        <div className="flex gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl overflow-x-auto w-full md:w-fit scrollbar-hide">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                 tab === t.key
                   ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -249,11 +558,12 @@ export default function AdminPage() {
         {/* ═══ OVERVIEW ═══ */}
         {tab === "overview" && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label="Total Users" value={stats?.totalUsers ?? radiologists.length} />
               <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label="Total Reports" value={stats?.totalReports ?? totalReports} />
               <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label="Reports This Month" value={stats?.reportsThisMonth ?? 0} />
-              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`€${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
+              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label="Dictation (min)" value={`${stats?.totalDictationMinutes ?? 0} min`} />
+              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -338,7 +648,15 @@ export default function AdminPage() {
             <div className="flex items-center gap-2 px-5 pt-5 pb-3">
               <Users className="h-4 w-4 text-blue-500" />
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">User Management</h2>
-              <Badge variant="secondary" className="ml-auto text-xs">{radiologists.length} radiologists</Badge>
+              <Badge variant="secondary" className="text-xs">{radiologists.length} radiologists</Badge>
+              <Button
+                size="sm"
+                className="ml-auto gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                onClick={() => { setCreateOpen(true); setCreateError(""); }}
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Add User
+              </Button>
             </div>
             <CardContent className="pt-0">
               <div className="overflow-x-auto">
@@ -346,11 +664,12 @@ export default function AdminPage() {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Role</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Plan</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Usage</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Reports/mo</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">Dictation/mo</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Total</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Joined</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Joined</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Actions</th>
                     </tr>
                   </thead>
@@ -359,6 +678,9 @@ export default function AdminPage() {
                       const plan = (u.subscription_plan || "free") as SubscriptionPlan;
                       const planConfig = PLANS[plan];
                       const usagePct = u.role === "admin" ? 0 : Math.round(((u.reports_used_this_month || 0) / planConfig.reports) * 100);
+                      const dictUsedMin = Math.round((u.dictation_seconds_used || 0) / 60);
+                      const dictLimitMin = planConfig.dictationMinutes;
+                      const dictPct = u.role === "admin" ? 0 : (dictLimitMin > 0 ? Math.round((dictUsedMin / dictLimitMin) * 100) : 0);
                       return (
                         <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                           <td className="py-3 px-2">
@@ -367,7 +689,7 @@ export default function AdminPage() {
                               <p className="text-[11px] text-gray-500">{u.email}</p>
                             </div>
                           </td>
-                          <td className="py-3 px-2">
+                          <td className="py-3 px-2 hidden sm:table-cell">
                             <Badge
                               variant={u.role === "admin" ? "default" : "secondary"}
                               className="text-[10px]"
@@ -393,17 +715,32 @@ export default function AdminPage() {
                               </Badge>
                             )}
                           </td>
-                          <td className="py-3 px-2 text-right">
+                          <td className="py-3 px-2 text-right hidden md:table-cell">
                             {u.role !== "admin" && (
                               <div className="inline-flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                   <div
                                     className={`h-full rounded-full ${usagePct > 80 ? "bg-red-500" : usagePct > 50 ? "bg-amber-500" : "bg-green-500"}`}
                                     style={{ width: `${Math.min(usagePct, 100)}%` }}
                                   />
                                 </div>
-                                <span className="text-[10px] text-gray-500 w-16 text-right">
+                                <span className="text-[10px] text-gray-500 w-14 text-right">
                                   {u.reports_used_this_month || 0}/{planConfig.reports}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-right hidden lg:table-cell">
+                            {u.role !== "admin" && (
+                              <div className="inline-flex items-center gap-2">
+                                <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${dictPct > 80 ? "bg-red-500" : dictPct > 50 ? "bg-amber-500" : "bg-violet-500"}`}
+                                    style={{ width: `${Math.min(dictPct, 100)}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-gray-500 w-16 text-right">
+                                  {dictUsedMin}/{dictLimitMin}m
                                 </span>
                               </div>
                             )}
@@ -414,7 +751,7 @@ export default function AdminPage() {
                               {u.report_count}
                             </span>
                           </td>
-                          <td className="py-3 px-2 text-right text-gray-500 text-[11px]">
+                          <td className="py-3 px-2 text-right text-gray-500 text-[11px] hidden md:table-cell">
                             {new Date(u.created_at).toLocaleDateString()}
                           </td>
                           <td className="py-3 px-2 text-right">
@@ -449,121 +786,440 @@ export default function AdminPage() {
 
         {/* ═══ AI CONFIG ═══ */}
         {tab === "ai" && (
-          <Card>
-            <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-              <Plug className="h-4 w-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Global AI Configuration</h2>
-            </div>
-            <CardContent className="space-y-4 pt-0 max-w-xl">
-              <p className="text-xs text-gray-500">
-                This model and API key are used for all radiologists on the platform.
-              </p>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Provider</Label>
-                <Select value={provider} onValueChange={(v) => {
-                  setProvider(v);
-                  const prov = PROVIDERS.find((p) => p.value === v);
-                  if (prov?.models.length) setModelName(prov.models[0]);
-                  setTestResult(null);
-                }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PROVIDERS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4">
+            {/* ── Default model + keys ── */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Plug className="h-4 w-4 text-blue-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Default Model & API Keys</h2>
               </div>
+              <CardContent className="space-y-4 pt-0 max-w-xl">
+                <p className="text-xs text-gray-500">
+                  Default provider used for all tasks unless overridden below.
+                </p>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Model</Label>
-                {selectedProvider && selectedProvider.models.length > 0 ? (
-                  <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {selectedProvider.models.map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <input
-                    type="text" value={modelName}
-                    onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="Model name"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Provider</Label>
+                    <Select value={provider} onValueChange={(v) => {
+                      setProvider(v);
+                      const prov = PROVIDERS.find((p) => p.value === v);
+                      if (prov?.models.length) setModelName(prov.models[0]);
+                      setTestResult(null);
+                    }}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PROVIDERS.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Model</Label>
+                    {selectedProvider && selectedProvider.models.length > 0 ? (
+                      <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {selectedProvider.models.map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <input type="text" value={modelName}
+                        onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
+                        className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                        placeholder="Model name" />
+                    )}
+                  </div>
+                </div>
+
+                {provider === "custom" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Custom Base URL</Label>
+                    <input type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)}
+                      className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                      placeholder="https://your-endpoint.com/v1" />
+                  </div>
                 )}
-              </div>
 
-              {provider === "custom" && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Custom Base URL</Label>
-                  <input
-                    type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="https://your-endpoint.com/v1"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">API Key</Label>
+                    <div className="relative">
+                      <input type={showKey ? "text" : "password"} value={apiKey}
+                        onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
+                        className="w-full h-9 px-3 pr-9 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                        placeholder="API key" />
+                      <button type="button" onClick={() => setShowKey(!showKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">OpenAI / Whisper Key</Label>
+                    <div className="relative">
+                      <input type={showWhisperKey ? "text" : "password"} value={whisperKey}
+                        onChange={(e) => setWhisperKey(e.target.value)}
+                        className="w-full h-9 px-3 pr-9 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                        placeholder="sk-..." />
+                      <button type="button" onClick={() => setShowWhisperKey(!showWhisperKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showWhisperKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">API Key</Label>
-                <div className="relative">
-                  <input
-                    type={showKey ? "text" : "password"} value={apiKey}
-                    onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
-                    className="w-full px-3 py-2 pr-10 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="Enter API key"
-                  />
-                  <button type="button" onClick={() => setShowKey(!showKey)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" size="sm" onClick={handleTestConnection}
+                    disabled={testing || !apiKey || apiKey === "••••••••"} className="gap-1.5">
+                    {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                     testResult === true ? <Check className="h-3.5 w-3.5 text-green-600" /> :
+                     testResult === false ? <X className="h-3.5 w-3.5 text-red-500" /> :
+                     <Plug className="h-3.5 w-3.5" />}
+                    {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test"}
+                  </Button>
+                  <Button size="sm" onClick={handleSaveConfig} disabled={saving}
+                    className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white">
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                    Save all
+                  </Button>
                 </div>
-              </div>
+                {configError && <p className="text-xs text-red-500">{configError}</p>}
+                {configSuccess && <p className="text-xs text-green-600">Configuration saved.</p>}
+                {config?.updated_at && (
+                  <p className="text-[11px] text-gray-400">Last updated: {new Date(config.updated_at).toLocaleString()}</p>
+                )}
+              </CardContent>
+            </Card>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Whisper API Key (OpenAI — voice dictation)</Label>
-                <div className="relative">
-                  <input
-                    type={showWhisperKey ? "text" : "password"} value={whisperKey}
-                    onChange={(e) => setWhisperKey(e.target.value)}
-                    className="w-full px-3 py-2 pr-10 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                    placeholder="sk-... (OpenAI key for Whisper)"
-                  />
-                  <button type="button" onClick={() => setShowWhisperKey(!showWhisperKey)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showWhisperKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+            {/* ── Per-task model overrides ── */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Zap className="h-4 w-4 text-amber-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Per-Task Model Overrides</h2>
+              </div>
+              <CardContent className="pt-0 space-y-3">
+                <p className="text-xs text-gray-500">
+                  Assign a different model to each task. Leave empty to use the default above.
+                </p>
+                {([
+                  { key: "findings" as TaskKey, label: "Findings", desc: "Structured report generation" },
+                  { key: "conclusion" as TaskKey, label: "Conclusion", desc: "Clinical conclusion synthesis" },
+                  { key: "recommendations" as TaskKey, label: "Recommendations", desc: "Guideline-based recommendations" },
+                  { key: "trace" as TaskKey, label: "Traceability", desc: "Dictation ↔ findings verification" },
+                ]).map(({ key, label, desc }) => {
+                  const isComboOverride = key === "findings" && findingsCombo;
+                  const o = taskOverrides[key];
+                  const taskProv = PROVIDERS.find((p) => p.value === o.provider);
+                  return (
+                    <div key={key} className={`rounded-lg border p-3 space-y-2 ${isComboOverride ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-900 dark:text-white">{label}</p>
+                          <p className="text-[10px] text-gray-400">{desc}</p>
+                        </div>
+                        {isComboOverride ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Combo active</Badge>
+                        ) : o.provider && o.model ? (
+                          <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-gray-400">Default</Badge>
+                        )}
+                      </div>
+                      {isComboOverride ? (
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                          Managed by Combo pipeline below. Disable combo to set a custom model.
+                        </p>
+                      ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
+                        <Select value={o.provider || "default"} onValueChange={(v) => {
+                          const val = v === "default" ? "" : v;
+                          updateTaskOverride(key, "provider", val);
+                          if (val) {
+                            const p = PROVIDERS.find((pp) => pp.value === val);
+                            if (p?.models.length) updateTaskOverride(key, "model", p.models[0]);
+                          } else {
+                            updateTaskOverride(key, "model", "");
+                          }
+                        }}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Default</SelectItem>
+                            {PROVIDERS.map((p) => (
+                              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {o.provider ? (
+                          taskProv && taskProv.models.length > 0 ? (
+                            <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Model" /></SelectTrigger>
+                              <SelectContent>
+                                {taskProv.models.map((m) => (
+                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <input type="text" value={o.model}
+                              onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
+                              className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                              placeholder="Model name" />
+                          )
+                        ) : (
+                          <div className="h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                            {modelName}
+                          </div>
+                        )}
+                        {o.provider && (
+                          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-gray-400 hover:text-red-500"
+                            onClick={() => { updateTaskOverride(key, "provider", ""); updateTaskOverride(key, "model", ""); }}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Provider API keys — show fields for providers that need a separate key */}
+                {(() => {
+                  // Collect all providers in use across task overrides that differ from default
+                  const extraProviders = new Set<string>();
+                  for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+                    const p = taskOverrides[task].provider;
+                    if (p && p !== provider) extraProviders.add(p);
+                  }
+
+                  const keyConfig: { prov: string; label: string; value: string; setter: (v: string) => void; hint?: string }[] = [
+                    { prov: "claude", label: "Anthropic (Claude)", value: anthropicKey, setter: setAnthropicKey },
+                    { prov: "gemini", label: "Google (Gemini)", value: googleKey, setter: setGoogleKey },
+                    { prov: "deepseek", label: "DeepSeek", value: deepseekKey, setter: setDeepseekKey },
+                    { prov: "custom", label: "Custom Endpoint", value: customProvKey, setter: setCustomProvKey },
+                    { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: "Uses the Whisper key above" },
+                  ];
+
+                  // Show fields only for providers different from the default (main key covers default)
+                  const toShow = keyConfig.filter((k) => extraProviders.has(k.prov));
+
+                  if (toShow.length === 0) return null;
+
+                  return (
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-3.5 w-3.5 text-blue-500" />
+                        <Label className="text-xs font-semibold text-gray-900 dark:text-white">Provider API Keys</Label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        The main API key covers {PROVIDERS.find((p) => p.value === provider)?.label || provider}. Add keys for any other providers used above.
+                      </p>
+                      <div className="space-y-2">
+                        {toShow.map((k) => {
+                          const isSaved = k.value === "••••••••";
+                          return (
+                            <div key={k.prov} className="flex items-center gap-2">
+                              <Label className="text-xs text-gray-600 dark:text-gray-400 w-32 flex-shrink-0">{k.label}</Label>
+                              {k.hint ? (
+                                <div className="flex-1 h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                                  {isSaved ? "Configured (Whisper key)" : k.hint}
+                                </div>
+                              ) : (
+                                <>
+                                  <input
+                                    type="password"
+                                    value={k.value}
+                                    onChange={(e) => k.setter(e.target.value)}
+                                    className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                                    placeholder={isSaved ? "••••••••  (saved)" : "API key"}
+                                  />
+                                  {k.value && !isSaved && (
+                                    <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                  )}
+                                  {isSaved && (
+                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">Saved</Badge>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* ── Combo GPT-4 Mini + DeepSeek V3 ── */}
+            <Card className={findingsCombo ? "ring-2 ring-emerald-500/30" : ""}>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Shield className="h-4 w-4 text-emerald-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Combo: GPT-4 Mini + DeepSeek V3</h2>
+                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Active</Badge>}
+              </div>
+              <CardContent className="pt-0 space-y-3 max-w-xl">
+                <p className="text-xs text-gray-500">
+                  Two-stage findings pipeline that reduces omissions and hallucinations. Stage 1: GPT-4o-mini maps the dictation to template sections as structured JSON with evidence. Stage 2: DeepSeek V3 validates the mapping, correcting any errors without redoing the full generation.
+                </p>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">Enable combo pipeline for Findings</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Overrides the Findings task override above. Requires OpenAI + DeepSeek API keys.
+                    </p>
+                  </div>
+                  <Switch checked={findingsCombo} onCheckedChange={setFindingsCombo} />
                 </div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">Separate OpenAI key used only for voice-to-text. Independent of the text generation provider above.</p>
-              </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={handleTestConnection}
-                  disabled={testing || !apiKey || apiKey === "••••••••"} className="gap-1.5">
-                  {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
-                   testResult === true ? <Check className="h-3.5 w-3.5 text-green-600" /> :
-                   testResult === false ? <X className="h-3.5 w-3.5 text-red-500" /> :
-                   <Plug className="h-3.5 w-3.5" />}
-                  {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test connection"}
-                </Button>
-                <Button size="sm" onClick={handleSaveConfig} disabled={saving}
-                  className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white">
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  Save configuration
-                </Button>
-              </div>
+                {findingsCombo && (
+                  <div className="space-y-2 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
+                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Pipeline stages</p>
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">GPT-4o-mini — Mapper</p>
+                        <p className="text-[10px] text-gray-500">Maps dictation → template sections as structured JSON with evidence links.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">2</div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">DeepSeek V3 — Validator</p>
+                        <p className="text-[10px] text-gray-500">Validates mapping against dictation. Corrects omissions, hallucinations, and misattributions only.</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1.5">
+                      <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                      Conclusion, recommendations, and traceability use their own configured models — unaffected by this pipeline.
+                    </div>
 
-              {configError && <p className="text-xs text-red-500">{configError}</p>}
-              {configSuccess && <p className="text-xs text-green-600">Configuration saved successfully.</p>}
-              {config?.updated_at && (
-                <p className="text-[11px] text-gray-400">Last updated: {new Date(config.updated_at).toLocaleString()}</p>
-              )}
-            </CardContent>
-          </Card>
+                    {/* Key requirement indicators */}
+                    <div className="mt-2 space-y-1">
+                      {(() => {
+                        const hasOpenAI = (apiKey && apiKey !== "••••••••" && provider === "openai") || (whisperKey && whisperKey !== "••••••••");
+                        const hasDeepSeek = (apiKey && apiKey !== "••••••••" && provider === "deepseek") || (deepseekKey && deepseekKey !== "••••••••");
+                        return (
+                          <>
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              {hasOpenAI ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
+                              <span className={hasOpenAI ? "text-green-600 dark:text-green-400" : "text-red-500"}>
+                                OpenAI API key {hasOpenAI ? "configured" : "— required (set main key or Whisper key)"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              {hasDeepSeek ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
+                              <span className={hasDeepSeek ? "text-green-600 dark:text-green-400" : "text-red-500"}>
+                                DeepSeek API key {hasDeepSeek ? "configured" : "— required (set main key or DeepSeek provider key)"}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── Fine-tuning (OpenAI) ── */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Fine-Tuning (OpenAI)</h2>
+              </div>
+              <CardContent className="pt-0 space-y-4 max-w-xl">
+                <p className="text-xs text-gray-500">
+                  Upload JSONL training examples, start a fine-tuning job, then assign the resulting model to any task above.
+                </p>
+
+                {/* Step 1: Upload */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">1. Upload training data</Label>
+                  <div className="flex gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 h-9 px-3 border-2 border-dashed rounded-md cursor-pointer text-xs text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors dark:border-gray-700 dark:hover:border-purple-500">
+                      <Upload className="h-3.5 w-3.5" />
+                      {ftUploading ? "Uploading..." : ftFileId ? `${ftExamples} examples ready` : "Choose .jsonl file"}
+                      <input type="file" accept=".jsonl,.txt,.json" className="hidden"
+                        onChange={(e) => { if (e.target.files?.[0]) handleFtUpload(e.target.files[0]); }} />
+                    </label>
+                  </div>
+                  {ftFileId && <p className="text-[10px] text-green-600">File uploaded: {ftFileId}</p>}
+                </div>
+
+                {/* Step 2: Configure & start */}
+                {ftFileId && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">2. Configure & start job</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Base model</Label>
+                        <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
+                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Suffix</Label>
+                        <input type="text" value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)}
+                          className="w-full h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                          placeholder="radiogenai" />
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={handleFtStart} disabled={ftStarting}
+                      className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white">
+                      {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                      Start fine-tuning
+                    </Button>
+                  </div>
+                )}
+
+                {ftError && <p className="text-xs text-red-500">{ftError}</p>}
+
+                {/* Step 3: Jobs list */}
+                {ftJobs.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Fine-tuning jobs</Label>
+                    <div className="space-y-1.5">
+                      {ftJobs.map((job) => (
+                        <div key={job.jobId} className="flex items-center gap-2 p-2 rounded-md border text-xs dark:border-gray-700">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-mono text-[10px] text-gray-500 truncate">{job.jobId}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{job.model}</p>
+                          </div>
+                          <Badge variant={job.status === "succeeded" ? "default" : job.status === "failed" ? "destructive" : "secondary"}
+                            className="text-[10px] flex-shrink-0">
+                            {job.status}
+                          </Badge>
+                          {job.fineTunedModel && (
+                            <Badge variant="outline" className="text-[10px] text-purple-600 flex-shrink-0 max-w-[140px] truncate">
+                              {job.fineTunedModel}
+                            </Badge>
+                          )}
+                          {job.status !== "succeeded" && job.status !== "failed" && (
+                            <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => handleFtCheckStatus(job.jobId)}
+                              disabled={ftChecking}>
+                              <RefreshCw className={`h-3 w-3 ${ftChecking ? "animate-spin" : ""}`} />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      Once a job succeeds, copy the fine-tuned model name and assign it to any task above.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* ═══ PLANS ═══ */}
@@ -594,16 +1250,16 @@ export default function AdminPage() {
                       <div className="text-xs text-gray-500 space-y-1">
                         <p>{plan.reports} reports/month</p>
                         <p>~{plan.tokensPerReport.toLocaleString()} tokens/report</p>
-                        <p>Cost/report: ~€0.005</p>
+                        <p>Cost/report: ~$0.005</p>
                       </div>
                       <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-500">Revenue</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">€{revenue.toFixed(2)}/mo</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">${revenue.toFixed(2)}/mo</span>
                         </div>
                         <div className="flex items-center justify-between text-xs mt-1">
                           <span className="text-gray-500">AI cost</span>
-                          <span className="text-gray-600 dark:text-gray-400">~€{(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
+                          <span className="text-gray-600 dark:text-gray-400">~${(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
                         </div>
                       </div>
                     </CardContent>
@@ -630,11 +1286,363 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium text-gray-900 dark:text-white">Margins</p>
-                    <p>Free: marketing cost (~€0.25/user/mo)</p>
-                    <p>Starter: ~92% margin</p>
-                    <p>Professional: ~87% margin</p>
+                    <p>Free: marketing cost (~$0.03/user/mo)</p>
+                    <p>Starter: ~87% margin</p>
+                    <p>Professional: ~75% margin</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ═══ HOSPITALS ═══ */}
+        {tab === "orgs" && <AdminOrganizationsTab />}
+
+        {/* ═══ RESIDENTS ═══ */}
+        {tab === "residents" && <AdminResidentsTab />}
+
+        {/* ═══ SUPPORT ═══ */}
+        {tab === "support" && <AdminSupportTab />}
+
+        {/* ═══ AUDIT LOGS ═══ */}
+        {tab === "audit" && (
+          <div className="space-y-4">
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <ClipboardList className="h-4 w-4 text-blue-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
+                <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
+                <div className="ml-auto flex gap-1">
+                  {["all", "generate_findings", "generate_conclusion", "correction_logged", "save_report", "report_error"].map((f) => (
+                    <Button
+                      key={f}
+                      variant={auditFilter === f ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setAuditFilter(f)}
+                    >
+                      {f === "all" ? "All" : f === "generate_findings" ? "Findings" : f === "generate_conclusion" ? "Conclusions" : f === "correction_logged" ? "Corrections" : f === "save_report" ? "Saves" : "Errors"}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <CardContent className="pt-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-gray-800">
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Date</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Action</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Provider / Model</th>
+                        <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Duration</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs
+                        .filter((l) => auditFilter === "all" || l.action === auditFilter)
+                        .map((log) => {
+                        const meta = log.metadata as Record<string, unknown>;
+                        const isCorrection = log.action === "correction_logged";
+                        const hasDetail = !!(meta?.raw_dictation || meta?.generated_findings || meta?.note || isCorrection);
+                        const hasTraceIssues = (Number(meta?.trace_unmatched) || 0) > 0 || (Number(meta?.trace_hallucinations) || 0) > 0;
+                        const isExpanded = expandedAuditId === log.id;
+                        return (
+                        <tr key={log.id} className="border-b border-gray-50 dark:border-gray-800/50">
+                          <td colSpan={6} className="p-0">
+                            <button
+                              type="button"
+                              className={`w-full text-left flex items-center hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors ${hasDetail || hasTraceIssues ? "cursor-pointer" : "cursor-default"}`}
+                              onClick={() => (hasDetail || hasTraceIssues) && setExpandedAuditId(isExpanded ? null : log.id)}
+                            >
+                              <span className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap w-[140px] shrink-0">
+                                {new Date(log.created_at).toLocaleString()}
+                              </span>
+                              <span className="py-2.5 px-2 w-[130px] shrink-0">
+                                <span className="block text-xs font-medium text-gray-900 dark:text-white truncate">{log.user_name}</span>
+                                <span className="block text-[10px] text-gray-500 truncate">{log.user_email}</span>
+                              </span>
+                              <span className="py-2.5 px-2 shrink-0">
+                                <Badge
+                                  variant={log.action === "report_error" ? "destructive" : "secondary"}
+                                  className={`text-[10px] ${isCorrection ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : ""}`}
+                                >
+                                  {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
+                                  {isCorrection ? "correction" : log.action.replace(/_/g, " ")}
+                                </Badge>
+                                {log.had_corrections && !isCorrection && (
+                                  <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                                )}
+                                {isCorrection && !!meta?.conclusion_changed && (
+                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">conclusion</Badge>
+                                )}
+                                {isCorrection && !!meta?.findings_changed && (
+                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">findings</Badge>
+                                )}
+                              </span>
+                              <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:inline w-[140px] shrink-0">
+                                {log.provider && log.model ? `${log.provider} / ${log.model}` : "—"}
+                              </span>
+                              <span className="py-2.5 px-2 text-xs text-gray-500 text-right hidden md:inline w-[60px] shrink-0">
+                                {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : "—"}
+                              </span>
+                              <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 flex-1 min-w-0 truncate">
+                                {(() => {
+                                  if (log.action === "report_error" && meta?.note) return String(meta.note);
+                                  if (isCorrection) {
+                                    const parts: string[] = [];
+                                    if (meta?.study_type) parts.push(String(meta.study_type));
+                                    if (meta?.modality) parts.push(String(meta.modality));
+                                    return parts.length > 0 ? parts.join(" · ") : "Radiologist correction";
+                                  }
+                                  const parts: string[] = [];
+                                  if (meta?.study_type) parts.push(String(meta.study_type));
+                                  if (typeof meta?.trace_mappings === "number") {
+                                    parts.push(`${meta.trace_mappings} ok, ${meta.trace_unmatched || 0} omit, ${meta.trace_hallucinations || 0} halluc`);
+                                  }
+                                  return parts.length > 0 ? parts.join(" · ") : "—";
+                                })()}
+                              </span>
+                              {(hasDetail || hasTraceIssues) && (
+                                <span className="py-2.5 px-2 shrink-0">
+                                  <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+                                </span>
+                              )}
+                            </button>
+
+                            {isExpanded && (hasDetail || hasTraceIssues) && (
+                              <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
+                                {!!meta?.note && (
+                                  <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                                    <span className="font-medium">Error report:</span> {String(meta.note)}
+                                  </div>
+                                )}
+
+                                {hasTraceIssues && (
+                                  <div className="flex gap-3 text-xs">
+                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} matched</Badge>
+                                    {(Number(meta.trace_unmatched) || 0) > 0 && (
+                                      <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                        {Number(meta.trace_unmatched)} omissions
+                                      </Badge>
+                                    )}
+                                    {(Number(meta.trace_hallucinations) || 0) > 0 && (
+                                      <Badge variant="destructive" className="text-[10px]">
+                                        {Number(meta.trace_hallucinations)} hallucinations
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+
+                                {!!meta?.raw_dictation && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Dictation input</p>
+                                    <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                      {String(meta.raw_dictation)}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {!!meta?.generated_findings && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Generated findings</p>
+                                    <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                      {String(meta.generated_findings)}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {!!meta?.generated_conclusion && !isCorrection && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">Generated conclusion</p>
+                                    <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                      {String(meta.generated_conclusion)}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {isCorrection && !!meta?.conclusion_changed && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original conclusion (AI)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.original_conclusion || "—")}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Corrected conclusion (radiologist)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-blue-200 dark:border-blue-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.corrected_conclusion || "—")}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {isCorrection && !!meta?.findings_changed && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original findings (AI)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.original_findings || "—")}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">Corrected findings (radiologist)</p>
+                                      <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-purple-200 dark:border-purple-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                                        {String(meta.corrected_findings || "—")}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                        );
+                      })}
+                      {auditLogs.filter((l) => auditFilter === "all" || l.action === auditFilter).length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
+                            No audit logs yet
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Training Data */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
+                <Database className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Training Data</h2>
+                <Badge variant="secondary" className="text-xs">{trainingData.length} reports</Badge>
+                <div className="ml-auto flex flex-wrap gap-1.5 items-center">
+                  <Select value={trainingModality} onValueChange={(v) => setTrainingModality(v)}>
+                    <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All modalities</SelectItem>
+                      <SelectItem value="CT">CT</SelectItem>
+                      <SelectItem value="MRI">MRI</SelectItem>
+                      <SelectItem value="XRay">XRay</SelectItem>
+                      <SelectItem value="Ultrasound">Ultrasound</SelectItem>
+                      <SelectItem value="Mammography">Mammography</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <label className="flex items-center gap-1 text-xs text-gray-500">
+                    <input
+                      type="checkbox"
+                      checked={trainingCorrectionsOnly}
+                      onChange={(e) => setTrainingCorrectionsOnly(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Corrections only
+                  </label>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadTrainingData} disabled={trainingLoading}>
+                    {trainingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Load
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportJsonl} disabled={exporting || trainingData.length === 0}>
+                    {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                    Export JSONL
+                  </Button>
+                </div>
+              </div>
+              <CardContent className="pt-0">
+                {trainingError && (
+                  <div className="mb-3 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                    <span className="font-medium">Error loading training data:</span> {trainingError}
+                  </div>
+                )}
+                {trainingLoading ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400 mb-2" />
+                    <p className="text-xs text-gray-400">Loading training data...</p>
+                  </div>
+                ) : trainingData.length === 0 && !trainingError ? (
+                  <div className="text-center py-8 text-gray-400 text-xs">
+                    <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    No training data yet — reports are saved automatically when radiologists generate reports
+                  </div>
+                ) : trainingData.length === 0 ? null : (
+                  <div className="space-y-2">
+                    {trainingData.map((r) => {
+                      const isExpanded = expandedReportId === r.id;
+                      const findingsChanged = r.initial_findings_text && r.initial_findings_text !== r.findings_text;
+                      const conclusionChanged = r.initial_conclusion_text && r.initial_conclusion_text !== r.conclusion_text;
+                      return (
+                        <div key={r.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+                            onClick={() => setExpandedReportId(isExpanded ? null : r.id)}
+                          >
+                            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+                            <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                              <Badge variant="secondary" className="text-[10px]">{r.modality}</Badge>
+                              <span className="text-xs font-medium text-gray-900 dark:text-white truncate">{r.study_type}</span>
+                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">corrected</Badge>}
+                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />error</Badge>}
+                            </div>
+                            <span className="text-[10px] text-gray-400 shrink-0">
+                              {r.user_name || r.user_email || "—"} · {new Date(r.created_at).toLocaleDateString()}
+                            </span>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
+                              {r.error_report_note && (
+                                <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                                  <span className="font-medium">Error report:</span> {r.error_report_note}
+                                </div>
+                              )}
+
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Input (dictation + clinical context)</p>
+                                {r.clinical_context && (
+                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-20 overflow-y-auto mb-1.5 text-gray-500">{r.clinical_context}</pre>
+                                )}
+                                <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">{r.raw_dictation || "—"}</pre>
+                              </div>
+
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">
+                                    AI Generated {findingsChanged && <span className="text-amber-500 normal-case">(modified by radiologist)</span>}
+                                  </p>
+                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+{r.initial_findings_text || r.findings_text || "—"}
+{"\n\n---\n\n"}
+{r.initial_conclusion_text || r.conclusion_text || "—"}
+                                  </pre>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">
+                                    Final Report {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">(corrected)</span>}
+                                  </p>
+                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+{r.findings_text || "—"}
+{"\n\n---\n\n"}
+{r.conclusion_text || "—"}
+                                  </pre>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3 text-[10px] text-gray-400">
+                                {r.provider_used && <span>Provider: {r.provider_used}</span>}
+                                {r.model_used && <span>Model: {r.model_used}</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -668,9 +1676,9 @@ export default function AdminPage() {
                 <Select value={editPlan} onValueChange={setEditPlan}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="free">Free (50 reports/mo)</SelectItem>
-                    <SelectItem value="starter">Starter — €9.99 (150 reports/mo)</SelectItem>
-                    <SelectItem value="professional">Professional — €14.99 (400 reports/mo)</SelectItem>
+                    <SelectItem value="free">Free (30 reports/mo)</SelectItem>
+                    <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
+                    <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -703,6 +1711,61 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create user dialog */}
+      <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input
+                type="email"
+                placeholder="user@example.com"
+                value={createEmail}
+                onChange={(e) => setCreateEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Password</Label>
+              <Input
+                type="password"
+                placeholder="Min. 6 characters"
+                value={createPassword}
+                onChange={(e) => setCreatePassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Plan</Label>
+              <Select value={createPlan} onValueChange={setCreatePlan}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free (50 reports/mo)</SelectItem>
+                  <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
+                  <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {createError && (
+              <p className="text-xs text-red-500 flex items-center gap-1">
+                <X className="h-3 w-3" /> {createError}
+              </p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                onClick={handleCreateUser}
+                disabled={creatingUser}
+              >
+                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

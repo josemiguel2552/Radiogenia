@@ -7,12 +7,13 @@ interface GenerateParams {
   customBaseUrl?: string;
   system: string;
   user: string;
+  maxTokens?: number;
 }
 
 interface ProviderConfig {
   url: string;
   headers: Record<string, string>;
-  buildBody: (model: string, system: string, user: string) => object;
+  buildBody: (model: string, system: string, user: string, maxTokens: number) => object;
   extractText: (data: unknown) => string;
 }
 
@@ -28,9 +29,9 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           "anthropic-version": "2023-06-01",
           "content-type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
           system,
           messages: [{ role: "user", content: user }],
@@ -48,13 +49,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
         }),
         extractText: (data: unknown) => {
@@ -70,13 +71,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
         }),
         extractText: (data: unknown) => {
@@ -89,10 +90,10 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
       return {
         url: `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
         headers: { "Content-Type": "application/json" },
-        buildBody: (_model, system, user) => ({
+        buildBody: (_model, system, user, maxTokens) => ({
           system_instruction: { parts: [{ text: system }] },
           contents: [{ parts: [{ text: user }] }],
-          generationConfig: { maxOutputTokens: 4096, temperature: 0 },
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0 },
         }),
         extractText: (data: unknown) => {
           const d = data as { candidates: { content: { parts: { text: string }[] } }[] };
@@ -107,13 +108,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user) => ({
+        buildBody: (model, system, user, maxTokens) => ({
           model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
-          max_tokens: 4096,
+          max_tokens: maxTokens,
           temperature: 0,
         }),
         extractText: (data: unknown) => {
@@ -126,7 +127,8 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
 
 export async function generateAI(params: GenerateParams): Promise<string> {
   const config = getProviderConfig(params);
-  const body = config.buildBody(params.modelName, params.system, params.user);
+  const maxTokens = params.maxTokens || 4096;
+  const body = config.buildBody(params.modelName, params.system, params.user, maxTokens);
 
   const response = await fetch(config.url, {
     method: "POST",
@@ -164,15 +166,33 @@ function extractStreamToken(parsed: any, provider: AIProvider, eventType: string
   }
 }
 
+function extractSSEError(parsed: Record<string, unknown>, provider: AIProvider, eventType: string): string | null {
+  if (eventType === "error") {
+    const err = parsed as { error?: { message?: string }; message?: string };
+    return err.error?.message || err.message || "Stream error";
+  }
+  if (provider === "openai" || provider === "deepseek" || provider === "custom") {
+    const obj = parsed as { error?: { message?: string } };
+    if (obj.error?.message) return obj.error.message;
+  }
+  if (provider === "gemini") {
+    const obj = parsed as { error?: { message?: string } };
+    if (obj.error?.message) return obj.error.message;
+  }
+  return null;
+}
+
 function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProvider): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   const reader = body.getReader();
   const decoder = new TextDecoder();
+  const ERROR_PREFIX = "__STREAM_ERROR__:";
 
   return new ReadableStream({
     async start(controller) {
       let buffer = "";
       let eventType = "";
+      let hasTokens = false;
 
       try {
         while (true) {
@@ -197,8 +217,14 @@ function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProv
 
             try {
               const parsed = JSON.parse(data);
+              const errMsg = extractSSEError(parsed, provider, eventType);
+              if (errMsg) {
+                controller.enqueue(encoder.encode(ERROR_PREFIX + errMsg));
+                break;
+              }
               const token = extractStreamToken(parsed, provider, eventType);
               if (token) {
+                hasTokens = true;
                 controller.enqueue(encoder.encode(token));
               }
             } catch { /* skip unparseable SSE lines */ }
@@ -250,7 +276,8 @@ function withKeepalive(source: ReadableStream<Uint8Array>): ReadableStream<Uint8
 export async function generateAIStream(params: GenerateParams): Promise<ReadableStream<Uint8Array>> {
   const { provider, modelName } = params;
   const config = getProviderConfig(params);
-  const body = config.buildBody(modelName, params.system, params.user);
+  const maxTokens = params.maxTokens || 4096;
+  const body = config.buildBody(modelName, params.system, params.user, maxTokens);
 
   let url = config.url;
   let requestBody: object;

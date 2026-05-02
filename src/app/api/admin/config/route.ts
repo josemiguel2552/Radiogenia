@@ -19,11 +19,21 @@ export async function GET() {
       return NextResponse.json({ error: "Global config not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      ...data,
-      api_key_encrypted: data.api_key_encrypted ? "••••••••" : "",
-      whisper_api_key_encrypted: data.whisper_api_key_encrypted ? "••••••••" : "",
-    });
+    const MASKED_KEY_FIELDS = [
+      "api_key_encrypted",
+      "whisper_api_key_encrypted",
+      "anthropic_api_key_encrypted",
+      "google_api_key_encrypted",
+      "deepseek_api_key_encrypted",
+      "custom_api_key_encrypted",
+    ] as const;
+
+    const masked = { ...data };
+    for (const f of MASKED_KEY_FIELDS) {
+      masked[f] = masked[f] ? "••••••••" : "";
+    }
+
+    return NextResponse.json(masked);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
@@ -43,12 +53,34 @@ export async function PUT(req: NextRequest) {
     if (body.model_name) updates.model_name = body.model_name;
     if (body.custom_base_url !== undefined) updates.custom_base_url = body.custom_base_url;
 
+    const taskFields = [
+      "findings_provider", "findings_model",
+      "conclusion_provider", "conclusion_model",
+      "recommendations_provider", "recommendations_model",
+      "trace_provider", "trace_model",
+    ];
+    for (const field of taskFields) {
+      if (field in body) updates[field] = body[field] || null;
+    }
+
     if (body.api_key && body.api_key !== "••••••••") {
       updates.api_key_encrypted = encrypt(body.api_key);
     }
 
     if (body.whisper_api_key && body.whisper_api_key !== "••••••••") {
       updates.whisper_api_key_encrypted = encrypt(body.whisper_api_key);
+    }
+
+    const providerKeyMap: [string, string][] = [
+      ["anthropic_api_key", "anthropic_api_key_encrypted"],
+      ["google_api_key", "google_api_key_encrypted"],
+      ["deepseek_api_key", "deepseek_api_key_encrypted"],
+      ["custom_api_key", "custom_api_key_encrypted"],
+    ];
+    for (const [bodyField, dbCol] of providerKeyMap) {
+      if (body[bodyField] && body[bodyField] !== "••••••••") {
+        updates[dbCol] = encrypt(body[bodyField]);
+      }
     }
 
     // Get existing config ID (singleton table)
@@ -72,11 +104,17 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      ...data,
-      api_key_encrypted: data.api_key_encrypted ? "••••••••" : "",
-      whisper_api_key_encrypted: data.whisper_api_key_encrypted ? "••••••••" : "",
-    });
+    const MASKED = [
+      "api_key_encrypted", "whisper_api_key_encrypted",
+      "anthropic_api_key_encrypted", "google_api_key_encrypted",
+      "deepseek_api_key_encrypted", "custom_api_key_encrypted",
+    ] as const;
+    const result = { ...data };
+    for (const f of MASKED) {
+      result[f] = result[f] ? "••••••••" : "";
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;

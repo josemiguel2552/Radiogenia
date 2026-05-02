@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgMembership } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
@@ -14,7 +15,27 @@ export async function GET() {
       .order("created_at", { ascending: false });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data || []);
+
+    const personal = (data || []).map((r) => ({ ...r, is_org: false }));
+
+    // Merge org recommendations if user is in an organization
+    let orgRecs: typeof personal = [];
+    try {
+      const membership = await getOrgMembership(user.id);
+      if (membership) {
+        const { data: orgData } = await supabase
+          .from("org_recommendations")
+          .select("*, org_sections(name)")
+          .eq("org_id", membership.org_id);
+
+        orgRecs = (orgData || []).map((r) => {
+          const sec = r.org_sections as unknown as { name: string } | null;
+          return { ...r, org_sections: undefined, is_org: true, section_name: sec?.name || "" };
+        });
+      }
+    } catch { /* org tables may not exist */ }
+
+    return NextResponse.json([...orgRecs, ...personal]);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

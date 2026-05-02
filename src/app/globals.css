@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --preset-primary: 221.2 83.2% 53.3%;
@@ -125,3 +127,21 @@
 .animate-float-slower { animation: float-slower 20s ease-in-out infinite; }
 .animate-float-medium { animation: float-medium 12s ease-in-out infinite; }
 .animate-scroll-dot { animation: scroll-dot 1.5s ease-in-out infinite; }
+
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Mobile safe area for devices with home indicator (iPhone X+) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Slide-in animation for mobile drawer */
+@keyframes slide-in-from-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-in.slide-in-from-right {
+  animation: slide-in-from-right 0.2s ease-out;
+}

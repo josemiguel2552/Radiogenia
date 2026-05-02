@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig, checkDictationLimit } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, checkDictationLimit, incrementDictationUsage } from "@/lib/auth-helpers";
+import { getWhisperPrompt } from "@/lib/whisper-prompts";
+import { postprocessWhisper } from "@/lib/whisper-postprocess";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +15,8 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const audioFile = formData.get("audio") as File | null;
     const language = (formData.get("language") as string) || "";
+    const studyContext = (formData.get("study_context") as string) || "";
+    const templateSections = (formData.get("template_sections") as string) || "";
     const context = (formData.get("context") as string) || "";
     const durationSeconds = Math.max(0, Math.min(120, Number(formData.get("duration_seconds")) || 0));
 
@@ -57,8 +61,18 @@ export async function POST(req: NextRequest) {
     whisperForm.append("file", audioFile, fileName);
     whisperForm.append("model", "whisper-1");
     whisperForm.append("response_format", "text");
+    whisperForm.append("temperature", "0");
     if (language) whisperForm.append("language", language);
-    if (context) whisperForm.append("prompt", context);
+
+    // Construct prompt: prior transcript → study context → domain vocabulary.
+    // Whisper keeps the LAST 224 tokens of the prompt, so domain vocab goes last.
+    const domainPrompt = getWhisperPrompt(language || "es", templateSections || undefined);
+    const priorContext = context ? context.slice(-200) : "";
+    const parts: string[] = [];
+    if (priorContext) parts.push(priorContext);
+    if (studyContext) parts.push(studyContext);
+    parts.push(domainPrompt);
+    whisperForm.append("prompt", parts.join("\n"));
 
     const res = await fetch(`${baseUrl}/audio/transcriptions`, {
       method: "POST",
@@ -72,27 +86,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Increment dictation usage after successful transcription
+    let newUsedSeconds = quota.usedSeconds;
     if (durationSeconds > 0) {
       const roundedSeconds = Math.ceil(durationSeconds);
-      await supabase.rpc("increment_dictation_seconds", {
-        uid: user.id,
-        seconds: roundedSeconds,
-      }).then(({ error }) => {
-        if (error) {
-          supabase
-            .from("profiles")
-            .update({ dictation_seconds_used: quota.usedSeconds + roundedSeconds })
-            .eq("id", user.id)
-            .then(() => {});
-        }
-      });
+      newUsedSeconds = await incrementDictationUsage(user.id, roundedSeconds);
     }
 
-    const text = await res.text();
+    const rawText = await res.text();
+    const text = postprocessWhisper(rawText);
     return NextResponse.json({
-      text: text.trim(),
+      text,
       dictation: {
-        usedSeconds: quota.usedSeconds + Math.ceil(durationSeconds),
+        usedSeconds: newUsedSeconds,
         limitSeconds: quota.limitSeconds,
       },
     });

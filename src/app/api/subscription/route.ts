@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
 
 export async function GET() {
@@ -8,7 +9,8 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: profile } = await supabase
+    const service = createServiceClient();
+    const { data: profile } = await service
       .from("profiles")
       .select("subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start")
       .eq("id", user.id)
@@ -29,7 +31,8 @@ export async function GET() {
     const dictationLimitSeconds = planConfig.dictationMinutes * 60;
 
     if (needsReset) {
-      await supabase
+      const service = createServiceClient();
+      await service
         .from("profiles")
         .update({
           reports_used_this_month: 0,

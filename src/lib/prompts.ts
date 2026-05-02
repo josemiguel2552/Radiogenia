@@ -71,32 +71,32 @@ const VERBOSITY_INSTRUCTIONS: Record<OutputLanguage, Record<NormalFieldsVerbosit
 const PARAPHRASE_INSTRUCTIONS: Record<OutputLanguage, Record<ParaphraseLevel, string>> = {
   es: {
     none: "Transcribe los hallazgos dictados de forma literal. No cambies ninguna palabra. Solo ubícalos en la sección correcta.",
-    light: "Puedes corregir gramática y orden sintáctico. No cambies ningún dato clínico, medida ni descriptor.",
+    light: "Puedes corregir gramática, orden sintáctico y errores de terminología médica (ej: 'supracolicular'→'supraclavicular', 'arthrosis' en abdomen→'artrosis/hidronefrosis'). Usa el término anatómico o patológico correcto según el contexto clínico y la modalidad. No cambies ningún dato clínico, medida ni descriptor.",
     free: "Puedes reescribir los hallazgos con estilo radiológico profesional. Mantén todos los datos clínicos intactos.",
   },
   en: {
     none: "Transcribe dictated findings literally. Do not change any words. Only place them in the correct section.",
-    light: "You may correct grammar and syntax. Do not change any clinical data, measurements or descriptors.",
+    light: "You may correct grammar, syntax, and medical terminology errors (e.g. 'supracolicular'→'supraclavicular', 'arthrosis' in abdomen→'hydronephrosis'). Use the correct anatomical/pathological term based on clinical context and modality. Do not change any clinical data, measurements or descriptors.",
     free: "You may rewrite findings in professional radiological style. Keep all clinical data intact.",
   },
   pt: {
     none: "Transcreva os achados ditados de forma literal. Não mude nenhuma palavra. Apenas coloque-os na secção correta.",
-    light: "Pode corrigir gramática e ordem sintática. Não mude nenhum dado clínico, medida ou descritor.",
+    light: "Pode corrigir gramática, ordem sintática e erros de terminologia médica (ex: 'supracolicular'→'supraclavicular'). Use o termo anatómico/patológico correto segundo o contexto clínico e a modalidade. Não mude nenhum dado clínico, medida ou descritor.",
     free: "Pode reescrever os achados com estilo radiológico profissional. Mantenha todos os dados clínicos intactos.",
   },
   fr: {
     none: "Transcrivez les résultats dictés littéralement. Ne changez aucun mot. Placez-les uniquement dans la bonne section.",
-    light: "Vous pouvez corriger la grammaire et la syntaxe. Ne changez aucune donnée clinique, mesure ou descripteur.",
+    light: "Vous pouvez corriger la grammaire, la syntaxe et les erreurs de terminologie médicale (ex: 'supracoliculaire'→'supraclaviculaire'). Utilisez le terme anatomique/pathologique correct selon le contexte clinique et la modalité. Ne changez aucune donnée clinique, mesure ou descripteur.",
     free: "Vous pouvez réécrire les résultats dans un style radiologique professionnel. Gardez toutes les données cliniques intactes.",
   },
   de: {
     none: "Übertrage die diktierten Befunde wörtlich. Ändere keine Wörter. Ordne sie nur dem richtigen Abschnitt zu.",
-    light: "Du kannst Grammatik und Syntax korrigieren. Ändere keine klinischen Daten, Maße oder Deskriptoren.",
+    light: "Du kannst Grammatik, Syntax und medizinische Terminologiefehler korrigieren (z.B. 'suprakolikulär'→'supraklavikulär'). Verwende den korrekten anatomischen/pathologischen Begriff je nach klinischem Kontext und Modalität. Ändere keine klinischen Daten, Maße oder Deskriptoren.",
     free: "Du kannst die Befunde in professionellem radiologischem Stil umschreiben. Behalte alle klinischen Daten bei.",
   },
   it: {
     none: "Trascrivi i reperti dettati letteralmente. Non cambiare nessuna parola. Collocali solo nella sezione corretta.",
-    light: "Puoi correggere grammatica e sintassi. Non cambiare nessun dato clinico, misura o descrittore.",
+    light: "Puoi correggere grammatica, sintassi ed errori di terminologia medica (es: 'supracoliculare'→'supraclavicolare'). Usa il termine anatomico/patologico corretto in base al contesto clinico e alla modalità. Non cambiare nessun dato clinico, misura o descrittore.",
     free: "Puoi riscrivere i reperti con stile radiologico professionale. Mantieni tutti i dati clinici intatti.",
   },
 };
@@ -114,13 +114,15 @@ const COMPACT_NORMALS_INSTRUCTION: Record<string, string> = {
   es: `FORMATO COMPACTO DE NORMALIDAD:
 Se ha solicitado un informe compacto. Debes reorganizar la salida así:
 1. PRIMERO: escribe SOLO las secciones que tienen hallazgos mencionados por el radiólogo (positivos o negativos dictados), cada una en su formato estructurado habitual ("Sección: Descripción.").
-2. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (sin etiquetas de sección, sin viñetas, sin saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Este párrafo debe decir algo como: "El resto de las estructuras evaluadas (nombrar las secciones) no muestran alteraciones significativas." o una variante natural y profesional. NO listes cada sección individualmente — redacta un texto fluido que las englobe.
+2. Si hay hallazgos que no encajan en ninguna sección del template, escribe la sección "Otros hallazgos: ..." con todos esos hallazgos agrupados, ANTES del párrafo final de normalidad.
+3. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (sin etiquetas de sección, sin viñetas, sin saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Este párrafo debe decir algo como: "El resto de las estructuras evaluadas (nombrar las secciones) no muestran alteraciones significativas." o una variante natural y profesional. NO listes cada sección individualmente — redacta un texto fluido que las englobe.
 El párrafo final de normalidad debe ser breve y natural. No repitas "es normal" para cada órgano.`,
 
   en: `COMPACT NORMALITY FORMAT:
 A compact report has been requested. Reorganize the output as follows:
 1. FIRST: write ONLY the sections that have findings mentioned by the radiologist (positive or dictated negative findings), each in the usual structured format ("Section: Description.").
-2. THEN: at the end, write a SINGLE running paragraph (no section labels, no bullets, no internal line breaks) grouping ALL the normal unmentioned sections. This paragraph should say something like: "The remaining evaluated structures (name the sections) show no significant abnormalities." or a natural, professional variation. Do NOT list each section individually — write a flowing text that encompasses them all.
+2. If there are findings that do not fit any template section, write the section "Additional findings: ..." with all those findings grouped together, BEFORE the final normality paragraph.
+3. THEN: at the end, write a SINGLE running paragraph (no section labels, no bullets, no internal line breaks) grouping ALL the normal unmentioned sections. This paragraph should say something like: "The remaining evaluated structures (name the sections) show no significant abnormalities." or a natural, professional variation. Do NOT list each section individually — write a flowing text that encompasses them all.
 The final normality paragraph should be brief and natural. Do not repeat "is normal" for each organ.`,
 };
 
@@ -132,6 +134,7 @@ function findingsSystemPrompt(lang: OutputLanguage, modality: string): string {
     return `Eres un radiólogo experto redactando informes estructurados. Tu tarea es tomar el dictado del radiólogo y distribuirlo en las secciones anatómicas del template proporcionado.
 
 IDIOMA DE SALIDA: ${l}. TODO el informe debe estar en ${l}.
+IMPORTANTE: El dictado puede estar en CUALQUIER idioma. Independientemente del idioma de entrada, tu salida COMPLETA debe estar en ${l}. Traduce todo el contenido al ${l}.
 
 MODALIDAD DEL ESTUDIO: ${modality}
 
@@ -139,18 +142,20 @@ PRINCIPIO FUNDAMENTAL — SECCIONES NO MENCIONADAS:
 El radiólogo solo dicta lo anormal o lo que quiere destacar. Si el radiólogo NO menciona una sección del template, significa que la evaluó y es NORMAL. En su lugar, describe normalidad radiológica apropiada para ese órgano/estructura y esta modalidad.
 
 FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ninguna circunstancia):
-"no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
+- "no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
+- Muletillas verbales (solo en texto generado por ti, NO en hallazgos dictados por el radiólogo): "se observa", "se evidencia", "se identifica", "se aprecia", "se demuestra", "se detecta", "se visualiza", "cabe destacar", "llama la atención", "noted", "observed", "identified", "seen", "demonstrated", "visualized". En secciones de normalidad y texto que tú redactes, escribe directamente sin verbos introductorios. Ej: "Nódulo hepático de 12 mm en segmento VI." en vez de "Se observa un nódulo hepático de 12 mm en segmento VI." EXCEPCIÓN: si el radiólogo usó estas palabras en su dictado, respétalas tal cual.
 Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
 
 HALLAZGOS NEGATIVOS DICTADOS:
 Cuando el radiólogo dicta explícitamente la AUSENCIA de un hallazgo (ej: "no masa colónica", "sin evidencia de TEP", "no disección aórtica", "no se identifica litiasis"), esto es un hallazgo negativo relevante y DEBE incluirse en la sección anatómica correspondiente. No lo omitas ni lo sustituyas por una frase genérica de normalidad. Reproduce fielmente la negación dictada.
 
 REGLAS OBLIGATORIAS:
-1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna. No añadas secciones que no estén en el template.
+1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna.
 2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template. Esto incluye tanto hallazgos positivos como hallazgos negativos dictados por el radiólogo.
 3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
+6. Si un hallazgo dictado NO encaja en NINGUNA sección del template, añade una sección final llamada "Otros hallazgos" al final del informe con TODOS los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo dictado por falta de sección adecuada.
 
 FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
@@ -161,16 +166,18 @@ FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - NO añadas encabezados como "HALLAZGOS", "FINDINGS" ni agrupaciones. Solo la lista plana de secciones.
 - TRADUCE los nombres de las secciones del template al ${l}.
 
-Ejemplo — si el template tiene las secciones Liver, Gallbladder, Bile ducts, Pancreas (en ese orden), la salida debe ser EXACTAMENTE:
+Ejemplo — si el template tiene las secciones Liver, Gallbladder, Bile ducts, Pancreas (en ese orden) y el dictado menciona nódulos tiroideos, la salida debe ser EXACTAMENTE:
 Hígado: De tamaño y morfología normales.
 Vesícula biliar: De paredes finas, sin litiasis.
 Vía biliar: De calibre normal.
-Páncreas: De tamaño y morfología normales.`;
+Páncreas: De tamaño y morfología normales.
+Otros hallazgos: Nódulos tiroideos bilaterales de aspecto inespecífico.`;
   }
 
   return `You are an expert radiologist writing structured reports. Your task is to take the radiologist's dictation and distribute it into the anatomical sections of the provided template.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE report must be written in ${l}.
+IMPORTANT: The dictation may be in ANY language. Regardless of the input language, your ENTIRE output MUST be in ${l}. Translate all content to ${l}.
 
 STUDY MODALITY: ${modality}
 
@@ -178,18 +185,20 @@ FUNDAMENTAL PRINCIPLE — UNMENTIONED SECTIONS:
 The radiologist only dictates abnormal or noteworthy findings. If the radiologist does NOT mention a section from the template, it means they evaluated it and it is NORMAL. Instead, describe appropriate radiological normality for that organ/structure and this modality.
 
 ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any circumstance):
-"not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
+- "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
+- Filler verbs (only in text YOU generate, NOT in the radiologist's dictated findings): "noted", "observed", "identified", "seen", "demonstrated", "visualized", "detected", "appreciated", "is noted", "is observed", "is seen", "are identified", "se observa", "se identifica", "se evidencia". In normality sections and text you write, state findings directly without introductory verbs. E.g.: "12 mm hepatic nodule in segment VI." instead of "A 12 mm hepatic nodule is noted in segment VI." EXCEPTION: if the radiologist used these words in their dictation, preserve them as-is.
 If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
 
 DICTATED NEGATIVE FINDINGS:
 When the radiologist explicitly dictates the ABSENCE of a finding (e.g. "no colonic mass", "no CT evidence of acute pulmonary embolism", "no aortic dissection", "no lithiasis identified"), this is a relevant negative finding and MUST be included in the corresponding anatomical section. Do not omit it or replace it with a generic normality phrase. Faithfully reproduce the dictated negation.
 
 MANDATORY RULES:
-1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any. Do not add sections not in the template.
+1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any.
 2. Place each dictated finding in the correct anatomical section of the template. This includes both positive findings AND negative findings explicitly dictated by the radiologist.
 3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
 4. Do NOT invent pathological findings that the radiologist did not dictate.
 5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
+6. If a dictated finding does NOT fit ANY template section, add a final section called "Additional findings" at the end of the report with ALL orphan findings grouped together. NEVER omit a dictated finding due to lack of a matching section.
 
 OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Each section is exactly ONE line with the format: "Anatomical section: Description."
@@ -200,11 +209,12 @@ OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Do NOT add headings like "FINDINGS" or groupings. Only the flat list of sections.
 - TRANSLATE section names from the template into ${l}.
 
-Example — if the template has sections Liver, Gallbladder, Bile ducts, Pancreas (in that order), the output must be EXACTLY:
+Example — if the template has sections Liver, Gallbladder, Bile ducts, Pancreas (in that order) and the dictation mentions thyroid nodules, the output must be EXACTLY:
 Liver: Normal in size and morphology.
 Gallbladder: Thin-walled, no lithiasis.
 Bile ducts: Normal caliber.
-Pancreas: Normal in size and morphology.`;
+Pancreas: Normal in size and morphology.
+Additional findings: Bilateral thyroid nodules of nonspecific appearance.`;
 }
 
 function modalityTerminology(modality: string, lang: OutputLanguage): string {
@@ -258,16 +268,16 @@ ${PARAPHRASE_INSTRUCTIONS[lang][params.paraphraseLevel]}`;
     const block = lang === "es"
       ? `FRASES DE NORMALIDAD PREFERIDAS DEL RADIÓLOGO para cada sección anatómica.
 Reglas de uso:
-- Si el dictado NO menciona una sección y existe una frase preferida para ella, úsala LITERALMENTE tal como aparece.
+- Si el dictado NO menciona una sección y existe una frase preferida para ella, úsala como guía de estilo y nivel de detalle. Si la frase está en otro idioma, TRADÚCELA al español manteniendo exactamente el mismo significado y nivel de detalle.
 - Si el dictado describe un hallazgo en esa sección, IGNORA la frase preferida y redacta el hallazgo dictado.
 - NUNCA introduzcas información clínica que no esté en el dictado.
-- Estas frases definen exactamente cómo el radiólogo quiere que se expresen las secciones normales.`
+- RECUERDA: TODA la salida debe estar en español. Si una frase preferida está en inglés, tradúcela al español.`
       : `RADIOLOGIST'S PREFERRED NORMALITY PHRASES for each anatomical section.
 Rules:
-- If the dictation does NOT mention a section and a preferred phrase exists for it, use it LITERALLY as written.
+- If the dictation does NOT mention a section and a preferred phrase exists for it, use it as a style and detail guide. If the phrase is in a different language, TRANSLATE it to ${LANGUAGE_LABEL[lang]} keeping the exact same meaning and level of detail.
 - If the dictation describes a finding in that section, IGNORE the preferred phrase and write the dictated finding.
 - NEVER introduce clinical information that is not in the dictation.
-- These phrases define exactly how the radiologist wants normal sections to be worded.`;
+- REMEMBER: ALL output must be in ${LANGUAGE_LABEL[lang]}. Translate any phrase that is not already in ${LANGUAGE_LABEL[lang]}.`;
 
     system += `\n\n${block}\n`;
     params.preferredNormalPhrases.forEach((p) => {
@@ -285,7 +295,10 @@ Rules:
     });
   }
 
-  const user = `Template: ${params.template}\n\nDictation: ${params.dictation}`;
+  const langReminder = lang === "es"
+    ? `\n\nIDIOMA: Tu salida COMPLETA debe estar en ${LANGUAGE_LABEL[lang]}. No mezcles con otros idiomas.`
+    : `\n\nLANGUAGE: Write your ENTIRE output in ${LANGUAGE_LABEL[lang]}, not in the dictation language. Do not mix languages.`;
+  const user = `Template: ${params.template}\n\nDictation: ${params.dictation}${langReminder}`;
   return { system, user };
 }
 
@@ -302,107 +315,107 @@ export function buildConclusionPrompt(params: {
   let system: string;
 
   if (lang === "es") {
-    system = `Eres un radiólogo experto redactando conclusiones de informes radiológicos. Genera la conclusión basándote EXCLUSIVAMENTE en los hallazgos proporcionados.
+    system = `Redacta la CONCLUSIÓN de un informe radiológico a partir de los HALLAZGOS proporcionados.
 
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
+Si los hallazgos están en otro idioma, traduce al ${l}.
 
-PRINCIPIO FUNDAMENTAL — LA CONCLUSIÓN ES DESCRIPTIVA, NO INTERPRETATIVA:
-La conclusión DESCRIBE los hallazgos relevantes. NUNCA especula sobre su naturaleza, etiología ni relación entre ellos. El radiólogo describe lo que VE, no lo que CREE.
+ESTILO:
+- Telegráfico: frases cortas, sin palabras de relleno. NUNCA uses muletillas como "se observa", "se identifica", "noted", "presence of", "no significant findings regarding", "no significant abnormalities in".
+- Directo: ve al grano. Ejemplo: "No parenchymal consolidation." en vez de "No significant findings regarding consolidation in the lung parenchyma."
+- Usa el MÍNIMO de puntos necesarios (máximo 6). Si 2 puntos bastan, usa 2. No rellenes para llegar a un número.
+- Ordena por relevancia clínica (primero lo importante).
+- Lenguaje prudente y descriptivo: tamaño, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a previos.
 
-PROHIBICIONES ABSOLUTAS:
-- NUNCA incluyas recomendaciones. Frases como "se recomienda...", "se sugiere...", "valorar...", "completar con...", "control en...", "correlacionar con...", "derivar a..." están PROHIBIDAS.
-- NUNCA incluyas descripciones genéricas de normalidad. Si un órgano es normal y el radiólogo no lo destacó, NO lo menciones.
-- NUNCA especules sobre la naturaleza de un hallazgo. NO escribas "probablemente inflamatorio", "posiblemente benigno", "de probable origen...", "sugiere...". Describe el hallazgo tal como aparece en los datos sin añadir interpretaciones diagnósticas.
-- NUNCA establezcas relaciones causales entre hallazgos a menos que la relación sea anatómicamente obvia e indiscutible. NO escribas "probablemente relacionado con...", "en el contexto de...", "secundario a...".
-- NUNCA descartes patología. NO escribas "sin evidencia de malignidad" si hay un hallazgo indeterminado (como un nódulo sin caracterizar). Solo puedes descartar patología si genuinamente no hay NINGÚN hallazgo que la sugiera.
+PROHIBIDO:
+- Emitir diagnósticos o sugerir enfermedades ("compatible con neumonía", "sugestivo de neoplasia").
+- Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM", "control en 3 meses").
+- Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
+- Lenguaje categórico o inferencias causales ("probablemente relacionado con...", "secundario a...").
+- Pronósticos ("hallazgo preocupante", "proceso agresivo", "buen pronóstico").
+- Añadir información no presente en los hallazgos.
+- Especular sobre la naturaleza de un hallazgo ("posiblemente benigno", "probablemente inflamatorio").
+- Descartar patología si existe algún hallazgo indeterminado.
 
-HALLAZGOS NEGATIVOS CON RELEVANCIA CLÍNICA:
-Si en los hallazgos aparece un hallazgo negativo que el radiólogo dictó explícitamente (ej: "sin evidencia de TEP", "no masa colónica", "no disección aórtica"), inclúyelo en la conclusión SOLO si:
-- Responde directamente a la pregunta clínica, O
-- Tiene alta relevancia clínica por el contexto del estudio.
-Ejemplo: si la pregunta clínica es "descartar TEP" y los hallazgos dicen "sin evidencia de TEP agudo", la conclusión DEBE incluir "Sin evidencia de tromboembolismo pulmonar agudo."
+REGLA CRÍTICA — NO ENUMERAR NORMALIDAD:
+NUNCA listes órganos o estructuras normales. Si un órgano no tiene hallazgo patológico, NO lo menciones en la conclusión. Un punto que diga "No se observan alteraciones en aorta, corazón, pericardio, diafragma..." está PROHIBIDO. La conclusión SOLO contiene hallazgos positivos (patológicos) y, si aplica, la respuesta negativa a la pregunta clínica.
+
+HALLAZGOS NEGATIVOS:
+Incluye un hallazgo negativo SOLO si el radiólogo lo dictó explícitamente Y responde a la pregunta clínica (ej: pregunta "descartar TEP" → "Sin evidencia de TEP").
 
 ${hasClinical ? `PREGUNTA CLÍNICA:
-Se proporcionan datos clínicos del médico solicitante. El PRIMER punto de la conclusión debe responder directamente a esa pregunta basándose en los hallazgos.
-- Si los hallazgos responden claramente: usa lenguaje descriptivo directo ("Hallazgos compatibles con...", "Se identifica...")
-- Si no permiten responder con certeza: "No se identifican hallazgos concluyentes respecto a..."
-- Si hay un hallazgo indeterminado relacionado con la pregunta: descríbelo sin especular sobre su naturaleza.` : ""}
+El primer punto responde a la pregunta clínica. Sé breve:
+- Si responde claramente: lenguaje descriptivo directo.
+- Si no hay hallazgos: frase corta negativa (ej: "Sin consolidación parenquimatosa.").
+- Si hay hallazgo indeterminado: descríbelo sin especular.` : ""}
 
-ESTRUCTURA DE LA CONCLUSIÓN:
-1. ${hasClinical ? "Punto 1: respuesta a la pregunta clínica." : "Solo hallazgos clínicamente SIGNIFICATIVOS."}
-2. AGRUPA hallazgos que probablemente compartan la misma patología de base en un MISMO punto. Por ejemplo: lesión pulmonar + adenopatías mediastínicas + derrame pleural pueden ir juntos si sugieren un mismo proceso; diverticulitis colónica + adenopatías mesentéricas pueden ir juntos. El objetivo es que cada punto represente un "problema" clínico coherente, no una lista desgranada de hallazgos individuales.
-3. Hallazgos que NO tengan relación fisiopatológica razonable entre sí van en puntos SEPARADOS.
-4. Ordenados de MAYOR a MENOR relevancia clínica.
-5. Los hallazgos de ESCASA relevancia clínica NO se incluyen.
-6. Si todo es normal: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica. Exploración dentro de límites normales." : "Exploración dentro de límites normales."}"
+AGRUPACIÓN — REGLA CLAVE:
+Cada punto = un PROBLEMA CLÍNICO COMPLETO. Agrupa TODOS los hallazgos relacionados en un solo punto, aunque vengan de secciones anatómicas distintas:
+- Tumor: masa + adenopatías + derrame + metástasis → TODO en un solo punto.
+- TEP: defectos de llenado + infartos + sobrecarga derecha → un solo punto.
+- Politrauma: fracturas + neumotórax + contusión + derrame → un solo punto.
+Ejemplo correcto: "Masa hiliar izquierda de 54 mm con adenopatías mediastínicas, supraclaviculares ipsilaterales y pequeño derrame pleural izquierdo."
+Ejemplo incorrecto: separar masa, adenopatías y derrame en 3 puntos distintos.
 
-EJEMPLO CORRECTO (lesión pulmonar + adenopatías + derrame + diverticulitis + adenopatías mesentéricas):
-1. Masa pulmonar de 35 mm en lóbulo superior derecho con adenopatías mediastínicas patológicas y pequeño derrame pleural ipsilateral.
-2. Signos de diverticulitis aguda en sigma con adenopatías mesentéricas reactivas adyacentes.
+COMPARACIONES CON PREVIOS:
+Si hay cambios respecto a estudios previos, inclúyelos junto al hallazgo correspondiente.
 
-EJEMPLO INCORRECTO:
-1. Masa pulmonar de 35 mm, probablemente neoplásica. ← MAL: especula sobre la naturaleza / da un diagnóstico.
-2. Adenopatías mediastínicas. ← MAL: separó un hallazgo que probablemente está relacionado con la masa.
-3. Derrame pleural, probablemente secundario a la masa. ← MAL: relación causal especulativa explícita.
-4. Diverticulitis aguda. ← Bien como concepto, pero le faltan las adenopatías asociadas.
-5. Adenopatías mesentéricas. ← MAL: deberían ir agrupadas con la diverticulitis.
-
-LÍMITE ESTRICTO: MÁXIMO 4 PUNTOS. Si hay más hallazgos relevantes, descarta los menos importantes.
+Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
 FORMATO:
-- Puntos numerados (1. 2. 3. 4.). Texto plano.
+- Puntos numerados (1. 2. 3.). Texto plano.
 - NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".`;
   } else {
-    system = `You are an expert radiologist writing radiology report conclusions. Generate the conclusion based EXCLUSIVELY on the provided findings.
+    system = `Write the CONCLUSION of a radiology report based on the provided FINDINGS.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
+If findings are in another language, translate to ${l}.
 
-FUNDAMENTAL PRINCIPLE — THE CONCLUSION IS DESCRIPTIVE, NOT INTERPRETIVE:
-The conclusion DESCRIBES relevant findings. It NEVER speculates about their nature, etiology or relationship to each other. The radiologist describes what they SEE, not what they THINK.
+STYLE:
+- Telegraphic: short phrases, no filler words. NEVER use padding like "noted", "presence of", "no significant findings regarding", "no significant abnormalities in the".
+- Direct: get to the point. Example: "No parenchymal consolidation." instead of "No significant findings regarding consolidation in the lung parenchyma."
+- Use the MINIMUM number of points needed (maximum 6). If 2 points suffice, use 2. Do NOT pad to reach a number.
+- Order by clinical relevance (most important first).
+- Prudent, descriptive language: size, location, density/signal, relationship to adjacent structures, changes compared to prior studies.
 
-ABSOLUTE PROHIBITIONS:
-- NEVER include recommendations. Phrases like "recommend...", "suggest...", "consider...", "follow-up...", "correlate with..." are FORBIDDEN.
-- NEVER include generic normality descriptions. If an organ is normal and the radiologist did not highlight it, do NOT mention it.
-- NEVER speculate about the nature of a finding. Do NOT write "possibly inflammatory", "likely benign", "probably related to...", "suggestive of...". Describe the finding as it appears in the data without adding diagnostic interpretations.
-- NEVER establish causal relationships between findings unless the relationship is anatomically obvious and indisputable. Do NOT write "likely related to...", "in the context of...", "secondary to...".
-- NEVER rule out pathology. Do NOT write "no evidence of malignancy" if there is an indeterminate finding (e.g. an uncharacterized nodule). You may only rule out pathology if there genuinely is NO finding that suggests it.
+FORBIDDEN:
+- Suggesting diagnoses or diseases ("consistent with pneumonia", "suggestive of neoplasm").
+- Recommending clinical actions ("biopsy recommended", "further evaluation with MRI", "follow-up in 3 months").
+- Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
+- Categorical language or causal inferences ("likely related to...", "secondary to...").
+- Issuing prognoses ("concerning finding", "aggressive process", "good prognosis").
+- Adding information not present in the findings.
+- Speculating about the nature of a finding ("possibly benign", "likely inflammatory").
+- Ruling out pathology if any indeterminate finding exists.
 
-CLINICALLY RELEVANT NEGATIVE FINDINGS:
-If the findings include a negative finding that the radiologist explicitly dictated (e.g. "no CT evidence of acute pulmonary embolism", "no colonic mass", "no aortic dissection"), include it in the conclusion ONLY if:
-- It directly answers the clinical question, OR
-- It has high clinical relevance given the study context.
-Example: if the clinical question is "rule out PE" and the findings state "no CT evidence of acute pulmonary embolism", the conclusion MUST include "No CT evidence of acute pulmonary embolism."
+CRITICAL RULE — DO NOT LIST NORMAL STRUCTURES:
+NEVER list normal organs or structures. If an organ has no pathological finding, do NOT mention it in the conclusion. A point saying "No significant abnormalities in the aorta, heart, pericardium, diaphragm..." is FORBIDDEN. The conclusion contains ONLY positive (pathological) findings and, if applicable, the negative answer to the clinical question.
+
+NEGATIVE FINDINGS:
+Include a negative finding ONLY if the radiologist explicitly dictated it AND it answers the clinical question (e.g., question "rule out PE" → "No evidence of PE").
 
 ${hasClinical ? `CLINICAL QUESTION:
-Clinical data from the referring physician is provided. The FIRST point of the conclusion must directly answer that clinical question based on the findings.
-- If findings clearly answer: use direct descriptive language ("Findings consistent with...", "Identified...")
-- If inconclusive: "No conclusive findings regarding..."
-- If there is an indeterminate finding related to the question: describe it without speculating about its nature.` : ""}
+The first point answers the clinical question. Be brief:
+- If findings clearly answer: direct descriptive language.
+- If no findings: short negative phrase (e.g., "No parenchymal consolidation.").
+- If there is an indeterminate finding: describe it without speculating.` : ""}
 
-CONCLUSION STRUCTURE:
-1. ${hasClinical ? "Point 1: answer to the clinical question." : "Only clinically SIGNIFICANT findings."}
-2. GROUP findings that likely share the same underlying pathology into a SINGLE point. For example: lung mass + mediastinal lymphadenopathy + pleural effusion may go together if they suggest a single process; colonic diverticulitis + mesenteric lymphadenopathy may go together. The goal is for each point to represent a coherent clinical "problem", not a broken-down list of individual findings.
-3. Findings that have NO reasonable pathophysiological relationship go in SEPARATE points.
-4. Ordered from MOST to LEAST clinically relevant.
-5. Findings of LOW clinical relevance are NOT included.
-6. If everything is normal: write the equivalent of "Examination within normal limits" in ${l}.
+GROUPING — KEY RULE:
+Each point = a COMPLETE CLINICAL PROBLEM. Group ALL related findings into one single point, even if they come from different anatomical sections:
+- Tumor: mass + lymphadenopathy + effusion + metastases → ALL in one single point.
+- PE: filling defects + infarcts + right heart strain → one single point.
+- Polytrauma: fractures + pneumothorax + contusion + effusion → one single point.
+Correct example: "Left hilar mass measuring 54 mm with associated left mediastinal, supraclavicular lymphadenopathy and small left pleural effusion."
+Incorrect example: separating mass, lymphadenopathy, and effusion into 3 different points.
 
-CORRECT EXAMPLE (lung mass + lymphadenopathy + effusion + diverticulitis + mesenteric nodes):
-1. 35 mm pulmonary mass in the right upper lobe with pathological mediastinal lymphadenopathy and small ipsilateral pleural effusion.
-2. Signs of acute diverticulitis in the sigmoid colon with adjacent reactive mesenteric lymphadenopathy.
+COMPARISON WITH PRIOR STUDIES:
+If findings mention changes compared to prior studies, include them alongside the corresponding finding.
 
-INCORRECT EXAMPLE:
-1. 35 mm pulmonary mass, likely neoplastic. ← WRONG: speculates about nature / gives a diagnosis.
-2. Mediastinal lymphadenopathy. ← WRONG: separated a finding that is likely related to the mass.
-3. Pleural effusion, probably secondary to the mass. ← WRONG: explicit speculative causal relationship.
-4. Acute diverticulitis. ← Correct concept, but missing the associated lymphadenopathy.
-5. Mesenteric lymphadenopathy. ← WRONG: should be grouped with the diverticulitis.
-
-STRICT LIMIT: MAXIMUM 4 POINTS. If there are more relevant findings, discard the least important ones.
+If no relevant findings: "${hasClinical ? "No significant findings regarding the clinical question." : "Examination within normal limits."}"
 
 FORMAT:
-- Numbered points (1. 2. 3. 4.). Plain text.
+- Numbered points (1. 2. 3.). Plain text.
 - Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".`;
   }
@@ -422,6 +435,15 @@ Rules:
     params.preferredConclusionPhrases.forEach((p, i) => {
       system += `\n--- ${i + 1} ---\n${p}`;
     });
+  }
+
+  // Final language enforcement
+  if (lang !== "es" && lang !== "en") {
+    system += `\n\nCRITICAL LANGUAGE REMINDER: Your ENTIRE output must be in ${l}. Not a single word in Spanish or English. Translate ALL medical terminology to ${l}.`;
+  } else if (lang === "es") {
+    system += `\n\nRECORDATORIO DE IDIOMA: Tu salida COMPLETA debe estar en ${l}. No mezcles con inglés ni otros idiomas. Traduce toda terminología al ${l}.`;
+  } else {
+    system += `\n\nLANGUAGE REMINDER: Your ENTIRE output must be in ${l}. Do not mix with Spanish or other languages. Translate all terminology to ${l}.`;
   }
 
   let userMsg = "";

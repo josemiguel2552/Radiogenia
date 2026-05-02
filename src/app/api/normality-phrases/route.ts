@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getDefaultsForModality, getAllDefaults } from "@/lib/normality-defaults";
+import { getDefaultsForModality, getAllDefaults, type NormalityLang } from "@/lib/normality-defaults";
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,8 +10,9 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const modality = url.searchParams.get("modality");
+    const lang = (url.searchParams.get("lang") === "es" ? "es" : "en") as NormalityLang;
 
-    const defaults = modality ? getDefaultsForModality(modality) : getAllDefaults();
+    const defaults = modality ? getDefaultsForModality(modality, lang) : getAllDefaults(lang);
 
     let overrides: { modality: string; section_label: string; phrase: string }[] = [];
     try {
@@ -34,6 +35,8 @@ export async function GET(req: NextRequest) {
       overrides.map((o) => [`${o.modality}|${o.section_label}`, o.phrase])
     );
 
+    const defaultKeys = new Set(defaults.map((d) => `${d.modality}|${d.section_label}`));
+
     const merged = defaults.map((d) => {
       const key = `${d.modality}|${d.section_label}`;
       const userPhrase = overrideMap.get(key);
@@ -45,6 +48,19 @@ export async function GET(req: NextRequest) {
         is_customized: userPhrase != null,
       };
     });
+
+    for (const o of overrides) {
+      const key = `${o.modality}|${o.section_label}`;
+      if (!defaultKeys.has(key)) {
+        merged.push({
+          modality: o.modality,
+          section_label: o.section_label,
+          default_phrase: o.phrase,
+          phrase: o.phrase,
+          is_customized: true,
+        });
+      }
+    }
 
     return NextResponse.json(merged);
   } catch (error) {

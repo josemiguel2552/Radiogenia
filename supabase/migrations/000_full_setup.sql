@@ -72,6 +72,7 @@ create table if not exists public.user_model_config (
   style_learning_enabled boolean default true,
   style_sample_count integer default 0,
   few_shot_count integer default 3,
+  compact_normals boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -253,6 +254,14 @@ create table if not exists public.global_model_config (
   model_name text default 'deepseek-chat',
   api_key_encrypted text default '',
   custom_base_url text default '',
+  findings_provider text,
+  findings_model text,
+  conclusion_provider text,
+  conclusion_model text,
+  recommendations_provider text,
+  recommendations_model text,
+  trace_provider text,
+  trace_model text,
   updated_at timestamptz not null default now(),
   updated_by uuid references auth.users(id)
 );
@@ -443,3 +452,145 @@ begin
   where id = uid;
 end;
 $$ language plpgsql security definer;
+
+
+-- ##########################################################
+-- 011 — Per-task model overrides
+-- ##########################################################
+
+alter table public.global_model_config
+  add column if not exists findings_provider text,
+  add column if not exists findings_model text,
+  add column if not exists conclusion_provider text,
+  add column if not exists conclusion_model text,
+  add column if not exists recommendations_provider text,
+  add column if not exists recommendations_model text,
+  add column if not exists trace_provider text,
+  add column if not exists trace_model text;
+
+
+-- ##########################################################
+-- 012 — Per-provider API keys
+-- ##########################################################
+
+alter table public.global_model_config
+  add column if not exists anthropic_api_key_encrypted text,
+  add column if not exists google_api_key_encrypted text,
+  add column if not exists deepseek_api_key_encrypted text,
+  add column if not exists custom_api_key_encrypted text;
+
+
+-- ##########################################################
+-- 013 — Audit logs + report training metadata
+-- ##########################################################
+
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  report_id uuid references public.reports(id) on delete set null,
+  action text not null check (action in (
+    'generate_findings', 'generate_conclusion', 'save_report', 'report_error', 'correction_logged'
+  )),
+  provider text,
+  model text,
+  duration_ms int,
+  had_corrections boolean default false,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists audit_logs_user_idx
+  on public.audit_logs (user_id, created_at desc);
+create index if not exists audit_logs_report_idx
+  on public.audit_logs (report_id) where report_id is not null;
+
+alter table public.audit_logs enable row level security;
+
+drop policy if exists "users read own audit_logs" on public.audit_logs;
+create policy "users read own audit_logs" on public.audit_logs
+  for select using (auth.uid() = user_id);
+drop policy if exists "users insert own audit_logs" on public.audit_logs;
+create policy "users insert own audit_logs" on public.audit_logs
+  for insert with check (auth.uid() = user_id);
+
+alter table public.reports
+  add column if not exists generation_duration_ms int,
+  add column if not exists provider_used text,
+  add column if not exists model_used text,
+  add column if not exists had_corrections boolean default false,
+  add column if not exists error_reported boolean default false,
+  add column if not exists error_report_note text;
+
+
+-- ##########################################################
+-- 014 — Clinical context
+-- ##########################################################
+
+alter table public.reports
+  add column if not exists clinical_context text default '';
+
+-- ##########################################################
+-- 015 — Signatures (per-user, multiple allowed, one active)
+-- ##########################################################
+
+create table if not exists public.signatures (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  label text not null,
+  body text not null,
+  is_active boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists signatures_user_idx on public.signatures (user_id);
+
+alter table public.signatures enable row level security;
+
+drop policy if exists "users manage own signatures" on public.signatures;
+create policy "users manage own signatures"
+  on public.signatures for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+
+-- ##########################################################
+-- 016 — Dictation language preference
+-- ##########################################################
+
+alter table public.user_model_config
+  add column if not exists dictation_language text default 'auto';
+
+
+-- ##########################################################
+-- 017 — Admin access to all reports & audit logs
+-- ##########################################################
+
+drop policy if exists "admins read all reports" on public.reports;
+create policy "admins read all reports" on public.reports
+  for select using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
+drop policy if exists "admins read all audit_logs" on public.audit_logs;
+create policy "admins read all audit_logs" on public.audit_logs
+  for select using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+
+
+-- ##########################################################
+-- 018 — Allow correction_logged action in audit_logs
+-- ##########################################################
+
+ALTER TABLE public.audit_logs DROP CONSTRAINT IF EXISTS audit_logs_action_check;
+ALTER TABLE public.audit_logs ADD CONSTRAINT audit_logs_action_check
+  CHECK (action IN (
+    'generate_findings', 'generate_conclusion', 'save_report', 'report_error', 'correction_logged'
+  ));

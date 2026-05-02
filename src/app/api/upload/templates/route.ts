@@ -1,9 +1,11 @@
+export const maxDuration = 120;
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/encryption";
+import { getGlobalAIConfig, checkDocumentLimit } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import mammoth from "mammoth";
-import type { AIProvider } from "@/lib/types";
+import { extractPdfText } from "@/lib/pdf-extract";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,35 +13,36 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const docLimit = await checkDocumentLimit(user.id);
+    if (!docLimit.allowed) {
+      return NextResponse.json({
+        error: `Document limit reached (${docLimit.used}/${docLimit.limit}). Upgrade your plan to upload more documents.`,
+      }, { status: 429 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
-    // Parse Word document
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await mammoth.extractRawText({ buffer });
-    const docText = result.value;
+    let docText = "";
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith(".docx") || fileName.endsWith(".doc")) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const result = await mammoth.extractRawText({ buffer });
+      docText = result.value;
+    } else if (fileName.endsWith(".pdf")) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      docText = await extractPdfText(buffer);
+    } else {
+      return NextResponse.json({ error: "Unsupported file type. Use .docx or .pdf" }, { status: 400 });
+    }
 
     if (!docText.trim()) {
       return NextResponse.json({ error: "Document is empty" }, { status: 400 });
     }
 
-    // Get AI config
-    const { data: config } = await supabase
-      .from("user_model_config")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!config) return NextResponse.json({ error: "No model config found" }, { status: 400 });
-
-    let apiKey = "";
-    try {
-      apiKey = config.api_key_encrypted ? decrypt(config.api_key_encrypted) : "";
-    } catch {
-      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
-    }
-    if (!apiKey) return NextResponse.json({ error: "No API key configured" }, { status: 400 });
+    const globalConfig = await getGlobalAIConfig();
 
     const system = `You are a radiology informatics expert. Given a document containing radiology report templates, extract each template and classify it.
 
@@ -62,21 +65,19 @@ Return ONLY valid JSON array. Example:
 If the document contains a single template, still return it as an array with one element.`;
 
     const text = await generateAI({
-      provider: config.provider as AIProvider,
-      modelName: config.model_name,
-      apiKey,
-      customBaseUrl: config.custom_base_url,
+      provider: globalConfig.provider,
+      modelName: globalConfig.modelName,
+      apiKey: globalConfig.apiKey,
+      customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: `Extract and classify all radiology report templates from this document:\n\n${docText.substring(0, 20000)}`,
     });
 
-    // Parse JSON response
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return NextResponse.json({ error: "Could not parse AI response" }, { status: 500 });
 
     const templates = JSON.parse(jsonMatch[0]);
 
-    // Validate and normalize
     const validTechniques = ["CT", "MRI", "Ultrasound", "XRay", "Mammography", "Procedures"];
     const validSections = ["Head and neck", "Thorax", "Abdomen and pelvis", "Spine", "Upper limbs", "Lower limbs"];
 

@@ -33,6 +33,8 @@ export async function GET() {
 
     if (data) {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
+      if (data.compact_normals === undefined) data.compact_normals = false;
+      if (!data.dictation_language) data.dictation_language = "auto";
     }
 
     const role = await getUserRole(user.id);
@@ -66,12 +68,35 @@ export async function PUT(req: NextRequest) {
     delete body.style_sample_count;
     delete body.role;
 
-    const { data, error } = await supabase
+    // Non-admins cannot change provider, model, or API key
+    const role = await getUserRole(user.id);
+    if (role !== "admin") {
+      delete body.provider;
+      delete body.model_name;
+      delete body.custom_base_url;
+      delete body.api_key_encrypted;
+    }
+
+    const service = createServiceClient();
+
+    // Try upsert; if a column is missing (migration not applied), retry without it
+    let result = await service
       .from("user_model_config")
-      .update(body)
-      .eq("user_id", user.id)
+      .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })
       .select()
       .single();
+
+    if (result.error?.message?.includes("column")) {
+      delete body.compact_normals;
+      delete body.dictation_language;
+      result = await service
+        .from("user_model_config")
+        .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })
+        .select()
+        .single();
+    }
+
+    const { data, error } = result;
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

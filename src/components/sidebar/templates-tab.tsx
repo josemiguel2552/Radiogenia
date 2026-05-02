@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus,
   Pencil,
@@ -22,16 +22,198 @@ import {
   ChevronRight,
   Search,
   Sparkles,
+  ArrowUp,
+  ArrowDown,
+  Indent,
+  Outdent,
+  FolderOpen,
+  Building2,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
-import { useT, useSection } from "@/lib/i18n";
+import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 
 interface ExtractedTemplate {
   title: string;
   technique: string;
   section: string;
   template: string;
+}
+
+interface CatalogItem {
+  id: string;
+  name: string;
+  modality: string;
+  section_id: string;
+  section_name: string;
+  imported: boolean;
+}
+
+interface TemplateField {
+  id: string;
+  label: string;
+  indent: number; // 0 = top-level, 1 = child
+}
+
+let _fieldId = 0;
+function nextFieldId(): string { return `f_${++_fieldId}_${Date.now()}`; }
+
+function parseTemplateSections(raw: string): TemplateField[] {
+  const fields: TemplateField[] = [];
+  const body = raw
+    .replace(/\*{4}FINDINGS\*{4}\n?/g, "")
+    .replace(/\n?\*{4}CONCLUSION\*{4}\n?\{conclusion\}/g, "")
+    .trim();
+  if (!body) return fields;
+
+  for (const line of body.split("\n")) {
+    if (!line.trim()) continue;
+    const isIndented = /^\s{2,}/.test(line);
+    const trimmed = line.trim();
+
+    const tripleMatch = trimmed.match(/^\*{3}([^*]+)\*{3}/);
+    if (tripleMatch) {
+      fields.push({ id: nextFieldId(), label: tripleMatch[1].trim(), indent: 0 });
+      continue;
+    }
+
+    const fieldMatch = trimmed.match(/^\*{2}([^*]+)\*{2}/);
+    if (fieldMatch) {
+      fields.push({ id: nextFieldId(), label: fieldMatch[1].trim(), indent: isIndented ? 1 : 0 });
+      continue;
+    }
+
+    if (trimmed.length > 1 && !trimmed.startsWith("{")) {
+      fields.push({ id: nextFieldId(), label: trimmed.replace(/[*{}:]/g, "").trim(), indent: isIndented ? 1 : 0 });
+    }
+  }
+  return fields;
+}
+
+function serializeTemplateSections(fields: TemplateField[]): string {
+  const lines: string[] = [];
+
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i];
+    if (!f.label.trim()) continue;
+
+    const isParent = f.indent === 0 && fields[i + 1]?.indent === 1;
+
+    if (isParent) {
+      lines.push(`**${f.label}**:`);
+    } else if (f.indent === 1) {
+      lines.push(`   **${f.label}**: {${f.label.toLowerCase()}}`);
+    } else {
+      lines.push(`**${f.label}**: {${f.label.toLowerCase()}}`);
+    }
+  }
+
+  return `****FINDINGS****\n${lines.join("\n")}\n\n****CONCLUSION****\n{conclusion}`;
+}
+
+function SectionEditor({ fields, onChange }: { fields: TemplateField[]; onChange: (fields: TemplateField[]) => void }) {
+  const t = useT();
+
+  const updateLabel = useCallback((id: string, label: string) => {
+    onChange(fields.map((f) => f.id === id ? { ...f, label } : f));
+  }, [fields, onChange]);
+
+  const indentField = useCallback((id: string) => {
+    onChange(fields.map((f) => f.id === id ? { ...f, indent: Math.min(f.indent + 1, 1) } : f));
+  }, [fields, onChange]);
+
+  const outdentField = useCallback((id: string) => {
+    onChange(fields.map((f) => f.id === id ? { ...f, indent: Math.max(f.indent - 1, 0) } : f));
+  }, [fields, onChange]);
+
+  const moveUp = useCallback((id: string) => {
+    const idx = fields.findIndex((f) => f.id === id);
+    if (idx <= 0) return;
+    const next = [...fields];
+    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+    onChange(next);
+  }, [fields, onChange]);
+
+  const moveDown = useCallback((id: string) => {
+    const idx = fields.findIndex((f) => f.id === id);
+    if (idx < 0 || idx >= fields.length - 1) return;
+    const next = [...fields];
+    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+    onChange(next);
+  }, [fields, onChange]);
+
+  const remove = useCallback((id: string) => {
+    onChange(fields.filter((f) => f.id !== id));
+  }, [fields, onChange]);
+
+  const addAfter = useCallback((id: string) => {
+    const idx = fields.findIndex((f) => f.id === id);
+    const currentIndent = fields[idx]?.indent ?? 0;
+    const next = [...fields];
+    next.splice(idx + 1, 0, { id: nextFieldId(), label: "", indent: currentIndent });
+    onChange(next);
+  }, [fields, onChange]);
+
+  const addAtEnd = useCallback(() => {
+    onChange([...fields, { id: nextFieldId(), label: "", indent: 0 }]);
+  }, [fields, onChange]);
+
+  return (
+    <div className="space-y-1.5">
+      {fields.map((f, idx) => {
+        const isParent = f.indent === 0 && fields[idx + 1]?.indent === 1;
+        const isChild = f.indent === 1;
+
+        return (
+          <div key={f.id} className={`group rounded-md border border-transparent hover:border-gray-200 dark:hover:border-gray-700 p-1 ${isChild ? "ml-5" : ""}`}>
+            <div className="flex items-center gap-1">
+              {isParent ? (
+                <FolderOpen className="h-3.5 w-3.5 text-brand shrink-0" />
+              ) : (
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isChild ? "bg-gray-300 dark:bg-gray-600" : "bg-gray-400 dark:bg-gray-500"}`} />
+              )}
+
+              <Input
+                value={f.label}
+                onChange={(e) => updateLabel(f.id, e.target.value)}
+                placeholder={t("tpl.section_name_placeholder")}
+                className={`h-7 text-xs flex-1 min-w-0 ${isParent ? "font-semibold" : ""}`}
+                autoFocus={!f.label}
+              />
+
+              <div className="flex gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveUp(f.id)} disabled={idx === 0}>
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveDown(f.id)} disabled={idx === fields.length - 1}>
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600" onClick={() => remove(f.id)} disabled={fields.length <= 1}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-0.5 mt-0.5 ml-5">
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 text-gray-500" onClick={() => indentField(f.id)} disabled={f.indent >= 1}>
+                <Indent className="h-2.5 w-2.5" /> {t("tpl.make_group")}
+              </Button>
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 text-gray-500" onClick={() => outdentField(f.id)} disabled={f.indent <= 0}>
+                <Outdent className="h-2.5 w-2.5" /> {t("tpl.make_field")}
+              </Button>
+              <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] gap-1 text-brand" onClick={() => addAfter(f.id)}>
+                <Plus className="h-2.5 w-2.5" /> {t("tpl.add_below")}
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+
+      <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1.5 mt-2 border-dashed" onClick={addAtEnd}>
+        <Plus className="h-3 w-3" /> {t("tpl.add_section")}
+      </Button>
+    </div>
+  );
 }
 
 export function TemplatesTab() {
@@ -42,17 +224,27 @@ export function TemplatesTab() {
   const [editName, setEditName] = useState("");
   const [editModality, setEditModality] = useState("");
   const [editSection, setEditSection] = useState("");
-  const [editStructure, setEditStructure] = useState("");
+  const [editFields, setEditFields] = useState<TemplateField[]>([]);
   const [saving, setSaving] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const t = useT();
   const sec = useSection();
+  const tplName = useTemplateName();
+  const modName = useModality();
 
   // Word upload
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [extractedTemplates, setExtractedTemplates] = useState<ExtractedTemplate[]>([]);
   const [reviewOpen, setReviewOpen] = useState(true);
+
+  // Org template catalog (only for hospital members)
+  const [hasOrg, setHasOrg] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
 
   async function load() {
     setLoading(true);
@@ -61,13 +253,23 @@ export function TemplatesTab() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    fetch("/api/org", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setHasOrg(!!data?.membership))
+      .catch(() => {});
+  }, []);
 
-  const filtered = templates.filter((t) =>
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.modality.toLowerCase().includes(search.toLowerCase()) ||
-    (t.structure?.section || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = templates.filter((tmpl) => {
+    const q = search.toLowerCase();
+    return tmpl.name.toLowerCase().includes(q) ||
+      tplName(tmpl.name).toLowerCase().includes(q) ||
+      tmpl.modality.toLowerCase().includes(q) ||
+      modName(tmpl.modality).toLowerCase().includes(q) ||
+      (tmpl.structure?.section || "").toLowerCase().includes(q) ||
+      sec(tmpl.structure?.section || "").toLowerCase().includes(q);
+  });
 
   const grouped = filtered.reduce<Record<string, UserTemplate[]>>((acc, t) => {
     const section = t.structure?.section || "Other";
@@ -92,13 +294,14 @@ export function TemplatesTab() {
     setEditName(t.name);
     setEditModality(t.modality);
     setEditSection(t.structure?.section || "");
-    setEditStructure(t.structure?.template || "");
+    setEditFields(parseTemplateSections(t.structure?.template || ""));
   }
 
   async function handleSave() {
     if (!editTemplate) return;
     setSaving(true);
-    const updatedStructure = { ...editTemplate.structure, template: editStructure, title: editName, technique: editModality, section: editSection };
+    const templateText = serializeTemplateSections(editFields);
+    const updatedStructure = { ...editTemplate.structure, template: templateText, title: editName, technique: editModality, section: editSection };
     await fetch("/api/templates", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -109,11 +312,12 @@ export function TemplatesTab() {
     load();
   }
 
-  async function handleDuplicate(t: UserTemplate) {
+  async function handleDuplicate(tmpl: UserTemplate) {
+    const displayName = tplName(tmpl.name);
     await fetch("/api/templates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: t.name + " (copy)", modality: t.modality, base_template_id: t.base_template_id, structure: t.structure }),
+      body: JSON.stringify({ name: displayName + " (copy)", modality: tmpl.modality, base_template_id: tmpl.base_template_id, structure: tmpl.structure }),
     });
     load();
   }
@@ -186,6 +390,36 @@ export function TemplatesTab() {
     setExtractedTemplates((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  async function openCatalog() {
+    setCatalogOpen(true);
+    setCatalogLoading(true);
+    setCatalogSearch("");
+    try {
+      const res = await fetch("/api/templates/catalog");
+      if (res.ok) setCatalog(await res.json());
+    } catch { /* ignore */ }
+    setCatalogLoading(false);
+  }
+
+  async function toggleImport(item: CatalogItem) {
+    setToggling((prev) => new Set(prev).add(item.id));
+    try {
+      if (item.imported) {
+        await fetch(`/api/templates/imports?org_template_id=${item.id}`, { method: "DELETE" });
+      } else {
+        await fetch("/api/templates/imports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ org_template_id: item.id }),
+        });
+      }
+      setCatalog((prev) =>
+        prev.map((c) => c.id === item.id ? { ...c, imported: !c.imported } : c),
+      );
+    } catch { /* ignore */ }
+    setToggling((prev) => { const next = new Set(prev); next.delete(item.id); return next; });
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -215,6 +449,17 @@ export function TemplatesTab() {
             className="pl-8 h-8 text-xs"
           />
         </div>
+        {hasOrg && (
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={openCatalog}
+            title="Importar de sección"
+            className="h-8 w-8 shrink-0"
+          >
+            <Building2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           size="icon"
           variant="outline"
@@ -237,7 +482,7 @@ export function TemplatesTab() {
 
       <input
         type="file"
-        accept=".docx,.doc"
+        accept=".docx,.doc,.pdf"
         ref={fileRef}
         onChange={handleWordUpload}
         className="hidden"
@@ -287,10 +532,10 @@ export function TemplatesTab() {
                   key={i}
                   className="p-2.5 border border-amber-200/60 dark:border-amber-900/40 rounded-md bg-white dark:bg-gray-900"
                 >
-                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{ext.title}</p>
+                  <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{tplName(ext.title)}</p>
                   <div className="flex gap-1 mt-1">
-                    <Badge variant="secondary" className="text-[10px]">{ext.technique}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{ext.section}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{modName(ext.technique)}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{sec(ext.section)}</Badge>
                   </div>
                   <div className="flex gap-1 mt-2">
                     <Button
@@ -355,13 +600,17 @@ export function TemplatesTab() {
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                            {tpl.name}
+                            {tplName(tpl.name)}
                           </p>
                           <div className="flex items-center gap-1 mt-1">
                             <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                              {tpl.modality}
+                              {modName(tpl.modality)}
                             </Badge>
-                            {tpl.is_global ? (
+                            {tpl.is_org ? (
+                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-teal-300 text-teal-600 dark:border-teal-700 dark:text-teal-400">
+                                {tpl.section_name || "Hospital"}
+                              </Badge>
+                            ) : tpl.is_global ? (
                               <Badge variant="outline" className="text-[9px] h-4 px-1.5">
                                 {t("global")}
                               </Badge>
@@ -370,8 +619,8 @@ export function TemplatesTab() {
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {!tpl.is_global && (
+                        <div className="flex gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          {!tpl.is_global && !tpl.is_org && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -391,7 +640,7 @@ export function TemplatesTab() {
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          {!tpl.is_global && !tpl.is_default && (
+                          {!tpl.is_global && !tpl.is_default && !tpl.is_org && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -415,16 +664,16 @@ export function TemplatesTab() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{t("tpl.edit_dialog")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
               <Label className="text-xs">{t("tpl.name")}</Label>
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">{t("tpl.modality")}</Label>
                 <Select value={editModality} onValueChange={setEditModality}>
@@ -444,26 +693,158 @@ export function TemplatesTab() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label className="text-xs">{t("tpl.structure")}</Label>
-              <Textarea
-                value={editStructure}
-                onChange={(e) => setEditStructure(e.target.value)}
-                className="min-h-[200px] font-mono text-xs"
-              />
-              <p className="text-[10px] text-gray-400 mt-1">
-                {t("tpl.structure_hint")}
-              </p>
-            </div>
           </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+            <Label className="text-xs font-semibold">
+              {t("tpl.structure")} ({editFields.length})
+            </Label>
+            <p className="text-[10px] text-gray-400">{t("tpl.structure_hint")}</p>
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+            <div className="space-y-1 pr-3 pb-2">
+              <div className="flex items-center gap-2 px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">
+                <Badge variant="secondary" className="text-[10px]">{t("tpl.findings_header")}</Badge>
+              </div>
+
+              <SectionEditor fields={editFields} onChange={setEditFields} />
+
+              <div className="flex items-center gap-2 px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 mt-2">
+                <Badge variant="secondary" className="text-[10px]">{t("tpl.conclusion_header")}</Badge>
+                <span className="text-[10px] text-gray-400">{t("tpl.auto_generated")}</span>
+              </div>
+            </div>
+          </ScrollArea>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">{t("cancel")}</Button>
             </DialogClose>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || editFields.every((f) => !f.label.trim())}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("tpl.save_changes")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Catalog Dialog — browse & import org templates */}
+      <Dialog open={catalogOpen} onOpenChange={(open) => { if (!open) { setCatalogOpen(false); load(); } }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-teal-600" />
+              Plantillas de sección
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input
+              placeholder="Buscar plantilla..."
+              value={catalogSearch}
+              onChange={(e) => setCatalogSearch(e.target.value)}
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0 max-h-[60vh]">
+            {catalogLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+              </div>
+            ) : catalog.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 text-xs">
+                No hay plantillas de sección disponibles
+              </div>
+            ) : (() => {
+              const q = catalogSearch.toLowerCase();
+              const filtered = catalog.filter((c) =>
+                c.name.toLowerCase().includes(q) ||
+                tplName(c.name).toLowerCase().includes(q) ||
+                c.modality.toLowerCase().includes(q) ||
+                modName(c.modality).toLowerCase().includes(q) ||
+                c.section_name.toLowerCase().includes(q)
+              );
+              const grouped = new Map<string, CatalogItem[]>();
+              filtered.forEach((c) => {
+                const key = c.section_name || "Hospital";
+                if (!grouped.has(key)) grouped.set(key, []);
+                grouped.get(key)!.push(c);
+              });
+              const importedCount = catalog.filter((c) => c.imported).length;
+
+              return (
+                <div className="space-y-3 pr-3 pb-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {importedCount} importada{importedCount !== 1 ? "s" : ""}
+                    </Badge>
+                    <span className="text-[10px] text-gray-400">
+                      de {catalog.length} disponible{catalog.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {filtered.length === 0 && (
+                    <p className="text-center text-xs text-gray-400 py-6">Sin resultados</p>
+                  )}
+
+                  {Array.from(grouped.entries()).map(([secName, items]) => (
+                    <div key={secName}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                          {secName}
+                        </span>
+                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                      </div>
+
+                      <div className="space-y-1">
+                        {items.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`flex items-center justify-between gap-2 p-2 rounded-md border transition-all ${
+                              item.imported
+                                ? "border-teal-300 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10"
+                                : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                {tplName(item.name)}
+                              </p>
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1.5 mt-0.5">
+                                {modName(item.modality)}
+                              </Badge>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={item.imported ? "default" : "outline"}
+                              className={`h-7 px-3 text-[11px] shrink-0 ${
+                                item.imported
+                                  ? "bg-teal-600 hover:bg-teal-700 text-white"
+                                  : "text-teal-600 border-teal-300 hover:bg-teal-50 dark:border-teal-800 dark:hover:bg-teal-900/20"
+                              }`}
+                              disabled={toggling.has(item.id)}
+                              onClick={() => toggleImport(item)}
+                            >
+                              {toggling.has(item.id) ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : item.imported ? (
+                                <><Check className="h-3 w-3 mr-1" /> Importada</>
+                              ) : (
+                                <><Plus className="h-3 w-3 mr-1" /> Importar</>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

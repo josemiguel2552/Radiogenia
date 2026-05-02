@@ -7,10 +7,13 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Loader2 } from "lucide-react";
+import { Loader2, Globe } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { usePublicLang } from "@/lib/public-i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { lang, setLang, t } = usePublicLang();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -47,18 +50,11 @@ export default function LoginPage() {
         <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px] animate-float-slow" />
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[100px] animate-float-slower" />
         <div className="relative z-10 max-w-md text-center px-8">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-xl shadow-purple-500/25">
-              <Zap className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-3xl font-bold text-white tracking-tight">
-              Radiogen<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">.ai</span>
-            </span>
+          <div className="flex items-center justify-center mb-8">
+            <Logo size="lg" forceDark />
           </div>
           <p className="text-lg text-gray-300 leading-relaxed">
-            AI-powered radiology reporting.
-            <br />
-            Dictate, generate, deliver.
+            {t("auth.sidebar_text")}
           </p>
         </div>
       </div>
@@ -67,20 +63,22 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
-          <div className="flex lg:hidden flex-col items-center gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <Zap className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">
-                Radiogen<span className="text-gray-500">.ai</span>
-              </span>
-            </div>
+          <div className="flex lg:hidden justify-center mb-4">
+            <Logo size="md" forceDark />
           </div>
 
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
-            <p className="text-sm text-gray-400">Sign in to your account</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">{t("auth.welcome_back")}</h1>
+              <p className="text-sm text-gray-400">{t("auth.sign_in_subtitle")}</p>
+            </div>
+            <button
+              onClick={() => setLang(lang === "es" ? "en" : "es")}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {lang === "es" ? "EN" : "ES"}
+            </button>
           </div>
 
           {/* Google OAuth */}
@@ -95,7 +93,7 @@ export default function LoginPage() {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
-            Continue with Google
+            {t("auth.google")}
           </button>
 
           <div className="relative">
@@ -103,17 +101,17 @@ export default function LoginPage() {
               <div className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-[#0a0a1a] text-gray-500">or sign in with email</span>
+              <span className="px-3 bg-[#0a0a1a] text-gray-500">{t("auth.or_email")}</span>
             </div>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300 text-sm">Email</Label>
+              <Label htmlFor="email" className="text-gray-300 text-sm">{t("auth.email")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@hospital.com"
+                placeholder={t("auth.email_placeholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -122,15 +120,15 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-gray-300 text-sm">Password</Label>
+                <Label htmlFor="password" className="text-gray-300 text-sm">{t("auth.password")}</Label>
                 <Link href="/auth/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">
-                  Forgot password?
+                  {t("auth.forgot")}
                 </Link>
               </div>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t("auth.password_placeholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -144,17 +142,17 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold shadow-lg shadow-purple-500/20"
+              className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("auth.signin_btn")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-gray-500">
-            No account?{" "}
+            {t("auth.no_account")}{" "}
             <Link href="/auth/register" className="text-blue-400 hover:text-blue-300 font-medium">
-              Create one free
+              {t("auth.create_free")}
             </Link>
           </p>
         </div>

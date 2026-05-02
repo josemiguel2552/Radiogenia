@@ -10,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Loader2, Check, Eye, Upload, RefreshCw, Sparkles,
-  Plug, Wand2, GraduationCap, Brain, Pencil, X, RotateCcw, Search, Trash2,
+  Loader2, Check, Wand2, Brain, Pencil, X, RotateCcw, Search,
+  PenLine, Plus, Trash2,
 } from "lucide-react";
-import { PROVIDERS, LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage } from "@/lib/types";
-import { buildFullPromptPreview } from "@/lib/prompts";
-import { useT, useSection } from "@/lib/i18n";
+import { LANGUAGES, DICTATION_LANGUAGES, MODALITIES, type AIProvider, type FindingsLength, type NormalFieldsVerbosity, type ParaphraseLevel, type OutputLanguage, type Signature } from "@/lib/types";
+import { useT, useModality, useSection } from "@/lib/i18n";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 interface ModelConfig {
   provider: AIProvider;
@@ -26,9 +26,7 @@ interface ModelConfig {
   normal_fields_verbosity: NormalFieldsVerbosity;
   paraphrase_level: ParaphraseLevel;
   output_language: OutputLanguage;
-  style_learning_enabled: boolean;
-  style_sample_count: number;
-  few_shot_count: number;
+  dictation_language: string;
   compact_normals: boolean;
 }
 
@@ -42,15 +40,14 @@ interface NormalityPhraseRow {
 
 export function ModelConfigTab() {
   const t = useT();
-  const sec = useSection();
+  const modName = useModality();
+  const secName = useSection();
+  const { prefs } = useUIPrefs();
+  const uiLang = (prefs.uiLanguage || "es") as "es" | "en";
   const [config, setConfig] = useState<ModelConfig | null>(null);
-  const [userRole, setUserRole] = useState<"admin" | "radiologist">("radiologist");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<boolean | null>(null);
 
   // Normality phrases
   const [normalityPhrases, setNormalityPhrases] = useState<NormalityPhraseRow[]>([]);
@@ -59,45 +56,22 @@ export function ModelConfigTab() {
   const [normalitySearch, setNormalitySearch] = useState("");
   const [savingPhrase, setSavingPhrase] = useState<string | null>(null);
 
-  // Style patterns (learned phrases)
-  interface StyleGroup {
-    modality: string;
-    study_type: string;
-    report_count: number;
-    normal_phrases: { id: string; phrase: string; frequency: number; last_seen_at: string }[];
-    conclusion_phrases: { id: string; phrase: string; frequency: number; last_seen_at: string }[];
-  }
-  const [styleGroups, setStyleGroups] = useState<StyleGroup[]>([]);
-  const [showLearnedPhrases, setShowLearnedPhrases] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<StyleGroup | null>(null);
-  const [deletingPhrase, setDeletingPhrase] = useState<string | null>(null);
-
-  // Prompt preview
-  const [showPrompt, setShowPrompt] = useState(false);
-
-  // Fine-tuning
-  const [ftUploading, setFtUploading] = useState(false);
-  const [ftFileId, setFtFileId] = useState<string | null>(null);
-  const [ftExamples, setFtExamples] = useState(0);
-  const [ftStarting, setFtStarting] = useState(false);
-  const [ftJobId, setFtJobId] = useState<string | null>(null);
-  const [ftStatus, setFtStatus] = useState<string | null>(null);
-  const [ftModel, setFtModel] = useState<string | null>(null);
-  const [ftError, setFtError] = useState<string | null>(null);
-  const [ftChecking, setFtChecking] = useState(false);
-  const [ftJobs, setFtJobs] = useState<{ jobId: string; status: string; fineTunedModel: string | null; model: string; createdAt: number }[]>([]);
-  const [ftSuffix, setFtSuffix] = useState("radiogenai");
-  const [ftBaseModel, setFtBaseModel] = useState("gpt-4o-mini-2024-07-18");
-  const ftFileRef = useRef<HTMLInputElement>(null);
+  // Signatures
+  const [signatures, setSignatures] = useState<Signature[]>([]);
+  const [showAddSig, setShowAddSig] = useState(false);
+  const [editingSig, setEditingSig] = useState<Signature | null>(null);
+  const [sigLabel, setSigLabel] = useState("");
+  const [sigBody, setSigBody] = useState("");
+  const [savingSig, setSavingSig] = useState(false);
+  const [sigError, setSigError] = useState<string | null>(null);
+  const [sigSetupNeeded, setSigSetupNeeded] = useState(false);
 
   async function load() {
     setLoading(true);
     const res = await fetch("/api/model-config");
     if (res.ok) {
       const data = await res.json();
-      if (data.role) setUserRole(data.role);
       setConfig(data);
-      setApiKey(data?.api_key_encrypted || "");
     }
     setLoading(false);
   }
@@ -105,24 +79,34 @@ export function ModelConfigTab() {
   const loadNormality = useCallback(async (mod?: string) => {
     const m = mod || selectedModality;
     try {
-      const res = await fetch(`/api/normality-phrases?modality=${encodeURIComponent(m)}`);
+      const res = await fetch(`/api/normality-phrases?modality=${encodeURIComponent(m)}&lang=${uiLang}`);
       if (res.ok) setNormalityPhrases(await res.json());
     } catch { /* ignore */ }
-  }, [selectedModality]);
+  }, [selectedModality, uiLang]);
 
-  const loadStylePatterns = useCallback(async () => {
+  const loadSignatures = useCallback(async () => {
     try {
-      const res = await fetch("/api/style-patterns");
+      const res = await fetch("/api/signatures");
       if (res.ok) {
         const data = await res.json();
-        setStyleGroups(data.groups || []);
+        if (Array.isArray(data)) {
+          setSignatures(data);
+          setSigSetupNeeded(false);
+        } else if (data?.error === "SETUP_REQUIRED") {
+          setSigSetupNeeded(true);
+        }
+      } else {
+        const data = await res.json().catch(() => null);
+        if (data?.error === "SETUP_REQUIRED") {
+          setSigSetupNeeded(true);
+        }
       }
-    } catch { /* table may not exist */ }
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => { load(); }, []);
   useEffect(() => { loadNormality(); }, [loadNormality]);
-  useEffect(() => { loadStylePatterns(); }, [loadStylePatterns]);
+  useEffect(() => { loadSignatures(); }, [loadSignatures]);
 
   function update(field: string, value: string | boolean | number) {
     if (!config) return;
@@ -134,37 +118,22 @@ export function ModelConfigTab() {
     if (!config) return;
     setSaving(true);
     const body: Record<string, unknown> = { ...config };
-    if (apiKey && apiKey !== "••••••••") {
-      body.api_key = apiKey;
-    }
     delete body.api_key_encrypted;
+    delete body.provider;
+    delete body.model_name;
+    delete body.custom_base_url;
 
-    await fetch("/api/model-config", {
+    const res = await fetch("/api/model-config", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (!res.ok) {
+      console.error("Failed to save config:", await res.text());
+    }
     setDirty(false);
     setSaving(false);
     load();
-  }
-
-  async function handleTestConnection() {
-    setTesting(true);
-    setTestResult(null);
-    const res = await fetch("/api/test-connection", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        provider: config?.provider,
-        modelName: config?.model_name,
-        apiKey: apiKey !== "••••••••" ? apiKey : "",
-        customBaseUrl: config?.custom_base_url,
-      }),
-    });
-    const data = await res.json();
-    setTestResult(data.success);
-    setTesting(false);
   }
 
   async function handleSaveNormalityPhrase(modality: string, sectionLabel: string, phrase: string) {
@@ -185,130 +154,75 @@ export function ModelConfigTab() {
     setSavingPhrase(null);
   }
 
-  async function handleDeletePhrase(id: string) {
-    setDeletingPhrase(id);
-    await fetch(`/api/style-patterns?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    await loadStylePatterns();
-    setDeletingPhrase(null);
-    if (selectedGroup) {
-      setSelectedGroup((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          normal_phrases: prev.normal_phrases.filter((p) => p.id !== id),
-          conclusion_phrases: prev.conclusion_phrases.filter((p) => p.id !== id),
-        };
-      });
-    }
-  }
-
-  async function handleResetGroup(modality: string, studyType: string) {
-    await fetch(`/api/style-patterns?group=${encodeURIComponent(modality + "|" + studyType)}`, { method: "DELETE" });
-    await loadStylePatterns();
-    setSelectedGroup(null);
-  }
-
-  // Fine-tuning functions
-  async function loadFtJobs() {
+  async function handleSaveSig() {
+    if (!sigLabel.trim() || !sigBody.trim()) return;
+    setSavingSig(true);
+    setSigError(null);
     try {
-      const res = await fetch("/api/finetune/status");
-      if (res.ok) {
-        const data = await res.json();
-        setFtJobs(data.jobs || []);
-      }
-    } catch { /* ignore */ }
-  }
-
-  async function handleFtUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFtUploading(true);
-    setFtError(null);
-    setFtFileId(null);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/finetune/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        setFtFileId(data.fileId);
-        setFtExamples(data.validExamples);
-        if (data.skippedErrors > 0) {
-          setFtError(`${data.skippedErrors} lines skipped (invalid format)`);
+      const res = editingSig
+        ? await fetch("/api/signatures", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: editingSig.id, label: sigLabel, body: sigBody }),
+          })
+        : await fetch("/api/signatures", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ label: sigLabel, body: sigBody }),
+          });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed to save" }));
+        if (err.error === "SETUP_REQUIRED") {
+          setSigSetupNeeded(true);
+          setSigError("Run migration 015_signatures.sql in the Supabase SQL Editor.");
+        } else {
+          setSigError(err.error || "Failed to save signature");
         }
-      } else {
-        setFtError(data.error || "Upload failed");
+        setSavingSig(false);
+        return;
       }
-    } catch (err) {
-      setFtError(err instanceof Error ? err.message : "Upload failed");
+      setSigLabel(""); setSigBody(""); setShowAddSig(false); setEditingSig(null);
+      setSigError(null);
+      await loadSignatures();
+    } catch {
+      setSigError("Network error saving signature");
     }
-    setFtUploading(false);
-    if (ftFileRef.current) ftFileRef.current.value = "";
+    setSavingSig(false);
   }
 
-  async function handleFtStart() {
-    if (!ftFileId) return;
-    setFtStarting(true);
-    setFtError(null);
-
+  async function handleToggleSigActive(sig: Signature) {
     try {
-      const res = await fetch("/api/finetune/start", {
-        method: "POST",
+      const res = await fetch("/api/signatures", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
+        body: JSON.stringify({ id: sig.id, is_active: !sig.is_active }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setFtJobId(data.jobId);
-        setFtStatus(data.status);
-        setFtFileId(null);
-      } else {
-        setFtError(data.error || "Failed to start");
-      }
-    } catch (err) {
-      setFtError(err instanceof Error ? err.message : "Failed to start");
+      if (!res.ok) console.error("Toggle signature error:", await res.text());
+    } catch (e) {
+      console.error("Toggle signature error:", e);
     }
-    setFtStarting(false);
+    await loadSignatures();
   }
 
-  async function handleFtCheckStatus() {
-    if (!ftJobId) return;
-    setFtChecking(true);
-
+  async function handleDeleteSig(id: string) {
     try {
-      const res = await fetch("/api/finetune/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: ftJobId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setFtStatus(data.status);
-        if (data.fineTunedModel) {
-          setFtModel(data.fineTunedModel);
-        }
-        if (data.error) setFtError(data.error);
-      }
-    } catch { /* ignore */ }
-    setFtChecking(false);
-  }
-
-  function useFtModel() {
-    if (!ftModel) return;
-    update("provider", "openai");
-    update("model_name", ftModel);
-    setDirty(true);
+      const res = await fetch(`/api/signatures?id=${id}`, { method: "DELETE" });
+      if (!res.ok) console.error("Delete signature error:", await res.text());
+    } catch (e) {
+      console.error("Delete signature error:", e);
+    }
+    await loadSignatures();
   }
 
   if (loading || !config) return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
 
-  const selectedProvider = PROVIDERS.find((p) => p.value === config.provider);
   const langLabel = LANGUAGES.find((l) => l.value === config.output_language)?.label || config.output_language;
   const customizedCount = normalityPhrases.filter((p) => p.is_customized).length;
   const filteredPhrases = normalitySearch
-    ? normalityPhrases.filter((p) => p.section_label.toLowerCase().includes(normalitySearch.toLowerCase()))
+    ? normalityPhrases.filter((p) => {
+        const q = normalitySearch.toLowerCase();
+        return p.section_label.toLowerCase().includes(q) || secName(p.section_label).toLowerCase().includes(q);
+      })
     : normalityPhrases;
 
   return (
@@ -316,11 +230,11 @@ export function ModelConfigTab() {
       {/* Active model summary card */}
       <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex-shrink-0 h-9 w-9 rounded-full bg-brand-soft flex items-center justify-center">
-          <Plug className="h-4 w-4 text-brand" />
+          <Wand2 className="h-4 w-4 text-brand" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-            {userRole === "admin" ? `${selectedProvider?.label || config.provider} / ${config.model_name}` : t("cfg.managed_by_admin")}
+            {t("cfg.managed_by_admin")}
           </p>
           <p className="text-[10px] text-gray-500 dark:text-gray-400">{langLabel}</p>
         </div>
@@ -331,76 +245,7 @@ export function ModelConfigTab() {
         )}
       </div>
 
-      <Accordion type="single" collapsible defaultValue={userRole === "admin" ? "connection" : "writing"}>
-        {/* Connection — admin only */}
-        {userRole === "admin" && <AccordionItem value="connection">
-          <AccordionTrigger className="text-sm font-semibold">
-            <span className="flex items-center gap-2">
-              <Plug className="h-3.5 w-3.5 text-brand" />
-              {t("cfg.connection")}
-            </span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-3 pt-1">
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.provider")}</Label>
-              <Select value={config.provider} onValueChange={(v) => update("provider", v)}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PROVIDERS.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.model")}</Label>
-              {selectedProvider && selectedProvider.models.length > 0 ? (
-                config.model_name.startsWith("ft:") ? (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
-                      <Sparkles className="h-3 w-3 text-purple-500" />
-                      <span className="text-xs font-mono truncate">{config.model_name}</span>
-                    </div>
-                    <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={() => update("model_name", selectedProvider.models[0])}>
-                      {t("cfg.switch_standard")}
-                    </Button>
-                  </div>
-                ) : (
-                  <Select value={config.model_name} onValueChange={(v) => update("model_name", v)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {selectedProvider.models.map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )
-              ) : (
-                <Input value={config.model_name} onChange={(e) => update("model_name", e.target.value)} placeholder={t("cfg.model")} className="h-9" />
-              )}
-            </div>
-
-            {config.provider === "custom" && (
-              <div>
-                <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.endpoint_url")}</Label>
-                <Input value={config.custom_base_url} onChange={(e) => update("custom_base_url", e.target.value)} placeholder="https://..." className="h-9" />
-              </div>
-            )}
-
-            <div>
-              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.api_key")}</Label>
-              <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setDirty(true); }} placeholder={t("cfg.api_key")} className="h-9" />
-              <p className="text-[10px] text-gray-400 mt-1">{t("cfg.key_hint")}</p>
-            </div>
-
-            <Button size="sm" variant="outline" onClick={handleTestConnection} disabled={testing} className="w-full gap-1.5">
-              {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : testResult === true ? <Check className="h-3.5 w-3.5 text-green-500" /> : null}
-              {testResult === true ? t("cfg.connected") : testResult === false ? t("cfg.connection_failed") : t("cfg.test_connection")}
-            </Button>
-          </AccordionContent>
-        </AccordionItem>}
-
+      <Accordion type="single" collapsible defaultValue="writing">
         {/* Writing preferences */}
         <AccordionItem value="writing">
           <AccordionTrigger className="text-sm font-semibold">
@@ -419,7 +264,7 @@ export function ModelConfigTab() {
               <Switch checked={!!config.compact_normals} onCheckedChange={(v) => update("compact_normals", v)} />
             </div>
 
-            {/* Language */}
+            {/* Report language */}
             <div>
               <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.output_language")}</Label>
               <Select value={config.output_language} onValueChange={(v) => update("output_language", v)}>
@@ -429,277 +274,144 @@ export function ModelConfigTab() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Dictation language */}
+            <div>
+              <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.dictation_language")}</Label>
+              <p className="text-[10px] text-gray-400 mb-1.5">{t("cfg.dictation_language_hint")}</p>
+              <Select value={config.dictation_language || "auto"} onValueChange={(v) => update("dictation_language", v)}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DICTATION_LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </AccordionContent>
         </AccordionItem>
 
-        {/* Style Learning */}
-        <AccordionItem value="style">
+        {/* Normality Phrases */}
+        <AccordionItem value="normality">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              {t("cfg.style_learning")}
+              <Brain className="h-3.5 w-3.5 text-emerald-500" />
+              {t("cfg.normality")}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {t("cfg.normality_desc")}
+            </p>
             <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs">{t("cfg.normality_use")}</Label>
-                <p className="text-[10px] text-gray-400">{t("cfg.style_learning_desc")}</p>
-              </div>
-              <Switch checked={config.style_learning_enabled} onCheckedChange={(v) => update("style_learning_enabled", v)} />
+              <span className="text-xs text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">{modName(selectedModality)}</span> — {normalityPhrases.length} {t("cfg.sections")}
+              </span>
+              <Badge variant={customizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
+                {customizedCount}/{normalityPhrases.length} {t("cfg.customized")}
+              </Badge>
             </div>
-
-            {/* Learned phrases summary */}
-            {config.style_learning_enabled && (
-              <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-                {styleGroups.length > 0 ? (
-                  <>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {t("cfg.style_learning_summary").replace("{0}", String(styleGroups.length))}
-                    </p>
-                    <div className="space-y-1">
-                      {styleGroups.slice(0, 5).map((g) => (
-                        <div
-                          key={`${g.modality}|${g.study_type}`}
-                          className="flex items-center justify-between py-1 px-2 rounded text-xs hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                          onClick={() => { setSelectedGroup(g); setShowLearnedPhrases(true); }}
-                        >
-                          <span className="text-gray-700 dark:text-gray-300 truncate">
-                            <span className="font-medium">{g.modality}</span>
-                            <span className="text-gray-400 mx-1">/</span>
-                            {g.study_type}
-                          </span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge variant="secondary" className="text-[9px]">{Math.min(g.report_count, 10)}/10</Badge>
-                            <span className="text-[10px] text-gray-400">{g.normal_phrases.length + g.conclusion_phrases.length} {t("cfg.phrases_learned")}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {styleGroups.length > 5 && (
-                        <Button size="sm" variant="ghost" className="w-full text-xs text-brand" onClick={() => setShowLearnedPhrases(true)}>
-                          {t("cfg.view_all")} ({styleGroups.length})
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-[10px] text-gray-400 text-center py-2">
-                    {t("cfg.no_patterns")}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Normality phrases sub-section */}
-            <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Brain className="h-3 w-3 text-emerald-500" />
-                <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("cfg.normality")}</span>
-              </div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                {t("cfg.normality_desc")}
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold">{selectedModality}</span> — {normalityPhrases.length} {t("cfg.sections")}
-                </span>
-                <Badge variant={customizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
-                  {customizedCount}/{normalityPhrases.length} {t("cfg.customized")}
-                </Badge>
-              </div>
-              <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowNormality(true)}>
-                <Pencil className="h-3 w-3" />
-                {t("cfg.edit_normality")}
-              </Button>
-            </div>
+            <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowNormality(true)}>
+              <Pencil className="h-3 w-3" />
+              {t("cfg.edit_normality")}
+            </Button>
           </AccordionContent>
         </AccordionItem>
 
-        {/* Fine-Tuning — admin only */}
-        {userRole === "admin" && <AccordionItem value="finetune">
+        {/* Signatures */}
+        <AccordionItem value="signatures">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
-              <GraduationCap className="h-3.5 w-3.5 text-purple-500" />
-              {t("cfg.finetuning")}
+              <PenLine className="h-3.5 w-3.5 text-blue-500" />
+              {t("sig.title")}
+              {signatures.some((s) => s.is_active) && (
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pt-1">
-            {config.provider !== "openai" ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400 py-2">
-                {t("cfg.switch_openai")}
-              </p>
-            ) : (
-              <>
-                {/* Step 1: Upload */}
-                <input type="file" accept=".docx,.doc,.jsonl,.txt" ref={ftFileRef} onChange={handleFtUpload} className="hidden" />
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {t("sig.desc")}
+            </p>
 
-                <div className="space-y-3">
-                  {/* Step indicator */}
-                  <FtStep n={1} label={t("cfg.upload_training")} active={!ftFileId && !ftJobId}>
-                    <div
-                      className="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:border-purple-400 transition-colors dark:border-gray-600"
-                      onClick={() => ftFileRef.current?.click()}
-                    >
-                      {ftUploading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{t("cfg.uploading_openai")}</p>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-2">
-                          <Upload className="h-4 w-4 text-gray-400" />
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{t("cfg.word_or_jsonl")}</p>
-                        </div>
-                      )}
-                    </div>
-                  </FtStep>
+            {sigSetupNeeded && (
+              <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">Setup required</p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                  Run migration <code className="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 rounded">015_signatures.sql</code> in the Supabase SQL Editor to enable signatures.
+                </p>
+              </div>
+            )}
 
-                  {ftFileId && (
-                    <div className="p-2.5 bg-green-50 dark:bg-green-900/20 rounded-lg text-xs text-green-700 dark:text-green-300">
-                      <Check className="h-3 w-3 inline mr-1" />
-                      {ftExamples} {t("cfg.examples_uploaded")}
-                    </div>
-                  )}
-
-                  {/* Step 2: Configure & start */}
-                  <FtStep n={2} label={t("cfg.configure_start")} active={!!ftFileId}>
-                    {ftFileId && (
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">{t("cfg.base_model")}</Label>
-                          <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
-                              <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-[10px] text-gray-500 dark:text-gray-400">{t("cfg.suffix")}</Label>
-                          <Input value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)} placeholder="radiogenai" className="h-8 text-xs" />
-                        </div>
-                        <Button size="sm" onClick={handleFtStart} disabled={ftStarting} className="w-full bg-purple-600 hover:bg-purple-700 gap-1.5">
-                          {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                          {t("cfg.start_finetuning")}
+            {!sigSetupNeeded && signatures.length === 0 ? (
+              <div className="text-center py-3">
+                <p className="text-xs text-gray-400">{t("sig.no_signatures")}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{t("sig.no_signatures_hint")}</p>
+              </div>
+            ) : !sigSetupNeeded && (
+              <div className="space-y-1.5">
+                {signatures.map((sig) => (
+                  <div
+                    key={sig.id}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      sig.is_active
+                        ? "border-green-500/40 bg-green-50 dark:bg-green-900/10"
+                        : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSigActive(sig)}
+                        className={`h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          sig.is_active
+                            ? "border-green-500 bg-green-500"
+                            : "border-gray-300 dark:border-gray-600 hover:border-green-400"
+                        }`}
+                        title={sig.is_active ? t("sig.active") : t("sig.set_active")}
+                      >
+                        {sig.is_active && <Check className="h-2.5 w-2.5 text-white" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">{sig.label}</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 block truncate">{sig.body.split("\n")[0]}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <Button
+                          variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-brand"
+                          onClick={() => { setEditingSig(sig); setSigLabel(sig.label); setSigBody(sig.body); setShowAddSig(true); }}
+                          title={t("edit")}
+                        >
+                          <Pencil className="h-2.5 w-2.5" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-500"
+                          onClick={() => { if (confirm(t("sig.confirm_delete"))) handleDeleteSig(sig.id); }}
+                          title={t("delete")}
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
                         </Button>
                       </div>
-                    )}
-                  </FtStep>
-
-                  {/* Step 3: Status */}
-                  <FtStep n={3} label={t("cfg.training_status")} active={!!ftJobId}>
-                    {ftJobId && (
-                      <div className="space-y-2">
-                        <div className="p-2.5 border rounded-lg text-xs dark:border-gray-700 space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500 dark:text-gray-400">{t("job")}:</span>
-                            <span className="font-mono text-[10px]">{ftJobId.slice(0, 20)}...</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500 dark:text-gray-400">{t("status")}:</span>
-                            <Badge variant={ftStatus === "succeeded" ? "default" : ftStatus === "failed" ? "destructive" : "secondary"} className="text-[10px]">
-                              {ftStatus || "unknown"}
-                            </Badge>
-                          </div>
-                          {ftModel && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-500 dark:text-gray-400">{t("model")}:</span>
-                              <span className="font-mono text-[10px] text-green-600">{ftModel}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={handleFtCheckStatus} disabled={ftChecking} className="flex-1 text-xs gap-1">
-                            {ftChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                            {t("cfg.refresh")}
-                          </Button>
-                          {ftModel && (
-                            <Button size="sm" onClick={useFtModel} className="flex-1 text-xs bg-green-600 hover:bg-green-700 gap-1">
-                              <Check className="h-3 w-3" /> {t("cfg.use_model")}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </FtStep>
-                </div>
-
-                {/* Previous jobs */}
-                {!ftJobId && !ftFileId && (
-                  <Button size="sm" variant="outline" className="w-full text-xs gap-1" onClick={loadFtJobs}>
-                    <RefreshCw className="h-3 w-3" /> {t("cfg.load_previous")}
-                  </Button>
-                )}
-
-                {ftJobs.length > 0 && !ftJobId && (
-                  <div className="space-y-1.5">
-                    {ftJobs.map((job) => (
-                      <div key={job.jobId} className="p-2 border rounded-lg text-xs dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-[10px]">{job.model}</span>
-                          <Badge variant={job.status === "succeeded" ? "default" : "secondary"} className="text-[10px]">{job.status}</Badge>
-                        </div>
-                        {job.fineTunedModel && (
-                          <div className="flex items-center justify-between mt-1">
-                            <span className="font-mono text-[10px] text-green-600 truncate flex-1">{job.fineTunedModel}</span>
-                            <Button size="sm" variant="ghost" className="h-5 text-[10px] text-green-600 ml-1" onClick={() => {
-                              update("provider", "openai");
-                              update("model_name", job.fineTunedModel!);
-                              setDirty(true);
-                            }}>
-                              {t("use")}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    </div>
                   </div>
-                )}
-
-                {ftError && (
-                  <div className="p-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg text-xs text-red-600 dark:text-red-400">
-                    {ftError}
-                  </div>
-                )}
-
-                <p className="text-[10px] text-gray-400">
-                  {t("cfg.ft_hint")}
-                </p>
-              </>
+                ))}
+              </div>
             )}
+
+            <Button
+              size="sm" variant="outline" className="w-full text-xs gap-1.5"
+              onClick={() => { setEditingSig(null); setSigLabel(""); setSigBody(""); setShowAddSig(true); }}
+            >
+              <Plus className="h-3 w-3" />
+              {t("sig.add")}
+            </Button>
           </AccordionContent>
-        </AccordionItem>}
+        </AccordionItem>
+
       </Accordion>
 
-      {/* Footer actions */}
-      <div className="flex gap-2 pt-1">
-        <Button onClick={handleSave} disabled={saving || !dirty} className="flex-1 h-10">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cfg.save_config")}
-        </Button>
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => setShowPrompt(true)} title={t("cfg.preview_prompt")}>
-          <Eye className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Prompt Preview Dialog */}
-      <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("cfg.prompt_preview")}</DialogTitle>
-          </DialogHeader>
-          <pre className="text-xs bg-gray-50 dark:bg-gray-800 p-4 rounded-lg whitespace-pre-wrap font-mono">
-            {buildFullPromptPreview({
-              template: "[Selected template structure]",
-              findingsLength: config.findings_length,
-              normalFieldsVerbosity: config.normal_fields_verbosity,
-              paraphraseLevel: config.paraphrase_level,
-              outputLanguage: config.output_language,
-              styleSamplesCount: config.style_learning_enabled ? config.few_shot_count : 0,
-            })}
-          </pre>
-        </DialogContent>
-      </Dialog>
+      {/* Footer */}
+      <Button onClick={handleSave} disabled={saving || !dirty} className="w-full h-10">
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cfg.save_config")}
+      </Button>
 
       {/* Normality Phrases Editor Dialog */}
       <Dialog open={showNormality} onOpenChange={setShowNormality}>
@@ -713,7 +425,7 @@ export function ModelConfigTab() {
               <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MODALITIES.filter((m) => m !== "Procedures").map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                  <SelectItem key={m} value={m}>{modName(m)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -739,6 +451,7 @@ export function ModelConfigTab() {
                 saving={savingPhrase === p.section_label}
                 onSave={(phrase) => handleSaveNormalityPhrase(p.modality, p.section_label, phrase)}
                 onReset={() => handleResetNormalityPhrase(p.modality, p.section_label)}
+                translateLabel={secName}
               />
             ))}
             {filteredPhrases.length === 0 && (
@@ -748,94 +461,72 @@ export function ModelConfigTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Learned Phrases Dialog */}
-      <Dialog open={showLearnedPhrases} onOpenChange={(open) => { setShowLearnedPhrases(open); if (!open) setSelectedGroup(null); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+      {/* Signature Add/Edit Dialog */}
+      <Dialog open={showAddSig} onOpenChange={(v) => { setShowAddSig(v); if (!v) setEditingSig(null); }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("cfg.learned_phrases")}</DialogTitle>
+            <DialogTitle>{editingSig ? t("edit") : t("sig.add")}</DialogTitle>
           </DialogHeader>
-
-          {selectedGroup ? (
-            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{selectedGroup.modality} / {selectedGroup.study_type}</span>
-                  <p className="text-[10px] text-gray-400">{selectedGroup.report_count} {t("cfg.reports_stored")}</p>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("sig.label")}</Label>
+              <Input
+                value={sigLabel}
+                onChange={(e) => setSigLabel(e.target.value)}
+                placeholder={t("sig.label_placeholder")}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("sig.body")}</Label>
+              <textarea
+                value={sigBody}
+                onChange={(e) => setSigBody(e.target.value)}
+                placeholder={t("sig.body_placeholder")}
+                rows={4}
+                className="w-full text-sm border rounded-lg px-3 py-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-brand/50"
+              />
+            </div>
+            {sigBody.trim() && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-gray-400">{t("sig.preview")}</Label>
+                <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                  <pre className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap font-sans">{sigBody}</pre>
                 </div>
-                <Button size="sm" variant="outline" className="text-xs text-red-500 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20 gap-1"
-                  onClick={() => handleResetGroup(selectedGroup.modality, selectedGroup.study_type)}
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  {t("cfg.reset_study_type")}
-                </Button>
               </div>
-
-              {selectedGroup.conclusion_phrases.length > 0 && (
-                <div>
-                  <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.conclusion_phrases_label")}</Label>
-                  <div className="space-y-1">
-                    {selectedGroup.conclusion_phrases.map((p) => (
-                      <LearnedPhraseRow key={p.id} phrase={p} deleting={deletingPhrase === p.id} onDelete={() => handleDeletePhrase(p.id)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup.normal_phrases.length > 0 && (
-                <div>
-                  <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">{t("cfg.normal_phrases_label")}</Label>
-                  <div className="space-y-1">
-                    {selectedGroup.normal_phrases.map((p) => (
-                      <LearnedPhraseRow key={p.id} phrase={p} deleting={deletingPhrase === p.id} onDelete={() => handleDeletePhrase(p.id)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup.normal_phrases.length === 0 && selectedGroup.conclusion_phrases.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
-              )}
+            )}
+            {sigError && (
+              <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{sigError}</p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setShowAddSig(false); setEditingSig(null); setSigError(null); }}>
+                {t("cancel")}
+              </Button>
+              <Button size="sm" onClick={handleSaveSig} disabled={savingSig || !sigLabel.trim() || !sigBody.trim()}>
+                {savingSig ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("save")}
+              </Button>
             </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
-              {styleGroups.length > 0 ? styleGroups.map((g) => (
-                <div
-                  key={`${g.modality}|${g.study_type}`}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                  onClick={() => setSelectedGroup(g)}
-                >
-                  <div>
-                    <span className="text-xs font-medium text-gray-900 dark:text-white">{g.modality} / {g.study_type}</span>
-                    <p className="text-[10px] text-gray-400">{g.report_count} {t("cfg.reports_stored")}</p>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {g.normal_phrases.length + g.conclusion_phrases.length} {t("cfg.phrases_learned")}
-                  </Badge>
-                </div>
-              )) : (
-                <p className="text-xs text-gray-400 text-center py-6">{t("cfg.no_patterns")}</p>
-              )}
-            </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
 
 /* ────────── Helper components ────────── */
 
-function NormalityPhraseRow({ row, saving, onSave, onReset }: {
+function NormalityPhraseRow({ row, saving, onSave, onReset, translateLabel }: {
   row: NormalityPhraseRow;
   saving: boolean;
   onSave: (phrase: string) => void;
   onReset: () => void;
+  translateLabel: (name: string) => string;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(row.phrase);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const sec = useSection();
 
   useEffect(() => { setDraft(row.phrase); }, [row.phrase]);
   useEffect(() => {
@@ -856,7 +547,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   if (editing) {
     return (
       <div className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 space-y-1.5 bg-gray-50 dark:bg-gray-800">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{sec(row.section_label)}</span>
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{translateLabel(row.section_label)}</span>
         <textarea
           ref={inputRef}
           value={draft}
@@ -883,7 +574,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   return (
     <div className={`flex items-start gap-2 p-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-emerald-500" : ""}`}>
       <div className="flex-1 min-w-0">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{row.section_label}</span>
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{translateLabel(row.section_label)}</span>
         <span className="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{row.phrase}</span>
       </div>
       <div className="flex items-center gap-0.5 flex-shrink-0 pt-0.5">
@@ -906,73 +597,3 @@ function NormalityPhraseRow({ row, saving, onSave, onReset }: {
   );
 }
 
-function SegmentedPill({ value, options, onChange }: {
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(opt.value)}
-          className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-            value === opt.value
-              ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function LearnedPhraseRow({ phrase, deleting, onDelete }: {
-  phrase: { id: string; phrase: string; frequency: number; last_seen_at: string };
-  deleting: boolean;
-  onDelete: () => void;
-}) {
-  const t = useT();
-  return (
-    <div className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50">
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-700 dark:text-gray-300">{phrase.phrase}</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">
-          {t("cfg.frequency")}: {phrase.frequency}
-        </p>
-      </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-5 w-5 text-gray-400 hover:text-red-500 flex-shrink-0"
-        onClick={onDelete}
-        disabled={deleting}
-      >
-        {deleting ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-      </Button>
-    </div>
-  );
-}
-
-function FtStep({ n, label, active, children }: {
-  n: number;
-  label: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={`relative pl-7 ${active ? "" : "opacity-50"}`}>
-      <div className={`absolute left-0 top-0 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-        active ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-      }`}>
-        {n}
-      </div>
-      <Label className="text-xs mb-1.5 block font-medium">{label}</Label>
-      {children}
-    </div>
-  );
-}

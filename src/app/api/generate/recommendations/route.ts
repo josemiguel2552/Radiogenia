@@ -3,7 +3,7 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAI } from "@/lib/ai-provider";
 import { buildRecommendationsPrompt } from "@/lib/prompts";
 import type { OutputLanguage } from "@/lib/types";
@@ -130,10 +130,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ text: userPrompt });
     }
 
+    const taskModel = globalConfig.taskOverrides?.recommendations;
+    const effectiveProvider = taskModel?.provider || globalConfig.provider;
+    const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);
+
+    if (!effectiveKey) {
+      return NextResponse.json(
+        { error: `No API key configured for provider "${effectiveProvider}".` },
+        { status: 500 },
+      );
+    }
+
     const raw = await generateAI({
-      provider: globalConfig.provider,
-      modelName: globalConfig.modelName,
-      apiKey: globalConfig.apiKey,
+      provider: effectiveProvider,
+      modelName: taskModel?.modelName || globalConfig.modelName,
+      apiKey: effectiveKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
