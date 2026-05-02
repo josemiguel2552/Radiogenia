@@ -57,12 +57,15 @@ export function useVoiceDictation({
   const wsRef = useRef<WebSocket | null>(null);
   const dgStartRef = useRef(0);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 2;
 
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
+  const startDeepgramRef = useRef<(key: string) => Promise<void>>();
 
   // ── Pre-fetch token on mount for instant start ──
-  const fetchToken = useCallback(async (): Promise<CachedToken | null> => {
+  const fetchToken = useCallback(async (silent = false): Promise<CachedToken | null> => {
     const cached = cachedTokenRef.current;
     if (cached && Date.now() - cached.ts < TOKEN_TTL_MS) return cached;
 
@@ -70,17 +73,17 @@ export function useVoiceDictation({
       const res = await fetch("/api/transcribe/token", { method: "POST" });
       if (res.status === 429) {
         const data = await res.json();
-        onError?.(data?.error || "Dictation limit reached");
+        if (!silent) onError?.(data?.error || "Dictation limit reached");
         return null;
       }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        onError?.(data?.error || "Transcription service unavailable");
+        if (!silent) onError?.(data?.error || "Transcription service unavailable");
         return null;
       }
       const data = await res.json();
       if (!data.key) {
-        onError?.("Transcription service not configured");
+        if (!silent) onError?.("Transcription service not configured");
         return null;
       }
       const token: CachedToken = {
@@ -96,7 +99,7 @@ export function useVoiceDictation({
   }, [onError]);
 
   useEffect(() => {
-    fetchToken();
+    fetchToken(true);
   }, [fetchToken]);
 
   // ══════════════════════════════════════════════════════════════
@@ -219,6 +222,7 @@ export function useVoiceDictation({
 
     ws.onopen = () => {
       if (!activeRef.current) { ws.close(); return; }
+      retryCountRef.current = 0;
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
@@ -270,17 +274,34 @@ export function useVoiceDictation({
     };
 
     ws.onerror = () => {
-      onError?.("Error de conexión con el servicio de dictado");
+      const canRetry = retryCountRef.current < MAX_RETRIES;
       cleanup();
+      if (canRetry) {
+        retryCountRef.current++;
+        const delay = retryCountRef.current * 1000;
+        setTimeout(() => {
+          fetchToken().then((token) => {
+            if (token && startDeepgramRef.current) startDeepgramRef.current(token.key);
+          });
+        }, delay);
+      } else {
+        retryCountRef.current = 0;
+        onError?.("No se pudo conectar al servicio de dictado. Verifica tu conexión a internet.");
+      }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (ev) => {
       if (activeRef.current) {
         reportStreamingUsage();
+        if (ev.code === 1008 || ev.code === 1003) {
+          onError?.("Clave de Deepgram inválida o expirada. Revisa la configuración.");
+        }
         cleanup();
       }
     };
-  }, [language, initAudio, runLevelMeter, cleanup, onTranscript, onInterim, onError]);
+  }, [language, initAudio, runLevelMeter, cleanup, onTranscript, onInterim, onError, fetchToken]);
+
+  startDeepgramRef.current = startDeepgram;
 
   const reportStreamingUsage = useCallback(() => {
     if (dgStartRef.current <= 0) return;
@@ -304,6 +325,7 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   const startRecording = useCallback(async () => {
     try {
+      retryCountRef.current = 0;
       const token = await fetchToken();
       if (!token) return;
 
@@ -312,7 +334,7 @@ export function useVoiceDictation({
       }
       await startDeepgram(token.key);
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : "Microphone access denied");
+      onError?.(err instanceof Error ? err.message : "No se pudo acceder al micrófono");
     }
   }, [fetchToken, startDeepgram, onError, onQuotaUpdate]);
 
