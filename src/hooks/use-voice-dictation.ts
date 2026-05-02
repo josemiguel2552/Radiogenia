@@ -62,7 +62,7 @@ export function useVoiceDictation({
 
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
-  const startDeepgramRef = useRef<(key: string) => Promise<void>>();
+  const startDeepgramRef = useRef<((key: string) => Promise<void>) | null>(null);
 
   // ── Pre-fetch token on mount for instant start ──
   const fetchToken = useCallback(async (silent = false): Promise<CachedToken | null> => {
