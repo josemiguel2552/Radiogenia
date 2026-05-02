@@ -68,6 +68,11 @@ export function DashboardContent() {
   const [isCorrecting, setIsCorrecting] = useState(false);
   const correctedLenRef = useRef(0);
   const dictationRef = useRef("");
+  const correctTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const correctingRef = useRef(false);
+  const templatesRef = useRef(templates);
+  const selectedTemplateIdRef = useRef(selectedTemplateId);
+  const resolvedDictLangRef = useRef("");
 
   // Report output state
   const [findings, setFindings] = useState("");
@@ -190,6 +195,63 @@ export function DashboardContent() {
       .filter((s) => s && s.length > 1 && s.length < 60);
     return sections.length > 0 ? sections.join(", ") : undefined;
   }, [whisperTemplate]);
+  const correctUncorrectedTextFn = useRef((immediate?: boolean) => {
+    if (correctingRef.current && !immediate) return;
+    const full = dictationRef.current;
+    const alreadyCorrected = correctedLenRef.current;
+    const newText = full.slice(alreadyCorrected).trim();
+    if (!newText || newText.length < 3) {
+      correctedLenRef.current = full.length;
+      return;
+    }
+    correctingRef.current = true;
+    setIsCorrecting(true);
+    const snapshotStart = alreadyCorrected;
+    const snapshotText = newText;
+    const tpl = templatesRef.current.find((tp) => tp.id === selectedTemplateIdRef.current);
+    fetch("/api/transcribe/correct", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: snapshotText,
+        modality: tpl?.modality || "",
+        studyType: tpl?.name || "",
+        language: resolvedDictLangRef.current,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.corrected && data.corrected !== snapshotText) {
+          setDictation((prev) => {
+            const idx = prev.indexOf(snapshotText, snapshotStart);
+            if (idx === -1) {
+              correctedLenRef.current = prev.length;
+              return prev;
+            }
+            const result = prev.slice(0, idx) + data.corrected + prev.slice(idx + snapshotText.length);
+            correctedLenRef.current = idx + data.corrected.length;
+            return result;
+          });
+        } else {
+          correctedLenRef.current = snapshotStart + snapshotText.length;
+        }
+      })
+      .catch(() => {
+        correctedLenRef.current = dictationRef.current.length;
+      })
+      .finally(() => {
+        correctingRef.current = false;
+        setIsCorrecting(false);
+      });
+  });
+
+  const scheduleDebouncedCorrection = useRef(() => {
+    if (correctTimerRef.current) clearTimeout(correctTimerRef.current);
+    correctTimerRef.current = setTimeout(() => {
+      correctUncorrectedTextFn.current();
+    }, 1500);
+  });
+
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
     studyContext: whisperStudyContext,
@@ -202,6 +264,7 @@ export function DashboardContent() {
       });
       setTraceData(null);
       setVoiceError(null);
+      scheduleDebouncedCorrection.current();
     },
     onInterim: () => {},
     onQuotaUpdate: (quota) => {
@@ -225,48 +288,22 @@ export function DashboardContent() {
       setVoiceError(err);
     },
     onRecordingDone: () => {
-      const full = dictationRef.current;
-      const alreadyCorrected = correctedLenRef.current;
-      const newText = full.slice(alreadyCorrected).trim();
-      if (!newText || newText.length < 3) {
-        correctedLenRef.current = full.length;
-        return;
-      }
-      setIsCorrecting(true);
-      const tpl = templates.find((tp) => tp.id === selectedTemplateId);
-      fetch("/api/transcribe/correct", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: newText,
-          modality: tpl?.modality || "",
-          studyType: tpl?.name || "",
-          language: resolvedDictLang,
-        }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.corrected && data.corrected !== newText) {
-            setDictation((prev) => {
-              const prefix = prev.slice(0, alreadyCorrected);
-              const suffix = prev.slice(alreadyCorrected);
-              const updated = suffix.replace(newText, data.corrected);
-              const result = prefix + updated;
-              correctedLenRef.current = result.length;
-              return result;
-            });
-          } else {
-            correctedLenRef.current = dictationRef.current.length;
-          }
-        })
-        .catch(() => {
-          correctedLenRef.current = dictationRef.current.length;
-        })
-        .finally(() => setIsCorrecting(false));
+      if (correctTimerRef.current) clearTimeout(correctTimerRef.current);
+      const waitForPending = () => {
+        if (correctingRef.current) {
+          setTimeout(() => waitForPending(), 100);
+          return;
+        }
+        correctUncorrectedTextFn.current(true);
+      };
+      waitForPending();
     },
   });
 
   useEffect(() => { dictationRef.current = dictation; }, [dictation]);
+  useEffect(() => { templatesRef.current = templates; }, [templates]);
+  useEffect(() => { selectedTemplateIdRef.current = selectedTemplateId; }, [selectedTemplateId]);
+  useEffect(() => { resolvedDictLangRef.current = resolvedDictLang; }, [resolvedDictLang]);
 
   // PII detection — debounced on dictation + clinical info changes
   useEffect(() => {
