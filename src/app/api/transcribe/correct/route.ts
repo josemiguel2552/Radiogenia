@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
 
     const globalConfig = await getGlobalAIConfig();
 
-    const apiKey = resolveApiKey(globalConfig, "openai");
+    const taskModel = globalConfig.taskOverrides?.dictation_correction;
+    const effectiveProvider = taskModel?.provider || "openai";
+    const effectiveModel = taskModel?.modelName || "gpt-4o-mini";
+    const apiKey = resolveApiKey(globalConfig, effectiveProvider);
 
     const isEs = !language || language.startsWith("es");
 
@@ -48,8 +51,8 @@ MANDATORY FIXES:
 Keep exact structure, punctuation, line breaks. Return text as-is if correct. Respond ONLY with corrected text.`;
 
     const corrected = await generateAI({
-      provider: "openai",
-      modelName: "gpt-4o-mini",
+      provider: effectiveProvider,
+      modelName: effectiveModel,
       apiKey,
       system,
       user: text,
