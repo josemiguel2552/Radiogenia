@@ -26,6 +26,8 @@ export interface GlobalAIConfig {
     conclusion?: TaskModelOverride;
     recommendations?: TaskModelOverride;
     trace?: TaskModelOverride;
+    dictation_correction?: TaskModelOverride;
+    improve_writing?: TaskModelOverride;
   };
 }
 
@@ -96,6 +98,12 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
   if (data.trace_provider && data.trace_model) {
     taskOverrides.trace = { provider: data.trace_provider as AIProvider, modelName: data.trace_model };
+  }
+  if (data.dictation_correction_provider && data.dictation_correction_model) {
+    taskOverrides.dictation_correction = { provider: data.dictation_correction_provider as AIProvider, modelName: data.dictation_correction_model };
+  }
+  if (data.improve_writing_provider && data.improve_writing_model) {
+    taskOverrides.improve_writing = { provider: data.improve_writing_provider as AIProvider, modelName: data.improve_writing_model };
   }
 
   return {

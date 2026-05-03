@@ -148,7 +148,10 @@ export async function POST(req: NextRequest) {
       preferredNormalPhrases,
     });
 
-    const taskModel = globalConfig.taskOverrides?.findings;
+    const isImproveWriting = !!paraphraseOverride;
+    const taskModel = (isImproveWriting && globalConfig.taskOverrides?.improve_writing)
+      ? globalConfig.taskOverrides.improve_writing
+      : globalConfig.taskOverrides?.findings;
     const effectiveProvider = taskModel?.provider || globalConfig.provider;
     const effectiveModel = taskModel?.modelName || globalConfig.modelName;
     const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);

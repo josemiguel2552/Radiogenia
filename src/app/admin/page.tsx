@@ -42,6 +42,10 @@ interface GlobalConfig {
   recommendations_model: string | null;
   trace_provider: string | null;
   trace_model: string | null;
+  dictation_correction_provider: string | null;
+  dictation_correction_model: string | null;
+  improve_writing_provider: string | null;
+  improve_writing_model: string | null;
   updated_at: string;
 }
 
@@ -54,7 +58,7 @@ interface FtJob {
   finishedAt: number | null;
 }
 
-type TaskKey = "findings" | "conclusion" | "recommendations" | "trace";
+type TaskKey = "findings" | "conclusion" | "recommendations" | "trace" | "dictation_correction" | "improve_writing";
 
 interface UserRow {
   id: string;
@@ -115,6 +119,8 @@ export default function AdminPage() {
     conclusion: { provider: "", model: "" },
     recommendations: { provider: "", model: "" },
     trace: { provider: "", model: "" },
+    dictation_correction: { provider: "", model: "" },
+    improve_writing: { provider: "", model: "" },
   });
 
   // Combo pipeline
@@ -222,6 +228,8 @@ export default function AdminPage() {
         conclusion: { provider: d.conclusion_provider || "", model: d.conclusion_model || "" },
         recommendations: { provider: d.recommendations_provider || "", model: d.recommendations_model || "" },
         trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
+        dictation_correction: { provider: d.dictation_correction_provider || "", model: d.dictation_correction_model || "" },
+        improve_writing: { provider: d.improve_writing_provider || "", model: d.improve_writing_model || "" },
       });
       setFindingsCombo(isCombo);
     }
@@ -272,7 +280,7 @@ export default function AdminPage() {
       if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
-      for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+      for (const task of ["findings", "conclusion", "recommendations", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
         if (task === "findings" && findingsCombo) {
           body.findings_provider = "combo";
           body.findings_model = "gpt4mini+deepseek-v3";
@@ -911,6 +919,8 @@ export default function AdminPage() {
                   { key: "conclusion" as TaskKey, label: "Conclusion", desc: "Clinical conclusion synthesis" },
                   { key: "recommendations" as TaskKey, label: "Recommendations", desc: "Guideline-based recommendations" },
                   { key: "trace" as TaskKey, label: "Traceability", desc: "Dictation ↔ findings verification" },
+                  { key: "dictation_correction" as TaskKey, label: "Dictation Correction", desc: "Real-time speech-to-text error correction (default: gpt-4o-mini)" },
+                  { key: "improve_writing" as TaskKey, label: "Improve Writing", desc: "Light paraphrase / wording improvement tool" },
                 ]).map(({ key, label, desc }) => {
                   const isComboOverride = key === "findings" && findingsCombo;
                   const o = taskOverrides[key];
@@ -991,7 +1001,7 @@ export default function AdminPage() {
                 {(() => {
                   // Collect all providers in use across task overrides that differ from default
                   const extraProviders = new Set<string>();
-                  for (const task of ["findings", "conclusion", "recommendations", "trace"] as TaskKey[]) {
+                  for (const task of ["findings", "conclusion", "recommendations", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
                     const p = taskOverrides[task].provider;
                     if (p && p !== provider) extraProviders.add(p);
                   }
