@@ -1,3 +1,5 @@
+export const maxDuration = 30;
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";

@@ -69,6 +69,7 @@ export function DashboardContent() {
   const correctedLenRef = useRef(0);
   const dictationRef = useRef("");
   const correctTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxIntervalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const correctingRef = useRef(false);
   const templatesRef = useRef(templates);
   const selectedTemplateIdRef = useRef(selectedTemplateId);
@@ -190,6 +191,7 @@ export function DashboardContent() {
     const newText = full.slice(alreadyCorrected).trim();
     if (!newText || newText.length < 3) {
       correctedLenRef.current = full.length;
+      setIsCorrecting(false);
       return;
     }
     correctingRef.current = true;
@@ -225,11 +227,16 @@ export function DashboardContent() {
         }
       })
       .catch(() => {
-        correctedLenRef.current = dictationRef.current.length;
+        correctedLenRef.current = snapshotStart + snapshotText.length;
       })
       .finally(() => {
         correctingRef.current = false;
-        setIsCorrecting(false);
+        const remaining = dictationRef.current.length - correctedLenRef.current;
+        if (remaining > 3) {
+          setTimeout(() => correctUncorrectedTextFn.current(), 100);
+        } else {
+          setIsCorrecting(false);
+        }
       });
   });
 
@@ -238,6 +245,14 @@ export function DashboardContent() {
     correctTimerRef.current = setTimeout(() => {
       correctUncorrectedTextFn.current();
     }, 1500);
+    if (!maxIntervalTimerRef.current) {
+      maxIntervalTimerRef.current = setTimeout(() => {
+        maxIntervalTimerRef.current = null;
+        if (correctTimerRef.current) clearTimeout(correctTimerRef.current);
+        correctTimerRef.current = null;
+        correctUncorrectedTextFn.current();
+      }, 8000);
+    }
   });
 
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
@@ -274,15 +289,19 @@ export function DashboardContent() {
       setVoiceError(err);
     },
     onRecordingDone: () => {
-      if (correctTimerRef.current) clearTimeout(correctTimerRef.current);
-      const waitForPending = () => {
+      if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
+      if (maxIntervalTimerRef.current) { clearTimeout(maxIntervalTimerRef.current); maxIntervalTimerRef.current = null; }
+      const waitAndCorrect = () => {
         if (correctingRef.current) {
-          setTimeout(() => waitForPending(), 100);
+          setTimeout(waitAndCorrect, 100);
           return;
         }
-        correctUncorrectedTextFn.current(true);
+        const remaining = dictationRef.current.length - correctedLenRef.current;
+        if (remaining > 3) {
+          correctUncorrectedTextFn.current(true);
+        }
       };
-      waitForPending();
+      setTimeout(waitAndCorrect, 200);
     },
   });
 
@@ -1003,6 +1022,8 @@ export function DashboardContent() {
     setErrorReported(false);
     correctionLoggedRef.current = false;
     correctedLenRef.current = 0;
+    if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
+    if (maxIntervalTimerRef.current) { clearTimeout(maxIntervalTimerRef.current); maxIntervalTimerRef.current = null; }
     localStorage.removeItem("radiogenai_draft");
   }
 
