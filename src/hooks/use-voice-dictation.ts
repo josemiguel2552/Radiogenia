@@ -64,6 +64,7 @@ export function useVoiceDictation({
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
   const startDeepgramRef = useRef<((key: string, skipKeywords?: boolean) => Promise<void>) | null>(null);
+  const connectWsRef = useRef<((key: string, skipKeywords?: boolean) => void) | null>(null);
 
   // ── Pre-fetch token on mount for instant start ──
   const fetchToken = useCallback(async (silent = false): Promise<CachedToken | null> => {
@@ -192,40 +193,27 @@ export function useVoiceDictation({
     setInterimText("");
   }, []);
 
-  // ══════════════════════════════════════════════════════════════
-  // DEEPGRAM: WebSocket streaming (optimized for low latency)
-  // ══════════════════════════════════════════════════════════════
-  const startDeepgram = useCallback(async (apiKey: string, skipKeywords = false) => {
-    const stream = await initAudio();
-    activeRef.current = true;
-    dgStartRef.current = Date.now();
+  const reportStreamingUsage = useCallback(() => {
+    if (dgStartRef.current <= 0) return;
+    const seconds = Math.round((Date.now() - dgStartRef.current) / 1000);
+    dgStartRef.current = 0;
+    if (seconds < 1) return;
 
-    // Start recording immediately — buffer audio while WebSocket connects
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-      ? "audio/webm;codecs=opus"
-      : MediaRecorder.isTypeSupported("audio/webm")
-      ? "audio/webm"
-      : "";
-
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    recorderRef.current = recorder;
-    audioBufferRef.current = [];
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size === 0) return;
-      const ws = wsRef.current;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(e.data);
-      } else {
-        audioBufferRef.current.push(e.data);
+    fetch("/api/transcribe/usage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seconds }),
+    }).then((r) => r.ok ? r.json() : null).then((data) => {
+      if (data?.dictation && onQuotaUpdate) {
+        onQuotaUpdate(data.dictation);
       }
-    };
+    }).catch(() => {});
+  }, [onQuotaUpdate]);
 
-    recorder.start(DG_TIMESLICE_MS);
-    setIsRecording(true);
-    animFrameRef.current = requestAnimationFrame(runLevelMeter);
-
-    // Connect WebSocket in parallel
+  // ══════════════════════════════════════════════════════════════
+  // DEEPGRAM: WebSocket connection (can be called independently on retry)
+  // ══════════════════════════════════════════════════════════════
+  const connectWs = useCallback((apiKey: string, skipKeywords = false) => {
     const params = new URLSearchParams({
       model: "nova-3",
       language,
@@ -253,7 +241,6 @@ export function useVoiceDictation({
       if (!activeRef.current) { ws.close(); return; }
       retryCountRef.current = 0;
 
-      // Flush buffered audio captured while connecting
       const buffered = audioBufferRef.current;
       audioBufferRef.current = [];
       for (const chunk of buffered) {
@@ -299,15 +286,16 @@ export function useVoiceDictation({
     ws.onclose = (ev) => {
       if (!activeRef.current && !wsErrored) return;
 
-      reportStreamingUsage();
-      cleanup();
+      if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null; }
+      wsRef.current = null;
 
-      // 1008 = Policy Violation (Deepgram's auth rejection)
       const isAuthError = ev.code === 1008;
 
       if (isAuthError) {
         retryCountRef.current = 0;
         cachedTokenRef.current = null;
+        reportStreamingUsage();
+        cleanup();
         onError?.("Clave de Deepgram inválida o expirada. Genera una nueva en console.deepgram.com y configúrala en Vercel.");
         return;
       }
@@ -316,39 +304,66 @@ export function useVoiceDictation({
         const canRetry = retryCountRef.current < MAX_RETRIES;
         if (canRetry) {
           retryCountRef.current++;
-          const delay = retryCountRef.current * 1000;
           setTimeout(() => {
+            if (!activeRef.current) return;
             cachedTokenRef.current = null;
-            fetchToken().then((token) => {
-              if (token && startDeepgramRef.current) startDeepgramRef.current(token.key, true);
+            fetchToken(true).then((token) => {
+              if (token && activeRef.current && connectWsRef.current) {
+                connectWsRef.current(token.key, true);
+              } else {
+                reportStreamingUsage();
+                cleanup();
+              }
             });
-          }, delay);
+          }, 500);
           return;
         }
         retryCountRef.current = 0;
+        reportStreamingUsage();
+        cleanup();
         onError?.(`Error de conexión con Deepgram (código: ${ev.code}, razón: ${ev.reason || "desconocida"}). Reintenta en unos segundos.`);
       }
     };
-  }, [language, initAudio, runLevelMeter, cleanup, onTranscript, onInterim, onError, fetchToken]);
+  }, [language, onTranscript, onInterim, onError, fetchToken, cleanup, reportStreamingUsage]);
+
+  connectWsRef.current = connectWs;
+
+  // ══════════════════════════════════════════════════════════════
+  // Start full pipeline: audio + WebSocket
+  // ══════════════════════════════════════════════════════════════
+  const startDeepgram = useCallback(async (apiKey: string, skipKeywords = false) => {
+    const stream = await initAudio();
+    activeRef.current = true;
+    dgStartRef.current = Date.now();
+
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : "";
+
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    recorderRef.current = recorder;
+    audioBufferRef.current = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size === 0) return;
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(e.data);
+      } else {
+        audioBufferRef.current.push(e.data);
+      }
+    };
+
+    recorder.start(DG_TIMESLICE_MS);
+    setIsRecording(true);
+    animFrameRef.current = requestAnimationFrame(runLevelMeter);
+
+    connectWs(apiKey, skipKeywords);
+  }, [initAudio, runLevelMeter, connectWs]);
 
   startDeepgramRef.current = startDeepgram;
-
-  const reportStreamingUsage = useCallback(() => {
-    if (dgStartRef.current <= 0) return;
-    const seconds = Math.round((Date.now() - dgStartRef.current) / 1000);
-    dgStartRef.current = 0;
-    if (seconds < 1) return;
-
-    fetch("/api/transcribe/usage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seconds }),
-    }).then((r) => r.ok ? r.json() : null).then((data) => {
-      if (data?.dictation && onQuotaUpdate) {
-        onQuotaUpdate(data.dictation);
-      }
-    }).catch(() => {});
-  }, [onQuotaUpdate]);
 
   // ══════════════════════════════════════════════════════════════
   // Public API
