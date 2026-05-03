@@ -58,6 +58,7 @@ export function useVoiceDictation({
   const dgStartRef = useRef(0);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const retryCountRef = useRef(0);
+  const audioBufferRef = useRef<Blob[]>([]);
   const MAX_RETRIES = 2;
 
   // ── Pre-fetched token ──
@@ -199,6 +200,32 @@ export function useVoiceDictation({
     activeRef.current = true;
     dgStartRef.current = Date.now();
 
+    // Start recording immediately — buffer audio while WebSocket connects
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : "";
+
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    recorderRef.current = recorder;
+    audioBufferRef.current = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size === 0) return;
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(e.data);
+      } else {
+        audioBufferRef.current.push(e.data);
+      }
+    };
+
+    recorder.start(DG_TIMESLICE_MS);
+    setIsRecording(true);
+    animFrameRef.current = requestAnimationFrame(runLevelMeter);
+
+    // Connect WebSocket in parallel
     const params = new URLSearchParams({
       model: "nova-3",
       language,
@@ -226,24 +253,12 @@ export function useVoiceDictation({
       if (!activeRef.current) { ws.close(); return; }
       retryCountRef.current = 0;
 
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : MediaRecorder.isTypeSupported("audio/webm")
-        ? "audio/webm"
-        : "";
-
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      recorderRef.current = recorder;
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-          ws.send(e.data);
-        }
-      };
-
-      recorder.start(DG_TIMESLICE_MS);
-      setIsRecording(true);
-      animFrameRef.current = requestAnimationFrame(runLevelMeter);
+      // Flush buffered audio captured while connecting
+      const buffered = audioBufferRef.current;
+      audioBufferRef.current = [];
+      for (const chunk of buffered) {
+        ws.send(chunk);
+      }
 
       keepAliveRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
