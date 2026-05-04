@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,12 +78,18 @@ export function DashboardContent() {
 
   // Report output state
   const [findings, setFindings] = useState("");
-  const [conclusion, setConclusion] = useState("");
+  const emptyConcVersions = { concise: "", detailed: "", grouped: "" };
+  const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
   const [recommendations, setRecommendations] = useState("");
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
-  const [loadingConclusion, setLoadingConclusion] = useState(false);
+  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, detailed: false, grouped: false });
+  const conclusion = conclusionVersions[conclusionStyle] || "";
+  const setConclusion = useCallback((v: string) => {
+    setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
+  }, [conclusionStyle]);
+  const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
@@ -341,13 +347,14 @@ export function DashboardContent() {
         localStorage.setItem("radiogenai_draft", JSON.stringify({
           savedAt: Date.now(),
           clinicalInfo, dictation, findings, conclusion, recommendations,
+          conclusionVersions,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
           initialFindings, initialConclusion,
         }));
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [clinicalInfo, dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
+  }, [clinicalInfo, dictation, findings, conclusion, conclusionVersions, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
 
   // Keep snapshot ref in sync for unmount / beforeunload / visibilitychange
   useEffect(() => {
@@ -444,7 +451,11 @@ export function DashboardContent() {
       if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
       if (d.dictation) setDictation(d.dictation);
       if (d.findings) setFindings(d.findings);
-      if (d.conclusion) setConclusion(d.conclusion);
+      if (d.conclusionVersions) {
+        setConclusionVersions(d.conclusionVersions);
+      } else if (d.conclusion) {
+        setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: d.conclusion }));
+      }
       if (d.recommendations) setRecommendations(d.recommendations);
       if (d.selectedModality) setSelectedModality(d.selectedModality);
       if (d.selectedSection) setSelectedSection(d.selectedSection);
@@ -511,10 +522,10 @@ export function DashboardContent() {
     correctionLoggedRef.current = false;
     setErrorReported(false);
     setLoadingFindings(true);
-    setLoadingConclusion(true);
+    setLoadingConcStyles({ concise: true, detailed: true, grouped: true });
     setLoadingRecs(true);
     setFindings("");
-    setConclusion("");
+    setConclusionVersions({ ...emptyConcVersions });
     setRecommendations("");
     setInitialFindings("");
     setInitialConclusion("");
@@ -586,7 +597,7 @@ export function DashboardContent() {
 
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
-      setLoadingConclusion(false);
+      setLoadingConcStyles({ concise: false, detailed: false, grouped: false });
       setLoadingRecs(false);
       return;
     }
@@ -637,7 +648,10 @@ export function DashboardContent() {
       }
     })();
 
-    const conclusionPromise = (async () => {
+    const concStyles = ["concise", "detailed", "grouped"] as const;
+    const activeStyle = conclusionStyle;
+
+    const conclusionPromise = Promise.all(concStyles.map((style) => (async () => {
       try {
         const res = await fetch("/api/generate/conclusion", {
           method: "POST",
@@ -647,6 +661,7 @@ export function DashboardContent() {
             clinicalInfo,
             modality: selectedTemplate.modality,
             studyType: studyName,
+            conclusionStyle: style,
           }),
         });
 
@@ -664,40 +679,45 @@ export function DashboardContent() {
               break;
             }
             text += chunk;
-            setConclusion(cleanReport(text));
+            if (style === activeStyle) {
+              setConclusionVersions((prev) => ({ ...prev, [style]: cleanReport(text) }));
+            }
           }
           if (streamError) {
-            setConclusion("Error: " + streamError);
+            setConclusionVersions((prev) => ({ ...prev, [style]: "Error: " + streamError }));
           } else {
             const cleaned = cleanReport(text);
-            conclusionText = cleaned;
-            setInitialConclusion(cleaned);
-            setConclusion(cleaned);
-            // Audit: log conclusion generation
-            fetch("/api/audit-logs", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "generate_conclusion",
-                duration_ms: Date.now() - generateStartRef.current,
-                metadata: {
-                  study_type: studyName,
-                  modality: selectedTemplate.modality,
-                  conclusion_length: cleaned.length,
-                },
-              }),
-            }).catch(() => {});
+            setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+            if (style === activeStyle) {
+              conclusionText = cleaned;
+              setInitialConclusion(cleaned);
+            }
+            if (style === activeStyle) {
+              fetch("/api/audit-logs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "generate_conclusion",
+                  duration_ms: Date.now() - generateStartRef.current,
+                  metadata: {
+                    study_type: studyName,
+                    modality: selectedTemplate.modality,
+                    conclusion_length: cleaned.length,
+                  },
+                }),
+              }).catch(() => {});
+            }
           }
         } else {
           const data = await res.json().catch(() => ({ error: "Generation failed" }));
-          setConclusion(data.error || "Error generating conclusion");
+          setConclusionVersions((prev) => ({ ...prev, [style]: data.error || "Error generating conclusion" }));
         }
       } catch (e) {
-        setConclusion("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+        setConclusionVersions((prev) => ({ ...prev, [style]: "Error: " + (e instanceof Error ? e.message : "Unknown error") }));
       } finally {
-        setLoadingConclusion(false);
+        setLoadingConcStyles((prev) => ({ ...prev, [style]: false }));
       }
-    })();
+    })()));
 
     const recsPromise = fetch("/api/generate/recommendations", {
       method: "POST",
@@ -1015,7 +1035,7 @@ export function DashboardContent() {
     }
     setDictation("");
     setFindings("");
-    setConclusion("");
+    setConclusionVersions({ ...emptyConcVersions });
     setRecommendations("");
     setInitialFindings("");
     setInitialConclusion("");
@@ -1497,9 +1517,9 @@ export function DashboardContent() {
           <OutputCard
             title={t("dash.conclusion")}
             icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
-            loading={loadingConclusion}
+            loading={loadingConcStyles[conclusionStyle] ?? false}
             value={conclusion}
-            onChange={(v) => { setConclusion(v); reportDirtyRef.current = true; }}
+            onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
             minHeight={70}
             headerExtra={
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
@@ -1518,9 +1538,12 @@ export function DashboardContent() {
                     className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
                       conclusionStyle === s
                         ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
+                        : conclusionVersions[s] ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                         : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     }`}
                   >
+                    {loadingConcStyles[s] && s !== conclusionStyle ? <Loader2 className="h-2.5 w-2.5 animate-spin inline mr-0.5" /> : null}
                     {t(`dash.conclusion_${s}`)}
                   </button>
                 ))}

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { findingsText, clinicalInfo, modality, studyType } = await req.json();
+    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const outputLanguage = config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
-    const conclusionStyle = (config?.conclusion_style || "concise") as ConclusionStyle;
+    const conclusionStyle = (reqStyle || config?.conclusion_style || "concise") as ConclusionStyle;
 
     let preferredConclusionPhrases: string[] | undefined;
     if (styleLearning && modality && studyType) {
