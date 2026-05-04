@@ -316,46 +316,46 @@ export function buildConclusionPrompt(params: {
 
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
-- Telegráfico: frases cortas, sin palabras de relleno. NUNCA uses muletillas como "se observa", "se identifica".
-- Directo: ve al grano con lo más relevante clínicamente.
-- Usa el MÍNIMO de puntos necesarios (máximo 4). Si 1 punto basta, usa 1.
-- Ordena por relevancia clínica (primero lo importante).
-- Lenguaje prudente y descriptivo: tamaño, localización, densidad/señal.`,
-    detailed: `ESTILO — DETALLADO CON BULLET POINTS:
-- Conclusión de un radiólogo experto que resume y agrupa solo los hallazgos relevantes.
-- Cada punto es una viñeta (bullet point) clara y descriptiva.
-- Incluye datos clave: tamaño, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a previos.
-- Ordena por relevancia clínica (primero lo importante).
-- Usa el mínimo necesario de puntos (máximo 6). Si 2 puntos bastan, usa 2.
-- NO uses muletillas como "se observa", "se identifica", "presence of".`,
-    grouped: `ESTILO — AGRUPADO EN 2 PUNTOS MÁXIMO:
-- Agrupa TODO lo importante en el PRIMER punto: hallazgos principales, datos relevantes, medidas, localizaciones.
-- Si hay hallazgos secundarios o menos relevantes, agrúpalos en un SEGUNDO punto.
-- NUNCA hagas más de 2 puntos. Si todo es relevante, ponlo todo en el primer punto.
-- Si solo hay hallazgos principales, usa un único punto.
-- Lenguaje descriptivo con datos clave: tamaño, localización, densidad/señal.`,
+- Frases cortas, directas, telegráficas. Sin palabras de relleno.
+- Solo lo clínicamente relevante: hallazgos patológicos y negativos pertinentes.
+- Cada punto debe ser una frase breve con el dato esencial (localización, tamaño, señal/densidad).
+- Si un solo punto basta para cubrir todos los hallazgos relevantes, usa solo uno.
+- Tono: objetivo, descriptivo, sin florituras.`,
+    detailed: `ESTILO — DESCRIPTIVO:
+- Conclusión de un radiólogo experto que integra y contextualiza los hallazgos relevantes.
+- Cada punto describe el hallazgo con precisión: tamaño, localización, densidad/señal, relación con estructuras adyacentes, cambios respecto a previos si los hay.
+- Redacción fluida y profesional, no telegráfica. Frases completas y bien construidas.
+- Solo hallazgos clínicamente relevantes — NO enumerar normalidad.
+- Tono: experto, preciso, informativo.`,
+    grouped: `ESTILO — INTEGRADO:
+- Integra TODOS los hallazgos relevantes en un texto continuo, como un párrafo de conclusión clásico.
+- Ordena por relevancia: lo más importante primero, lo secundario después.
+- Usa conectores naturales ("Adicionalmente,", "Asimismo,") para un texto fluido.
+- MÁXIMO 2 puntos: agrupa todo lo principal en el primero; si hay hallazgos secundarios, en el segundo.
+- Si todo cabe en un solo punto, usa uno. NUNCA más de 2.
+- Tono: integrador, sintético, clínico.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
     concise: `STYLE — CONCISE:
-- Telegraphic: short phrases, no filler words. NEVER use padding like "noted", "presence of".
-- Direct: get to the point with the most clinically relevant findings.
-- Use the MINIMUM number of points needed (maximum 4). If 1 point suffices, use 1.
-- Order by clinical relevance (most important first).
-- Prudent, descriptive language: size, location, density/signal.`,
-    detailed: `STYLE — DETAILED BULLET POINTS:
-- Expert radiologist conclusion that summarizes and groups only relevant findings.
-- Each point is a clear, descriptive bullet point.
-- Include key data: size, location, density/signal, relationship to adjacent structures, changes compared to prior studies.
-- Order by clinical relevance (most important first).
-- Use the minimum number of points needed (maximum 6). If 2 points suffice, use 2.
-- Do NOT use filler like "noted", "presence of", "no significant findings regarding".`,
-    grouped: `STYLE — GROUPED IN 2 POINTS MAXIMUM:
-- Group ALL important findings in the FIRST point: main findings, relevant data, measurements, locations.
-- If there are secondary or less relevant findings, group them in a SECOND point.
-- NEVER make more than 2 points. If everything is relevant, put it all in the first point.
-- If there are only main findings, use a single point.
-- Descriptive language with key data: size, location, density/signal.`,
+- Short, direct, telegraphic phrases. No filler words.
+- Only clinically relevant findings: pathological findings and pertinent negatives.
+- Each point should be a brief phrase with the essential data (location, size, signal/density).
+- If a single point covers all relevant findings, use only one.
+- Tone: objective, descriptive, no embellishments.`,
+    detailed: `STYLE — DESCRIPTIVE:
+- Expert radiologist conclusion that integrates and contextualizes relevant findings.
+- Each point describes the finding precisely: size, location, density/signal, relationship to adjacent structures, changes from prior studies if applicable.
+- Fluent, professional writing — not telegraphic. Complete, well-constructed sentences.
+- Only clinically relevant findings — do NOT list normal structures.
+- Tone: expert, precise, informative.`,
+    grouped: `STYLE — INTEGRATED:
+- Integrate ALL relevant findings into continuous text, like a classic conclusion paragraph.
+- Order by relevance: most important first, secondary afterwards.
+- Use natural connectors ("Additionally,", "Furthermore,") for fluid text.
+- MAXIMUM 2 points: group all main findings in the first; if there are secondary findings, in the second.
+- If everything fits in a single point, use one. NEVER more than 2.
+- Tone: integrative, synthetic, clinical.`,
   };
 
   const FORMAT_ES: Record<ConclusionStyle, string> = {
