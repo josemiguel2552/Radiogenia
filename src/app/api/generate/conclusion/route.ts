@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAIStream } from "@/lib/ai-provider";
 import { buildConclusionPrompt } from "@/lib/prompts";
-import type { OutputLanguage } from "@/lib/types";
+import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,12 +21,13 @@ export async function POST(req: NextRequest) {
 
     const { data: config } = await service
       .from("user_model_config")
-      .select("output_language, style_learning_enabled")
+      .select("output_language, style_learning_enabled, conclusion_style")
       .eq("user_id", user.id)
       .maybeSingle();
 
     const outputLanguage = config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
+    const conclusionStyle = (config?.conclusion_style || "concise") as ConclusionStyle;
 
     let preferredConclusionPhrases: string[] | undefined;
     if (styleLearning && modality && studyType) {
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
       findingsText,
       clinicalInfo: clinicalInfo || "",
       outputLanguage: outputLanguage as OutputLanguage,
+      conclusionStyle,
       preferredConclusionPhrases,
     });
 

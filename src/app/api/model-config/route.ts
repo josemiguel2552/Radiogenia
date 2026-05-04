@@ -89,6 +89,7 @@ export async function PUT(req: NextRequest) {
     if (result.error?.message?.includes("column")) {
       delete body.compact_normals;
       delete body.dictation_language;
+      delete body.conclusion_style;
       result = await service
         .from("user_model_config")
         .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })

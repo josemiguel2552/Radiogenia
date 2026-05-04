@@ -61,6 +61,7 @@ export function DashboardContent() {
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [recsOpen, setRecsOpen] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
+  const [conclusionStyle, setConclusionStyle] = useState<"concise" | "detailed" | "grouped">("concise");
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -467,6 +468,7 @@ export function DashboardContent() {
         if (cfgRes.ok) {
           const cfg = await cfgRes.json();
           if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+          if (cfg.conclusion_style) setConclusionStyle(cfg.conclusion_style);
         }
       } catch { /* ignore */ }
     }
@@ -1499,6 +1501,31 @@ export function DashboardContent() {
             value={conclusion}
             onChange={(v) => { setConclusion(v); reportDirtyRef.current = true; }}
             minHeight={70}
+            headerExtra={
+              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
+                {(["concise", "detailed", "grouped"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setConclusionStyle(s);
+                      fetch("/api/model-config", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ conclusion_style: s }),
+                      }).catch(() => {});
+                    }}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      conclusionStyle === s
+                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {t(`dash.conclusion_${s}`)}
+                  </button>
+                ))}
+              </div>
+            }
           />
 
           <RecommendationsCard
@@ -1681,6 +1708,7 @@ function OutputCard({
   value,
   onChange,
   minHeight,
+  headerExtra,
   traceHighlights,
   traceLocked,
   isDark,
@@ -1691,6 +1719,7 @@ function OutputCard({
   value: string;
   onChange: (v: string) => void;
   minHeight: number;
+  headerExtra?: React.ReactNode;
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
   traceLocked?: boolean;
   isDark?: boolean;
@@ -1699,12 +1728,13 @@ function OutputCard({
   const showTrace = traceHighlights && traceHighlights.length > 0;
   return (
     <Card>
-      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1.5 gap-2">
+        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 shrink-0">
           {icon}
           {title}
         </h3>
         <div className="flex items-center gap-2">
+          {headerExtra}
           {showTrace && !traceLocked && (
             <button
               type="button"

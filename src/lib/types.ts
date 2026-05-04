@@ -149,6 +149,7 @@ export type AIProvider = "claude" | "openai" | "deepseek" | "gemini" | "custom";
 export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
 export type ParaphraseLevel = "none" | "light" | "free";
+export type ConclusionStyle = "concise" | "detailed" | "grouped";
 export type OutputLanguage = "es" | "en" | "pt" | "fr" | "de" | "it";
 export type DictationLanguage = OutputLanguage | "auto";
 
