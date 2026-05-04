@@ -69,7 +69,7 @@ export function DashboardContent() {
   const correctedLenRef = useRef(0);
   const dictationRef = useRef("");
   const correctTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const maxIntervalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const correctionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const correctingRef = useRef(false);
   const templatesRef = useRef(templates);
   const selectedTemplateIdRef = useRef(selectedTemplateId);
@@ -184,8 +184,8 @@ export function DashboardContent() {
       body: JSON.stringify({ dictation_language: lang }),
     }).catch(() => {});
   };
-  const correctUncorrectedTextFn = useRef((immediate?: boolean) => {
-    if (correctingRef.current && !immediate) return;
+  const runCorrection = useRef(() => {
+    if (correctingRef.current) return;
     const full = dictationRef.current;
     const alreadyCorrected = correctedLenRef.current;
     const newText = full.slice(alreadyCorrected).trim();
@@ -233,26 +233,32 @@ export function DashboardContent() {
         correctingRef.current = false;
         const remaining = dictationRef.current.length - correctedLenRef.current;
         if (remaining > 3) {
-          setTimeout(() => correctUncorrectedTextFn.current(), 100);
+          setTimeout(() => runCorrection.current(), 150);
         } else {
           setIsCorrecting(false);
         }
       });
   });
 
+  const startCorrectionLoop = useRef(() => {
+    if (correctionIntervalRef.current) return;
+    correctionIntervalRef.current = setInterval(() => {
+      runCorrection.current();
+    }, 5000);
+  });
+
+  const stopCorrectionLoop = useRef(() => {
+    if (correctionIntervalRef.current) {
+      clearInterval(correctionIntervalRef.current);
+      correctionIntervalRef.current = null;
+    }
+  });
+
   const scheduleDebouncedCorrection = useRef(() => {
     if (correctTimerRef.current) clearTimeout(correctTimerRef.current);
     correctTimerRef.current = setTimeout(() => {
-      correctUncorrectedTextFn.current();
+      runCorrection.current();
     }, 1500);
-    if (!maxIntervalTimerRef.current) {
-      maxIntervalTimerRef.current = setTimeout(() => {
-        maxIntervalTimerRef.current = null;
-        if (correctTimerRef.current) clearTimeout(correctTimerRef.current);
-        correctTimerRef.current = null;
-        correctUncorrectedTextFn.current();
-      }, 8000);
-    }
   });
 
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
@@ -265,6 +271,7 @@ export function DashboardContent() {
       });
       setTraceData(null);
       setVoiceError(null);
+      startCorrectionLoop.current();
       scheduleDebouncedCorrection.current();
     },
     onInterim: () => {},
@@ -289,8 +296,8 @@ export function DashboardContent() {
       setVoiceError(err);
     },
     onRecordingDone: () => {
+      stopCorrectionLoop.current();
       if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
-      if (maxIntervalTimerRef.current) { clearTimeout(maxIntervalTimerRef.current); maxIntervalTimerRef.current = null; }
       const waitAndCorrect = () => {
         if (correctingRef.current) {
           setTimeout(waitAndCorrect, 100);
@@ -298,10 +305,10 @@ export function DashboardContent() {
         }
         const remaining = dictationRef.current.length - correctedLenRef.current;
         if (remaining > 3) {
-          correctUncorrectedTextFn.current(true);
+          runCorrection.current();
         }
       };
-      setTimeout(waitAndCorrect, 200);
+      setTimeout(waitAndCorrect, 250);
     },
   });
 
@@ -1022,8 +1029,8 @@ export function DashboardContent() {
     setErrorReported(false);
     correctionLoggedRef.current = false;
     correctedLenRef.current = 0;
+    stopCorrectionLoop.current();
     if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
-    if (maxIntervalTimerRef.current) { clearTimeout(maxIntervalTimerRef.current); maxIntervalTimerRef.current = null; }
     localStorage.removeItem("radiogenai_draft");
   }
 
