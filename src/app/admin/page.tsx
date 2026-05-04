@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -825,21 +825,37 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Model</Label>
-                    {selectedProvider && selectedProvider.models.length > 0 ? (
-                      <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {selectedProvider.models.map((m) => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <input type="text" value={modelName}
-                        onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
-                        className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                        placeholder="Model name" />
-                    )}
+                    {(() => {
+                      const base = selectedProvider?.models || [];
+                      const ft = provider === "openai"
+                        ? ftJobs.filter((j) => j.status === "succeeded" && j.fineTunedModel).map((j) => j.fineTunedModel!)
+                        : [];
+                      const all = [...base, ...ft];
+                      const inList = !modelName || all.includes(modelName);
+                      return all.length > 0 ? (
+                        <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
+                          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {base.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Standard</SelectLabel>
+                              {base.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectGroup>}
+                            {ft.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Fine-tuned</SelectLabel>
+                              {ft.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectGroup>}
+                            {!inList && modelName && (
+                              <SelectGroup><SelectLabel className="text-[10px]">Current</SelectLabel>
+                                <SelectItem value={modelName}>{modelName}</SelectItem>
+                              </SelectGroup>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <input type="text" value={modelName}
+                          onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
+                          className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                          placeholder="Model name" />
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -965,21 +981,41 @@ export default function AdminPage() {
                           </SelectContent>
                         </Select>
                         {o.provider ? (
-                          taskProv && taskProv.models.length > 0 ? (
-                            <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
-                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Model" /></SelectTrigger>
-                              <SelectContent>
-                                {taskProv.models.map((m) => (
-                                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <input type="text" value={o.model}
-                              onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
-                              className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                              placeholder="Model name" />
-                          )
+                          (() => {
+                            const baseModels = taskProv?.models || [];
+                            const ftModels = o.provider === "openai"
+                              ? ftJobs.filter((j) => j.status === "succeeded" && j.fineTunedModel).map((j) => j.fineTunedModel!)
+                              : [];
+                            const allModels = [...baseModels, ...ftModels];
+                            const currentInList = !o.model || allModels.includes(o.model);
+                            return allModels.length > 0 ? (
+                              <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Model" /></SelectTrigger>
+                                <SelectContent>
+                                  {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Standard</SelectLabel>
+                                    {baseModels.map((m) => (
+                                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                                    ))}
+                                  </SelectGroup>}
+                                  {ftModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Fine-tuned</SelectLabel>
+                                    {ftModels.map((m) => (
+                                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                                    ))}
+                                  </SelectGroup>}
+                                  {!currentInList && o.model && (
+                                    <SelectGroup><SelectLabel className="text-[10px]">Current</SelectLabel>
+                                      <SelectItem value={o.model}>{o.model}</SelectItem>
+                                    </SelectGroup>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <input type="text" value={o.model}
+                                onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
+                                className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                                placeholder="Model name" />
+                            );
+                          })()
                         ) : (
                           <div className="h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                             {modelName}
