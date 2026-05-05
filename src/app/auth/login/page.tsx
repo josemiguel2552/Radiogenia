@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Globe } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { usePublicLang } from "@/lib/public-i18n";
+import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,11 +73,11 @@ export default function LoginPage() {
               <p className="text-sm text-gray-400">{t("auth.sign_in_subtitle")}</p>
             </div>
             <button
-              onClick={() => setLang(lang === "es" ? "en" : "es")}
+              onClick={() => setLang(nextLang(lang))}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
             >
               <Globe className="h-3.5 w-3.5" />
-              {lang === "es" ? "EN" : "ES"}
+              {langLabel(lang)}
             </button>
           </div>
 

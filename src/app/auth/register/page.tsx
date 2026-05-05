@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Globe } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { usePublicLang } from "@/lib/public-i18n";
+import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,6 +26,8 @@ export default function RegisterPage() {
     if (!accepted) {
       setError(lang === "es"
         ? "Debes aceptar los términos de uso y la política de privacidad para crear una cuenta."
+        : lang === "pt"
+        ? "Você deve aceitar os termos de uso e a política de privacidade para criar uma conta."
         : "You must accept the terms of use and privacy policy to create an account.");
       return;
     }
@@ -61,6 +63,8 @@ export default function RegisterPage() {
     if (!accepted) {
       setError(lang === "es"
         ? "Debes aceptar los términos de uso y la política de privacidad para crear una cuenta."
+        : lang === "pt"
+        ? "Você deve aceitar os termos de uso e a política de privacidade para criar uma conta."
         : "You must accept the terms of use and privacy policy to create an account.");
       return;
     }
@@ -102,11 +106,11 @@ export default function RegisterPage() {
               <p className="text-sm text-gray-400">{t("auth.register_subtitle")}</p>
             </div>
             <button
-              onClick={() => setLang(lang === "es" ? "en" : "es")}
+              onClick={() => setLang(nextLang(lang))}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
             >
               <Globe className="h-3.5 w-3.5" />
-              {lang === "es" ? "EN" : "ES"}
+              {langLabel(lang)}
             </button>
           </div>
 
@@ -184,7 +188,7 @@ export default function RegisterPage() {
                 <span className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
                   {t("auth.accept_terms").replace(".", "")}{" "}
                   <Link href="/legal" target="_blank" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
-                    {lang === "es" ? "Ver términos" : "View terms"}
+                    {lang === "es" ? "Ver términos" : lang === "pt" ? "Ver termos" : "View terms"}
                   </Link>.
                   {" "}{t("auth.accept_terms_note")}
                 </span>

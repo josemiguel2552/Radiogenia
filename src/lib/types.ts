@@ -150,7 +150,7 @@ export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
 export type ParaphraseLevel = "none" | "light" | "free";
 export type ConclusionStyle = "concise" | "grouped";
-export type OutputLanguage = "es" | "en" | "pt" | "fr" | "de" | "it";
+export type OutputLanguage = "es" | "en" | "pt";
 export type DictationLanguage = OutputLanguage | "auto";
 
 export interface UserModelConfig {
@@ -259,10 +259,7 @@ export const PROVIDERS: { value: AIProvider; label: string; models: string[] }[]
 export const LANGUAGES: { value: OutputLanguage; label: string }[] = [
   { value: "es", label: "Español" },
   { value: "en", label: "English" },
-  { value: "pt", label: "Português" },
-  { value: "fr", label: "Français" },
-  { value: "de", label: "Deutsch" },
-  { value: "it", label: "Italiano" },
+  { value: "pt", label: "Português (BR)" },
 ];
 
 export const DICTATION_LANGUAGES: { value: DictationLanguage; label: string }[] = [

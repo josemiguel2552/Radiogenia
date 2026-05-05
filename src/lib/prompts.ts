@@ -14,24 +14,9 @@ const LENGTH_INSTRUCTIONS: Record<OutputLanguage, Record<FindingsLength, string>
     detailed: "Write each section exhaustively describing all available radiological parameters.",
   },
   pt: {
-    concise: "Redija cada secção de forma concisa numa única frase. Inclua apenas o dado diagnóstico essencial.",
-    standard: "Redija cada secção com descrição completa mas sem redundâncias.",
-    detailed: "Redija cada secção de forma exaustiva descrevendo todos os parâmetros radiológicos disponíveis.",
-  },
-  fr: {
-    concise: "Rédigez chaque section de manière concise en une seule phrase. N'incluez que la donnée diagnostique essentielle.",
-    standard: "Rédigez chaque section avec une description complète mais sans redondances.",
-    detailed: "Rédigez chaque section de manière exhaustive en décrivant tous les paramètres radiologiques disponibles.",
-  },
-  de: {
-    concise: "Schreibe jeden Abschnitt knapp in einem einzigen Satz. Nenne nur den wesentlichen diagnostischen Befund.",
-    standard: "Schreibe jeden Abschnitt mit vollständiger Beschreibung, aber ohne Redundanzen.",
-    detailed: "Schreibe jeden Abschnitt ausführlich und beschreibe alle verfügbaren radiologischen Parameter.",
-  },
-  it: {
-    concise: "Scrivi ogni sezione in modo conciso in una singola frase. Includi solo il dato diagnostico essenziale.",
-    standard: "Scrivi ogni sezione con descrizione completa ma senza ridondanze.",
-    detailed: "Scrivi ogni sezione in modo esaustivo descrivendo tutti i parametri radiologici disponibili.",
+    concise: "Redija cada seção de forma concisa em uma única frase. Inclua apenas o dado diagnóstico essencial.",
+    standard: "Redija cada seção com descrição completa, mas sem redundâncias.",
+    detailed: "Redija cada seção de forma exaustiva, descrevendo todos os parâmetros radiológicos disponíveis.",
   },
 };
 
@@ -47,24 +32,9 @@ const VERBOSITY_INSTRUCTIONS: Record<OutputLanguage, Record<NormalFieldsVerbosit
     explicit: "Unmentioned sections are described exhaustively with all relevant normal parameters for that anatomical structure and modality.",
   },
   pt: {
-    minimal: "As secções não mencionadas descrevem-se brevemente como normais. Ex: 'Fígado: Sem alterações.'",
-    standard: "As secções não mencionadas descrevem-se com uma frase profissional de normalidade. Ex: 'Fígado: De tamanho, morfologia e intensidade de sinal normais.'",
-    explicit: "As secções não mencionadas descrevem-se exaustivamente com todos os parâmetros normais relevantes.",
-  },
-  fr: {
-    minimal: "Les sections non mentionnées sont décrites brièvement comme normales. Ex : 'Foie : Sans anomalie.'",
-    standard: "Les sections non mentionnées sont décrites avec une phrase professionnelle de normalité. Ex : 'Foie : De taille, morphologie et signal normaux.'",
-    explicit: "Les sections non mentionnées sont décrites exhaustivement avec tous les paramètres normaux pertinents.",
-  },
-  de: {
-    minimal: "Nicht erwähnte Abschnitte werden kurz als normal beschrieben. Z.B.: 'Leber: Unauffällig.'",
-    standard: "Nicht erwähnte Abschnitte werden mit einem professionellen Normalbefund beschrieben. Z.B.: 'Leber: Größe, Morphologie und Signalintensität normal.'",
-    explicit: "Nicht erwähnte Abschnitte werden ausführlich mit allen relevanten Normalparametern beschrieben.",
-  },
-  it: {
-    minimal: "Le sezioni non menzionate sono descritte brevemente come normali. Es: 'Fegato: Nella norma.'",
-    standard: "Le sezioni non menzionate sono descritte con una frase professionale di normalità. Es: 'Fegato: Di dimensioni, morfologia e intensità di segnale normali.'",
-    explicit: "Le sezioni non menzionate sono descritte esaustivamente con tutti i parametri normali rilevanti.",
+    minimal: "As seções não mencionadas são descritas brevemente como normais. Ex: 'Fígado: Sem alterações.'",
+    standard: "As seções não mencionadas são descritas com uma frase profissional de normalidade. Ex: 'Fígado: De tamanho, morfologia e intensidade de sinal normais.'",
+    explicit: "As seções não mencionadas são descritas de forma exaustiva, com todos os parâmetros normais relevantes.",
   },
 };
 
@@ -80,24 +50,9 @@ const PARAPHRASE_INSTRUCTIONS: Record<OutputLanguage, Record<ParaphraseLevel, st
     free: "You may rewrite findings in professional radiological style. Keep all clinical data intact.",
   },
   pt: {
-    none: "Transcreva os achados ditados de forma literal. Não mude nenhuma palavra. Apenas coloque-os na secção correta.",
-    light: "Pode corrigir gramática, ordem sintática e erros de terminologia médica (ex: 'supracolicular'→'supraclavicular'). Use o termo anatómico/patológico correto segundo o contexto clínico e a modalidade. Não mude nenhum dado clínico, medida ou descritor.",
+    none: "Transcreva os achados ditados de forma literal. Não mude nenhuma palavra. Apenas coloque-os na seção correta.",
+    light: "Pode corrigir gramática, ordem sintática e erros de terminologia médica (ex: 'supracolicular'→'supraclavicular'). Use o termo anatômico/patológico correto de acordo com o contexto clínico e a modalidade. Não mude nenhum dado clínico, medida ou descritor.",
     free: "Pode reescrever os achados com estilo radiológico profissional. Mantenha todos os dados clínicos intactos.",
-  },
-  fr: {
-    none: "Transcrivez les résultats dictés littéralement. Ne changez aucun mot. Placez-les uniquement dans la bonne section.",
-    light: "Vous pouvez corriger la grammaire, la syntaxe et les erreurs de terminologie médicale (ex: 'supracoliculaire'→'supraclaviculaire'). Utilisez le terme anatomique/pathologique correct selon le contexte clinique et la modalité. Ne changez aucune donnée clinique, mesure ou descripteur.",
-    free: "Vous pouvez réécrire les résultats dans un style radiologique professionnel. Gardez toutes les données cliniques intactes.",
-  },
-  de: {
-    none: "Übertrage die diktierten Befunde wörtlich. Ändere keine Wörter. Ordne sie nur dem richtigen Abschnitt zu.",
-    light: "Du kannst Grammatik, Syntax und medizinische Terminologiefehler korrigieren (z.B. 'suprakolikulär'→'supraklavikulär'). Verwende den korrekten anatomischen/pathologischen Begriff je nach klinischem Kontext und Modalität. Ändere keine klinischen Daten, Maße oder Deskriptoren.",
-    free: "Du kannst die Befunde in professionellem radiologischem Stil umschreiben. Behalte alle klinischen Daten bei.",
-  },
-  it: {
-    none: "Trascrivi i reperti dettati letteralmente. Non cambiare nessuna parola. Collocali solo nella sezione corretta.",
-    light: "Puoi correggere grammatica, sintassi ed errori di terminologia medica (es: 'supracoliculare'→'supraclavicolare'). Usa il termine anatomico/patologico corretto in base al contesto clinico e alla modalità. Non cambiare nessun dato clinico, misura o descrittore.",
-    free: "Puoi riscrivere i reperti con stile radiologico professionale. Mantieni tutti i dati clinici intatti.",
   },
 };
 
@@ -105,9 +60,6 @@ const LANGUAGE_LABEL: Record<OutputLanguage, string> = {
   es: "español",
   en: "English",
   pt: "português",
-  fr: "français",
-  de: "Deutsch",
-  it: "italiano",
 };
 
 const COMPACT_NORMALS_INSTRUCTION: Record<string, string> = {
@@ -126,6 +78,14 @@ Do NOT write each template section individually. The output format changes compl
 3. THEN: at the end, write a SINGLE running paragraph (NO section labels, NO bullets, NO internal line breaks) grouping ALL normal unmentioned sections. Example: "The remaining evaluated structures (lung parenchyma, mediastinum, chest wall, etc.) show no significant abnormalities."
 ⚠️ FORBIDDEN in compact mode: Do NOT write individual sections with normality text (e.g., "Lung parenchyma: No abnormalities."). Those sections are REPLACED by the single final paragraph.
 If the resulting report has more sections than dictated findings, you are doing it WRONG.`,
+
+  pt: `⚠️ MODO COMPACTO ATIVADO — ESTA É A INSTRUÇÃO MAIS IMPORTANTE DO RELATÓRIO:
+NÃO escreva cada seção do template individualmente. O formato de saída muda completamente:
+1. PRIMEIRO: escreva APENAS as seções que possuem achados mencionados pelo radiologista (positivos ou negativos ditados), cada uma como "Seção: Descrição."
+2. Se houver achados que não se encaixam em nenhuma seção do template, escreva "Outros achados: ..." com todos esses achados agrupados.
+3. DEPOIS: ao final, escreva um ÚNICO parágrafo corrido (SEM rótulos de seção, SEM marcadores, SEM quebras de linha internas) agrupando TODAS as seções normais não mencionadas. Exemplo: "As demais estruturas avaliadas (parênquima pulmonar, mediastino, parede torácica, etc.) não apresentam alterações significativas."
+⚠️ PROIBIDO no modo compacto: NÃO escreva seções individuais com texto de normalidade (ex: "Parênquima pulmonar: Sem alterações."). Essas seções são SUBSTITUÍDAS pelo parágrafo final único.
+Se o relatório resultante tiver mais seções do que achados ditados, você está fazendo ERRADO.`,
 };
 
 /* ── System prompt templates per language ───────────────────── */
@@ -181,6 +141,55 @@ Páncreas: De tamaño y morfología normales.
 Otros hallazgos: Nódulos tiroideos bilaterales de aspecto inespecífico.`;
   }
 
+  if (lang === "pt") {
+    return `Você é um radiologista experiente redigindo laudos estruturados. Sua tarefa é pegar o ditado do radiologista e distribuí-lo nas seções anatômicas do template fornecido.
+
+IDIOMA DE SAÍDA: ${l}. TODO o laudo deve estar em ${l}.
+IMPORTANTE: O ditado pode estar em QUALQUER idioma. Independentemente do idioma de entrada, toda a sua saída DEVE estar em ${l}. Traduza todo o conteúdo para ${l}.
+
+MODALIDADE DO ESTUDO: ${modality}
+
+PRINCÍPIO FUNDAMENTAL — SEÇÕES NÃO MENCIONADAS:
+O radiologista dita apenas o que é anormal ou o que deseja destacar. Se o radiologista NÃO menciona uma seção do template, significa que ele a avaliou e é NORMAL. Em vez disso, descreva normalidade radiológica apropriada para aquele órgão/estrutura e esta modalidade.
+
+FRASES ABSOLUTAMENTE PROIBIDAS (nunca escreva nenhuma destas em nenhuma seção, sob nenhuma circunstância):
+- "não avaliado", "não analisado", "não descrito", "não mencionado", "não explorado", "não visualizado para avaliação", "not assessed", "not evaluated", "no valorado", "no se describe".
+- Vícios de linguagem (apenas no texto gerado por você, NÃO nos achados ditados pelo radiologista): "observa-se", "evidencia-se", "identifica-se", "nota-se", "demonstra-se", "detecta-se", "visualiza-se", "cabe destacar", "chama atenção", "noted", "observed", "identified". Nas seções de normalidade e texto que você redigir, escreva diretamente sem verbos introdutórios. Ex: "Nódulo hepático de 12 mm no segmento VI." em vez de "Observa-se nódulo hepático de 12 mm no segmento VI." EXCEÇÃO: se o radiologista usou essas palavras no ditado, mantenha-as como estão.
+Se uma seção não é mencionada no ditado, SEMPRE escreva uma descrição de normalidade. JAMAIS indique que não foi avaliada.
+
+ACHADOS NEGATIVOS DITADOS:
+Quando o radiologista dita explicitamente a AUSÊNCIA de um achado (ex: "sem massa colônica", "sem evidência de TEP", "sem dissecção aórtica", "não se identifica litíase"), isso é um achado negativo relevante e DEVE ser incluído na seção anatômica correspondente. Não o omita nem o substitua por uma frase genérica de normalidade. Reproduza fielmente a negação ditada.
+
+REGRAS OBRIGATÓRIAS:
+1. A saída deve conter EXATAMENTE as mesmas seções do template, na MESMA ORDEM. Não reordene. Não omita nenhuma.
+2. Distribua cada achado ditado na seção anatômica correta do template. Isso inclui tanto achados positivos quanto achados negativos ditados pelo radiologista.
+3. Seções não mencionadas no ditado são SEMPRE preenchidas com descrições de normalidade radiológica profissional.
+4. NÃO invente achados patológicos que o radiologista não tenha ditado.
+5. IGNORE completamente a seção "CONCLUSÃO" do template — NÃO a inclua na resposta.
+6. ACHADOS SEM SEÇÃO — OBRIGATÓRIO:
+   Se um achado ditado NÃO se encaixa claramente em NENHUMA seção do template, você DEVE adicionar uma seção final chamada "Outros achados:" ao final do laudo com TODOS os achados órfãos agrupados.
+   - NUNCA omita um achado ditado por falta de seção adequada.
+   - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados".
+   - Exemplos: achados incidentais em órgãos não cobertos pelo template, achados de partes moles em um template ósseo, linfonodomegalias em um template que não as inclui, etc.
+   - Se TODOS os achados se encaixam em seções existentes, NÃO adicione esta seção.
+
+FORMATO DE SAÍDA — ESTRITO, SEM EXCEÇÕES:
+- Cada seção é exatamente UMA linha com o formato: "Seção anatômica: Descrição."
+- Primeira letra da seção em MAIÚSCULA, o restante em minúsculas. Dois pontos. Um espaço. Descrição. Ponto final.
+- Uma linha por seção. Sem linhas em branco entre seções. Sem quebras de linha dentro de uma seção.
+- NÃO use asteriscos (*), cerquilhas (#), hífens (-), marcadores, negrito nem nenhuma formatação markdown.
+- NÃO numere as seções.
+- NÃO adicione cabeçalhos como "ACHADOS" nem agrupamentos. Apenas a lista plana de seções.
+- TRADUZA os nomes das seções do template para ${l}.
+
+Exemplo — se o template tem as seções Liver, Gallbladder, Bile ducts, Pancreas (nessa ordem) e o ditado menciona nódulos tireoidianos, a saída deve ser EXATAMENTE:
+Fígado: De tamanho e morfologia normais.
+Vesícula biliar: De paredes finas, sem litíase.
+Via biliar: De calibre normal.
+Pâncreas: De tamanho e morfologia normais.
+Outros achados: Nódulos tireoidianos bilaterais de aspecto inespecífico.`;
+  }
+
   return `You are an expert radiologist writing structured reports. Your task is to take the radiologist's dictation and distribute it into the anatomical sections of the provided template.
 
 OUTPUT LANGUAGE: ${l}. The ENTIRE report must be written in ${l}.
@@ -230,8 +239,8 @@ Additional findings: Bilateral thyroid nodules of nonspecific appearance.`;
 }
 
 function modalityTerminology(modality: string, lang: OutputLanguage): string {
-  const use = lang === "es" ? "Usa" : lang === "pt" ? "Use" : lang === "fr" ? "Utilisez" : lang === "de" ? "Verwende" : lang === "it" ? "Usa" : "Use";
-  const forbidden = lang === "es" ? "PROHIBIDO" : lang === "pt" ? "PROIBIDO" : lang === "fr" ? "INTERDIT" : lang === "de" ? "VERBOTEN" : lang === "it" ? "VIETATO" : "FORBIDDEN";
+  const use = lang === "es" ? "Usa" : lang === "pt" ? "Use" : "Use";
+  const forbidden = lang === "es" ? "PROHIBIDO" : lang === "pt" ? "PROIBIDO" : "FORBIDDEN";
 
   if (modality === "MRI") {
     return `- ${use}: "signal intensity", "hyperintense on T2", "hypointense on T1", "post-contrast enhancement", "diffusion restriction", "morphology", "size" (or equivalent in ${LANGUAGE_LABEL[lang]}).
@@ -538,10 +547,10 @@ Rules:
 
   let userMsg = "";
   if (hasClinical) {
-    const label = lang === "es" ? "Datos clínicos / pregunta clínica" : "Clinical data / clinical question";
+    const label = lang === "es" ? "Datos clínicos / pregunta clínica" : lang === "pt" ? "Dados clínicos / pergunta clínica" : "Clinical data / clinical question";
     userMsg += `${label}:\n${params.clinicalInfo}\n\n`;
   }
-  const findingsLabel = lang === "es" ? "Hallazgos" : "Findings";
+  const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
   userMsg += `${findingsLabel}:\n${params.findingsText}`;
 
   return { system, user: userMsg };
@@ -558,6 +567,8 @@ export function buildRecommendationsPrompt(params: {
   if (params.recommendations.length === 0) {
     const noRecs = lang === "es"
       ? "No se emiten recomendaciones adicionales."
+      : lang === "pt"
+      ? "Não há recomendações adicionais."
       : "No additional recommendations.";
     return { system: "", user: noRecs };
   }
@@ -617,7 +628,7 @@ RESPOND IN JSON:
 [{"catalogue_id": "R1", "recommendation": "exact catalogue text", "guideline": "guideline name", "triggering_finding": "verbatim finding quote", "confidence": "high|medium"}]`;
   }
 
-  const findLabel = lang === "es" ? "Hallazgos del informe a evaluar" : "Report findings to evaluate";
+  const findLabel = lang === "es" ? "Hallazgos del informe a evaluar" : lang === "pt" ? "Achados do relatório a avaliar" : "Report findings to evaluate";
   const user = `${findLabel}:\n${params.findingsText}`;
   return { system, user };
 }

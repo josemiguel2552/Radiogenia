@@ -90,7 +90,6 @@ ${phraseBlock}` : ""}`;
   // English and other languages
   const LANG_LABEL: Record<OutputLanguage, string> = {
     es: "español", en: "English", pt: "português",
-    fr: "français", de: "Deutsch", it: "italiano",
   };
   const l = LANG_LABEL[lang];
 
@@ -159,7 +158,6 @@ REGLAS:
 
   const LANG_LABEL: Record<OutputLanguage, string> = {
     es: "español", en: "English", pt: "português",
-    fr: "français", de: "Deutsch", it: "italiano",
   };
   const l = LANG_LABEL[lang];
 
@@ -209,10 +207,7 @@ function applyCorrections(sections: MappedSection[], corrections: ValidatorCorre
 const COMPACT_SUFFIX: Record<string, string> = {
   es: "El resto de las estructuras evaluadas ({names}) no muestran alteraciones significativas.",
   en: "The remaining evaluated structures ({names}) show no significant abnormalities.",
-  pt: "As restantes estruturas avaliadas ({names}) não apresentam alterações significativas.",
-  fr: "Les structures évaluées restantes ({names}) ne montrent pas d'anomalies significatives.",
-  de: "Die übrigen untersuchten Strukturen ({names}) zeigen keine signifikanten Auffälligkeiten.",
-  it: "Le restanti strutture valutate ({names}) non mostrano alterazioni significative.",
+  pt: "As demais estruturas avaliadas ({names}) não apresentam alterações significativas.",
 };
 
 function sectionsToText(sections: MappedSection[], compactNormals: boolean, lang: OutputLanguage): string {

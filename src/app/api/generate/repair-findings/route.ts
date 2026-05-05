@@ -27,9 +27,6 @@ export async function POST(req: NextRequest) {
       es: "Responde SOLO con el informe corregido en español. Sin explicaciones.",
       en: "Respond ONLY with the corrected report in English. No explanations.",
       pt: "Responda APENAS com o relatório corrigido em português. Sem explicações.",
-      fr: "Répondez UNIQUEMENT avec le rapport corrigé en français. Sans explications.",
-      de: "Antworten Sie NUR mit dem korrigierten Bericht auf Deutsch. Keine Erklärungen.",
-      it: "Rispondi SOLO con il referto corretto in italiano. Senza spiegazioni.",
     };
 
     let instructions = `You are a radiology report editor. Your ONLY task is to correct a structured findings report.\n\n`;
