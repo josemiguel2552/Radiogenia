@@ -89,10 +89,13 @@ Mantén la estructura, puntuación y saltos de línea exactos. Si el texto ya es
 ${modality || studyType ? `CONTEXT: ${modality ? `Modality: ${modality}.` : ""} ${studyType ? `Study: ${studyType}.` : ""}` : ""}
 ${modalityContext}
 MANDATORY FIXES:
-- Rejoin split compound terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "retro peritoneal"→"retroperitoneal", "pneumo thorax"→"pneumothorax", etc.
-- Fix homophones: "new frosts"→"nephrosis", "pare nkima"→"parenchyma", "adder no path he"→"adenopathy"
+- Rejoin split compound terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "retro peritoneal"→"retroperitoneal", "pneumo thorax"→"pneumothorax", "atel ectasis"→"atelectasis", etc.
+- Fix STT misrecognitions (common Deepgram errors): "consultative"→"consolidative", "consulted"→"consolidated", "internal increase"→"interval increase", "iLocalated/I located/I lock you lated"→"loculated", "impetigo"→"empyema", "employee ma"→"empyema", "cavity nation"→"cavitation", "no line"→(remove if spurious), "High resolution CT of the chest shows"→(remove if not dictated — this is a common STT hallucination)
+- Fix word fusion: "lymph nodesThe"→"lymph nodes. The", "consolidatioand"→"consolidation and"
+- Fix homophones: "new frosts"→"nephrosis", "pare nkima"→"parenchyma", "adder no path he"→"adenopathy", "plural"→"pleural", "bilateral"→(keep), "medi a steinum"→"mediastinum"
 - Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
 - Use modality/study type to disambiguate.
+- If a word looks like a truncated medical term (e.g. "consolidatio", "atelectasi"), complete it.
 
 Keep exact structure, punctuation, line breaks. Return text as-is if correct. Respond ONLY with corrected text.`;
 
