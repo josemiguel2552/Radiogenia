@@ -28,9 +28,11 @@ import {
   Pencil,
   Wand2,
   GraduationCap,
+  Scan,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
+import { ImageAnalysisPanel } from "./image-analysis/analysis-panel"; // IMAGE_ANALYSIS_INTEGRATION — remove this line to disable
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
@@ -137,6 +139,7 @@ export function DashboardContent() {
   const [errorReported, setErrorReported] = useState(false);
   const [reportingError, setReportingError] = useState(false);
   const [residentDialogOpen, setResidentDialogOpen] = useState(false);
+  const [imageAnalysisOpen, setImageAnalysisOpen] = useState(false); // IMAGE_ANALYSIS_INTEGRATION
 
   // Subscription usage (inline — replaces StatsPanel)
   const [subPlan, setSubPlan] = useState<string>("free");
@@ -1496,14 +1499,25 @@ export function DashboardContent() {
                   <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
                 )}
               </Button>
-              <button
-                type="button"
-                onClick={() => setLightParaphrase(!lightParaphrase)}
-                className={`flex items-center gap-1.5 text-[11px] transition-colors ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
-              >
-                <Wand2 className="h-3 w-3" />
-                {t("dash.light_paraphrase")}
-              </button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setLightParaphrase(!lightParaphrase)}
+                  className={`flex items-center gap-1.5 text-[11px] transition-colors ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
+                >
+                  <Wand2 className="h-3 w-3" />
+                  {t("dash.light_paraphrase")}
+                </button>
+                {/* IMAGE_ANALYSIS_INTEGRATION — remove this button to disable */}
+                <button
+                  type="button"
+                  onClick={() => setImageAnalysisOpen(!imageAnalysisOpen)}
+                  className={`flex items-center gap-1.5 text-[11px] transition-colors ${imageAnalysisOpen ? "text-cyan-600 dark:text-cyan-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
+                >
+                  <Scan className="h-3 w-3" />
+                  {t("img.title")}
+                </button>
+              </div>
               {!setupReady && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
                   {t("dash.select_template_first")}
@@ -1512,6 +1526,20 @@ export function DashboardContent() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* IMAGE_ANALYSIS_INTEGRATION — remove this block to disable */}
+      {imageAnalysisOpen && (
+        <ImageAnalysisPanel
+          templates={templates}
+          selectedTemplateId={selectedTemplateId}
+          outputLanguage={outputLanguage}
+          onInsertFindings={(text) => {
+            setFindings(text);
+            setImageAnalysisOpen(false);
+          }}
+          onClose={() => setImageAnalysisOpen(false)}
+        />
       )}
 
       {/* ── Output ── */}
