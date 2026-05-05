@@ -37,10 +37,17 @@ export interface TraceHallucination {
   reason: string;
 }
 
+export interface TraceRepairedItem {
+  dictation_fragment: string;
+  inserted_into_section: string;
+  reason: string;
+}
+
 export interface TraceData {
   mappings: TraceMapping[];
   unmatched: TraceUnmatched[];
   hallucinations: TraceHallucination[];
+  repairedItems?: TraceRepairedItem[];
 }
 
 function normalizeForSearch(s: string): string {
@@ -207,9 +214,11 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
     return Array.from(map.entries());
   }, [trace.mappings]);
 
-  const total = trace.mappings.length + trace.unmatched.length;
+  const total = trace.mappings.length + trace.unmatched.length + (trace.repairedItems?.length || 0);
   const matched = trace.mappings.length;
-  const allGood = trace.unmatched.length === 0 && trace.hallucinations.length === 0;
+  const hasRepairs = (trace.repairedItems?.length || 0) > 0;
+  const hasUnmatched = trace.unmatched.length > 0;
+  const allGood = !hasUnmatched && trace.hallucinations.length === 0 && !hasRepairs;
 
   return (
     <div className="space-y-2">
@@ -224,7 +233,13 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
               {t("trace.all_verified")}
             </span>
           )}
-          {trace.unmatched.length > 0 && (
+          {hasRepairs && (
+            <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+              <Check className="h-3 w-3" />
+              {trace.repairedItems!.length} {t("trace.auto_repaired_count")}
+            </span>
+          )}
+          {hasUnmatched && (
             <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
               <AlertTriangle className="h-3 w-3" />
               {trace.unmatched.length} {t("trace.omissions")}
@@ -242,8 +257,8 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
         <div
           className="h-1.5 rounded-full transition-all"
           style={{
-            width: `${total > 0 ? (matched / total) * 100 : 0}%`,
-            backgroundColor: allGood ? "#22c55e" : trace.unmatched.length > 0 ? "#f59e0b" : "#a855f7",
+            width: `${total > 0 ? ((matched + (trace.repairedItems?.length || 0)) / total) * 100 : 0}%`,
+            backgroundColor: allGood ? "#22c55e" : hasUnmatched ? "#f59e0b" : hasRepairs ? "#3b82f6" : "#a855f7",
           }}
         />
       </div>
@@ -261,6 +276,66 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
           </span>
         ))}
       </div>
+
+      {hasRepairs && (
+        <div className="space-y-1 pt-1">
+          <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
+            {t("trace.repaired_title")}
+          </span>
+          {trace.repairedItems!.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-1.5 text-[11px] px-2 py-1 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+            >
+              <Check className="h-3 w-3 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-gray-800 dark:text-gray-200">&ldquo;{item.dictation_fragment}&rdquo;</span>
+                <span className="text-gray-500 dark:text-gray-400"> → {item.inserted_into_section}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hasUnmatched && (
+        <div className="space-y-1 pt-1">
+          <span className="text-[10px] font-semibold text-red-700 dark:text-red-300 uppercase tracking-wide">
+            {t("trace.omitted_title")}
+          </span>
+          {trace.unmatched.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-1.5 text-[11px] px-2 py-1 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+            >
+              <AlertTriangle className="h-3 w-3 mt-0.5 text-red-500 dark:text-red-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-gray-800 dark:text-gray-200">&ldquo;{item.dictation_fragment}&rdquo;</span>
+                <span className="text-gray-500 dark:text-gray-400"> — {item.reason}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {trace.hallucinations.length > 0 && (
+        <div className="space-y-1 pt-1">
+          <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+            {t("trace.hallucination_title")}
+          </span>
+          {trace.hallucinations.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-1.5 text-[11px] px-2 py-1 rounded bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800"
+            >
+              <ShieldAlert className="h-3 w-3 mt-0.5 text-purple-500 dark:text-purple-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-gray-800 dark:text-gray-200">&ldquo;{item.findings_fragment}&rdquo;</span>
+                <span className="text-gray-500 dark:text-gray-400"> ({item.section}) — {item.reason}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

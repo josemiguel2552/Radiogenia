@@ -36,12 +36,13 @@ OUTPUT — respond ONLY with valid JSON:
   "unmatched": [{"dictation_fragment": "phrase", "reason": "brief reason"}],
   "hallucinations": [{"findings_fragment": "detail", "section": "Section name", "reason": "brief reason"}],
   "repaired": false,
-  "corrected_findings": null
+  "corrected_findings": null,
+  "repaired_items": []
 }
 
-If repair was needed, set "repaired": true and "corrected_findings" to the FULL corrected findings text (in ${lang}). The mappings/unmatched/hallucinations should reflect the FINAL corrected state (mappings should be complete, unmatched should be empty, hallucinations should be empty).
+If repair was needed, set "repaired": true and "corrected_findings" to the FULL corrected findings text (in ${lang}). The mappings/unmatched/hallucinations should reflect the FINAL corrected state (mappings should be complete, unmatched should be empty, hallucinations should be empty). Also populate "repaired_items" with an array of EACH omission that was auto-integrated: [{"dictation_fragment": "the original phrase", "inserted_into_section": "Section name where it was placed", "reason": "why it was originally omitted"}].
 
-If no repair was needed, set "repaired": false, "corrected_findings": null, and return the trace of the original findings.`;
+If no repair was needed, set "repaired": false, "corrected_findings": null, "repaired_items": [], and return the trace of the original findings.`;
 
     const userMsg = `DICTATION:\n${dictation}\n\nSTRUCTURED FINDINGS:\n${findings}`;
 
@@ -68,6 +69,7 @@ If no repair was needed, set "repaired": false, "corrected_findings": null, and 
     if (!result.unmatched) result.unmatched = [];
     if (result.repaired === undefined) result.repaired = false;
     if (result.corrected_findings === undefined) result.corrected_findings = null;
+    if (!result.repaired_items) result.repaired_items = [];
 
     return NextResponse.json(result);
   } catch (error) {

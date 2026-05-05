@@ -437,34 +437,56 @@ export function DashboardContent() {
     };
   }, []);
 
-  // Load draft on mount — discard if older than 15 minutes
+  // Load draft on mount — discard if older than 15 minutes; fall back to last template
   useEffect(() => {
     const raw = localStorage.getItem("radiogenai_draft");
-    if (!raw) return;
+    if (raw) {
+      try {
+        const d = JSON.parse(raw);
+        const age = Date.now() - (d.savedAt || 0);
+        if (age > 15 * 60 * 1000) {
+          localStorage.removeItem("radiogenai_draft");
+        } else {
+          if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
+          if (d.dictation) setDictation(d.dictation);
+          if (d.findings) setFindings(d.findings);
+          if (d.conclusionVersions) {
+            setConclusionVersions(d.conclusionVersions);
+          } else if (d.conclusion) {
+            setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: d.conclusion }));
+          }
+          if (d.recommendations) setRecommendations(d.recommendations);
+          if (d.selectedModality) setSelectedModality(d.selectedModality);
+          if (d.selectedSection) setSelectedSection(d.selectedSection);
+          if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
+          if (d.contrastOption) setContrastOption(d.contrastOption);
+          if (d.initialFindings) setInitialFindings(d.initialFindings);
+          if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
+          return;
+        }
+      } catch { /* ignore corrupt draft */ }
+    }
+    // No valid draft — restore last used template selection
     try {
-      const d = JSON.parse(raw);
-      const age = Date.now() - (d.savedAt || 0);
-      if (age > 15 * 60 * 1000) {
-        localStorage.removeItem("radiogenai_draft");
-        return;
+      const tplRaw = localStorage.getItem("radiogenai_last_template");
+      if (tplRaw) {
+        const tpl = JSON.parse(tplRaw);
+        if (tpl.modality) setSelectedModality(tpl.modality);
+        if (tpl.section) setSelectedSection(tpl.section);
+        if (tpl.templateId) setSelectedTemplateId(tpl.templateId);
       }
-      if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
-      if (d.dictation) setDictation(d.dictation);
-      if (d.findings) setFindings(d.findings);
-      if (d.conclusionVersions) {
-        setConclusionVersions(d.conclusionVersions);
-      } else if (d.conclusion) {
-        setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: d.conclusion }));
-      }
-      if (d.recommendations) setRecommendations(d.recommendations);
-      if (d.selectedModality) setSelectedModality(d.selectedModality);
-      if (d.selectedSection) setSelectedSection(d.selectedSection);
-      if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
-      if (d.contrastOption) setContrastOption(d.contrastOption);
-      if (d.initialFindings) setInitialFindings(d.initialFindings);
-      if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
-    } catch { /* ignore corrupt draft */ }
+    } catch { /* ignore */ }
   }, []);
+
+  // Persist template selection across sessions
+  useEffect(() => {
+    if (!selectedModality && !selectedSection && !selectedTemplateId) return;
+    localStorage.setItem("radiogenai_last_template", JSON.stringify({
+      modality: selectedModality,
+      section: selectedSection,
+      templateId: selectedTemplateId,
+    }));
+  }, [selectedModality, selectedSection, selectedTemplateId]);
 
   // Seed defaults (if needed) then load templates + user config
   useEffect(() => {
@@ -631,13 +653,14 @@ export function DashboardContent() {
             findingsText = cleanReport(result.corrected_findings);
             setFindings(findingsText);
             setInitialFindings(findingsText);
-            setRepairMessage(t("trace.auto_repaired").replace("{0}", ""));
+            setRepairMessage(t("trace.auto_repaired").replace("{0}", String(result.repaired_items?.length || "")));
           }
 
           setTraceData({
             mappings: result.mappings,
             unmatched: result.unmatched,
             hallucinations: result.hallucinations,
+            repairedItems: result.repaired_items || [],
           });
           setTraceActive(true);
         }
