@@ -318,30 +318,30 @@ export function buildConclusionPrompt(params: {
     concise: `ESTILO — CONCISO:
 - Cada punto agrupa hallazgos relacionados en UNA SOLA FRASE breve y directa.
 - Sin subordinadas largas ni explicaciones. Solo el dato clave condensado.
-- Usa paréntesis para medidas y datos: "Progresión tumoral hepática (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
-- Tono: directo, escueto, clínico.`,
+- Usa paréntesis para medidas y datos: "Aumento de la lesión hepática del segmento VII (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
+- Tono: directo, escueto, descriptivo.`,
     grouped: `ESTILO — INTEGRADO:
 - Cada punto es un párrafo breve con frases completas y bien redactadas.
 - Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
 - SOLO conecta hallazgos dentro de un punto si son parte del MISMO PROCESO PATOLÓGICO (ej: lesión primaria + sus adenopatías, derrame + atelectasia compresiva).
 - Si dos hallazgos no comparten fisiopatología, van en PUNTOS SEPARADOS aunque ambos sean importantes.
 - NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
-- Tono: integrador pero riguroso, sintético, clínico.`,
+- Tono: integrador pero riguroso, sintético, descriptivo.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
     concise: `STYLE — CONCISE:
 - Each point groups related findings into ONE SINGLE brief, direct phrase.
 - No long subordinate clauses or explanations. Only the key data condensed.
-- Use parentheses for measurements and data: "Hepatic tumor progression (2→3.5 cm) with new retroperitoneal lymphadenopathy (15 mm)."
-- Tone: direct, succinct, clinical.`,
+- Use parentheses for measurements and data: "Interval increase of segment VII hepatic lesion (2→3.5 cm) with new retroperitoneal lymph node (15 mm)."
+- Tone: direct, succinct, descriptive.`,
     grouped: `STYLE — INTEGRATED:
 - Each point is a brief paragraph with complete, well-written sentences.
 - Include descriptive data: size, location, density/signal, evolution.
 - ONLY connect findings within a point if they are part of the SAME PATHOLOGICAL PROCESS (e.g., primary lesion + its lymphadenopathy, effusion + compressive atelectasis).
 - If two findings do not share pathophysiology, they go in SEPARATE POINTS even if both are important.
 - Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
-- Tone: integrative but rigorous, synthetic, clinical.`,
+- Tone: integrative but rigorous, synthetic, descriptive.`,
   };
 
   let system: string;
@@ -366,9 +366,9 @@ REGLAS DE CONTENIDO:
 3. ORDEN: De MAYOR a MENOR importancia clínica.
 
 4. AGRUPACIÓN POR CONTEXTO CLÍNICO:
-   - Hallazgos que expresen EMPEORAMIENTO van juntos en un mismo punto (ej: "Progresión tumoral con aumento de la lesión hepática de 2 a 3.5 cm y nueva adenopatía retroperitoneal.").
-   - Hallazgos que expresen MEJORÍA van juntos en otro punto (ej: "Disminución del derrame pleural derecho y resolución parcial de la consolidación basal.").
-   - Hallazgos del MISMO ESPECTRO DE ENFERMEDAD van juntos (ej: todas las lesiones metastásicas en un punto; todos los signos de cirrosis en un punto).
+   - Hallazgos que muestren AUMENTO/EMPEORAMIENTO van juntos en un mismo punto (ej: "Aumento de tamaño de la lesión hepática del segmento VII (de 2 a 3.5 cm) con nueva adenopatía retroperitoneal de 15 mm.").
+   - Hallazgos que muestren DISMINUCIÓN/MEJORÍA van juntos en otro punto (ej: "Disminución del derrame pleural derecho y resolución parcial de la consolidación basal.").
+   - Hallazgos de la MISMA REGIÓN/SISTEMA van juntos (ej: todas las lesiones hepáticas en un punto; todos los hallazgos pleurales en un punto).
    - Hallazgos INDEPENDIENTES entre sí van en puntos separados.
 
 5. ${hasClinical ? `PREGUNTA CLÍNICA PROPORCIONADA:
@@ -379,7 +379,7 @@ REGLAS DE CONTENIDO:
    - Analiza los hallazgos y DEDUCE qué es lo más relevante para el clínico que solicitó la prueba.
    - Piensa: ¿por qué se pidió este estudio? ¿Qué hallazgo responde a esa pregunta implícita?
    - El PRIMER punto debe ser lo que el clínico busca saber: el hallazgo principal o su ausencia.
-   - Ej: si hay hallazgos oncológicos → lo más relevante es la progresión/estabilidad/respuesta.
+   - Ej: si hay lesiones conocidas → lo más relevante son los cambios de tamaño/número respecto a previos.
    - Ej: si hay un hallazgo agudo (fractura, colección, isquemia) → ese va primero.
    - Ej: si todo es crónico/degenerativo → prioriza lo que puede requerir acción.`}
 
@@ -391,15 +391,27 @@ REGLAS DE CONTENIDO:
 7. COMPARACIONES CON PREVIOS:
    - Si se mencionan cambios, inclúyelos DENTRO del punto del hallazgo correspondiente, calificando evolución (aumento/disminución/estabilidad).
 
+PRINCIPIO FUNDAMENTAL — DESCRIBIR, NO DIAGNOSTICAR:
+La conclusión DESCRIBE hallazgos radiológicos. NO emite diagnósticos, interpretaciones etiológicas ni juicios clínicos. El radiólogo describe lo que ve; el clínico decide qué significa.
+- CORRECTO: "Aumento de tamaño de la lesión hepática del segmento VII (de 2 a 3.5 cm respecto al estudio previo)."
+- INCORRECTO: "Progresión tumoral hepática." (esto es un diagnóstico/interpretación)
+- CORRECTO: "Consolidación en lóbulo inferior derecho con broncograma aéreo."
+- INCORRECTO: "Neumonía del lóbulo inferior derecho." (esto es un diagnóstico)
+- CORRECTO: "Lesión focal hepática hipodensa de 25 mm en segmento VI, de nueva aparición."
+- INCORRECTO: "Nueva metástasis hepática." (esto es un diagnóstico)
+
 PROHIBIDO:
-- Emitir diagnósticos ("compatible con neumonía", "sugestivo de neoplasia").
+- Emitir diagnósticos o interpretaciones etiológicas: "progresión tumoral", "metástasis", "neumonía", "compatible con X", "sugestivo de X", "en relación con X", "indicativo de X", "consistente con X". En su lugar, describe el hallazgo radiológico puro.
+- Asumir naturaleza de lesiones: "lesión maligna", "tumor", "metástasis", "recidiva", "diseminación". En su lugar: "lesión", "nódulo", "masa", "imagen nodular", "captación patológica".
+- Inferir progresión o respuesta terapéutica: "progresión tumoral", "respuesta parcial", "enfermedad estable". En su lugar: "aumento de tamaño de la lesión", "disminución de tamaño", "sin cambios significativos respecto al previo".
 - Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM").
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
-- Lenguaje categórico o inferencias causales ("secundario a...", "probablemente relacionado con...").
-- Pronósticos ("hallazgo preocupante", "buen pronóstico").
+- Inferencias causales ("secundario a...", "probablemente relacionado con...", "en contexto de...").
+- Pronósticos ("hallazgo preocupante", "buen pronóstico", "evolución desfavorable").
 - Añadir información no presente en los hallazgos.
-- Especular sobre naturaleza ("posiblemente benigno", "probablemente inflamatorio").
 - Muletillas ("se observa", "se identifica", "se evidencia", "cabe destacar").
+
+EXCEPCIÓN: Usa terminología diagnóstica SOLO si está explícitamente en los hallazgos dictados por el radiólogo (ej: si los hallazgos dicen "fractura", puedes decir "fractura"; si dicen "nódulo", no digas "tumor").
 
 Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
@@ -427,9 +439,9 @@ CONTENT RULES:
 3. ORDER: From MOST to LEAST clinically important.
 
 4. GROUPING BY CLINICAL CONTEXT:
-   - Findings expressing WORSENING go together in one point (e.g., "Tumor progression with hepatic lesion increase from 2 to 3.5 cm and new retroperitoneal lymphadenopathy.").
-   - Findings expressing IMPROVEMENT go together in another point (e.g., "Decreased right pleural effusion and partial resolution of basal consolidation.").
-   - Findings of the SAME DISEASE SPECTRUM go together (e.g., all metastatic lesions in one point; all signs of cirrhosis in one point).
+   - Findings showing INTERVAL INCREASE/WORSENING go together in one point (e.g., "Interval increase of segment VII hepatic lesion (from 2 to 3.5 cm) with new 15 mm retroperitoneal lymph node.").
+   - Findings showing INTERVAL DECREASE/IMPROVEMENT go together in another point (e.g., "Decreased right pleural effusion and partial resolution of basal consolidation.").
+   - Findings of the SAME REGION/SYSTEM go together (e.g., all hepatic lesions in one point; all pleural findings in one point).
    - INDEPENDENT findings go in separate points.
 
 5. ${hasClinical ? `CLINICAL QUESTION PROVIDED:
@@ -440,7 +452,7 @@ CONTENT RULES:
    - Analyze the findings and DEDUCE what is most relevant for the clinician who ordered the study.
    - Think: why was this study ordered? What finding answers that implicit question?
    - The FIRST point should be what the clinician wants to know: the main finding or its absence.
-   - E.g.: if there are oncologic findings → most relevant is progression/stability/response.
+   - E.g.: if there are known lesions → most relevant are size/number changes compared to prior.
    - E.g.: if there is an acute finding (fracture, collection, ischemia) → that goes first.
    - E.g.: if everything is chronic/degenerative → prioritize what may require action.`}
 
@@ -452,15 +464,27 @@ CONTENT RULES:
 7. COMPARISON WITH PRIOR STUDIES:
    - If changes are mentioned, include them WITHIN the corresponding finding's point, qualifying evolution (increase/decrease/stability).
 
+FUNDAMENTAL PRINCIPLE — DESCRIBE, DO NOT DIAGNOSE:
+The conclusion DESCRIBES radiological findings. It does NOT issue diagnoses, etiological interpretations, or clinical judgments. The radiologist describes what they see; the clinician decides what it means.
+- CORRECT: "Interval increase of the segment VII hepatic lesion (from 2 to 3.5 cm compared to prior study)."
+- INCORRECT: "Hepatic tumor progression." (this is a diagnosis/interpretation)
+- CORRECT: "Right lower lobe consolidation with air bronchograms."
+- INCORRECT: "Right lower lobe pneumonia." (this is a diagnosis)
+- CORRECT: "New 25 mm hypodense focal hepatic lesion in segment VI."
+- INCORRECT: "New hepatic metastasis." (this is a diagnosis)
+
 FORBIDDEN:
-- Suggesting diagnoses ("consistent with pneumonia", "suggestive of neoplasm").
+- Issuing diagnoses or etiological interpretations: "tumor progression", "metastasis", "pneumonia", "consistent with X", "suggestive of X", "in keeping with X", "indicative of X". Instead, describe the pure radiological finding.
+- Assuming lesion nature: "malignant lesion", "tumor", "metastasis", "recurrence", "spread". Instead: "lesion", "nodule", "mass", "nodular image", "pathological enhancement".
+- Inferring progression or therapeutic response: "tumor progression", "partial response", "stable disease". Instead: "interval increase in lesion size", "interval decrease in size", "no significant change compared to prior".
 - Recommending clinical actions ("biopsy recommended", "further evaluation with MRI").
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
-- Categorical language or causal inferences ("secondary to...", "likely related to...").
-- Issuing prognoses ("concerning finding", "good prognosis").
+- Causal inferences ("secondary to...", "likely related to...", "in the context of...").
+- Issuing prognoses ("concerning finding", "good prognosis", "unfavorable evolution").
 - Adding information not present in the findings.
-- Speculating about nature ("possibly benign", "likely inflammatory").
 - Filler phrases ("noted", "identified", "visualized", "presence of").
+
+EXCEPTION: Use diagnostic terminology ONLY if it is explicitly stated in the radiologist's dictated findings (e.g., if findings say "fracture", you may say "fracture"; if findings say "nodule", do not say "tumor").
 
 If no relevant findings: "${hasClinical ? "No significant findings regarding the clinical question." : "Examination within normal limits."}"
 
