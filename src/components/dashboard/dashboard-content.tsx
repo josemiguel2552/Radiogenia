@@ -873,6 +873,8 @@ export function DashboardContent() {
     return title.toUpperCase();
   }
 
+  const copyFormattedRef = useRef<(mode: "findings" | "findings_conclusion" | "full") => void>(null as unknown as (mode: "findings" | "findings_conclusion" | "full") => void);
+
   function copyText(text: string, id: string) {
     navigator.clipboard.writeText(text);
     setCopied(id);
@@ -914,6 +916,18 @@ export function DashboardContent() {
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
     copyText(text, id);
   }
+  copyFormattedRef.current = copyFormatted;
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.shiftKey && e.code === "Space") {
+        e.preventDefault();
+        copyFormattedRef.current?.("findings_conclusion");
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
@@ -1571,6 +1585,7 @@ export function DashboardContent() {
                   <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.plus_conclusion")}
+                    <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] text-gray-400 font-mono leading-none">⇧ Space</kbd>
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
