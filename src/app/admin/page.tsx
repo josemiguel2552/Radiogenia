@@ -128,6 +128,7 @@ export default function AdminPage() {
 
   // Fine-tuning
   const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
+  const [ftModelsList, setFtModelsList] = useState<string[]>([]);
   const [ftUploading, setFtUploading] = useState(false);
   const [ftStarting, setFtStarting] = useState(false);
   const [ftFileId, setFtFileId] = useState<string | null>(null);
@@ -239,6 +240,7 @@ export default function AdminPage() {
       if (ftRes?.ok) {
         const ftData = await ftRes.json();
         setFtJobs(ftData.jobs || []);
+        setFtModelsList(ftData.ftModels || []);
       }
     } catch { /* fine-tune listing may fail if not OpenAI */ }
     if (usersRes?.ok) {
@@ -828,7 +830,7 @@ export default function AdminPage() {
                     {(() => {
                       const base = selectedProvider?.models || [];
                       const ft = provider === "openai"
-                        ? ftJobs.filter((j) => j.status === "succeeded" && j.fineTunedModel).map((j) => j.fineTunedModel!)
+                        ? ftModelsList
                         : [];
                       const all = [...base, ...ft];
                       const inList = !modelName || all.includes(modelName);
@@ -984,7 +986,7 @@ export default function AdminPage() {
                           (() => {
                             const baseModels = taskProv?.models || [];
                             const ftModels = o.provider === "openai"
-                              ? ftJobs.filter((j) => j.status === "succeeded" && j.fineTunedModel).map((j) => j.fineTunedModel!)
+                              ? ftModelsList
                               : [];
                             const allModels = [...baseModels, ...ftModels];
                             const currentInList = !o.model || allModels.includes(o.model);
