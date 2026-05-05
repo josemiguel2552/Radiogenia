@@ -316,30 +316,32 @@ export function buildConclusionPrompt(params: {
 
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
-- Misma lógica de agrupación e integración que el estilo integrado, pero RESUMIDO.
-- Cada punto agrupa los hallazgos relacionados en UNA SOLA FRASE breve y directa.
+- Cada punto agrupa hallazgos relacionados en UNA SOLA FRASE breve y directa.
 - Sin subordinadas largas ni explicaciones. Solo el dato clave condensado.
-- Si un punto integrado dice "Progresión tumoral con aumento de la lesión hepática de 2 a 3.5 cm, asociada a nueva adenopatía retroperitoneal de 15 mm", el conciso dice: "Progresión tumoral hepática (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
+- Usa paréntesis para medidas y datos: "Progresión tumoral hepática (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
 - Tono: directo, escueto, clínico.`,
     grouped: `ESTILO — INTEGRADO:
-- Texto continuo dentro de cada punto, como un párrafo de conclusión clásico.
-- Usa conectores naturales dentro de cada punto ("asociado a", "con extensión a", "junto con").
-- Incluye datos descriptivos relevantes: tamaño, localización, densidad/señal, evolución.
-- Tono: integrador, sintético, clínico.`,
+- Cada punto es un párrafo breve con frases completas y bien redactadas.
+- Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
+- SOLO conecta hallazgos dentro de un punto si son parte del MISMO PROCESO PATOLÓGICO (ej: lesión primaria + sus adenopatías, derrame + atelectasia compresiva).
+- Si dos hallazgos no comparten fisiopatología, van en PUNTOS SEPARADOS aunque ambos sean importantes.
+- NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
+- Tono: integrador pero riguroso, sintético, clínico.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
     concise: `STYLE — CONCISE:
-- Same grouping and integration logic as the integrated style, but CONDENSED.
 - Each point groups related findings into ONE SINGLE brief, direct phrase.
 - No long subordinate clauses or explanations. Only the key data condensed.
-- If an integrated point says "Tumor progression with hepatic lesion increase from 2 to 3.5 cm, associated with new 15 mm retroperitoneal lymphadenopathy", concise says: "Hepatic tumor progression (2→3.5 cm) with new retroperitoneal lymphadenopathy (15 mm)."
+- Use parentheses for measurements and data: "Hepatic tumor progression (2→3.5 cm) with new retroperitoneal lymphadenopathy (15 mm)."
 - Tone: direct, succinct, clinical.`,
     grouped: `STYLE — INTEGRATED:
-- Continuous text within each point, like a classic conclusion paragraph.
-- Use natural connectors within each point ("associated with", "extending to", "along with").
-- Include relevant descriptive data: size, location, density/signal, evolution.
-- Tone: integrative, synthetic, clinical.`,
+- Each point is a brief paragraph with complete, well-written sentences.
+- Include descriptive data: size, location, density/signal, evolution.
+- ONLY connect findings within a point if they are part of the SAME PATHOLOGICAL PROCESS (e.g., primary lesion + its lymphadenopathy, effusion + compressive atelectasis).
+- If two findings do not share pathophysiology, they go in SEPARATE POINTS even if both are important.
+- Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
+- Tone: integrative but rigorous, synthetic, clinical.`,
   };
 
   let system: string;
