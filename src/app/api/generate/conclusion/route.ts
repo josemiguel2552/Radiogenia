@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
 
     const outputLanguage = config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
-    const conclusionStyle = (reqStyle || config?.conclusion_style || "concise") as ConclusionStyle;
+    const rawStyle = reqStyle || config?.conclusion_style || "grouped";
+    const conclusionStyle = (rawStyle === "detailed" ? "grouped" : rawStyle) as ConclusionStyle;
 
     let preferredConclusionPhrases: string[] | undefined;
     if (styleLearning && modality && studyType) {

@@ -61,7 +61,7 @@ export function DashboardContent() {
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [recsOpen, setRecsOpen] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
-  const [conclusionStyle, setConclusionStyle] = useState<"concise" | "detailed" | "grouped">("concise");
+  const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -78,13 +78,13 @@ export function DashboardContent() {
 
   // Report output state
   const [findings, setFindings] = useState("");
-  const emptyConcVersions = { concise: "", detailed: "", grouped: "" };
+  const emptyConcVersions = { concise: "", grouped: "" };
   const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
   const [recommendations, setRecommendations] = useState("");
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
-  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, detailed: false, grouped: false });
+  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, grouped: false });
   const conclusion = conclusionVersions[conclusionStyle] || "";
   const setConclusion = useCallback((v: string) => {
     setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
@@ -479,7 +479,7 @@ export function DashboardContent() {
         if (cfgRes.ok) {
           const cfg = await cfgRes.json();
           if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
-          if (cfg.conclusion_style) setConclusionStyle(cfg.conclusion_style);
+          if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
         }
       } catch { /* ignore */ }
     }
@@ -522,7 +522,7 @@ export function DashboardContent() {
     correctionLoggedRef.current = false;
     setErrorReported(false);
     setLoadingFindings(true);
-    setLoadingConcStyles({ concise: true, detailed: true, grouped: true });
+    setLoadingConcStyles({ concise: true, grouped: true });
     setLoadingRecs(true);
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
@@ -597,7 +597,7 @@ export function DashboardContent() {
 
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
-      setLoadingConcStyles({ concise: false, detailed: false, grouped: false });
+      setLoadingConcStyles({ concise: false, grouped: false });
       setLoadingRecs(false);
       return;
     }
@@ -648,7 +648,7 @@ export function DashboardContent() {
       }
     })();
 
-    const concStyles = ["concise", "detailed", "grouped"] as const;
+    const concStyles = ["concise", "grouped"] as const;
     const activeStyle = conclusionStyle;
 
     const conclusionPromise = Promise.all(concStyles.map((style) => (async () => {
@@ -1523,7 +1523,7 @@ export function DashboardContent() {
             minHeight={70}
             headerExtra={
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
-                {(["concise", "detailed", "grouped"] as const).map((s) => (
+                {(["concise", "grouped"] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
