@@ -1807,6 +1807,7 @@ interface ParsedRec {
   recommendation: string;
   guideline: string;
   finding: string;
+  possible: boolean;
 }
 
 const REC_COLORS = [
@@ -1826,7 +1827,10 @@ function parseRecommendations(text: string): ParsedRec[] {
       /^(\d+)\.\s*(.+?)\s*\(([^)]+)\)\s*[-—–]\s*(?:Hallazgo|Finding|Achado|Résultat|Befund|Reperto)\s*:\s*(.+?)\.?\s*$/i
     );
     if (m) {
-      results.push({ number: m[1], recommendation: m[2].trim(), guideline: m[3].trim(), finding: m[4].trim() });
+      const rawRec = m[2].trim();
+      const possible = /\[posible\]|\[possible\]/i.test(rawRec);
+      const recommendation = rawRec.replace(/\s*\[posible\]\s*|\s*\[possible\]\s*/gi, "").trim();
+      results.push({ number: m[1], recommendation, guideline: m[3].trim(), finding: m[4].trim(), possible });
     }
   }
   return results;
@@ -1915,13 +1919,16 @@ function RecommendationsCard({
                   >
                     <div className="flex items-start gap-2">
                       <span
-                        className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                        className={`flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${rec.possible ? "opacity-60" : ""}`}
                         style={{ backgroundColor: color.border }}
                       >
-                        {rec.number}
+                        {rec.possible ? "?" : rec.number}
                       </span>
                       <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-gray-900 dark:text-gray-100 font-medium">{rec.recommendation}</p>
+                        <p className="text-gray-900 dark:text-gray-100 font-medium">
+                          {rec.recommendation}
+                          {rec.possible && <span className="ml-1.5 text-[10px] font-normal text-amber-600 dark:text-amber-400">(posible)</span>}
+                        </p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400">({rec.guideline})</p>
                         <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
                           <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />

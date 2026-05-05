@@ -21,6 +21,8 @@ interface LLMRecommendation {
   triggering_finding?: string;
 }
 
+type Confidence = "high" | "medium" | "low";
+
 function normalizeForMatch(s: string): string {
   return s.toLowerCase().replace(/[^a-záéíóúüñ\w\s]/g, "").replace(/\s+/g, " ").trim();
 }
@@ -28,8 +30,8 @@ function normalizeForMatch(s: string): string {
 function validateRecommendation(
   rec: LLMRecommendation,
   catalogue: CatalogueEntry[],
-): { valid: boolean; matchedEntry?: CatalogueEntry } {
-  if (!rec.recommendation) return { valid: false };
+): { valid: boolean; matchedEntry?: CatalogueEntry; confidence: Confidence } {
+  if (!rec.recommendation) return { valid: false, confidence: "low" };
 
   // Try matching by catalogue_id first (R1, R2, etc.)
   if (rec.catalogue_id) {
@@ -37,7 +39,7 @@ function validateRecommendation(
     if (idMatch) {
       const idx = parseInt(idMatch[1], 10) - 1;
       if (idx >= 0 && idx < catalogue.length) {
-        return { valid: true, matchedEntry: catalogue[idx] };
+        return { valid: true, matchedEntry: catalogue[idx], confidence: "high" };
       }
     }
   }
@@ -64,16 +66,18 @@ function validateRecommendation(
     }
   }
 
-  // Require at least 50% word overlap to consider it a match
   if (bestScore >= 0.5 && bestEntry) {
-    return { valid: true, matchedEntry: bestEntry };
+    return { valid: true, matchedEntry: bestEntry, confidence: "high" };
+  }
+  if (bestScore >= 0.3 && bestEntry) {
+    return { valid: true, matchedEntry: bestEntry, confidence: "medium" };
   }
 
-  return { valid: false };
+  return { valid: false, confidence: "low" };
 }
 
 function formatValidatedOutput(
-  validated: { entry: CatalogueEntry; finding: string }[],
+  validated: { entry: CatalogueEntry; finding: string; confidence: Confidence }[],
   outputLanguage: OutputLanguage,
 ): string {
   if (validated.length === 0) {
@@ -82,10 +86,18 @@ function formatValidatedOutput(
       : "No additional recommendations.";
   }
 
-  return validated.map((v, i) => {
+  const sorted = [...validated].sort((a, b) => {
+    const order: Record<Confidence, number> = { high: 0, medium: 1, low: 2 };
+    return order[a.confidence] - order[b.confidence];
+  });
+
+  return sorted.map((v, i) => {
     const gPart = ` (${v.entry.guideline || "Clinical practice"})`;
     const fLabel = outputLanguage === "es" ? "Hallazgo" : "Finding";
-    return `${i + 1}. ${v.entry.recommendation}${gPart} — ${fLabel}: ${v.finding}`;
+    const confLabel = v.confidence === "medium"
+      ? (outputLanguage === "es" ? " [posible]" : " [possible]")
+      : "";
+    return `${i + 1}. ${v.entry.recommendation}${confLabel}${gPart} — ${fLabel}: ${v.finding}`;
   }).join("\n");
 }
 
@@ -156,12 +168,11 @@ export async function POST(req: NextRequest) {
       const jsonMatch = raw.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const llmRecs: LLMRecommendation[] = JSON.parse(jsonMatch[0]);
-        const validated: { entry: CatalogueEntry; finding: string }[] = [];
+        const validated: { entry: CatalogueEntry; finding: string; confidence: Confidence }[] = [];
 
         for (const rec of llmRecs) {
           const result = validateRecommendation(rec, catalogue);
           if (result.valid && result.matchedEntry) {
-            // Deduplicate by catalogue entry
             const alreadyAdded = validated.some(
               (v) => normalizeForMatch(v.entry.recommendation) === normalizeForMatch(result.matchedEntry!.recommendation),
             );
@@ -169,6 +180,7 @@ export async function POST(req: NextRequest) {
               validated.push({
                 entry: result.matchedEntry,
                 finding: rec.triggering_finding || "",
+                confidence: result.confidence,
               });
             }
           }
