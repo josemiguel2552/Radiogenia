@@ -214,11 +214,11 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
     return Array.from(map.entries());
   }, [trace.mappings]);
 
-  const total = trace.mappings.length + trace.unmatched.length + (trace.repairedItems?.length || 0);
-  const matched = trace.mappings.length;
   const hasRepairs = (trace.repairedItems?.length || 0) > 0;
   const hasUnmatched = trace.unmatched.length > 0;
-  const allGood = !hasUnmatched && trace.hallucinations.length === 0 && !hasRepairs;
+  const total = trace.mappings.length + trace.unmatched.length;
+  const matched = trace.mappings.length;
+  const allGood = !hasUnmatched && trace.hallucinations.length === 0;
 
   return (
     <div className="space-y-2">
@@ -234,7 +234,7 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
             </span>
           )}
           {hasRepairs && (
-            <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+            <span className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-medium">
               <Check className="h-3 w-3" />
               {trace.repairedItems!.length} {t("trace.auto_repaired_count")}
             </span>
@@ -257,8 +257,8 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
         <div
           className="h-1.5 rounded-full transition-all"
           style={{
-            width: `${total > 0 ? ((matched + (trace.repairedItems?.length || 0)) / total) * 100 : 0}%`,
-            backgroundColor: allGood ? "#22c55e" : hasUnmatched ? "#f59e0b" : hasRepairs ? "#3b82f6" : "#a855f7",
+            width: `${total > 0 ? (matched / total) * 100 : 0}%`,
+            backgroundColor: allGood ? "#22c55e" : hasUnmatched ? "#f59e0b" : "#a855f7",
           }}
         />
       </div>
@@ -276,26 +276,6 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
           </span>
         ))}
       </div>
-
-      {hasRepairs && (
-        <div className="space-y-1 pt-1">
-          <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
-            {t("trace.repaired_title")}
-          </span>
-          {trace.repairedItems!.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-1.5 text-[11px] px-2 py-1 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
-            >
-              <Check className="h-3 w-3 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <div className="min-w-0">
-                <span className="text-gray-800 dark:text-gray-200">&ldquo;{item.dictation_fragment}&rdquo;</span>
-                <span className="text-gray-500 dark:text-gray-400"> → {item.inserted_into_section}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {hasUnmatched && (
         <div className="space-y-1 pt-1">
@@ -331,6 +311,26 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
               <div className="min-w-0">
                 <span className="text-gray-800 dark:text-gray-200">&ldquo;{item.findings_fragment}&rdquo;</span>
                 <span className="text-gray-500 dark:text-gray-400"> ({item.section}) — {item.reason}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hasRepairs && (
+        <div className="space-y-1 pt-1">
+          <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
+            {t("trace.repaired_title")}
+          </span>
+          {trace.repairedItems!.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-1.5 text-[11px] px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+            >
+              <Check className="h-3 w-3 mt-0.5 text-blue-500 dark:text-blue-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-gray-800 dark:text-gray-200">&ldquo;{item.dictation_fragment}&rdquo;</span>
+                <span className="text-gray-500 dark:text-gray-400"> → {item.inserted_into_section}</span>
               </div>
             </div>
           ))}

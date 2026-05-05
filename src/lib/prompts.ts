@@ -155,7 +155,12 @@ REGLAS OBLIGATORIAS:
 3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
-6. Si un hallazgo dictado NO encaja en NINGUNA sección del template, añade una sección final llamada "Otros hallazgos" al final del informe con TODOS los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo dictado por falta de sección adecuada.
+6. HALLAZGOS SIN SECCIÓN — OBLIGATORIO:
+   Si un hallazgo dictado NO encaja claramente en NINGUNA sección del template, DEBES añadir una sección final llamada "Otros hallazgos:" al final del informe con TODOS los hallazgos huérfanos agrupados.
+   - NUNCA omitas un hallazgo dictado por falta de sección adecuada.
+   - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos".
+   - Ejemplos: hallazgos incidentales en órganos no cubiertos por el template, hallazgos de partes blandas en un template óseo, adenopatías en un template que no las incluye, etc.
+   - Si TODOS los hallazgos encajan en secciones existentes, NO añadas esta sección.
 
 FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
@@ -198,7 +203,12 @@ MANDATORY RULES:
 3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
 4. Do NOT invent pathological findings that the radiologist did not dictate.
 5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
-6. If a dictated finding does NOT fit ANY template section, add a final section called "Additional findings" at the end of the report with ALL orphan findings grouped together. NEVER omit a dictated finding due to lack of a matching section.
+6. FINDINGS WITHOUT A SECTION — MANDATORY:
+   If a dictated finding does NOT clearly fit ANY template section, you MUST add a final section called "Additional findings:" at the end of the report with ALL orphan findings grouped together.
+   - NEVER omit a dictated finding due to lack of a matching section.
+   - NEVER force a finding into an incorrect anatomical section just to avoid creating "Additional findings".
+   - Examples: incidental findings in organs not covered by the template, soft tissue findings in a bone template, lymphadenopathy in a template that doesn't include it, etc.
+   - If ALL findings fit existing sections, do NOT add this section.
 
 OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Each section is exactly ONE line with the format: "Anatomical section: Description."
