@@ -28,7 +28,6 @@ export interface GlobalAIConfig {
     trace?: TaskModelOverride;
     dictation_correction?: TaskModelOverride;
     improve_writing?: TaskModelOverride;
-    image_analysis?: TaskModelOverride;
   };
 }
 
