@@ -28,6 +28,8 @@ import {
   Pencil,
   Wand2,
   GraduationCap,
+  AlignLeft,
+  List,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -527,7 +529,7 @@ export function DashboardContent() {
   // Voice recording is handled by useVoiceDictation hook above
 
   // Generate report
-  async function handleGenerate() {
+  async function handleGenerate(compact?: boolean) {
     if (!selectedTemplate || !dictation.trim()) return;
 
     // Log any pending corrections from the previous report before starting a new generation
@@ -571,6 +573,7 @@ export function DashboardContent() {
           modality: selectedTemplate.modality,
           studyType: studyName,
           ...(lightParaphrase ? { paraphraseOverride: "light" } : {}),
+          ...(compact !== undefined ? { compactNormals: compact } : {}),
         }),
       });
 
@@ -1270,17 +1273,31 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <Button
-                onClick={handleGenerate}
-                disabled={!canGenerate}
-                className="w-full h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
-                ) : (
-                  <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleGenerate(false)}
+                  disabled={!canGenerate}
+                  className="flex-1 h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                  ) : (
+                    <><List className="h-4 w-4" /> {t("dash.generate_structured")}</>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleGenerate(true)}
+                  disabled={!canGenerate}
+                  variant="outline"
+                  className="flex-1 h-11 md:h-9 gap-2 disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                  ) : (
+                    <><AlignLeft className="h-4 w-4" /> {t("dash.generate_compact")}</>
+                  )}
+                </Button>
+              </div>
               <button
                 type="button"
                 onClick={() => setLightParaphrase(!lightParaphrase)}
@@ -1485,17 +1502,31 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <Button
-                onClick={handleGenerate}
-                disabled={!canGenerate}
-                className="w-full h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
-                ) : (
-                  <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleGenerate(false)}
+                  disabled={!canGenerate}
+                  className="flex-1 h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                  ) : (
+                    <><List className="h-4 w-4" /> {t("dash.generate_structured")}</>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleGenerate(true)}
+                  disabled={!canGenerate}
+                  variant="outline"
+                  className="flex-1 h-11 md:h-9 gap-2 disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                  ) : (
+                    <><AlignLeft className="h-4 w-4" /> {t("dash.generate_compact")}</>
+                  )}
+                </Button>
+              </div>
               <button
                 type="button"
                 onClick={() => setLightParaphrase(!lightParaphrase)}

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, paraphraseOverride } = await req.json();
+    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       paraphrase_level: paraphraseOverride || config?.paraphrase_level || "light",
       output_language: config?.output_language || "es",
       style_learning_enabled: config?.style_learning_enabled ?? true,
-      compact_normals: config?.compact_normals ?? false,
+      compact_normals: compactOverride !== undefined ? compactOverride : (config?.compact_normals ?? false),
     };
 
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
