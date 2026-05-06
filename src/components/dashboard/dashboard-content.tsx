@@ -549,11 +549,11 @@ export function DashboardContent() {
     while ((m = re.exec(text)) !== null) {
       const label = m[1].trim();
       if (label.length > 1 && !skip.has(label.toUpperCase())) {
-        labels.push(label);
+        labels.push(sec(label));
       }
     }
     return labels;
-  }, [selectedTemplate]);
+  }, [selectedTemplate, sec]);
 
   async function handleHideTemplate(tpl: UserTemplate) {
     if (tpl.is_global) {
