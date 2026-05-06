@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Trash2,
   HelpCircle,
+  EyeOff,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -521,6 +522,15 @@ export function DashboardContent() {
       } catch { /* ignore */ }
     }
     seedAndLoad();
+
+    // Listen for template changes from other components
+    const handleTemplatesChanged = () => {
+      fetch("/api/templates").then(r => r.ok ? r.json() : null).then(data => {
+        if (data) setTemplates(data);
+      }).catch(() => {});
+    };
+    window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
+    return () => window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
   }, []);
 
   // Filtered data
@@ -563,6 +573,7 @@ export function DashboardContent() {
     }
     setTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
     if (selectedTemplateId === tpl.id) setSelectedTemplateId("");
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
   async function loadHiddenTemplates() {
@@ -577,6 +588,7 @@ export function DashboardContent() {
     setHiddenTemplates((prev) => prev.filter((t) => t.id !== id));
     const res = await fetch("/api/templates");
     if (res.ok) setTemplates(await res.json());
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
   // Voice recording is handled by useVoiceDictation hook above
@@ -1486,10 +1498,10 @@ export function DashboardContent() {
                   <button
                     type="button"
                     onClick={() => handleHideTemplate(selectedTemplate)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded"
+                    className="p-1.5 text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors rounded"
                     title={t("dash.hide_template")}
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <EyeOff className="h-3.5 w-3.5" />
                   </button>
                 )}
 

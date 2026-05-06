@@ -631,6 +631,8 @@ export function buildRecommendationsPrompt(params: {
     return `[R${i + 1}] Trigger: "${r.trigger}" → Recommendation: "${r.recommendation}"${gPart}`;
   }).join("\n");
 
+  const langName = l; // e.g. "español", "English", "português"
+
   let system: string;
 
   if (lang === "es") {
@@ -646,6 +648,7 @@ REGLAS:
 4. NUNCA apliques un trigger de un órgano a un hallazgo de otro órgano.
 5. NUNCA sugieras procedimientos invasivos a menos que el catálogo lo diga.
 6. Indica el hallazgo EXACTO del informe que activó cada recomendación.
+7. El campo "translated" debe contener la recomendación traducida al ${langName}. Si el catálogo ya está en ${langName}, copia el texto exacto.
 
 MATCHING FLEXIBLE:
 - Si un hallazgo coincide CLARAMENTE con un trigger (mismo órgano, mismo tipo de hallazgo): inclúyelo con confianza "high".
@@ -655,7 +658,7 @@ MATCHING FLEXIBLE:
 Si no hay coincidencias, responde: []
 
 RESPONDE EN JSON:
-[{"catalogue_id": "R1", "recommendation": "texto exacto del catálogo", "guideline": "nombre guía", "triggering_finding": "cita textual del hallazgo", "confidence": "high|medium"}]`;
+[{"catalogue_id": "R1", "recommendation": "texto exacto del catálogo", "translated": "recomendación traducida al ${langName}", "guideline": "nombre guía", "triggering_finding": "cita textual del hallazgo", "confidence": "high|medium"}]`;
   } else {
     system = `You are an expert radiologist issuing follow-up recommendations.
 
@@ -669,6 +672,7 @@ RULES:
 4. NEVER apply a trigger from one organ to a finding in a different organ.
 5. NEVER suggest invasive procedures unless the catalogue explicitly says so.
 6. Indicate the EXACT finding from the report that triggered each recommendation.
+7. The "translated" field must contain the recommendation translated to ${langName}. If the catalogue is already in ${langName}, copy the exact text.
 
 FLEXIBLE MATCHING:
 - If a finding CLEARLY matches a trigger (same organ, same finding type): include with confidence "high".
@@ -678,7 +682,7 @@ FLEXIBLE MATCHING:
 If no matches, respond: []
 
 RESPOND IN JSON:
-[{"catalogue_id": "R1", "recommendation": "exact catalogue text", "guideline": "guideline name", "triggering_finding": "verbatim finding quote", "confidence": "high|medium"}]`;
+[{"catalogue_id": "R1", "recommendation": "exact catalogue text", "translated": "recommendation translated to ${langName}", "guideline": "guideline name", "triggering_finding": "verbatim finding quote", "confidence": "high|medium"}]`;
   }
 
   const findLabel = lang === "es" ? "Hallazgos del informe a evaluar" : lang === "pt" ? "Achados do relatório a avaliar" : "Report findings to evaluate";

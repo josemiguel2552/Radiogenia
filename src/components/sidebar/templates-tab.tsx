@@ -252,6 +252,7 @@ export function TemplatesTab() {
   const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
   const [hiddenOpen, setHiddenOpen] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [justHiddenMsg, setJustHiddenMsg] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -274,6 +275,13 @@ export function TemplatesTab() {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => setHasOrg(!!data?.membership))
       .catch(() => {});
+
+    const handleTemplatesChanged = () => {
+      load();
+      loadHidden();
+    };
+    window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
+    return () => window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
   }, []);
 
   const filtered = templates.filter((tmpl) => {
@@ -341,8 +349,13 @@ export function TemplatesTab() {
     if (!confirm(isGlobal ? t("tpl.confirm_hide") : t("confirm_delete_template"))) return;
     const qs = isGlobal ? `id=${id}&global=true` : `id=${id}`;
     await fetch(`/api/templates?${qs}`, { method: "DELETE" });
+    if (isGlobal) {
+      setJustHiddenMsg(t("tpl.hidden_success"));
+      setTimeout(() => setJustHiddenMsg(null), 2500);
+    }
     load();
     if (isGlobal) loadHidden();
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
   async function handleCreateNew() {
@@ -415,6 +428,7 @@ export function TemplatesTab() {
       load();
     } catch { /* ignore */ }
     setRestoring(null);
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
   async function openCatalog() {
@@ -514,6 +528,13 @@ export function TemplatesTab() {
         onChange={handleWordUpload}
         className="hidden"
       />
+
+      {justHiddenMsg && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs">
+          <Check className="h-3.5 w-3.5 shrink-0" />
+          {justHiddenMsg}
+        </div>
+      )}
 
       {/* Upload status */}
       {uploading && (

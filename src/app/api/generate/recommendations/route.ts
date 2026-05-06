@@ -17,6 +17,7 @@ interface CatalogueEntry {
 interface LLMRecommendation {
   catalogue_id?: string;
   recommendation?: string;
+  translated?: string;
   guideline?: string;
   triggering_finding?: string;
 }
@@ -77,13 +78,13 @@ function validateRecommendation(
 }
 
 function formatValidatedOutput(
-  validated: { entry: CatalogueEntry; finding: string; confidence: Confidence }[],
+  validated: { entry: CatalogueEntry; finding: string; confidence: Confidence; translated?: string }[],
   outputLanguage: OutputLanguage,
 ): string {
   if (validated.length === 0) {
-    return outputLanguage === "es"
-      ? "No se emiten recomendaciones adicionales."
-      : "No additional recommendations.";
+    if (outputLanguage === "es") return "No se emiten recomendaciones adicionales.";
+    if (outputLanguage === "pt") return "Não há recomendações adicionais.";
+    return "No additional recommendations.";
   }
 
   const sorted = [...validated].sort((a, b) => {
@@ -92,12 +93,13 @@ function formatValidatedOutput(
   });
 
   return sorted.map((v, i) => {
+    const recText = v.translated || v.entry.recommendation;
     const gPart = ` (${v.entry.guideline || "Clinical practice"})`;
-    const fLabel = outputLanguage === "es" ? "Hallazgo" : "Finding";
+    const fLabel = outputLanguage === "es" ? "Hallazgo" : outputLanguage === "pt" ? "Achado" : "Finding";
     const confLabel = v.confidence === "medium"
-      ? (outputLanguage === "es" ? " [posible]" : " [possible]")
+      ? (outputLanguage === "es" ? " [posible]" : outputLanguage === "pt" ? " [possível]" : " [possible]")
       : "";
-    return `${i + 1}. ${v.entry.recommendation}${confLabel}${gPart} — ${fLabel}: ${v.finding}`;
+    return `${i + 1}. ${recText}${confLabel}${gPart} — ${fLabel}: ${v.finding}`;
   }).join("\n");
 }
 
@@ -168,7 +170,7 @@ export async function POST(req: NextRequest) {
       const jsonMatch = raw.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const llmRecs: LLMRecommendation[] = JSON.parse(jsonMatch[0]);
-        const validated: { entry: CatalogueEntry; finding: string; confidence: Confidence }[] = [];
+        const validated: { entry: CatalogueEntry; finding: string; confidence: Confidence; translated?: string }[] = [];
 
         for (const rec of llmRecs) {
           const result = validateRecommendation(rec, catalogue);
@@ -181,6 +183,7 @@ export async function POST(req: NextRequest) {
                 entry: result.matchedEntry,
                 finding: rec.triggering_finding || "",
                 confidence: result.confidence,
+                translated: rec.translated || undefined,
               });
             }
           }
@@ -189,21 +192,27 @@ export async function POST(req: NextRequest) {
         text = formatValidatedOutput(validated, outputLanguage);
       } else {
         // LLM didn't return JSON — check if it's a "no recommendations" response
-        const noRecPatterns = /no (se emiten |additional |hay )?(recomendaciones|recommendations)/i;
+        const noRecPatterns = /no (se emiten |additional |hay )?(recomendaciones|recommendations|recomendações)/i;
         if (noRecPatterns.test(raw) || raw.trim() === "[]") {
           text = outputLanguage === "es"
             ? "No se emiten recomendaciones adicionales."
+            : outputLanguage === "pt"
+            ? "Não há recomendações adicionais."
             : "No additional recommendations.";
         } else {
           // Fallback: return empty rather than potentially hallucinated text
           text = outputLanguage === "es"
             ? "No se emiten recomendaciones adicionales."
+            : outputLanguage === "pt"
+            ? "Não há recomendações adicionais."
             : "No additional recommendations.";
         }
       }
     } catch {
       text = outputLanguage === "es"
         ? "No se emiten recomendaciones adicionales."
+        : outputLanguage === "pt"
+        ? "Não há recomendações adicionais."
         : "No additional recommendations.";
     }
 

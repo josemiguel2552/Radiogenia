@@ -886,6 +886,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "tpl.confirm_hide": "¿Ocultar esta plantilla global? Podrás restaurarla después.",
     "tpl.hidden_templates": "plantillas ocultas",
     "tpl.restore": "Restaurar",
+    "tpl.hidden_success": "Plantilla ocultada. Puede restaurarla desde la sección inferior.",
     // Guidelines / recommendations tab
     "rec.title": "Guías clínicas",
     "rec.grouped_by": "agrupadas por fuente",
@@ -1838,6 +1839,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "tpl.confirm_hide": "Hide this global template? You can restore it later.",
     "tpl.hidden_templates": "hidden templates",
     "tpl.restore": "Restore",
+    "tpl.hidden_success": "Template hidden. You can restore it from the section below.",
     "rec.title": "Guidelines",
     "rec.grouped_by": "grouped by source",
     "rec.add_manual": "Add recommendation manually",
@@ -2791,6 +2793,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "tpl.confirm_hide": "Ocultar este template global? Você pode restaurá-lo depois.",
     "tpl.hidden_templates": "templates ocultos",
     "tpl.restore": "Restaurar",
+    "tpl.hidden_success": "Template ocultado. Pode restaurá-lo na seção abaixo.",
     // Guidelines / recommendations tab
     "rec.title": "Diretrizes clínicas",
     "rec.grouped_by": "agrupadas por fonte",
