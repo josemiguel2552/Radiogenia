@@ -1285,6 +1285,312 @@ function VertebralFractureSheet() {
   );
 }
 
+/* ── Thorax: new sheets ── */
+
+function ThyroidIncidentalSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.thyroid_incidental_title")} source="ACR White Paper (Hoang et al., JACR 2015)">
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.size"), t("calc.recommendation")]}
+        rows={[
+          [t("calc.thyroid_inc_low"), "< 1 cm", t("calc.thyroid_inc_low_rec")],
+          [t("calc.thyroid_inc_low"), "1–1.5 cm", t("calc.thyroid_inc_med_rec")],
+          [t("calc.thyroid_inc_low"), "> 1.5 cm", t("calc.thyroid_inc_large_rec")],
+          [t("calc.thyroid_inc_suspicious"), t("calc.any_size"), t("calc.thyroid_inc_suspicious_rec")],
+          [t("calc.thyroid_inc_age"), "—", t("calc.thyroid_inc_age_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function MediastinalLNSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.mediastinal_ln_title")} source="IASLC Lymph Node Map (Rusch et al., J Thorac Oncol 2009)">
+      <SheetTable
+        headers={[t("calc.station"), t("calc.location"), t("calc.description")]}
+        rows={[
+          ["1", t("calc.mln_1_loc"), t("calc.mln_1_desc")],
+          ["2R / 2L", t("calc.mln_2_loc"), t("calc.mln_2_desc")],
+          ["3A / 3P", t("calc.mln_3_loc"), t("calc.mln_3_desc")],
+          ["4R / 4L", t("calc.mln_4_loc"), t("calc.mln_4_desc")],
+          ["5", t("calc.mln_5_loc"), t("calc.mln_5_desc")],
+          ["6", t("calc.mln_6_loc"), t("calc.mln_6_desc")],
+          ["7", t("calc.mln_7_loc"), t("calc.mln_7_desc")],
+          ["8", t("calc.mln_8_loc"), t("calc.mln_8_desc")],
+          ["9", t("calc.mln_9_loc"), t("calc.mln_9_desc")],
+          ["10–14", t("calc.mln_10_loc"), t("calc.mln_10_desc")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Breast: new sheets ── */
+
+function BreastDensitySheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.breast_density_title")} source="ACR BI-RADS Atlas, 5th ed. (2013)">
+      <SheetTable
+        headers={[t("calc.category"), t("calc.description"), t("calc.sensitivity")]}
+        rows={[
+          ["A", t("calc.breast_density_a"), t("calc.breast_density_a_sens")],
+          ["B", t("calc.breast_density_b"), t("calc.breast_density_b_sens")],
+          ["C", t("calc.breast_density_c"), t("calc.breast_density_c_sens")],
+          ["D", t("calc.breast_density_d"), t("calc.breast_density_d_sens")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BreastScreeningSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.breast_screening_title")} source="ACR (2023) / ACS / NCCN / EUSOBI">
+      <SheetTable
+        headers={[t("calc.risk_level"), t("calc.criteria"), t("calc.recommendation")]}
+        rows={[
+          [t("calc.breast_avg_risk"), t("calc.breast_avg_criteria"), t("calc.breast_avg_rec")],
+          [t("calc.breast_inter_risk"), t("calc.breast_inter_criteria"), t("calc.breast_inter_rec")],
+          [t("calc.breast_high_risk"), t("calc.breast_high_criteria"), t("calc.breast_high_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BreastUSLexiconSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.breast_us_title")} source="ACR BI-RADS US Lexicon, 5th ed. (2013)">
+      <SheetTable
+        headers={[t("calc.feature"), t("calc.benign_features"), t("calc.suspicious_features")]}
+        rows={[
+          [t("calc.breast_us_shape"), t("calc.breast_us_shape_ben"), t("calc.breast_us_shape_sus")],
+          [t("calc.breast_us_margin"), t("calc.breast_us_margin_ben"), t("calc.breast_us_margin_sus")],
+          [t("calc.breast_us_orient"), t("calc.breast_us_orient_ben"), t("calc.breast_us_orient_sus")],
+          [t("calc.breast_us_echo"), t("calc.breast_us_echo_ben"), t("calc.breast_us_echo_sus")],
+          [t("calc.breast_us_post"), t("calc.breast_us_post_ben"), t("calc.breast_us_post_sus")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BreastImplantSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.breast_implant_title")} source="ACR / FDA (2020) / Defined NCCN">
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.description"), t("calc.recommendation")]}
+        rows={[
+          [t("calc.implant_intact"), t("calc.implant_intact_desc"), t("calc.implant_intact_rec")],
+          [t("calc.implant_intracap"), t("calc.implant_intracap_desc"), t("calc.implant_intracap_rec")],
+          [t("calc.implant_extracap"), t("calc.implant_extracap_desc"), t("calc.implant_extracap_rec")],
+          [t("calc.implant_bialcl"), t("calc.implant_bialcl_desc"), t("calc.implant_bialcl_rec")],
+          [t("calc.implant_contract"), t("calc.implant_contract_desc"), t("calc.implant_contract_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Neuro: new sheets ── */
+
+function FazekasSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.fazekas_title")} source="Fazekas et al., AJR 1987 / Modified Fazekas">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.fazekas_pvh")}</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description")]}
+        rows={[
+          ["0", t("calc.fazekas_pvh_0")],
+          ["1", t("calc.fazekas_pvh_1")],
+          ["2", t("calc.fazekas_pvh_2")],
+          ["3", t("calc.fazekas_pvh_3")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.fazekas_dwmh")}</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description")]}
+        rows={[
+          ["0", t("calc.fazekas_dwmh_0")],
+          ["1", t("calc.fazekas_dwmh_1")],
+          ["2", t("calc.fazekas_dwmh_2")],
+          ["3", t("calc.fazekas_dwmh_3")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function CerebralAneurysmSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.cerebral_aneurysm_title")} source="AHA/ASA (Thompson et al., Stroke 2015) / ISUIA (Lancet 2003)">
+      <SheetTable
+        headers={[t("calc.size"), t("calc.location"), t("calc.recommendation")]}
+        rows={[
+          ["< 3 mm", t("calc.aneurysm_any_loc"), t("calc.aneurysm_tiny_rec")],
+          ["3–7 mm", t("calc.aneurysm_anterior"), t("calc.aneurysm_small_ant_rec")],
+          ["3–7 mm", t("calc.aneurysm_posterior"), t("calc.aneurysm_small_post_rec")],
+          ["7–12 mm", t("calc.aneurysm_any_loc"), t("calc.aneurysm_med_rec")],
+          ["13–24 mm", t("calc.aneurysm_any_loc"), t("calc.aneurysm_large_rec")],
+          ["≥ 25 mm", t("calc.aneurysm_any_loc"), t("calc.aneurysm_giant_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function FisherSAHSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.fisher_title")} source="Modified Fisher (Frontera et al., Neurosurgery 2006)">
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description"), t("calc.vasospasm_risk")]}
+        rows={[
+          ["0", t("calc.fisher_0"), t("calc.fisher_0_risk")],
+          ["1", t("calc.fisher_1"), t("calc.fisher_1_risk")],
+          ["2", t("calc.fisher_2"), t("calc.fisher_2_risk")],
+          ["3", t("calc.fisher_3"), t("calc.fisher_3_risk")],
+          ["4", t("calc.fisher_4"), t("calc.fisher_4_risk")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BrainTumorSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.brain_tumor_title")} source="WHO CNS Tumors, 5th ed. (2021)">
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description"), t("calc.examples")]}
+        rows={[
+          ["1", t("calc.who_cns_1"), t("calc.who_cns_1_ex")],
+          ["2", t("calc.who_cns_2"), t("calc.who_cns_2_ex")],
+          ["3", t("calc.who_cns_3"), t("calc.who_cns_3_ex")],
+          ["4", t("calc.who_cns_4"), t("calc.who_cns_4_ex")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function VascularTerritoriesSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.vasc_territories_title")} source="Defined anatomy / Tatu et al., Neurology 1998">
+      <SheetTable
+        headers={[t("calc.artery"), t("calc.territory"), t("calc.key_structures")]}
+        rows={[
+          ["ACA", t("calc.vasc_aca"), t("calc.vasc_aca_struct")],
+          ["MCA sup.", t("calc.vasc_mca_sup"), t("calc.vasc_mca_sup_struct")],
+          ["MCA inf.", t("calc.vasc_mca_inf"), t("calc.vasc_mca_inf_struct")],
+          ["MCA lenticulo.", t("calc.vasc_mca_lent"), t("calc.vasc_mca_lent_struct")],
+          ["PCA", t("calc.vasc_pca"), t("calc.vasc_pca_struct")],
+          ["PICA", t("calc.vasc_pica"), t("calc.vasc_pica_struct")],
+          ["AICA", t("calc.vasc_aica"), t("calc.vasc_aica_struct")],
+          ["SCA", t("calc.vasc_sca"), t("calc.vasc_sca_struct")],
+          ["Basilar", t("calc.vasc_basilar"), t("calc.vasc_basilar_struct")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Vascular: new sheets ── */
+
+function AorticDissectionSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.dissection_title")} source="Stanford (Daily et al., 1970) / DeBakey (1965) / ESC 2024">
+      <SheetTable
+        headers={[t("calc.classification"), t("calc.description"), t("calc.recommendation")]}
+        rows={[
+          ["Stanford A", t("calc.dissection_a"), t("calc.dissection_a_rec")],
+          ["Stanford B", t("calc.dissection_b"), t("calc.dissection_b_rec")],
+          ["DeBakey I", t("calc.dissection_db1"), "≈ Stanford A"],
+          ["DeBakey II", t("calc.dissection_db2"), "≈ Stanford A"],
+          ["DeBakey III", t("calc.dissection_db3"), "≈ Stanford B"],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function CarotidStenosisSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.carotid_title")} source="NASCET (NEJM 1991) / Grant et al., Radiology 2003 (consensus)">
+      <SheetTable
+        headers={[t("calc.stenosis_degree"), "PSV (cm/s)", "EDV (cm/s)", "ICA/CCA ratio"]}
+        rows={[
+          [t("calc.carotid_normal"), "< 125", "< 40", "< 2.0"],
+          ["< 50%", "< 125", "< 40", "< 2.0"],
+          ["50–69%", "125–230", "40–100", "2.0–4.0"],
+          ["≥ 70%", "> 230", "> 100", "> 4.0"],
+          [t("calc.carotid_near_occl"), t("calc.carotid_variable"), t("calc.carotid_variable"), "—"],
+          [t("calc.carotid_occluded"), t("calc.carotid_no_flow"), "—", "—"],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function PadClassSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.pad_title")} source="Rutherford (JVS 1997) / Fontaine (1954)">
+      <SheetTable
+        headers={["Fontaine", "Rutherford", t("calc.description")]}
+        rows={[
+          ["I", "0", t("calc.pad_0")],
+          ["IIa", "1", t("calc.pad_1")],
+          ["IIb", "2–3", t("calc.pad_2")],
+          ["III", "4", t("calc.pad_4")],
+          ["IV", "5", t("calc.pad_5")],
+          ["IV", "6", t("calc.pad_6")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function DVTPESheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.dvt_pe_title")} source="Defined radiology findings / Defined CTPA reporting">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.pe_location")}</p>
+      <SheetTable
+        headers={[t("calc.location"), t("calc.description"), t("calc.severity")]}
+        rows={[
+          [t("calc.pe_saddle"), t("calc.pe_saddle_desc"), t("calc.pe_saddle_sev")],
+          [t("calc.pe_central"), t("calc.pe_central_desc"), t("calc.pe_central_sev")],
+          [t("calc.pe_lobar"), t("calc.pe_lobar_desc"), t("calc.pe_lobar_sev")],
+          [t("calc.pe_segmental"), t("calc.pe_segmental_desc"), t("calc.pe_segmental_sev")],
+          [t("calc.pe_subseg"), t("calc.pe_subseg_desc"), t("calc.pe_subseg_sev")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.rv_strain")}</p>
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.description")]}
+        rows={[
+          ["RV/LV > 1.0", t("calc.rv_ratio")],
+          [t("calc.septal_bow"), t("calc.septal_bow_desc")],
+          [t("calc.reflux_ivc"), t("calc.reflux_ivc_desc")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
@@ -1323,25 +1629,75 @@ export function CalculatorsTab() {
     (c) => !q || calcLabels[c.id].toLowerCase().includes(q),
   );
 
-  const cheatSheets = useMemo(() => [
-    { id: "lungrads", component: <LungRadsSheet />, label: "Lung-RADS" },
-    { id: "birads", component: <BiradsSheet />, label: "BI-RADS" },
-    { id: "lirads", component: <LiradsSheet />, label: "LI-RADS" },
-    { id: "fleischner", component: <FleischnerSheet />, label: "Fleischner" },
-    { id: "bts", component: <BtsNodulesSheet />, label: "BTS" },
-    { id: "liver", component: <LiverIncidentalSheet />, label: t("calc.liver_title") },
-    { id: "adrenal_inc", component: <AdrenalIncidentalSheet />, label: t("calc.adrenal_incidental_title") },
-    { id: "pancreas", component: <PancreaticCystSheet />, label: t("calc.pancreas_title") },
-    { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
-    { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
-    { id: "aorta", component: <AorticAneurysmSheet />, label: t("calc.aorta_title") },
-    { id: "orads", component: <OradsSheet />, label: "O-RADS" },
-    { id: "spine_nom", component: <SpineNomenclatureSheet />, label: t("calc.spine_nomen_title") },
-    { id: "foraminal", component: <ForaminalStenosisSheet />, label: t("calc.foraminal_title") },
-    { id: "canal", component: <CanalStenosisSheet />, label: t("calc.canal_title") },
-    { id: "rc", component: <RotatorCuffSheet />, label: t("calc.rc_title") },
-    { id: "bone_tumor", component: <BoneTumorSheet />, label: t("calc.bone_tumor_title") },
-    { id: "vfx", component: <VertebralFractureSheet />, label: t("calc.vfx_title") },
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  type SheetEntry = { id: string; component: React.ReactNode; label: string };
+  type SheetSection = { key: string; label: string; icon: string; sheets: SheetEntry[] };
+
+  const sheetSections: SheetSection[] = useMemo(() => [
+    {
+      key: "thorax", label: t("calc.section_thorax"), icon: "🫁",
+      sheets: [
+        { id: "lungrads", component: <LungRadsSheet />, label: "Lung-RADS" },
+        { id: "fleischner", component: <FleischnerSheet />, label: "Fleischner 2017" },
+        { id: "bts", component: <BtsNodulesSheet />, label: "BTS 2015" },
+        { id: "thyroid_inc", component: <ThyroidIncidentalSheet />, label: t("calc.thyroid_incidental_title") },
+        { id: "mediastinal_ln", component: <MediastinalLNSheet />, label: t("calc.mediastinal_ln_title") },
+      ],
+    },
+    {
+      key: "abdomen", label: t("calc.section_abdomen"), icon: "🩻",
+      sheets: [
+        { id: "lirads", component: <LiradsSheet />, label: "LI-RADS" },
+        { id: "liver", component: <LiverIncidentalSheet />, label: t("calc.liver_title") },
+        { id: "adrenal_inc", component: <AdrenalIncidentalSheet />, label: t("calc.adrenal_incidental_title") },
+        { id: "pancreas", component: <PancreaticCystSheet />, label: t("calc.pancreas_title") },
+        { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
+        { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
+        { id: "orads", component: <OradsSheet />, label: "O-RADS" },
+      ],
+    },
+    {
+      key: "breast", label: t("calc.section_breast"), icon: "🎗️",
+      sheets: [
+        { id: "birads", component: <BiradsSheet />, label: "BI-RADS" },
+        { id: "breast_density", component: <BreastDensitySheet />, label: t("calc.breast_density_title") },
+        { id: "breast_us", component: <BreastUSLexiconSheet />, label: t("calc.breast_us_title") },
+        { id: "breast_screening", component: <BreastScreeningSheet />, label: t("calc.breast_screening_title") },
+        { id: "breast_implant", component: <BreastImplantSheet />, label: t("calc.breast_implant_title") },
+      ],
+    },
+    {
+      key: "neuro", label: t("calc.section_neuro"), icon: "🧠",
+      sheets: [
+        { id: "fazekas", component: <FazekasSheet />, label: t("calc.fazekas_title") },
+        { id: "vasc_terr", component: <VascularTerritoriesSheet />, label: t("calc.vasc_territories_title") },
+        { id: "cerebral_aneur", component: <CerebralAneurysmSheet />, label: t("calc.cerebral_aneurysm_title") },
+        { id: "fisher", component: <FisherSAHSheet />, label: t("calc.fisher_title") },
+        { id: "brain_tumor", component: <BrainTumorSheet />, label: t("calc.brain_tumor_title") },
+      ],
+    },
+    {
+      key: "msk", label: t("calc.section_msk"), icon: "🦴",
+      sheets: [
+        { id: "rc", component: <RotatorCuffSheet />, label: t("calc.rc_title") },
+        { id: "bone_tumor", component: <BoneTumorSheet />, label: t("calc.bone_tumor_title") },
+        { id: "vfx", component: <VertebralFractureSheet />, label: t("calc.vfx_title") },
+        { id: "spine_nom", component: <SpineNomenclatureSheet />, label: t("calc.spine_nomen_title") },
+        { id: "foraminal", component: <ForaminalStenosisSheet />, label: t("calc.foraminal_title") },
+        { id: "canal", component: <CanalStenosisSheet />, label: t("calc.canal_title") },
+      ],
+    },
+    {
+      key: "vascular", label: t("calc.section_vascular"), icon: "❤️",
+      sheets: [
+        { id: "aorta", component: <AorticAneurysmSheet />, label: t("calc.aorta_title") },
+        { id: "dissection", component: <AorticDissectionSheet />, label: t("calc.dissection_title") },
+        { id: "carotid", component: <CarotidStenosisSheet />, label: t("calc.carotid_title") },
+        { id: "pad", component: <PadClassSheet />, label: t("calc.pad_title") },
+        { id: "dvt_pe", component: <DVTPESheet />, label: t("calc.dvt_pe_title") },
+      ],
+    },
   ], [t]);
 
   return (
@@ -1404,23 +1760,44 @@ export function CalculatorsTab() {
         </div>
       </div>
 
-      {/* Cheat Sheets */}
-      {(() => {
-        const filteredSheets = cheatSheets.filter((s) => !q || s.label.toLowerCase().includes(q));
-        if (filteredSheets.length === 0) return null;
-        return (
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
-              {t("calc.cheat_sheets")}
-            </p>
-            <div className="space-y-1">
-              {filteredSheets.map((s) => (
-                <div key={s.id}>{s.component}</div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {/* Cheat Sheets — grouped by section */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
+          {t("calc.cheat_sheets")}
+        </p>
+        <div className="space-y-1.5">
+          {sheetSections.map((sec) => {
+            const filtered = sec.sheets.filter((s) => !q || s.label.toLowerCase().includes(q) || sec.label.toLowerCase().includes(q));
+            if (q && filtered.length === 0) return null;
+            const isOpen = openSection === sec.key || !!q;
+            return (
+              <div key={sec.key} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenSection(openSection === sec.key ? null : sec.key)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                    isOpen ? "bg-gray-50 dark:bg-gray-800/50" : "hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                  }`}
+                >
+                  <span className="text-sm">{sec.icon}</span>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex-1">{sec.label}</span>
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{filtered.length}</Badge>
+                  {isOpen
+                    ? <ChevronDown className="h-3 w-3 text-gray-400" />
+                    : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                </button>
+                {isOpen && (
+                  <div className="px-2 pb-2 space-y-1">
+                    {(q ? filtered : sec.sheets).map((s) => (
+                      <div key={s.id}>{s.component}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
