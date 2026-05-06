@@ -1,7 +1,8 @@
 -- Waitlist table for pre-launch signups
 CREATE TABLE IF NOT EXISTS waitlist (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
+  first_name text NOT NULL,
+  last_name text NOT NULL,
   email text NOT NULL,
   country text NOT NULL,
   hospital text NOT NULL,

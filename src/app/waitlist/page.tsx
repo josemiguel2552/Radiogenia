@@ -18,7 +18,8 @@ const COUNTRIES = [
 
 export default function WaitlistPage() {
   const { lang, setLang, t } = usePublicLang();
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("");
   const [hospital, setHospital] = useState("");
@@ -36,7 +37,7 @@ export default function WaitlistPage() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, country, hospital, role }),
+        body: JSON.stringify({ firstName, lastName, email, country, hospital, role }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -117,16 +118,29 @@ export default function WaitlistPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-300 text-sm">{t("waitlist.name")}</Label>
-              <Input
-                id="name"
-                placeholder={t("waitlist.name_placeholder")}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-gray-300 text-sm">{t("waitlist.first_name")}</Label>
+                <Input
+                  id="firstName"
+                  placeholder={t("waitlist.first_name_placeholder")}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-gray-300 text-sm">{t("waitlist.last_name")}</Label>
+                <Input
+                  id="lastName"
+                  placeholder={t("waitlist.last_name_placeholder")}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

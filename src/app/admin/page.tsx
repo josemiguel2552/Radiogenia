@@ -22,6 +22,7 @@ import { Logo } from "@/components/ui/logo";
 import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
 import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
+import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 
 interface GlobalConfig {
   id: string;
@@ -84,7 +85,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -514,6 +515,7 @@ export default function AdminPage() {
     { key: "orgs", label: "Hospitals", icon: <Building2 className="h-4 w-4" /> },
     { key: "residents", label: "Residents", icon: <GraduationCap className="h-4 w-4" /> },
     { key: "support", label: "Support", icon: <MessageSquare className="h-4 w-4" /> },
+    { key: "waitlist", label: "Waitlist", icon: <UserPlus className="h-4 w-4" /> },
     { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
@@ -1352,6 +1354,9 @@ export default function AdminPage() {
 
         {/* ═══ SUPPORT ═══ */}
         {tab === "support" && <AdminSupportTab />}
+
+        {/* ═══ WAITLIST ═══ */}
+        {tab === "waitlist" && <AdminWaitlistTab />}
 
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (

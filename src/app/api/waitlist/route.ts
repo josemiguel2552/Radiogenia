@@ -3,9 +3,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, country, hospital, role } = await req.json();
+    const { firstName, lastName, email, country, hospital, role } = await req.json();
 
-    if (!name?.trim() || !email?.trim() || !country?.trim() || !hospital?.trim() || !role) {
+    if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !country?.trim() || !hospital?.trim() || !role) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient();
     const { error } = await supabase.from("waitlist").upsert(
-      { name: name.trim(), email: email.trim().toLowerCase(), country: country.trim(), hospital: hospital.trim(), role },
+      { first_name: firstName.trim(), last_name: lastName.trim(), email: email.trim().toLowerCase(), country: country.trim(), hospital: hospital.trim(), role },
       { onConflict: "email", ignoreDuplicates: true },
     );
 
