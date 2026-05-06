@@ -1865,6 +1865,40 @@ export function DashboardContent() {
           />
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-4 w-4" />
+              {t("dash.restore_templates_title")}
+            </DialogTitle>
+          </DialogHeader>
+          {hiddenTemplates.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">{t("dash.no_hidden_templates")}</p>
+          ) : (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {hiddenTemplates.map((tpl) => (
+                <div key={tpl.id} className="flex items-center justify-between px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700">
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{tpl.name}</p>
+                    <p className="text-[10px] text-gray-400">{tpl.modality}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 h-7 text-xs gap-1"
+                    onClick={() => handleRestoreTemplate(tpl.id)}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    {t("dash.restore")}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
