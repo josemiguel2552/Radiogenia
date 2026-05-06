@@ -74,11 +74,12 @@ REGLAS:
 4. NUNCA inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. NUNCA escribas "no valorado", "no evaluado", "no descrito" en ninguna sección.
 6. Coloca cada hallazgo en la sección anatómica correcta.
-7. Si un hallazgo dictado NO encaja en NINGUNA sección del template, añade una entrada adicional al final del array con label "Otros hallazgos", source "dictation" y todos los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo por falta de sección.
+7. HALLAZGOS SIN SECCIÓN — OBLIGATORIO: Si un hallazgo dictado NO encaja en NINGUNA sección del template, DEBES añadir una entrada adicional al final del array con label "Otros hallazgos", source "dictation" y TODOS los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo por falta de sección. Es preferible un "Otros hallazgos" largo que perder un solo dato clínico.
 8. Devuelve SOLO JSON válido — sin markdown, sin comentarios.
 9. ${paraphrase}
 10. ${length}
-11. TRADUCE los nombres de las secciones del template al español.${phraseBlock ? `
+11. TRADUCE los nombres de las secciones del template al español.
+12. ⚠️ CERO OMISIONES: Antes de finalizar, VERIFICA que CADA dato del dictado aparece en alguna sección del JSON. Si falta alguno, añádelo a "Otros hallazgos" con source "dictation".${phraseBlock ? `
 
 FRASES DE NORMALIDAD PREFERIDAS — guías de estilo para secciones no mencionadas.
 Si una frase está en inglés, TRADÚCELA al español manteniendo el mismo significado y nivel de detalle. TODA la salida debe estar en español sin excepción:
@@ -119,11 +120,12 @@ RULES:
    - "normal_default": section NOT mentioned. Write professional normality phrase for ${params.modality}. "evidence" = null.
 4. NEVER invent findings not in the dictation.
 5. NEVER write "not assessed" / "not evaluated".
-6. If a dictated finding does NOT fit ANY template section, add an extra entry at the end of the array with label "Additional findings", source "dictation", grouping all orphan findings. NEVER omit a finding due to lack of a matching section.
+6. FINDINGS WITHOUT A SECTION — MANDATORY: If a dictated finding does NOT fit ANY template section, you MUST add an extra entry at the end of the array with label "Additional findings", source "dictation", grouping ALL orphan findings. NEVER omit a finding due to lack of a matching section. A long "Additional findings" entry is preferable to losing a single clinical data point.
 7. Return ONLY valid JSON.
 8. ${paraphrase}
 9. ${length}
-10. TRANSLATE section names to ${l}.${phraseBlock ? `
+10. TRANSLATE section names to ${l}.
+11. ZERO OMISSIONS: Before finalizing, VERIFY that EVERY piece of data from the dictation appears in some section of the JSON. If anything is missing, add it to "Additional findings" with source "dictation".${phraseBlock ? `
 
 PREFERRED NORMALITY PHRASES — style guide for unmentioned sections.
 If a phrase is in a different language, TRANSLATE it to ${l} keeping the same meaning and detail level. ALL output must be in ${l} without exception:
@@ -140,7 +142,7 @@ function buildValidatorPrompt(dictation: string, mappingJson: string, lang: Outp
     const system = `Eres un auditor de calidad de informes radiológicos. Recibes el dictado original y un JSON con el mapping de hallazgos.
 
 TU ÚNICA TAREA — buscar estos 4 tipos de error:
-1. OMISIONES: un dato clínico del dictado no aparece en el mapping.
+1. OMISIONES (LA MÁS IMPORTANTE): un dato clínico del dictado no aparece en NINGUNA sección del mapping. Revisa CADA frase del dictado y verifica que está representada en alguna sección. Si un hallazgo no encaja en ninguna sección existente, usa action "add_finding" con section_label "Otros hallazgos" para añadirlo. NUNCA se debe perder un hallazgo dictado.
 2. ALUCINACIONES: el mapping contiene un hallazgo clínico específico que NO está en el dictado. Las frases de normalidad para secciones no mencionadas NO son alucinaciones. La sección "Otros hallazgos" con hallazgos que SÍ están en el dictado NO es una alucinación — es una sección legítima para hallazgos que no encajan en el template.
 3. ERRORES DE SECCIÓN: un hallazgo está en la sección anatómica incorrecta.
 4. IDIOMA INCORRECTO: TODA la salida (labels y textos) debe estar en ESPAÑOL. Si un label o texto está en inglés u otro idioma, corrígelo traduciéndolo al español. Esto incluye frases de normalidad como "No significant abnormalities", "Normal in size", etc. — TODAS deben estar en español.
@@ -149,6 +151,7 @@ REGLAS:
 - NO rehaces el mapping completo. SOLO devuelves correcciones.
 - Cada corrección: section_label, action (replace|add_finding|remove_hallucination), corrected_text (texto corregido en español), reason.
 - Para errores de idioma usa action "replace" y en reason indica "wrong_language".
+- Para omisiones: usa action "add_finding", section_label = sección correcta (o "Otros hallazgos" si no encaja en ninguna), corrected_text = texto completo de la sección incluyendo el hallazgo omitido.
 - Si no hay errores: {"status":"validated","corrections":[]}
 - Si hay errores: {"status":"corrected","corrections":[...]}
 - Devuelve SOLO JSON válido.`;
@@ -165,7 +168,7 @@ REGLAS:
   const system = `You are a radiology report QC auditor. You receive the original dictation and a JSON mapping.
 
 CHECK FOR 4 ERROR TYPES:
-1. OMISSIONS: dictation content missing from mapping.
+1. OMISSIONS (MOST IMPORTANT): dictation content missing from ANY section in the mapping. Check EVERY phrase in the dictation and verify it is represented in some section. If a finding does not fit any existing section, use action "add_finding" with section_label "Additional findings" to add it. A dictated finding must NEVER be lost.
 2. HALLUCINATIONS: specific clinical finding in mapping NOT in dictation. Normal phrases for unmentioned sections are NOT hallucinations. The "Additional findings" section containing findings that ARE in the dictation is NOT a hallucination — it is a legitimate catch-all for findings that do not fit any template section.
 3. WRONG SECTION: finding in incorrect anatomical section.
 4. WRONG LANGUAGE: ALL output (labels and text) must be in ${l}. If any label or text is in a different language, correct it by translating to ${l}. This includes normality phrases like "No significant abnormalities", "Normal in size" etc. — ALL must be in ${l}.
@@ -174,6 +177,7 @@ RULES:
 - Do NOT redo the mapping. ONLY output corrections.
 - Each correction: section_label, action (replace|add_finding|remove_hallucination), corrected_text (in ${l}), reason.
 - For language errors use action "replace" and reason "wrong_language".
+- For omissions: use action "add_finding", section_label = correct section (or "Additional findings" if it fits nowhere), corrected_text = full section text including the omitted finding.
 - No errors: {"status":"validated","corrections":[]}
 - Errors found: {"status":"corrected","corrections":[...]}
 - Return ONLY valid JSON.`;
@@ -190,7 +194,18 @@ function applyCorrections(sections: MappedSection[], corrections: ValidatorCorre
     const idx = result.findIndex(
       (s) => s.label.toLowerCase() === c.section_label.toLowerCase(),
     );
-    if (idx === -1) continue;
+
+    if (idx === -1) {
+      if (c.action === "add_finding") {
+        result.push({
+          label: c.section_label,
+          text: c.corrected_text,
+          source: "dictation",
+          evidence: c.reason,
+        });
+      }
+      continue;
+    }
 
     if (c.action === "replace" || c.action === "add_finding") {
       result[idx].text = c.corrected_text;

@@ -66,26 +66,38 @@ const COMPACT_NORMALS_INSTRUCTION: Record<string, string> = {
   es: `⚠️ MODO COMPACTO ACTIVADO — ESTA ES LA INSTRUCCIÓN MÁS IMPORTANTE DEL INFORME:
 NO escribas cada sección del template individualmente. El formato de salida cambia por completo:
 1. PRIMERO: escribe SOLO las secciones que tienen hallazgos mencionados por el radiólogo (positivos o negativos dictados), cada una como "Sección: Descripción."
-2. Si hay hallazgos que no encajan en ninguna sección del template, escribe "Otros hallazgos: ..." con todos esos hallazgos agrupados.
-3. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (SIN etiquetas de sección, SIN viñetas, SIN saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Ejemplo: "El resto de las estructuras evaluadas (parénquima pulmonar, mediastino, pared torácica, etc.) no muestran alteraciones significativas."
+2. DESPUÉS: al final, escribe un ÚNICO párrafo corrido (SIN etiquetas de sección, SIN viñetas, SIN saltos de línea internos) que agrupe TODAS las secciones normales no mencionadas. Ejemplo: "El resto de las estructuras evaluadas (parénquima pulmonar, mediastino, pared torácica, etc.) no muestran alteraciones significativas."
 ⚠️ PROHIBIDO en modo compacto: NO escribas secciones individuales con texto de normalidad (ej: "Parénquima pulmonar: Sin alteraciones."). Esas secciones se REEMPLAZAN por el párrafo final único.
-Si el informe resultante tiene más secciones que hallazgos dictados, estás haciéndolo MAL.`,
+Si el informe resultante tiene más secciones que hallazgos dictados, estás haciéndolo MAL.
+
+⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA, SIN EXCEPCIONES:
+- CADA hallazgo del dictado DEBE aparecer en el informe. Si un hallazgo encaja en una sección del template, ponlo ahí. Si NO encaja en NINGUNA sección, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+- NUNCA omitas un hallazgo dictado. Es preferible tener una sección "Otros hallazgos" larga que perder un solo dato clínico.
+- Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta. Si falta alguno, añádelo a "Otros hallazgos".`,
 
   en: `⚠️ COMPACT MODE ENABLED — THIS IS THE MOST IMPORTANT INSTRUCTION FOR THIS REPORT:
 Do NOT write each template section individually. The output format changes completely:
 1. FIRST: write ONLY sections that have findings mentioned by the radiologist (positive or dictated negative findings), each as "Section: Description."
-2. If there are findings that do not fit any template section, write "Additional findings: ..." with all those findings grouped together.
-3. THEN: at the end, write a SINGLE running paragraph (NO section labels, NO bullets, NO internal line breaks) grouping ALL normal unmentioned sections. Example: "The remaining evaluated structures (lung parenchyma, mediastinum, chest wall, etc.) show no significant abnormalities."
+2. THEN: at the end, write a SINGLE running paragraph (NO section labels, NO bullets, NO internal line breaks) grouping ALL normal unmentioned sections. Example: "The remaining evaluated structures (lung parenchyma, mediastinum, chest wall, etc.) show no significant abnormalities."
 ⚠️ FORBIDDEN in compact mode: Do NOT write individual sections with normality text (e.g., "Lung parenchyma: No abnormalities."). Those sections are REPLACED by the single final paragraph.
-If the resulting report has more sections than dictated findings, you are doing it WRONG.`,
+If the resulting report has more sections than dictated findings, you are doing it WRONG.
+
+⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
+- EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
+- NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
+- Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
 
   pt: `⚠️ MODO COMPACTO ATIVADO — ESTA É A INSTRUÇÃO MAIS IMPORTANTE DO RELATÓRIO:
 NÃO escreva cada seção do template individualmente. O formato de saída muda completamente:
 1. PRIMEIRO: escreva APENAS as seções que possuem achados mencionados pelo radiologista (positivos ou negativos ditados), cada uma como "Seção: Descrição."
-2. Se houver achados que não se encaixam em nenhuma seção do template, escreva "Outros achados: ..." com todos esses achados agrupados.
-3. DEPOIS: ao final, escreva um ÚNICO parágrafo corrido (SEM rótulos de seção, SEM marcadores, SEM quebras de linha internas) agrupando TODAS as seções normais não mencionadas. Exemplo: "As demais estruturas avaliadas (parênquima pulmonar, mediastino, parede torácica, etc.) não apresentam alterações significativas."
+2. DEPOIS: ao final, escreva um ÚNICO parágrafo corrido (SEM rótulos de seção, SEM marcadores, SEM quebras de linha internas) agrupando TODAS as seções normais não mencionadas. Exemplo: "As demais estruturas avaliadas (parênquima pulmonar, mediastino, parede torácica, etc.) não apresentam alterações significativas."
 ⚠️ PROIBIDO no modo compacto: NÃO escreva seções individuais com texto de normalidade (ex: "Parênquima pulmonar: Sem alterações."). Essas seções são SUBSTITUÍDAS pelo parágrafo final único.
-Se o relatório resultante tiver mais seções do que achados ditados, você está fazendo ERRADO.`,
+Se o relatório resultante tiver mais seções do que achados ditados, você está fazendo ERRADO.
+
+⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA, SEM EXCEÇÕES:
+- CADA achado do ditado DEVE aparecer no laudo. Se um achado se encaixa em uma seção do template, coloque-o lá. Se NÃO se encaixa em NENHUMA seção, você DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
+- NUNCA omita um achado ditado. Uma seção "Outros achados" longa é preferível a perder um único dado clínico.
+- Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta. Se faltar algum, adicione-o a "Outros achados".`,
 };
 
 const DICTATION_ONLY_INSTRUCTION: Record<string, string> = {
@@ -93,28 +105,37 @@ const DICTATION_ONLY_INSTRUCTION: Record<string, string> = {
 NO escribas secciones de normalidad. El informe SOLO contiene lo que el radiólogo dictó.
 1. Escribe ÚNICAMENTE las secciones del template donde el radiólogo dictó un hallazgo (positivo o negativo explícito).
 2. Las secciones NO mencionadas en el dictado se OMITEN por completo — NO las incluyas.
-3. Si hay hallazgos que no encajan en ninguna sección del template, añade "Otros hallazgos:" al final.
-4. Mantén el formato estructurado: "Sección: Descripción." — una línea por sección.
+3. Mantén el formato estructurado: "Sección: Descripción." — una línea por sección.
 ⚠️ PROHIBIDO: escribir secciones con frases de normalidad inventadas por ti. Si el radiólogo no mencionó un órgano, NO aparece en el informe.
-El informe debe ser breve: solo las secciones con hallazgos dictados + "Otros hallazgos" si aplica.`,
+
+⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA, SIN EXCEPCIONES:
+- CADA hallazgo del dictado DEBE aparecer en el informe. Si un hallazgo encaja en una sección del template, ponlo ahí. Si NO encaja en NINGUNA sección, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+- NUNCA omitas un hallazgo dictado. Es preferible tener una sección "Otros hallazgos" larga que perder un solo dato clínico.
+- Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta. Si falta alguno, añádelo a "Otros hallazgos".`,
 
   en: `⚠️ DICTATION ONLY MODE — THIS IS THE MOST IMPORTANT INSTRUCTION:
 Do NOT write normality sections. The report ONLY contains what the radiologist dictated.
 1. Write ONLY template sections where the radiologist dictated a finding (positive or explicit negative).
 2. Sections NOT mentioned in the dictation are OMITTED entirely — do NOT include them.
-3. If there are findings that don't fit any template section, add "Additional findings:" at the end.
-4. Keep the structured format: "Section: Description." — one line per section.
+3. Keep the structured format: "Section: Description." — one line per section.
 ⚠️ FORBIDDEN: writing sections with normality phrases you invented. If the radiologist didn't mention an organ, it does NOT appear in the report.
-The report should be brief: only sections with dictated findings + "Additional findings" if applicable.`,
+
+⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
+- EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
+- NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
+- Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
 
   pt: `⚠️ MODO SOMENTE DITADO — ESTA É A INSTRUÇÃO MAIS IMPORTANTE:
 NÃO escreva seções de normalidade. O laudo contém APENAS o que o radiologista ditou.
 1. Escreva SOMENTE as seções do template onde o radiologista ditou um achado (positivo ou negativo explícito).
 2. As seções NÃO mencionadas no ditado são OMITIDAS completamente — NÃO as inclua.
-3. Se houver achados que não se encaixam em nenhuma seção do template, adicione "Outros achados:" ao final.
-4. Mantenha o formato estruturado: "Seção: Descrição." — uma linha por seção.
+3. Mantenha o formato estruturado: "Seção: Descrição." — uma linha por seção.
 ⚠️ PROIBIDO: escrever seções com frases de normalidade inventadas por você. Se o radiologista não mencionou um órgão, ele NÃO aparece no laudo.
-O laudo deve ser breve: apenas seções com achados ditados + "Outros achados" se aplicável.`,
+
+⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA, SEM EXCEÇÕES:
+- CADA achado do ditado DEVE aparecer no laudo. Se um achado se encaixa em uma seção do template, coloque-o lá. Se NÃO se encaixa em NENHUMA seção, você DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
+- NUNCA omita um achado ditado. Uma seção "Outros achados" longa é preferível a perder um único dado clínico.
+- Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta. Se faltar algum, adicione-o a "Outros achados".`,
 };
 
 /* ── System prompt templates per language ───────────────────── */
