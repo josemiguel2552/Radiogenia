@@ -94,6 +94,7 @@ export function DashboardContent() {
   }, [conclusionStyle]);
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [loadingRecs, setLoadingRecs] = useState(false);
+  const [recsEnabled, setRecsEnabled] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
@@ -505,6 +506,7 @@ export function DashboardContent() {
           const cfg = await cfgRes.json();
           if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
           if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
+          setRecsEnabled(cfg.recommendations_enabled ?? true);
         }
       } catch { /* ignore */ }
     }
@@ -548,7 +550,7 @@ export function DashboardContent() {
     setErrorReported(false);
     setLoadingFindings(true);
     setLoadingConcStyles({ concise: true, grouped: true });
-    setLoadingRecs(true);
+    if (recsEnabled) setLoadingRecs(true);
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
     setRecommendations("");
@@ -746,22 +748,24 @@ export function DashboardContent() {
       }
     })()));
 
-    const recsPromise = fetch("/api/generate/recommendations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ findingsText }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        recsText = data.text ? cleanReport(data.text) : "";
-        setRecommendations(recsText || data.error || "");
-      })
-      .catch((e) => {
-        setRecommendations("Error: " + e.message);
-      })
-      .finally(() => {
-        setLoadingRecs(false);
-      });
+    const recsPromise = recsEnabled
+      ? fetch("/api/generate/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ findingsText }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            recsText = data.text ? cleanReport(data.text) : "";
+            setRecommendations(recsText || data.error || "");
+          })
+          .catch((e) => {
+            setRecommendations("Error: " + e.message);
+          })
+          .finally(() => {
+            setLoadingRecs(false);
+          })
+      : Promise.resolve();
 
     await Promise.all([tracePromise, conclusionPromise, recsPromise]);
     const durationMs = Date.now() - generateStartRef.current;
@@ -1620,13 +1624,15 @@ export function DashboardContent() {
             }
           />
 
-          <RecommendationsCard
-            loading={loadingRecs}
-            value={recommendations}
-            onChange={setRecommendations}
-            open={recsOpen}
-            onToggle={() => setRecsOpen(!recsOpen)}
-          />
+          {recsEnabled && (
+            <RecommendationsCard
+              loading={loadingRecs}
+              value={recommendations}
+              onChange={setRecommendations}
+              open={recsOpen}
+              onToggle={() => setRecsOpen(!recsOpen)}
+            />
+          )}
 
           {/* Action bar */}
           <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
