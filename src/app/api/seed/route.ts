@@ -8,7 +8,7 @@ export async function POST() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Wait for the profile row to exist (FK constraint on user_recommendations)
+    // Wait for the profile row to exist
     for (let attempt = 0; attempt < 5; attempt++) {
       const { count } = await supabase
         .from("profiles")

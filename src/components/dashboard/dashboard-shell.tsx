@@ -18,7 +18,6 @@ import {
   Moon,
   Sun,
   FileText,
-  BookOpen,
   Settings,
   Shield,
   X,
@@ -28,7 +27,6 @@ import {
   Calculator,
 } from "lucide-react";
 import { TemplatesTab } from "@/components/sidebar/templates-tab";
-import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
@@ -37,7 +35,7 @@ import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
-type ActiveView = "dashboard" | "templates" | "recommendations" | "calculators";
+type ActiveView = "dashboard" | "templates" | "calculators";
 
 const PANEL_MIN = 240;
 const PANEL_MAX = 600;
@@ -221,7 +219,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const topTabs: { key: ActiveView; label: string; icon: React.ReactNode }[] = [
     { key: "dashboard", label: t("nav.reports"), icon: <LayoutDashboard className="h-4 w-4" /> },
     { key: "templates", label: t("nav.templates"), icon: <FileText className="h-4 w-4" /> },
-    { key: "recommendations", label: t("nav.guidelines"), icon: <BookOpen className="h-4 w-4" /> },
     { key: "calculators", label: t("nav.calculators"), icon: <Calculator className="h-4 w-4" /> },
   ];
 
@@ -233,9 +230,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       </div>
       <div className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}>
         <TemplatesTab />
-      </div>
-      <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}>
-        <RecommendationsTab />
       </div>
       <div className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}>
         <CalculatorsTab />
@@ -267,15 +261,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           title={t("nav.templates")}
         >
           <FileText className="h-5 w-5" />
-        </Button>
-
-        <Button
-          variant="ghost" size="icon"
-          className={`rounded-lg h-9 w-9 ${activeView === "recommendations" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-          onClick={() => setActiveView("recommendations")}
-          title={t("nav.guidelines")}
-        >
-          <BookOpen className="h-5 w-5" />
         </Button>
 
         <Button
@@ -429,14 +414,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           >
             <FileText className="h-5 w-5" />
             <span className="text-[9px]">{t("nav.templates")}</span>
-          </button>
-
-          <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
-            onClick={() => setActiveView("recommendations")}
-          >
-            <BookOpen className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.guidelines")}</span>
           </button>
 
           <button

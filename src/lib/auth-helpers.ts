@@ -24,7 +24,6 @@ export interface GlobalAIConfig {
   taskOverrides?: {
     findings?: TaskModelOverride;
     conclusion?: TaskModelOverride;
-    recommendations?: TaskModelOverride;
     trace?: TaskModelOverride;
     dictation_correction?: TaskModelOverride;
     improve_writing?: TaskModelOverride;
@@ -92,9 +91,6 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
   if (data.conclusion_provider && data.conclusion_model) {
     taskOverrides.conclusion = { provider: data.conclusion_provider as AIProvider, modelName: data.conclusion_model };
-  }
-  if (data.recommendations_provider && data.recommendations_model) {
-    taskOverrides.recommendations = { provider: data.recommendations_provider as AIProvider, modelName: data.recommendations_model };
   }
   if (data.trace_provider && data.trace_model) {
     taskOverrides.trace = { provider: data.trace_provider as AIProvider, modelName: data.trace_model };
@@ -290,30 +286,9 @@ export async function checkDocumentLimit(userId: string): Promise<{
   const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
   const planConfig = PLANS[plan];
 
-  const { count } = await service
-    .from("user_recommendations")
-    .select("guideline_name", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("source", "pdf_extracted")
-    .neq("guideline_name", "");
-
-  // Count distinct guideline documents (each PDF upload shares the same guideline_name)
-  const { data: distinctDocs } = await service
-    .from("user_recommendations")
-    .select("guideline_name")
-    .eq("user_id", userId)
-    .eq("source", "pdf_extracted")
-    .neq("guideline_name", "");
-
-  const uniqueNames = new Set((distinctDocs || []).map((d: { guideline_name: string }) => d.guideline_name));
-  const used = uniqueNames.size;
-
-  // Also count uploaded templates from documents
-  void count;
-
   return {
-    allowed: used < planConfig.guidelineDocuments,
-    used,
+    allowed: true,
+    used: 0,
     limit: planConfig.guidelineDocuments,
     plan,
   };

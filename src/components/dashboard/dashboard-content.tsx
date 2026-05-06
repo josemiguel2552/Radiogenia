@@ -16,7 +16,6 @@ import {
   Copy,
   Check,
   Sparkles,
-  Lightbulb,
   Stethoscope,
   CircleCheck,
   ArrowRight,
@@ -67,7 +66,6 @@ export function DashboardContent() {
   const [clinicalInfo, setClinicalInfo] = useState("");
   const [clinicalOpen, setClinicalOpen] = useState(false);
   const [setupCollapsed, setSetupCollapsed] = useState(false);
-  const [recsOpen, setRecsOpen] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
 
@@ -88,7 +86,6 @@ export function DashboardContent() {
   const [findings, setFindings] = useState("");
   const emptyConcVersions = { concise: "", grouped: "" };
   const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
-  const [recommendations, setRecommendations] = useState("");
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
@@ -98,8 +95,6 @@ export function DashboardContent() {
     setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
   }, [conclusionStyle]);
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
-  const [loadingRecs, setLoadingRecs] = useState(false);
-  const [recsEnabled, setRecsEnabled] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
@@ -350,18 +345,13 @@ export function DashboardContent() {
     return () => clearTimeout(timer);
   }, [dictation, clinicalInfo]);
 
-  // Auto-open recommendations when they arrive
-  useEffect(() => {
-    if (recommendations && !loadingRecs) setRecsOpen(true);
-  }, [recommendations, loadingRecs]);
-
   // Autosave draft with timestamp
   useEffect(() => {
     const interval = setInterval(() => {
-      if (dictation || findings || conclusion || recommendations || clinicalInfo) {
+      if (dictation || findings || conclusion || clinicalInfo) {
         localStorage.setItem("radiogenai_draft", JSON.stringify({
           savedAt: Date.now(),
-          clinicalInfo, dictation, findings, conclusion, recommendations,
+          clinicalInfo, dictation, findings, conclusion,
           conclusionVersions,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
           initialFindings, initialConclusion,
@@ -369,7 +359,7 @@ export function DashboardContent() {
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [clinicalInfo, dictation, findings, conclusion, conclusionVersions, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
+  }, [clinicalInfo, dictation, findings, conclusion, conclusionVersions, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
 
   // Keep snapshot ref in sync for unmount / beforeunload / visibilitychange
   useEffect(() => {
@@ -470,7 +460,6 @@ export function DashboardContent() {
           } else if (d.conclusion) {
             setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: d.conclusion }));
           }
-          if (d.recommendations) setRecommendations(d.recommendations);
           if (d.selectedModality) setSelectedModality(d.selectedModality);
           if (d.selectedSection) setSelectedSection(d.selectedSection);
           if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
@@ -517,7 +506,6 @@ export function DashboardContent() {
           const cfg = await cfgRes.json();
           if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
           if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
-          setRecsEnabled(cfg.recommendations_enabled ?? true);
         }
       } catch { /* ignore */ }
     }
@@ -613,10 +601,8 @@ export function DashboardContent() {
     setErrorReported(false);
     setLoadingFindings(true);
     setLoadingConcStyles({ concise: true, grouped: true });
-    if (recsEnabled) setLoadingRecs(true);
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
-    setRecommendations("");
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -689,13 +675,11 @@ export function DashboardContent() {
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
       setLoadingConcStyles({ concise: false, grouped: false });
-      setLoadingRecs(false);
       return;
     }
 
-    // Run trace+repair, conclusion, and recommendations ALL IN PARALLEL
+    // Run trace+repair and conclusion in parallel
     let conclusionText = "";
-    let recsText = "";
     let traceStats = { mappings: 0, unmatched: 0, hallucinations: 0 };
 
     const tracePromise = (async () => {
@@ -811,26 +795,7 @@ export function DashboardContent() {
       }
     })()));
 
-    const recsPromise = recsEnabled
-      ? fetch("/api/generate/recommendations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ findingsText }),
-        })
-          .then((r) => r.json())
-          .then((data) => {
-            recsText = data.text ? cleanReport(data.text) : "";
-            setRecommendations(recsText || data.error || "");
-          })
-          .catch((e) => {
-            setRecommendations("Error: " + e.message);
-          })
-          .finally(() => {
-            setLoadingRecs(false);
-          })
-      : Promise.resolve();
-
-    await Promise.all([tracePromise, conclusionPromise, recsPromise]);
+    await Promise.all([tracePromise, conclusionPromise]);
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
 
@@ -877,7 +842,7 @@ export function DashboardContent() {
             clinical_context: clinicalInfo || "",
             findings_text: findingsText,
             conclusion_text: conclusionText,
-            recommendations_text: recsText,
+            recommendations_text: "",
             initial_findings_text: findingsText,
             initial_conclusion_text: conclusionText,
             template_snapshot: selectedTemplate.structure,
@@ -940,13 +905,13 @@ export function DashboardContent() {
       .trim();
   }
 
-  const SECTION_HEADERS: Record<string, { findings: string; conclusion: string; recommendations: string }> = {
-    es: { findings: "HALLAZGOS", conclusion: "CONCLUSIÓN", recommendations: "RECOMENDACIONES" },
-    en: { findings: "FINDINGS", conclusion: "CONCLUSION", recommendations: "RECOMMENDATIONS" },
-    pt: { findings: "ACHADOS", conclusion: "CONCLUSÃO", recommendations: "RECOMENDAÇÕES" },
-    fr: { findings: "RÉSULTATS", conclusion: "CONCLUSION", recommendations: "RECOMMANDATIONS" },
-    de: { findings: "BEFUNDE", conclusion: "SCHLUSSFOLGERUNG", recommendations: "EMPFEHLUNGEN" },
-    it: { findings: "REPERTI", conclusion: "CONCLUSIONE", recommendations: "RACCOMANDAZIONI" },
+  const SECTION_HEADERS: Record<string, { findings: string; conclusion: string }> = {
+    es: { findings: "HALLAZGOS", conclusion: "CONCLUSIÓN" },
+    en: { findings: "FINDINGS", conclusion: "CONCLUSION" },
+    pt: { findings: "ACHADOS", conclusion: "CONCLUSÃO" },
+    fr: { findings: "RÉSULTATS", conclusion: "CONCLUSION" },
+    de: { findings: "BEFUNDE", conclusion: "SCHLUSSFOLGERUNG" },
+    it: { findings: "REPERTI", conclusion: "CONCLUSIONE" },
   };
 
   const CONTRAST_LABELS: Record<string, { with: string; without: string }> = {
@@ -991,7 +956,6 @@ export function DashboardContent() {
     const title = getStudyTitle();
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);
-    const cleanRecs = cleanReport(recommendations);
     const headers = SECTION_HEADERS[outputLanguage] || SECTION_HEADERS.es;
 
     let text = "";
@@ -999,9 +963,6 @@ export function DashboardContent() {
     text += headers.findings + "\n" + cleanFindings;
     if (mode === "findings_conclusion" || mode === "full") {
       text += "\n\n" + headers.conclusion + "\n" + cleanConclusion;
-    }
-    if (mode === "full" && cleanRecs) {
-      text += "\n\n" + headers.recommendations + "\n" + cleanRecs;
     }
     if (mode !== "findings" && activeSignatureRef.current) {
       text += "\n\n" + activeSignatureRef.current;
@@ -1047,7 +1008,7 @@ export function DashboardContent() {
           clinical_context: clinicalInfo || "",
           findings_text: findings,
           conclusion_text: conclusion,
-          recommendations_text: recommendations,
+          recommendations_text: "",
           initial_findings_text: initialFindings || null,
           initial_conclusion_text: initialConclusion || null,
           template_snapshot: selectedTemplate.structure,
@@ -1144,14 +1105,12 @@ export function DashboardContent() {
     setDictation("");
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
-    setRecommendations("");
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
     setTraceData(null);
     setTraceActive(false);
     setRepairMessage(null);
-    setRecsOpen(false);
     setPiiMatches([]);
     setPiiDismissed(false);
     setGenerationDurationMs(null);
@@ -1192,8 +1151,8 @@ export function DashboardContent() {
     setReportingError(false);
   }
 
-  const isGenerating = loadingFindings || loadingConclusion || loadingRecs;
-  const hasOutput = findings || conclusion || recommendations || isGenerating;
+  const isGenerating = loadingFindings || loadingConclusion;
+  const hasOutput = findings || conclusion || isGenerating;
   const setupReady = !!selectedTemplate;
   const showPiiWarning = piiMatches.length > 0 && !piiDismissed && dictation.trim();
   const canGenerate = setupReady && dictation.trim() && !isGenerating && !showPiiWarning;
@@ -1687,7 +1646,7 @@ export function DashboardContent() {
       {/* ── Output ── */}
       {hasOutput && (
         <div className="space-y-3">
-          {isGenerating && !findings && !conclusion && !recommendations && (
+          {isGenerating && !findings && !conclusion && (
             <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
           )}
 
@@ -1757,16 +1716,6 @@ export function DashboardContent() {
               </div>
             }
           />
-
-          {recsEnabled && (
-            <RecommendationsCard
-              loading={loadingRecs}
-              value={recommendations}
-              onChange={setRecommendations}
-              open={recsOpen}
-              onToggle={() => setRecsOpen(!recsOpen)}
-            />
-          )}
 
           {/* Action bar */}
           <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
@@ -2045,176 +1994,3 @@ function OutputCard({
   );
 }
 
-/* ── Recommendations with traceability ── */
-
-interface ParsedRec {
-  number: string;
-  recommendation: string;
-  guideline: string;
-  finding: string;
-  possible: boolean;
-}
-
-const REC_COLORS = [
-  { bg: "rgba(245,158,11,0.12)", border: "#f59e0b", dark: "rgba(251,191,36,0.18)" },
-  { bg: "rgba(249,115,22,0.12)", border: "#f97316", dark: "rgba(251,146,60,0.18)" },
-  { bg: "rgba(239,68,68,0.12)",  border: "#ef4444", dark: "rgba(248,113,113,0.18)" },
-  { bg: "rgba(168,85,247,0.12)", border: "#a855f7", dark: "rgba(192,132,252,0.18)" },
-  { bg: "rgba(59,130,246,0.12)", border: "#3b82f6", dark: "rgba(96,165,250,0.18)" },
-];
-
-function parseRecommendations(text: string): ParsedRec[] {
-  const lines = text.split("\n").filter(l => l.trim());
-  const results: ParsedRec[] = [];
-
-  for (const line of lines) {
-    const m = line.match(
-      /^(\d+)\.\s*(.+?)\s*\(([^)]+)\)\s*[-—–]\s*(?:Hallazgo|Finding|Achado|Résultat|Befund|Reperto)\s*:\s*(.+?)\.?\s*$/i
-    );
-    if (m) {
-      const rawRec = m[2].trim();
-      const possible = /\[posible\]|\[possible\]/i.test(rawRec);
-      const recommendation = rawRec.replace(/\s*\[posible\]\s*|\s*\[possible\]\s*/gi, "").trim();
-      results.push({ number: m[1], recommendation, guideline: m[3].trim(), finding: m[4].trim(), possible });
-    }
-  }
-  return results;
-}
-
-function RecommendationsCard({
-  loading,
-  value,
-  onChange,
-  open,
-  onToggle,
-}: {
-  loading: boolean;
-  value: string;
-  onChange: (v: string) => void;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const parsed = useMemo(() => parseRecommendations(value), [value]);
-  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-  const hasStructured = parsed.length > 0 && !editing;
-  const noRecs = !loading && value.trim() && parsed.length === 0 && !editing;
-  const t = useT();
-
-  const hasContent = loading || value.trim();
-
-  return (
-    <Card>
-      <div className="flex items-center justify-between w-full px-4 py-2.5">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex items-center gap-1.5 text-left hover:opacity-80 transition-opacity"
-        >
-          <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-            <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
-            {t("dash.recommendations")}
-            {!open && hasContent && !loading && (
-              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">
-                {parsed.length || (value.trim() ? 1 : 0)}
-              </Badge>
-            )}
-          </h3>
-        </button>
-        <div className="flex items-center gap-1.5">
-          <button type="button" onClick={(e) => { e.stopPropagation(); setShowHelp(!showHelp); }} className={`p-1 rounded-full transition-colors ${showHelp ? "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" : "text-gray-400 dark:text-gray-500 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30"}`}>
-            <HelpCircle className="h-4 w-4" />
-          </button>
-          {loading && <LoadingDots size="xs" className="text-brand" />}
-          <button type="button" onClick={onToggle}>
-            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
-          </button>
-        </div>
-      </div>
-      {showHelp && (
-        <div className="text-[11px] text-gray-600 dark:text-gray-300 mx-4 mb-2 px-3 py-2 leading-relaxed rounded-md bg-amber-50/80 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 animate-[fade-in_0.15s_ease-out]">
-          {t("dash.recs_help")}
-        </div>
-      )}
-      {open && (
-        <CardContent className="pt-0 px-4 pb-3">
-          {!loading && value.trim() && (
-            <div className="flex justify-end mb-1.5">
-              <button
-                type="button"
-                onClick={() => setEditing(!editing)}
-                className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
-              >
-                {editing ? t("view") : t("edit")}
-              </button>
-            </div>
-          )}
-          {loading ? (
-            <div
-              className="relative overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800"
-              style={{ height: 70 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
-            </div>
-          ) : editing ? (
-            <Textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="text-sm leading-relaxed"
-              style={{ minHeight: 70 }}
-            />
-          ) : hasStructured ? (
-            <div className="space-y-2">
-              {parsed.map((rec, i) => {
-                const color = REC_COLORS[i % REC_COLORS.length];
-                return (
-                  <div
-                    key={i}
-                    className="rounded-lg p-3 border text-sm"
-                    style={{
-                      backgroundColor: isDark ? color.dark : color.bg,
-                      borderColor: color.border + "40",
-                    }}
-                  >
-                    <div className="flex items-start gap-2">
-                      <span
-                        className={`flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${rec.possible ? "opacity-60" : ""}`}
-                        style={{ backgroundColor: color.border }}
-                      >
-                        {rec.possible ? "?" : rec.number}
-                      </span>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-gray-900 dark:text-gray-100 font-medium">
-                          {rec.recommendation}
-                          {rec.possible && <span className="ml-1.5 text-[10px] font-normal text-amber-600 dark:text-amber-400">(posible)</span>}
-                        </p>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400">({rec.guideline})</p>
-                        <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
-                          <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />
-                          <p className="text-xs text-gray-600 dark:text-gray-300">
-                            <span className="font-medium" style={{ color: color.border }}>{t("dash.finding_label")}: </span>
-                            {rec.finding}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : noRecs ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{value}</p>
-          ) : (
-            <Textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="text-sm leading-relaxed"
-              style={{ minHeight: 70 }}
-            />
-          )}
-        </CardContent>
-      )}
-    </Card>
-  );
-}

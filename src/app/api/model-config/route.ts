@@ -34,7 +34,6 @@ export async function GET() {
     if (data) {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
       if (data.compact_normals === undefined) data.compact_normals = false;
-      if (data.recommendations_enabled === undefined) data.recommendations_enabled = true;
       if (!data.dictation_language) data.dictation_language = "auto";
     }
 
@@ -91,7 +90,6 @@ export async function PUT(req: NextRequest) {
       delete body.compact_normals;
       delete body.dictation_language;
       delete body.conclusion_style;
-      delete body.recommendations_enabled;
       result = await service
         .from("user_model_config")
         .upsert({ ...body, user_id: user.id }, { onConflict: "user_id" })

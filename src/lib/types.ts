@@ -135,16 +135,6 @@ export interface UserTemplate {
   created_at: string;
 }
 
-export interface UserRecommendation {
-  id: string;
-  user_id: string;
-  trigger_keyword: string;
-  recommendation_text: string;
-  source: "manual" | "pdf_extracted";
-  guideline_name: string;
-  created_at: string;
-}
-
 export type AIProvider = "claude" | "openai" | "deepseek" | "gemini" | "custom";
 export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
@@ -344,18 +334,6 @@ export interface OrgNormalityPhrase {
   phrase: string;
   created_by: string | null;
   updated_at: string;
-}
-
-export interface OrgRecommendation {
-  id: string;
-  org_id: string;
-  section_id: string;
-  trigger_keyword: string;
-  recommendation_text: string;
-  source: "manual" | "pdf_extracted";
-  guideline_name: string;
-  created_by: string | null;
-  created_at: string;
 }
 
 export type SupportTicketCategory = "error" | "question" | "complaint" | "general";

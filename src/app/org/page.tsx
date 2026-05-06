@@ -12,11 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ArrowLeft, Loader2, Users, Building2, FileText, BarChart3,
   Plus, Pencil, Trash2, UserPlus, ChevronDown,
-  Check, X, BookOpen, Download, Upload,
+  Check, X, Download, Upload,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
-import type { OrgMembership, OrgSection, OrgTemplate, OrgRecommendation, SectionRole } from "@/lib/types";
+import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
 
 type Tab = "stats" | "members" | "sections";
 
@@ -89,23 +89,12 @@ export default function OrgDashboard() {
   const [importSelected, setImportSelected] = useState<Set<number>>(new Set());
   const [importing, setImporting] = useState(false);
 
-  // Recommendations
-  const [orgRecs, setOrgRecs] = useState<OrgRecommendation[]>([]);
-  const [showRecForm, setShowRecForm] = useState(false);
-  const [recSectionId, setRecSectionId] = useState("");
-  const [recTrigger, setRecTrigger] = useState("");
-  const [recText, setRecText] = useState("");
-  const [recGuideline, setRecGuideline] = useState("");
-  const [savingRec, setSavingRec] = useState(false);
-  const [recError, setRecError] = useState("");
-
   // AI upload
-  const [uploadingRecs, setUploadingRecs] = useState<string | null>(null);
   const [uploadingTpls, setUploadingTpls] = useState<string | null>(null);
   const [uploadMsg, setUploadMsg] = useState("");
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates" | "recs">>({});
+  const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates">>({});
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
   const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
@@ -144,16 +133,9 @@ export default function OrgDashboard() {
     } catch { /* ignore */ }
   }, []);
 
-  const loadRecs = useCallback(async () => {
-    try {
-      const res = await fetch("/api/org/recommendations", { cache: "no-store" });
-      if (res.ok) setOrgRecs(await res.json());
-    } catch { /* ignore */ }
-  }, []);
-
   useEffect(() => {
-    Promise.all([loadOrg(), loadMembers(), loadStats(), loadTemplates(), loadRecs()]).finally(() => setLoading(false));
-  }, [loadOrg, loadMembers, loadStats, loadTemplates, loadRecs]);
+    Promise.all([loadOrg(), loadMembers(), loadStats(), loadTemplates()]).finally(() => setLoading(false));
+  }, [loadOrg, loadMembers, loadStats, loadTemplates]);
 
   async function handleSaveSection() {
     if (!sectionName.trim()) return;
@@ -283,55 +265,6 @@ export default function OrgDashboard() {
     if (!confirm("¿Eliminar esta plantilla compartida?")) return;
     await fetch(`/api/org/templates?id=${id}`, { method: "DELETE" });
     await loadTemplates();
-  }
-
-  // ── Recommendations ──
-  async function handleSaveRec() {
-    if (!recSectionId || !recTrigger.trim() || !recText.trim()) return;
-    setSavingRec(true);
-    setRecError("");
-    const res = await fetch("/api/org/recommendations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        section_id: recSectionId,
-        trigger_keyword: recTrigger.trim(),
-        recommendation_text: recText.trim(),
-        guideline_name: recGuideline.trim(),
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: "Error" }));
-      setRecError(data.error || "Error al crear");
-      setSavingRec(false);
-      return;
-    }
-    setSavingRec(false);
-    setShowRecForm(false);
-    setRecTrigger("");
-    setRecText("");
-    setRecGuideline("");
-    await loadRecs();
-  }
-
-  async function handleDeleteRec(id: string) {
-    if (!confirm("¿Eliminar esta recomendación?")) return;
-    await fetch(`/api/org/recommendations?id=${id}`, { method: "DELETE" });
-    await loadRecs();
-  }
-
-  async function handleUploadRecs(file: File, sectionId: string) {
-    setUploadingRecs(sectionId);
-    setUploadMsg("");
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("section_id", sectionId);
-    const res = await fetch("/api/org/upload-recommendations", { method: "POST", body: fd });
-    const data = await res.json();
-    setUploadingRecs(null);
-    if (!res.ok) { setUploadMsg(data.error || "Error al procesar"); return; }
-    setUploadMsg(`${data.saved} recomendaciones extraídas y guardadas`);
-    await loadRecs();
   }
 
   async function handleUploadTpls(file: File, sectionId: string) {
@@ -633,7 +566,7 @@ export default function OrgDashboard() {
                     <Building2 className="h-8 w-8 text-blue-400" />
                   </div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No hay secciones creadas</p>
-                  <p className="text-xs text-gray-400 max-w-xs mx-auto">Crea la primera sección para organizar plantillas, recomendaciones y equipo.</p>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">Crea la primera sección para organizar plantillas y equipo.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -641,7 +574,6 @@ export default function OrgDashboard() {
                 const isExpanded = expandedSection === s.id || visibleSections.length === 1;
                 const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
                 const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
-                const sRecs = orgRecs.filter((r) => r.section_id === s.id);
                 const sub = getSubTab(s.id);
 
                 return (
@@ -662,7 +594,6 @@ export default function OrgDashboard() {
                               <span className="text-[11px] text-gray-500 flex items-center gap-1"><Users className="h-3 w-3 text-blue-400" /> {sMembers.length}</span>
                             )}
                             <span className="text-[11px] text-gray-500 flex items-center gap-1"><FileText className="h-3 w-3 text-teal-400" /> {sTemplates.length}</span>
-                            <span className="text-[11px] text-gray-500 flex items-center gap-1"><BookOpen className="h-3 w-3 text-amber-400" /> {sRecs.length}</span>
                           </div>
                         </div>
                         {isOrgChief && (
@@ -692,11 +623,6 @@ export default function OrgDashboard() {
                             className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "templates" ? "border-teal-500 text-teal-600 dark:text-teal-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
                             <FileText className="h-3.5 w-3.5" /> Plantillas
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "templates" ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sTemplates.length}</span>
-                          </button>
-                          <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "recs" })}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "recs" ? "border-amber-500 text-amber-600 dark:text-amber-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-                            <BookOpen className="h-3.5 w-3.5" /> Guías
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "recs" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sRecs.length}</span>
                           </button>
                         </div>
 
@@ -749,7 +675,7 @@ export default function OrgDashboard() {
                                   </Button>
                                 </div>
                               </div>
-                              {uploadMsg && uploadingTpls === null && !uploadingRecs && (
+                              {uploadMsg && uploadingTpls === null && (
                                 <div className="mb-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">{uploadMsg}</div>
                               )}
                               {sTemplates.length === 0 ? (
@@ -791,70 +717,6 @@ export default function OrgDashboard() {
                             </div>
                           )}
 
-                          {/* ── RECOMMENDATIONS ── */}
-                          {sub === "recs" && (
-                            <div>
-                              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                                <p className="text-xs text-gray-500">{sRecs.length} guía{sRecs.length !== 1 ? "s" : ""} clínica{sRecs.length !== 1 ? "s" : ""}</p>
-                                <div className="flex gap-2">
-                                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                    {uploadingRecs === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-amber-500" />}
-                                    {uploadingRecs === s.id ? "Procesando..." : "Extraer de PDF"}
-                                    <input type="file" accept=".pdf,.docx,.doc" className="hidden" disabled={!!uploadingRecs}
-                                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadRecs(f, s.id); e.target.value = ""; }} />
-                                  </label>
-                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                    onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
-                                    <Plus className="h-3.5 w-3.5" /> Manual
-                                  </Button>
-                                </div>
-                              </div>
-                              {uploadMsg && uploadingRecs === null && !uploadingTpls && (
-                                <div className="mb-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">{uploadMsg}</div>
-                              )}
-                              {sRecs.length === 0 ? (
-                                <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-                                  <BookOpen className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                  <p className="text-xs text-gray-400 mb-1">Sin guías clínicas</p>
-                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Sube un PDF con guías clínicas y la IA extraerá las recomendaciones, o añádelas manualmente.</p>
-                                  <div className="flex gap-2 justify-center">
-                                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                      {uploadingRecs === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-amber-500" />}
-                                      Extraer de PDF
-                                      <input type="file" accept=".pdf,.docx,.doc" className="hidden" disabled={!!uploadingRecs}
-                                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadRecs(f, s.id); e.target.value = ""; }} />
-                                    </label>
-                                    <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                      onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
-                                      <Plus className="h-3 w-3" /> Manual
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="space-y-2">
-                                  {sRecs.map((r) => (
-                                    <div key={r.id} className="group p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-sm transition-all">
-                                      <div className="flex items-start gap-3">
-                                        <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                          <BookOpen className="h-4 w-4 text-amber-500" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-semibold">{r.trigger_keyword}</Badge>
-                                            {r.guideline_name && <span className="text-[10px] text-gray-400 italic">{r.guideline_name}</span>}
-                                          </div>
-                                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{r.recommendation_text}</p>
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
@@ -1022,52 +884,6 @@ export default function OrgDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Recommendation form dialog */}
-      <Dialog open={showRecForm} onOpenChange={setShowRecForm}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nueva recomendación</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Sección</Label>
-              <Select value={recSectionId} onValueChange={setRecSectionId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
-                <SelectContent>
-                  {orgData.sections.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Hallazgo trigger</Label>
-              <Input value={recTrigger} onChange={(e) => setRecTrigger(e.target.value)} placeholder="nódulo pulmonar" className="h-9 text-xs" />
-              <p className="text-[10px] text-gray-400">Hallazgo que activa esta recomendación</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Texto de la recomendación</Label>
-              <textarea
-                value={recText}
-                onChange={(e) => setRecText(e.target.value)}
-                placeholder="Seguimiento con TC de baja dosis en 12 meses según criterios Fleischner..."
-                className="w-full h-20 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Guía / Fuente (opcional)</Label>
-              <Input value={recGuideline} onChange={(e) => setRecGuideline(e.target.value)} placeholder="Fleischner Society 2017" className="h-9 text-xs" />
-            </div>
-            {recError && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{recError}</p>}
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowRecForm(false)}>Cancelar</Button>
-              <Button size="sm" onClick={handleSaveRec} disabled={savingRec || !recTrigger.trim() || !recText.trim() || !recSectionId}>
-                {savingRec ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Crear"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

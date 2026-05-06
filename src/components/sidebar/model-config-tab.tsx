@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,7 +27,6 @@ interface ModelConfig {
   output_language: OutputLanguage;
   dictation_language: string;
   compact_normals: boolean;
-  recommendations_enabled: boolean;
 }
 
 interface NormalityPhraseRow {
@@ -279,14 +277,6 @@ export function ModelConfigTab() {
               </Select>
             </div>
 
-            {/* Recommendations toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs">{t("cfg.recommendations_enabled")}</Label>
-                <p className="text-[10px] text-gray-400">{t("cfg.recommendations_enabled_hint")}</p>
-              </div>
-              <Switch checked={config.recommendations_enabled ?? true} onCheckedChange={(v) => update("recommendations_enabled", v)} />
-            </div>
           </AccordionContent>
         </AccordionItem>
 
