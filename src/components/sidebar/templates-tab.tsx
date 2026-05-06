@@ -28,6 +28,8 @@ import {
   Outdent,
   FolderOpen,
   Building2,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
@@ -246,6 +248,11 @@ export function TemplatesTab() {
   const [catalogSearch, setCatalogSearch] = useState("");
   const [toggling, setToggling] = useState<Set<string>>(new Set());
 
+  // Hidden global templates
+  const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
+  const [hiddenOpen, setHiddenOpen] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
+
   async function load() {
     setLoading(true);
     const res = await fetch("/api/templates");
@@ -253,8 +260,16 @@ export function TemplatesTab() {
     setLoading(false);
   }
 
+  async function loadHidden() {
+    try {
+      const res = await fetch("/api/templates/hidden");
+      if (res.ok) setHiddenTemplates(await res.json());
+    } catch { /* ignore */ }
+  }
+
   useEffect(() => {
     load();
+    loadHidden();
     fetch("/api/org", { cache: "no-store" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => setHasOrg(!!data?.membership))
@@ -322,10 +337,12 @@ export function TemplatesTab() {
     load();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm(t("confirm_delete_template"))) return;
-    await fetch(`/api/templates?id=${id}`, { method: "DELETE" });
+  async function handleDelete(id: string, isGlobal?: boolean) {
+    if (!confirm(isGlobal ? t("tpl.confirm_hide") : t("confirm_delete_template"))) return;
+    const qs = isGlobal ? `id=${id}&global=true` : `id=${id}`;
+    await fetch(`/api/templates?${qs}`, { method: "DELETE" });
     load();
+    if (isGlobal) loadHidden();
   }
 
   async function handleCreateNew() {
@@ -388,6 +405,16 @@ export function TemplatesTab() {
 
   function rejectExtracted(idx: number) {
     setExtractedTemplates((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleRestore(id: string) {
+    setRestoring(id);
+    try {
+      await fetch(`/api/templates/hidden?id=${id}`, { method: "DELETE" });
+      setHiddenTemplates((prev) => prev.filter((h) => h.id !== id));
+      load();
+    } catch { /* ignore */ }
+    setRestoring(null);
   }
 
   async function openCatalog() {
@@ -640,7 +667,17 @@ export function TemplatesTab() {
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          {!tpl.is_global && !tpl.is_default && !tpl.is_org && (
+                          {tpl.is_global ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-gray-400 hover:text-orange-500"
+                              onClick={() => handleDelete(tpl.id, true)}
+                              title={t("tpl.hide")}
+                            >
+                              <EyeOff className="h-3 w-3" />
+                            </Button>
+                          ) : !tpl.is_default && !tpl.is_org && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -661,6 +698,50 @@ export function TemplatesTab() {
           );
         })}
       </div>
+
+      {/* Hidden globals — restore section */}
+      {hiddenTemplates.length > 0 && (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setHiddenOpen(!hiddenOpen)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <EyeOff className="h-3.5 w-3.5 text-gray-400" />
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {hiddenTemplates.length} {t("tpl.hidden_templates")}
+              </span>
+            </div>
+            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${hiddenOpen ? "" : "-rotate-90"}`} />
+          </button>
+          {hiddenOpen && (
+            <div className="px-3 pb-3 space-y-1">
+              {hiddenTemplates.map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-center justify-between gap-2 p-2 rounded-md border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{tplName(h.name)}</p>
+                    <Badge variant="secondary" className="text-[9px] h-4 px-1.5 mt-0.5">{modName(h.modality)}</Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2.5 text-[11px] gap-1 shrink-0"
+                    disabled={restoring === h.id}
+                    onClick={() => handleRestore(h.id)}
+                  >
+                    {restoring === h.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                    {t("tpl.restore")}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
