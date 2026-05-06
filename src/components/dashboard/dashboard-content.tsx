@@ -109,6 +109,7 @@ export function DashboardContent() {
   // Hidden templates
   const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [reportModeInfo, setReportModeInfo] = useState<string | null>(null);
 
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
@@ -1311,40 +1312,42 @@ export function DashboardContent() {
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
-                <Button
-                  onClick={() => handleGenerate("structured")}
-                  disabled={!canGenerate}
-                  className="h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
-                >
-                  {isGenerating ? (
-                    <LoadingDots size="xs" />
-                  ) : (
-                    <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => handleGenerate("compact")}
-                  disabled={!canGenerate}
-                  className="h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
-                >
-                  {isGenerating ? (
-                    <LoadingDots size="xs" />
-                  ) : (
-                    <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => handleGenerate("dictation_only")}
-                  disabled={!canGenerate}
-                  className="h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
-                >
-                  {isGenerating ? (
-                    <LoadingDots size="xs" />
-                  ) : (
-                    <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>
-                  )}
-                </Button>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("structured")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-indigo-300/60 hover:bg-indigo-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("compact")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("dictation_only")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
+                </div>
               </div>
+              {reportModeInfo && (
+                <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
+                  {t(`dash.mode_info_${reportModeInfo}`)}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setLightParaphrase(!lightParaphrase)}
@@ -1569,40 +1572,42 @@ export function DashboardContent() {
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
-                <Button
-                  onClick={() => handleGenerate("structured")}
-                  disabled={!canGenerate}
-                  className="h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
-                >
-                  {isGenerating ? (
-                    <LoadingDots size="xs" />
-                  ) : (
-                    <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => handleGenerate("compact")}
-                  disabled={!canGenerate}
-                  className="h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
-                >
-                  {isGenerating ? (
-                    <LoadingDots size="xs" />
-                  ) : (
-                    <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => handleGenerate("dictation_only")}
-                  disabled={!canGenerate}
-                  className="h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
-                >
-                  {isGenerating ? (
-                    <LoadingDots size="xs" />
-                  ) : (
-                    <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>
-                  )}
-                </Button>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("structured")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-indigo-300/60 hover:bg-indigo-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("compact")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("dictation_only")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
+                </div>
               </div>
+              {reportModeInfo && (
+                <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
+                  {t(`dash.mode_info_${reportModeInfo}`)}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setLightParaphrase(!lightParaphrase)}
