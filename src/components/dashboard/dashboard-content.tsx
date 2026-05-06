@@ -537,6 +537,22 @@ export function DashboardContent() {
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
+  const templateFieldLabels = useMemo(() => {
+    if (!selectedTemplate) return [];
+    const text = selectedTemplate.structure?.template || "";
+    const re = /\*{2,3}([^*]+)\*{2,3}/g;
+    const skip = new Set(["FINDINGS", "HALLAZGOS", "ACHADOS", "CONCLUSION", "CONCLUSIÓN", "CONCLUSÃO", "CONCLUSIONES"]);
+    const labels: string[] = [];
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const label = m[1].trim();
+      if (label.length > 1 && !skip.has(label.toUpperCase())) {
+        labels.push(label);
+      }
+    }
+    return labels;
+  }, [selectedTemplate]);
+
   async function handleHideTemplate(tpl: UserTemplate) {
     if (tpl.is_global) {
       await fetch(`/api/templates?id=${tpl.id}&global=true`, { method: "DELETE" });
@@ -1624,6 +1640,24 @@ export function DashboardContent() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* ── Template watermark ── */}
+      {!hasOutput && selectedTemplate && templateFieldLabels.length > 0 && (
+        <Card>
+          <CardContent className="px-4 py-3">
+            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+              {t("dash.template_fields")}
+            </p>
+            <ul className="space-y-0.5">
+              {templateFieldLabels.map((label) => (
+                <li key={label} className="text-xs text-gray-300 dark:text-gray-600">
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Output ── */}
