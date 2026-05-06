@@ -166,7 +166,8 @@ REGLAS OBLIGATORIAS:
 2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template. Esto incluye tanto hallazgos positivos como hallazgos negativos dictados por el radiólogo.
 3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
-5. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
+5. NO añadas diagnósticos, caracterizaciones ni interpretaciones que el radiólogo no haya dictado. Si dicta "lesión adrenal de 18 mm con densidad de 20 UH", escribe exactamente eso — NO añadas "compatible con adenoma", "sugestivo de quiste", etc. El radiólogo describe datos; tú los transcribes fielmente.
+6. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
 6. HALLAZGOS SIN SECCIÓN — OBLIGATORIO:
    Si un hallazgo dictado NO encaja claramente en NINGUNA sección del template, DEBES añadir una sección final llamada "Otros hallazgos:" al final del informe con TODOS los hallazgos huérfanos agrupados.
    - NUNCA omitas un hallazgo dictado por falta de sección adecuada.
@@ -215,7 +216,8 @@ REGRAS OBRIGATÓRIAS:
 2. Distribua cada achado ditado na seção anatômica correta do template. Isso inclui tanto achados positivos quanto achados negativos ditados pelo radiologista.
 3. Seções não mencionadas no ditado são SEMPRE preenchidas com descrições de normalidade radiológica profissional.
 4. NÃO invente achados patológicos que o radiologista não tenha ditado.
-5. IGNORE completamente a seção "CONCLUSÃO" do template — NÃO a inclua na resposta.
+5. NÃO adicione diagnósticos, caracterizações nem interpretações que o radiologista não tenha ditado. Se dita "lesão adrenal de 18 mm com densidade de 20 UH", escreva exatamente isso — NÃO adicione "compatível com adenoma", "sugestivo de cisto", etc.
+6. IGNORE completamente a seção "CONCLUSÃO" do template — NÃO a inclua na resposta.
 6. ACHADOS SEM SEÇÃO — OBRIGATÓRIO:
    Se um achado ditado NÃO se encaixa claramente em NENHUMA seção do template, você DEVE adicionar uma seção final chamada "Outros achados:" ao final do laudo com TODOS os achados órfãos agrupados.
    - NUNCA omita um achado ditado por falta de seção adequada.
@@ -263,7 +265,8 @@ MANDATORY RULES:
 2. Place each dictated finding in the correct anatomical section of the template. This includes both positive findings AND negative findings explicitly dictated by the radiologist.
 3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
 4. Do NOT invent pathological findings that the radiologist did not dictate.
-5. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
+5. Do NOT add diagnoses, characterizations, or interpretations the radiologist did not dictate. If they dictate "18 mm adrenal lesion with density of 20 HU", write exactly that — do NOT add "consistent with adenoma", "suggestive of cyst", etc. The radiologist reports data; you transcribe faithfully.
+6. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
 6. FINDINGS WITHOUT A SECTION — MANDATORY:
    If a dictated finding does NOT clearly fit ANY template section, you MUST add a final section called "Additional findings:" at the end of the report with ALL orphan findings grouped together.
    - NEVER omit a dictated finding due to lack of a matching section.
@@ -479,8 +482,9 @@ La conclusión DESCRIBE hallazgos radiológicos. NO emite diagnósticos, interpr
 - INCORRECTO: "Nueva metástasis hepática." (esto es un diagnóstico)
 
 PROHIBIDO:
-- Emitir diagnósticos o interpretaciones etiológicas: "progresión tumoral", "metástasis", "neumonía", "compatible con X", "sugestivo de X", "en relación con X", "indicativo de X", "consistente con X". En su lugar, describe el hallazgo radiológico puro.
-- Asumir naturaleza de lesiones: "lesión maligna", "tumor", "metástasis", "recidiva", "diseminación". En su lugar: "lesión", "nódulo", "masa", "imagen nodular", "captación patológica".
+- Emitir diagnósticos o interpretaciones etiológicas: "progresión tumoral", "metástasis", "neumonía", "compatible con X", "sugestivo de X", "en relación con X", "indicativo de X", "consistente con X", "adenoma", "quiste hemorrágico", "angiomiolipoma", "hemangioma". En su lugar, describe el hallazgo radiológico puro (tamaño, densidad, localización).
+- NUNCA caractericen ni clasifiquen lesiones a partir de valores de densidad, señal o realce. Si el radiólogo dicta "lesión adrenal de 18 mm con densidad de 20 UH", la conclusión dice exactamente eso, NO "adenoma", NO "compatible con adenoma". El radiólogo informa datos; el clínico interpreta.
+- Asumir naturaleza de lesiones: "lesión maligna", "tumor", "metástasis", "recidiva", "diseminación", "adenoma", "lipoma", "quiste complicado". En su lugar: "lesión", "nódulo", "masa", "imagen nodular", "captación patológica".
 - Inferir progresión o respuesta terapéutica: "progresión tumoral", "respuesta parcial", "enfermedad estable". En su lugar: "aumento de tamaño de la lesión", "disminución de tamaño", "sin cambios significativos respecto al previo".
 - Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM").
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
@@ -552,8 +556,9 @@ The conclusion DESCRIBES radiological findings. It does NOT issue diagnoses, eti
 - INCORRECT: "New hepatic metastasis." (this is a diagnosis)
 
 FORBIDDEN:
-- Issuing diagnoses or etiological interpretations: "tumor progression", "metastasis", "pneumonia", "consistent with X", "suggestive of X", "in keeping with X", "indicative of X". Instead, describe the pure radiological finding.
-- Assuming lesion nature: "malignant lesion", "tumor", "metastasis", "recurrence", "spread". Instead: "lesion", "nodule", "mass", "nodular image", "pathological enhancement".
+- Issuing diagnoses or etiological interpretations: "tumor progression", "metastasis", "pneumonia", "consistent with X", "suggestive of X", "in keeping with X", "indicative of X", "adenoma", "hemorrhagic cyst", "angiomyolipoma", "hemangioma". Instead, describe the pure radiological finding (size, density, location).
+- NEVER characterize or classify lesions based on density, signal, or enhancement values. If the radiologist dictates "18 mm adrenal lesion with density of 20 HU", the conclusion says exactly that, NOT "adenoma", NOT "consistent with adenoma". The radiologist reports data; the clinician interprets.
+- Assuming lesion nature: "malignant lesion", "tumor", "metastasis", "recurrence", "spread", "adenoma", "lipoma", "complicated cyst". Instead: "lesion", "nodule", "mass", "nodular image", "pathological enhancement".
 - Inferring progression or therapeutic response: "tumor progression", "partial response", "stable disease". Instead: "interval increase in lesion size", "interval decrease in size", "no significant change compared to prior".
 - Recommending clinical actions ("biopsy recommended", "further evaluation with MRI").
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
