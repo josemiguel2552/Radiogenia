@@ -30,6 +30,9 @@ import {
   GraduationCap,
   AlignLeft,
   List,
+  X,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -102,6 +105,10 @@ export function DashboardContent() {
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
   const [repairMessage, setRepairMessage] = useState<string | null>(null);
+
+  // Hidden templates
+  const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
 
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
@@ -529,10 +536,35 @@ export function DashboardContent() {
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
+  async function handleHideTemplate(tpl: UserTemplate) {
+    if (tpl.is_global) {
+      await fetch(`/api/templates?id=${tpl.id}&global=true`, { method: "DELETE" });
+    } else if (!tpl.is_org) {
+      await fetch(`/api/templates?id=${tpl.id}`, { method: "DELETE" });
+    }
+    setTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
+    if (selectedTemplateId === tpl.id) setSelectedTemplateId("");
+  }
+
+  async function loadHiddenTemplates() {
+    try {
+      const res = await fetch("/api/templates/hidden");
+      if (res.ok) setHiddenTemplates(await res.json());
+    } catch { /* ignore */ }
+  }
+
+  async function handleRestoreTemplate(id: string) {
+    await fetch(`/api/templates/hidden?id=${id}`, { method: "DELETE" });
+    setHiddenTemplates((prev) => prev.filter((t) => t.id !== id));
+    const res = await fetch("/api/templates");
+    if (res.ok) setTemplates(await res.json());
+  }
+
   // Voice recording is handled by useVoiceDictation hook above
 
   // Generate report
-  async function handleGenerate(compact?: boolean) {
+  type ReportMode = "structured" | "compact" | "dictation_only";
+  async function handleGenerate(mode: ReportMode = "structured") {
     if (!selectedTemplate || !dictation.trim()) return;
 
     // Log any pending corrections from the previous report before starting a new generation
@@ -576,7 +608,7 @@ export function DashboardContent() {
           modality: selectedTemplate.modality,
           studyType: studyName,
           ...(lightParaphrase ? { paraphraseOverride: "light" } : {}),
-          ...(compact !== undefined ? { compactNormals: compact } : {}),
+          reportMode: mode,
         }),
       });
 
@@ -1278,28 +1310,38 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button
-                  onClick={() => handleGenerate(false)}
+                  onClick={() => handleGenerate("structured")}
                   disabled={!canGenerate}
-                  className="flex-1 h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+                  className="h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
                 >
                   {isGenerating ? (
-                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
+                    <LoadingDots size="xs" />
                   ) : (
-                    <><List className="h-4 w-4" /> {t("dash.generate_structured")}</>
+                    <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>
                   )}
                 </Button>
                 <Button
-                  onClick={() => handleGenerate(true)}
+                  onClick={() => handleGenerate("compact")}
                   disabled={!canGenerate}
-                  variant="outline"
-                  className="flex-1 h-11 md:h-9 gap-2 disabled:opacity-50"
+                  className="h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
                 >
                   {isGenerating ? (
-                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
+                    <LoadingDots size="xs" />
                   ) : (
-                    <><AlignLeft className="h-4 w-4" /> {t("dash.generate_compact")}</>
+                    <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleGenerate("dictation_only")}
+                  disabled={!canGenerate}
+                  className="h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                >
+                  {isGenerating ? (
+                    <LoadingDots size="xs" />
+                  ) : (
+                    <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>
                   )}
                 </Button>
               </div>
@@ -1409,6 +1451,17 @@ export function DashboardContent() {
                   </SelectContent>
                 </Select>
 
+                {selectedTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => handleHideTemplate(selectedTemplate)}
+                    className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded"
+                    title={t("dash.hide_template")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
                 <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
                   {[
                     { v: "default", l: t("dash.default") },
@@ -1429,6 +1482,14 @@ export function DashboardContent() {
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => { loadHiddenTemplates(); setShowRestoreDialog(true); }}
+                  className="text-[10px] text-gray-400 hover:text-brand transition-colors flex items-center gap-1"
+                >
+                  <RotateCcw className="h-2.5 w-2.5" />
+                  {t("dash.restore_templates")}
+                </button>
               </div>
 
               {/* Row 3: Clinical context (collapsible) */}
@@ -1507,28 +1568,38 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button
-                  onClick={() => handleGenerate(false)}
+                  onClick={() => handleGenerate("structured")}
                   disabled={!canGenerate}
-                  className="flex-1 h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
+                  className="h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
                 >
                   {isGenerating ? (
-                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
+                    <LoadingDots size="xs" />
                   ) : (
-                    <><List className="h-4 w-4" /> {t("dash.generate_structured")}</>
+                    <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>
                   )}
                 </Button>
                 <Button
-                  onClick={() => handleGenerate(true)}
+                  onClick={() => handleGenerate("compact")}
                   disabled={!canGenerate}
-                  variant="outline"
-                  className="flex-1 h-11 md:h-9 gap-2 disabled:opacity-50"
+                  className="h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
                 >
                   {isGenerating ? (
-                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
+                    <LoadingDots size="xs" />
                   ) : (
-                    <><AlignLeft className="h-4 w-4" /> {t("dash.generate_compact")}</>
+                    <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleGenerate("dictation_only")}
+                  disabled={!canGenerate}
+                  className="h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                >
+                  {isGenerating ? (
+                    <LoadingDots size="xs" />
+                  ) : (
+                    <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>
                   )}
                 </Button>
               </div>

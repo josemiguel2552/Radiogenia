@@ -88,6 +88,35 @@ NÃO escreva cada seção do template individualmente. O formato de saída muda 
 Se o relatório resultante tiver mais seções do que achados ditados, você está fazendo ERRADO.`,
 };
 
+const DICTATION_ONLY_INSTRUCTION: Record<string, string> = {
+  es: `⚠️ MODO SOLO DICTADO — ESTA ES LA INSTRUCCIÓN MÁS IMPORTANTE:
+NO escribas secciones de normalidad. El informe SOLO contiene lo que el radiólogo dictó.
+1. Escribe ÚNICAMENTE las secciones del template donde el radiólogo dictó un hallazgo (positivo o negativo explícito).
+2. Las secciones NO mencionadas en el dictado se OMITEN por completo — NO las incluyas.
+3. Si hay hallazgos que no encajan en ninguna sección del template, añade "Otros hallazgos:" al final.
+4. Mantén el formato estructurado: "Sección: Descripción." — una línea por sección.
+⚠️ PROHIBIDO: escribir secciones con frases de normalidad inventadas por ti. Si el radiólogo no mencionó un órgano, NO aparece en el informe.
+El informe debe ser breve: solo las secciones con hallazgos dictados + "Otros hallazgos" si aplica.`,
+
+  en: `⚠️ DICTATION ONLY MODE — THIS IS THE MOST IMPORTANT INSTRUCTION:
+Do NOT write normality sections. The report ONLY contains what the radiologist dictated.
+1. Write ONLY template sections where the radiologist dictated a finding (positive or explicit negative).
+2. Sections NOT mentioned in the dictation are OMITTED entirely — do NOT include them.
+3. If there are findings that don't fit any template section, add "Additional findings:" at the end.
+4. Keep the structured format: "Section: Description." — one line per section.
+⚠️ FORBIDDEN: writing sections with normality phrases you invented. If the radiologist didn't mention an organ, it does NOT appear in the report.
+The report should be brief: only sections with dictated findings + "Additional findings" if applicable.`,
+
+  pt: `⚠️ MODO SOMENTE DITADO — ESTA É A INSTRUÇÃO MAIS IMPORTANTE:
+NÃO escreva seções de normalidade. O laudo contém APENAS o que o radiologista ditou.
+1. Escreva SOMENTE as seções do template onde o radiologista ditou um achado (positivo ou negativo explícito).
+2. As seções NÃO mencionadas no ditado são OMITIDAS completamente — NÃO as inclua.
+3. Se houver achados que não se encaixam em nenhuma seção do template, adicione "Outros achados:" ao final.
+4. Mantenha o formato estruturado: "Seção: Descrição." — uma linha por seção.
+⚠️ PROIBIDO: escrever seções com frases de normalidade inventadas por você. Se o radiologista não mencionou um órgão, ele NÃO aparece no laudo.
+O laudo deve ser breve: apenas seções com achados ditados + "Outros achados" se aplicável.`,
+};
+
 /* ── System prompt templates per language ───────────────────── */
 
 function findingsSystemPrompt(lang: OutputLanguage, modality: string): string {
@@ -272,6 +301,7 @@ export function buildFindingsPrompt(params: {
   paraphraseLevel: ParaphraseLevel;
   outputLanguage: OutputLanguage;
   compactNormals?: boolean;
+  dictationOnly?: boolean;
   styleSamples?: string[];
   preferredNormalPhrases?: PreferredNormalPhrase[];
 }): { system: string; user: string } {
@@ -316,7 +346,9 @@ Rules:
     });
   }
 
-  if (params.compactNormals) {
+  if (params.dictationOnly) {
+    system += `\n\n${DICTATION_ONLY_INSTRUCTION[lang] || DICTATION_ONLY_INSTRUCTION.en}`;
+  } else if (params.compactNormals) {
     system += `\n\n${COMPACT_NORMALS_INSTRUCTION[lang] || COMPACT_NORMALS_INSTRUCTION.en}`;
   }
 

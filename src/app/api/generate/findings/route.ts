@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride } = await req.json();
+    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
       paraphrase_level: paraphraseOverride || config?.paraphrase_level || "light",
       output_language: config?.output_language || "es",
       style_learning_enabled: config?.style_learning_enabled ?? true,
-      compact_normals: compactOverride !== undefined ? compactOverride : (config?.compact_normals ?? false),
+      compact_normals: reportMode === "compact" || (compactOverride !== undefined ? compactOverride : (config?.compact_normals ?? false)),
+      dictation_only: reportMode === "dictation_only",
     };
 
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
@@ -121,6 +122,7 @@ export async function POST(req: NextRequest) {
         paraphraseLevel: safeConfig.paraphrase_level as ParaphraseLevel,
         outputLanguage: safeConfig.output_language as OutputLanguage,
         compactNormals: safeConfig.compact_normals,
+        dictationOnly: safeConfig.dictation_only,
         preferredNormalPhrases,
       });
 
@@ -145,6 +147,7 @@ export async function POST(req: NextRequest) {
       paraphraseLevel: safeConfig.paraphrase_level as ParaphraseLevel,
       outputLanguage: safeConfig.output_language as OutputLanguage,
       compactNormals: safeConfig.compact_normals,
+      dictationOnly: safeConfig.dictation_only,
       preferredNormalPhrases,
     });
 

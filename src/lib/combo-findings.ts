@@ -13,6 +13,7 @@ interface ComboParams {
   paraphraseLevel: ParaphraseLevel;
   outputLanguage: OutputLanguage;
   compactNormals: boolean;
+  dictationOnly?: boolean;
   preferredNormalPhrases?: PreferredNormalPhrase[];
 }
 
@@ -210,7 +211,12 @@ const COMPACT_SUFFIX: Record<string, string> = {
   pt: "As demais estruturas avaliadas ({names}) não apresentam alterações significativas.",
 };
 
-function sectionsToText(sections: MappedSection[], compactNormals: boolean, lang: OutputLanguage): string {
+function sectionsToText(sections: MappedSection[], compactNormals: boolean, dictationOnly: boolean, lang: OutputLanguage): string {
+  if (dictationOnly) {
+    const dictated = sections.filter((s) => s.source !== "normal_default");
+    return dictated.map((s) => `${s.label}: ${s.text}`).join("\n");
+  }
+
   if (!compactNormals) {
     return sections.map((s) => `${s.label}: ${s.text}`).join("\n");
   }
@@ -310,6 +316,6 @@ export async function runComboFindings(
     ? applyCorrections(parsed.sections, validatorResult.corrections)
     : parsed.sections;
 
-  const rawText = sectionsToText(finalSections, params.compactNormals, params.outputLanguage);
+  const rawText = sectionsToText(finalSections, params.compactNormals, !!params.dictationOnly, params.outputLanguage);
   return enforceOutputLanguage(rawText, params.outputLanguage);
 }
