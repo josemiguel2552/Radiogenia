@@ -738,6 +738,57 @@ function AspectsCalc() {
 }
 
 /* ═══════════════════════════════════════════
+   8. On-track / Off-track (Shoulder instability)
+   ═══════════════════════════════════════════ */
+
+function OnTrackOffTrack() {
+  const t = useT();
+  const [glenoidW, setGlenoidW] = useState("");
+  const [boneLoss, setBoneLoss] = useState("");
+  const [hsi, setHsi] = useState("");
+
+  const gw = parseFloat(glenoidW);
+  const bl = parseFloat(boneLoss);
+  const hs = parseFloat(hsi);
+
+  const hasAll = glenoidW && boneLoss && hsi && !isNaN(gw) && !isNaN(bl) && !isNaN(hs) && gw > 0;
+
+  const glenoidTrack = hasAll ? (0.83 * gw) - bl : null;
+  const isOffTrack = glenoidTrack !== null && hs > glenoidTrack;
+
+  const copyText = glenoidTrack !== null
+    ? `Glenoid track: ${glenoidTrack.toFixed(1)} mm. HSI: ${hs} mm. ${isOffTrack ? "OFF-TRACK" : "ON-TRACK"}. ${isOffTrack ? t("calc.offtrack_interpretation") : t("calc.ontrack_interpretation")}`
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Di Giacomo et al., JBJS 2014; Yamamoto et al., AJSM 2007</p>
+        <ResetButton onClick={() => { setGlenoidW(""); setBoneLoss(""); setHsi(""); }} />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <NumInput label={t("calc.glenoid_width")} value={glenoidW} onChange={setGlenoidW} unit="mm" />
+        <NumInput label={t("calc.bone_loss")} value={boneLoss} onChange={setBoneLoss} unit="mm" />
+        <NumInput label={t("calc.hsi")} value={hsi} onChange={setHsi} unit="mm" />
+      </div>
+      <p className="text-[10px] text-gray-400 leading-relaxed">{t("calc.ontrack_formula")}</p>
+      {glenoidTrack !== null && (
+        <>
+          <ResultBox label="Glenoid track" value={`${glenoidTrack.toFixed(1)} mm`} color="blue" />
+          <ResultBox
+            label={isOffTrack ? "OFF-TRACK" : "ON-TRACK"}
+            value={isOffTrack ? t("calc.offtrack_interpretation") : t("calc.ontrack_interpretation")}
+            interpretation={`HSI (${hs} mm) ${isOffTrack ? ">" : "≤"} Glenoid track (${glenoidTrack.toFixed(1)} mm)`}
+            color={isOffTrack ? "red" : "green"}
+          />
+        </>
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
    CHEAT SHEETS
    ═══════════════════════════════════════════ */
 
@@ -908,11 +959,337 @@ function OradsSheet() {
   );
 }
 
+/* ── New Cheat Sheets ── */
+
+function LungRadsSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title="Lung-RADS v2022" source="ACR Lung-RADS v2022 (Defined et al., Radiology 2022)">
+      <SheetTable
+        headers={[t("calc.category"), t("calc.finding"), t("calc.recommendation")]}
+        rows={[
+          ["0", t("calc.lungrads_0"), t("calc.lungrads_0_rec")],
+          ["1", t("calc.lungrads_1"), t("calc.lungrads_1_rec")],
+          ["2", t("calc.lungrads_2"), t("calc.lungrads_2_rec")],
+          ["3", t("calc.lungrads_3"), t("calc.lungrads_3_rec")],
+          ["4A", t("calc.lungrads_4a"), t("calc.lungrads_4a_rec")],
+          ["4B", t("calc.lungrads_4b"), t("calc.lungrads_4b_rec")],
+          ["4X", t("calc.lungrads_4x"), t("calc.lungrads_4x_rec")],
+          ["S", t("calc.lungrads_s"), t("calc.lungrads_s_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BiradsSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title="BI-RADS" source="ACR BI-RADS Atlas, 5th ed. (2013)">
+      <SheetTable
+        headers={[t("calc.category"), t("calc.description"), t("calc.recommendation")]}
+        rows={[
+          ["0", t("calc.birads_0"), t("calc.birads_0_rec")],
+          ["1", t("calc.birads_1"), t("calc.birads_1_rec")],
+          ["2", t("calc.birads_2"), t("calc.birads_2_rec")],
+          ["3", t("calc.birads_3"), t("calc.birads_3_rec")],
+          ["4A", t("calc.birads_4a"), t("calc.birads_4a_rec")],
+          ["4B", t("calc.birads_4b"), t("calc.birads_4b_rec")],
+          ["4C", t("calc.birads_4c"), t("calc.birads_4c_rec")],
+          ["5", t("calc.birads_5"), t("calc.birads_5_rec")],
+          ["6", t("calc.birads_6"), t("calc.birads_6_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BtsNodulesSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.bts_title")} source="British Thoracic Society (Callister et al., Thorax 2015)">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.solid_nodules")}</p>
+      <SheetTable
+        headers={[t("calc.size"), t("calc.recommendation")]}
+        rows={[
+          ["< 5 mm / < 80 mm³", t("calc.bts_solid_tiny")],
+          ["5–6 mm / 80–300 mm³", t("calc.bts_solid_small")],
+          ["6–8 mm / 300–500 mm³", t("calc.bts_solid_medium")],
+          ["> 8 mm / > 500 mm³", t("calc.bts_solid_large")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.subsolid_nodules")}</p>
+      <SheetTable
+        headers={[t("calc.type"), t("calc.size"), t("calc.recommendation")]}
+        rows={[
+          ["GGN", "< 5 mm", t("calc.bts_ggn_tiny")],
+          ["GGN", "≥ 5 mm", t("calc.bts_ggn_large")],
+          [t("calc.part_solid"), t("calc.any_size"), t("calc.bts_partsol")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function OvarianIncidentalSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.ovarian_title")} source="ACR Incidental Findings Committee (Patel et al., JACR 2020)">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.premenopausal")}</p>
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.size"), t("calc.recommendation")]}
+        rows={[
+          [t("calc.simple_cyst"), "< 5 cm", t("calc.ovarian_pre_simple_small")],
+          [t("calc.simple_cyst"), "5–7 cm", t("calc.ovarian_pre_simple_med")],
+          [t("calc.simple_cyst"), "> 7 cm", t("calc.ovarian_pre_simple_large")],
+          [t("calc.hemorrhagic_cyst"), "< 5 cm", t("calc.ovarian_pre_hem_small")],
+          [t("calc.hemorrhagic_cyst"), "≥ 5 cm", t("calc.ovarian_pre_hem_large")],
+          [t("calc.complex_lesion"), t("calc.any_size"), t("calc.ovarian_complex")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.postmenopausal")}</p>
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.size"), t("calc.recommendation")]}
+        rows={[
+          [t("calc.simple_cyst"), "< 3 cm", t("calc.ovarian_post_simple_small")],
+          [t("calc.simple_cyst"), "3–7 cm", t("calc.ovarian_post_simple_med")],
+          [t("calc.simple_cyst"), "> 7 cm", t("calc.ovarian_post_simple_large")],
+          [t("calc.complex_lesion"), t("calc.any_size"), t("calc.ovarian_complex")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function GallbladderPolypSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.gb_polyp_title")} source="European Society of Gastrointestinal & Abdominal Radiology (Defined et al., Eur Radiol 2017) / Joint ESG-ESGAR 2022">
+      <SheetTable
+        headers={[t("calc.size"), t("calc.risk_factors"), t("calc.recommendation")]}
+        rows={[
+          ["< 5 mm", t("calc.none"), t("calc.gb_tiny")],
+          ["5–9 mm", t("calc.no"), t("calc.gb_small_low")],
+          ["5–9 mm", t("calc.yes"), t("calc.gb_small_high")],
+          ["≥ 10 mm", t("calc.any"), t("calc.gb_large")],
+          [t("calc.gb_growth"), t("calc.any"), t("calc.gb_growth_rec")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+        {t("calc.gb_risk_note")}
+      </p>
+    </CheatSheet>
+  );
+}
+
+function AorticAneurysmSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.aorta_title")} source="ACC/AHA 2022 (Isselbacher et al.) / ESC 2024 / SVS 2018">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.aorta_thresholds")}</p>
+      <SheetTable
+        headers={[t("calc.location"), t("calc.diameter_surgical"), t("calc.special")]}
+        rows={[
+          [t("calc.aorta_root"), "> 5.5 cm", "Marfan > 5.0 cm; Loeys-Dietz > 4.2 cm"],
+          [t("calc.asc_aorta"), "> 5.5 cm", "BAV > 5.0–5.5 cm"],
+          [t("calc.aortic_arch"), "> 5.5 cm", "—"],
+          [t("calc.desc_thoracic"), "> 5.5–6.0 cm", "TEVAR > 5.5 cm"],
+          [t("calc.infrarenal_aaa"), "> 5.5 cm (H) / > 5.0 cm (M)", "EVAR > 5.5 cm"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.aorta_followup")}</p>
+      <SheetTable
+        headers={[t("calc.diameter"), t("calc.imaging_interval")]}
+        rows={[
+          ["< 4.0 cm (AAA)", t("calc.aorta_fu_small")],
+          ["4.0–4.9 cm", t("calc.aorta_fu_med")],
+          ["5.0–5.4 cm", t("calc.aorta_fu_large")],
+          [t("calc.aorta_growth_fast"), t("calc.aorta_fu_fast")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function SpineNomenclatureSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.spine_nomen_title")} source="Combined Task Forces of NASS, ASSR, ASNR (Fardon et al., Spine J 2014)">
+      <SheetTable
+        headers={[t("calc.term"), t("calc.definition")]}
+        rows={[
+          [t("calc.spine_normal"), t("calc.spine_normal_def")],
+          [t("calc.spine_bulge"), t("calc.spine_bulge_def")],
+          [t("calc.spine_protrusion"), t("calc.spine_protrusion_def")],
+          [t("calc.spine_extrusion"), t("calc.spine_extrusion_def")],
+          [t("calc.spine_sequestration"), t("calc.spine_sequestration_def")],
+          [t("calc.spine_migration"), t("calc.spine_migration_def")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+        {t("calc.spine_nomen_note")}
+      </p>
+    </CheatSheet>
+  );
+}
+
+function ForaminalStenosisSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.foraminal_title")} source="Lee et al., AJNR 1988 / Defined by Wildermuth et al., Radiology 1998">
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description"), t("calc.foraminal_fat")]}
+        rows={[
+          ["0", t("calc.foraminal_g0"), t("calc.foraminal_g0_fat")],
+          ["1", t("calc.foraminal_g1"), t("calc.foraminal_g1_fat")],
+          ["2", t("calc.foraminal_g2"), t("calc.foraminal_g2_fat")],
+          ["3", t("calc.foraminal_g3"), t("calc.foraminal_g3_fat")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function CanalStenosisSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.canal_title")} source="Schizas et al., Spine 2010">
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description"), t("calc.csf_rootlets")]}
+        rows={[
+          ["A (A1–A4)", t("calc.canal_a"), t("calc.canal_a_csf")],
+          ["B", t("calc.canal_b"), t("calc.canal_b_csf")],
+          ["C", t("calc.canal_c"), t("calc.canal_c_csf")],
+          ["D", t("calc.canal_d"), t("calc.canal_d_csf")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function RotatorCuffSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.rc_title")} source="Ellman classification (Ellman, Clin Orthop 1990) / Snyder arthroscopic (Snyder et al., Arthroscopy 1991)">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.rc_partial")}</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description"), t("calc.rc_thickness")]}
+        rows={[
+          ["I", t("calc.rc_p1"), "< 3 mm / < 25%"],
+          ["II", t("calc.rc_p2"), "3–6 mm / 25–50%"],
+          ["III", t("calc.rc_p3"), "> 6 mm / > 50%"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.rc_full")}</p>
+      <SheetTable
+        headers={[t("calc.size"), t("calc.rc_tear_size")]}
+        rows={[
+          [t("calc.rc_small"), "< 1 cm"],
+          [t("calc.rc_medium"), "1–3 cm"],
+          [t("calc.rc_large"), "3–5 cm"],
+          [t("calc.rc_massive"), "> 5 cm"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.rc_retraction")}</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description")]}
+        rows={[
+          ["I (Patte)", t("calc.rc_patte_1")],
+          ["II", t("calc.rc_patte_2")],
+          ["III", t("calc.rc_patte_3")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.rc_fatty")}</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description")]}
+        rows={[
+          ["0 (Goutallier)", t("calc.rc_gout_0")],
+          ["1", t("calc.rc_gout_1")],
+          ["2", t("calc.rc_gout_2")],
+          ["3", t("calc.rc_gout_3")],
+          ["4", t("calc.rc_gout_4")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function BoneTumorSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.bone_tumor_title")} source="WHO Classification of Tumours of Soft Tissue and Bone, 5th ed. 2020 / Radiologyassistant.nl adapted">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.bone_tumor_age")}</p>
+      <SheetTable
+        headers={[t("calc.age_group"), t("calc.common_benign"), t("calc.common_malignant")]}
+        rows={[
+          ["0–10", t("calc.bone_010_ben"), t("calc.bone_010_mal")],
+          ["10–30", t("calc.bone_1030_ben"), t("calc.bone_1030_mal")],
+          ["30–40", t("calc.bone_3040_ben"), t("calc.bone_3040_mal")],
+          ["> 40", t("calc.bone_40_ben"), t("calc.bone_40_mal")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.bone_tumor_location")}</p>
+      <SheetTable
+        headers={[t("calc.location"), t("calc.epiphysis"), t("calc.metaphysis"), t("calc.diaphysis")]}
+        rows={[
+          [t("calc.common_benign"), t("calc.bone_epi_ben"), t("calc.bone_meta_ben"), t("calc.bone_dia_ben")],
+          [t("calc.common_malignant"), t("calc.bone_epi_mal"), t("calc.bone_meta_mal"), t("calc.bone_dia_mal")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.bone_tumor_matrix")}</p>
+      <SheetTable
+        headers={[t("calc.pattern"), t("calc.suggests")]}
+        rows={[
+          [t("calc.bone_matrix_chondroid"), t("calc.bone_matrix_chondroid_dx")],
+          [t("calc.bone_matrix_osteoid"), t("calc.bone_matrix_osteoid_dx")],
+          [t("calc.bone_matrix_gg"), t("calc.bone_matrix_gg_dx")],
+          [t("calc.bone_periost_solid"), t("calc.bone_periost_solid_dx")],
+          [t("calc.bone_periost_lamellated"), t("calc.bone_periost_lamellated_dx")],
+          [t("calc.bone_periost_sunburst"), t("calc.bone_periost_sunburst_dx")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function VertebralFractureSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.vfx_title")} source="Genant et al., JBMR 1993 / AO Spine Classification (Vaccaro et al., Spine 2013)">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.vfx_genant")}</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.height_loss"), t("calc.description")]}
+        rows={[
+          ["0", "< 20%", t("calc.vfx_g0")],
+          ["1 (" + t("calc.mild") + ")", "20–25%", t("calc.vfx_g1")],
+          ["2 (" + t("calc.moderate") + ")", "26–40%", t("calc.vfx_g2")],
+          ["3 (" + t("calc.severe") + ")", "> 40%", t("calc.vfx_g3")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.vfx_ao")}</p>
+      <SheetTable
+        headers={[t("calc.type"), t("calc.description")]}
+        rows={[
+          ["A0", t("calc.vfx_a0")],
+          ["A1", t("calc.vfx_a1")],
+          ["A2", t("calc.vfx_a2")],
+          ["A3", t("calc.vfx_a3")],
+          ["A4", t("calc.vfx_a4")],
+          ["B1", t("calc.vfx_b1")],
+          ["B2", t("calc.vfx_b2")],
+          ["B3", t("calc.vfx_b3")],
+          ["C", t("calc.vfx_c")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -922,6 +1299,7 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "thyroid", emoji: "📐" },
   { id: "prostate", emoji: "📏" },
   { id: "aspects", emoji: "🧠" },
+  { id: "ontrack", emoji: "💪" },
 ];
 
 export function CalculatorsTab() {
@@ -937,6 +1315,7 @@ export function CalculatorsTab() {
     thyroid: t("calc.thyroid_title"),
     prostate: t("calc.prostate_title"),
     aspects: "ASPECTS",
+    ontrack: t("calc.ontrack_title"),
   };
 
   const q = search.toLowerCase();
@@ -945,13 +1324,25 @@ export function CalculatorsTab() {
   );
 
   const cheatSheets = useMemo(() => [
-    { id: "fleischner", component: <FleischnerSheet /> },
-    { id: "liver", component: <LiverIncidentalSheet /> },
-    { id: "adrenal_inc", component: <AdrenalIncidentalSheet /> },
-    { id: "pancreas", component: <PancreaticCystSheet /> },
-    { id: "lirads", component: <LiradsSheet /> },
-    { id: "orads", component: <OradsSheet /> },
-  ], []);
+    { id: "lungrads", component: <LungRadsSheet />, label: "Lung-RADS" },
+    { id: "birads", component: <BiradsSheet />, label: "BI-RADS" },
+    { id: "lirads", component: <LiradsSheet />, label: "LI-RADS" },
+    { id: "fleischner", component: <FleischnerSheet />, label: "Fleischner" },
+    { id: "bts", component: <BtsNodulesSheet />, label: "BTS" },
+    { id: "liver", component: <LiverIncidentalSheet />, label: t("calc.liver_title") },
+    { id: "adrenal_inc", component: <AdrenalIncidentalSheet />, label: t("calc.adrenal_incidental_title") },
+    { id: "pancreas", component: <PancreaticCystSheet />, label: t("calc.pancreas_title") },
+    { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
+    { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
+    { id: "aorta", component: <AorticAneurysmSheet />, label: t("calc.aorta_title") },
+    { id: "orads", component: <OradsSheet />, label: "O-RADS" },
+    { id: "spine_nom", component: <SpineNomenclatureSheet />, label: t("calc.spine_nomen_title") },
+    { id: "foraminal", component: <ForaminalStenosisSheet />, label: t("calc.foraminal_title") },
+    { id: "canal", component: <CanalStenosisSheet />, label: t("calc.canal_title") },
+    { id: "rc", component: <RotatorCuffSheet />, label: t("calc.rc_title") },
+    { id: "bone_tumor", component: <BoneTumorSheet />, label: t("calc.bone_tumor_title") },
+    { id: "vfx", component: <VertebralFractureSheet />, label: t("calc.vfx_title") },
+  ], [t]);
 
   return (
     <div className="space-y-3">
@@ -1005,6 +1396,7 @@ export function CalculatorsTab() {
                   {c.id === "thyroid" && <ThyroidVolume />}
                   {c.id === "prostate" && <ProstateVolume />}
                   {c.id === "aspects" && <AspectsCalc />}
+                  {c.id === "ontrack" && <OnTrackOffTrack />}
                 </div>
               )}
             </div>
@@ -1013,18 +1405,22 @@ export function CalculatorsTab() {
       </div>
 
       {/* Cheat Sheets */}
-      {(!q || [t("calc.fleischner_title"), t("calc.liver_title"), t("calc.adrenal_incidental_title"), t("calc.pancreas_title"), "LI-RADS", "O-RADS"].some((s) => s.toLowerCase().includes(q))) && (
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
-            {t("calc.cheat_sheets")}
-          </p>
-          <div className="space-y-1">
-            {cheatSheets.map((s) => (
-              <div key={s.id}>{s.component}</div>
-            ))}
+      {(() => {
+        const filteredSheets = cheatSheets.filter((s) => !q || s.label.toLowerCase().includes(q));
+        if (filteredSheets.length === 0) return null;
+        return (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
+              {t("calc.cheat_sheets")}
+            </p>
+            <div className="space-y-1">
+              {filteredSheets.map((s) => (
+                <div key={s.id}>{s.component}</div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
