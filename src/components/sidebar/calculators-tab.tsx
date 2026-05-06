@@ -503,7 +503,7 @@ function PiradsCalc() {
       if (t2n >= 4) return t2n;
       // T2 = 3
       if (isNaN(dwin)) return null;
-      return dwin >= 4 ? 4 : 3;
+      return dwin >= 5 ? 4 : 3;
     }
   }
 
@@ -598,18 +598,20 @@ function BosniakCalc() {
   const [septa, setSepta] = useState("");
   const [wall, setWall] = useState("");
   const [enhancement, setEnhancement] = useState("");
+  const [nodular, setNodular] = useState("");
+  const [calcification, setCalcification] = useState("");
 
   function classify(): { cls: string; risk: string; color: "green" | "blue" | "yellow" | "red" } | null {
-    if (!septa || !wall || !enhancement) return null;
+    if (!septa || !wall || !enhancement || !nodular || !calcification) return null;
     const en = enhancement === "yes";
-    const thick = wall === "thick" || septa === "thick";
 
-    if (!en && septa === "none" && wall === "thin") return { cls: "I", risk: t("calc.bosniak_i"), color: "green" };
-    if (!en && septa === "thin") return { cls: "II", risk: t("calc.bosniak_ii"), color: "green" };
-    if (en && septa === "thin" && wall === "thin") return { cls: "IIF", risk: t("calc.bosniak_iif"), color: "blue" };
-    if (en && thick && wall !== "nodular") return { cls: "III", risk: t("calc.bosniak_iii"), color: "yellow" };
-    if (wall === "nodular" || (en && thick)) return { cls: "IV", risk: t("calc.bosniak_iv"), color: "red" };
-    return { cls: "IIF", risk: t("calc.bosniak_iif"), color: "blue" };
+    if (nodular === "yes") return { cls: "IV", risk: t("calc.bosniak_iv_risk"), color: "red" };
+    if (septa === "thick_irreg" && en) return { cls: "III", risk: t("calc.bosniak_iii_risk"), color: "yellow" };
+    if (wall === "thick_irreg" && en) return { cls: "III", risk: t("calc.bosniak_iii_risk"), color: "yellow" };
+    if ((wall === "min_thick" && en) || (septa === "many_thin" && en) || calcification === "thick") return { cls: "IIF", risk: t("calc.bosniak_iif_risk"), color: "blue" };
+    if (septa === "few_thin" && (wall === "thin") && !en) return { cls: "II", risk: t("calc.bosniak_ii_risk"), color: "green" };
+    if (septa === "none" && wall === "thin" && !en) return { cls: "I", risk: t("calc.bosniak_i_risk"), color: "green" };
+    return { cls: "IIF", risk: t("calc.bosniak_iif_risk"), color: "blue" };
   }
 
   const result = classify();
@@ -618,16 +620,17 @@ function BosniakCalc() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] text-gray-400">Bosniak v2019 (Silverman et al.)</p>
-        <ResetButton onClick={() => { setSepta(""); setWall(""); setEnhancement(""); }} />
+        <p className="text-[10px] text-gray-400">Bosniak v2019 (Silverman et al., Radiology 2019)</p>
+        <ResetButton onClick={() => { setSepta(""); setWall(""); setEnhancement(""); setNodular(""); setCalcification(""); }} />
       </div>
       <div>
         <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.bosniak_septa")}</Label>
         <OptionPills
           options={[
-            { key: "none", label: t("calc.bosniak_no_septa") },
-            { key: "thin", label: t("calc.bosniak_thin_septa") },
-            { key: "thick", label: t("calc.bosniak_thick_septa") },
+            { key: "none", label: t("calc.bosniak_septa_none") },
+            { key: "few_thin", label: t("calc.bosniak_septa_few_thin") },
+            { key: "many_thin", label: t("calc.bosniak_septa_many_thin") },
+            { key: "thick_irreg", label: t("calc.bosniak_septa_thick_irreg") },
           ]}
           value={septa}
           onChange={setSepta}
@@ -637,9 +640,9 @@ function BosniakCalc() {
         <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.bosniak_wall")}</Label>
         <OptionPills
           options={[
-            { key: "thin", label: t("calc.bosniak_thin_wall") },
-            { key: "thick", label: t("calc.bosniak_thick_wall") },
-            { key: "nodular", label: t("calc.bosniak_nodular") },
+            { key: "thin", label: t("calc.bosniak_wall_thin") },
+            { key: "min_thick", label: t("calc.bosniak_wall_min_thick") },
+            { key: "thick_irreg", label: t("calc.bosniak_wall_thick_irreg") },
           ]}
           value={wall}
           onChange={setWall}
@@ -654,6 +657,29 @@ function BosniakCalc() {
           ]}
           value={enhancement}
           onChange={setEnhancement}
+        />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.bosniak_nodular_tissue")}</Label>
+        <OptionPills
+          options={[
+            { key: "no", label: t("calc.no") },
+            { key: "yes", label: t("calc.yes") },
+          ]}
+          value={nodular}
+          onChange={setNodular}
+        />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.bosniak_calcification")}</Label>
+        <OptionPills
+          options={[
+            { key: "none", label: t("calc.bosniak_calc_none") },
+            { key: "thin", label: t("calc.bosniak_calc_thin") },
+            { key: "thick", label: t("calc.bosniak_calc_thick") },
+          ]}
+          value={calcification}
+          onChange={setCalcification}
         />
       </div>
       {result && (
@@ -782,6 +808,386 @@ function OnTrackOffTrack() {
             color={isOffTrack ? "red" : "green"}
           />
         </>
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   9. Renal Lesion Characterization (Multiphase CT)
+   ═══════════════════════════════════════════ */
+
+function RenalLesionCalc() {
+  const t = useT();
+  const [unenh, setUnenh] = useState("");
+  const [cm, setCm] = useState("");
+  const [np, setNp] = useState("");
+  const [dp, setDp] = useState("");
+  const [size, setSize] = useState("");
+  const [homog, setHomog] = useState("");
+
+  const unenhN = parseFloat(unenh);
+  const cmN = parseFloat(cm);
+  const npN = parseFloat(np);
+  const sizeN = parseFloat(size);
+
+  const hasUnenh = unenh !== "" && !isNaN(unenhN);
+  const hasCm = cm !== "" && !isNaN(cmN);
+  const hasNp = np !== "" && !isNaN(npN);
+  const hasSize = size !== "" && !isNaN(sizeN);
+
+  const enhancement = hasUnenh && (hasCm || hasNp)
+    ? Math.max(hasCm ? cmN : -Infinity, hasNp ? npN : -Infinity) - unenhN
+    : null;
+
+  function interpret(): { text: string; color: "green" | "blue" | "yellow" | "red" } | null {
+    if (!hasUnenh || enhancement === null) return null;
+    if (unenhN <= 20 && enhancement < 20) return { text: t("calc.renal_simple_cyst"), color: "green" };
+    if (unenhN > 70 && Math.abs(enhancement) < 10) return { text: t("calc.renal_hyperdense"), color: "green" };
+    if (unenhN >= -10 && unenhN <= 20 && enhancement >= 10 && enhancement < 20) return { text: t("calc.renal_indeterminate"), color: "yellow" };
+    if (enhancement >= 20 && homog === "homog" && hasSize && sizeN < 30) return { text: t("calc.renal_small_enhancing"), color: "yellow" };
+    if (enhancement >= 20 && homog === "heterog") return { text: t("calc.renal_heterog_mass"), color: "red" };
+    if (enhancement >= 20 && homog === "homog" && hasSize && sizeN >= 30) return { text: t("calc.renal_enhancing_mass"), color: "red" };
+    if (enhancement >= 20) return { text: t("calc.renal_enhancing_mass"), color: "red" };
+    return null;
+  }
+
+  const result = interpret();
+  const copyParts: string[] = [];
+  if (enhancement !== null) copyParts.push(`${t("calc.renal_enhancement")}: ${enhancement.toFixed(0)} HU`);
+  if (result) copyParts.push(result.text);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Bosniak v2019 / ACR Incidental Findings 2017</p>
+        <ResetButton onClick={() => { setUnenh(""); setCm(""); setNp(""); setDp(""); setSize(""); setHomog(""); }} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput label={t("calc.renal_unenh")} value={unenh} onChange={setUnenh} unit="HU" />
+        <NumInput label={t("calc.renal_cm_phase")} value={cm} onChange={setCm} unit="HU" />
+        <NumInput label={t("calc.renal_np_phase")} value={np} onChange={setNp} unit="HU" />
+        <NumInput label={t("calc.renal_dp_phase")} value={dp} onChange={setDp} unit="HU" placeholder={t("calc.optional")} />
+      </div>
+      <NumInput label={`${t("calc.size")} (mm)`} value={size} onChange={setSize} unit="mm" />
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.renal_homog")}</Label>
+        <OptionPills
+          options={[
+            { key: "homog", label: t("calc.renal_homog") },
+            { key: "heterog", label: t("calc.renal_heterog") },
+          ]}
+          value={homog}
+          onChange={setHomog}
+        />
+      </div>
+      {enhancement !== null && (
+        <ResultBox label={t("calc.renal_enhancement")} value={`${enhancement.toFixed(0)} HU`} color={enhancement >= 20 ? "yellow" : "blue"} />
+      )}
+      {result && (
+        <ResultBox label={t("calc.renal_title")} value={result.text} color={result.color} />
+      )}
+      {copyParts.length > 0 && <CopyButton text={copyParts.join(". ")} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   10. Lung TNM 9th Edition (2024)
+   ═══════════════════════════════════════════ */
+
+function LungTNMCalc() {
+  const t = useT();
+  const [tStage, setTStage] = useState("");
+  const [nStage, setNStage] = useState("");
+  const [mStage, setMStage] = useState("");
+
+  const tOptions = [
+    { key: "Tis", label: "Tis" },
+    { key: "T1mi", label: "T1mi" },
+    { key: "T1a", label: "T1a" },
+    { key: "T1b", label: "T1b" },
+    { key: "T1c", label: "T1c" },
+    { key: "T2a", label: "T2a" },
+    { key: "T2b", label: "T2b" },
+    { key: "T3", label: "T3" },
+    { key: "T4", label: "T4" },
+  ];
+
+  const nOptions = [
+    { key: "N0", label: "N0" },
+    { key: "N1", label: "N1" },
+    { key: "N2a", label: "N2a" },
+    { key: "N2b", label: "N2b" },
+    { key: "N3", label: "N3" },
+  ];
+
+  const mOptions = [
+    { key: "M0", label: "M0" },
+    { key: "M1a", label: "M1a" },
+    { key: "M1b", label: "M1b" },
+    { key: "M1c", label: "M1c" },
+  ];
+
+  const tDescs: Record<string, string> = {
+    Tis: t("calc.lung_tis"),
+    T1mi: t("calc.lung_t1mi"),
+    T1a: t("calc.lung_t1a"),
+    T1b: t("calc.lung_t1b"),
+    T1c: t("calc.lung_t1c"),
+    T2a: t("calc.lung_t2a"),
+    T2b: t("calc.lung_t2b"),
+    T3: t("calc.lung_t3"),
+    T4: t("calc.lung_t4"),
+  };
+
+  const nDescs: Record<string, string> = {
+    N0: t("calc.lung_n0"),
+    N1: t("calc.lung_n1"),
+    N2a: t("calc.lung_n2a"),
+    N2b: t("calc.lung_n2b"),
+    N3: t("calc.lung_n3"),
+  };
+
+  const mDescs: Record<string, string> = {
+    M0: t("calc.lung_m0"),
+    M1a: t("calc.lung_m1a"),
+    M1b: t("calc.lung_m1b"),
+    M1c: t("calc.lung_m1c"),
+  };
+
+  function getStage(): { stage: string; color: "green" | "blue" | "yellow" | "red" } | null {
+    if (!tStage || !nStage || !mStage) return null;
+
+    if (mStage === "M1c") return { stage: "IVB", color: "red" };
+    if (mStage === "M1a" || mStage === "M1b") return { stage: "IVA", color: "red" };
+
+    const isT12 = ["Tis", "T1mi", "T1a", "T1b", "T1c", "T2a", "T2b"].includes(tStage);
+    const isT1T2 = ["T1mi", "T1a", "T1b", "T1c", "T2a", "T2b"].includes(tStage);
+    const isT34 = tStage === "T3" || tStage === "T4";
+    const isT1T3 = isT1T2 || tStage === "T3";
+
+    if (nStage === "N3") {
+      if (isT34) return { stage: "IIIC", color: "red" };
+      if (isT1T3) return { stage: "IIIB", color: "red" };
+    }
+    if (nStage === "N2b") {
+      if (isT34) return { stage: "IIIB", color: "red" };
+      if (isT12) return { stage: "IIIB", color: "red" };
+    }
+    if (nStage === "N2a") {
+      if (isT34) return { stage: "IIIB", color: "red" };
+      if (isT1T2) return { stage: "IIIA", color: "yellow" };
+    }
+    if (nStage === "N1") {
+      if (tStage === "T4") return { stage: "IIIA", color: "yellow" };
+      if (tStage === "T3") return { stage: "IIIA", color: "yellow" };
+      if (isT1T2) return { stage: "IIB", color: "yellow" };
+    }
+    if (nStage === "N0") {
+      if (tStage === "T4") return { stage: "IIIA", color: "yellow" };
+      if (tStage === "T3") return { stage: "IIB", color: "yellow" };
+      if (tStage === "T2b") return { stage: "IIA", color: "blue" };
+      if (tStage === "T2a") return { stage: "IB", color: "blue" };
+      if (tStage === "T1c") return { stage: "IA3", color: "green" };
+      if (tStage === "T1b") return { stage: "IA2", color: "green" };
+      if (tStage === "T1a" || tStage === "T1mi") return { stage: "IA1", color: "green" };
+      if (tStage === "Tis") return { stage: "0", color: "green" };
+    }
+    return { stage: "—", color: "yellow" };
+  }
+
+  const result = getStage();
+  const descParts: string[] = [];
+  if (tStage) descParts.push(`${tStage}: ${tDescs[tStage]}`);
+  if (nStage) descParts.push(`${nStage}: ${nDescs[nStage]}`);
+  if (mStage) descParts.push(`${mStage}: ${mDescs[mStage]}`);
+  const copyText = result ? `${tStage} ${nStage} ${mStage} — ${t("calc.stage")} ${result.stage}. ${descParts.join(". ")}` : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">IASLC TNM 9th ed. (2024)</p>
+        <ResetButton onClick={() => { setTStage(""); setNStage(""); setMStage(""); }} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.t_stage")}</Label>
+        <OptionPills options={tOptions} value={tStage} onChange={setTStage} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.n_stage")}</Label>
+        <OptionPills options={nOptions} value={nStage} onChange={setNStage} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.m_stage")}</Label>
+        <OptionPills options={mOptions} value={mStage} onChange={setMStage} />
+      </div>
+      {tStage && <p className="text-[10px] text-gray-500">{tStage}: {tDescs[tStage]}</p>}
+      {nStage && <p className="text-[10px] text-gray-500">{nStage}: {nDescs[nStage]}</p>}
+      {mStage && <p className="text-[10px] text-gray-500">{mStage}: {mDescs[mStage]}</p>}
+      {result && (
+        <ResultBox
+          label={t("calc.stage")}
+          value={`${t("calc.stage")} ${result.stage}`}
+          interpretation={`${tStage} ${nStage} ${mStage}`}
+          color={result.color}
+        />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   11. Laryngeal TNM (8th edition)
+   ═══════════════════════════════════════════ */
+
+function LarynxTNMCalc() {
+  const t = useT();
+  const [subsite, setSubsite] = useState("");
+  const [tStage, setTStage] = useState("");
+  const [nStage, setNStage] = useState("");
+  const [mStage, setMStage] = useState("");
+
+  const supraglotticT = [
+    { key: "T1", label: "T1" },
+    { key: "T2", label: "T2" },
+    { key: "T3", label: "T3" },
+    { key: "T4a", label: "T4a" },
+    { key: "T4b", label: "T4b" },
+  ];
+
+  const glotticT = [
+    { key: "T1a", label: "T1a" },
+    { key: "T1b", label: "T1b" },
+    { key: "T2", label: "T2" },
+    { key: "T3", label: "T3" },
+    { key: "T4a", label: "T4a" },
+    { key: "T4b", label: "T4b" },
+  ];
+
+  const subglotticT = [
+    { key: "T1", label: "T1" },
+    { key: "T2", label: "T2" },
+    { key: "T3", label: "T3" },
+    { key: "T4a", label: "T4a" },
+    { key: "T4b", label: "T4b" },
+  ];
+
+  const tOptionsMap: Record<string, { key: string; label: string }[]> = {
+    supraglottic: supraglotticT,
+    glottic: glotticT,
+    subglottic: subglotticT,
+  };
+
+  const nOptions = [
+    { key: "N0", label: "N0" },
+    { key: "N1", label: "N1" },
+    { key: "N2a", label: "N2a" },
+    { key: "N2b", label: "N2b" },
+    { key: "N2c", label: "N2c" },
+    { key: "N3a", label: "N3a" },
+    { key: "N3b", label: "N3b" },
+  ];
+
+  const mOptions = [
+    { key: "M0", label: "M0" },
+    { key: "M1", label: "M1" },
+  ];
+
+  const tDescKeys: Record<string, Record<string, string>> = {
+    supraglottic: {
+      T1: "calc.larynx_t1", T2: "calc.larynx_t2", T3: "calc.larynx_t3", T4a: "calc.larynx_t4a", T4b: "calc.larynx_t4b",
+    },
+    glottic: {
+      T1a: "calc.larynx_t1a", T1b: "calc.larynx_t1b", T2: "calc.larynx_t2", T3: "calc.larynx_t3", T4a: "calc.larynx_t4a", T4b: "calc.larynx_t4b",
+    },
+    subglottic: {
+      T1: "calc.larynx_t1", T2: "calc.larynx_t2", T3: "calc.larynx_t3", T4a: "calc.larynx_t4a", T4b: "calc.larynx_t4b",
+    },
+  };
+
+  const nDescKeys: Record<string, string> = {
+    N0: "calc.larynx_n0", N1: "calc.larynx_n1", N2a: "calc.larynx_n2a", N2b: "calc.larynx_n2b",
+    N2c: "calc.larynx_n2c", N3a: "calc.larynx_n3a", N3b: "calc.larynx_n3b",
+  };
+
+  function getStage(): { stage: string; color: "green" | "blue" | "yellow" | "red" } | null {
+    if (!tStage || !nStage || !mStage) return null;
+
+    if (mStage === "M1") return { stage: "IVC", color: "red" };
+    if (nStage === "N3a" || nStage === "N3b") return { stage: "IVB", color: "red" };
+    if (tStage === "T4b") return { stage: "IVB", color: "red" };
+
+    const isN2 = ["N2a", "N2b", "N2c"].includes(nStage);
+    const isT1 = ["T1", "T1a", "T1b"].includes(tStage);
+    const isT1toT4a = !tStage.includes("T4b");
+
+    if (isN2 && isT1toT4a) return { stage: "IVA", color: "red" };
+    if (tStage === "T4a" && (nStage === "N0" || nStage === "N1")) return { stage: "IVA", color: "red" };
+
+    if (nStage === "N1") {
+      if (isT1 || tStage === "T2" || tStage === "T3") return { stage: "III", color: "yellow" };
+    }
+    if (nStage === "N0") {
+      if (tStage === "T3") return { stage: "III", color: "yellow" };
+      if (tStage === "T2") return { stage: "II", color: "blue" };
+      if (isT1) return { stage: "I", color: "green" };
+    }
+    return { stage: "—", color: "yellow" };
+  }
+
+  const result = getStage();
+  const tDesc = subsite && tStage && tDescKeys[subsite]?.[tStage] ? t(tDescKeys[subsite][tStage]) : "";
+  const nDesc = nStage ? t(nDescKeys[nStage]) : "";
+  const copyText = result ? `${tStage} ${nStage} ${mStage} — ${t("calc.stage")} ${result.stage}` : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">AJCC 8th ed. (2017)</p>
+        <ResetButton onClick={() => { setSubsite(""); setTStage(""); setNStage(""); setMStage(""); }} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.subsite")}</Label>
+        <OptionPills
+          options={[
+            { key: "supraglottic", label: t("calc.supraglottic") },
+            { key: "glottic", label: t("calc.glottic") },
+            { key: "subglottic", label: t("calc.subglottic") },
+          ]}
+          value={subsite}
+          onChange={(v) => { setSubsite(v); setTStage(""); }}
+        />
+      </div>
+      {subsite && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.t_stage")}</Label>
+          <OptionPills options={tOptionsMap[subsite]} value={tStage} onChange={setTStage} />
+        </div>
+      )}
+      {subsite && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.n_stage")}</Label>
+          <OptionPills options={nOptions} value={nStage} onChange={setNStage} />
+        </div>
+      )}
+      {subsite && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.m_stage")}</Label>
+          <OptionPills options={mOptions} value={mStage} onChange={setMStage} />
+        </div>
+      )}
+      {tStage && tDesc && <p className="text-[10px] text-gray-500">{tStage}: {tDesc}</p>}
+      {nStage && nDesc && <p className="text-[10px] text-gray-500">{nStage}: {nDesc}</p>}
+      {result && (
+        <ResultBox
+          label={t("calc.stage")}
+          value={`${t("calc.stage")} ${result.stage}`}
+          interpretation={`${tStage} ${nStage} ${mStage}`}
+          color={result.color}
+        />
       )}
       {copyText && <CopyButton text={copyText} />}
     </div>
@@ -1591,11 +1997,42 @@ function DVTPESheet() {
   );
 }
 
+function DiverticulitisSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.divert_title")} source="Modified Hinchey classification (Wasvary et al., Dis Colon Rectum 1999); WSES guidelines 2020">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Modified Hinchey</p>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description")]}
+        rows={[
+          [t("calc.divert_0"), t("calc.divert_0_desc")],
+          [t("calc.divert_1a"), t("calc.divert_1a_desc")],
+          [t("calc.divert_1b"), t("calc.divert_1b_desc")],
+          [t("calc.divert_2"), t("calc.divert_2_desc")],
+          [t("calc.divert_3"), t("calc.divert_3_desc")],
+          [t("calc.divert_4"), t("calc.divert_4_desc")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.divert_ct_title")}</p>
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.description")]}
+        rows={[
+          [t("calc.divert_uncomp"), t("calc.divert_uncomp_desc")],
+          [t("calc.divert_abscess"), t("calc.divert_abscess_desc")],
+          [t("calc.divert_perf"), t("calc.divert_perf_desc")],
+          [t("calc.divert_fistula"), t("calc.divert_fistula_desc")],
+          [t("calc.divert_obst"), t("calc.divert_obst_desc")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -1606,6 +2043,9 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "prostate", emoji: "📏" },
   { id: "aspects", emoji: "🧠" },
   { id: "ontrack", emoji: "💪" },
+  { id: "renal", emoji: "🫘" },
+  { id: "lung_tnm", emoji: "🫁" },
+  { id: "larynx_tnm", emoji: "🗣️" },
 ];
 
 export function CalculatorsTab() {
@@ -1622,6 +2062,9 @@ export function CalculatorsTab() {
     prostate: t("calc.prostate_title"),
     aspects: "ASPECTS",
     ontrack: t("calc.ontrack_title"),
+    renal: t("calc.renal_title"),
+    lung_tnm: t("calc.lung_tnm_title"),
+    larynx_tnm: t("calc.larynx_tnm_title"),
   };
 
   const q = search.toLowerCase();
@@ -1655,6 +2098,7 @@ export function CalculatorsTab() {
         { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
         { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
         { id: "orads", component: <OradsSheet />, label: "O-RADS" },
+        { id: "diverticulitis", component: <DiverticulitisSheet />, label: t("calc.divert_title") },
       ],
     },
     {
@@ -1753,6 +2197,9 @@ export function CalculatorsTab() {
                   {c.id === "prostate" && <ProstateVolume />}
                   {c.id === "aspects" && <AspectsCalc />}
                   {c.id === "ontrack" && <OnTrackOffTrack />}
+                  {c.id === "renal" && <RenalLesionCalc />}
+                  {c.id === "lung_tnm" && <LungTNMCalc />}
+                  {c.id === "larynx_tnm" && <LarynxTNMCalc />}
                 </div>
               )}
             </div>
