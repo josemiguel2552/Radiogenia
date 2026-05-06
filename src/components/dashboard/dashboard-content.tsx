@@ -1386,8 +1386,8 @@ export function DashboardContent() {
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
                   {t("dash.study_setup")}
-                  <button type="button" onClick={() => setShowTemplateHelp(!showTemplateHelp)} className="p-0.5 rounded-full text-gray-300 dark:text-gray-600 hover:text-brand dark:hover:text-brand transition-colors">
-                    <Info className="h-3 w-3" />
+                  <button type="button" onClick={() => setShowTemplateHelp(!showTemplateHelp)} className={`p-0.5 rounded-full transition-colors ${showTemplateHelp ? "text-brand bg-brand/10" : "text-gray-400 dark:text-gray-500 hover:text-brand dark:hover:text-brand hover:bg-brand/10"}`}>
+                    <Info className="h-3.5 w-3.5" />
                   </button>
                 </h3>
                 <button
@@ -1399,9 +1399,9 @@ export function DashboardContent() {
                 </button>
               </div>
               {showTemplateHelp && (
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 px-1 leading-relaxed animate-[fade-in_0.15s_ease-out]">
+                <div className="text-[11px] text-gray-600 dark:text-gray-300 mb-3 px-3 py-2 leading-relaxed rounded-md bg-blue-50/80 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 animate-[fade-in_0.15s_ease-out]">
                   {t("dash.templates_help")}
-                </p>
+                </div>
               )}
 
               {/* Row 1: Modality pills */}
@@ -2109,8 +2109,8 @@ function RecommendationsCard({
           </h3>
         </button>
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={(e) => { e.stopPropagation(); setShowHelp(!showHelp); }} className="p-0.5 rounded-full text-gray-300 dark:text-gray-600 hover:text-brand dark:hover:text-brand transition-colors">
-            <Info className="h-3 w-3" />
+          <button type="button" onClick={(e) => { e.stopPropagation(); setShowHelp(!showHelp); }} className={`p-0.5 rounded-full transition-colors ${showHelp ? "text-brand bg-brand/10" : "text-gray-400 dark:text-gray-500 hover:text-brand dark:hover:text-brand hover:bg-brand/10"}`}>
+            <Info className="h-3.5 w-3.5" />
           </button>
           {loading && <LoadingDots size="xs" className="text-brand" />}
           <button type="button" onClick={onToggle}>
@@ -2119,9 +2119,9 @@ function RecommendationsCard({
         </div>
       </div>
       {showHelp && (
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 px-4 pb-2 leading-relaxed animate-[fade-in_0.15s_ease-out]">
+        <div className="text-[11px] text-gray-600 dark:text-gray-300 mx-4 mb-2 px-3 py-2 leading-relaxed rounded-md bg-amber-50/80 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 animate-[fade-in_0.15s_ease-out]">
           {t("dash.recs_help")}
-        </p>
+        </div>
       )}
       {open && (
         <CardContent className="pt-0 px-4 pb-3">
