@@ -73,7 +73,7 @@ export function LandingPage() {
               {t("nav.signin")}
             </Link>
             <Link
-              href="/auth/register"
+              href="/waitlist"
               className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-5 py-2 rounded-full transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
             >
               {t("nav.get_started")}
@@ -122,7 +122,7 @@ export function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/auth/register"
+              href="/waitlist"
               className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
             >
               {t("hero.cta_primary")}
@@ -290,7 +290,7 @@ export function LandingPage() {
               {t("cta.subtitle")}
             </p>
             <Link
-              href="/auth/register"
+              href="/waitlist"
               className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40"
             >
               {t("cta.button")}
@@ -406,7 +406,7 @@ function PricingCard({ plan, planKey, t, lang }: {
       </ul>
 
       <Link
-        href={planKey === "resident" ? "/auth/register?plan=resident" : "/auth/register"}
+        href="/waitlist"
         className={`block text-center text-sm font-semibold py-3 rounded-xl transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"

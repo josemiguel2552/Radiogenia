@@ -151,8 +151,8 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             {t("auth.no_account")}{" "}
-            <Link href="/auth/register" className="text-blue-400 hover:text-blue-300 font-medium">
-              {t("auth.create_free")}
+            <Link href="/waitlist" className="text-blue-400 hover:text-blue-300 font-medium">
+              {t("auth.join_waitlist")}
             </Link>
           </p>
         </div>
