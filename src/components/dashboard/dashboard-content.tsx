@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
@@ -1280,7 +1281,7 @@ export function DashboardContent() {
                   className="flex-1 h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
                 >
                   {isGenerating ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
                   ) : (
                     <><List className="h-4 w-4" /> {t("dash.generate_structured")}</>
                   )}
@@ -1292,7 +1293,7 @@ export function DashboardContent() {
                   className="flex-1 h-11 md:h-9 gap-2 disabled:opacity-50"
                 >
                   {isGenerating ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
                   ) : (
                     <><AlignLeft className="h-4 w-4" /> {t("dash.generate_compact")}</>
                   )}
@@ -1509,7 +1510,7 @@ export function DashboardContent() {
                   className="flex-1 h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
                 >
                   {isGenerating ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
                   ) : (
                     <><List className="h-4 w-4" /> {t("dash.generate_structured")}</>
                   )}
@@ -1521,7 +1522,7 @@ export function DashboardContent() {
                   className="flex-1 h-11 md:h-9 gap-2 disabled:opacity-50"
                 >
                   {isGenerating ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
+                    <><LoadingDots size="sm" /> {t("dash.generating")}</>
                   ) : (
                     <><AlignLeft className="h-4 w-4" /> {t("dash.generate_compact")}</>
                   )}
@@ -1554,7 +1555,7 @@ export function DashboardContent() {
 
           {loadingTrace && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+              <LoadingDots size="sm" className="text-blue-500" />
               <span className="text-xs text-blue-700 dark:text-blue-300">{t("dash.verifying")}</span>
             </div>
           )}
@@ -1611,7 +1612,7 @@ export function DashboardContent() {
                         : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     }`}
                   >
-                    {loadingConcStyles[s] && s !== conclusionStyle ? <Loader2 className="h-2.5 w-2.5 animate-spin inline mr-0.5" /> : null}
+                    {loadingConcStyles[s] && s !== conclusionStyle ? <LoadingDots size="xs" className="inline-flex mr-0.5" /> : null}
                     {t(`dash.conclusion_${s}`)}
                   </button>
                 ))}
@@ -1767,7 +1768,7 @@ export function DashboardContent() {
                 onClick={handleReportError}
                 disabled={reportingError}
               >
-                {reportingError ? <Loader2 className="h-4 w-4 animate-spin" /> : t("dash.report_error_send")}
+                {reportingError ? <LoadingDots size="sm" /> : t("dash.report_error_send")}
               </Button>
             </div>
           </div>
@@ -1837,22 +1838,23 @@ function OutputCard({
               {t("edit")}
             </button>
           )}
-          {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
+          {loading && <LoadingDots size="xs" className="text-brand" />}
         </div>
       </div>
       <CardContent className="pt-0 px-4 pb-3">
         {loading && !value ? (
           <div
-            className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
+            className="relative overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800"
             style={{ height: minHeight }}
-          />
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
+          </div>
         ) : loading && value ? (
           <div
-            className="whitespace-pre-wrap text-sm leading-relaxed p-3 border rounded-md bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+            className="streaming-cursor whitespace-pre-wrap text-sm leading-relaxed p-3 border rounded-md bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 animate-[fade-in_0.15s_ease-out]"
             style={{ minHeight }}
           >
             {value}
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-brand animate-pulse align-text-bottom" />
           </div>
         ) : showTrace ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
@@ -1944,7 +1946,7 @@ function RecommendationsCard({
           )}
         </h3>
         <div className="flex items-center gap-1.5">
-          {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
+          {loading && <LoadingDots size="xs" className="text-brand" />}
           <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
       </button>
@@ -1963,9 +1965,11 @@ function RecommendationsCard({
           )}
           {loading ? (
             <div
-              className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
+              className="relative overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800"
               style={{ height: 70 }}
-            />
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
+            </div>
           ) : editing ? (
             <Textarea
               value={value}
