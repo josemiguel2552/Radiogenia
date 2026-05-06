@@ -33,6 +33,7 @@ import {
   X,
   RotateCcw,
   Trash2,
+  Info,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -110,6 +111,7 @@ export function DashboardContent() {
   const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [reportModeInfo, setReportModeInfo] = useState<string | null>(null);
+  const [showTemplateHelp, setShowTemplateHelp] = useState(false);
 
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
@@ -1384,6 +1386,9 @@ export function DashboardContent() {
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
                   {t("dash.study_setup")}
+                  <button type="button" onClick={() => setShowTemplateHelp(!showTemplateHelp)} className="p-0.5 rounded-full text-gray-300 dark:text-gray-600 hover:text-brand dark:hover:text-brand transition-colors">
+                    <Info className="h-3 w-3" />
+                  </button>
                 </h3>
                 <button
                   type="button"
@@ -1393,6 +1398,11 @@ export function DashboardContent() {
                   <ChevronDown className="h-3.5 w-3.5 rotate-90" />
                 </button>
               </div>
+              {showTemplateHelp && (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 px-1 leading-relaxed animate-[fade-in_0.15s_ease-out]">
+                  {t("dash.templates_help")}
+                </p>
+              )}
 
               {/* Row 1: Modality pills */}
               <div className="flex flex-wrap gap-1.5 mb-4">
@@ -2071,6 +2081,7 @@ function RecommendationsCard({
   onToggle: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const parsed = useMemo(() => parseRecommendations(value), [value]);
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const hasStructured = parsed.length > 0 && !editing;
@@ -2081,25 +2092,37 @@ function RecommendationsCard({
 
   return (
     <Card>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex items-center justify-between w-full px-4 py-2.5 text-left hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors rounded-t-xl"
-      >
-        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-          <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
-          {t("dash.recommendations")}
-          {!open && hasContent && !loading && (
-            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">
-              {parsed.length || (value.trim() ? 1 : 0)}
-            </Badge>
-          )}
-        </h3>
+      <div className="flex items-center justify-between w-full px-4 py-2.5">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-1.5 text-left hover:opacity-80 transition-opacity"
+        >
+          <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+            <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
+            {t("dash.recommendations")}
+            {!open && hasContent && !loading && (
+              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">
+                {parsed.length || (value.trim() ? 1 : 0)}
+              </Badge>
+            )}
+          </h3>
+        </button>
         <div className="flex items-center gap-1.5">
+          <button type="button" onClick={(e) => { e.stopPropagation(); setShowHelp(!showHelp); }} className="p-0.5 rounded-full text-gray-300 dark:text-gray-600 hover:text-brand dark:hover:text-brand transition-colors">
+            <Info className="h-3 w-3" />
+          </button>
           {loading && <LoadingDots size="xs" className="text-brand" />}
-          <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+          <button type="button" onClick={onToggle}>
+            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
         </div>
-      </button>
+      </div>
+      {showHelp && (
+        <p className="text-[11px] text-gray-500 dark:text-gray-400 px-4 pb-2 leading-relaxed animate-[fade-in_0.15s_ease-out]">
+          {t("dash.recs_help")}
+        </p>
+      )}
       {open && (
         <CardContent className="pt-0 px-4 pb-3">
           {!loading && value.trim() && (
