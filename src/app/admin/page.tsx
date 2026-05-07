@@ -298,7 +298,7 @@ export default function AdminPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setConfigError((await res.json()).error || "Failed");
+        setConfigError((await res.json()).error || t("admin.failed"));
       } else {
         const d = await res.json();
         setConfig(d);
@@ -312,7 +312,7 @@ export default function AdminPage() {
         setTimeout(() => setConfigSuccess(false), 3000);
       }
     } catch (e) {
-      setConfigError(e instanceof Error ? e.message : "Failed");
+      setConfigError(e instanceof Error ? e.message : t("admin.failed"));
     }
     setSaving(false);
   }
@@ -351,11 +351,11 @@ export default function AdminPage() {
       form.append("file", file);
       const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) { setFtError(data.error || "Upload failed"); return; }
+      if (!res.ok) { setFtError(data.error || t("admin.ft_upload_failed")); return; }
       setFtFileId(data.fileId);
       setFtExamples(data.validExamples);
     } catch (e) {
-      setFtError(e instanceof Error ? e.message : "Upload failed");
+      setFtError(e instanceof Error ? e.message : t("admin.ft_upload_failed"));
     } finally {
       setFtUploading(false);
     }
@@ -372,11 +372,11 @@ export default function AdminPage() {
         body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
       });
       const data = await res.json();
-      if (!res.ok) { setFtError(data.error || "Failed to start"); return; }
+      if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
       setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null }, ...prev]);
       setFtFileId(null);
     } catch (e) {
-      setFtError(e instanceof Error ? e.message : "Failed");
+      setFtError(e instanceof Error ? e.message : t("admin.failed"));
     } finally {
       setFtStarting(false);
     }
@@ -777,7 +777,7 @@ export default function AdminPage() {
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600"
                                   onClick={() => setDeleteConfirm(u)}
-                                  title="Delete user"
+                                  title={t("admin.delete_user")}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
@@ -1047,8 +1047,8 @@ export default function AdminPage() {
                     { prov: "claude", label: "Anthropic (Claude)", value: anthropicKey, setter: setAnthropicKey },
                     { prov: "gemini", label: "Google (Gemini)", value: googleKey, setter: setGoogleKey },
                     { prov: "deepseek", label: "DeepSeek", value: deepseekKey, setter: setDeepseekKey },
-                    { prov: "custom", label: "Custom Endpoint", value: customProvKey, setter: setCustomProvKey },
-                    { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: "Uses the Whisper key above" },
+                    { prov: "custom", label: t("admin.custom_endpoint"), value: customProvKey, setter: setCustomProvKey },
+                    { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: t("admin.uses_whisper_key") },
                   ];
 
                   // Show fields only for providers different from the default (main key covers default)
@@ -1752,12 +1752,12 @@ export default function AdminPage() {
           {deleteConfirm && (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-white">{deleteConfirm.email}</span>?
-                This will remove all their data including reports, templates, and recommendations.
+                {t("admin.delete_user_confirm")} <span className="font-semibold text-gray-900 dark:text-white">{deleteConfirm.email}</span>?
+                {t("admin.delete_user_warning")}
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-                <Button variant="destructive" className="flex-1" onClick={handleDeleteUser}>Delete</Button>
+                <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirm(null)}>{t("cancel")}</Button>
+                <Button variant="destructive" className="flex-1" onClick={handleDeleteUser}>{t("delete")}</Button>
               </div>
             </div>
           )}
@@ -1768,11 +1768,11 @@ export default function AdminPage() {
       <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Add User</DialogTitle>
+            <DialogTitle>{t("admin.add_user")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Email</Label>
+              <Label className="text-xs">{t("admin.email")}</Label>
               <Input
                 type="email"
                 placeholder="user@example.com"
@@ -1781,22 +1781,22 @@ export default function AdminPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Password</Label>
+              <Label className="text-xs">{t("admin.password")}</Label>
               <Input
                 type="password"
-                placeholder="Min. 6 characters"
+                placeholder={t("admin.min_6_chars")}
                 value={createPassword}
                 onChange={(e) => setCreatePassword(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Plan</Label>
+              <Label className="text-xs">{t("admin.plan")}</Label>
               <Select value={createPlan} onValueChange={setCreatePlan}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free (50 reports/mo)</SelectItem>
-                  <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
-                  <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
+                  <SelectItem value="free">{t("admin.plan_free")}</SelectItem>
+                  <SelectItem value="starter">{t("admin.plan_starter")}</SelectItem>
+                  <SelectItem value="professional">{t("admin.plan_professional")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1806,13 +1806,13 @@ export default function AdminPage() {
               </p>
             )}
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>{t("cancel")}</Button>
               <Button
                 className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white"
                 onClick={handleCreateUser}
                 disabled={creatingUser}
               >
-                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : t("admin.create")}
               </Button>
             </div>
           </div>
