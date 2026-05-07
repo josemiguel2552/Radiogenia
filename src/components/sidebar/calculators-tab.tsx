@@ -2193,10 +2193,222 @@ function DiverticulitisSheet() {
 }
 
 /* ═══════════════════════════════════════════
+   12. Nodule Doubling Time
+   ═══════════════════════════════════════════ */
+
+function NoduleDTCalc() {
+  const t = useT();
+  const [mode, setMode] = useState<"diameter" | "volume">("diameter");
+  const [date1, setDate1] = useState("");
+  const [date2, setDate2] = useState("");
+  const [val1, setVal1] = useState("");
+  const [val2, setVal2] = useState("");
+
+  function compute(): { vdt: number; text: string; color: "green" | "blue" | "yellow" | "red" } | null {
+    const v1 = parseFloat(val1);
+    const v2 = parseFloat(val2);
+    if (!date1 || !date2 || isNaN(v1) || isNaN(v2) || v1 <= 0 || v2 <= 0) return null;
+
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    const deltaDays = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24);
+    if (deltaDays <= 0) return null;
+
+    const vol1 = mode === "volume" ? v1 : (Math.PI / 6) * Math.pow(v1, 3);
+    const vol2 = mode === "volume" ? v2 : (Math.PI / 6) * Math.pow(v2, 3);
+
+    if (vol2 <= vol1) {
+      return { vdt: -1, text: t("calc.dt_stable_shrinking"), color: "green" };
+    }
+
+    const vdt = (deltaDays * Math.LN2) / Math.log(vol2 / vol1);
+
+    let color: "green" | "blue" | "yellow" | "red" = "green";
+    let text = "";
+    if (vdt < 100) { color = "red"; text = t("calc.dt_fast"); }
+    else if (vdt < 400) { color = "yellow"; text = t("calc.dt_intermediate"); }
+    else if (vdt < 600) { color = "blue"; text = t("calc.dt_slow"); }
+    else { color = "green"; text = t("calc.dt_very_slow"); }
+
+    return { vdt: Math.round(vdt), text, color };
+  }
+
+  const result = compute();
+  const pctGrowth = (() => {
+    const v1 = parseFloat(val1);
+    const v2 = parseFloat(val2);
+    if (isNaN(v1) || isNaN(v2) || v1 <= 0) return null;
+    const vol1 = mode === "volume" ? v1 : (Math.PI / 6) * Math.pow(v1, 3);
+    const vol2 = mode === "volume" ? v2 : (Math.PI / 6) * Math.pow(v2, 3);
+    return ((vol2 - vol1) / vol1 * 100).toFixed(1);
+  })();
+
+  const copyText = result && result.vdt > 0
+    ? `VDT = ${result.vdt} ${t("calc.days")}. ${result.text}. ${t("calc.dt_vol_growth")}: ${pctGrowth}%`
+    : result ? result.text : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Schwartz formula (Radiology 2014)</p>
+        <ResetButton onClick={() => { setMode("diameter"); setDate1(""); setDate2(""); setVal1(""); setVal2(""); }} />
+      </div>
+
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.dt_mode")}</Label>
+        <OptionPills
+          options={[
+            { key: "diameter", label: t("calc.dt_diameter") },
+            { key: "volume", label: t("calc.dt_volume") },
+          ]}
+          value={mode}
+          onChange={(v) => { setMode(v as "diameter" | "volume"); setVal1(""); setVal2(""); }}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("calc.dt_date1")}</Label>
+          <Input type="date" value={date1} onChange={(e) => setDate1(e.target.value)} className="h-8 text-xs mt-0.5" />
+        </div>
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400">{t("calc.dt_date2")}</Label>
+          <Input type="date" value={date2} onChange={(e) => setDate2(e.target.value)} className="h-8 text-xs mt-0.5" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput
+          label={mode === "diameter" ? `${t("calc.dt_size1")} (mm)` : `${t("calc.dt_vol1")} (mm³)`}
+          value={val1}
+          onChange={setVal1}
+          min={0}
+          step={mode === "diameter" ? 0.1 : 1}
+        />
+        <NumInput
+          label={mode === "diameter" ? `${t("calc.dt_size2")} (mm)` : `${t("calc.dt_vol2")} (mm³)`}
+          value={val2}
+          onChange={setVal2}
+          min={0}
+          step={mode === "diameter" ? 0.1 : 1}
+        />
+      </div>
+
+      {result && result.vdt > 0 && (
+        <ResultBox
+          label={t("calc.dt_vdt")}
+          value={`${result.vdt} ${t("calc.days")}`}
+          interpretation={`${result.text}. ${t("calc.dt_vol_growth")}: ${pctGrowth}%`}
+          color={result.color}
+        />
+      )}
+      {result && result.vdt <= 0 && (
+        <ResultBox label={t("calc.dt_vdt")} value={result.text} color={result.color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   CHEAT SHEETS — additional
+   ═══════════════════════════════════════════ */
+
+function ResistiveIndexSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.ri_title")} source="Defined AIUM standards; Bude & Rubin, Radiology 1999; Defined values from peer-reviewed literature">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.ri_formula")}</p>
+      <p className="text-[10px] text-gray-500 mb-2">RI = (PSV − EDV) / PSV</p>
+      <SheetTable
+        headers={[t("calc.ri_artery"), t("calc.ri_normal_ri"), t("calc.ri_notes")]}
+        rows={[
+          [t("calc.ri_renal"), "0.50–0.70", t("calc.ri_renal_note")],
+          [t("calc.ri_hepatic"), "0.55–0.80", t("calc.ri_hepatic_note")],
+          [t("calc.ri_splenic"), "0.50–0.70", t("calc.ri_splenic_note")],
+          [t("calc.ri_ica"), "0.50–0.70", t("calc.ri_ica_note")],
+          [t("calc.ri_ophthalmic"), "0.65–0.75", t("calc.ri_ophthalmic_note")],
+          [t("calc.ri_uterine"), "0.80–0.90", t("calc.ri_uterine_note")],
+          [t("calc.ri_umbilical"), "0.55–0.70", t("calc.ri_umbilical_note")],
+          [t("calc.ri_mca"), "0.70–0.80", t("calc.ri_mca_note")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function TransplantUSSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.tx_us_title")} source="ACR Appropriateness Criteria 2022; AIUM guidelines; Defined Doppler values from published transplant literature">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.tx_hepatic")}</p>
+      <SheetTable
+        headers={[t("calc.tx_parameter"), t("calc.tx_normal"), t("calc.tx_abnormal")]}
+        rows={[
+          [t("calc.tx_ha_ri"), "0.50–0.80", t("calc.tx_ha_ri_abn")],
+          [t("calc.tx_ha_psv"), "30–100 cm/s", t("calc.tx_ha_psv_abn")],
+          [t("calc.tx_ha_at"), "< 0.08 s", t("calc.tx_ha_at_abn")],
+          [t("calc.tx_pv_vel"), "20–40 cm/s", t("calc.tx_pv_vel_abn")],
+          [t("calc.tx_pv_flow"), t("calc.tx_pv_hepatopetal"), t("calc.tx_pv_flow_abn")],
+          [t("calc.tx_hv_wave"), t("calc.tx_hv_triphasic"), t("calc.tx_hv_wave_abn")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.tx_renal")}</p>
+      <SheetTable
+        headers={[t("calc.tx_parameter"), t("calc.tx_normal"), t("calc.tx_abnormal")]}
+        rows={[
+          [t("calc.tx_ra_ri"), "0.50–0.80", t("calc.tx_ra_ri_abn")],
+          [t("calc.tx_ra_psv"), "< 200 cm/s", t("calc.tx_ra_psv_abn")],
+          [t("calc.tx_seg_ri"), "0.50–0.70", t("calc.tx_seg_ri_abn")],
+          [t("calc.tx_rv_flow"), t("calc.tx_rv_continuous"), t("calc.tx_rv_flow_abn")],
+          [t("calc.tx_at"), "< 0.07 s", t("calc.tx_at_abn")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function CTPerfusionSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.ctp_title")} source="AHA/ASA 2019 guidelines; Wintermark et al., AJNR 2005; RAPID CTP thresholds (validated in DEFUSE 3, DAWN trials)">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.ctp_params")}</p>
+      <SheetTable
+        headers={[t("calc.ctp_param"), t("calc.ctp_meaning"), t("calc.ctp_normal")]}
+        rows={[
+          ["CBF", t("calc.ctp_cbf_desc"), "50–60 mL/100g/min"],
+          ["CBV", t("calc.ctp_cbv_desc"), "4–5 mL/100g"],
+          ["MTT", t("calc.ctp_mtt_desc"), "4–6 s"],
+          ["TTP", t("calc.ctp_ttp_desc"), t("calc.ctp_ttp_normal")],
+          ["Tmax", t("calc.ctp_tmax_desc"), "< 6 s"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.ctp_ischemia")}</p>
+      <SheetTable
+        headers={[t("calc.ctp_zone"), t("calc.ctp_criteria"), t("calc.ctp_interpretation")]}
+        rows={[
+          [t("calc.ctp_core"), "CBF < 30% / rCBV ↓↓", t("calc.ctp_core_desc")],
+          [t("calc.ctp_penumbra"), "Tmax > 6 s, CBV " + t("calc.ctp_preserved"), t("calc.ctp_penumbra_desc")],
+          [t("calc.ctp_oligemia"), "Tmax 4–6 s", t("calc.ctp_oligemia_desc")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.ctp_selection")}</p>
+      <SheetTable
+        headers={[t("calc.ctp_trial"), t("calc.ctp_criteria")]}
+        rows={[
+          ["DAWN (6–24h)", t("calc.ctp_dawn")],
+          ["DEFUSE 3 (6–16h)", t("calc.ctp_defuse")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -2210,6 +2422,7 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "renal", emoji: "🫘" },
   { id: "lung_tnm", emoji: "🫁" },
   { id: "larynx_tnm", emoji: "🗣️" },
+  { id: "nodule_dt", emoji: "📈" },
 ];
 
 export function CalculatorsTab() {
@@ -2229,6 +2442,7 @@ export function CalculatorsTab() {
     renal: t("calc.renal_title"),
     lung_tnm: t("calc.lung_tnm_title"),
     larynx_tnm: t("calc.larynx_tnm_title"),
+    nodule_dt: t("calc.dt_title"),
   };
 
   const q = search.toLowerCase();
@@ -2283,6 +2497,7 @@ export function CalculatorsTab() {
         { id: "cerebral_aneur", component: <CerebralAneurysmSheet />, label: t("calc.cerebral_aneurysm_title") },
         { id: "fisher", component: <FisherSAHSheet />, label: t("calc.fisher_title") },
         { id: "brain_tumor", component: <BrainTumorSheet />, label: t("calc.brain_tumor_title") },
+        { id: "ct_perfusion", component: <CTPerfusionSheet />, label: t("calc.ctp_title") },
       ],
     },
     {
@@ -2304,6 +2519,8 @@ export function CalculatorsTab() {
         { id: "carotid", component: <CarotidStenosisSheet />, label: t("calc.carotid_title") },
         { id: "pad", component: <PadClassSheet />, label: t("calc.pad_title") },
         { id: "dvt_pe", component: <DVTPESheet />, label: t("calc.dvt_pe_title") },
+        { id: "ri", component: <ResistiveIndexSheet />, label: t("calc.ri_title") },
+        { id: "transplant_us", component: <TransplantUSSheet />, label: t("calc.tx_us_title") },
       ],
     },
   ], [t]);
@@ -2364,6 +2581,7 @@ export function CalculatorsTab() {
                   {c.id === "renal" && <RenalLesionCalc />}
                   {c.id === "lung_tnm" && <LungTNMCalc />}
                   {c.id === "larynx_tnm" && <LarynxTNMCalc />}
+                  {c.id === "nodule_dt" && <NoduleDTCalc />}
                 </div>
               )}
             </div>
