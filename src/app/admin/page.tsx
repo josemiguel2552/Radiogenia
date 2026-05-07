@@ -1286,26 +1286,26 @@ export default function AdminPage() {
                       </div>
                       <div className="flex items-baseline gap-1">
                         {plan.price === 0 ? (
-                          <span className="text-2xl font-bold text-gray-900 dark:text-white">Free</span>
+                          <span className="text-2xl font-bold text-gray-900 dark:text-white">{t("admin.free")}</span>
                         ) : (
                           <>
                             <span className="text-2xl font-bold text-gray-900 dark:text-white">&euro;{plan.price}</span>
-                            <span className="text-xs text-gray-500">/month</span>
+                            <span className="text-xs text-gray-500">/{t("admin.month")}</span>
                           </>
                         )}
                       </div>
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>{plan.reports} reports/month</p>
-                        <p>~{plan.tokensPerReport.toLocaleString()} tokens/report</p>
-                        <p>Cost/report: ~$0.005</p>
+                        <p>{plan.reports} {t("admin.reports_per_month")}</p>
+                        <p>~{plan.tokensPerReport.toLocaleString()} {t("admin.tokens_per_report")}</p>
+                        <p>{t("admin.cost_per_report")}: ~$0.005</p>
                       </div>
                       <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-500">Revenue</span>
+                          <span className="text-gray-500">{t("admin.revenue")}</span>
                           <span className="font-semibold text-gray-900 dark:text-white">${revenue.toFixed(2)}/mo</span>
                         </div>
                         <div className="flex items-center justify-between text-xs mt-1">
-                          <span className="text-gray-500">AI cost</span>
+                          <span className="text-gray-500">{t("admin.ai_cost")}</span>
                           <span className="text-gray-600 dark:text-gray-400">~${(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
                         </div>
                       </div>
@@ -1317,25 +1317,25 @@ export default function AdminPage() {
 
             <Card>
               <CardContent className="p-5">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Token Economics</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t("admin.token_economics")}</h3>
                 <div className="grid md:grid-cols-3 gap-4 text-xs text-gray-600 dark:text-gray-400">
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">Per Report</p>
-                    <p>~8,000 input tokens</p>
-                    <p>~2,000 output tokens</p>
-                    <p>Total: ~10,000 tokens</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.per_report")}</p>
+                    <p>~8,000 {t("admin.input_tokens")}</p>
+                    <p>~2,000 {t("admin.output_tokens")}</p>
+                    <p>{t("admin.total")}: ~10,000 tokens</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">DeepSeek Pricing</p>
-                    <p>Input: $0.27/M tokens</p>
-                    <p>Output: $1.10/M tokens</p>
-                    <p>Per report: ~$0.004-0.005</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.deepseek_pricing")}</p>
+                    <p>{t("admin.input")}: $0.27/M tokens</p>
+                    <p>{t("admin.output")}: $1.10/M tokens</p>
+                    <p>{t("admin.per_report")}: ~$0.004-0.005</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">Margins</p>
-                    <p>Free: marketing cost (~$0.03/user/mo)</p>
-                    <p>Starter: ~87% margin</p>
-                    <p>Professional: ~75% margin</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.margins")}</p>
+                    <p>Free: {t("admin.marketing_cost")} (~$0.03/{t("admin.user_mo")})</p>
+                    <p>Starter: ~87% {t("admin.margin")}</p>
+                    <p>Professional: ~75% {t("admin.margin")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1361,8 +1361,8 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <ClipboardList className="h-4 w-4 text-blue-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
-                <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.audit_logs")}</h2>
+                <Badge variant="secondary" className="text-xs">{auditLogs.length} {t("admin.entries")}</Badge>
                 <div className="ml-auto flex gap-1">
                   {["all", "generate_findings", "generate_conclusion", "correction_logged", "save_report", "report_error"].map((f) => (
                     <Button
@@ -1372,7 +1372,7 @@ export default function AdminPage() {
                       className="h-7 text-xs"
                       onClick={() => setAuditFilter(f)}
                     >
-                      {f === "all" ? "All" : f === "generate_findings" ? "Findings" : f === "generate_conclusion" ? "Conclusions" : f === "correction_logged" ? "Corrections" : f === "save_report" ? "Saves" : "Errors"}
+                      {f === "all" ? t("admin.filter_all") : f === "generate_findings" ? t("admin.filter_findings") : f === "generate_conclusion" ? t("admin.filter_conclusions") : f === "correction_logged" ? t("admin.filter_corrections") : f === "save_report" ? t("admin.filter_saves") : t("admin.filter_errors")}
                     </Button>
                   ))}
                 </div>
@@ -1382,12 +1382,12 @@ export default function AdminPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-gray-800">
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Date</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Action</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Provider / Model</th>
-                        <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Duration</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Details</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_date")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_user")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_action")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_provider_model")}</th>
+                        <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_duration")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_details")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1420,16 +1420,16 @@ export default function AdminPage() {
                                   className={`text-[10px] ${isCorrection ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : ""}`}
                                 >
                                   {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
-                                  {isCorrection ? "correction" : log.action.replace(/_/g, " ")}
+                                  {isCorrection ? t("admin.correction") : log.action.replace(/_/g, " ")}
                                 </Badge>
                                 {log.had_corrections && !isCorrection && (
-                                  <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                                  <Badge variant="outline" className="text-[10px] ml-1">{t("admin.edited")}</Badge>
                                 )}
                                 {isCorrection && !!meta?.conclusion_changed && (
-                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">conclusion</Badge>
+                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.conclusion_label")}</Badge>
                                 )}
                                 {isCorrection && !!meta?.findings_changed && (
-                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">findings</Badge>
+                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">{t("admin.findings_label")}</Badge>
                                 )}
                               </span>
                               <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:inline w-[140px] shrink-0">
@@ -1445,7 +1445,7 @@ export default function AdminPage() {
                                     const parts: string[] = [];
                                     if (meta?.study_type) parts.push(String(meta.study_type));
                                     if (meta?.modality) parts.push(String(meta.modality));
-                                    return parts.length > 0 ? parts.join(" · ") : "Radiologist correction";
+                                    return parts.length > 0 ? parts.join(" · ") : t("admin.radiologist_correction");
                                   }
                                   const parts: string[] = [];
                                   if (meta?.study_type) parts.push(String(meta.study_type));
@@ -1466,21 +1466,21 @@ export default function AdminPage() {
                               <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
                                 {!!meta?.note && (
                                   <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                                    <span className="font-medium">Error report:</span> {String(meta.note)}
+                                    <span className="font-medium">{t("admin.error_report")}:</span> {String(meta.note)}
                                   </div>
                                 )}
 
                                 {hasTraceIssues && (
                                   <div className="flex gap-3 text-xs">
-                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} matched</Badge>
+                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} {t("admin.matched")}</Badge>
                                     {(Number(meta.trace_unmatched) || 0) > 0 && (
                                       <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                                        {Number(meta.trace_unmatched)} omissions
+                                        {Number(meta.trace_unmatched)} {t("admin.omissions")}
                                       </Badge>
                                     )}
                                     {(Number(meta.trace_hallucinations) || 0) > 0 && (
                                       <Badge variant="destructive" className="text-[10px]">
-                                        {Number(meta.trace_hallucinations)} hallucinations
+                                        {Number(meta.trace_hallucinations)} {t("admin.hallucinations")}
                                       </Badge>
                                     )}
                                   </div>
@@ -1488,7 +1488,7 @@ export default function AdminPage() {
 
                                 {!!meta?.raw_dictation && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Dictation input</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.dictation_input")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.raw_dictation)}
                                     </pre>
@@ -1497,7 +1497,7 @@ export default function AdminPage() {
 
                                 {!!meta?.generated_findings && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Generated findings</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.generated_findings")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                       {String(meta.generated_findings)}
                                     </pre>
@@ -1506,7 +1506,7 @@ export default function AdminPage() {
 
                                 {!!meta?.generated_conclusion && !isCorrection && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">Generated conclusion</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">{t("admin.generated_conclusion")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.generated_conclusion)}
                                     </pre>
@@ -1516,13 +1516,13 @@ export default function AdminPage() {
                                 {isCorrection && !!meta?.conclusion_changed && (
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original conclusion (AI)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_conclusion_ai")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.original_conclusion || "—")}
                                       </pre>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Corrected conclusion (radiologist)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.corrected_conclusion_rad")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-blue-200 dark:border-blue-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.corrected_conclusion || "—")}
                                       </pre>
@@ -1533,13 +1533,13 @@ export default function AdminPage() {
                                 {isCorrection && !!meta?.findings_changed && (
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original findings (AI)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_findings_ai")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.original_findings || "—")}
                                       </pre>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">Corrected findings (radiologist)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">{t("admin.corrected_findings_rad")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-purple-200 dark:border-purple-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.corrected_findings || "—")}
                                       </pre>
@@ -1555,7 +1555,7 @@ export default function AdminPage() {
                       {auditLogs.filter((l) => auditFilter === "all" || l.action === auditFilter).length === 0 && (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
-                            No audit logs yet
+                            {t("admin.no_audit_logs")}
                           </td>
                         </tr>
                       )}
@@ -1569,13 +1569,13 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
                 <Database className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Training Data</h2>
-                <Badge variant="secondary" className="text-xs">{trainingData.length} reports</Badge>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.training_data")}</h2>
+                <Badge variant="secondary" className="text-xs">{trainingData.length} {t("admin.reports")}</Badge>
                 <div className="ml-auto flex flex-wrap gap-1.5 items-center">
                   <Select value={trainingModality} onValueChange={(v) => setTrainingModality(v)}>
                     <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All modalities</SelectItem>
+                      <SelectItem value="all">{t("admin.all_modalities")}</SelectItem>
                       <SelectItem value="CT">CT</SelectItem>
                       <SelectItem value="MRI">MRI</SelectItem>
                       <SelectItem value="XRay">XRay</SelectItem>
@@ -1590,33 +1590,33 @@ export default function AdminPage() {
                       onChange={(e) => setTrainingCorrectionsOnly(e.target.checked)}
                       className="rounded border-gray-300"
                     />
-                    Corrections only
+                    {t("admin.corrections_only")}
                   </label>
                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadTrainingData} disabled={trainingLoading}>
                     {trainingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    Load
+                    {t("admin.load")}
                   </Button>
                   <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportJsonl} disabled={exporting || trainingData.length === 0}>
                     {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                    Export JSONL
+                    {t("admin.export_jsonl")}
                   </Button>
                 </div>
               </div>
               <CardContent className="pt-0">
                 {trainingError && (
                   <div className="mb-3 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                    <span className="font-medium">Error loading training data:</span> {trainingError}
+                    <span className="font-medium">{t("admin.error_loading_training")}:</span> {trainingError}
                   </div>
                 )}
                 {trainingLoading ? (
                   <div className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400 mb-2" />
-                    <p className="text-xs text-gray-400">Loading training data...</p>
+                    <p className="text-xs text-gray-400">{t("admin.loading_training_data")}</p>
                   </div>
                 ) : trainingData.length === 0 && !trainingError ? (
                   <div className="text-center py-8 text-gray-400 text-xs">
                     <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    No training data yet — reports are saved automatically when radiologists generate reports
+                    {t("admin.no_training_data")}
                   </div>
                 ) : trainingData.length === 0 ? null : (
                   <div className="space-y-2">
@@ -1635,8 +1635,8 @@ export default function AdminPage() {
                             <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                               <Badge variant="secondary" className="text-[10px]">{r.modality}</Badge>
                               <span className="text-xs font-medium text-gray-900 dark:text-white truncate">{r.study_type}</span>
-                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">corrected</Badge>}
-                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />error</Badge>}
+                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.corrected")}</Badge>}
+                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />{t("admin.error")}</Badge>}
                             </div>
                             <span className="text-[10px] text-gray-400 shrink-0">
                               {r.user_name || r.user_email || "—"} · {new Date(r.created_at).toLocaleDateString()}
@@ -1647,12 +1647,12 @@ export default function AdminPage() {
                             <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
                               {r.error_report_note && (
                                 <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                                  <span className="font-medium">Error report:</span> {r.error_report_note}
+                                  <span className="font-medium">{t("admin.error_report")}:</span> {r.error_report_note}
                                 </div>
                               )}
 
                               <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Input (dictation + clinical context)</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.input_dictation_context")}</p>
                                 {r.clinical_context && (
                                   <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-20 overflow-y-auto mb-1.5 text-gray-500">{r.clinical_context}</pre>
                                 )}
@@ -1662,7 +1662,7 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                 <div>
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">
-                                    AI Generated {findingsChanged && <span className="text-amber-500 normal-case">(modified by radiologist)</span>}
+                                    {t("admin.ai_generated")} {findingsChanged && <span className="text-amber-500 normal-case">({t("admin.modified_by_rad")})</span>}
                                   </p>
                                   <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
 {r.initial_findings_text || r.findings_text || "—"}
@@ -1672,7 +1672,7 @@ export default function AdminPage() {
                                 </div>
                                 <div>
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">
-                                    Final Report {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">(corrected)</span>}
+                                    {t("admin.final_report")} {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">({t("admin.corrected")})</span>}
                                   </p>
                                   <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
 {r.findings_text || "—"}
@@ -1683,8 +1683,8 @@ export default function AdminPage() {
                               </div>
 
                               <div className="flex gap-3 text-[10px] text-gray-400">
-                                {r.provider_used && <span>Provider: {r.provider_used}</span>}
-                                {r.model_used && <span>Model: {r.model_used}</span>}
+                                {r.provider_used && <span>{t("admin.provider")}: {r.provider_used}</span>}
+                                {r.model_used && <span>{t("admin.model")}: {r.model_used}</span>}
                               </div>
                             </div>
                           )}
@@ -1703,7 +1703,7 @@ export default function AdminPage() {
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>{t("admin.edit_user")}</DialogTitle>
           </DialogHeader>
           {editUser && (
             <div className="space-y-4">
@@ -1712,7 +1712,7 @@ export default function AdminPage() {
                 <p className="text-xs text-gray-500">{editUser.email}</p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Role</Label>
+                <Label className="text-xs">{t("admin.role")}</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>

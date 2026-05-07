@@ -819,7 +819,7 @@ export function AdminOrganizationsTab() {
                 {!editingMember && isNewUser && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">{t("admin.org.full_name")}</Label>
-                    <Input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Dr. García López" className="h-9" />
+                    <Input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder={t("admin.org.full_name_placeholder")} className="h-9" />
                   </div>
                 )}
 
