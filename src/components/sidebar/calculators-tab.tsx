@@ -1737,11 +1737,246 @@ function CanalStenosisSheet() {
   );
 }
 
+function ShoulderCoronal() {
+  return (
+    <svg viewBox="0 0 320 260" className="w-full max-w-[320px] mx-auto">
+      {/* Acromion */}
+      <path d="M90,52 Q100,42 160,40 Q180,40 190,48" fill="none" stroke="#94a3b8" strokeWidth="5" strokeLinecap="round" />
+      {/* Clavicle hint */}
+      <path d="M90,52 L50,58" fill="none" stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" />
+      {/* Humeral head */}
+      <ellipse cx="185" cy="115" rx="52" ry="55" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Humeral shaft */}
+      <path d="M145,160 L135,240 M225,160 L215,240" stroke="#94a3b8" strokeWidth="2.5" fill="none" />
+      <path d="M135,240 Q175,248 215,240" stroke="#94a3b8" strokeWidth="2" fill="none" />
+      {/* Greater tuberosity bump */}
+      <path d="M225,80 Q240,95 237,120" fill="none" stroke="#94a3b8" strokeWidth="2.5" />
+      {/* Glenoid */}
+      <path d="M120,72 Q112,115 120,158" fill="none" stroke="#64748b" strokeWidth="4" strokeLinecap="round" />
+      {/* Scapula body hint */}
+      <path d="M120,158 Q100,175 85,210 M120,72 Q105,55 90,52" fill="none" stroke="#94a3b8" strokeWidth="2.5" />
+      {/* Labrum sup */}
+      <ellipse cx="118" cy="72" rx="6" ry="5" fill="#a78bfa" stroke="#7c3aed" strokeWidth="1.5" />
+      {/* Labrum inf */}
+      <ellipse cx="118" cy="158" rx="6" ry="5" fill="#a78bfa" stroke="#7c3aed" strokeWidth="1.5" />
+      {/* Supraspinatus tendon */}
+      <path d="M100,58 Q140,50 175,58 Q200,62 228,78" fill="none" stroke="#f97316" strokeWidth="4" strokeLinecap="round" opacity="0.85" />
+      {/* Infraspinatus tendon */}
+      <path d="M105,165 Q130,175 170,165 Q210,148 235,120" fill="none" stroke="#06b6d4" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+      {/* Subscapularis tendon (anterior, coming "toward viewer" on coronal) */}
+      <path d="M118,90 Q130,88 148,80 Q162,74 170,70" fill="none" stroke="#22c55e" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" strokeDasharray="6,3" />
+      {/* Teres minor */}
+      <path d="M110,178 Q145,185 180,172 Q215,155 237,132" fill="none" stroke="#ec4899" strokeWidth="3" strokeLinecap="round" opacity="0.75" />
+      {/* Biceps tendon (long head) */}
+      <path d="M118,72 Q140,65 160,70 Q168,78 170,95 L170,200" fill="none" stroke="#eab308" strokeWidth="2" strokeDasharray="4,2" opacity="0.8" />
+      {/* Labels */}
+      <g className="text-[9px] fill-gray-600 dark:fill-gray-300" style={{ fontSize: "9px" }}>
+        {/* Supraspinatus label */}
+        <line x1="150" y1="52" x2="150" y2="28" stroke="#f97316" strokeWidth="0.8" />
+        <rect x="100" y="16" width="100" height="14" rx="3" fill="#f97316" opacity="0.15" />
+        <text x="150" y="26" textAnchor="middle" fill="#f97316" fontWeight="600">Supraspinatus</text>
+        {/* Infraspinatus label */}
+        <line x1="240" y1="130" x2="270" y2="140" stroke="#06b6d4" strokeWidth="0.8" />
+        <text x="272" y="144" fill="#06b6d4" fontWeight="600" style={{ fontSize: "8.5px" }}>Infraspinatus</text>
+        {/* Subscapularis label */}
+        <line x1="135" y1="84" x2="42" y2="84" stroke="#22c55e" strokeWidth="0.8" />
+        <text x="40" y="82" textAnchor="end" fill="#22c55e" fontWeight="600" style={{ fontSize: "8.5px" }}>Subscapularis</text>
+        <text x="40" y="92" textAnchor="end" fill="#22c55e" style={{ fontSize: "7.5px" }}>(anterior)</text>
+        {/* Teres minor label */}
+        <line x1="245" y1="150" x2="270" y2="162" stroke="#ec4899" strokeWidth="0.8" />
+        <text x="272" y="166" fill="#ec4899" fontWeight="600" style={{ fontSize: "8.5px" }}>Teres minor</text>
+        {/* Labrum label */}
+        <line x1="112" y1="72" x2="45" y2="62" stroke="#7c3aed" strokeWidth="0.8" />
+        <text x="43" y="60" textAnchor="end" fill="#7c3aed" fontWeight="600" style={{ fontSize: "8.5px" }}>Labrum</text>
+        {/* Biceps label */}
+        <line x1="170" y1="190" x2="215" y2="200" stroke="#eab308" strokeWidth="0.8" />
+        <text x="217" y="204" fill="#eab308" style={{ fontSize: "8px" }}>Biceps (LH)</text>
+        {/* Acromion label */}
+        <text x="130" y="38" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8px" }}>Acromion</text>
+        {/* Greater tuberosity */}
+        <text x="258" y="94" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "7.5px" }}>GT</text>
+      </g>
+      {/* Coronal T2 FS label */}
+      <text x="160" y="254" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8.5px", fontStyle: "italic" }}>Coronal T2 FS</text>
+    </svg>
+  );
+}
+
+function KneeSagittal() {
+  return (
+    <svg viewBox="0 0 280 300" className="w-full max-w-[280px] mx-auto">
+      {/* Femur shaft */}
+      <path d="M105,0 L100,70 M165,0 L170,70" stroke="#94a3b8" strokeWidth="2.5" fill="none" />
+      {/* Femoral condyle */}
+      <path d="M100,70 Q95,90 90,110 Q85,140 100,165 Q120,190 140,192 Q160,192 175,180 Q192,165 195,140 Q195,110 185,90 Q178,75 170,70" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Tibial plateau */}
+      <path d="M65,200 L210,200 L210,208 Q200,205 140,205 Q80,205 65,208 Z" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Tibial eminence */}
+      <path d="M125,200 L133,192 L140,200" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Tibia shaft */}
+      <path d="M85,208 L80,295 M185,208 L190,295" stroke="#94a3b8" strokeWidth="2.5" fill="none" />
+      {/* Patella */}
+      <ellipse cx="78" cy="130" rx="14" ry="22" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2" className="dark:fill-gray-700 dark:stroke-gray-500" transform="rotate(-10,78,130)" />
+      {/* Medial meniscus (triangular wedge) */}
+      <path d="M150,200 L180,200 L168,188 Z" fill="#f97316" opacity="0.35" stroke="#f97316" strokeWidth="1.5" />
+      {/* Lateral meniscus */}
+      <path d="M120,200 L90,200 L102,188 Z" fill="#f97316" opacity="0.35" stroke="#f97316" strokeWidth="1.5" />
+      {/* ACL */}
+      <path d="M115,195 Q125,165 160,155 Q165,148 162,140" fill="none" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+      {/* PCL */}
+      <path d="M155,200 Q148,175 120,160 Q112,152 110,142" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+      {/* MCL (medial side — right in sagittal) */}
+      <path d="M200,130 L205,200 L205,235" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+      {/* Patellar tendon */}
+      <path d="M82,150 Q95,175 110,198" fill="none" stroke="#eab308" strokeWidth="2" strokeDasharray="4,2" opacity="0.7" />
+      {/* Quadriceps tendon */}
+      <path d="M82,110 L105,40" fill="none" stroke="#eab308" strokeWidth="2" strokeDasharray="4,2" opacity="0.7" />
+      {/* Labels */}
+      <g style={{ fontSize: "9px" }}>
+        {/* ACL label */}
+        <line x1="148" y1="152" x2="195" y2="128" stroke="#ef4444" strokeWidth="0.8" />
+        <rect x="195" y="120" width="34" height="14" rx="3" fill="#ef4444" opacity="0.15" />
+        <text x="212" y="130" textAnchor="middle" fill="#ef4444" fontWeight="600" style={{ fontSize: "9px" }}>ACL</text>
+        {/* PCL label */}
+        <line x1="118" y1="148" x2="38" y2="135" stroke="#3b82f6" strokeWidth="0.8" />
+        <rect x="15" y="127" width="33" height="14" rx="3" fill="#3b82f6" opacity="0.15" />
+        <text x="31" y="137" textAnchor="middle" fill="#3b82f6" fontWeight="600" style={{ fontSize: "9px" }}>PCL</text>
+        {/* Meniscus labels */}
+        <line x1="172" y1="192" x2="225" y2="175" stroke="#f97316" strokeWidth="0.8" />
+        <text x="227" y="172" fill="#f97316" fontWeight="600" style={{ fontSize: "8px" }}>MM</text>
+        <line x1="98" y1="192" x2="42" y2="180" stroke="#f97316" strokeWidth="0.8" />
+        <text x="40" y="178" textAnchor="end" fill="#f97316" fontWeight="600" style={{ fontSize: "8px" }}>ML</text>
+        {/* MCL label */}
+        <text x="212" y="218" fill="#22c55e" fontWeight="600" style={{ fontSize: "8px" }}>MCL</text>
+        {/* Patella */}
+        <text x="48" y="130" textAnchor="end" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8px" }}>Patella</text>
+        {/* Femur/Tibia */}
+        <text x="135" y="15" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8px" }}>Femur</text>
+        <text x="135" y="290" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8px" }}>Tibia</text>
+      </g>
+      <text x="140" y="298" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8.5px", fontStyle: "italic" }}>Sagittal T2 FS</text>
+    </svg>
+  );
+}
+
+function AnkleAxial() {
+  return (
+    <svg viewBox="0 0 320 310" className="w-full max-w-[320px] mx-auto">
+      {/* Tibia cross-section */}
+      <ellipse cx="145" cy="130" rx="55" ry="45" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Fibula cross-section */}
+      <ellipse cx="248" cy="145" rx="16" ry="18" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Tendons as colored dots with consistent size */}
+      {/* Anterior: Tibialis anterior */}
+      <circle cx="100" cy="85" r="6" fill="#22c55e" stroke="#16a34a" strokeWidth="1.5" />
+      {/* Anterior: EHL */}
+      <circle cx="125" cy="78" r="5" fill="#86efac" stroke="#16a34a" strokeWidth="1" />
+      {/* Anterior: EDL */}
+      <circle cx="150" cy="78" r="5" fill="#86efac" stroke="#16a34a" strokeWidth="1" />
+      {/* Medial side (Tom Dick ANd Harry): */}
+      {/* Tibialis posterior */}
+      <circle cx="78" cy="138" r="6" fill="#f97316" stroke="#ea580c" strokeWidth="1.5" />
+      {/* FDL */}
+      <circle cx="72" cy="158" r="5.5" fill="#fb923c" stroke="#ea580c" strokeWidth="1.5" />
+      {/* Posterior tibial artery + nerve */}
+      <circle cx="70" cy="176" r="4" fill="#ef4444" stroke="#dc2626" strokeWidth="1" />
+      <circle cx="78" cy="182" r="3" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
+      {/* FHL */}
+      <circle cx="88" cy="192" r="5.5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+      {/* Posterior: Achilles */}
+      <ellipse cx="175" cy="210" rx="10" ry="14" fill="#a78bfa" stroke="#7c3aed" strokeWidth="2" />
+      {/* Lateral: Peroneus brevis + longus */}
+      <circle cx="260" cy="178" r="5.5" fill="#06b6d4" stroke="#0891b2" strokeWidth="1.5" />
+      <circle cx="270" cy="162" r="5.5" fill="#22d3ee" stroke="#0891b2" strokeWidth="1.5" />
+      {/* Leader lines and labels */}
+      <g style={{ fontSize: "8.5px" }}>
+        {/* Tib. Anterior */}
+        <line x1="94" y1="82" x2="28" y2="60" stroke="#16a34a" strokeWidth="0.7" />
+        <text x="26" y="58" textAnchor="end" fill="#22c55e" fontWeight="600">Tib. ant.</text>
+        {/* Tib. Posterior */}
+        <line x1="72" y1="136" x2="14" y2="118" stroke="#ea580c" strokeWidth="0.7" />
+        <text x="12" y="116" textAnchor="end" fill="#f97316" fontWeight="600">Tib. post. (T)</text>
+        {/* FDL */}
+        <line x1="66" y1="156" x2="14" y2="140" stroke="#ea580c" strokeWidth="0.7" />
+        <text x="12" y="138" textAnchor="end" fill="#fb923c" fontWeight="600">FDL (D)</text>
+        {/* Art + Nerve */}
+        <line x1="64" y1="176" x2="14" y2="168" stroke="#ef4444" strokeWidth="0.7" />
+        <text x="12" y="166" textAnchor="end" fill="#ef4444" fontWeight="600">A. + N. (AN)</text>
+        {/* FHL */}
+        <line x1="82" y1="194" x2="22" y2="205" stroke="#d97706" strokeWidth="0.7" />
+        <text x="20" y="208" textAnchor="end" fill="#f59e0b" fontWeight="600">FHL (H)</text>
+        {/* Achilles */}
+        <line x1="175" y1="225" x2="175" y2="248" stroke="#7c3aed" strokeWidth="0.7" />
+        <text x="175" y="258" textAnchor="middle" fill="#a78bfa" fontWeight="600">Achilles</text>
+        {/* Peroneus brevis */}
+        <line x1="266" y1="178" x2="298" y2="192" stroke="#0891b2" strokeWidth="0.7" />
+        <text x="300" y="196" fill="#06b6d4" fontWeight="600" style={{ fontSize: "8px" }}>Per. brevis</text>
+        {/* Peroneus longus */}
+        <line x1="276" y1="160" x2="298" y2="150" stroke="#0891b2" strokeWidth="0.7" />
+        <text x="300" y="154" fill="#22d3ee" fontWeight="600" style={{ fontSize: "8px" }}>Per. longus</text>
+        {/* Bone labels */}
+        <text x="145" y="134" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }}>Tibia</text>
+        <text x="248" y="149" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8px" }}>Fib.</text>
+        {/* Orientation markers */}
+        <text x="115" y="48" textAnchor="middle" className="fill-gray-300 dark:fill-gray-600" style={{ fontSize: "8px" }}>ANT</text>
+        <text x="155" y="276" textAnchor="middle" className="fill-gray-300 dark:fill-gray-600" style={{ fontSize: "8px" }}>POST</text>
+        <text x="4" y="170" className="fill-gray-300 dark:fill-gray-600" style={{ fontSize: "8px" }}>MED</text>
+        <text x="295" y="130" className="fill-gray-300 dark:fill-gray-600" style={{ fontSize: "8px" }}>LAT</text>
+      </g>
+      {/* Mnemonic bar */}
+      <rect x="40" y="286" width="240" height="18" rx="4" fill="#f97316" opacity="0.1" />
+      <text x="160" y="298" textAnchor="middle" fill="#f97316" style={{ fontSize: "8px", fontWeight: 600 }}>Tom · Dick · ANd · Harry</text>
+    </svg>
+  );
+}
+
+function AnkleLateral() {
+  return (
+    <svg viewBox="0 0 320 230" className="w-full max-w-[320px] mx-auto">
+      {/* Fibula */}
+      <path d="M195,0 L190,5 Q185,30 180,60 Q175,80 178,95" fill="none" stroke="#94a3b8" strokeWidth="3" />
+      <ellipse cx="178" cy="100" rx="14" ry="18" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Talus */}
+      <path d="M100,105 Q130,85 175,90 Q200,95 215,110 Q220,130 200,140 Q160,150 120,145 Q95,135 100,105" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Calcaneus */}
+      <path d="M60,145 Q50,155 50,170 Q55,195 90,200 Q140,205 170,195 Q185,185 185,165 Q180,150 160,148 Q120,145 60,145" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
+      {/* Navicular hint */}
+      <ellipse cx="90" cy="118" rx="18" ry="12" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3,2" />
+      {/* ATFL */}
+      <path d="M178,108 Q155,108 130,105" fill="none" stroke="#ef4444" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+      {/* CFL */}
+      <path d="M178,112 Q168,135 155,160 Q148,172 140,180" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+      {/* PTFL */}
+      <path d="M182,115 Q200,125 210,130" fill="none" stroke="#22c55e" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+      {/* Labels */}
+      <g style={{ fontSize: "9px" }}>
+        {/* ATFL */}
+        <line x1="150" y1="105" x2="130" y2="78" stroke="#ef4444" strokeWidth="0.7" />
+        <rect x="90" y="68" width="52" height="14" rx="3" fill="#ef4444" opacity="0.12" />
+        <text x="116" y="78" textAnchor="middle" fill="#ef4444" fontWeight="700">ATFL</text>
+        {/* CFL */}
+        <line x1="152" y1="165" x2="185" y2="182" stroke="#3b82f6" strokeWidth="0.7" />
+        <rect x="186" y="174" width="38" height="14" rx="3" fill="#3b82f6" opacity="0.12" />
+        <text x="205" y="184" textAnchor="middle" fill="#3b82f6" fontWeight="700">CFL</text>
+        {/* PTFL */}
+        <line x1="210" y1="130" x2="240" y2="125" stroke="#22c55e" strokeWidth="0.7" />
+        <rect x="240" y="117" width="48" height="14" rx="3" fill="#22c55e" opacity="0.12" />
+        <text x="264" y="127" textAnchor="middle" fill="#22c55e" fontWeight="700">PTFL</text>
+        {/* Bone labels */}
+        <text x="195" y="15" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8px" }}>Fibula</text>
+        <text x="150" y="125" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }}>Talus</text>
+        <text x="115" y="180" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }}>Calcaneus</text>
+      </g>
+      <text x="160" y="222" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "8.5px", fontStyle: "italic" }}>Lateral view — Coronal T2 FS</text>
+    </svg>
+  );
+}
+
 function MRIShoulderSheet() {
   const t = useT();
   return (
     <CheatSheet title={t("calc.mri_shoulder_title")} source="Stoller DW, Magnetic Resonance Imaging in Orthopaedics & Sports Medicine, 3rd ed.">
-      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_shoulder_rc")}</p>
+      <ShoulderCoronal />
       <SheetTable
         headers={[t("calc.mri_shoulder_structure"), t("calc.mri_shoulder_insertion"), t("calc.mri_shoulder_best_seq")]}
         rows={[
@@ -1768,21 +2003,13 @@ function MRIKneeSheet() {
   const t = useT();
   return (
     <CheatSheet title={t("calc.mri_knee_title")} source="Stoller DW; Helms CA, Fundamentals of Skeletal Radiology, 4th ed.">
-      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_knee_menisci")}</p>
-      <SheetTable
-        headers={[t("calc.mri_knee_region"), t("calc.mri_knee_normal_signal")]}
-        rows={[
-          [t("calc.mri_knee_mm"), t("calc.mri_knee_mm_signal")],
-          [t("calc.mri_knee_ml"), t("calc.mri_knee_ml_signal")],
-        ]}
-      />
-      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_knee_tear_grades")}</p>
+      <KneeSagittal />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-1">{t("calc.mri_knee_tear_grades")}</p>
       <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-0.5">
         <p>{t("calc.mri_knee_g1")}</p>
         <p>{t("calc.mri_knee_g2")}</p>
         <p>{t("calc.mri_knee_g3")}</p>
       </div>
-      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_knee_ligaments")}</p>
       <SheetTable
         headers={[t("calc.mri_knee_lig"), t("calc.mri_knee_lig_seq")]}
         rows={[
@@ -1802,27 +2029,9 @@ function MRIAnkleSheet() {
   return (
     <CheatSheet title={t("calc.mri_ankle_title")} source="Rosenberg ZS et al., MRI of the Ankle and Foot; Stoller DW">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_ankle_tendons")}</p>
-      <SheetTable
-        headers={[t("calc.mri_ankle_tendon"), t("calc.mri_ankle_location")]}
-        rows={[
-          [t("calc.mri_ankle_achilles"), t("calc.mri_ankle_achilles_loc")],
-          [t("calc.mri_ankle_tibpost"), t("calc.mri_ankle_tibpost_loc")],
-          [t("calc.mri_ankle_fdl"), t("calc.mri_ankle_fdl_loc")],
-          [t("calc.mri_ankle_fhl"), t("calc.mri_ankle_fhl_loc")],
-          [t("calc.mri_ankle_peroneus"), t("calc.mri_ankle_peroneus_loc")],
-          [t("calc.mri_ankle_tibant"), t("calc.mri_ankle_tibant_loc")],
-        ]}
-      />
+      <AnkleAxial />
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_ankle_ligaments")}</p>
-      <SheetTable
-        headers={[t("calc.mri_ankle_tendon"), t("calc.mri_ankle_best_seq")]}
-        rows={[
-          [t("calc.mri_ankle_ltfl"), t("calc.mri_ankle_best_seq")],
-          [t("calc.mri_ankle_cfl"), t("calc.mri_ankle_best_seq")],
-          [t("calc.mri_ankle_ptfl"), t("calc.mri_ankle_best_seq")],
-          [t("calc.mri_ankle_deltoid"), t("calc.mri_ankle_best_seq")],
-        ]}
-      />
+      <AnkleLateral />
       <p className="text-[10px] text-gray-500 italic mt-1">{t("calc.mri_ankle_mnemonic")}</p>
     </CheatSheet>
   );
