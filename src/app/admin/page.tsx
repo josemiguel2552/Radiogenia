@@ -1716,26 +1716,26 @@ export default function AdminPage() {
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="radiologist">Radiologist</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="radiologist">{t("admin.role_radiologist")}</SelectItem>
+                    <SelectItem value="admin">{t("admin.role_admin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Subscription Plan</Label>
+                <Label className="text-xs">{t("admin.subscription_plan")}</Label>
                 <Select value={editPlan} onValueChange={setEditPlan}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="free">Free (30 reports/mo)</SelectItem>
-                    <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
-                    <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
+                    <SelectItem value="free">{t("admin.plan_free")}</SelectItem>
+                    <SelectItem value="starter">{t("admin.plan_starter")}</SelectItem>
+                    <SelectItem value="professional">{t("admin.plan_professional")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setEditUser(null)}>Cancel</Button>
+                <Button variant="outline" className="flex-1" onClick={() => setEditUser(null)}>{t("cancel")}</Button>
                 <Button className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white" onClick={handleSaveUser} disabled={savingUser}>
-                  {savingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                  {savingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
                 </Button>
               </div>
             </div>
@@ -1747,7 +1747,7 @@ export default function AdminPage() {
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle>{t("admin.delete_user")}</DialogTitle>
           </DialogHeader>
           {deleteConfirm && (
             <div className="space-y-4">
