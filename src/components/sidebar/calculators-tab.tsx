@@ -137,6 +137,41 @@ function OptionPills({
   );
 }
 
+function MultiPills({
+  options,
+  value,
+  onChange,
+}: {
+  options: { key: string; label: string }[];
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={() =>
+            onChange(
+              value.includes(o.key)
+                ? value.filter((v) => v !== o.key)
+                : [...value, o.key]
+            )
+          }
+          className={`px-2 py-1 text-[11px] rounded-md border transition-colors ${
+            value.includes(o.key)
+              ? "bg-brand text-white border-brand"
+              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-brand/50"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ResetButton({ onClick }: { onClick: () => void }) {
   const t = useT();
   return (
@@ -899,63 +934,97 @@ function RenalLesionCalc() {
 
 function LungTNMCalc() {
   const t = useT();
-  const [tStage, setTStage] = useState("");
-  const [nStage, setNStage] = useState("");
-  const [mStage, setMStage] = useState("");
+  const [tumorType, setTumorType] = useState("");
+  const [tumorSize, setTumorSize] = useState("");
+  const [invasions, setInvasions] = useState<string[]>([]);
+  const [nodeLocation, setNodeLocation] = useState("");
+  const [metsType, setMetsType] = useState("");
 
-  const tOptions = [
-    { key: "Tis", label: "Tis" },
-    { key: "T1mi", label: "T1mi" },
-    { key: "T1a", label: "T1a" },
-    { key: "T1b", label: "T1b" },
-    { key: "T1c", label: "T1c" },
-    { key: "T2a", label: "T2a" },
-    { key: "T2b", label: "T2b" },
-    { key: "T3", label: "T3" },
-    { key: "T4", label: "T4" },
+  const typeOptions = [
+    { key: "standard", label: t("calc.lung_type_standard") },
+    { key: "in_situ", label: t("calc.lung_type_in_situ") },
+    { key: "minimally_inv", label: t("calc.lung_type_minimally_inv") },
   ];
 
-  const nOptions = [
-    { key: "N0", label: "N0" },
-    { key: "N1", label: "N1" },
-    { key: "N2a", label: "N2a" },
-    { key: "N2b", label: "N2b" },
-    { key: "N3", label: "N3" },
+  const sizeOptions = [
+    { key: "le1", label: "≤1 cm" },
+    { key: "1to2", label: "1-2 cm" },
+    { key: "2to3", label: "2-3 cm" },
+    { key: "3to4", label: "3-4 cm" },
+    { key: "4to5", label: "4-5 cm" },
+    { key: "5to7", label: "5-7 cm" },
+    { key: "gt7", label: ">7 cm" },
   ];
 
-  const mOptions = [
-    { key: "M0", label: "M0" },
-    { key: "M1a", label: "M1a" },
-    { key: "M1b", label: "M1b" },
-    { key: "M1c", label: "M1c" },
+  const invasionOptions = [
+    { key: "visceral_pleura", label: t("calc.lung_inv_visceral_pleura") },
+    { key: "main_bronchus", label: t("calc.lung_inv_main_bronchus") },
+    { key: "atelectasis", label: t("calc.lung_inv_atelectasis") },
+    { key: "chest_wall", label: t("calc.lung_inv_chest_wall") },
+    { key: "same_lobe", label: t("calc.lung_inv_same_lobe") },
+    { key: "mediastinum", label: t("calc.lung_inv_mediastinum") },
+    { key: "trachea_esoph", label: t("calc.lung_inv_trachea") },
+    { key: "diff_lobe", label: t("calc.lung_inv_diff_lobe") },
   ];
 
-  const tDescs: Record<string, string> = {
-    Tis: t("calc.lung_tis"),
-    T1mi: t("calc.lung_t1mi"),
-    T1a: t("calc.lung_t1a"),
-    T1b: t("calc.lung_t1b"),
-    T1c: t("calc.lung_t1c"),
-    T2a: t("calc.lung_t2a"),
-    T2b: t("calc.lung_t2b"),
-    T3: t("calc.lung_t3"),
-    T4: t("calc.lung_t4"),
-  };
+  const nodeOptions = [
+    { key: "none", label: t("calc.lung_node_none") },
+    { key: "hilar", label: t("calc.lung_node_hilar") },
+    { key: "mediastinal_single", label: t("calc.lung_node_mediastinal_single") },
+    { key: "mediastinal_multi", label: t("calc.lung_node_mediastinal_multi") },
+    { key: "contralateral", label: t("calc.lung_node_contralateral") },
+  ];
 
-  const nDescs: Record<string, string> = {
-    N0: t("calc.lung_n0"),
-    N1: t("calc.lung_n1"),
-    N2a: t("calc.lung_n2a"),
-    N2b: t("calc.lung_n2b"),
-    N3: t("calc.lung_n3"),
-  };
+  const metsOptions = [
+    { key: "none", label: t("calc.lung_mets_none") },
+    { key: "contralateral_pleural", label: t("calc.lung_mets_contralateral") },
+    { key: "single_extra", label: t("calc.lung_mets_single_extra") },
+    { key: "multi_extra", label: t("calc.lung_mets_multi_extra") },
+  ];
 
-  const mDescs: Record<string, string> = {
-    M0: t("calc.lung_m0"),
-    M1a: t("calc.lung_m1a"),
-    M1b: t("calc.lung_m1b"),
-    M1c: t("calc.lung_m1c"),
-  };
+  function deriveT(): string {
+    if (tumorType === "in_situ") return "Tis";
+    if (tumorType === "minimally_inv") return "T1mi";
+
+    const hasT4Inv = invasions.some((i) => ["mediastinum", "trachea_esoph", "diff_lobe"].includes(i));
+    const hasT3Inv = invasions.some((i) => ["chest_wall", "same_lobe"].includes(i));
+    const hasT2Inv = invasions.some((i) => ["visceral_pleura", "main_bronchus", "atelectasis"].includes(i));
+
+    const sizeT: Record<string, number> = {
+      le1: 1, "1to2": 2, "2to3": 3, "3to4": 4, "4to5": 5, "5to7": 6, gt7: 7,
+    };
+    const sLevel = sizeT[tumorSize] || 0;
+
+    let tLevel = sLevel <= 1 ? 1 : sLevel <= 2 ? 2 : sLevel <= 3 ? 3 : sLevel <= 4 ? 4 : sLevel <= 5 ? 5 : sLevel <= 6 ? 6 : 7;
+    if (hasT2Inv && tLevel < 4) tLevel = 4;
+    if (hasT3Inv && tLevel < 6) tLevel = 6;
+    if (hasT4Inv) tLevel = 7;
+
+    if (!tumorSize && !hasT2Inv && !hasT3Inv && !hasT4Inv) return "";
+
+    const tMap: Record<number, string> = { 1: "T1a", 2: "T1b", 3: "T1c", 4: "T2a", 5: "T2b", 6: "T3", 7: "T4" };
+    return tMap[tLevel] || "";
+  }
+
+  function deriveN(): string {
+    if (!nodeLocation) return "";
+    const nMap: Record<string, string> = {
+      none: "N0", hilar: "N1", mediastinal_single: "N2a", mediastinal_multi: "N2b", contralateral: "N3",
+    };
+    return nMap[nodeLocation] || "";
+  }
+
+  function deriveM(): string {
+    if (!metsType) return "";
+    const mMap: Record<string, string> = {
+      none: "M0", contralateral_pleural: "M1a", single_extra: "M1b", multi_extra: "M1c",
+    };
+    return mMap[metsType] || "";
+  }
+
+  const tStage = deriveT();
+  const nStage = deriveN();
+  const mStage = deriveM();
 
   function getStage(): { stage: string; color: "green" | "blue" | "yellow" | "red" } | null {
     if (!tStage || !nStage || !mStage) return null;
@@ -999,33 +1068,49 @@ function LungTNMCalc() {
   }
 
   const result = getStage();
-  const descParts: string[] = [];
-  if (tStage) descParts.push(`${tStage}: ${tDescs[tStage]}`);
-  if (nStage) descParts.push(`${nStage}: ${nDescs[nStage]}`);
-  if (mStage) descParts.push(`${mStage}: ${mDescs[mStage]}`);
-  const copyText = result ? `${tStage} ${nStage} ${mStage} — ${t("calc.stage")} ${result.stage}. ${descParts.join(". ")}` : "";
+  const copyText = result
+    ? `${tStage} ${nStage} ${mStage} — ${t("calc.stage")} ${result.stage}`
+    : "";
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-gray-400">IASLC TNM 9th ed. (2024)</p>
-        <ResetButton onClick={() => { setTStage(""); setNStage(""); setMStage(""); }} />
+        <ResetButton onClick={() => { setTumorType(""); setTumorSize(""); setInvasions([]); setNodeLocation(""); setMetsType(""); }} />
       </div>
+
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.t_stage")}</Label>
-        <OptionPills options={tOptions} value={tStage} onChange={setTStage} />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lung_tumor_type")}</Label>
+        <OptionPills options={typeOptions} value={tumorType} onChange={setTumorType} />
       </div>
+
+      {tumorType === "standard" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lung_size")}</Label>
+            <OptionPills options={sizeOptions} value={tumorSize} onChange={setTumorSize} />
+          </div>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lung_invasion")}</Label>
+            <MultiPills options={invasionOptions} value={invasions} onChange={setInvasions} />
+          </div>
+        </>
+      )}
+
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.n_stage")}</Label>
-        <OptionPills options={nOptions} value={nStage} onChange={setNStage} />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lung_node_location")}</Label>
+        <OptionPills options={nodeOptions} value={nodeLocation} onChange={setNodeLocation} />
       </div>
+
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.m_stage")}</Label>
-        <OptionPills options={mOptions} value={mStage} onChange={setMStage} />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lung_mets_type")}</Label>
+        <OptionPills options={metsOptions} value={metsType} onChange={setMetsType} />
       </div>
-      {tStage && <p className="text-[10px] text-gray-500">{tStage}: {tDescs[tStage]}</p>}
-      {nStage && <p className="text-[10px] text-gray-500">{nStage}: {nDescs[nStage]}</p>}
-      {mStage && <p className="text-[10px] text-gray-500">{mStage}: {mDescs[mStage]}</p>}
+
+      {tStage && <p className="text-[10px] text-gray-500 font-medium">T → {tStage}</p>}
+      {nStage && <p className="text-[10px] text-gray-500 font-medium">N → {nStage}</p>}
+      {mStage && <p className="text-[10px] text-gray-500 font-medium">M → {mStage}</p>}
+
       {result && (
         <ResultBox
           label={t("calc.stage")}
@@ -1046,72 +1131,141 @@ function LungTNMCalc() {
 function LarynxTNMCalc() {
   const t = useT();
   const [subsite, setSubsite] = useState("");
-  const [tStage, setTStage] = useState("");
-  const [nStage, setNStage] = useState("");
-  const [mStage, setMStage] = useState("");
+  const [tCriteria, setTCriteria] = useState<string[]>([]);
+  const [nodeNumber, setNodeNumber] = useState("");
+  const [nodeLaterality, setNodeLaterality] = useState("");
+  const [nodeSize, setNodeSize] = useState("");
+  const [nodeENE, setNodeENE] = useState("");
+  const [hasMets, setHasMets] = useState("");
 
-  const supraglotticT = [
-    { key: "T1", label: "T1" },
-    { key: "T2", label: "T2" },
-    { key: "T3", label: "T3" },
-    { key: "T4a", label: "T4a" },
-    { key: "T4b", label: "T4b" },
+  const subsiteOptions = [
+    { key: "supraglottic", label: t("calc.supraglottic") },
+    { key: "glottic", label: t("calc.glottic") },
+    { key: "subglottic", label: t("calc.subglottic") },
   ];
 
-  const glotticT = [
-    { key: "T1a", label: "T1a" },
-    { key: "T1b", label: "T1b" },
-    { key: "T2", label: "T2" },
-    { key: "T3", label: "T3" },
-    { key: "T4a", label: "T4a" },
-    { key: "T4b", label: "T4b" },
+  const supraglotticCriteria = [
+    { key: "one_subsite", label: t("calc.larynx_crit_one_subsite") },
+    { key: "multi_subsite", label: t("calc.larynx_crit_multi_subsite") },
+    { key: "cord_fixation", label: t("calc.larynx_crit_cord_fixation") },
+    { key: "preepiglottic", label: t("calc.larynx_crit_preepiglottic") },
+    { key: "paraglottic", label: t("calc.larynx_crit_paraglottic") },
+    { key: "inner_thyroid", label: t("calc.larynx_crit_inner_thyroid") },
+    { key: "through_cartilage", label: t("calc.larynx_crit_through_cartilage") },
+    { key: "soft_tissues", label: t("calc.larynx_crit_soft_tissues") },
+    { key: "prevertebral", label: t("calc.larynx_crit_prevertebral") },
+    { key: "carotid", label: t("calc.larynx_crit_carotid") },
   ];
 
-  const subglotticT = [
-    { key: "T1", label: "T1" },
-    { key: "T2", label: "T2" },
-    { key: "T3", label: "T3" },
-    { key: "T4a", label: "T4a" },
-    { key: "T4b", label: "T4b" },
+  const glotticCriteria = [
+    { key: "one_cord", label: t("calc.larynx_crit_one_cord") },
+    { key: "both_cords", label: t("calc.larynx_crit_both_cords") },
+    { key: "extension_supra_sub", label: t("calc.larynx_crit_extension_supra_sub") },
+    { key: "impaired_mobility", label: t("calc.larynx_crit_impaired_mobility") },
+    { key: "cord_fixation", label: t("calc.larynx_crit_cord_fixation") },
+    { key: "paraglottic", label: t("calc.larynx_crit_paraglottic") },
+    { key: "inner_thyroid", label: t("calc.larynx_crit_inner_thyroid") },
+    { key: "through_cartilage", label: t("calc.larynx_crit_through_cartilage") },
+    { key: "soft_tissues", label: t("calc.larynx_crit_soft_tissues") },
+    { key: "prevertebral", label: t("calc.larynx_crit_prevertebral") },
+    { key: "carotid", label: t("calc.larynx_crit_carotid") },
   ];
 
-  const tOptionsMap: Record<string, { key: string; label: string }[]> = {
-    supraglottic: supraglotticT,
-    glottic: glotticT,
-    subglottic: subglotticT,
+  const subglotticCriteria = [
+    { key: "limited_subglottis", label: t("calc.larynx_crit_limited_subglottis") },
+    { key: "extends_cords", label: t("calc.larynx_crit_extends_cords") },
+    { key: "cord_fixation", label: t("calc.larynx_crit_cord_fixation") },
+    { key: "paraglottic", label: t("calc.larynx_crit_paraglottic") },
+    { key: "inner_thyroid", label: t("calc.larynx_crit_inner_thyroid") },
+    { key: "through_cartilage", label: t("calc.larynx_crit_through_cartilage") },
+    { key: "soft_tissues", label: t("calc.larynx_crit_soft_tissues") },
+    { key: "prevertebral", label: t("calc.larynx_crit_prevertebral") },
+    { key: "carotid", label: t("calc.larynx_crit_carotid") },
+  ];
+
+  const criteriaMap: Record<string, { key: string; label: string }[]> = {
+    supraglottic: supraglotticCriteria,
+    glottic: glotticCriteria,
+    subglottic: subglotticCriteria,
   };
 
-  const nOptions = [
-    { key: "N0", label: "N0" },
-    { key: "N1", label: "N1" },
-    { key: "N2a", label: "N2a" },
-    { key: "N2b", label: "N2b" },
-    { key: "N2c", label: "N2c" },
-    { key: "N3a", label: "N3a" },
-    { key: "N3b", label: "N3b" },
+  const nodeNumberOptions = [
+    { key: "none", label: t("calc.larynx_node_none") },
+    { key: "single", label: t("calc.larynx_node_single") },
+    { key: "multiple", label: t("calc.larynx_node_multiple") },
   ];
 
-  const mOptions = [
-    { key: "M0", label: "M0" },
-    { key: "M1", label: "M1" },
+  const nodeLateralityOptions = [
+    { key: "ipsilateral", label: t("calc.larynx_node_ipsilateral") },
+    { key: "bilateral", label: t("calc.larynx_node_bilateral") },
   ];
 
-  const tDescKeys: Record<string, Record<string, string>> = {
-    supraglottic: {
-      T1: "calc.larynx_t1", T2: "calc.larynx_t2", T3: "calc.larynx_t3", T4a: "calc.larynx_t4a", T4b: "calc.larynx_t4b",
-    },
-    glottic: {
-      T1a: "calc.larynx_t1a", T1b: "calc.larynx_t1b", T2: "calc.larynx_t2", T3: "calc.larynx_t3", T4a: "calc.larynx_t4a", T4b: "calc.larynx_t4b",
-    },
-    subglottic: {
-      T1: "calc.larynx_t1", T2: "calc.larynx_t2", T3: "calc.larynx_t3", T4a: "calc.larynx_t4a", T4b: "calc.larynx_t4b",
-    },
-  };
+  const nodeSizeOptions = [
+    { key: "le3", label: "≤3 cm" },
+    { key: "3to6", label: "3-6 cm" },
+    { key: "gt6", label: ">6 cm" },
+  ];
 
-  const nDescKeys: Record<string, string> = {
-    N0: "calc.larynx_n0", N1: "calc.larynx_n1", N2a: "calc.larynx_n2a", N2b: "calc.larynx_n2b",
-    N2c: "calc.larynx_n2c", N3a: "calc.larynx_n3a", N3b: "calc.larynx_n3b",
-  };
+  const nodeENEOptions = [
+    { key: "negative", label: "ENE(−)" },
+    { key: "positive", label: "ENE(+)" },
+  ];
+
+  const metsOptions = [
+    { key: "no", label: t("calc.larynx_mets_no") },
+    { key: "yes", label: t("calc.larynx_mets_yes") },
+  ];
+
+  function deriveT(): string {
+    if (!subsite || tCriteria.length === 0) return "";
+    const has = (k: string) => tCriteria.includes(k);
+    const hasT4b = has("prevertebral") || has("carotid");
+    const hasT4a = has("through_cartilage") || has("soft_tissues");
+    const hasT3 = has("cord_fixation") || has("paraglottic") || has("inner_thyroid") || has("preepiglottic");
+
+    if (hasT4b) return "T4b";
+    if (hasT4a) return "T4a";
+    if (hasT3) return "T3";
+
+    if (subsite === "supraglottic") {
+      if (has("multi_subsite")) return "T2";
+      if (has("one_subsite")) return "T1";
+    }
+    if (subsite === "glottic") {
+      if (has("extension_supra_sub") || has("impaired_mobility")) return "T2";
+      if (has("both_cords")) return "T1b";
+      if (has("one_cord")) return "T1a";
+    }
+    if (subsite === "subglottic") {
+      if (has("extends_cords")) return "T2";
+      if (has("limited_subglottis")) return "T1";
+    }
+    return "";
+  }
+
+  function deriveN(): string {
+    if (!nodeNumber) return "";
+    if (nodeNumber === "none") return "N0";
+    if (nodeENE === "positive") return "N3b";
+    if (nodeSize === "gt6") return "N3a";
+    if (nodeNumber === "multiple" && nodeLaterality === "ipsilateral" && nodeSize !== "gt6") return "N2b";
+    if (nodeLaterality === "bilateral") return "N2c";
+    if (nodeNumber === "single" && nodeLaterality === "ipsilateral") {
+      if (nodeSize === "3to6") return "N2a";
+      if (nodeSize === "le3") return "N1";
+    }
+    if (!nodeLaterality || !nodeSize) return "";
+    return "";
+  }
+
+  function deriveM(): string {
+    if (!hasMets) return "";
+    return hasMets === "yes" ? "M1" : "M0";
+  }
+
+  const tStage = deriveT();
+  const nStage = deriveN();
+  const mStage = deriveM();
 
   function getStage(): { stage: string; color: "green" | "blue" | "yellow" | "red" } | null {
     if (!tStage || !nStage || !mStage) return null;
@@ -1139,48 +1293,58 @@ function LarynxTNMCalc() {
   }
 
   const result = getStage();
-  const tDesc = subsite && tStage && tDescKeys[subsite]?.[tStage] ? t(tDescKeys[subsite][tStage]) : "";
-  const nDesc = nStage ? t(nDescKeys[nStage]) : "";
   const copyText = result ? `${tStage} ${nStage} ${mStage} — ${t("calc.stage")} ${result.stage}` : "";
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-gray-400">AJCC 8th ed. (2017)</p>
-        <ResetButton onClick={() => { setSubsite(""); setTStage(""); setNStage(""); setMStage(""); }} />
+        <ResetButton onClick={() => { setSubsite(""); setTCriteria([]); setNodeNumber(""); setNodeLaterality(""); setNodeSize(""); setNodeENE(""); setHasMets(""); }} />
       </div>
+
       <div>
         <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.subsite")}</Label>
-        <OptionPills
-          options={[
-            { key: "supraglottic", label: t("calc.supraglottic") },
-            { key: "glottic", label: t("calc.glottic") },
-            { key: "subglottic", label: t("calc.subglottic") },
-          ]}
-          value={subsite}
-          onChange={(v) => { setSubsite(v); setTStage(""); }}
-        />
+        <OptionPills options={subsiteOptions} value={subsite} onChange={(v) => { setSubsite(v); setTCriteria([]); }} />
       </div>
+
       {subsite && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.t_stage")}</Label>
-          <OptionPills options={tOptionsMap[subsite]} value={tStage} onChange={setTStage} />
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.larynx_t_criteria")}</Label>
+          <MultiPills options={criteriaMap[subsite]} value={tCriteria} onChange={setTCriteria} />
         </div>
       )}
-      {subsite && (
-        <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.n_stage")}</Label>
-          <OptionPills options={nOptions} value={nStage} onChange={setNStage} />
-        </div>
+
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.larynx_node_number")}</Label>
+        <OptionPills options={nodeNumberOptions} value={nodeNumber} onChange={setNodeNumber} />
+      </div>
+
+      {nodeNumber && nodeNumber !== "none" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.larynx_node_laterality")}</Label>
+            <OptionPills options={nodeLateralityOptions} value={nodeLaterality} onChange={setNodeLaterality} />
+          </div>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.larynx_node_size")}</Label>
+            <OptionPills options={nodeSizeOptions} value={nodeSize} onChange={setNodeSize} />
+          </div>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.larynx_node_ene")}</Label>
+            <OptionPills options={nodeENEOptions} value={nodeENE} onChange={setNodeENE} />
+          </div>
+        </>
       )}
-      {subsite && (
-        <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.m_stage")}</Label>
-          <OptionPills options={mOptions} value={mStage} onChange={setMStage} />
-        </div>
-      )}
-      {tStage && tDesc && <p className="text-[10px] text-gray-500">{tStage}: {tDesc}</p>}
-      {nStage && nDesc && <p className="text-[10px] text-gray-500">{nStage}: {nDesc}</p>}
+
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.larynx_mets")}</Label>
+        <OptionPills options={metsOptions} value={hasMets} onChange={setHasMets} />
+      </div>
+
+      {tStage && <p className="text-[10px] text-gray-500 font-medium">T → {tStage}</p>}
+      {nStage && <p className="text-[10px] text-gray-500 font-medium">N → {nStage}</p>}
+      {mStage && <p className="text-[10px] text-gray-500 font-medium">M → {mStage}</p>}
+
       {result && (
         <ResultBox
           label={t("calc.stage")}
