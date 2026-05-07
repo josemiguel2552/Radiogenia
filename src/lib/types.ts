@@ -369,6 +369,7 @@ export interface ManualRecommendation {
   source: string;
   scope: "system" | "org" | "user";
   user_id?: string;
+  overrides?: string;
 }
 
 export type ResidentVerificationStatus = "pending" | "approved" | "rejected";

@@ -20,6 +20,7 @@ type UsageMap = Record<string, number>;
 
 const STORAGE_KEY = "radiogenai_rec_usage";
 const CUSTOM_KEY = "radiogenai_rec_custom";
+const HIDDEN_KEY = "radiogenai_rec_hidden";
 
 function loadUsageLocal(): UsageMap {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
@@ -90,6 +91,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<UsageMap>({});
   const [customRecs, setCustomRecs] = useState<ManualRecommendation[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [addingCustom, setAddingCustom] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
   const [customText, setCustomText] = useState("");
@@ -97,6 +99,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   useEffect(() => {
     setUsage(loadUsageLocal());
     setCustomRecs(loadCustomLocal());
+    try { setHiddenIds(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]")); } catch { /* */ }
     fetchUsageFromDB().then((dbUsage) => {
       if (dbUsage) { setUsage(dbUsage); saveUsageLocal(dbUsage); }
     });
@@ -115,7 +118,22 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   };
   const currentMod = modMap[modality] || modality;
 
-  const allRecs = useMemo(() => [...DEFAULT_RECOMMENDATIONS, ...customRecs], [customRecs]);
+  const allRecs = useMemo(() => {
+    const hiddenSet = new Set(hiddenIds);
+    const overrideMap = new Map<string, ManualRecommendation>();
+    for (const r of customRecs) {
+      if (r.overrides) overrideMap.set(r.overrides, r);
+    }
+    const result: ManualRecommendation[] = [];
+    for (const sys of DEFAULT_RECOMMENDATIONS) {
+      if (hiddenSet.has(sys.id)) continue;
+      result.push(overrideMap.get(sys.id) || sys);
+    }
+    for (const r of customRecs) {
+      if (!r.overrides) result.push(r);
+    }
+    return result;
+  }, [customRecs, hiddenIds]);
 
   const filtered = useMemo(() => {
     return allRecs.filter((r) => {

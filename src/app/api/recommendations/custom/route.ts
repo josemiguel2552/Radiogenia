@@ -22,8 +22,9 @@ export async function GET() {
       title: { es: row.title, en: row.title, pt: row.title },
       text: { es: row.text, en: row.text, pt: row.text },
       tags: row.tags || [],
-      source: "Personal",
+      source: row.overrides ? "Personal (mod.)" : "Personal",
       scope: "user" as const,
+      ...(row.overrides ? { overrides: row.overrides } : {}),
     }));
 
     return NextResponse.json({ recommendations });
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { category, modality, title, text, tags } = await req.json();
+    const { category, modality, title, text, tags, overrides } = await req.json();
     if (!title || !text) {
       return NextResponse.json({ error: "title and text required" }, { status: 400 });
     }
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
         title,
         text,
         tags: tags || [],
+        ...(overrides ? { overrides } : {}),
       })
       .select()
       .single();

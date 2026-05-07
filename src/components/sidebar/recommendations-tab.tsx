@@ -16,6 +16,9 @@ import {
   ChevronDown,
   ChevronRight,
   Filter,
+  RotateCcw,
+  Undo2,
+  Eye,
 } from "lucide-react";
 import { useT, useSection, useModality } from "@/lib/i18n";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
@@ -23,12 +26,19 @@ import { MODALITIES, SECTIONS } from "@/lib/types";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
 
 const CUSTOM_KEY = "radiogenai_rec_custom";
+const HIDDEN_KEY = "radiogenai_rec_hidden";
 
 function loadCustomLocal(): ManualRecommendation[] {
   try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); } catch { return []; }
 }
 function saveCustomLocal(recs: ManualRecommendation[]) {
   localStorage.setItem(CUSTOM_KEY, JSON.stringify(recs));
+}
+function loadHiddenLocal(): string[] {
+  try { return JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]"); } catch { return []; }
+}
+function saveHiddenLocal(ids: string[]) {
+  localStorage.setItem(HIDDEN_KEY, JSON.stringify(ids));
 }
 
 function tokenize(text: string): string[] {
@@ -44,6 +54,7 @@ export function RecommendationsTab() {
   const tSection = useSection();
   const tModality = useModality();
   const [customRecs, setCustomRecs] = useState<ManualRecommendation[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [filterMod, setFilterMod] = useState<string>("all");
   const [filterCat, setFilterCat] = useState<string>("all");
@@ -51,8 +62,10 @@ export function RecommendationsTab() {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRec, setEditingRec] = useState<ManualRecommendation | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [editingIsSystem, setEditingIsSystem] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<ManualRecommendation | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
 
   const [formTitle, setFormTitle] = useState("");
   const [formText, setFormText] = useState("");
@@ -64,6 +77,7 @@ export function RecommendationsTab() {
 
   useEffect(() => {
     setCustomRecs(loadCustomLocal());
+    setHiddenIds(loadHiddenLocal());
     fetch("/api/recommendations/custom")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -75,11 +89,32 @@ export function RecommendationsTab() {
       .catch(() => {});
   }, []);
 
-  const allRecs = useMemo(() => [...DEFAULT_RECOMMENDATIONS, ...customRecs], [customRecs]);
+  const overrideMap = useMemo(() => {
+    const map = new Map<string, ManualRecommendation>();
+    for (const r of customRecs) {
+      if (r.overrides) map.set(r.overrides, r);
+    }
+    return map;
+  }, [customRecs]);
+
+  const hiddenSet = useMemo(() => new Set(hiddenIds), [hiddenIds]);
+
+  const visibleRecs = useMemo(() => {
+    const result: ManualRecommendation[] = [];
+    for (const sys of DEFAULT_RECOMMENDATIONS) {
+      if (hiddenSet.has(sys.id)) continue;
+      const override = overrideMap.get(sys.id);
+      result.push(override || sys);
+    }
+    for (const r of customRecs) {
+      if (!r.overrides) result.push(r);
+    }
+    return result;
+  }, [customRecs, overrideMap, hiddenSet]);
 
   const filtered = useMemo(() => {
     const searchLower = search.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-    return allRecs.filter((r) => {
+    return visibleRecs.filter((r) => {
       if (filterMod !== "all" && r.modality !== "all" && r.modality !== filterMod) return false;
       if (filterCat !== "all" && r.category !== "all" && r.category !== filterCat) return false;
       if (filterScope !== "all" && r.scope !== filterScope) return false;
@@ -91,7 +126,7 @@ export function RecommendationsTab() {
       }
       return true;
     });
-  }, [allRecs, filterMod, filterCat, filterScope, search, lang]);
+  }, [visibleRecs, filterMod, filterCat, filterScope, search, lang]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ManualRecommendation[]>();
@@ -102,6 +137,10 @@ export function RecommendationsTab() {
     }
     return map;
   }, [filtered]);
+
+  const hiddenRecs = useMemo(() => {
+    return DEFAULT_RECOMMENDATIONS.filter((r) => hiddenSet.has(r.id));
+  }, [hiddenSet]);
 
   const toggleCat = useCallback((cat: string) => {
     setExpandedCats((prev) => {
@@ -117,6 +156,7 @@ export function RecommendationsTab() {
 
   const openAdd = useCallback(() => {
     setEditingRec(null);
+    setEditingIsSystem(false);
     setFormTitle("");
     setFormText("");
     setFormCategory("all");
@@ -126,7 +166,9 @@ export function RecommendationsTab() {
   }, [t]);
 
   const openEdit = useCallback((rec: ManualRecommendation) => {
+    const isSystem = rec.scope === "system";
     setEditingRec(rec);
+    setEditingIsSystem(isSystem);
     setFormTitle(rec.title[lang] || rec.title.es || "");
     setFormText(rec.text[lang] || rec.text.es || "");
     setFormCategory(rec.category);
@@ -138,7 +180,66 @@ export function RecommendationsTab() {
   const handleSave = useCallback(() => {
     if (!formTitle.trim() || !formText.trim()) return;
 
-    if (editingRec) {
+    if (editingRec && editingIsSystem) {
+      const existingOverride = customRecs.find((r) => r.overrides === editingRec.id);
+      const overrideRec: ManualRecommendation = {
+        id: existingOverride?.id || `override_${editingRec.id}_${Date.now()}`,
+        category: formCategory,
+        modality: formModality,
+        title: { es: formTitle, en: formTitle, pt: formTitle },
+        text: { es: formText, en: formText, pt: formText },
+        tags: tokenize(formTitle + " " + formText),
+        source: formSource,
+        scope: "user",
+        overrides: editingRec.id,
+      };
+      const updated = existingOverride
+        ? customRecs.map((r) => r.id === existingOverride.id ? overrideRec : r)
+        : [...customRecs, overrideRec];
+      setCustomRecs(updated);
+      saveCustomLocal(updated);
+      fetch("/api/recommendations/custom", {
+        method: existingOverride ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(existingOverride ? { id: existingOverride.id } : {}),
+          category: overrideRec.category,
+          modality: overrideRec.modality,
+          title: formTitle,
+          text: formText,
+          tags: overrideRec.tags,
+          overrides: editingRec.id,
+        }),
+      }).catch(() => {});
+    } else if (editingRec && editingRec.overrides) {
+      const updated = customRecs.map((r) =>
+        r.id === editingRec.id
+          ? {
+              ...r,
+              title: { es: formTitle, en: formTitle, pt: formTitle },
+              text: { es: formText, en: formText, pt: formText },
+              category: formCategory,
+              modality: formModality,
+              source: formSource,
+              tags: tokenize(formTitle + " " + formText),
+            }
+          : r
+      );
+      setCustomRecs(updated);
+      saveCustomLocal(updated);
+      fetch("/api/recommendations/custom", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingRec.id,
+          category: formCategory,
+          modality: formModality,
+          title: formTitle,
+          text: formText,
+          tags: tokenize(formTitle + " " + formText),
+        }),
+      }).catch(() => {});
+    } else if (editingRec) {
       const updated = customRecs.map((r) =>
         r.id === editingRec.id
           ? {
@@ -187,14 +288,49 @@ export function RecommendationsTab() {
       }).catch(() => {});
     }
     setDialogOpen(false);
-  }, [editingRec, formTitle, formText, formCategory, formModality, formSource, customRecs, t]);
+  }, [editingRec, editingIsSystem, formTitle, formText, formCategory, formModality, formSource, customRecs, t]);
 
-  const handleDelete = useCallback((id: string) => {
-    const updated = customRecs.filter((r) => r.id !== id);
+  const handleDelete = useCallback((rec: ManualRecommendation) => {
+    if (rec.scope === "system") {
+      const newHidden = [...hiddenIds, rec.id];
+      setHiddenIds(newHidden);
+      saveHiddenLocal(newHidden);
+    } else if (rec.overrides) {
+      const updated = customRecs.filter((r) => r.id !== rec.id);
+      setCustomRecs(updated);
+      saveCustomLocal(updated);
+      fetch(`/api/recommendations/custom?id=${rec.id}`, { method: "DELETE" }).catch(() => {});
+      const newHidden = [...hiddenIds, rec.overrides];
+      setHiddenIds(newHidden);
+      saveHiddenLocal(newHidden);
+    } else {
+      const updated = customRecs.filter((r) => r.id !== rec.id);
+      setCustomRecs(updated);
+      saveCustomLocal(updated);
+      fetch(`/api/recommendations/custom?id=${rec.id}`, { method: "DELETE" }).catch(() => {});
+    }
+    setDeleteConfirm(null);
+  }, [customRecs, hiddenIds]);
+
+  const restoreRec = useCallback((id: string) => {
+    const newHidden = hiddenIds.filter((h) => h !== id);
+    setHiddenIds(newHidden);
+    saveHiddenLocal(newHidden);
+    const override = customRecs.find((r) => r.overrides === id);
+    if (override) {
+      const updated = customRecs.filter((r) => r.id !== override.id);
+      setCustomRecs(updated);
+      saveCustomLocal(updated);
+      fetch(`/api/recommendations/custom?id=${override.id}`, { method: "DELETE" }).catch(() => {});
+    }
+  }, [hiddenIds, customRecs]);
+
+  const restoreOriginal = useCallback((rec: ManualRecommendation) => {
+    if (!rec.overrides) return;
+    const updated = customRecs.filter((r) => r.id !== rec.id);
     setCustomRecs(updated);
     saveCustomLocal(updated);
-    fetch(`/api/recommendations/custom?id=${id}`, { method: "DELETE" }).catch(() => {});
-    setDeleteConfirm(null);
+    fetch(`/api/recommendations/custom?id=${rec.id}`, { method: "DELETE" }).catch(() => {});
   }, [customRecs]);
 
   const catLabel = (cat: string) => {
@@ -206,6 +342,8 @@ export function RecommendationsTab() {
     if (mod === "all") return t("mrec.mod_all");
     return tModality(mod);
   };
+
+  const isOverride = (rec: ManualRecommendation) => !!rec.overrides;
 
   return (
     <div className="space-y-4 py-4">
@@ -309,16 +447,22 @@ export function RecommendationsTab() {
                   <div key={rec.id} className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                           <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
                             {rec.title[lang] || rec.title.es}
                           </span>
-                          <Badge
-                            variant={rec.scope === "system" ? "secondary" : "outline"}
-                            className={`text-[9px] px-1 py-0 shrink-0 ${rec.scope === "user" ? "border-brand/50 text-brand" : ""}`}
-                          >
-                            {rec.scope === "system" ? t("mrec.scope_system") : t("mrec.scope_user")}
-                          </Badge>
+                          {isOverride(rec) ? (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-400/50 text-amber-600 dark:text-amber-400">
+                              {t("mrec.modified")}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant={rec.scope === "system" ? "secondary" : "outline"}
+                              className={`text-[9px] px-1 py-0 shrink-0 ${rec.scope === "user" ? "border-brand/50 text-brand" : ""}`}
+                            >
+                              {rec.scope === "system" ? t("mrec.scope_system") : t("mrec.scope_user")}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
                           {rec.text[lang] || rec.text.es}
@@ -329,21 +473,30 @@ export function RecommendationsTab() {
                           <span className="text-[9px] text-gray-400">{rec.source}</span>
                         </div>
                       </div>
-                      {rec.scope === "user" && (
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {isOverride(rec) && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-red-500"
-                            onClick={() => setDeleteConfirm(rec.id)}
+                            className="h-7 w-7 text-gray-400 hover:text-amber-500"
+                            title={t("mrec.restore_original")}
+                            onClick={() => restoreOriginal(rec)}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Undo2 className="h-3 w-3" />
                           </Button>
-                        </div>
-                      )}
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-gray-400 hover:text-red-500"
+                          onClick={() => setDeleteConfirm(rec)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -357,14 +510,61 @@ export function RecommendationsTab() {
         <div className="text-center py-8 text-sm text-gray-400">{t("mrec.no_results")}</div>
       )}
 
+      {/* Hidden / recoverable section */}
+      {hiddenRecs.length > 0 && (
+        <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowHidden(!showHidden)}
+            className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+          >
+            {showHidden ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
+            <Eye className="h-3.5 w-3.5 text-gray-400" />
+            <span className="text-xs font-medium text-gray-500 flex-1">
+              {t("mrec.hidden_recs")} ({hiddenRecs.length})
+            </span>
+          </button>
+          {showHidden && (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800 border-t border-dashed border-gray-300 dark:border-gray-700">
+              {hiddenRecs.map((rec) => (
+                <div key={rec.id} className="px-3 py-2 flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate block">
+                      {rec.title[lang] || rec.title.es}
+                    </span>
+                    <span className="text-[9px] text-gray-400">{rec.source}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-[10px] gap-1 shrink-0"
+                    onClick={() => restoreRec(rec.id)}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    {t("mrec.restore")}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {editingRec ? t("mrec.edit_rec") : t("mrec.add_new")}
+              {editingRec
+                ? editingIsSystem ? t("mrec.edit_system") : t("mrec.edit_rec")
+                : t("mrec.add_new")}
             </DialogTitle>
           </DialogHeader>
+          {editingIsSystem && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1.5 rounded-md">
+              {t("mrec.edit_system_hint")}
+            </p>
+          )}
           <div className="space-y-3">
             <div>
               <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1 block">{t("mrec.form_title")}</label>
@@ -427,13 +627,17 @@ export function RecommendationsTab() {
           <DialogHeader>
             <DialogTitle className="text-sm">{t("mrec.delete_title")}</DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-gray-600 dark:text-gray-400">{t("mrec.delete_confirm")}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            {deleteConfirm?.scope === "system" || deleteConfirm?.overrides
+              ? t("mrec.hide_confirm")
+              : t("mrec.delete_confirm")}
+          </p>
           <DialogFooter className="gap-2">
             <DialogClose asChild>
               <Button variant="ghost" size="sm" className="text-xs">{t("cancel")}</Button>
             </DialogClose>
             <Button variant="destructive" size="sm" className="text-xs" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
-              {t("mrec.delete_btn")}
+              {deleteConfirm?.scope === "system" || deleteConfirm?.overrides ? t("mrec.hide_btn") : t("mrec.delete_btn")}
             </Button>
           </DialogFooter>
         </DialogContent>
