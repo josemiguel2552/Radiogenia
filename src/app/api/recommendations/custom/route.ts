@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getOrgMembership } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
@@ -27,7 +29,46 @@ export async function GET() {
       ...(row.overrides ? { overrides: row.overrides } : {}),
     }));
 
-    return NextResponse.json({ recommendations });
+    // Merge imported org recommendations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let orgRecs: any[] = [];
+    try {
+      const membership = await getOrgMembership(user.id);
+      if (membership) {
+        const service = createServiceClient();
+        const { data: imports } = await service
+          .from("user_recommendation_imports")
+          .select("org_recommendation_id")
+          .eq("user_id", user.id);
+
+        const importedIds = (imports || []).map((r: { org_recommendation_id: string }) => r.org_recommendation_id);
+
+        if (importedIds.length > 0) {
+          const { data: orgData } = await service
+            .from("org_recommendations")
+            .select("*, org_sections(name)")
+            .eq("org_id", membership.org_id)
+            .in("id", importedIds);
+
+          orgRecs = (orgData || []).map((r) => {
+            const sec = r.org_sections as unknown as { name: string } | null;
+            return {
+              id: r.id,
+              category: r.category || "all",
+              modality: r.modality || "all",
+              title: { es: r.title || r.trigger_keyword, en: r.title || r.trigger_keyword, pt: r.title || r.trigger_keyword },
+              text: { es: r.text || r.recommendation_text, en: r.text || r.recommendation_text, pt: r.text || r.recommendation_text },
+              tags: r.tags || [],
+              source: sec?.name || "Hospital",
+              scope: "org" as const,
+              section_name: sec?.name || "",
+            };
+          });
+        }
+      }
+    } catch { /* org tables may not exist */ }
+
+    return NextResponse.json({ recommendations: [...orgRecs, ...recommendations] });
   } catch {
     return NextResponse.json({ recommendations: [] });
   }

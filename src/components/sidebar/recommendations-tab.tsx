@@ -6,24 +6,42 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus,
+  Check,
   Pencil,
   Trash2,
   Search,
   BookOpen,
   User,
+  Building2,
   ChevronDown,
   ChevronRight,
   Filter,
   RotateCcw,
   Undo2,
   Eye,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { useT, useSection, useModality } from "@/lib/i18n";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import { MODALITIES, SECTIONS } from "@/lib/types";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
+
+interface RecCatalogItem {
+  id: string;
+  category: string;
+  modality: string;
+  title: string;
+  text: string;
+  tags: string[];
+  source: string;
+  section_id: string;
+  section_name: string;
+  imported: boolean;
+}
 
 const CUSTOM_KEY = "radiogenai_rec_custom";
 const HIDDEN_KEY = "radiogenai_rec_hidden";
@@ -73,6 +91,13 @@ export function RecommendationsTab() {
   const [formModality, setFormModality] = useState("all");
   const [formSource, setFormSource] = useState("");
 
+  const [hasOrg, setHasOrg] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalog, setCatalog] = useState<RecCatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+
   const lang: OutputLanguage = (typeof window !== "undefined" && (localStorage.getItem("radiogenai_lang") as OutputLanguage)) || "es";
 
   useEffect(() => {
@@ -86,6 +111,10 @@ export function RecommendationsTab() {
           saveCustomLocal(data.recommendations);
         }
       })
+      .catch(() => {});
+    fetch("/api/org", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setHasOrg(!!data?.membership))
       .catch(() => {});
   }, []);
 
@@ -333,6 +362,48 @@ export function RecommendationsTab() {
     fetch(`/api/recommendations/custom?id=${rec.id}`, { method: "DELETE" }).catch(() => {});
   }, [customRecs]);
 
+  const reloadCustom = useCallback(() => {
+    fetch("/api/recommendations/custom")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.recommendations) {
+          setCustomRecs(data.recommendations);
+          saveCustomLocal(data.recommendations);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const openCatalog = useCallback(async () => {
+    setCatalogOpen(true);
+    setCatalogLoading(true);
+    setCatalogSearch("");
+    try {
+      const res = await fetch("/api/recommendations/catalog");
+      if (res.ok) setCatalog(await res.json());
+    } catch { /* ignore */ }
+    setCatalogLoading(false);
+  }, []);
+
+  const toggleImport = useCallback(async (item: RecCatalogItem) => {
+    setToggling((prev) => new Set(prev).add(item.id));
+    try {
+      if (item.imported) {
+        await fetch(`/api/recommendations/imports?id=${item.id}`, { method: "DELETE" });
+      } else {
+        await fetch("/api/recommendations/imports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.id }),
+        });
+      }
+      setCatalog((prev) =>
+        prev.map((c) => c.id === item.id ? { ...c, imported: !c.imported } : c),
+      );
+    } catch { /* ignore */ }
+    setToggling((prev) => { const next = new Set(prev); next.delete(item.id); return next; });
+  }, []);
+
   const catLabel = (cat: string) => {
     if (cat === "all") return t("mrec.cat_all");
     return tSection(cat);
@@ -350,10 +421,18 @@ export function RecommendationsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("mrec.manage_title")}</h2>
-        <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}>
-          <Plus className="h-3.5 w-3.5" />
-          {t("mrec.add_new")}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {hasOrg && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs border-teal-300 text-teal-600 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-400 dark:hover:bg-teal-900/20" onClick={openCatalog}>
+              <Download className="h-3.5 w-3.5" />
+              {t("mrec.import_section")}
+            </Button>
+          )}
+          <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}>
+            <Plus className="h-3.5 w-3.5" />
+            {t("mrec.add_new")}
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400">{t("mrec.manage_desc")}</p>
@@ -414,6 +493,7 @@ export function RecommendationsTab() {
               <SelectContent>
                 <SelectItem value="all">{t("mrec.scope_all")}</SelectItem>
                 <SelectItem value="system">{t("mrec.scope_system")}</SelectItem>
+                <SelectItem value="org">{t("mrec.scope_org")}</SelectItem>
                 <SelectItem value="user">{t("mrec.scope_user")}</SelectItem>
               </SelectContent>
             </Select>
@@ -422,9 +502,12 @@ export function RecommendationsTab() {
       )}
 
       {/* Stats */}
-      <div className="flex gap-3 text-[11px] text-gray-500">
+      <div className="flex gap-3 text-[11px] text-gray-500 flex-wrap">
         <span>{filtered.length} {t("mrec.total_count")}</span>
         <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {filtered.filter((r) => r.scope === "system").length} {t("mrec.scope_system")}</span>
+        {filtered.some((r) => r.scope === "org") && (
+          <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {filtered.filter((r) => r.scope === "org").length} {t("mrec.scope_org")}</span>
+        )}
         <span className="flex items-center gap-1"><User className="h-3 w-3" /> {filtered.filter((r) => r.scope === "user").length} {t("mrec.scope_user")}</span>
       </div>
 
@@ -454,6 +537,10 @@ export function RecommendationsTab() {
                           {isOverride(rec) ? (
                             <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-400/50 text-amber-600 dark:text-amber-400">
                               {t("mrec.modified")}
+                            </Badge>
+                          ) : rec.scope === "org" ? (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-teal-400/50 text-teal-600 dark:text-teal-400">
+                              {(rec as ManualRecommendation & { section_name?: string }).section_name || "Hospital"}
                             </Badge>
                           ) : (
                             <Badge
@@ -485,17 +572,21 @@ export function RecommendationsTab() {
                             <Undo2 className="h-3 w-3" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-gray-400 hover:text-red-500"
-                          onClick={() => setDeleteConfirm(rec)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {rec.scope !== "org" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {rec.scope !== "org" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-gray-400 hover:text-red-500"
+                            onClick={() => setDeleteConfirm(rec)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -640,6 +731,134 @@ export function RecommendationsTab() {
               {deleteConfirm?.scope === "system" || deleteConfirm?.overrides ? t("mrec.hide_btn") : t("mrec.delete_btn")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Catalog Dialog — browse & import org recommendations */}
+      <Dialog open={catalogOpen} onOpenChange={(open) => { if (!open) { setCatalogOpen(false); reloadCustom(); } }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Building2 className="h-4 w-4 text-teal-600" />
+              {t("mrec.catalog_title")}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input
+              placeholder={t("mrec.search_ph")}
+              value={catalogSearch}
+              onChange={(e) => setCatalogSearch(e.target.value)}
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0 max-h-[60vh]">
+            {catalogLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+              </div>
+            ) : catalog.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 text-xs">
+                {t("mrec.catalog_empty")}
+              </div>
+            ) : (() => {
+              const q = catalogSearch.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+              const catalogFiltered = catalog.filter((c) =>
+                c.title.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q) ||
+                c.text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q) ||
+                c.section_name.toLowerCase().includes(q) ||
+                c.category.toLowerCase().includes(q)
+              );
+              const catalogGrouped = new Map<string, RecCatalogItem[]>();
+              catalogFiltered.forEach((c) => {
+                const key = c.section_name || "Hospital";
+                if (!catalogGrouped.has(key)) catalogGrouped.set(key, []);
+                catalogGrouped.get(key)!.push(c);
+              });
+              const importedCount = catalog.filter((c) => c.imported).length;
+
+              return (
+                <div className="space-y-3 pr-3 pb-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {importedCount} {t("mrec.catalog_imported")}
+                    </Badge>
+                    <span className="text-[10px] text-gray-400">
+                      {t("mrec.catalog_of")} {catalog.length} {t("mrec.catalog_available")}
+                    </span>
+                  </div>
+
+                  {catalogFiltered.length === 0 && (
+                    <p className="text-center text-xs text-gray-400 py-6">{t("mrec.no_results")}</p>
+                  )}
+
+                  {Array.from(catalogGrouped.entries()).map(([secName, items]) => (
+                    <div key={secName}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                          {secName}
+                        </span>
+                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                      </div>
+
+                      <div className="space-y-1">
+                        {items.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`flex items-center justify-between gap-2 p-2 rounded-md border transition-all ${
+                              item.imported
+                                ? "border-teal-300 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10"
+                                : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                {item.title}
+                              </p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
+                                {item.text}
+                              </p>
+                              <div className="flex gap-1.5 mt-0.5">
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
+                                  {modLabel(item.modality)}
+                                </Badge>
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
+                                  {catLabel(item.category)}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            <Button
+                              size="sm"
+                              variant={item.imported ? "default" : "outline"}
+                              className={`h-7 px-3 text-[11px] shrink-0 ${
+                                item.imported
+                                  ? "bg-teal-600 hover:bg-teal-700 text-white"
+                                  : "text-teal-600 border-teal-300 hover:bg-teal-50 dark:border-teal-800 dark:hover:bg-teal-900/20"
+                              }`}
+                              disabled={toggling.has(item.id)}
+                              onClick={() => toggleImport(item)}
+                            >
+                              {toggling.has(item.id) ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : item.imported ? (
+                                <><Check className="h-3 w-3 mr-1" /> {t("mrec.catalog_imported_btn")}</>
+                              ) : (
+                                <><Plus className="h-3 w-3 mr-1" /> {t("mrec.catalog_import_btn")}</>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
