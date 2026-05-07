@@ -1737,6 +1737,97 @@ function CanalStenosisSheet() {
   );
 }
 
+function MRIShoulderSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.mri_shoulder_title")} source="Stoller DW, Magnetic Resonance Imaging in Orthopaedics & Sports Medicine, 3rd ed.">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_shoulder_rc")}</p>
+      <SheetTable
+        headers={[t("calc.mri_shoulder_structure"), t("calc.mri_shoulder_insertion"), t("calc.mri_shoulder_best_seq")]}
+        rows={[
+          [t("calc.mri_shoulder_supra"), t("calc.mri_shoulder_supra_ins"), t("calc.mri_shoulder_supra_seq")],
+          [t("calc.mri_shoulder_infra"), t("calc.mri_shoulder_infra_ins"), t("calc.mri_shoulder_infra_seq")],
+          [t("calc.mri_shoulder_subsc"), t("calc.mri_shoulder_subsc_ins"), t("calc.mri_shoulder_subsc_seq")],
+          [t("calc.mri_shoulder_tmin"), t("calc.mri_shoulder_tmin_ins"), t("calc.mri_shoulder_tmin_seq")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_shoulder_labrum")}</p>
+      <SheetTable
+        headers={[t("calc.mri_shoulder_structure"), t("calc.mri_shoulder_best_seq")]}
+        rows={[
+          [t("calc.mri_shoulder_labrum_ant"), t("calc.mri_shoulder_labrum_seq")],
+          [t("calc.mri_shoulder_labrum_post"), t("calc.mri_shoulder_labrum_seq")],
+          [t("calc.mri_shoulder_labrum_sup"), t("calc.mri_shoulder_labrum_seq")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function MRIKneeSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.mri_knee_title")} source="Stoller DW; Helms CA, Fundamentals of Skeletal Radiology, 4th ed.">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_knee_menisci")}</p>
+      <SheetTable
+        headers={[t("calc.mri_knee_region"), t("calc.mri_knee_normal_signal")]}
+        rows={[
+          [t("calc.mri_knee_mm"), t("calc.mri_knee_mm_signal")],
+          [t("calc.mri_knee_ml"), t("calc.mri_knee_ml_signal")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_knee_tear_grades")}</p>
+      <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-0.5">
+        <p>{t("calc.mri_knee_g1")}</p>
+        <p>{t("calc.mri_knee_g2")}</p>
+        <p>{t("calc.mri_knee_g3")}</p>
+      </div>
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_knee_ligaments")}</p>
+      <SheetTable
+        headers={[t("calc.mri_knee_lig"), t("calc.mri_knee_lig_seq")]}
+        rows={[
+          [t("calc.mri_knee_acl"), t("calc.mri_knee_acl_seq")],
+          [t("calc.mri_knee_pcl"), t("calc.mri_knee_pcl_seq")],
+          [t("calc.mri_knee_mcl"), t("calc.mri_knee_mcl_seq")],
+          [t("calc.mri_knee_lcl"), t("calc.mri_knee_lcl_seq")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 italic mt-1">{t("calc.mri_knee_cartilage")}</p>
+    </CheatSheet>
+  );
+}
+
+function MRIAnkleSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.mri_ankle_title")} source="Rosenberg ZS et al., MRI of the Ankle and Foot; Stoller DW">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_ankle_tendons")}</p>
+      <SheetTable
+        headers={[t("calc.mri_ankle_tendon"), t("calc.mri_ankle_location")]}
+        rows={[
+          [t("calc.mri_ankle_achilles"), t("calc.mri_ankle_achilles_loc")],
+          [t("calc.mri_ankle_tibpost"), t("calc.mri_ankle_tibpost_loc")],
+          [t("calc.mri_ankle_fdl"), t("calc.mri_ankle_fdl_loc")],
+          [t("calc.mri_ankle_fhl"), t("calc.mri_ankle_fhl_loc")],
+          [t("calc.mri_ankle_peroneus"), t("calc.mri_ankle_peroneus_loc")],
+          [t("calc.mri_ankle_tibant"), t("calc.mri_ankle_tibant_loc")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_ankle_ligaments")}</p>
+      <SheetTable
+        headers={[t("calc.mri_ankle_tendon"), t("calc.mri_ankle_best_seq")]}
+        rows={[
+          [t("calc.mri_ankle_ltfl"), t("calc.mri_ankle_best_seq")],
+          [t("calc.mri_ankle_cfl"), t("calc.mri_ankle_best_seq")],
+          [t("calc.mri_ankle_ptfl"), t("calc.mri_ankle_best_seq")],
+          [t("calc.mri_ankle_deltoid"), t("calc.mri_ankle_best_seq")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 italic mt-1">{t("calc.mri_ankle_mnemonic")}</p>
+    </CheatSheet>
+  );
+}
+
 function RotatorCuffSheet() {
   const t = useT();
   return (
@@ -2503,6 +2594,9 @@ export function CalculatorsTab() {
     {
       key: "msk", label: t("calc.section_msk"), icon: "🦴",
       sheets: [
+        { id: "mri_shoulder", component: <MRIShoulderSheet />, label: t("calc.mri_shoulder_title") },
+        { id: "mri_knee", component: <MRIKneeSheet />, label: t("calc.mri_knee_title") },
+        { id: "mri_ankle", component: <MRIAnkleSheet />, label: t("calc.mri_ankle_title") },
         { id: "rc", component: <RotatorCuffSheet />, label: t("calc.rc_title") },
         { id: "bone_tumor", component: <BoneTumorSheet />, label: t("calc.bone_tumor_title") },
         { id: "vfx", component: <VertebralFractureSheet />, label: t("calc.vfx_title") },
