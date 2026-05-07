@@ -9,8 +9,10 @@ import {
   Loader2, MessageSquare, CheckCircle, Clock, AlertCircle, ChevronDown,
 } from "lucide-react";
 import type { SupportTicket, SupportTicketStatus } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 export function AdminSupportTab() {
+  const t = useT();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -83,39 +85,39 @@ export function AdminSupportTab() {
   // Group by org
   const orgGroups = new Map<string, SupportTicket[]>();
   const individualTickets: SupportTicket[] = [];
-  for (const t of tickets) {
-    if (t.org_name) {
-      const group = orgGroups.get(t.org_name) || [];
-      group.push(t);
-      orgGroups.set(t.org_name, group);
+  for (const tk of tickets) {
+    if (tk.org_name) {
+      const group = orgGroups.get(tk.org_name) || [];
+      group.push(tk);
+      orgGroups.set(tk.org_name, group);
     } else {
-      individualTickets.push(t);
+      individualTickets.push(tk);
     }
   }
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>;
 
-  const openCount = tickets.filter((t) => t.status === "open").length;
+  const openCount = tickets.filter((tk) => tk.status === "open").length;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          Support Tickets
+          {t("admin.support.title")}
           {openCount > 0 && (
             <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">
-              {openCount} open
+              {openCount} {t("admin.support.open")}
             </Badge>
           )}
         </h2>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="all">{t("admin.support.filter_all")}</SelectItem>
+            <SelectItem value="open">{t("admin.support.filter_open")}</SelectItem>
+            <SelectItem value="in_progress">{t("admin.support.filter_in_progress")}</SelectItem>
+            <SelectItem value="resolved">{t("admin.support.filter_resolved")}</SelectItem>
+            <SelectItem value="closed">{t("admin.support.filter_closed")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -124,7 +126,7 @@ export function AdminSupportTab() {
         <Card>
           <CardContent className="text-center py-12">
             <MessageSquare className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500">No tickets {filter !== "all" ? `with status "${filter}"` : ""}</p>
+            <p className="text-sm text-gray-500">{t("admin.support.no_tickets")} {filter !== "all" ? t("admin.support.with_status").replace("{status}", filter) : ""}</p>
           </CardContent>
         </Card>
       ) : (
@@ -138,12 +140,12 @@ export function AdminSupportTab() {
                 <Badge variant="secondary" className="text-[9px] ml-1">{orgTickets.length}</Badge>
               </h3>
               <div className="space-y-1.5">
-                {orgTickets.map((t) => (
+                {orgTickets.map((tk) => (
                   <TicketRow
-                    key={t.id}
-                    ticket={t}
-                    expanded={expanded.has(t.id)}
-                    onToggle={() => toggleExpand(t.id)}
+                    key={tk.id}
+                    ticket={tk}
+                    expanded={expanded.has(tk.id)}
+                    onToggle={() => toggleExpand(tk.id)}
                     statusIcon={statusIcon}
                     statusColor={statusColor}
                     replyingId={replyingId}
@@ -164,16 +166,16 @@ export function AdminSupportTab() {
           {individualTickets.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
-                Individual Users
+                {t("admin.support.individual_users")}
                 <Badge variant="secondary" className="text-[9px] ml-1">{individualTickets.length}</Badge>
               </h3>
               <div className="space-y-1.5">
-                {individualTickets.map((t) => (
+                {individualTickets.map((tk) => (
                   <TicketRow
-                    key={t.id}
-                    ticket={t}
-                    expanded={expanded.has(t.id)}
-                    onToggle={() => toggleExpand(t.id)}
+                    key={tk.id}
+                    ticket={tk}
+                    expanded={expanded.has(tk.id)}
+                    onToggle={() => toggleExpand(tk.id)}
                     statusIcon={statusIcon}
                     statusColor={statusColor}
                     replyingId={replyingId}
@@ -196,7 +198,7 @@ export function AdminSupportTab() {
 }
 
 function TicketRow({
-  ticket: t, expanded, onToggle, statusIcon, statusColor,
+  ticket: tk, expanded, onToggle, statusIcon, statusColor,
   replyingId, replyText, saving,
   onStartReply, onReplyChange, onSendReply, onStatusChange, onCancelReply,
 }: {
@@ -214,66 +216,67 @@ function TicketRow({
   onStatusChange: (id: string, status: SupportTicketStatus) => void;
   onCancelReply: () => void;
 }) {
+  const t = useT();
   return (
     <Card>
       <CardContent className="p-3">
         <button type="button" className="w-full text-left" onClick={onToggle}>
           <div className="flex items-center gap-2">
-            {statusIcon(t.status)}
+            {statusIcon(tk.status)}
             <div className="flex-1 min-w-0">
               <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
-                {t.subject || t.body.slice(0, 60)}
+                {tk.subject || tk.body.slice(0, 60)}
               </span>
               <span className="text-[10px] text-gray-400">
-                {t.user_name || t.user_email} — {new Date(t.created_at).toLocaleDateString()}
+                {tk.user_name || tk.user_email} — {new Date(tk.created_at).toLocaleDateString()}
               </span>
             </div>
-            <Badge className={`text-[9px] ${statusColor(t.status)}`}>{t.status}</Badge>
+            <Badge className={`text-[9px] ${statusColor(tk.status)}`}>{tk.status}</Badge>
             <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
           </div>
         </button>
 
         {expanded && (
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
-            <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{t.body}</p>
+            <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{tk.body}</p>
 
-            {t.admin_reply && (
+            {tk.admin_reply && (
               <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40">
-                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 block mb-0.5">Admin reply:</span>
-                <p className="text-xs text-blue-800 dark:text-blue-200 whitespace-pre-wrap">{t.admin_reply}</p>
+                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 block mb-0.5">{t("admin.support.admin_reply")}</span>
+                <p className="text-xs text-blue-800 dark:text-blue-200 whitespace-pre-wrap">{tk.admin_reply}</p>
               </div>
             )}
 
-            {replyingId === t.id ? (
+            {replyingId === tk.id ? (
               <div className="space-y-2">
                 <textarea
                   value={replyText}
                   onChange={(e) => onReplyChange(e.target.value)}
-                  placeholder="Write a reply..."
+                  placeholder={t("admin.support.write_reply")}
                   rows={3}
                   className="w-full text-xs border rounded-lg px-3 py-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   autoFocus
                 />
                 <div className="flex gap-1.5 justify-end">
-                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={onCancelReply}>Cancel</Button>
-                  <Button size="sm" className="h-7 text-[10px]" onClick={() => onSendReply(t.id)} disabled={saving || !replyText.trim()}>
-                    {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Reply & Resolve"}
+                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={onCancelReply}>{t("admin.support.cancel")}</Button>
+                  <Button size="sm" className="h-7 text-[10px]" onClick={() => onSendReply(tk.id)} disabled={saving || !replyText.trim()}>
+                    {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("admin.support.reply_resolve")}
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="flex gap-1.5">
-                <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStartReply(t.id)}>
-                  Reply
+                <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStartReply(tk.id)}>
+                  {t("admin.support.reply")}
                 </Button>
-                {t.status === "open" && (
-                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStatusChange(t.id, "in_progress")}>
-                    Mark In Progress
+                {tk.status === "open" && (
+                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStatusChange(tk.id, "in_progress")}>
+                    {t("admin.support.mark_in_progress")}
                   </Button>
                 )}
-                {t.status !== "closed" && (
-                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStatusChange(t.id, "closed")}>
-                    Close
+                {tk.status !== "closed" && (
+                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStatusChange(tk.id, "closed")}>
+                    {t("admin.support.close")}
                   </Button>
                 )}
               </div>

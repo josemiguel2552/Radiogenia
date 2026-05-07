@@ -607,7 +607,7 @@ export function RecommendationsTab() {
             </div>
             <div>
               <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1 block">{t("mrec.form_source")}</label>
-              <Input value={formSource} onChange={(e) => setFormSource(e.target.value)} className="h-8 text-xs" placeholder="Fleischner 2017, ACR..." />
+              <Input value={formSource} onChange={(e) => setFormSource(e.target.value)} className="h-8 text-xs" placeholder={t("mrec.source_ph")} />
             </div>
           </div>
           <DialogFooter className="gap-2">

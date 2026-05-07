@@ -649,7 +649,7 @@ export function DashboardContent() {
         }
         if (streamError) {
           findingsFailed = true;
-          setFindings("Error: " + streamError);
+          setFindings(t("gen_error") + ": " + streamError);
         } else {
           findingsText = cleanReport(findingsText);
           setInitialFindings(findingsText);
@@ -665,11 +665,11 @@ export function DashboardContent() {
       } else {
         findingsFailed = true;
         const data = await res.json().catch(() => ({ error: "Generation failed" }));
-        setFindings(data.error || "Error generating findings");
+        setFindings(data.error || t("gen_error_findings"));
       }
     } catch (e) {
       findingsFailed = true;
-      setFindings("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+      setFindings(t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")));
     }
     setLoadingFindings(false);
 
@@ -761,7 +761,7 @@ export function DashboardContent() {
             }
           }
           if (streamError) {
-            setConclusionVersions((prev) => ({ ...prev, [style]: "Error: " + streamError }));
+            setConclusionVersions((prev) => ({ ...prev, [style]: t("gen_error") + ": " + streamError }));
           } else {
             const cleaned = cleanReport(text);
             setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
@@ -787,10 +787,10 @@ export function DashboardContent() {
           }
         } else {
           const data = await res.json().catch(() => ({ error: "Generation failed" }));
-          setConclusionVersions((prev) => ({ ...prev, [style]: data.error || "Error generating conclusion" }));
+          setConclusionVersions((prev) => ({ ...prev, [style]: data.error || t("gen_error_conclusion") }));
         }
       } catch (e) {
-        setConclusionVersions((prev) => ({ ...prev, [style]: "Error: " + (e instanceof Error ? e.message : "Unknown error") }));
+        setConclusionVersions((prev) => ({ ...prev, [style]: t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")) }));
       } finally {
         setLoadingConcStyles((prev) => ({ ...prev, [style]: false }));
       }

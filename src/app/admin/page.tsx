@@ -18,6 +18,7 @@ import {
   Building2, MessageSquare,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 import { Logo } from "@/components/ui/logo";
 import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
 import { AdminSupportTab } from "@/components/admin/admin-support-tab";
@@ -87,6 +88,7 @@ type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "suppo
 
 export default function AdminPage() {
   const router = useRouter();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
 
@@ -427,11 +429,11 @@ export default function AdminPage() {
   async function handleCreateUser() {
     setCreateError("");
     if (!createEmail || !createPassword) {
-      setCreateError("Email and password are required");
+      setCreateError(t("admin.email_password_required"));
       return;
     }
     if (createPassword.length < 6) {
-      setCreateError("Password must be at least 6 characters");
+      setCreateError(t("admin.password_min_length"));
       return;
     }
     setCreatingUser(true);
@@ -447,7 +449,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setCreateError(data.error || "Failed to create user");
+        setCreateError(data.error || t("admin.failed_create_user"));
       } else {
         setCreateOpen(false);
         setCreateEmail("");
@@ -456,7 +458,7 @@ export default function AdminPage() {
         loadAll();
       }
     } catch {
-      setCreateError("Network error");
+      setCreateError(t("admin.network_error"));
     }
     setCreatingUser(false);
   }
@@ -475,7 +477,7 @@ export default function AdminPage() {
       }
       setTrainingData(d.reports || []);
     } catch (e) {
-      setTrainingError(e instanceof Error ? e.message : "Failed to load training data");
+      setTrainingError(e instanceof Error ? e.message : t("admin.failed_load_training"));
     }
     setTrainingLoading(false);
   }
@@ -504,15 +506,15 @@ export default function AdminPage() {
   const totalReports = users.reduce((s, u) => s + u.report_count, 0);
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
-    { key: "ai", label: "AI Config", icon: <Plug className="h-4 w-4" /> },
-    { key: "plans", label: "Plans", icon: <CreditCard className="h-4 w-4" /> },
-    { key: "orgs", label: "Hospitals", icon: <Building2 className="h-4 w-4" /> },
-    { key: "residents", label: "Residents", icon: <GraduationCap className="h-4 w-4" /> },
-    { key: "support", label: "Support", icon: <MessageSquare className="h-4 w-4" /> },
-    { key: "waitlist", label: "Waitlist", icon: <UserPlus className="h-4 w-4" /> },
-    { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
+    { key: "overview", label: t("admin.tab_overview"), icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "users", label: t("admin.tab_users"), icon: <Users className="h-4 w-4" /> },
+    { key: "ai", label: t("admin.tab_ai_config"), icon: <Plug className="h-4 w-4" /> },
+    { key: "plans", label: t("admin.tab_plans"), icon: <CreditCard className="h-4 w-4" /> },
+    { key: "orgs", label: t("admin.tab_hospitals"), icon: <Building2 className="h-4 w-4" /> },
+    { key: "residents", label: t("admin.tab_residents"), icon: <GraduationCap className="h-4 w-4" /> },
+    { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-4 w-4" /> },
+    { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
+    { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -535,10 +537,10 @@ export default function AdminPage() {
             <Logo size="sm" variant="icon" className="sm:hidden" />
             <Logo size="sm" className="hidden sm:inline-flex" />
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
-              Admin
+              {t("admin.badge")}
             </Badge>
           </div>
-          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title="Refresh">
+          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title={t("admin.refresh")}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -567,18 +569,18 @@ export default function AdminPage() {
         {tab === "overview" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label="Total Users" value={stats?.totalUsers ?? radiologists.length} />
-              <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label="Total Reports" value={stats?.totalReports ?? totalReports} />
-              <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label="Reports This Month" value={stats?.reportsThisMonth ?? 0} />
-              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label="Dictation (min)" value={`${stats?.totalDictationMinutes ?? 0} min`} />
-              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
+              <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label={t("admin.total_users")} value={stats?.totalUsers ?? radiologists.length} />
+              <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label={t("admin.total_reports")} value={stats?.totalReports ?? totalReports} />
+              <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label={t("admin.reports_this_month")} value={stats?.reportsThisMonth ?? 0} />
+              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label={t("admin.dictation_min")} value={`${stats?.totalDictationMinutes ?? 0} min`} />
+              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label={t("admin.mrr")} value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Plan distribution */}
               <Card>
                 <div className="px-5 pt-5 pb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Plan Distribution</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.plan_distribution")}</h3>
                 </div>
                 <CardContent className="pt-0 space-y-3">
                   {(["free", "starter", "professional"] as const).map((p) => {
@@ -589,7 +591,7 @@ export default function AdminPage() {
                       <div key={p} className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">{p}</span>
-                          <span className="text-gray-500">{count} users ({pct}%)</span>
+                          <span className="text-gray-500">{count} {t("admin.users_count")} ({pct}%)</span>
                         </div>
                         <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
@@ -608,7 +610,7 @@ export default function AdminPage() {
               {/* Modality usage */}
               <Card>
                 <div className="px-5 pt-5 pb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Reports by Modality</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.reports_by_modality")}</h3>
                 </div>
                 <CardContent className="pt-0 space-y-2">
                   {stats?.modalityCounts && Object.keys(stats.modalityCounts).length > 0 ? (
@@ -622,7 +624,7 @@ export default function AdminPage() {
                         </div>
                       ))
                   ) : (
-                    <p className="text-xs text-gray-400 py-4 text-center">No reports yet</p>
+                    <p className="text-xs text-gray-400 py-4 text-center">{t("admin.no_reports_yet")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -639,11 +641,11 @@ export default function AdminPage() {
                     {selectedProvider?.label || provider} — {modelName}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {config?.updated_at ? `Updated ${new Date(config.updated_at).toLocaleDateString()}` : "Global AI configuration"}
+                    {config?.updated_at ? `${t("admin.updated")} ${new Date(config.updated_at).toLocaleDateString()}` : t("admin.global_ai_config")}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setTab("ai")} className="text-xs gap-1.5">
-                  <Plug className="h-3 w-3" /> Configure
+                  <Plug className="h-3 w-3" /> {t("admin.configure")}
                 </Button>
               </CardContent>
             </Card>
@@ -655,15 +657,15 @@ export default function AdminPage() {
           <Card>
             <div className="flex items-center gap-2 px-5 pt-5 pb-3">
               <Users className="h-4 w-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">User Management</h2>
-              <Badge variant="secondary" className="text-xs">{radiologists.length} radiologists</Badge>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.user_management")}</h2>
+              <Badge variant="secondary" className="text-xs">{radiologists.length} {t("admin.radiologists")}</Badge>
               <Button
                 size="sm"
                 className="ml-auto gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
                 onClick={() => { setCreateOpen(true); setCreateError(""); }}
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                Add User
+                {t("admin.add_user")}
               </Button>
             </div>
             <CardContent className="pt-0">
@@ -671,14 +673,14 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Plan</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Reports/mo</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">Dictation/mo</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Total</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Joined</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Actions</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_user")}</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">{t("admin.th_role")}</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_plan")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_reports_mo")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">{t("admin.th_dictation_mo")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_total")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_joined")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -703,8 +705,8 @@ export default function AdminPage() {
                               className="text-[10px]"
                             >
                               {u.role === "admin" ? (
-                                <span className="flex items-center gap-1"><Shield className="h-2.5 w-2.5" /> Admin</span>
-                              ) : "Radiologist"}
+                                <span className="flex items-center gap-1"><Shield className="h-2.5 w-2.5" /> {t("admin.role_admin")}</span>
+                              ) : t("admin.role_radiologist")}
                             </Badge>
                           </td>
                           <td className="py-3 px-2">
@@ -768,7 +770,7 @@ export default function AdminPage() {
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7"
                                   onClick={() => { setEditUser(u); setEditRole(u.role); setEditPlan(u.subscription_plan || "free"); }}
-                                  title="Edit user"
+                                  title={t("admin.edit_user")}
                                 >
                                   <UserCog className="h-3.5 w-3.5" />
                                 </Button>
@@ -799,16 +801,16 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Plug className="h-4 w-4 text-blue-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Default Model & API Keys</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.default_model_keys")}</h2>
               </div>
               <CardContent className="space-y-4 pt-0 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Default provider used for all tasks unless overridden below.
+                  {t("admin.default_provider_desc")}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Provider</Label>
+                    <Label className="text-xs">{t("admin.provider")}</Label>
                     <Select value={provider} onValueChange={(v) => {
                       setProvider(v);
                       const prov = PROVIDERS.find((p) => p.value === v);
@@ -824,7 +826,7 @@ export default function AdminPage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Model</Label>
+                    <Label className="text-xs">{t("admin.model")}</Label>
                     {(() => {
                       const base = selectedProvider?.models || [];
                       const ft = provider === "openai"
@@ -853,7 +855,7 @@ export default function AdminPage() {
                         <input type="text" value={modelName}
                           onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
                           className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                          placeholder="Model name" />
+                          placeholder={t("admin.model_name")} />
                       );
                     })()}
                   </div>
@@ -861,7 +863,7 @@ export default function AdminPage() {
 
                 {provider === "custom" && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Custom Base URL</Label>
+                    <Label className="text-xs">{t("admin.custom_base_url")}</Label>
                     <input type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)}
                       className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
                       placeholder="https://your-endpoint.com/v1" />

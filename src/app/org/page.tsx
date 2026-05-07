@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
+import { useT } from "@/lib/i18n";
 import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
 
 type Tab = "stats" | "members" | "sections";
@@ -59,6 +60,7 @@ interface StatsData {
 
 export default function OrgDashboard() {
   const router = useRouter();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("sections");
   const [loading, setLoading] = useState(true);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
@@ -154,7 +156,7 @@ export default function OrgDashboard() {
   }
 
   async function handleDeleteSection(id: string) {
-    if (!confirm("Delete this section? Members will be unassigned.")) return;
+    if (!confirm(t("org.confirm_delete_section"))) return;
     await fetch(`/api/org/sections?id=${id}`, { method: "DELETE" });
     await loadOrg();
   }
@@ -201,7 +203,7 @@ export default function OrgDashboard() {
       }
     } else {
       if (!memberEmail.trim()) {
-        setMemberError("Introduce el email del usuario");
+        setMemberError(t("org.error_enter_email"));
         setSavingMember(false);
         return;
       }
@@ -217,7 +219,7 @@ export default function OrgDashboard() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setMemberError(data.error === "User not found" ? "No existe un usuario registrado con ese email" : data.error || "Error");
+        setMemberError(data.error === "User not found" ? t("org.error_user_not_found") : data.error || "Error");
         setSavingMember(false);
         return;
       }
@@ -262,7 +264,7 @@ export default function OrgDashboard() {
   }
 
   async function handleDeleteTemplate(id: string) {
-    if (!confirm("¿Eliminar esta plantilla compartida?")) return;
+    if (!confirm(t("org.confirm_delete_template"))) return;
     await fetch(`/api/org/templates?id=${id}`, { method: "DELETE" });
     await loadTemplates();
   }
@@ -276,16 +278,16 @@ export default function OrgDashboard() {
     const res = await fetch("/api/org/upload-templates", { method: "POST", body: fd });
     const data = await res.json();
     setUploadingTpls(null);
-    if (!res.ok) { setUploadMsg(data.error || "Error al procesar"); return; }
-    setUploadMsg(`${data.saved} plantillas extraídas y guardadas`);
+    if (!res.ok) { setUploadMsg(data.error || t("org.error_processing")); return; }
+    setUploadMsg(`${data.saved} ${t("org.templates_extracted_saved")}`);
     await loadTemplates();
   }
 
   const roleLabel = (role: string, chief: boolean) => {
-    if (chief) return "Jefe de Servicio";
-    if (role === "section_chief") return "Jefe de Sección";
-    if (role === "section_editor") return "Editor";
-    return "Radiólogo";
+    if (chief) return t("org.role_org_chief");
+    if (role === "section_chief") return t("org.role_section_chief");
+    if (role === "section_editor") return t("org.role_editor");
+    return t("org.role_radiologist");
   };
 
   const roleColor = (role: string, chief: boolean) => {
@@ -318,15 +320,15 @@ export default function OrgDashboard() {
   if (!orgData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">No organization found</p>
+        <p className="text-gray-500">{t("org.no_organization")}</p>
       </div>
     );
   }
 
   const ALL_TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "stats", label: "Estadísticas", icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "members", label: "Miembros", icon: <Users className="h-4 w-4" /> },
-    { key: "sections", label: "Secciones", icon: <Building2 className="h-4 w-4" /> },
+    { key: "stats", label: t("org.tab_stats"), icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "members", label: t("org.tab_members"), icon: <Users className="h-4 w-4" /> },
+    { key: "sections", label: t("org.tab_sections"), icon: <Building2 className="h-4 w-4" /> },
   ];
 
   const TABS = ALL_TABS.filter((t) => {
@@ -349,7 +351,7 @@ export default function OrgDashboard() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <span className="ml-auto text-[11px] text-blue-200">
-              {orgData.active_members}/{orgData.organization.max_seats} plazas
+              {orgData.active_members}/{orgData.organization.max_seats} {t("org.seats")}
             </span>
           </div>
           <div className="pb-5 pl-1">
@@ -358,21 +360,21 @@ export default function OrgDashboard() {
               <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{orgData.organization.name}</h1>
             </div>
             <Badge className={`text-[10px] mt-1 ${isOrgChief ? "bg-white/20 text-white border-white/20" : isSectionChief ? "bg-white/20 text-white border-white/20" : "bg-white/20 text-white border-white/20"}`}>
-              {isOrgChief ? "Jefe de Servicio" : isSectionChief ? "Jefe de Sección" : "Editor de Sección"}
+              {isOrgChief ? t("org.role_org_chief") : isSectionChief ? t("org.role_section_chief") : t("org.role_section_editor")}
             </Badge>
             {canViewStats && stats && (
               <div className="flex gap-6 mt-4">
                 <div>
                   <p className="text-2xl font-bold text-white">{stats.total_members}</p>
-                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Radiólogos</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">{t("org.radiologists")}</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">{stats.total_reports_this_month}</p>
-                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Informes/mes</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">{t("org.reports_per_month")}</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">{orgData.sections.length}</p>
-                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Secciones</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">{t("org.tab_sections")}</p>
                 </div>
               </div>
             )}
@@ -407,19 +409,19 @@ export default function OrgDashboard() {
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_members}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Radiólogos</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.radiologists")}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_reports_this_month}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Informes este mes</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.reports_this_month")}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.sections.length}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Secciones</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.tab_sections")}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -427,13 +429,13 @@ export default function OrgDashboard() {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {stats.total_members > 0 ? Math.round(stats.total_reports_this_month / stats.total_members) : 0}
                   </p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Media/radiólogo</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.avg_per_radiologist")}</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Per-section breakdown */}
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Por sección</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("org.by_section")}</h3>
             <div className="space-y-2">
               {stats.sections.map((s) => (
                 <Card key={s.id}>
@@ -445,8 +447,8 @@ export default function OrgDashboard() {
                       <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{s.name}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-gray-500">{s.members} miembros</span>
-                      <span className="text-xs font-semibold text-gray-900 dark:text-white block">{s.reports} informes</span>
+                      <span className="text-xs text-gray-500">{s.members} {t("org.members")}</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white block">{s.reports} {t("org.reports")}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -454,17 +456,17 @@ export default function OrgDashboard() {
             </div>
 
             {/* Per-radiologist table */}
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-4">Por radiólogo</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-4">{t("org.by_radiologist")}</h3>
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-gray-800">
-                        <th className="text-left p-3 font-medium text-gray-500">Nombre</th>
-                        <th className="text-left p-3 font-medium text-gray-500">Sección</th>
-                        <th className="text-left p-3 font-medium text-gray-500">Rol</th>
-                        <th className="text-right p-3 font-medium text-gray-500">Informes/mes</th>
+                        <th className="text-left p-3 font-medium text-gray-500">{t("org.name")}</th>
+                        <th className="text-left p-3 font-medium text-gray-500">{t("org.section")}</th>
+                        <th className="text-left p-3 font-medium text-gray-500">{t("org.role")}</th>
+                        <th className="text-right p-3 font-medium text-gray-500">{t("org.reports_per_month")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -496,11 +498,11 @@ export default function OrgDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Miembros ({members.filter((m) => m.is_active).length} activos)
+                {t("org.tab_members")} ({members.filter((m) => m.is_active).length} {t("org.active")})
               </h3>
               <Button size="sm" onClick={openAddMember} className="gap-1.5">
                 <UserPlus className="h-3.5 w-3.5" />
-                Añadir
+                {t("org.add")}
               </Button>
             </div>
 
@@ -519,13 +521,13 @@ export default function OrgDashboard() {
                           {m.user_name || m.user_email}
                         </span>
                         <span className="text-[10px] text-gray-400 block truncate">
-                          {m.section_name || "Sin sección"} {m.user_name ? `· ${m.user_email}` : ""}
+                          {m.section_name || t("org.no_section")} {m.user_name ? `· ${m.user_email}` : ""}
                         </span>
                       </div>
                       <Badge className={`text-[9px] ${roleColor(m.section_role, m.is_org_chief)}`}>
                         {roleLabel(m.section_role, m.is_org_chief)}
                       </Badge>
-                      {!m.is_active && <Badge variant="secondary" className="text-[9px]">Inactivo</Badge>}
+                      {!m.is_active && <Badge variant="secondary" className="text-[9px]">{t("org.inactive")}</Badge>}
                       <div className="flex gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)}>
                           <Pencil className="h-3 w-3" />
@@ -534,7 +536,7 @@ export default function OrgDashboard() {
                           variant="ghost" size="icon"
                           className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
                           onClick={() => handleToggleMemberActive(m)}
-                          title={m.is_active ? "Desactivar" : "Reactivar"}
+                          title={m.is_active ? t("org.deactivate") : t("org.reactivate")}
                         >
                           {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                         </Button>
@@ -552,9 +554,9 @@ export default function OrgDashboard() {
           <div className="space-y-5">
             {isOrgChief && (
               <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-500">{visibleSections.length} secciones</p>
+                <p className="text-xs text-gray-500">{visibleSections.length} {t("org.sections_count")}</p>
                 <Button size="sm" onClick={() => { setSectionName(""); setSectionSlug(""); setShowSectionForm(true); }} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-3.5 w-3.5" /> Nueva sección
+                  <Plus className="h-3.5 w-3.5" /> {t("org.new_section")}
                 </Button>
               </div>
             )}
@@ -565,8 +567,8 @@ export default function OrgDashboard() {
                   <div className="h-16 w-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-4">
                     <Building2 className="h-8 w-8 text-blue-400" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No hay secciones creadas</p>
-                  <p className="text-xs text-gray-400 max-w-xs mx-auto">Crea la primera sección para organizar plantillas y equipo.</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("org.no_sections_title")}</p>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">{t("org.no_sections_desc")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -615,13 +617,13 @@ export default function OrgDashboard() {
                           {canManageMembers && (
                             <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "team" })}
                               className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "team" ? "border-blue-500 text-blue-600 dark:text-blue-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-                              <Users className="h-3.5 w-3.5" /> Equipo
+                              <Users className="h-3.5 w-3.5" /> {t("org.team")}
                               <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "team" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sMembers.length}</span>
                             </button>
                           )}
                           <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "templates" })}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "templates" ? "border-teal-500 text-teal-600 dark:text-teal-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-                            <FileText className="h-3.5 w-3.5" /> Plantillas
+                            <FileText className="h-3.5 w-3.5" /> {t("org.templates")}
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "templates" ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sTemplates.length}</span>
                           </button>
                         </div>
@@ -633,7 +635,7 @@ export default function OrgDashboard() {
                             sMembers.length === 0 ? (
                               <div className="text-center py-8">
                                 <Users className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                <p className="text-xs text-gray-400">Sin miembros en esta sección</p>
+                                <p className="text-xs text-gray-400">{t("org.no_members_section")}</p>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -661,17 +663,17 @@ export default function OrgDashboard() {
                           {sub === "templates" && (
                             <div>
                               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                                <p className="text-xs text-gray-500">{sTemplates.length} plantilla{sTemplates.length !== 1 ? "s" : ""} compartida{sTemplates.length !== 1 ? "s" : ""}</p>
+                                <p className="text-xs text-gray-500">{sTemplates.length} {sTemplates.length !== 1 ? t("org.shared_template_other") : t("org.shared_template_one")}</p>
                                 <div className="flex gap-2">
                                   <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                     {uploadingTpls === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-violet-500" />}
-                                    {uploadingTpls === s.id ? "Procesando..." : "Extraer de Word"}
+                                    {uploadingTpls === s.id ? t("org.processing") : t("org.extract_from_word")}
                                     <input type="file" accept=".docx,.doc,.pdf" className="hidden" disabled={!!uploadingTpls}
                                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTpls(f, s.id); e.target.value = ""; }} />
                                   </label>
                                   <Button size="sm" variant="outline" className="gap-1.5 text-xs"
                                     onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
-                                    <Download className="h-3.5 w-3.5" /> Catálogo
+                                    <Download className="h-3.5 w-3.5" /> {t("org.catalog")}
                                   </Button>
                                 </div>
                               </div>

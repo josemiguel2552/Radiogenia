@@ -47,7 +47,7 @@ export default function WaitlistPage() {
       }
       setSubmitted(true);
     } catch {
-      setError("Network error");
+      setError(t("waitlist.network_error"));
     }
     setLoading(false);
   }

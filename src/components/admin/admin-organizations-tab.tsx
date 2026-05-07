@@ -15,6 +15,7 @@ import {
   Network, Settings,
 } from "lucide-react";
 import type { Organization, OrgSection, SectionRole } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface OrgWithMembers extends Organization {
   active_members: number;
@@ -33,6 +34,7 @@ interface MemberRow {
 }
 
 export function AdminOrganizationsTab() {
+  const t = useT();
   const [orgs, setOrgs] = useState<OrgWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -104,16 +106,16 @@ export function AdminOrganizationsTab() {
       ]);
       if (!secRes.ok) {
         const err = await secRes.json().catch(() => ({ error: `HTTP ${secRes.status}` }));
-        setDetailError(`Secciones: ${err.error || secRes.statusText}`);
+        setDetailError(`${t("admin.org.sections")}: ${err.error || secRes.statusText}`);
       }
       if (!memRes.ok) {
         const err = await memRes.json().catch(() => ({ error: `HTTP ${memRes.status}` }));
-        setDetailError((prev) => prev ? `${prev} | Miembros: ${err.error || memRes.statusText}` : `Miembros: ${err.error || memRes.statusText}`);
+        setDetailError((prev) => prev ? `${prev} | ${t("admin.org.members")}: ${err.error || memRes.statusText}` : `${t("admin.org.members")}: ${err.error || memRes.statusText}`);
       }
       setSections(secRes.ok ? await secRes.json() : []);
       setMembers(memRes.ok ? await memRes.json() : []);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Error de red";
+      const msg = e instanceof Error ? e.message : t("admin.org.network_error");
       setDetailError(msg);
       setSections([]);
       setMembers([]);
@@ -174,7 +176,7 @@ export function AdminOrganizationsTab() {
   }
 
   async function handleDeleteOrg(org: OrgWithMembers) {
-    if (!confirm(`Eliminar "${org.name}"? Se borrarán todas las secciones, miembros y recursos compartidos.`)) return;
+    if (!confirm(t("admin.org.confirm_delete_org").replace("{name}", org.name))) return;
     await fetch(`/api/admin/organizations?id=${org.id}`, { method: "DELETE" });
     setSelectedOrg(null);
     await loadOrgs();
@@ -194,7 +196,7 @@ export function AdminOrganizationsTab() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
-        setSectionError(data.error || "Error al crear la sección");
+        setSectionError(data.error || t("admin.org.error_creating_section"));
         setSavingSection(false);
         return;
       }
@@ -203,17 +205,17 @@ export function AdminOrganizationsTab() {
       setSectionName("");
       await loadOrgDetail(selectedOrg);
     } catch (e) {
-      setSectionError("Error de red al crear la sección");
+      setSectionError(t("admin.org.network_error_creating_section"));
       setSavingSection(false);
     }
   }
 
   async function handleDeleteSection(id: string) {
-    if (!confirm("Eliminar sección? Los miembros quedarán sin sección asignada.")) return;
+    if (!confirm(t("admin.org.confirm_delete_section"))) return;
     const res = await fetch(`/api/admin/organizations/sections?id=${id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: "Error" }));
-      alert(data.error || "Error al eliminar la sección");
+      alert(data.error || t("admin.org.error_deleting_section"));
     }
     if (selectedOrg) await loadOrgDetail(selectedOrg);
   }
@@ -270,7 +272,7 @@ export function AdminOrganizationsTab() {
       const data = await res.json();
       setResetError(data.error || "Error");
     } else {
-      setResetSuccess(`Contraseña actualizada para ${resetMember.user_name || resetMember.user_email}`);
+      setResetSuccess(t("admin.org.password_updated_for").replace("{name}", resetMember.user_name || resetMember.user_email || ""));
     }
     setResettingPassword(false);
   }
@@ -295,7 +297,7 @@ export function AdminOrganizationsTab() {
         });
         const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
         if (!res.ok) {
-          setMemberError(data.error || "Error al actualizar miembro");
+          setMemberError(data.error || t("admin.org.error_updating_member"));
           setSavingMember(false);
           return;
         }
@@ -304,12 +306,12 @@ export function AdminOrganizationsTab() {
         await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
       } else {
         if (!memberEmail.trim()) {
-          setMemberError("Introduce el email del usuario");
+          setMemberError(t("admin.org.enter_user_email"));
           setSavingMember(false);
           return;
         }
         if (isNewUser && (!memberPassword || memberPassword.length < 6)) {
-          setMemberError("La contraseña debe tener al menos 6 caracteres");
+          setMemberError(t("admin.org.password_min_6"));
           setSavingMember(false);
           return;
         }
@@ -334,13 +336,13 @@ export function AdminOrganizationsTab() {
         const result = await res.json().catch(() => ({ error: `Error ${res.status}` }));
 
         if (!res.ok) {
-          setMemberError(result.error || "Error al añadir miembro");
+          setMemberError(result.error || t("admin.org.error_adding_member"));
           setSavingMember(false);
           return;
         }
 
         if (result.user_created) {
-          setMemberSuccess(`Cuenta creada. Email: ${memberEmail.trim().toLowerCase()} / Contraseña: ${memberPassword}`);
+          setMemberSuccess(`${t("admin.org.account_created")}. Email: ${memberEmail.trim().toLowerCase()} / ${t("admin.org.password")}: ${memberPassword}`);
           setSavingMember(false);
           await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
           return;
@@ -351,7 +353,7 @@ export function AdminOrganizationsTab() {
         await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
       }
     } catch (e) {
-      setMemberError("Error de red al guardar");
+      setMemberError(t("admin.org.network_error_saving"));
       setSavingMember(false);
     }
   }
@@ -367,10 +369,10 @@ export function AdminOrganizationsTab() {
   }
 
   const roleLabel = (role: string, chief: boolean) => {
-    if (chief) return "Jefe de Servicio";
-    if (role === "section_chief") return "Jefe de Sección";
-    if (role === "section_editor") return "Editor";
-    return "Radiólogo";
+    if (chief) return t("admin.org.role_org_chief");
+    if (role === "section_chief") return t("admin.org.role_section_chief");
+    if (role === "section_editor") return t("admin.org.role_editor");
+    return t("admin.org.role_radiologist");
   };
 
   const roleColor = (role: string, chief: boolean) => {
@@ -400,11 +402,11 @@ export function AdminOrganizationsTab() {
           </Button>
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate">{selectedOrg.name}</h2>
-            <span className="text-[11px] text-gray-400">{selectedOrg.slug} · {selectedOrg.active_members}/{selectedOrg.max_seats} plazas</span>
+            <span className="text-[11px] text-gray-400">{selectedOrg.slug} · {selectedOrg.active_members}/{selectedOrg.max_seats} {t("admin.org.seats")}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => openEditOrg(selectedOrg)} className="gap-1.5">
             <Pencil className="h-3.5 w-3.5" />
-            Editar
+            {t("edit")}
           </Button>
         </div>
 
@@ -417,7 +419,7 @@ export function AdminOrganizationsTab() {
             }`}
           >
             <Network className="h-3.5 w-3.5" />
-            Organigrama
+            {t("admin.org.org_chart")}
           </button>
           <button
             onClick={() => setDetailTab("manage")}
@@ -426,7 +428,7 @@ export function AdminOrganizationsTab() {
             }`}
           >
             <Settings className="h-3.5 w-3.5" />
-            Gestión
+            {t("admin.org.management")}
           </button>
         </div>
 
@@ -447,10 +449,10 @@ export function AdminOrganizationsTab() {
                   <Card>
                     <CardContent className="text-center py-12">
                       <Network className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-                      <p className="text-sm text-gray-500">El organigrama aparecerá cuando añadas miembros</p>
+                      <p className="text-sm text-gray-500">{t("admin.org.chart_empty")}</p>
                       <Button size="sm" className="mt-4 gap-1.5" onClick={() => setDetailTab("manage")}>
                         <Settings className="h-3.5 w-3.5" />
-                        Ir a Gestión
+                        {t("admin.org.go_to_management")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -461,7 +463,7 @@ export function AdminOrganizationsTab() {
                       <div className="px-5 py-3 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white text-center shadow-lg">
                         <Building2 className="h-5 w-5 mx-auto mb-1" />
                         <p className="text-sm font-bold">{selectedOrg.name}</p>
-                        <p className="text-[10px] opacity-80">{activeMembers.length} miembros activos</p>
+                        <p className="text-[10px] opacity-80">{activeMembers.length} {t("admin.org.active_members")}</p>
                       </div>
 
                       {/* Connector line down */}
@@ -479,7 +481,7 @@ export function AdminOrganizationsTab() {
                               </div>
                               <div className="text-left">
                                 <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">{c.user_name || c.user_email}</p>
-                                <p className="text-[10px] text-purple-600 dark:text-purple-400">Jefe de Servicio</p>
+                                <p className="text-[10px] text-purple-600 dark:text-purple-400">{t("admin.org.role_org_chief")}</p>
                               </div>
                               <Pencil className="h-3 w-3 text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                             </button>
@@ -514,7 +516,7 @@ export function AdminOrganizationsTab() {
                                 {/* Section header */}
                                 <div className="w-full px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-center">
                                   <p className="text-[11px] font-bold text-blue-800 dark:text-blue-200">{s.name}</p>
-                                  <p className="text-[9px] text-blue-500">{sMembers.length} miembros</p>
+                                  <p className="text-[9px] text-blue-500">{sMembers.length} {t("admin.org.members_count")}</p>
                                 </div>
 
                                 {/* Members in this section */}
@@ -531,7 +533,7 @@ export function AdminOrganizationsTab() {
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{sChief.user_name || sChief.user_email}</p>
-                                        <p className="text-[9px] text-blue-500">Jefe de Sección</p>
+                                        <p className="text-[9px] text-blue-500">{t("admin.org.role_section_chief")}</p>
                                       </div>
                                     </button>
                                   )}
@@ -546,7 +548,7 @@ export function AdminOrganizationsTab() {
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{e.user_name || e.user_email}</p>
-                                        <p className="text-[9px] text-amber-500">Editor</p>
+                                        <p className="text-[9px] text-amber-500">{t("admin.org.role_editor")}</p>
                                       </div>
                                     </button>
                                   ))}
@@ -561,7 +563,7 @@ export function AdminOrganizationsTab() {
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 truncate">{r.user_name || r.user_email}</p>
-                                        <p className="text-[9px] text-gray-400">Radiólogo</p>
+                                        <p className="text-[9px] text-gray-400">{t("admin.org.role_radiologist")}</p>
                                       </div>
                                     </button>
                                   ))}

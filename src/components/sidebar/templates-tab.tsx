@@ -388,10 +388,10 @@ export function TemplatesTab() {
         setReviewOpen(true);
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || "Upload failed"));
+        alert(t("tpl.upload_error") + ": " + (data.error || ""));
       }
     } catch (err) {
-      alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("tpl.upload_error") + ": " + (err instanceof Error ? err.message : ""));
     }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -495,7 +495,7 @@ export function TemplatesTab() {
             size="icon"
             variant="outline"
             onClick={openCatalog}
-            title="Importar de sección"
+            title={t("tpl.import_from_section")}
             className="h-8 w-8 shrink-0"
           >
             <Building2 className="h-3.5 w-3.5" />
@@ -843,7 +843,7 @@ export function TemplatesTab() {
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
-              placeholder="Buscar plantilla..."
+              placeholder={t("tpl.search")}
               value={catalogSearch}
               onChange={(e) => setCatalogSearch(e.target.value)}
               className="pl-8 h-8 text-xs"

@@ -159,7 +159,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     <div
       onMouseDown={onDragStart}
       className="w-1.5 shrink-0 cursor-col-resize group relative bg-brand-soft-hover transition-colors hidden md:block"
-      title="Drag to resize"
+      title={t("nav.drag_resize")}
     >
       <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 transition-colors" />
     </div>
@@ -301,7 +301,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <Link
             href="/org"
             className="inline-flex items-center justify-center text-blue-400 hover:bg-gray-800 hover:text-blue-300 rounded-lg h-9 w-9 transition-colors"
-            title="Hospital"
+            title={t("nav.hospital")}
           >
             <Building2 className="h-5 w-5" />
           </Link>
@@ -313,7 +313,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <Link
             href="/support"
             className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9 transition-colors"
-            title="Soporte"
+            title={t("nav.support")}
           >
             <MessageSquare className="h-4.5 w-4.5" />
           </Link>
@@ -461,7 +461,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
               className="flex flex-col items-center gap-0.5 text-amber-500 py-1.5 px-3 min-w-[56px]"
             >
               <Shield className="h-5 w-5" />
-              <span className="text-[9px]">Admin</span>
+              <span className="text-[9px]">{t("nav.admin")}</span>
             </Link>
           )}
 
@@ -471,7 +471,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
               className="flex flex-col items-center gap-0.5 text-blue-400 py-1.5 px-3 min-w-[56px]"
             >
               <Building2 className="h-5 w-5" />
-              <span className="text-[9px]">Hospital</span>
+              <span className="text-[9px]">{t("nav.hospital")}</span>
             </Link>
           )}
 
