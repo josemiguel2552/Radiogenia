@@ -127,12 +127,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
-    const { error } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", userId);
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Delete from auth.users first — this cascades to profiles, org_members, etc.
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
