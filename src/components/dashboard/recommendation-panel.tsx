@@ -21,17 +21,36 @@ type UsageMap = Record<string, number>;
 const STORAGE_KEY = "radiogenai_rec_usage";
 const CUSTOM_KEY = "radiogenai_rec_custom";
 
-function loadUsage(): UsageMap {
+function loadUsageLocal(): UsageMap {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
 }
-function saveUsage(m: UsageMap) {
+function saveUsageLocal(m: UsageMap) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
 }
-function loadCustom(): ManualRecommendation[] {
+function loadCustomLocal(): ManualRecommendation[] {
   try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); } catch { return []; }
 }
-function saveCustom(recs: ManualRecommendation[]) {
+function saveCustomLocal(recs: ManualRecommendation[]) {
   localStorage.setItem(CUSTOM_KEY, JSON.stringify(recs));
+}
+
+async function fetchUsageFromDB(): Promise<UsageMap | null> {
+  try {
+    const res = await fetch("/api/recommendations/usage");
+    if (!res.ok) return null;
+    const data = await res.json();
+    const map: UsageMap = {};
+    for (const row of data.usage || []) map[row.recommendation_id] = row.usage_count;
+    return map;
+  } catch { return null; }
+}
+
+async function fetchCustomFromDB(): Promise<ManualRecommendation[] | null> {
+  try {
+    const res = await fetch("/api/recommendations/custom");
+    if (!res.ok) return null;
+    return (await res.json()).recommendations || null;
+  } catch { return null; }
 }
 
 function trackUsageAPI(ids: string[]) {
@@ -76,8 +95,14 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const [customText, setCustomText] = useState("");
 
   useEffect(() => {
-    setUsage(loadUsage());
-    setCustomRecs(loadCustom());
+    setUsage(loadUsageLocal());
+    setCustomRecs(loadCustomLocal());
+    fetchUsageFromDB().then((dbUsage) => {
+      if (dbUsage) { setUsage(dbUsage); saveUsageLocal(dbUsage); }
+    });
+    fetchCustomFromDB().then((dbCustom) => {
+      if (dbCustom) { setCustomRecs(dbCustom); saveCustomLocal(dbCustom); }
+    });
   }, []);
 
   useEffect(() => {
@@ -151,7 +176,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
       newUsage[r.id] = (newUsage[r.id] || 0) + 1;
     }
     setUsage(newUsage);
-    saveUsage(newUsage);
+    saveUsageLocal(newUsage);
     trackUsageAPI(selectedRecs.map((r) => r.id));
   }, [selected, allRecs, outputLanguage, usage]);
 
@@ -169,7 +194,12 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     };
     const updated = [...customRecs, rec];
     setCustomRecs(updated);
-    saveCustom(updated);
+    saveCustomLocal(updated);
+    fetch("/api/recommendations/custom", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: rec.category, modality: rec.modality, title: customTitle, text: customText, tags: rec.tags }),
+    }).catch(() => {});
     setCustomTitle("");
     setCustomText("");
     setAddingCustom(false);
@@ -178,7 +208,8 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const removeCustom = useCallback((id: string) => {
     const updated = customRecs.filter((r) => r.id !== id);
     setCustomRecs(updated);
-    saveCustom(updated);
+    saveCustomLocal(updated);
+    fetch(`/api/recommendations/custom?id=${id}`, { method: "DELETE" }).catch(() => {});
     setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
   }, [customRecs]);
 
