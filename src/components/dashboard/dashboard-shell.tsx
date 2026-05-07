@@ -25,9 +25,11 @@ import {
   Building2,
   MessageSquare,
   Calculator,
+  ClipboardList,
 } from "lucide-react";
 import { TemplatesTab } from "@/components/sidebar/templates-tab";
 import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
+import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
 import { HelpDialog } from "@/components/dashboard/help-dialog";
@@ -35,7 +37,7 @@ import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
-type ActiveView = "dashboard" | "templates" | "calculators";
+type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations";
 
 const PANEL_MIN = 240;
 const PANEL_MAX = 600;
@@ -220,6 +222,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     { key: "dashboard", label: t("nav.reports"), icon: <LayoutDashboard className="h-4 w-4" /> },
     { key: "templates", label: t("nav.templates"), icon: <FileText className="h-4 w-4" /> },
     { key: "calculators", label: t("nav.calculators"), icon: <Calculator className="h-4 w-4" /> },
+    { key: "recommendations", label: t("nav.recommendations"), icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
   /* ── Main content based on active view ── */
@@ -233,6 +236,9 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       </div>
       <div className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}>
         <CalculatorsTab />
+      </div>
+      <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}>
+        <RecommendationsTab />
       </div>
     </>
   );
@@ -270,6 +276,15 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           title={t("nav.calculators")}
         >
           <Calculator className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="ghost" size="icon"
+          className={`rounded-lg h-9 w-9 ${activeView === "recommendations" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
+          onClick={() => setActiveView("recommendations")}
+          title={t("nav.recommendations")}
+        >
+          <ClipboardList className="h-5 w-5" />
         </Button>
 
         {role === "admin" && (
@@ -422,6 +437,14 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           >
             <Calculator className="h-5 w-5" />
             <span className="text-[9px]">{t("nav.calculators")}</span>
+          </button>
+
+          <button
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
+            onClick={() => setActiveView("recommendations")}
+          >
+            <ClipboardList className="h-5 w-5" />
+            <span className="text-[9px]">{t("nav.recommendations")}</span>
           </button>
 
           <button

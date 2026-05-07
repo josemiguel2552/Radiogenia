@@ -64,6 +64,31 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id, category, modality, title, text, tags } = await req.json();
+    if (!id || !title || !text) {
+      return NextResponse.json({ error: "id, title and text required" }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from("user_recommendations")
+      .update({ category: category || "all", modality: modality || "all", title, text, tags: tags || [] })
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const supabase = await createClient();
