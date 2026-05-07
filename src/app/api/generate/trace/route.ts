@@ -3,7 +3,8 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,15 +49,19 @@ If no repair was needed, set "repaired": false, "corrected_findings": null, "rep
 
     const taskModel = globalConfig.taskOverrides?.trace;
     const effectiveProvider = taskModel?.provider || globalConfig.provider;
-    const raw = await generateAI({
+    const effectiveModel = taskModel?.modelName || globalConfig.modelName;
+    const aiResult = await generateAIWithUsage({
       provider: effectiveProvider,
-      modelName: taskModel?.modelName || globalConfig.modelName,
+      modelName: effectiveModel,
       apiKey: resolveApiKey(globalConfig, effectiveProvider),
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userMsg,
       maxTokens: 8192,
     });
+    const raw = aiResult.text;
+
+    logAICost({ userId: user.id, action: "generate_trace", provider: effectiveProvider, model: effectiveModel, inputTokens: aiResult.usage.inputTokens, outputTokens: aiResult.usage.outputTokens });
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

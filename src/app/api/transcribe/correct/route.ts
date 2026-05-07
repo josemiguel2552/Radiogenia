@@ -3,7 +3,8 @@ export const maxDuration = 30;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 
 function buildModalityContext(modality: string | undefined, isEs: boolean): string {
   if (!modality) return "";
@@ -99,7 +100,7 @@ MANDATORY FIXES:
 
 Keep exact structure, punctuation, line breaks. Return text as-is if correct. Respond ONLY with corrected text.`;
 
-    const corrected = await generateAI({
+    const result = await generateAIWithUsage({
       provider: effectiveProvider,
       modelName: effectiveModel,
       apiKey,
@@ -108,7 +109,9 @@ Keep exact structure, punctuation, line breaks. Return text as-is if correct. Re
       maxTokens: Math.max(512, Math.ceil(text.length * 1.2)),
     });
 
-    return NextResponse.json({ corrected: corrected.trim() || text });
+    logAICost({ userId: user.id, action: "dictation_correction", provider: effectiveProvider, model: effectiveModel, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
+
+    return NextResponse.json({ corrected: result.text.trim() || text });
   } catch {
     return NextResponse.json({ corrected: "" });
   }

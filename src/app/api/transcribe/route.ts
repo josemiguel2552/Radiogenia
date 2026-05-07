@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, checkDictationLimit, incrementDictationUsage } from "@/lib/auth-helpers";
 import { getWhisperPrompt } from "@/lib/whisper-prompts";
+import { logAudioCost } from "@/lib/log-ai-cost";
 import { postprocessWhisper } from "@/lib/whisper-postprocess";
 
 export async function POST(req: NextRequest) {
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
     if (durationSeconds > 0) {
       const roundedSeconds = Math.ceil(durationSeconds);
       newUsedSeconds = await incrementDictationUsage(user.id, roundedSeconds);
+      logAudioCost({ userId: user.id, action: "transcription", provider: "openai", model: "whisper-1", durationSeconds: roundedSeconds });
     }
 
     const rawText = await res.text();

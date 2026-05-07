@@ -15,7 +15,7 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare,
+  Building2, MessageSquare, DollarSign,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -24,6 +24,7 @@ import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-ta
 import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
+import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
 
 interface GlobalConfig {
   id: string;
@@ -84,7 +85,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -515,6 +516,7 @@ export default function AdminPage() {
     { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-4 w-4" /> },
     { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
     { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
+    { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -1354,6 +1356,9 @@ export default function AdminPage() {
 
         {/* ═══ WAITLIST ═══ */}
         {tab === "waitlist" && <AdminWaitlistTab />}
+
+        {/* ═══ COSTS ═══ */}
+        {tab === "costs" && <AdminCostsTab />}
 
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (

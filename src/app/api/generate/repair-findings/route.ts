@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     instructions += `- Keep the same order and formatting.\n`;
     instructions += `- ${langInstructions[lang] || langInstructions.es}\n`;
 
-    const raw = await generateAI({
+    const aiResult = await generateAIWithUsage({
       provider: globalConfig.provider,
       modelName: globalConfig.modelName,
       apiKey: globalConfig.apiKey,
@@ -69,7 +70,9 @@ export async function POST(req: NextRequest) {
       user: "Output the corrected findings report now.",
     });
 
-    const cleaned = raw
+    logAICost({ userId: user.id, action: "repair_findings", provider: globalConfig.provider, model: globalConfig.modelName, inputTokens: aiResult.usage.inputTokens, outputTokens: aiResult.usage.outputTokens });
+
+    const cleaned = aiResult.text
       .replace(/^```[\s\S]*?\n/, "")
       .replace(/\n```\s*$/, "")
       .trim();

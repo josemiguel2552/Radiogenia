@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
-import { generateAIStream } from "@/lib/ai-provider";
+import { generateAIStreamWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
 import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
 
@@ -86,18 +87,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[conclusion] provider=${effectiveProvider}, model=${taskModel?.modelName || globalConfig.modelName}, keyLen=${effectiveKey.length}`);
-
-    const stream = await generateAIStream({
+    const effectiveModel = taskModel?.modelName || globalConfig.modelName;
+    console.log(`[conclusion] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}`);
+    const { stream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
-      modelName: taskModel?.modelName || globalConfig.modelName,
+      modelName: effectiveModel,
       apiKey: effectiveKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
     });
 
-    return new Response(stream, {
+    const reader = stream.getReader();
+    const userId = user.id;
+    const passthrough = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+          const usage = getUsage();
+          if (usage) {
+            logAICost({ userId, action: "generate_conclusion", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+          }
+        }
+      },
+    });
+
+    return new Response(passthrough, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
       },

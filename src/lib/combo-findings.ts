@@ -1,4 +1,4 @@
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIWithUsage, type AIUsage } from "@/lib/ai-provider";
 import type { GlobalAIConfig } from "@/lib/auth-helpers";
 import { resolveApiKey } from "@/lib/auth-helpers";
 import { enforceOutputLanguage } from "@/lib/section-translate";
@@ -252,10 +252,15 @@ function sectionsToText(sections: MappedSection[], compactNormals: boolean, dict
 
 /* ── Main pipeline ── */
 
+export interface ComboUsage {
+  mapper: { provider: string; model: string; usage: AIUsage };
+  validator: { provider: string; model: string; usage: AIUsage };
+}
+
 export async function runComboFindings(
   globalConfig: GlobalAIConfig,
   params: ComboParams,
-): Promise<string> {
+): Promise<{ text: string; comboUsage: ComboUsage }> {
   const openaiKey = resolveApiKey(globalConfig, "openai");
   const deepseekKey = resolveApiKey(globalConfig, "deepseek");
 
@@ -268,7 +273,7 @@ export async function runComboFindings(
   const mapper = buildMapperPrompt(params);
   console.log(`[combo] Stage 1 — GPT-4o-mini mapping (lang=${params.outputLanguage}, dictation=${params.dictation.length}ch)`);
 
-  const mapperRaw = await generateAI({
+  const mapperResult = await generateAIWithUsage({
     provider: "openai",
     modelName: "gpt-4o-mini",
     apiKey: openaiKey,
@@ -276,6 +281,7 @@ export async function runComboFindings(
     user: mapper.user,
     maxTokens: 3000,
   });
+  const mapperRaw = mapperResult.text;
 
   const t1 = Date.now();
   console.log(`[combo] Stage 1 done in ${t1 - t0}ms`);
@@ -299,7 +305,7 @@ export async function runComboFindings(
   const validator = buildValidatorPrompt(params.dictation, jsonMatch[0], params.outputLanguage);
   console.log(`[combo] Stage 2 — DeepSeek V3 validating...`);
 
-  const validatorRaw = await generateAI({
+  const validatorAI = await generateAIWithUsage({
     provider: "deepseek",
     modelName: "deepseek-chat",
     apiKey: deepseekKey,
@@ -307,6 +313,7 @@ export async function runComboFindings(
     user: validator.user,
     maxTokens: 2000,
   });
+  const validatorRaw = validatorAI.text;
 
   const t2 = Date.now();
   console.log(`[combo] Stage 2 done in ${t2 - t1}ms (total ${t2 - t0}ms)`);
@@ -332,5 +339,11 @@ export async function runComboFindings(
     : parsed.sections;
 
   const rawText = sectionsToText(finalSections, params.compactNormals, !!params.dictationOnly, params.outputLanguage);
-  return enforceOutputLanguage(rawText, params.outputLanguage);
+  return {
+    text: enforceOutputLanguage(rawText, params.outputLanguage),
+    comboUsage: {
+      mapper: { provider: "openai", model: "gpt-4o-mini", usage: mapperResult.usage },
+      validator: { provider: "deepseek", model: "deepseek-chat", usage: validatorAI.usage },
+    },
+  };
 }

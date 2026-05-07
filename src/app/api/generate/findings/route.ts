@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, checkReportLimit, incrementReportUsage } from "@/lib/auth-helpers";
-import { generateAIStream } from "@/lib/ai-provider";
+import { generateAIStreamWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
     if (globalConfig.findingsComboEnabled) {
       console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek V3, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
-      const comboResult = await runComboFindings(globalConfig, {
+      const { text: comboText, comboUsage } = await runComboFindings(globalConfig, {
         template: translatedTemplate,
         dictation,
         modality: modality || "CT",
@@ -126,10 +127,13 @@ export async function POST(req: NextRequest) {
         preferredNormalPhrases,
       });
 
+      logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.mapper.provider, model: comboUsage.mapper.model, inputTokens: comboUsage.mapper.usage.inputTokens, outputTokens: comboUsage.mapper.usage.outputTokens });
+      logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.validator.provider, model: comboUsage.validator.model, inputTokens: comboUsage.validator.usage.inputTokens, outputTokens: comboUsage.validator.usage.outputTokens });
+
       const encoder = new TextEncoder();
       const body = new ReadableStream({
         start(controller) {
-          controller.enqueue(encoder.encode(comboResult));
+          controller.enqueue(encoder.encode(comboText));
           controller.close();
         },
       });
@@ -168,7 +172,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[findings] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
-    const rawStream = await generateAIStream({
+    const { stream: rawStream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
       modelName: effectiveModel,
       apiKey: effectiveKey,
@@ -187,6 +191,12 @@ export async function POST(req: NextRequest) {
         fullText += decoder.decode(value, { stream: true });
       }
       fullText += decoder.decode();
+
+      const usage = getUsage();
+      if (usage) {
+        logAICost({ userId: user.id, action: "generate_findings", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+      }
+
       const enforced = enforceOutputLanguage(fullText, outLang);
       const encoder = new TextEncoder();
       const body = new ReadableStream({
@@ -198,7 +208,28 @@ export async function POST(req: NextRequest) {
       return new Response(body, { headers: responseHeaders });
     }
 
-    return new Response(rawStream, { headers: responseHeaders });
+    const reader = rawStream.getReader();
+    const encoder = new TextEncoder();
+    const userId = user.id;
+    const passthrough = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+          const usage = getUsage();
+          if (usage) {
+            logAICost({ userId, action: "generate_findings", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+          }
+        }
+      },
+    });
+
+    return new Response(passthrough, { headers: responseHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
