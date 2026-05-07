@@ -13,6 +13,8 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
   "gpt-4o-mini": { inputPer1M: 0.15, outputPer1M: 0.60 },
   "gpt-4o-mini-2024-07-18": { inputPer1M: 0.15, outputPer1M: 0.60 },
   // DeepSeek
+  "deepseek-v4-pro": { inputPer1M: 0.435, outputPer1M: 0.87 },
+  "deepseek-v4-flash": { inputPer1M: 0.14, outputPer1M: 0.28 },
   "deepseek-chat": { inputPer1M: 0.14, outputPer1M: 0.28 },
   "deepseek-reasoner": { inputPer1M: 0.55, outputPer1M: 2.19 },
   // Google
