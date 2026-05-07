@@ -47,6 +47,7 @@ import { detectPii, type PiiMatch } from "@/lib/pii-detect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ResidentVerificationForm } from "@/components/resident-verification-form";
+import { RecommendationPanel } from "./recommendation-panel";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -1715,6 +1716,14 @@ export function DashboardContent() {
                 ))}
               </div>
             }
+          />
+
+          <RecommendationPanel
+            conclusionText={conclusion}
+            modality={selectedModality}
+            section={selectedSection}
+            outputLanguage={outputLanguage as "es" | "en" | "pt"}
+            visible={!!conclusion}
           />
 
           {/* Action bar */}

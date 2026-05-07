@@ -357,6 +357,20 @@ export interface SupportTicket {
   org_name?: string;
 }
 
+/* ── Manual Recommendations ───────────────────────────── */
+
+export interface ManualRecommendation {
+  id: string;
+  category: string;
+  modality: string;
+  title: Record<string, string>;
+  text: Record<string, string>;
+  tags: string[];
+  source: string;
+  scope: "system" | "org" | "user";
+  user_id?: string;
+}
+
 export type ResidentVerificationStatus = "pending" | "approved" | "rejected";
 
 export interface ResidentVerification {
