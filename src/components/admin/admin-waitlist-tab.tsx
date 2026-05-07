@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Trash2, Search, Download, ClipboardList, GraduationCap, Stethoscope } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface WaitlistEntry {
   id: string;
@@ -19,6 +20,7 @@ interface WaitlistEntry {
 }
 
 export function AdminWaitlistTab() {
+  const t = useT();
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -46,7 +48,7 @@ export function AdminWaitlistTab() {
   }
 
   function handleExportCsv() {
-    const header = "Nombre,Apellidos,Email,País,Hospital,Perfil,Fecha";
+    const header = [t("admin.waitlist.col_name"), t("admin.waitlist.col_last_name"), t("admin.waitlist.col_email"), t("admin.waitlist.col_country"), t("admin.waitlist.col_hospital"), t("admin.waitlist.col_role"), t("admin.waitlist.col_date")].join(",");
     const rows = filtered.map((e) =>
       [e.first_name, e.last_name, e.email, e.country, e.hospital, e.role, new Date(e.created_at).toLocaleDateString()].map((v) => `"${v}"`).join(",")
     );
@@ -92,7 +94,7 @@ export function AdminWaitlistTab() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{entries.length}</p>
-              <p className="text-xs text-gray-500">Total</p>
+              <p className="text-xs text-gray-500">{t("admin.waitlist.total")}</p>
             </div>
           </CardContent>
         </Card>
@@ -103,7 +105,7 @@ export function AdminWaitlistTab() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{attendingCount}</p>
-              <p className="text-xs text-gray-500">Facultativos</p>
+              <p className="text-xs text-gray-500">{t("admin.waitlist.attending")}</p>
             </div>
           </CardContent>
         </Card>
@@ -114,7 +116,7 @@ export function AdminWaitlistTab() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{residentCount}</p>
-              <p className="text-xs text-gray-500">Residentes</p>
+              <p className="text-xs text-gray-500">{t("admin.waitlist.residents")}</p>
             </div>
           </CardContent>
         </Card>
@@ -127,7 +129,7 @@ export function AdminWaitlistTab() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Buscar por nombre, email, hospital..."
+                placeholder={t("admin.waitlist.search_placeholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9 text-sm"
@@ -141,20 +143,20 @@ export function AdminWaitlistTab() {
 
           {filtered.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
-              {entries.length === 0 ? "No hay registros en la lista de espera." : "Sin resultados para esta búsqueda."}
+              {entries.length === 0 ? t("admin.waitlist.empty") : t("admin.waitlist.no_results")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-800">
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Nombre</th>
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Apellidos</th>
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Email</th>
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">País</th>
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Hospital</th>
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Perfil</th>
-                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Fecha</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_name")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_last_name")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_email")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_country")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_hospital")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_role")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.waitlist.col_date")}</th>
                     <th className="w-10" />
                   </tr>
                 </thead>
@@ -168,7 +170,7 @@ export function AdminWaitlistTab() {
                       <td className="py-2 px-2 text-gray-600 dark:text-gray-300 max-w-[200px] truncate">{e.hospital}</td>
                       <td className="py-2 px-2">
                         <Badge variant="secondary" className={`text-[10px] ${e.role === "resident" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300"}`}>
-                          {e.role === "resident" ? "Residente" : "Facultativo"}
+                          {e.role === "resident" ? t("admin.waitlist.role_resident") : t("admin.waitlist.role_attending")}
                         </Badge>
                       </td>
                       <td className="py-2 px-2 text-gray-500 text-xs whitespace-nowrap">

@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, GraduationCap, Check, X, ChevronDown, ExternalLink } from "lucide-react";
 import type { ResidentVerification, ResidentVerificationStatus } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 export function AdminResidentsTab() {
+  const t = useT();
   const [verifications, setVerifications] = useState<ResidentVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -69,29 +71,37 @@ export function AdminResidentsTab() {
       <Card>
         <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
           <GraduationCap className="h-4 w-4 text-green-600" />
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Resident Verifications</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.residents.title")}</h2>
           {pendingCount > 0 && (
             <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-xs">
-              {pendingCount} pending
+              {pendingCount} {t("admin.residents.pending")}
             </Badge>
           )}
           <div className="ml-auto flex gap-1">
-            {["all", "pending", "approved", "rejected"].map((f) => (
-              <Button
-                key={f}
-                variant={filter === f ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setFilter(f)}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </Button>
-            ))}
+            {(["all", "pending", "approved", "rejected"] as const).map((f) => {
+              const labelMap: Record<string, string> = {
+                all: t("admin.residents.all"),
+                pending: t("admin.residents.filter_pending"),
+                approved: t("admin.residents.filter_approved"),
+                rejected: t("admin.residents.filter_rejected"),
+              };
+              return (
+                <Button
+                  key={f}
+                  variant={filter === f ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setFilter(f)}
+                >
+                  {labelMap[f]}
+                </Button>
+              );
+            })}
           </div>
         </div>
         <CardContent className="pt-0">
           {filtered.length === 0 ? (
-            <p className="text-sm text-gray-500 py-6 text-center">No verifications found.</p>
+            <p className="text-sm text-gray-500 py-6 text-center">{t("admin.residents.no_verifications")}</p>
           ) : (
             <div className="space-y-2">
               {filtered.map((v) => {
@@ -111,7 +121,7 @@ export function AdminResidentsTab() {
                           {v.user_name || v.user_email}
                         </span>
                         <span className="text-[11px] text-gray-500 block truncate">
-                          {v.institution_name || "No institution"} · {v.residency_start} → {v.residency_end}
+                          {v.institution_name || t("admin.residents.no_institution")} · {v.residency_start} → {v.residency_end}
                         </span>
                       </div>
                       <span className="text-[10px] text-gray-400 shrink-0">
@@ -124,25 +134,25 @@ export function AdminResidentsTab() {
                       <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           <div>
-                            <span className="text-gray-500 block">Email</span>
+                            <span className="text-gray-500 block">{t("admin.residents.email")}</span>
                             <span className="text-gray-900 dark:text-white">{v.user_email}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block">Institution</span>
+                            <span className="text-gray-500 block">{t("admin.residents.institution")}</span>
                             <span className="text-gray-900 dark:text-white">{v.institution_name || "—"}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block">Residency period</span>
+                            <span className="text-gray-500 block">{t("admin.residents.residency_period")}</span>
                             <span className="text-gray-900 dark:text-white">{v.residency_start} → {v.residency_end}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block">Submitted</span>
+                            <span className="text-gray-500 block">{t("admin.residents.submitted")}</span>
                             <span className="text-gray-900 dark:text-white">{new Date(v.created_at).toLocaleString()}</span>
                           </div>
                         </div>
 
                         <div>
-                          <span className="text-xs text-gray-500 block mb-1">Document</span>
+                          <span className="text-xs text-gray-500 block mb-1">{t("admin.residents.document")}</span>
                           <Button
                             variant="outline"
                             size="sm"
@@ -156,7 +166,7 @@ export function AdminResidentsTab() {
                             }}
                           >
                             <ExternalLink className="h-3 w-3" />
-                            View document
+                            {t("admin.residents.view_document")}
                           </Button>
                         </div>
 
@@ -165,7 +175,7 @@ export function AdminResidentsTab() {
                             <textarea
                               className="w-full text-xs border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
                               rows={2}
-                              placeholder="Admin notes (optional)..."
+                              placeholder={t("admin.residents.notes_placeholder")}
                               value={notes[v.id] || ""}
                               onChange={(e) => setNotes((prev) => ({ ...prev, [v.id]: e.target.value }))}
                             />
@@ -177,7 +187,7 @@ export function AdminResidentsTab() {
                                 disabled={processing === v.id}
                               >
                                 {processing === v.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                Approve
+                                {t("admin.residents.approve")}
                               </Button>
                               <Button
                                 size="sm"
@@ -187,7 +197,7 @@ export function AdminResidentsTab() {
                                 disabled={processing === v.id}
                               >
                                 {processing === v.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                                Reject
+                                {t("admin.residents.reject")}
                               </Button>
                             </div>
                           </div>
@@ -195,14 +205,14 @@ export function AdminResidentsTab() {
 
                         {v.status !== "pending" && v.admin_notes && (
                           <div>
-                            <span className="text-xs text-gray-500 block">Admin notes</span>
+                            <span className="text-xs text-gray-500 block">{t("admin.residents.admin_notes")}</span>
                             <p className="text-xs text-gray-900 dark:text-white">{v.admin_notes}</p>
                           </div>
                         )}
 
                         {v.reviewed_at && (
                           <div className="text-[10px] text-gray-400">
-                            Reviewed {new Date(v.reviewed_at).toLocaleString()}
+                            {t("admin.residents.reviewed")} {new Date(v.reviewed_at).toLocaleString()}
                           </div>
                         )}
                       </div>

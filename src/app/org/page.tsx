@@ -683,18 +683,18 @@ export default function OrgDashboard() {
                               {sTemplates.length === 0 ? (
                                 <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
                                   <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                  <p className="text-xs text-gray-400 mb-1">Sin plantillas en esta sección</p>
-                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Sube un archivo Word con plantillas y la IA las extraerá, o importa desde el catálogo.</p>
+                                  <p className="text-xs text-gray-400 mb-1">{t("org.no_templates_section")}</p>
+                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">{t("org.no_templates_desc")}</p>
                                   <div className="flex gap-2 justify-center">
                                     <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                       {uploadingTpls === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-violet-500" />}
-                                      Extraer de Word
+                                      {t("org.extract_from_word")}
                                       <input type="file" accept=".docx,.doc,.pdf" className="hidden" disabled={!!uploadingTpls}
                                         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTpls(f, s.id); e.target.value = ""; }} />
                                     </label>
                                     <Button size="sm" variant="outline" className="gap-1.5 text-xs"
                                       onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
-                                      <Download className="h-3 w-3" /> Catálogo
+                                      <Download className="h-3 w-3" /> {t("org.catalog")}
                                     </Button>
                                   </div>
                                 </div>
@@ -734,22 +734,22 @@ export default function OrgDashboard() {
       <Dialog open={showSectionForm} onOpenChange={setShowSectionForm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nueva sección</DialogTitle>
+            <DialogTitle>{t("org.new_section")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nombre</Label>
+              <Label className="text-xs">{t("org.section_form_name")}</Label>
               <Input
                 value={sectionName}
                 onChange={(e) => { setSectionName(e.target.value); setSectionSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "")); }}
-                placeholder="Radiología de Tórax"
+                placeholder={t("org.section_name_placeholder")}
                 className="h-9"
               />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>{t("org.cancel")}</Button>
               <Button size="sm" onClick={handleSaveSection} disabled={savingSection || !sectionName.trim()}>
-                {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Crear"}
+                {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("org.create")}
               </Button>
             </div>
           </div>
@@ -760,12 +760,12 @@ export default function OrgDashboard() {
       <Dialog open={showMemberForm} onOpenChange={setShowMemberForm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{editingMember ? "Editar miembro" : "Añadir miembro"}</DialogTitle>
+            <DialogTitle>{editingMember ? t("org.edit_member") : t("org.add_member")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {!editingMember && (
               <div className="space-y-1.5">
-                <Label className="text-xs">Email del usuario</Label>
+                <Label className="text-xs">{t("org.user_email")}</Label>
                 <Input
                   value={memberEmail}
                   onChange={(e) => setMemberEmail(e.target.value)}
@@ -773,13 +773,13 @@ export default function OrgDashboard() {
                   className="h-9"
                   type="email"
                 />
-                <p className="text-[10px] text-gray-400">El usuario debe estar registrado en Radiogenia</p>
+                <p className="text-[10px] text-gray-400">{t("org.user_must_be_registered")}</p>
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="text-xs">Sección</Label>
+              <Label className="text-xs">{t("org.section")}</Label>
               <Select value={memberSectionId} onValueChange={setMemberSectionId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("org.select_section")} /></SelectTrigger>
                 <SelectContent>
                   {orgData.sections.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -788,13 +788,13 @@ export default function OrgDashboard() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Rol en la sección</Label>
+              <Label className="text-xs">{t("org.section_role")}</Label>
               <Select value={memberRole} onValueChange={(v) => setMemberRole(v as SectionRole)}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="radiologist">Radiólogo</SelectItem>
-                  <SelectItem value="section_editor">Editor de sección</SelectItem>
-                  {isOrgChief && <SelectItem value="section_chief">Jefe de sección</SelectItem>}
+                  <SelectItem value="radiologist">{t("org.role_radiologist_label")}</SelectItem>
+                  <SelectItem value="section_editor">{t("org.role_section_editor_label")}</SelectItem>
+                  {isOrgChief && <SelectItem value="section_chief">{t("org.role_section_chief_label")}</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -806,16 +806,16 @@ export default function OrgDashboard() {
                   onChange={(e) => setMemberIsChief(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                Jefe de servicio (acceso a toda la organización)
+                {t("org.org_chief_checkbox")}
               </label>
             )}
             {memberError && (
               <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{memberError}</p>
             )}
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>{t("org.cancel")}</Button>
               <Button size="sm" onClick={handleSaveMember} disabled={savingMember || (!editingMember && !memberEmail.trim())}>
-                {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : "Añadir"}
+                {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? t("org.save") : t("org.add")}
               </Button>
             </div>
           </div>
@@ -826,13 +826,13 @@ export default function OrgDashboard() {
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Importar plantillas al servicio</DialogTitle>
+            <DialogTitle>{t("org.import_templates_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
             <div className="space-y-1.5">
-              <Label className="text-xs">Sección destino</Label>
+              <Label className="text-xs">{t("org.destination_section")}</Label>
               <Select value={importSectionId} onValueChange={setImportSectionId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("org.select_section")} /></SelectTrigger>
                 <SelectContent>
                   {orgData.sections.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -843,7 +843,7 @@ export default function OrgDashboard() {
             <Input
               value={importSearch}
               onChange={(e) => setImportSearch(e.target.value)}
-              placeholder="Buscar plantilla..."
+              placeholder={t("org.search_template")}
               className="h-9 text-xs"
             />
             <div className="flex-1 overflow-y-auto border rounded-lg divide-y divide-gray-100 dark:divide-gray-800">
@@ -874,11 +874,11 @@ export default function OrgDashboard() {
                 })}
             </div>
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[10px] text-gray-400">{importSelected.size} seleccionadas</span>
+              <span className="text-[10px] text-gray-400">{importSelected.size} {t("org.selected")}</span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowImportDialog(false)}>Cancelar</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowImportDialog(false)}>{t("org.cancel")}</Button>
                 <Button size="sm" onClick={handleImportTemplates} disabled={importing || importSelected.size === 0 || !importSectionId}>
-                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `Importar (${importSelected.size})`}
+                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `${t("org.import")} (${importSelected.size})`}
                 </Button>
               </div>
             </div>

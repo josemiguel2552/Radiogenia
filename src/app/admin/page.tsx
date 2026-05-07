@@ -838,14 +838,14 @@ export default function AdminPage() {
                         <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
                           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {base.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Standard</SelectLabel>
+                            {base.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.standard")}</SelectLabel>
                               {base.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                             </SelectGroup>}
-                            {ft.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Fine-tuned</SelectLabel>
+                            {ft.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.fine_tuned")}</SelectLabel>
                               {ft.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                             </SelectGroup>}
                             {!inList && modelName && (
-                              <SelectGroup><SelectLabel className="text-[10px]">Current</SelectLabel>
+                              <SelectGroup><SelectLabel className="text-[10px]">{t("admin.current")}</SelectLabel>
                                 <SelectItem value={modelName}>{modelName}</SelectItem>
                               </SelectGroup>
                             )}
@@ -872,12 +872,12 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">API Key</Label>
+                    <Label className="text-xs">{t("admin.api_key")}</Label>
                     <div className="relative">
                       <input type={showKey ? "text" : "password"} value={apiKey}
                         onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
                         className="w-full h-9 px-3 pr-9 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                        placeholder="API key" />
+                        placeholder={t("admin.api_key")} />
                       <button type="button" onClick={() => setShowKey(!showKey)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                         {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -885,7 +885,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">OpenAI / Whisper Key</Label>
+                    <Label className="text-xs">{t("admin.whisper_key")}</Label>
                     <div className="relative">
                       <input type={showWhisperKey ? "text" : "password"} value={whisperKey}
                         onChange={(e) => setWhisperKey(e.target.value)}
@@ -906,18 +906,18 @@ export default function AdminPage() {
                      testResult === true ? <Check className="h-3.5 w-3.5 text-green-600" /> :
                      testResult === false ? <X className="h-3.5 w-3.5 text-red-500" /> :
                      <Plug className="h-3.5 w-3.5" />}
-                    {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test"}
+                    {testResult === true ? t("admin.connected") : testResult === false ? t("admin.failed") : t("admin.test")}
                   </Button>
                   <Button size="sm" onClick={handleSaveConfig} disabled={saving}
                     className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white">
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    Save all
+                    {t("admin.save_all")}
                   </Button>
                 </div>
                 {configError && <p className="text-xs text-red-500">{configError}</p>}
-                {configSuccess && <p className="text-xs text-green-600">Configuration saved.</p>}
+                {configSuccess && <p className="text-xs text-green-600">{t("admin.config_saved")}</p>}
                 {config?.updated_at && (
-                  <p className="text-[11px] text-gray-400">Last updated: {new Date(config.updated_at).toLocaleString()}</p>
+                  <p className="text-[11px] text-gray-400">{t("admin.last_updated")}: {new Date(config.updated_at).toLocaleString()}</p>
                 )}
               </CardContent>
             </Card>
@@ -926,18 +926,18 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Zap className="h-4 w-4 text-amber-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Per-Task Model Overrides</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.per_task_overrides")}</h2>
               </div>
               <CardContent className="pt-0 space-y-3">
                 <p className="text-xs text-gray-500">
-                  Assign a different model to each task. Leave empty to use the default above.
+                  {t("admin.per_task_desc")}
                 </p>
                 {([
-                  { key: "findings" as TaskKey, label: "Findings", desc: "Structured report generation" },
-                  { key: "conclusion" as TaskKey, label: "Conclusion", desc: "Clinical conclusion synthesis" },
-                  { key: "trace" as TaskKey, label: "Traceability", desc: "Dictation ↔ findings verification" },
-                  { key: "dictation_correction" as TaskKey, label: "Dictation Correction", desc: "Real-time speech-to-text error correction (default: gpt-4o-mini)" },
-                  { key: "improve_writing" as TaskKey, label: "Improve Writing", desc: "Light paraphrase / wording improvement tool" },
+                  { key: "findings" as TaskKey, label: t("admin.task_findings"), desc: t("admin.task_findings_desc") },
+                  { key: "conclusion" as TaskKey, label: t("admin.task_conclusion"), desc: t("admin.task_conclusion_desc") },
+                  { key: "trace" as TaskKey, label: t("admin.task_traceability"), desc: t("admin.task_traceability_desc") },
+                  { key: "dictation_correction" as TaskKey, label: t("admin.task_dictation_correction"), desc: t("admin.task_dictation_correction_desc") },
+                  { key: "improve_writing" as TaskKey, label: t("admin.task_improve_writing"), desc: t("admin.task_improve_writing_desc") },
                 ]).map(({ key, label, desc }) => {
                   const isComboOverride = key === "findings" && findingsCombo;
                   const o = taskOverrides[key];
@@ -950,16 +950,16 @@ export default function AdminPage() {
                           <p className="text-[10px] text-gray-400">{desc}</p>
                         </div>
                         {isComboOverride ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Combo active</Badge>
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">{t("admin.combo_active")}</Badge>
                         ) : o.provider && o.model ? (
                           <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] text-gray-400">Default</Badge>
+                          <Badge variant="outline" className="text-[10px] text-gray-400">{t("admin.default")}</Badge>
                         )}
                       </div>
                       {isComboOverride ? (
                         <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                          Managed by Combo pipeline below. Disable combo to set a custom model.
+                          {t("admin.combo_managed")}
                         </p>
                       ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
@@ -975,7 +975,7 @@ export default function AdminPage() {
                         }}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="default">Default</SelectItem>
+                            <SelectItem value="default">{t("admin.default")}</SelectItem>
                             {PROVIDERS.map((p) => (
                               <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                             ))}
@@ -991,20 +991,20 @@ export default function AdminPage() {
                             const currentInList = !o.model || allModels.includes(o.model);
                             return allModels.length > 0 ? (
                               <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
-                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Model" /></SelectTrigger>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("admin.model")} /></SelectTrigger>
                                 <SelectContent>
-                                  {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Standard</SelectLabel>
+                                  {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.standard")}</SelectLabel>
                                     {baseModels.map((m) => (
                                       <SelectItem key={m} value={m}>{m}</SelectItem>
                                     ))}
                                   </SelectGroup>}
-                                  {ftModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">Fine-tuned</SelectLabel>
+                                  {ftModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.fine_tuned")}</SelectLabel>
                                     {ftModels.map((m) => (
                                       <SelectItem key={m} value={m}>{m}</SelectItem>
                                     ))}
                                   </SelectGroup>}
                                   {!currentInList && o.model && (
-                                    <SelectGroup><SelectLabel className="text-[10px]">Current</SelectLabel>
+                                    <SelectGroup><SelectLabel className="text-[10px]">{t("admin.current")}</SelectLabel>
                                       <SelectItem value={o.model}>{o.model}</SelectItem>
                                     </SelectGroup>
                                   )}
@@ -1014,7 +1014,7 @@ export default function AdminPage() {
                               <input type="text" value={o.model}
                                 onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
                                 className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                                placeholder="Model name" />
+                                placeholder={t("admin.model_name")} />
                             );
                           })()
                         ) : (
@@ -1060,10 +1060,10 @@ export default function AdminPage() {
                     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
                       <div className="flex items-center gap-2">
                         <Eye className="h-3.5 w-3.5 text-blue-500" />
-                        <Label className="text-xs font-semibold text-gray-900 dark:text-white">Provider API Keys</Label>
+                        <Label className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.provider_api_keys")}</Label>
                       </div>
                       <p className="text-[11px] text-gray-500">
-                        The main API key covers {PROVIDERS.find((p) => p.value === provider)?.label || provider}. Add keys for any other providers used above.
+                        {t("admin.main_key_covers")} {PROVIDERS.find((p) => p.value === provider)?.label || provider}. {t("admin.add_keys_other_providers")}
                       </p>
                       <div className="space-y-2">
                         {toShow.map((k) => {
@@ -1073,7 +1073,7 @@ export default function AdminPage() {
                               <Label className="text-xs text-gray-600 dark:text-gray-400 w-32 flex-shrink-0">{k.label}</Label>
                               {k.hint ? (
                                 <div className="flex-1 h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                                  {isSaved ? "Configured (Whisper key)" : k.hint}
+                                  {isSaved ? t("admin.configured_whisper_key") : k.hint}
                                 </div>
                               ) : (
                                 <>
@@ -1082,13 +1082,13 @@ export default function AdminPage() {
                                     value={k.value}
                                     onChange={(e) => k.setter(e.target.value)}
                                     className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                                    placeholder={isSaved ? "••••••••  (saved)" : "API key"}
+                                    placeholder={isSaved ? `••••••••  (${t("admin.saved")})` : t("admin.api_key")}
                                   />
                                   {k.value && !isSaved && (
                                     <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
                                   )}
                                   {isSaved && (
-                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">Saved</Badge>
+                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.saved")}</Badge>
                                   )}
                                 </>
                               )}
@@ -1106,18 +1106,18 @@ export default function AdminPage() {
             <Card className={findingsCombo ? "ring-2 ring-emerald-500/30" : ""}>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Shield className="h-4 w-4 text-emerald-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Combo: GPT-4 Mini + DeepSeek V3</h2>
-                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Active</Badge>}
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.combo_title")}</h2>
+                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">{t("admin.active")}</Badge>}
               </div>
               <CardContent className="pt-0 space-y-3 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Two-stage findings pipeline that reduces omissions and hallucinations. Stage 1: GPT-4o-mini maps the dictation to template sections as structured JSON with evidence. Stage 2: DeepSeek V3 validates the mapping, correcting any errors without redoing the full generation.
+                  {t("admin.combo_desc")}
                 </p>
                 <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                   <div>
-                    <p className="text-xs font-semibold text-gray-900 dark:text-white">Enable combo pipeline for Findings</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.enable_combo")}</p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
-                      Overrides the Findings task override above. Requires OpenAI + DeepSeek API keys.
+                      {t("admin.enable_combo_desc")}
                     </p>
                   </div>
                   <Switch checked={findingsCombo} onCheckedChange={setFindingsCombo} />
@@ -1125,24 +1125,24 @@ export default function AdminPage() {
 
                 {findingsCombo && (
                   <div className="space-y-2 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
-                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Pipeline stages</p>
+                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{t("admin.pipeline_stages")}</p>
                     <div className="flex items-start gap-2">
                       <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
                       <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">GPT-4o-mini — Mapper</p>
-                        <p className="text-[10px] text-gray-500">Maps dictation → template sections as structured JSON with evidence links.</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.combo_stage1_title")}</p>
+                        <p className="text-[10px] text-gray-500">{t("admin.combo_stage1_desc")}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">2</div>
                       <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">DeepSeek V3 — Validator</p>
-                        <p className="text-[10px] text-gray-500">Validates mapping against dictation. Corrects omissions, hallucinations, and misattributions only.</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.combo_stage2_title")}</p>
+                        <p className="text-[10px] text-gray-500">{t("admin.combo_stage2_desc")}</p>
                       </div>
                     </div>
                     <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1.5">
                       <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                      Conclusion and traceability use their own configured models — unaffected by this pipeline.
+                      {t("admin.combo_note")}
                     </div>
 
                     {/* Key requirement indicators */}
@@ -1155,13 +1155,13 @@ export default function AdminPage() {
                             <div className="flex items-center gap-1.5 text-[10px]">
                               {hasOpenAI ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
                               <span className={hasOpenAI ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                OpenAI API key {hasOpenAI ? "configured" : "— required (set main key or Whisper key)"}
+                                {t("admin.openai_key")} {hasOpenAI ? t("admin.key_configured") : t("admin.key_required_openai")}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5 text-[10px]">
                               {hasDeepSeek ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
                               <span className={hasDeepSeek ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                DeepSeek API key {hasDeepSeek ? "configured" : "— required (set main key or DeepSeek provider key)"}
+                                {t("admin.deepseek_key")} {hasDeepSeek ? t("admin.key_configured") : t("admin.key_required_deepseek")}
                               </span>
                             </div>
                           </>
@@ -1177,25 +1177,25 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <GraduationCap className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Fine-Tuning (OpenAI)</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.fine_tuning_title")}</h2>
               </div>
               <CardContent className="pt-0 space-y-4 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Upload JSONL training examples, start a fine-tuning job, then assign the resulting model to any task above.
+                  {t("admin.fine_tuning_desc")}
                 </p>
 
                 {/* Step 1: Upload */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">1. Upload training data</Label>
+                  <Label className="text-xs font-semibold">{t("admin.ft_step1")}</Label>
                   <div className="flex gap-2">
                     <label className="flex-1 flex items-center justify-center gap-2 h-9 px-3 border-2 border-dashed rounded-md cursor-pointer text-xs text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors dark:border-gray-700 dark:hover:border-purple-500">
                       <Upload className="h-3.5 w-3.5" />
-                      {ftUploading ? "Uploading..." : ftFileId ? `${ftExamples} examples ready` : "Choose .jsonl file"}
+                      {ftUploading ? t("admin.ft_uploading") : ftFileId ? `${ftExamples} ${t("admin.ft_examples_ready")}` : t("admin.ft_choose_file")}
                       <input type="file" accept=".jsonl,.txt,.json" className="hidden"
                         onChange={(e) => { if (e.target.files?.[0]) handleFtUpload(e.target.files[0]); }} />
                     </label>
                   </div>
-                  {ftFileId && <p className="text-[10px] text-green-600">File uploaded: {ftFileId}</p>}
+                  {ftFileId && <p className="text-[10px] text-green-600">{t("admin.ft_file_uploaded")}: {ftFileId}</p>}
                 </div>
 
                 {/* Step 2: Configure & start */}
