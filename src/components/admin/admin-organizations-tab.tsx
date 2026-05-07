@@ -743,7 +743,7 @@ export function AdminOrganizationsTab() {
                 <Input
                   value={sectionName}
                   onChange={(e) => setSectionName(e.target.value)}
-                  placeholder="Radiología de Tórax"
+                  placeholder={t("admin.org.section_name_placeholder")}
                   className="h-9"
                 />
               </div>
@@ -1080,29 +1080,29 @@ export function AdminOrganizationsTab() {
       <Dialog open={showOrgForm} onOpenChange={setShowOrgForm}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingOrg ? "Editar organización" : "Nuevo hospital"}</DialogTitle>
+            <DialogTitle>{editingOrg ? t("admin.org.edit_organization") : t("admin.org.new_hospital")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nombre</Label>
+              <Label className="text-xs">{t("admin.org.name")}</Label>
               <Input value={formName} onChange={(e) => { setFormName(e.target.value); if (!editingOrg) setFormSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} placeholder="Hospital Universitario La Paz" className="h-9" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Slug (identificador URL)</Label>
+              <Label className="text-xs">{t("admin.org.slug_url")}</Label>
               <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value)} placeholder="hospital-la-paz" className="h-9 font-mono text-sm" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Email de facturación</Label>
+              <Label className="text-xs">{t("admin.org.billing_email")}</Label>
               <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Plazas máximas</Label>
+              <Label className="text-xs">{t("admin.org.max_seats")}</Label>
               <Input type="number" value={formSeats} onChange={(e) => setFormSeats(Number(e.target.value))} min={1} className="h-9 w-24" />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>{t("cancel")}</Button>
               <Button size="sm" onClick={handleSaveOrg} disabled={saving || !formName.trim() || !formSlug.trim()}>
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingOrg ? "Guardar" : "Crear"}
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingOrg ? t("save") : t("admin.org.create")}
               </Button>
             </div>
           </div>

@@ -1201,20 +1201,20 @@ export default function AdminPage() {
                 {/* Step 2: Configure & start */}
                 {ftFileId && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">2. Configure & start job</Label>
+                    <Label className="text-xs font-semibold">{t("admin.ft_step2")}</Label>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Base model</Label>
+                        <Label className="text-[10px] text-gray-400">{t("admin.ft_base_model")}</Label>
                         <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
-                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
+                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini ({t("admin.ft_recommended")})</SelectItem>
+                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o ({t("admin.ft_higher_quality")})</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Suffix</Label>
+                        <Label className="text-[10px] text-gray-400">{t("admin.ft_suffix")}</Label>
                         <input type="text" value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)}
                           className="w-full h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
                           placeholder="radiogenai" />
@@ -1223,7 +1223,7 @@ export default function AdminPage() {
                     <Button size="sm" onClick={handleFtStart} disabled={ftStarting}
                       className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white">
                       {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                      Start fine-tuning
+                      {t("admin.ft_start")}
                     </Button>
                   </div>
                 )}
@@ -1233,7 +1233,7 @@ export default function AdminPage() {
                 {/* Step 3: Jobs list */}
                 {ftJobs.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Fine-tuning jobs</Label>
+                    <Label className="text-xs font-semibold">{t("admin.ft_jobs")}</Label>
                     <div className="space-y-1.5">
                       {ftJobs.map((job) => (
                         <div key={job.jobId} className="flex items-center gap-2 p-2 rounded-md border text-xs dark:border-gray-700">
@@ -1260,7 +1260,7 @@ export default function AdminPage() {
                       ))}
                     </div>
                     <p className="text-[10px] text-gray-400">
-                      Once a job succeeds, copy the fine-tuned model name and assign it to any task above.
+                      {t("admin.ft_jobs_hint")}
                     </p>
                   </div>
                 )}
@@ -1282,7 +1282,7 @@ export default function AdminPage() {
                     <CardContent className="p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-gray-900 dark:text-white">{plan.label}</h3>
-                        <Badge variant="secondary" className="text-xs">{count} users</Badge>
+                        <Badge variant="secondary" className="text-xs">{count} {t("admin.users_count")}</Badge>
                       </div>
                       <div className="flex items-baseline gap-1">
                         {plan.price === 0 ? (
