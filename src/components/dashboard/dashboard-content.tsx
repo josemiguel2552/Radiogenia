@@ -97,6 +97,7 @@ export function DashboardContent() {
   }, [conclusionStyle]);
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
+  const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
@@ -906,13 +907,13 @@ export function DashboardContent() {
       .trim();
   }
 
-  const SECTION_HEADERS: Record<string, { findings: string; conclusion: string }> = {
-    es: { findings: "HALLAZGOS", conclusion: "CONCLUSIÓN" },
-    en: { findings: "FINDINGS", conclusion: "CONCLUSION" },
-    pt: { findings: "ACHADOS", conclusion: "CONCLUSÃO" },
-    fr: { findings: "RÉSULTATS", conclusion: "CONCLUSION" },
-    de: { findings: "BEFUNDE", conclusion: "SCHLUSSFOLGERUNG" },
-    it: { findings: "REPERTI", conclusion: "CONCLUSIONE" },
+  const SECTION_HEADERS: Record<string, { findings: string; conclusion: string; recommendations: string }> = {
+    es: { findings: "HALLAZGOS", conclusion: "CONCLUSIÓN", recommendations: "RECOMENDACIONES" },
+    en: { findings: "FINDINGS", conclusion: "CONCLUSION", recommendations: "RECOMMENDATIONS" },
+    pt: { findings: "ACHADOS", conclusion: "CONCLUSÃO", recommendations: "RECOMENDAÇÕES" },
+    fr: { findings: "RÉSULTATS", conclusion: "CONCLUSION", recommendations: "RECOMMANDATIONS" },
+    de: { findings: "BEFUNDE", conclusion: "SCHLUSSFOLGERUNG", recommendations: "EMPFEHLUNGEN" },
+    it: { findings: "REPERTI", conclusion: "CONCLUSIONE", recommendations: "RACCOMANDAZIONI" },
   };
 
   const CONTRAST_LABELS: Record<string, { with: string; without: string }> = {
@@ -964,6 +965,9 @@ export function DashboardContent() {
     text += headers.findings + "\n" + cleanFindings;
     if (mode === "findings_conclusion" || mode === "full") {
       text += "\n\n" + headers.conclusion + "\n" + cleanConclusion;
+    }
+    if (selectedRecTexts.length > 0 && (mode === "findings_conclusion" || mode === "full")) {
+      text += "\n\n" + headers.recommendations + "\n" + selectedRecTexts.map((t) => "- " + t).join("\n");
     }
     if (mode !== "findings" && activeSignatureRef.current) {
       text += "\n\n" + activeSignatureRef.current;
@@ -1485,14 +1489,6 @@ export function DashboardContent() {
                     </button>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { loadHiddenTemplates(); setShowRestoreDialog(true); }}
-                  className="text-[10px] text-gray-400 hover:text-brand transition-colors flex items-center gap-1"
-                >
-                  <RotateCcw className="h-2.5 w-2.5" />
-                  {t("dash.restore_templates")}
-                </button>
               </div>
 
               {/* Row 3: Clinical context (collapsible) */}
@@ -1724,6 +1720,7 @@ export function DashboardContent() {
             section={selectedSection}
             outputLanguage={outputLanguage as "es" | "en" | "pt"}
             visible={!!conclusion}
+            onSelectionChange={setSelectedRecTexts}
           />
 
           {/* Action bar */}

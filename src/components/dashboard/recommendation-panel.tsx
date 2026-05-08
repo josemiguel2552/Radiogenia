@@ -14,6 +14,7 @@ interface Props {
   section: string;
   outputLanguage: OutputLanguage;
   visible: boolean;
+  onSelectionChange?: (texts: string[]) => void;
 }
 
 type UsageMap = Record<string, number>;
@@ -83,7 +84,7 @@ function scoreRelevance(rec: ManualRecommendation, conclusionTokens: string[], l
   return score;
 }
 
-export function RecommendationPanel({ conclusionText, modality, section, outputLanguage, visible }: Props) {
+export function RecommendationPanel({ conclusionText, modality, section, outputLanguage, visible, onSelectionChange }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -134,6 +135,15 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     }
     return result;
   }, [customRecs, hiddenIds]);
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      const texts = allRecs
+        .filter((r) => selected.has(r.id))
+        .map((r) => r.text[outputLanguage] || r.text.es);
+      onSelectionChange(texts);
+    }
+  }, [selected, allRecs, outputLanguage, onSelectionChange]);
 
   const filtered = useMemo(() => {
     return allRecs.filter((r) => {

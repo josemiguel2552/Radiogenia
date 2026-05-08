@@ -32,6 +32,7 @@ import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
 import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
+import { AccountTab } from "@/components/sidebar/account-tab";
 import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
@@ -178,6 +179,8 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         </div>
         <Separator />
         <AppearanceTab />
+        <Separator />
+        <AccountTab />
       </div>
     </ScrollArea>
   );
@@ -414,73 +417,73 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
       {/* ── Mobile bottom navigation ── */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 safe-area-bottom">
-        <div className="flex items-center justify-around h-14 px-2">
+        <div className="flex items-center h-14 px-1 overflow-x-auto scrollbar-hide">
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("dashboard")}
           >
             <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[9px] font-medium">{t("nav.reports")}</span>
+            <span className="text-[9px] font-medium leading-tight">{t("nav.reports")}</span>
           </button>
 
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "templates" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "templates" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("templates")}
           >
             <FileText className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.templates")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.templates")}</span>
           </button>
 
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "calculators" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "calculators" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("calculators")}
           >
             <Calculator className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.calculators")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.calculators")}</span>
           </button>
 
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("recommendations")}
           >
             <ClipboardList className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.recommendations")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.recommendations")}</span>
           </button>
 
           <button
-            className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
+            className="flex flex-col items-center shrink-0 gap-0.5 text-gray-500 py-1.5 px-2 min-w-[48px]"
             onClick={() => setMobileDrawerOpen(true)}
           >
             <Settings className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.config")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.config")}</span>
           </button>
 
           {role === "admin" && (
             <Link
               href="/admin"
-              className="flex flex-col items-center gap-0.5 text-amber-500 py-1.5 px-3 min-w-[56px]"
+              className="flex flex-col items-center shrink-0 gap-0.5 text-amber-500 py-1.5 px-2 min-w-[48px]"
             >
               <Shield className="h-5 w-5" />
-              <span className="text-[9px]">{t("nav.admin")}</span>
+              <span className="text-[9px] leading-tight">{t("nav.admin")}</span>
             </Link>
           )}
 
           {orgInfo?.isChief && (
             <Link
               href="/org"
-              className="flex flex-col items-center gap-0.5 text-blue-400 py-1.5 px-3 min-w-[56px]"
+              className="flex flex-col items-center shrink-0 gap-0.5 text-blue-400 py-1.5 px-2 min-w-[48px]"
             >
               <Building2 className="h-5 w-5" />
-              <span className="text-[9px]">{t("nav.hospital")}</span>
+              <span className="text-[9px] leading-tight">{t("nav.hospital")}</span>
             </Link>
           )}
 
           <button
-            className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
+            className="flex flex-col items-center shrink-0 gap-0.5 text-gray-500 py-1.5 px-2 min-w-[48px]"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.sign_out")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.sign_out")}</span>
           </button>
         </div>
       </nav>
