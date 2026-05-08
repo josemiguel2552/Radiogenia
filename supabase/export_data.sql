@@ -46,7 +46,7 @@ AS sql_statement
 FROM profiles;
 
 -- 3. Export user_model_config
-SELECT 'INSERT INTO user_model_config (id, user_id, provider, model_name, api_key_encrypted, custom_base_url, findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, style_sample_count, few_shot_count, compact_normals, dictation_language, conclusion_style, recommendations_enabled, created_at, updated_at)
+SELECT 'INSERT INTO user_model_config (id, user_id, provider, model_name, api_key_encrypted, custom_base_url, findings_length, normal_fields_verbosity, paraphrase_level, output_language, style_learning_enabled, style_sample_count, few_shot_count, created_at, updated_at)
 VALUES ('
   || quote_literal(id) || ', '
   || quote_literal(user_id) || ', '
@@ -61,10 +61,6 @@ VALUES ('
   || style_learning_enabled || ', '
   || style_sample_count || ', '
   || few_shot_count || ', '
-  || compact_normals || ', '
-  || COALESCE(quote_literal(dictation_language), '''auto''') || ', '
-  || COALESCE(quote_literal(conclusion_style), '''grouped''') || ', '
-  || COALESCE(recommendations_enabled::text, 'true') || ', '
   || quote_literal(created_at::text) || ', '
   || quote_literal(updated_at::text)
   || ') ON CONFLICT (id) DO NOTHING;'
