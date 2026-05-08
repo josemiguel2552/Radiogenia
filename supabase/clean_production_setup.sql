@@ -504,29 +504,8 @@ create policy "Users manage own hidden templates"
 
 
 -- ##########################################################
--- PART 4 — Hospital multi-tenant
+-- PART 4 — Hospital multi-tenant (tables first, then functions & policies)
 -- ##########################################################
-
--- Helper functions FIRST (referenced by policies below)
-create or replace function public.can_edit_org_section(uid uuid, sid uuid)
-returns boolean as $$
-  select exists (
-    select 1 from public.org_members
-    where user_id = uid and is_active = true
-    and (
-      is_org_chief = true
-      or (section_id = sid and section_role in ('section_chief', 'section_editor'))
-    )
-  );
-$$ language sql security definer stable;
-
-create or replace function public.get_user_org(uid uuid)
-returns table (org_id uuid, section_id uuid, is_org_chief boolean, section_role text) as $$
-  select org_id, section_id, is_org_chief, section_role
-  from public.org_members
-  where user_id = uid and is_active = true
-  limit 1;
-$$ language sql security definer stable;
 
 -- Organizations
 create table if not exists public.organizations (
@@ -713,7 +692,32 @@ alter table public.resident_verifications enable row level security;
 
 
 -- ##########################################################
--- PART 5 — RLS policies (multi-tenant)
+-- PART 5 — Helper functions (need tables above to exist)
+-- ##########################################################
+
+create or replace function public.can_edit_org_section(uid uuid, sid uuid)
+returns boolean as $$
+  select exists (
+    select 1 from public.org_members
+    where user_id = uid and is_active = true
+    and (
+      is_org_chief = true
+      or (section_id = sid and section_role in ('section_chief', 'section_editor'))
+    )
+  );
+$$ language sql security definer stable;
+
+create or replace function public.get_user_org(uid uuid)
+returns table (org_id uuid, section_id uuid, is_org_chief boolean, section_role text) as $$
+  select org_id, section_id, is_org_chief, section_role
+  from public.org_members
+  where user_id = uid and is_active = true
+  limit 1;
+$$ language sql security definer stable;
+
+
+-- ##########################################################
+-- PART 6 — RLS policies (multi-tenant)
 -- ##########################################################
 
 -- Organizations
@@ -932,7 +936,7 @@ create policy "org_chief reads all org reports"
 
 
 -- ##########################################################
--- PART 6 — Sync trigger for profiles.org_id
+-- PART 7 — Sync trigger for profiles.org_id
 -- ##########################################################
 
 create or replace function public.sync_profile_org_id()
@@ -972,7 +976,7 @@ create trigger trg_sync_profile_org_id
 
 
 -- ##########################################################
--- PART 7 — Admin setup (change email to yours)
+-- PART 8 — Admin setup (change email to yours)
 -- ##########################################################
 
 -- This runs AFTER data import. If importing data, skip this.
