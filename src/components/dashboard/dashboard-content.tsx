@@ -82,6 +82,7 @@ export function DashboardContent() {
   const templatesRef = useRef(templates);
   const selectedTemplateIdRef = useRef(selectedTemplateId);
   const resolvedDictLangRef = useRef("");
+  const [dictSelRange, setDictSelRange] = useState<{ start: number; end: number } | null>(null);
 
   // Report output state
   const [findings, setFindings] = useState("");
@@ -285,6 +286,12 @@ export function DashboardContent() {
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, resolvedDictLang);
       setDictation((prev) => {
+        if (dictSelRange && dictSelRange.start !== dictSelRange.end) {
+          const before = prev.slice(0, dictSelRange.start);
+          const after = prev.slice(dictSelRange.end);
+          setDictSelRange(null);
+          return before + text + after;
+        }
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
         return prev + sep + text;
       });
@@ -1278,6 +1285,14 @@ export function DashboardContent() {
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  onSelect={(e) => {
+                    const ta = e.currentTarget;
+                    if (ta.selectionStart !== ta.selectionEnd) {
+                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                    } else {
+                      setDictSelRange(null);
+                    }
+                  }}
                   className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
                 />
                 <Button
@@ -1297,6 +1312,15 @@ export function DashboardContent() {
                   </div>
                 )}
               </div>
+              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Texto seleccionado — al dictar se reemplazará
+                  </p>
+                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                </div>
+              )}
               {interimText && isRecording && (
                 <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                   <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
@@ -1540,6 +1564,14 @@ export function DashboardContent() {
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  onSelect={(e) => {
+                    const ta = e.currentTarget;
+                    if (ta.selectionStart !== ta.selectionEnd) {
+                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                    } else {
+                      setDictSelRange(null);
+                    }
+                  }}
                   className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
                 />
                 <Button
@@ -1559,6 +1591,15 @@ export function DashboardContent() {
                   </div>
                 )}
               </div>
+              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Texto seleccionado — al dictar se reemplazará
+                  </p>
+                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                </div>
+              )}
               {interimText && isRecording && (
                 <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                   <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />

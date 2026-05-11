@@ -52,6 +52,7 @@ export function useVoiceDictation({
   const animFrameRef = useRef<number | null>(null);
   const activeRef = useRef(false);
   const lastLevelUpdateRef = useRef(0);
+  const interimTextRef = useRef("");
 
   // ── Deepgram refs ──
   const wsRef = useRef<WebSocket | null>(null);
@@ -190,6 +191,7 @@ export function useVoiceDictation({
     setIsRecording(false);
     setIsTranscribing(false);
     setAudioLevel(0);
+    interimTextRef.current = "";
     setInterimText("");
   }, []);
 
@@ -265,10 +267,12 @@ export function useVoiceDictation({
           if (!transcript) return;
 
           if (msg.is_final) {
+            interimTextRef.current = "";
             setInterimText("");
             setIsTranscribing(false);
             onTranscript(transcript);
           } else {
+            interimTextRef.current = transcript;
             setInterimText(transcript);
             setIsTranscribing(true);
             onInterim?.(transcript);
@@ -397,10 +401,16 @@ export function useVoiceDictation({
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "CloseStream" }));
       }
+      // Flush any pending interim text as final before cleanup
+      const pending = interimTextRef.current;
+      if (pending) {
+        interimTextRef.current = "";
+        onTranscript(pending);
+      }
       cleanup();
       setTimeout(() => onRecordingDone?.(), 50);
     }, 300);
-  }, [cleanup, reportStreamingUsage, onRecordingDone]);
+  }, [cleanup, reportStreamingUsage, onRecordingDone, onTranscript]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
