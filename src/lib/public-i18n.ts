@@ -149,6 +149,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.check_email": "Revisa tu email",
     "auth.reset_sent": "Hemos enviado un enlace de restablecimiento a {email}. Haz clic en el enlace del email para establecer una nueva contraseña.",
     "auth.back_signin": "Volver a iniciar sesión",
+    "auth.reset_not_registered": "Este email no está registrado en Radiogen.AI.",
+    "auth.reset_join_waitlist": "Únete a la lista de espera para solicitar acceso.",
+    "auth.reset_already_waitlisted": "Ya estás en la lista de espera. Te contactaremos cuando tu acceso esté listo. No es necesario registrarte de nuevo.",
     // Auth - Reset password
     "auth.new_password_title": "Nueva contraseña",
     "auth.new_password_subtitle": "Elige una contraseña segura para tu cuenta.",
@@ -317,6 +320,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.check_email": "Check your email",
     "auth.reset_sent": "We sent a password reset link to {email}. Click the link in the email to set a new password.",
     "auth.back_signin": "Back to sign in",
+    "auth.reset_not_registered": "This email is not registered on Radiogen.AI.",
+    "auth.reset_join_waitlist": "Join the waitlist to request access.",
+    "auth.reset_already_waitlisted": "You're already on the waitlist. We'll reach out when your access is ready. No need to sign up again.",
     // Auth - Reset password
     "auth.new_password_title": "Set new password",
     "auth.new_password_subtitle": "Choose a strong password for your account.",
@@ -485,6 +491,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.check_email": "Verifique seu e-mail",
     "auth.reset_sent": "Enviamos um link de redefinição de senha para {email}. Clique no link do e-mail para definir uma nova senha.",
     "auth.back_signin": "Voltar para login",
+    "auth.reset_not_registered": "Este e-mail não está registrado no Radiogen.AI.",
+    "auth.reset_join_waitlist": "Entre na lista de espera para solicitar acesso.",
+    "auth.reset_already_waitlisted": "Você já está na lista de espera. Entraremos em contato quando seu acesso estiver pronto. Não é necessário se cadastrar novamente.",
     // Auth - Reset password
     "auth.new_password_title": "Nova senha",
     "auth.new_password_subtitle": "Escolha uma senha segura para sua conta.",
