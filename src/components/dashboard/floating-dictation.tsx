@@ -5,6 +5,7 @@ import { Mic, MicOff, X, Minimize2, Maximize2, Send, Loader2, GripVertical, Keyb
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { useT } from "@/lib/i18n";
+import { SelectionHighlight } from "@/components/ui/selection-highlight";
 
 interface FloatingDictationProps {
   language: string;
@@ -210,14 +211,17 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
 
         {/* Text area */}
         <div className="p-3">
-          <textarea
-            ref={textareaRef}
-            value={buffer}
-            onChange={(e) => setBuffer(e.target.value)}
-            onSelect={handleSelect}
-            placeholder={t("dash.dictation_placeholder")}
-            className="w-full h-[180px] text-sm resize-none border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand/50 placeholder:text-gray-400"
-          />
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={buffer}
+              onChange={(e) => setBuffer(e.target.value)}
+              onSelect={handleSelect}
+              placeholder={t("dash.dictation_placeholder")}
+              className="w-full h-[180px] text-sm resize-none border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand/50 placeholder:text-gray-400"
+            />
+            <SelectionHighlight text={buffer} range={selRange} textareaRef={textareaRef} className="p-2.5 rounded-lg" />
+          </div>
 
           {/* Selection indicator */}
           {selRange && selRange.start !== selRange.end && (
