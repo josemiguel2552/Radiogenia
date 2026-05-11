@@ -33,7 +33,7 @@ import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
 import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
-import { AccountTab } from "@/components/sidebar/account-tab";
+import { AccountTab, PasswordSection } from "@/components/sidebar/account-tab";
 import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
@@ -180,6 +180,12 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         </div>
         <Separator />
         <AppearanceTab />
+        {orgInfo?.isMember && (
+          <>
+            <Separator />
+            <PasswordSection />
+          </>
+        )}
       </div>
     </ScrollArea>
   );
@@ -220,12 +226,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   );
 
   /* ── Top navigation tabs ── */
+  const isOrgUser = !!orgInfo?.isMember;
   const topTabs: { key: ActiveView; label: string; icon: React.ReactNode }[] = [
     { key: "dashboard", label: t("nav.reports"), icon: <LayoutDashboard className="h-4 w-4" /> },
     { key: "templates", label: t("nav.templates"), icon: <FileText className="h-4 w-4" /> },
     { key: "calculators", label: t("nav.calculators"), icon: <Calculator className="h-4 w-4" /> },
     { key: "recommendations", label: t("nav.recommendations"), icon: <ClipboardList className="h-4 w-4" /> },
-    { key: "account", label: t("nav.account"), icon: <UserIcon className="h-4 w-4" /> },
+    ...(!isOrgUser ? [{ key: "account" as ActiveView, label: t("nav.account"), icon: <UserIcon className="h-4 w-4" /> }] : []),
   ];
 
   /* ── Main content based on active view ── */
@@ -293,14 +300,16 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <ClipboardList className="h-5 w-5" />
         </Button>
 
-        <Button
-          variant="ghost" size="icon"
-          className={`rounded-lg h-9 w-9 ${activeView === "account" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-          onClick={() => setActiveView("account")}
-          title={t("nav.account")}
-        >
-          <UserIcon className="h-5 w-5" />
-        </Button>
+        {!isOrgUser && (
+          <Button
+            variant="ghost" size="icon"
+            className={`rounded-lg h-9 w-9 ${activeView === "account" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
+            onClick={() => setActiveView("account")}
+            title={t("nav.account")}
+          >
+            <UserIcon className="h-5 w-5" />
+          </Button>
+        )}
 
         {role === "admin" && (
           <Link
@@ -462,13 +471,15 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
             <span className="text-[9px] leading-tight">{t("nav.recommendations")}</span>
           </button>
 
-          <button
-            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "account" ? "text-brand" : "text-gray-500"}`}
-            onClick={() => setActiveView("account")}
-          >
-            <UserIcon className="h-5 w-5" />
-            <span className="text-[9px] leading-tight">{t("nav.account")}</span>
-          </button>
+          {!isOrgUser && (
+            <button
+              className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "account" ? "text-brand" : "text-gray-500"}`}
+              onClick={() => setActiveView("account")}
+            >
+              <UserIcon className="h-5 w-5" />
+              <span className="text-[9px] leading-tight">{t("nav.account")}</span>
+            </button>
+          )}
 
           <button
             className="flex flex-col items-center shrink-0 gap-0.5 text-gray-500 py-1.5 px-2 min-w-[48px]"
