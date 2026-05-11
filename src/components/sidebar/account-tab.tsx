@@ -4,8 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock, ExternalLink, X } from "lucide-react";
+import {
+  Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
+  ExternalLink, X, Zap, FileText, Mic, TrendingUp, User,
+} from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
@@ -32,6 +36,15 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function UsageBar({ used, total, color }: { used: number; total: number; color: string }) {
+  const pct = Math.min(100, (used / total) * 100);
+  return (
+    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 export function AccountTab() {
   const t = useT();
   const [currentPw, setCurrentPw] = useState("");
@@ -39,6 +52,7 @@ export function AccountTab() {
   const [confirmPw, setConfirmPw] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [userEmail, setUserEmail] = useState("");
 
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [subLoading, setSubLoading] = useState(true);
@@ -56,7 +70,12 @@ export function AccountTab() {
     setSubLoading(false);
   }, []);
 
-  useEffect(() => { loadSub(); }, [loadSub]);
+  useEffect(() => {
+    loadSub();
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user?.email) setUserEmail(data.user.email);
+    });
+  }, [loadSub]);
 
   const handlePasswordChange = useCallback(async () => {
     setPwMsg(null);
@@ -149,180 +168,216 @@ export function AccountTab() {
   const planKeys = Object.keys(PLANS) as SubscriptionPlan[];
 
   return (
-    <div className="space-y-6">
-      {/* Password change */}
+    <div className="space-y-6 pb-8">
+      {/* Header */}
       <div>
-        <h4 className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
-          <Lock className="h-3.5 w-3.5" />
-          {t("account.change_password")}
-        </h4>
-        <div className="space-y-2">
-          <Input
-            type="password"
-            placeholder={t("account.current_password")}
-            value={currentPw}
-            onChange={(e) => setCurrentPw(e.target.value)}
-            className="h-8 text-xs"
-          />
-          <Input
-            type="password"
-            placeholder={t("account.new_password")}
-            value={newPw}
-            onChange={(e) => setNewPw(e.target.value)}
-            className="h-8 text-xs"
-          />
-          <Input
-            type="password"
-            placeholder={t("account.confirm_password")}
-            value={confirmPw}
-            onChange={(e) => setConfirmPw(e.target.value)}
-            className="h-8 text-xs"
-          />
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <User className="h-5 w-5 text-brand" />
+          {t("nav.account")}
+        </h2>
+        {userEmail && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{userEmail}</p>
+        )}
+      </div>
+
+      {/* Subscription overview */}
+      {subLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        </div>
+      ) : sub ? (
+        <>
+          {/* Plan card */}
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-brand/10 flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-brand" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{sub.planConfig.label}</span>
+                      <Badge className="text-[10px]">
+                        {sub.planConfig.price === 0 ? t("account.free") : `${CURRENCY}${sub.planConfig.price}/${t("account.month")}`}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {t("account.next_renewal")}: {formatDate(sub.nextPeriodDate)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5"
+                  onClick={() => { setSelectedPlan(null); setChangePlanOpen(true); setPlanMsg(null); }}
+                >
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  {t("account.change_plan")}
+                </Button>
+              </div>
+
+              {/* Usage cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Reports */}
+                <div className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-4 w-4 text-brand" />
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.reports_usage")}</span>
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{sub.used}</span>
+                    <span className="text-sm text-gray-400">/ {sub.limit}</span>
+                  </div>
+                  <UsageBar used={sub.used} total={sub.limit} color="bg-brand" />
+                </div>
+
+                {/* Dictation */}
+                <div className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mic className="h-4 w-4 text-teal-500" />
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.dictation_usage")}</span>
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{sub.dictation.usedMinutes}</span>
+                    <span className="text-sm text-gray-400">/ {sub.dictation.limitMinutes} min</span>
+                  </div>
+                  <UsageBar used={sub.dictation.usedMinutes} total={sub.dictation.limitMinutes} color="bg-teal-500" />
+                </div>
+              </div>
+
+              {/* Pending plan change */}
+              {sub.pendingPlan && sub.pendingPlanEffectiveDate && (
+                <div className="mt-4 p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+                  <div className="flex items-start gap-2">
+                    <CalendarClock className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-amber-800 dark:text-amber-300">
+                        {t("account.pending_change")}:{" "}
+                        <span className="font-semibold">{PLANS[sub.pendingPlan]?.label}</span>
+                      </p>
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                        {t("account.effective_date")}: {formatDate(sub.pendingPlanEffectiveDate)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={cancelPendingPlan}
+                      className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 shrink-0"
+                      title={t("account.cancel_pending")}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {planMsg && (
+                <p className={`mt-3 text-xs ${planMsg.ok ? "text-green-600" : "text-red-500"}`}>
+                  {planMsg.ok ? <Check className="inline h-3 w-3 mr-1" /> : <AlertTriangle className="inline h-3 w-3 mr-1" />}
+                  {planMsg.text}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Payment */}
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                    <CreditCard className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.manage_payment")}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Stripe</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5"
+                  onClick={openBillingPortal}
+                  disabled={portalLoading}
+                >
+                  {portalLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {t("account.manage_payment")}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <p className="text-sm text-gray-400">{t("account.sub_error")}</p>
+      )}
+
+      {/* Security */}
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Lock className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.change_password")}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.pw_min_length")}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input
+              type="password"
+              placeholder={t("account.current_password")}
+              value={currentPw}
+              onChange={(e) => setCurrentPw(e.target.value)}
+              className="h-9 text-sm"
+            />
+            <Input
+              type="password"
+              placeholder={t("account.new_password")}
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              className="h-9 text-sm"
+            />
+            <Input
+              type="password"
+              placeholder={t("account.confirm_password")}
+              value={confirmPw}
+              onChange={(e) => setConfirmPw(e.target.value)}
+              className="h-9 text-sm"
+            />
+          </div>
           {pwMsg && (
-            <p className={`text-[11px] ${pwMsg.ok ? "text-green-600" : "text-red-500"}`}>
+            <p className={`mt-2 text-xs ${pwMsg.ok ? "text-green-600" : "text-red-500"}`}>
               {pwMsg.ok ? <Check className="inline h-3 w-3 mr-1" /> : <AlertTriangle className="inline h-3 w-3 mr-1" />}
               {pwMsg.text}
             </p>
           )}
           <Button
             size="sm"
-            className="text-xs w-full"
+            className="mt-3 text-xs"
             onClick={handlePasswordChange}
             disabled={pwLoading || !currentPw || !newPw || !confirmPw}
           >
             {pwLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("account.update_password")}
           </Button>
-        </div>
-      </div>
-
-      {/* Subscription */}
-      <div>
-        <h4 className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
-          <CreditCard className="h-3.5 w-3.5" />
-          {t("account.subscription")}
-        </h4>
-        {subLoading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-          </div>
-        ) : sub ? (
-          <div className="space-y-3">
-            <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.current_plan")}</span>
-                <Badge className="text-[10px]">{sub.planConfig.label}</Badge>
-              </div>
-
-              {/* Next renewal date */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-gray-500">{t("account.next_renewal")}</span>
-                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                  {formatDate(sub.nextPeriodDate)}
-                </span>
-              </div>
-
-              {/* Reports usage */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-gray-500">{t("account.reports_usage")}</span>
-                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                  {sub.used} / {sub.limit}
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-brand rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (sub.used / sub.limit) * 100)}%` }}
-                />
-              </div>
-
-              {/* Dictation usage */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-gray-500">{t("account.dictation_usage")}</span>
-                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                  {sub.dictation.usedMinutes} / {sub.dictation.limitMinutes} min
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (sub.dictation.usedMinutes / sub.dictation.limitMinutes) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Pending plan change notice */}
-            {sub.pendingPlan && sub.pendingPlanEffectiveDate && (
-              <div className="p-2.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
-                <div className="flex items-start gap-2">
-                  <CalendarClock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                      {t("account.pending_change")}:{" "}
-                      <span className="font-semibold">{PLANS[sub.pendingPlan]?.label}</span>
-                    </p>
-                    <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                      {t("account.effective_date")}: {formatDate(sub.pendingPlanEffectiveDate)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={cancelPendingPlan}
-                    className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 shrink-0"
-                    title={t("account.cancel_pending")}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {planMsg && (
-              <p className={`text-[11px] ${planMsg.ok ? "text-green-600" : "text-red-500"}`}>
-                {planMsg.ok ? <Check className="inline h-3 w-3 mr-1" /> : <AlertTriangle className="inline h-3 w-3 mr-1" />}
-                {planMsg.text}
-              </p>
-            )}
-
-            <div className="space-y-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs w-full"
-                onClick={() => { setSelectedPlan(null); setChangePlanOpen(true); setPlanMsg(null); }}
-              >
-                {t("account.change_plan")}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs w-full gap-1.5"
-                onClick={openBillingPortal}
-                disabled={portalLoading}
-              >
-                {portalLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <>
-                    <ExternalLink className="h-3 w-3" />
-                    {t("account.manage_payment")}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-gray-400">{t("account.sub_error")}</p>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Change plan dialog */}
       <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm">{t("account.change_plan")}</DialogTitle>
           </DialogHeader>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-xs text-gray-500">
             {t("account.plan_change_info")}
           </p>
           <div className="space-y-2">
@@ -337,7 +392,7 @@ export function AccountTab() {
                   type="button"
                   onClick={() => !isCurrent && !isPending && setSelectedPlan(key)}
                   disabled={isCurrent || isPending}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  className={`w-full text-left p-3.5 rounded-lg border transition-all ${
                     isSelected
                       ? "border-brand bg-brand/5 ring-1 ring-brand"
                       : isCurrent
@@ -346,27 +401,27 @@ export function AccountTab() {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-gray-900 dark:text-white">{plan.label}</span>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{plan.label}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       {plan.price === 0 ? t("account.free") : `${CURRENCY}${plan.price}/${t("account.month")}`}
                     </span>
                   </div>
-                  <div className="text-[10px] text-gray-500 space-x-3">
+                  <div className="text-xs text-gray-500 space-x-3">
                     <span>{plan.reports} {t("account.reports")}</span>
                     <span>{plan.dictationMinutes} min {t("account.dictation")}</span>
                   </div>
                   {isCurrent && (
-                    <Badge variant="secondary" className="text-[9px] mt-1">{t("account.current")}</Badge>
+                    <Badge variant="secondary" className="text-[9px] mt-1.5">{t("account.current")}</Badge>
                   )}
                   {isPending && (
-                    <Badge variant="outline" className="text-[9px] mt-1 border-amber-400 text-amber-600">{t("account.pending")}</Badge>
+                    <Badge variant="outline" className="text-[9px] mt-1.5 border-amber-400 text-amber-600">{t("account.pending")}</Badge>
                   )}
                 </button>
               );
             })}
           </div>
           {sub?.nextPeriodDate && (
-            <p className="text-[10px] text-gray-400 flex items-center gap-1">
+            <p className="text-[11px] text-gray-400 flex items-center gap-1">
               <CalendarClock className="h-3 w-3" />
               {t("account.change_effective")}: {formatDate(sub.nextPeriodDate)}
             </p>
