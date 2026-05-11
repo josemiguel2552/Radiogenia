@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,9 +28,6 @@ export async function POST(req: NextRequest) {
       es: "Responde SOLO con el informe corregido en español. Sin explicaciones.",
       en: "Respond ONLY with the corrected report in English. No explanations.",
       pt: "Responda APENAS com o relatório corrigido em português. Sem explicações.",
-      fr: "Répondez UNIQUEMENT avec le rapport corrigé en français. Sans explications.",
-      de: "Antworten Sie NUR mit dem korrigierten Bericht auf Deutsch. Keine Erklärungen.",
-      it: "Rispondi SOLO con il referto corretto in italiano. Senza spiegazioni.",
     };
 
     let instructions = `You are a radiology report editor. Your ONLY task is to correct a structured findings report.\n\n`;
@@ -63,7 +61,7 @@ export async function POST(req: NextRequest) {
     instructions += `- Keep the same order and formatting.\n`;
     instructions += `- ${langInstructions[lang] || langInstructions.es}\n`;
 
-    const raw = await generateAI({
+    const aiResult = await generateAIWithUsage({
       provider: globalConfig.provider,
       modelName: globalConfig.modelName,
       apiKey: globalConfig.apiKey,
@@ -72,7 +70,9 @@ export async function POST(req: NextRequest) {
       user: "Output the corrected findings report now.",
     });
 
-    const cleaned = raw
+    logAICost({ userId: user.id, action: "repair_findings", provider: globalConfig.provider, model: globalConfig.modelName, inputTokens: aiResult.usage.inputTokens, outputTokens: aiResult.usage.outputTokens });
+
+    const cleaned = aiResult.text
       .replace(/^```[\s\S]*?\n/, "")
       .replace(/\n```\s*$/, "")
       .trim();

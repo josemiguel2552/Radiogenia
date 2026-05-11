@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
   Copy,
   Check,
   Sparkles,
-  Lightbulb,
   Stethoscope,
   CircleCheck,
   ArrowRight,
@@ -28,9 +27,17 @@ import {
   Pencil,
   Wand2,
   GraduationCap,
+  AlignLeft,
+  List,
+  X,
+  RotateCcw,
+  Trash2,
+  HelpCircle,
+  EyeOff,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
@@ -40,6 +47,7 @@ import { detectPii, type PiiMatch } from "@/lib/pii-detect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ResidentVerificationForm } from "@/components/resident-verification-form";
+import { RecommendationPanel } from "./recommendation-panel";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -59,8 +67,8 @@ export function DashboardContent() {
   const [clinicalInfo, setClinicalInfo] = useState("");
   const [clinicalOpen, setClinicalOpen] = useState(false);
   const [setupCollapsed, setSetupCollapsed] = useState(false);
-  const [recsOpen, setRecsOpen] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
+  const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -74,23 +82,36 @@ export function DashboardContent() {
   const templatesRef = useRef(templates);
   const selectedTemplateIdRef = useRef(selectedTemplateId);
   const resolvedDictLangRef = useRef("");
+  const [dictSelRange, setDictSelRange] = useState<{ start: number; end: number } | null>(null);
+  const dictSelRangeRef = useRef<{ start: number; end: number } | null>(null);
 
   // Report output state
   const [findings, setFindings] = useState("");
-  const [conclusion, setConclusion] = useState("");
-  const [recommendations, setRecommendations] = useState("");
+  const emptyConcVersions = { concise: "", grouped: "" };
+  const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
-  const [loadingConclusion, setLoadingConclusion] = useState(false);
-  const [loadingRecs, setLoadingRecs] = useState(false);
+  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, grouped: false });
+  const conclusion = conclusionVersions[conclusionStyle] || "";
+  const setConclusion = useCallback((v: string) => {
+    setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
+  }, [conclusionStyle]);
+  const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
+  const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
   const [repairMessage, setRepairMessage] = useState<string | null>(null);
+
+  // Hidden templates
+  const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [reportModeInfo, setReportModeInfo] = useState<string | null>(null);
+  const [showTemplateHelp, setShowTemplateHelp] = useState(false);
 
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
@@ -264,8 +285,16 @@ export function DashboardContent() {
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
     onTranscript: (rawText) => {
-      const text = processVoiceCommands(rawText, resolvedDictLang);
+      const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
       setDictation((prev) => {
+        const sel = dictSelRangeRef.current;
+        if (sel && sel.start !== sel.end) {
+          const before = prev.slice(0, sel.start);
+          const after = prev.slice(sel.end);
+          setDictSelRange(null);
+          dictSelRangeRef.current = null;
+          return before + text + after;
+        }
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
         return prev + sep + text;
       });
@@ -316,6 +345,7 @@ export function DashboardContent() {
   useEffect(() => { templatesRef.current = templates; }, [templates]);
   useEffect(() => { selectedTemplateIdRef.current = selectedTemplateId; }, [selectedTemplateId]);
   useEffect(() => { resolvedDictLangRef.current = resolvedDictLang; }, [resolvedDictLang]);
+  useEffect(() => { dictSelRangeRef.current = dictSelRange; }, [dictSelRange]);
 
   // PII detection — debounced on dictation + clinical info changes
   useEffect(() => {
@@ -328,25 +358,21 @@ export function DashboardContent() {
     return () => clearTimeout(timer);
   }, [dictation, clinicalInfo]);
 
-  // Auto-open recommendations when they arrive
-  useEffect(() => {
-    if (recommendations && !loadingRecs) setRecsOpen(true);
-  }, [recommendations, loadingRecs]);
-
   // Autosave draft with timestamp
   useEffect(() => {
     const interval = setInterval(() => {
-      if (dictation || findings || conclusion || recommendations || clinicalInfo) {
+      if (dictation || findings || conclusion || clinicalInfo) {
         localStorage.setItem("radiogenai_draft", JSON.stringify({
           savedAt: Date.now(),
-          clinicalInfo, dictation, findings, conclusion, recommendations,
+          clinicalInfo, dictation, findings, conclusion,
+          conclusionVersions,
           selectedModality, selectedSection, selectedTemplateId, contrastOption,
           initialFindings, initialConclusion,
         }));
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [clinicalInfo, dictation, findings, conclusion, recommendations, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
+  }, [clinicalInfo, dictation, findings, conclusion, conclusionVersions, selectedModality, selectedSection, selectedTemplateId, contrastOption]);
 
   // Keep snapshot ref in sync for unmount / beforeunload / visibilitychange
   useEffect(() => {
@@ -429,30 +455,55 @@ export function DashboardContent() {
     };
   }, []);
 
-  // Load draft on mount — discard if older than 15 minutes
+  // Load draft on mount — discard if older than 15 minutes; fall back to last template
   useEffect(() => {
     const raw = localStorage.getItem("radiogenai_draft");
-    if (!raw) return;
+    if (raw) {
+      try {
+        const d = JSON.parse(raw);
+        const age = Date.now() - (d.savedAt || 0);
+        if (age > 15 * 60 * 1000) {
+          localStorage.removeItem("radiogenai_draft");
+        } else {
+          if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
+          if (d.dictation) setDictation(d.dictation);
+          if (d.findings) setFindings(d.findings);
+          if (d.conclusionVersions) {
+            setConclusionVersions(d.conclusionVersions);
+          } else if (d.conclusion) {
+            setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: d.conclusion }));
+          }
+          if (d.selectedModality) setSelectedModality(d.selectedModality);
+          if (d.selectedSection) setSelectedSection(d.selectedSection);
+          if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
+          if (d.contrastOption) setContrastOption(d.contrastOption);
+          if (d.initialFindings) setInitialFindings(d.initialFindings);
+          if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
+          return;
+        }
+      } catch { /* ignore corrupt draft */ }
+    }
+    // No valid draft — restore last used template selection
     try {
-      const d = JSON.parse(raw);
-      const age = Date.now() - (d.savedAt || 0);
-      if (age > 15 * 60 * 1000) {
-        localStorage.removeItem("radiogenai_draft");
-        return;
+      const tplRaw = localStorage.getItem("radiogenai_last_template");
+      if (tplRaw) {
+        const tpl = JSON.parse(tplRaw);
+        if (tpl.modality) setSelectedModality(tpl.modality);
+        if (tpl.section) setSelectedSection(tpl.section);
+        if (tpl.templateId) setSelectedTemplateId(tpl.templateId);
       }
-      if (d.clinicalInfo) setClinicalInfo(d.clinicalInfo);
-      if (d.dictation) setDictation(d.dictation);
-      if (d.findings) setFindings(d.findings);
-      if (d.conclusion) setConclusion(d.conclusion);
-      if (d.recommendations) setRecommendations(d.recommendations);
-      if (d.selectedModality) setSelectedModality(d.selectedModality);
-      if (d.selectedSection) setSelectedSection(d.selectedSection);
-      if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
-      if (d.contrastOption) setContrastOption(d.contrastOption);
-      if (d.initialFindings) setInitialFindings(d.initialFindings);
-      if (d.initialConclusion) setInitialConclusion(d.initialConclusion);
-    } catch { /* ignore corrupt draft */ }
+    } catch { /* ignore */ }
   }, []);
+
+  // Persist template selection across sessions
+  useEffect(() => {
+    if (!selectedModality && !selectedSection && !selectedTemplateId) return;
+    localStorage.setItem("radiogenai_last_template", JSON.stringify({
+      modality: selectedModality,
+      section: selectedSection,
+      templateId: selectedTemplateId,
+    }));
+  }, [selectedModality, selectedSection, selectedTemplateId]);
 
   // Seed defaults (if needed) then load templates + user config
   useEffect(() => {
@@ -467,10 +518,20 @@ export function DashboardContent() {
         if (cfgRes.ok) {
           const cfg = await cfgRes.json();
           if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+          if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
         }
       } catch { /* ignore */ }
     }
     seedAndLoad();
+
+    // Listen for template changes from other components
+    const handleTemplatesChanged = () => {
+      fetch("/api/templates").then(r => r.ok ? r.json() : null).then(data => {
+        if (data) setTemplates(data);
+      }).catch(() => {});
+    };
+    window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
+    return () => window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
   }, []);
 
   // Filtered data
@@ -489,10 +550,53 @@ export function DashboardContent() {
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
+  const templateFieldLabels = useMemo(() => {
+    if (!selectedTemplate) return [];
+    const text = selectedTemplate.structure?.template || "";
+    const re = /\*{2,3}([^*]+)\*{2,3}/g;
+    const skip = new Set(["FINDINGS", "HALLAZGOS", "ACHADOS", "CONCLUSION", "CONCLUSIÓN", "CONCLUSÃO", "CONCLUSIONES"]);
+    const labels: string[] = [];
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const label = m[1].trim();
+      if (label.length > 1 && !skip.has(label.toUpperCase())) {
+        labels.push(sec(label));
+      }
+    }
+    return labels;
+  }, [selectedTemplate, sec]);
+
+  async function handleHideTemplate(tpl: UserTemplate) {
+    if (tpl.is_global) {
+      await fetch(`/api/templates?id=${tpl.id}&global=true`, { method: "DELETE" });
+    } else if (!tpl.is_org) {
+      await fetch(`/api/templates?id=${tpl.id}`, { method: "DELETE" });
+    }
+    setTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
+    if (selectedTemplateId === tpl.id) setSelectedTemplateId("");
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
+  }
+
+  async function loadHiddenTemplates() {
+    try {
+      const res = await fetch("/api/templates/hidden");
+      if (res.ok) setHiddenTemplates(await res.json());
+    } catch { /* ignore */ }
+  }
+
+  async function handleRestoreTemplate(id: string) {
+    await fetch(`/api/templates/hidden?id=${id}`, { method: "DELETE" });
+    setHiddenTemplates((prev) => prev.filter((t) => t.id !== id));
+    const res = await fetch("/api/templates");
+    if (res.ok) setTemplates(await res.json());
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
+  }
+
   // Voice recording is handled by useVoiceDictation hook above
 
   // Generate report
-  async function handleGenerate() {
+  type ReportMode = "structured" | "compact" | "dictation_only";
+  async function handleGenerate(mode: ReportMode = "structured") {
     if (!selectedTemplate || !dictation.trim()) return;
 
     // Log any pending corrections from the previous report before starting a new generation
@@ -509,11 +613,9 @@ export function DashboardContent() {
     correctionLoggedRef.current = false;
     setErrorReported(false);
     setLoadingFindings(true);
-    setLoadingConclusion(true);
-    setLoadingRecs(true);
+    setLoadingConcStyles({ concise: true, grouped: true });
     setFindings("");
-    setConclusion("");
-    setRecommendations("");
+    setConclusionVersions({ ...emptyConcVersions });
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -536,6 +638,7 @@ export function DashboardContent() {
           modality: selectedTemplate.modality,
           studyType: studyName,
           ...(lightParaphrase ? { paraphraseOverride: "light" } : {}),
+          reportMode: mode,
         }),
       });
 
@@ -558,7 +661,7 @@ export function DashboardContent() {
         }
         if (streamError) {
           findingsFailed = true;
-          setFindings("Error: " + streamError);
+          setFindings(t("gen_error") + ": " + streamError);
         } else {
           findingsText = cleanReport(findingsText);
           setInitialFindings(findingsText);
@@ -574,24 +677,22 @@ export function DashboardContent() {
       } else {
         findingsFailed = true;
         const data = await res.json().catch(() => ({ error: "Generation failed" }));
-        setFindings(data.error || "Error generating findings");
+        setFindings(data.error || t("gen_error_findings"));
       }
     } catch (e) {
       findingsFailed = true;
-      setFindings("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+      setFindings(t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")));
     }
     setLoadingFindings(false);
 
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
-      setLoadingConclusion(false);
-      setLoadingRecs(false);
+      setLoadingConcStyles({ concise: false, grouped: false });
       return;
     }
 
-    // Run trace+repair, conclusion, and recommendations ALL IN PARALLEL
+    // Run trace+repair and conclusion in parallel
     let conclusionText = "";
-    let recsText = "";
     let traceStats = { mappings: 0, unmatched: 0, hallucinations: 0 };
 
     const tracePromise = (async () => {
@@ -618,13 +719,14 @@ export function DashboardContent() {
             findingsText = cleanReport(result.corrected_findings);
             setFindings(findingsText);
             setInitialFindings(findingsText);
-            setRepairMessage(t("trace.auto_repaired").replace("{0}", ""));
+            setRepairMessage(t("trace.auto_repaired").replace("{0}", String(result.repaired_items?.length || "")));
           }
 
           setTraceData({
             mappings: result.mappings,
             unmatched: result.unmatched,
             hallucinations: result.hallucinations,
+            repairedItems: result.repaired_items || [],
           });
           setTraceActive(true);
         }
@@ -635,7 +737,10 @@ export function DashboardContent() {
       }
     })();
 
-    const conclusionPromise = (async () => {
+    const concStyles = ["concise", "grouped"] as const;
+    const activeStyle = conclusionStyle;
+
+    const conclusionPromise = Promise.all(concStyles.map((style) => (async () => {
       try {
         const res = await fetch("/api/generate/conclusion", {
           method: "POST",
@@ -645,6 +750,7 @@ export function DashboardContent() {
             clinicalInfo,
             modality: selectedTemplate.modality,
             studyType: studyName,
+            conclusionStyle: style,
           }),
         });
 
@@ -662,59 +768,47 @@ export function DashboardContent() {
               break;
             }
             text += chunk;
-            setConclusion(cleanReport(text));
+            if (style === activeStyle) {
+              setConclusionVersions((prev) => ({ ...prev, [style]: cleanReport(text) }));
+            }
           }
           if (streamError) {
-            setConclusion("Error: " + streamError);
+            setConclusionVersions((prev) => ({ ...prev, [style]: t("gen_error") + ": " + streamError }));
           } else {
             const cleaned = cleanReport(text);
-            conclusionText = cleaned;
-            setInitialConclusion(cleaned);
-            setConclusion(cleaned);
-            // Audit: log conclusion generation
-            fetch("/api/audit-logs", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "generate_conclusion",
-                duration_ms: Date.now() - generateStartRef.current,
-                metadata: {
-                  study_type: studyName,
-                  modality: selectedTemplate.modality,
-                  conclusion_length: cleaned.length,
-                },
-              }),
-            }).catch(() => {});
+            setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+            if (style === activeStyle) {
+              conclusionText = cleaned;
+              setInitialConclusion(cleaned);
+            }
+            if (style === activeStyle) {
+              fetch("/api/audit-logs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "generate_conclusion",
+                  duration_ms: Date.now() - generateStartRef.current,
+                  metadata: {
+                    study_type: studyName,
+                    modality: selectedTemplate.modality,
+                    conclusion_length: cleaned.length,
+                  },
+                }),
+              }).catch(() => {});
+            }
           }
         } else {
           const data = await res.json().catch(() => ({ error: "Generation failed" }));
-          setConclusion(data.error || "Error generating conclusion");
+          setConclusionVersions((prev) => ({ ...prev, [style]: data.error || t("gen_error_conclusion") }));
         }
       } catch (e) {
-        setConclusion("Error: " + (e instanceof Error ? e.message : "Unknown error"));
+        setConclusionVersions((prev) => ({ ...prev, [style]: t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")) }));
       } finally {
-        setLoadingConclusion(false);
+        setLoadingConcStyles((prev) => ({ ...prev, [style]: false }));
       }
-    })();
+    })()));
 
-    const recsPromise = fetch("/api/generate/recommendations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ findingsText }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        recsText = data.text ? cleanReport(data.text) : "";
-        setRecommendations(recsText || data.error || "");
-      })
-      .catch((e) => {
-        setRecommendations("Error: " + e.message);
-      })
-      .finally(() => {
-        setLoadingRecs(false);
-      });
-
-    await Promise.all([tracePromise, conclusionPromise, recsPromise]);
+    await Promise.all([tracePromise, conclusionPromise]);
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
 
@@ -761,7 +855,7 @@ export function DashboardContent() {
             clinical_context: clinicalInfo || "",
             findings_text: findingsText,
             conclusion_text: conclusionText,
-            recommendations_text: recsText,
+            recommendations_text: "",
             initial_findings_text: findingsText,
             initial_conclusion_text: conclusionText,
             template_snapshot: selectedTemplate.structure,
@@ -851,6 +945,8 @@ export function DashboardContent() {
     return title.toUpperCase();
   }
 
+  const copyFormattedRef = useRef<(mode: "findings" | "findings_conclusion" | "full") => void>(null as unknown as (mode: "findings" | "findings_conclusion" | "full") => void);
+
   function copyText(text: string, id: string) {
     navigator.clipboard.writeText(text);
     setCopied(id);
@@ -873,7 +969,6 @@ export function DashboardContent() {
     const title = getStudyTitle();
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);
-    const cleanRecs = cleanReport(recommendations);
     const headers = SECTION_HEADERS[outputLanguage] || SECTION_HEADERS.es;
 
     let text = "";
@@ -882,8 +977,8 @@ export function DashboardContent() {
     if (mode === "findings_conclusion" || mode === "full") {
       text += "\n\n" + headers.conclusion + "\n" + cleanConclusion;
     }
-    if (mode === "full" && cleanRecs) {
-      text += "\n\n" + headers.recommendations + "\n" + cleanRecs;
+    if (selectedRecTexts.length > 0 && (mode === "findings_conclusion" || mode === "full")) {
+      text += "\n\n" + headers.recommendations + "\n" + selectedRecTexts.map((t) => "- " + t).join("\n");
     }
     if (mode !== "findings" && activeSignatureRef.current) {
       text += "\n\n" + activeSignatureRef.current;
@@ -892,6 +987,18 @@ export function DashboardContent() {
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
     copyText(text, id);
   }
+  copyFormattedRef.current = copyFormatted;
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.shiftKey && e.code === "Space") {
+        e.preventDefault();
+        copyFormattedRef.current?.("findings_conclusion");
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
@@ -917,7 +1024,7 @@ export function DashboardContent() {
           clinical_context: clinicalInfo || "",
           findings_text: findings,
           conclusion_text: conclusion,
-          recommendations_text: recommendations,
+          recommendations_text: "",
           initial_findings_text: initialFindings || null,
           initial_conclusion_text: initialConclusion || null,
           template_snapshot: selectedTemplate.structure,
@@ -1013,15 +1120,13 @@ export function DashboardContent() {
     }
     setDictation("");
     setFindings("");
-    setConclusion("");
-    setRecommendations("");
+    setConclusionVersions({ ...emptyConcVersions });
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
     setTraceData(null);
     setTraceActive(false);
     setRepairMessage(null);
-    setRecsOpen(false);
     setPiiMatches([]);
     setPiiDismissed(false);
     setGenerationDurationMs(null);
@@ -1062,8 +1167,8 @@ export function DashboardContent() {
     setReportingError(false);
   }
 
-  const isGenerating = loadingFindings || loadingConclusion || loadingRecs;
-  const hasOutput = findings || conclusion || recommendations || isGenerating;
+  const isGenerating = loadingFindings || loadingConclusion;
+  const hasOutput = findings || conclusion || isGenerating;
   const setupReady = !!selectedTemplate;
   const showPiiWarning = piiMatches.length > 0 && !piiDismissed && dictation.trim();
   const canGenerate = setupReady && dictation.trim() && !isGenerating && !showPiiWarning;
@@ -1184,6 +1289,14 @@ export function DashboardContent() {
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  onSelect={(e) => {
+                    const ta = e.currentTarget;
+                    if (ta.selectionStart !== ta.selectionEnd) {
+                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                    } else {
+                      setDictSelRange(null);
+                    }
+                  }}
                   className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
                 />
                 <Button
@@ -1203,6 +1316,15 @@ export function DashboardContent() {
                   </div>
                 )}
               </div>
+              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Texto seleccionado — al dictar se reemplazará
+                  </p>
+                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                </div>
+              )}
               {interimText && isRecording && (
                 <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                   <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
@@ -1211,17 +1333,43 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <Button
-                onClick={handleGenerate}
-                disabled={!canGenerate}
-                className="w-full h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
-                ) : (
-                  <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
-                )}
-              </Button>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("structured")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-indigo-300/60 hover:bg-indigo-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("compact")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("dictation_only")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
+                </div>
+              </div>
+              {reportModeInfo && (
+                <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
+                  {t(`dash.mode_info_${reportModeInfo}`)}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setLightParaphrase(!lightParaphrase)}
@@ -1243,14 +1391,24 @@ export function DashboardContent() {
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
                   {t("dash.study_setup")}
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => setSetupCollapsed(true)}
-                  className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
-                >
-                  <ChevronDown className="h-3.5 w-3.5 rotate-90" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => setShowTemplateHelp(!showTemplateHelp)} className={`p-1 rounded-full transition-colors ${showTemplateHelp ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" : "text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"}`}>
+                    <HelpCircle className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSetupCollapsed(true)}
+                    className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5 rotate-90" />
+                  </button>
+                </div>
               </div>
+              {showTemplateHelp && (
+                <div className="text-[11px] text-gray-600 dark:text-gray-300 mb-3 px-3 py-2 leading-relaxed rounded-md bg-blue-50/80 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 animate-[fade-in_0.15s_ease-out]">
+                  {t("dash.templates_help")}
+                </div>
+              )}
 
               {/* Row 1: Modality pills */}
               <div className="flex flex-wrap gap-1.5 mb-4">
@@ -1328,6 +1486,17 @@ export function DashboardContent() {
                   </SelectContent>
                 </Select>
 
+                {selectedTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => handleHideTemplate(selectedTemplate)}
+                    className="p-1.5 text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors rounded"
+                    title={t("dash.hide_template")}
+                  >
+                    <EyeOff className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
                 <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
                   {[
                     { v: "default", l: t("dash.default") },
@@ -1399,6 +1568,14 @@ export function DashboardContent() {
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  onSelect={(e) => {
+                    const ta = e.currentTarget;
+                    if (ta.selectionStart !== ta.selectionEnd) {
+                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                    } else {
+                      setDictSelRange(null);
+                    }
+                  }}
                   className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
                 />
                 <Button
@@ -1418,6 +1595,15 @@ export function DashboardContent() {
                   </div>
                 )}
               </div>
+              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Texto seleccionado — al dictar se reemplazará
+                  </p>
+                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                </div>
+              )}
               {interimText && isRecording && (
                 <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                   <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
@@ -1426,17 +1612,43 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <Button
-                onClick={handleGenerate}
-                disabled={!canGenerate}
-                className="w-full h-11 md:h-9 gap-2 bg-brand-gradient shadow-brand hover:opacity-90 disabled:opacity-50 text-brand-fg"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("dash.generating")}</>
-                ) : (
-                  <><Sparkles className="h-4 w-4" /> {t("dash.generate")}</>
-                )}
-              </Button>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("structured")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-indigo-300/60 hover:bg-indigo-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("compact")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
+                </div>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleGenerate("dictation_only")}
+                    disabled={!canGenerate}
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                  >
+                    {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
+                  </Button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
+                </div>
+              </div>
+              {reportModeInfo && (
+                <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
+                  {t(`dash.mode_info_${reportModeInfo}`)}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setLightParaphrase(!lightParaphrase)}
@@ -1455,16 +1667,34 @@ export function DashboardContent() {
         </div>
       )}
 
+      {/* ── Template watermark ── */}
+      {!hasOutput && selectedTemplate && templateFieldLabels.length > 0 && (
+        <Card>
+          <CardContent className="px-4 py-3">
+            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+              {t("dash.template_fields")}
+            </p>
+            <ul className="space-y-0.5">
+              {templateFieldLabels.map((label) => (
+                <li key={label} className="text-xs text-gray-300 dark:text-gray-600">
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Output ── */}
       {hasOutput && (
         <div className="space-y-3">
-          {isGenerating && !findings && !conclusion && !recommendations && (
+          {isGenerating && !findings && !conclusion && (
             <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
           )}
 
           {loadingTrace && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+              <LoadingDots size="sm" className="text-blue-500" />
               <span className="text-xs text-blue-700 dark:text-blue-300">{t("dash.verifying")}</span>
             </div>
           )}
@@ -1495,18 +1725,47 @@ export function DashboardContent() {
           <OutputCard
             title={t("dash.conclusion")}
             icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
-            loading={loadingConclusion}
+            loading={loadingConcStyles[conclusionStyle] ?? false}
             value={conclusion}
-            onChange={(v) => { setConclusion(v); reportDirtyRef.current = true; }}
+            onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
             minHeight={70}
+            headerExtra={
+              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
+                {(["concise", "grouped"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setConclusionStyle(s);
+                      fetch("/api/model-config", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ conclusion_style: s }),
+                      }).catch(() => {});
+                    }}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      conclusionStyle === s
+                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
+                        : conclusionVersions[s] ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {loadingConcStyles[s] && s !== conclusionStyle ? <LoadingDots size="xs" className="inline-flex mr-0.5" /> : null}
+                    {t(`dash.conclusion_${s}`)}
+                  </button>
+                ))}
+              </div>
+            }
           />
 
-          <RecommendationsCard
-            loading={loadingRecs}
-            value={recommendations}
-            onChange={setRecommendations}
-            open={recsOpen}
-            onToggle={() => setRecsOpen(!recsOpen)}
+          <RecommendationPanel
+            conclusionText={conclusion}
+            modality={selectedModality}
+            section={selectedSection}
+            outputLanguage={outputLanguage as "es" | "en" | "pt"}
+            visible={!!conclusion}
+            onSelectionChange={setSelectedRecTexts}
           />
 
           {/* Action bar */}
@@ -1521,6 +1780,7 @@ export function DashboardContent() {
                   <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                     {t("dash.plus_conclusion")}
+                    <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] text-gray-400 font-mono leading-none">⇧ Space</kbd>
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
                     {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
@@ -1648,7 +1908,7 @@ export function DashboardContent() {
                 onClick={handleReportError}
                 disabled={reportingError}
               >
-                {reportingError ? <Loader2 className="h-4 w-4 animate-spin" /> : t("dash.report_error_send")}
+                {reportingError ? <LoadingDots size="sm" /> : t("dash.report_error_send")}
               </Button>
             </div>
           </div>
@@ -1668,6 +1928,40 @@ export function DashboardContent() {
           />
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-4 w-4" />
+              {t("dash.restore_templates_title")}
+            </DialogTitle>
+          </DialogHeader>
+          {hiddenTemplates.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">{t("dash.no_hidden_templates")}</p>
+          ) : (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {hiddenTemplates.map((tpl) => (
+                <div key={tpl.id} className="flex items-center justify-between px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700">
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{tpl.name}</p>
+                    <p className="text-[10px] text-gray-400">{tpl.modality}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 h-7 text-xs gap-1"
+                    onClick={() => handleRestoreTemplate(tpl.id)}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    {t("dash.restore")}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1681,6 +1975,7 @@ function OutputCard({
   value,
   onChange,
   minHeight,
+  headerExtra,
   traceHighlights,
   traceLocked,
   isDark,
@@ -1691,6 +1986,7 @@ function OutputCard({
   value: string;
   onChange: (v: string) => void;
   minHeight: number;
+  headerExtra?: React.ReactNode;
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
   traceLocked?: boolean;
   isDark?: boolean;
@@ -1699,12 +1995,13 @@ function OutputCard({
   const showTrace = traceHighlights && traceHighlights.length > 0;
   return (
     <Card>
-      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1.5 gap-2">
+        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 shrink-0">
           {icon}
           {title}
         </h3>
         <div className="flex items-center gap-2">
+          {headerExtra}
           {showTrace && !traceLocked && (
             <button
               type="button"
@@ -1715,22 +2012,23 @@ function OutputCard({
               {t("edit")}
             </button>
           )}
-          {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
+          {loading && <LoadingDots size="xs" className="text-brand" />}
         </div>
       </div>
       <CardContent className="pt-0 px-4 pb-3">
         {loading && !value ? (
           <div
-            className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
+            className="relative overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800"
             style={{ height: minHeight }}
-          />
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
+          </div>
         ) : loading && value ? (
           <div
-            className="whitespace-pre-wrap text-sm leading-relaxed p-3 border rounded-md bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+            className="streaming-cursor whitespace-pre-wrap text-sm leading-relaxed p-3 border rounded-md bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 animate-[fade-in_0.15s_ease-out]"
             style={{ minHeight }}
           >
             {value}
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-brand animate-pulse align-text-bottom" />
           </div>
         ) : showTrace ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
@@ -1747,154 +2045,3 @@ function OutputCard({
   );
 }
 
-/* ── Recommendations with traceability ── */
-
-interface ParsedRec {
-  number: string;
-  recommendation: string;
-  guideline: string;
-  finding: string;
-}
-
-const REC_COLORS = [
-  { bg: "rgba(245,158,11,0.12)", border: "#f59e0b", dark: "rgba(251,191,36,0.18)" },
-  { bg: "rgba(249,115,22,0.12)", border: "#f97316", dark: "rgba(251,146,60,0.18)" },
-  { bg: "rgba(239,68,68,0.12)",  border: "#ef4444", dark: "rgba(248,113,113,0.18)" },
-  { bg: "rgba(168,85,247,0.12)", border: "#a855f7", dark: "rgba(192,132,252,0.18)" },
-  { bg: "rgba(59,130,246,0.12)", border: "#3b82f6", dark: "rgba(96,165,250,0.18)" },
-];
-
-function parseRecommendations(text: string): ParsedRec[] {
-  const lines = text.split("\n").filter(l => l.trim());
-  const results: ParsedRec[] = [];
-
-  for (const line of lines) {
-    const m = line.match(
-      /^(\d+)\.\s*(.+?)\s*\(([^)]+)\)\s*[-—–]\s*(?:Hallazgo|Finding|Achado|Résultat|Befund|Reperto)\s*:\s*(.+?)\.?\s*$/i
-    );
-    if (m) {
-      results.push({ number: m[1], recommendation: m[2].trim(), guideline: m[3].trim(), finding: m[4].trim() });
-    }
-  }
-  return results;
-}
-
-function RecommendationsCard({
-  loading,
-  value,
-  onChange,
-  open,
-  onToggle,
-}: {
-  loading: boolean;
-  value: string;
-  onChange: (v: string) => void;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const parsed = useMemo(() => parseRecommendations(value), [value]);
-  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-  const hasStructured = parsed.length > 0 && !editing;
-  const noRecs = !loading && value.trim() && parsed.length === 0 && !editing;
-  const t = useT();
-
-  const hasContent = loading || value.trim();
-
-  return (
-    <Card>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex items-center justify-between w-full px-4 py-2.5 text-left hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors rounded-t-xl"
-      >
-        <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-          <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
-          {t("dash.recommendations")}
-          {!open && hasContent && !loading && (
-            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">
-              {parsed.length || (value.trim() ? 1 : 0)}
-            </Badge>
-          )}
-        </h3>
-        <div className="flex items-center gap-1.5">
-          {loading && <Loader2 className="h-3 w-3 animate-spin text-brand" />}
-          <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
-        </div>
-      </button>
-      {open && (
-        <CardContent className="pt-0 px-4 pb-3">
-          {!loading && value.trim() && (
-            <div className="flex justify-end mb-1.5">
-              <button
-                type="button"
-                onClick={() => setEditing(!editing)}
-                className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
-              >
-                {editing ? t("view") : t("edit")}
-              </button>
-            </div>
-          )}
-          {loading ? (
-            <div
-              className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 dark:from-gray-800 dark:via-gray-700/50 dark:to-gray-800 animate-pulse rounded-md"
-              style={{ height: 70 }}
-            />
-          ) : editing ? (
-            <Textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="text-sm leading-relaxed"
-              style={{ minHeight: 70 }}
-            />
-          ) : hasStructured ? (
-            <div className="space-y-2">
-              {parsed.map((rec, i) => {
-                const color = REC_COLORS[i % REC_COLORS.length];
-                return (
-                  <div
-                    key={i}
-                    className="rounded-lg p-3 border text-sm"
-                    style={{
-                      backgroundColor: isDark ? color.dark : color.bg,
-                      borderColor: color.border + "40",
-                    }}
-                  >
-                    <div className="flex items-start gap-2">
-                      <span
-                        className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                        style={{ backgroundColor: color.border }}
-                      >
-                        {rec.number}
-                      </span>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-gray-900 dark:text-gray-100 font-medium">{rec.recommendation}</p>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400">({rec.guideline})</p>
-                        <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t" style={{ borderColor: color.border + "30" }}>
-                          <ArrowRight className="h-3 w-3 mt-0.5 flex-shrink-0" style={{ color: color.border }} />
-                          <p className="text-xs text-gray-600 dark:text-gray-300">
-                            <span className="font-medium" style={{ color: color.border }}>{t("dash.finding_label")}: </span>
-                            {rec.finding}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : noRecs ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">{value}</p>
-          ) : (
-            <Textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="text-sm leading-relaxed"
-              style={{ minHeight: 70 }}
-            />
-          )}
-        </CardContent>
-      )}
-    </Card>
-  );
-}

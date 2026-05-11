@@ -135,21 +135,12 @@ export interface UserTemplate {
   created_at: string;
 }
 
-export interface UserRecommendation {
-  id: string;
-  user_id: string;
-  trigger_keyword: string;
-  recommendation_text: string;
-  source: "manual" | "pdf_extracted";
-  guideline_name: string;
-  created_at: string;
-}
-
 export type AIProvider = "claude" | "openai" | "deepseek" | "gemini" | "custom";
 export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
 export type ParaphraseLevel = "none" | "light" | "free";
-export type OutputLanguage = "es" | "en" | "pt" | "fr" | "de" | "it";
+export type ConclusionStyle = "concise" | "grouped";
+export type OutputLanguage = "es" | "en" | "pt";
 export type DictationLanguage = OutputLanguage | "auto";
 
 export interface UserModelConfig {
@@ -250,7 +241,7 @@ export const SECTIONS = [
 export const PROVIDERS: { value: AIProvider; label: string; models: string[] }[] = [
   { value: "claude", label: "Claude (Anthropic)", models: ["claude-sonnet-4-6-20250514", "claude-haiku-4-5-20251001"] },
   { value: "openai", label: "GPT (OpenAI)", models: ["gpt-4o", "gpt-4o-mini"] },
-  { value: "deepseek", label: "DeepSeek", models: ["deepseek-chat", "deepseek-reasoner"] },
+  { value: "deepseek", label: "DeepSeek", models: ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"] },
   { value: "gemini", label: "Gemini (Google)", models: ["gemini-1.5-pro", "gemini-2.0-flash"] },
   { value: "custom", label: "Custom Endpoint", models: [] },
 ];
@@ -258,10 +249,7 @@ export const PROVIDERS: { value: AIProvider; label: string; models: string[] }[]
 export const LANGUAGES: { value: OutputLanguage; label: string }[] = [
   { value: "es", label: "Español" },
   { value: "en", label: "English" },
-  { value: "pt", label: "Português" },
-  { value: "fr", label: "Français" },
-  { value: "de", label: "Deutsch" },
-  { value: "it", label: "Italiano" },
+  { value: "pt", label: "Português (BR)" },
 ];
 
 export const DICTATION_LANGUAGES: { value: DictationLanguage; label: string }[] = [
@@ -348,18 +336,6 @@ export interface OrgNormalityPhrase {
   updated_at: string;
 }
 
-export interface OrgRecommendation {
-  id: string;
-  org_id: string;
-  section_id: string;
-  trigger_keyword: string;
-  recommendation_text: string;
-  source: "manual" | "pdf_extracted";
-  guideline_name: string;
-  created_by: string | null;
-  created_at: string;
-}
-
 export type SupportTicketCategory = "error" | "question" | "complaint" | "general";
 export type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
 
@@ -379,6 +355,21 @@ export interface SupportTicket {
   user_email?: string;
   user_name?: string;
   org_name?: string;
+}
+
+/* ── Manual Recommendations ───────────────────────────── */
+
+export interface ManualRecommendation {
+  id: string;
+  category: string;
+  modality: string;
+  title: Record<string, string>;
+  text: Record<string, string>;
+  tags: string[];
+  source: string;
+  scope: "system" | "org" | "user";
+  user_id?: string;
+  overrides?: string;
 }
 
 export type ResidentVerificationStatus = "pending" | "approved" | "rejected";

@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
-import { generateAIStream } from "@/lib/ai-provider";
+import { generateAIStreamWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
-import type { OutputLanguage } from "@/lib/types";
+import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,19 +15,21 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { findingsText, clinicalInfo, modality, studyType } = await req.json();
+    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
 
     const { data: config } = await service
       .from("user_model_config")
-      .select("output_language, style_learning_enabled")
+      .select("output_language, style_learning_enabled, conclusion_style")
       .eq("user_id", user.id)
       .maybeSingle();
 
     const outputLanguage = config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
+    const rawStyle = reqStyle || config?.conclusion_style || "grouped";
+    const conclusionStyle = (rawStyle === "detailed" ? "grouped" : rawStyle) as ConclusionStyle;
 
     let preferredConclusionPhrases: string[] | undefined;
     if (styleLearning && modality && studyType) {
@@ -69,6 +72,7 @@ export async function POST(req: NextRequest) {
       findingsText,
       clinicalInfo: clinicalInfo || "",
       outputLanguage: outputLanguage as OutputLanguage,
+      conclusionStyle,
       preferredConclusionPhrases,
     });
 
@@ -83,18 +87,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[conclusion] provider=${effectiveProvider}, model=${taskModel?.modelName || globalConfig.modelName}, keyLen=${effectiveKey.length}`);
-
-    const stream = await generateAIStream({
+    const effectiveModel = taskModel?.modelName || globalConfig.modelName;
+    console.log(`[conclusion] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}`);
+    const { stream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
-      modelName: taskModel?.modelName || globalConfig.modelName,
+      modelName: effectiveModel,
       apiKey: effectiveKey,
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
     });
 
-    return new Response(stream, {
+    const reader = stream.getReader();
+    const userId = user.id;
+    const passthrough = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+          const usage = getUsage();
+          if (usage) {
+            logAICost({ userId, action: "generate_conclusion", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+          }
+        }
+      },
+    });
+
+    return new Response(passthrough, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
       },

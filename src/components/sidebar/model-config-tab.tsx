@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -255,15 +254,6 @@ export function ModelConfigTab() {
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-5 pt-1">
-            {/* Compact normals toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs">{t("cfg.compact_normals")}</Label>
-                <p className="text-[10px] text-gray-400">{t("cfg.compact_normals_hint")}</p>
-              </div>
-              <Switch checked={!!config.compact_normals} onCheckedChange={(v) => update("compact_normals", v)} />
-            </div>
-
             {/* Report language */}
             <div>
               <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 block">{t("cfg.output_language")}</Label>
@@ -286,6 +276,7 @@ export function ModelConfigTab() {
                 </SelectContent>
               </Select>
             </div>
+
           </AccordionContent>
         </AccordionItem>
 

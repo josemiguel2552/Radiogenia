@@ -13,7 +13,7 @@ export async function ensureProfile(userId: string, email: string): Promise<stri
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, approved")
       .eq("id", userId)
       .single();
 
@@ -23,11 +23,12 @@ export async function ensureProfile(userId: string, email: string): Promise<stri
         email,
         role: isAdmin ? "admin" : "radiologist",
         subscription_plan: isAdmin ? "professional" : "free",
+        approved: isAdmin,
       });
     } else if (isAdmin && profile.role !== "admin") {
       await supabase
         .from("profiles")
-        .update({ role: "admin", subscription_plan: "professional" })
+        .update({ role: "admin", subscription_plan: "professional", approved: true })
         .eq("id", userId);
     }
 
@@ -46,5 +47,19 @@ export async function ensureProfile(userId: string, email: string): Promise<stri
     return profile?.role || "radiologist";
   } catch {
     return isAdmin ? "admin" : "radiologist";
+  }
+}
+
+export async function isUserApproved(userId: string): Promise<boolean> {
+  try {
+    const supabase = createServiceClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("approved")
+      .eq("id", userId)
+      .single();
+    return data?.approved === true;
+  } catch {
+    return false;
   }
 }

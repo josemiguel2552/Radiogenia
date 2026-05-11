@@ -18,24 +18,27 @@ import {
   Moon,
   Sun,
   FileText,
-  BookOpen,
   Settings,
   Shield,
   X,
   Menu,
   Building2,
   MessageSquare,
+  Calculator,
+  ClipboardList,
 } from "lucide-react";
 import { TemplatesTab } from "@/components/sidebar/templates-tab";
+import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
 import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
 import { ModelConfigTab } from "@/components/sidebar/model-config-tab";
 import { AppearanceTab } from "@/components/sidebar/appearance-tab";
+import { AccountTab } from "@/components/sidebar/account-tab";
 import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
-type ActiveView = "dashboard" | "templates" | "recommendations";
+type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations";
 
 const PANEL_MIN = 240;
 const PANEL_MAX = 600;
@@ -157,7 +160,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     <div
       onMouseDown={onDragStart}
       className="w-1.5 shrink-0 cursor-col-resize group relative bg-brand-soft-hover transition-colors hidden md:block"
-      title="Drag to resize"
+      title={t("nav.drag_resize")}
     >
       <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 transition-colors" />
     </div>
@@ -176,6 +179,8 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         </div>
         <Separator />
         <AppearanceTab />
+        <Separator />
+        <AccountTab />
       </div>
     </ScrollArea>
   );
@@ -219,7 +224,8 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const topTabs: { key: ActiveView; label: string; icon: React.ReactNode }[] = [
     { key: "dashboard", label: t("nav.reports"), icon: <LayoutDashboard className="h-4 w-4" /> },
     { key: "templates", label: t("nav.templates"), icon: <FileText className="h-4 w-4" /> },
-    { key: "recommendations", label: t("nav.guidelines"), icon: <BookOpen className="h-4 w-4" /> },
+    { key: "calculators", label: t("nav.calculators"), icon: <Calculator className="h-4 w-4" /> },
+    { key: "recommendations", label: t("nav.recommendations"), icon: <ClipboardList className="h-4 w-4" /> },
   ];
 
   /* ── Main content based on active view ── */
@@ -230,6 +236,9 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       </div>
       <div className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}>
         <TemplatesTab />
+      </div>
+      <div className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}>
+        <CalculatorsTab />
       </div>
       <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}>
         <RecommendationsTab />
@@ -265,11 +274,20 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
         <Button
           variant="ghost" size="icon"
+          className={`rounded-lg h-9 w-9 ${activeView === "calculators" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
+          onClick={() => setActiveView("calculators")}
+          title={t("nav.calculators")}
+        >
+          <Calculator className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="ghost" size="icon"
           className={`rounded-lg h-9 w-9 ${activeView === "recommendations" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
           onClick={() => setActiveView("recommendations")}
-          title={t("nav.guidelines")}
+          title={t("nav.recommendations")}
         >
-          <BookOpen className="h-5 w-5" />
+          <ClipboardList className="h-5 w-5" />
         </Button>
 
         {role === "admin" && (
@@ -286,7 +304,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <Link
             href="/org"
             className="inline-flex items-center justify-center text-blue-400 hover:bg-gray-800 hover:text-blue-300 rounded-lg h-9 w-9 transition-colors"
-            title="Hospital"
+            title={t("nav.hospital")}
           >
             <Building2 className="h-5 w-5" />
           </Link>
@@ -298,7 +316,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
           <Link
             href="/support"
             className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9 transition-colors"
-            title="Soporte"
+            title={t("nav.support")}
           >
             <MessageSquare className="h-4.5 w-4.5" />
           </Link>
@@ -399,65 +417,73 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
       {/* ── Mobile bottom navigation ── */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 safe-area-bottom">
-        <div className="flex items-center justify-around h-14 px-2">
+        <div className="flex items-center h-14 px-1 overflow-x-auto scrollbar-hide">
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("dashboard")}
           >
             <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[9px] font-medium">{t("nav.reports")}</span>
+            <span className="text-[9px] font-medium leading-tight">{t("nav.reports")}</span>
           </button>
 
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "templates" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "templates" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("templates")}
           >
             <FileText className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.templates")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.templates")}</span>
           </button>
 
           <button
-            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-[56px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "calculators" ? "text-brand" : "text-gray-500"}`}
+            onClick={() => setActiveView("calculators")}
+          >
+            <Calculator className="h-5 w-5" />
+            <span className="text-[9px] leading-tight">{t("nav.calculators")}</span>
+          </button>
+
+          <button
+            className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "recommendations" ? "text-brand" : "text-gray-500"}`}
             onClick={() => setActiveView("recommendations")}
           >
-            <BookOpen className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.guidelines")}</span>
+            <ClipboardList className="h-5 w-5" />
+            <span className="text-[9px] leading-tight">{t("nav.recommendations")}</span>
           </button>
 
           <button
-            className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
+            className="flex flex-col items-center shrink-0 gap-0.5 text-gray-500 py-1.5 px-2 min-w-[48px]"
             onClick={() => setMobileDrawerOpen(true)}
           >
             <Settings className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.config")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.config")}</span>
           </button>
 
           {role === "admin" && (
             <Link
               href="/admin"
-              className="flex flex-col items-center gap-0.5 text-amber-500 py-1.5 px-3 min-w-[56px]"
+              className="flex flex-col items-center shrink-0 gap-0.5 text-amber-500 py-1.5 px-2 min-w-[48px]"
             >
               <Shield className="h-5 w-5" />
-              <span className="text-[9px]">Admin</span>
+              <span className="text-[9px] leading-tight">{t("nav.admin")}</span>
             </Link>
           )}
 
           {orgInfo?.isChief && (
             <Link
               href="/org"
-              className="flex flex-col items-center gap-0.5 text-blue-400 py-1.5 px-3 min-w-[56px]"
+              className="flex flex-col items-center shrink-0 gap-0.5 text-blue-400 py-1.5 px-2 min-w-[48px]"
             >
               <Building2 className="h-5 w-5" />
-              <span className="text-[9px]">Hospital</span>
+              <span className="text-[9px] leading-tight">{t("nav.hospital")}</span>
             </Link>
           )}
 
           <button
-            className="flex flex-col items-center gap-0.5 text-gray-500 py-1.5 px-3 min-w-[56px]"
+            className="flex flex-col items-center shrink-0 gap-0.5 text-gray-500 py-1.5 px-2 min-w-[48px]"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
-            <span className="text-[9px]">{t("nav.sign_out")}</span>
+            <span className="text-[9px] leading-tight">{t("nav.sign_out")}</span>
           </button>
         </div>
       </nav>

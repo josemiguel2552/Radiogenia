@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
       email,
       role: "radiologist",
       subscription_plan: plan,
+      approved: true,
     });
 
     await supabase.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
@@ -90,15 +91,16 @@ export async function PUT(req: NextRequest) {
   try {
     await requireAdmin();
     const supabase = createServiceClient();
-    const { userId, role, subscription_plan } = await req.json();
+    const { userId, role, subscription_plan, approved } = await req.json();
 
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
-    const updates: Record<string, string> = {};
+    const updates: Record<string, string | boolean> = {};
     if (role && (role === "admin" || role === "radiologist")) updates.role = role;
     if (subscription_plan && ["free", "starter", "professional"].includes(subscription_plan)) {
       updates.subscription_plan = subscription_plan;
     }
+    if (typeof approved === "boolean") updates.approved = approved;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
@@ -127,12 +129,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
-    const { error } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", userId);
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Delete from auth.users first — this cascades to profiles, org_members, etc.
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

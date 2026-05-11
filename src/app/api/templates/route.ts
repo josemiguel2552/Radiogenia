@@ -47,22 +47,27 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const [globalRes, userRes] = await Promise.all([
+    const [globalRes, userRes, hiddenRes] = await Promise.all([
       supabase.from("global_templates").select("*").eq("is_active", true).order("name"),
       supabase.from("user_templates").select("*").eq("user_id", user.id).order("name"),
+      supabase.from("user_hidden_templates").select("global_template_id").eq("user_id", user.id),
     ]);
 
-    const globals = (globalRes.data || []).map((g) => ({
-      id: g.id,
-      user_id: user.id,
-      name: g.name,
-      modality: g.modality,
-      base_template_id: g.base_template_id,
-      structure: g.structure,
-      is_default: true,
-      is_global: true,
-      created_at: g.created_at,
-    }));
+    const hiddenIds = new Set((hiddenRes.data || []).map((h: { global_template_id: string }) => h.global_template_id));
+
+    const globals = (globalRes.data || [])
+      .filter((g) => !hiddenIds.has(g.id))
+      .map((g) => ({
+        id: g.id,
+        user_id: user.id,
+        name: g.name,
+        modality: g.modality,
+        base_template_id: g.base_template_id,
+        structure: g.structure,
+        is_default: true,
+        is_global: true,
+        created_at: g.created_at,
+      }));
 
     const customs = (userRes.data || []).map((u) => ({
       ...u,
@@ -188,15 +193,26 @@ export async function DELETE(req: NextRequest) {
 
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
+    const isGlobal = url.searchParams.get("global") === "true";
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    const { error } = await supabase
-      .from("user_templates")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
+    if (isGlobal) {
+      const { error } = await supabase
+        .from("user_hidden_templates")
+        .upsert(
+          { user_id: user.id, global_template_id: id },
+          { onConflict: "user_id,global_template_id", ignoreDuplicates: true },
+        );
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    } else {
+      const { error } = await supabase
+        .from("user_templates")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

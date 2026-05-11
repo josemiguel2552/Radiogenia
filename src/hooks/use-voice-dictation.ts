@@ -52,6 +52,14 @@ export function useVoiceDictation({
   const animFrameRef = useRef<number | null>(null);
   const activeRef = useRef(false);
   const lastLevelUpdateRef = useRef(0);
+  const interimTextRef = useRef("");
+  const drainingRef = useRef(false);
+
+  // Stable refs so WS onmessage always calls the latest callbacks
+  const onTranscriptRef = useRef(onTranscript);
+  onTranscriptRef.current = onTranscript;
+  const onInterimRef = useRef(onInterim);
+  onInterimRef.current = onInterim;
 
   // ── Deepgram refs ──
   const wsRef = useRef<WebSocket | null>(null);
@@ -190,6 +198,7 @@ export function useVoiceDictation({
     setIsRecording(false);
     setIsTranscribing(false);
     setAudioLevel(0);
+    interimTextRef.current = "";
     setInterimText("");
   }, []);
 
@@ -221,8 +230,8 @@ export function useVoiceDictation({
       punctuate: "true",
       numerals: "true",
       interim_results: "true",
-      endpointing: "200",
-      utterance_end_ms: "1200",
+      endpointing: "350",
+      utterance_end_ms: "1500",
       vad_events: "true",
       channels: "1",
       sample_rate: "16000",
@@ -265,13 +274,15 @@ export function useVoiceDictation({
           if (!transcript) return;
 
           if (msg.is_final) {
+            interimTextRef.current = "";
             setInterimText("");
             setIsTranscribing(false);
-            onTranscript(transcript);
+            onTranscriptRef.current(transcript);
           } else {
+            interimTextRef.current = transcript;
             setInterimText(transcript);
             setIsTranscribing(true);
-            onInterim?.(transcript);
+            onInterimRef.current?.(transcript);
           }
         }
       } catch { /* ignore non-JSON */ }
@@ -284,6 +295,7 @@ export function useVoiceDictation({
     };
 
     ws.onclose = (ev) => {
+      if (drainingRef.current) return;
       if (!activeRef.current && !wsErrored) return;
 
       if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null; }
@@ -324,7 +336,7 @@ export function useVoiceDictation({
         onError?.(`Error de conexión con Deepgram (código: ${ev.code}, razón: ${ev.reason || "desconocida"}). Reintenta en unos segundos.`);
       }
     };
-  }, [language, onTranscript, onInterim, onError, fetchToken, cleanup, reportStreamingUsage]);
+  }, [language, onError, fetchToken, cleanup, reportStreamingUsage]);
 
   connectWsRef.current = connectWs;
 
@@ -392,14 +404,48 @@ export function useVoiceDictation({
     }
     recorderRef.current = null;
 
+    // Stop the level meter and keep-alive but keep WS open for draining
+    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
+    if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null; }
+    setIsRecording(false);
+    drainingRef.current = true;
+
+    const finalize = () => {
+      if (!drainingRef.current) return;
+      drainingRef.current = false;
+      const pending = interimTextRef.current;
+      if (pending) {
+        interimTextRef.current = "";
+        onTranscriptRef.current(pending);
+      }
+      cleanup();
+      setTimeout(() => onRecordingDone?.(), 50);
+    };
+
+    // Give recorder's final ondataavailable time to send, then tell Deepgram to finalize
     setTimeout(() => {
       const ws = wsRef.current;
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "CloseStream" }));
+
+        // Patch onmessage: if Deepgram sends a final result during drain, resolve early
+        const prevOnMessage = ws.onmessage;
+        ws.onmessage = (event) => {
+          prevOnMessage?.call(ws, event);
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === "Results" && msg.is_final && msg.channel?.alternatives?.[0]?.transcript) {
+              finalize();
+            }
+          } catch { /* ignore */ }
+        };
+
+        // Safety timeout — finalize even if Deepgram doesn't respond
+        setTimeout(finalize, 1200);
+      } else {
+        finalize();
       }
-      cleanup();
-      setTimeout(() => onRecordingDone?.(), 50);
-    }, 300);
+    }, 250);
   }, [cleanup, reportStreamingUsage, onRecordingDone]);
 
   const toggleRecording = useCallback(() => {

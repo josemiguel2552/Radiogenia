@@ -81,7 +81,7 @@ export const FONT_FAMILIES: { value: FontFamily; label: string; stack: string }[
 
 /* ── Full prefs shape ───────────────────────────────────────────── */
 
-export type UILanguage = "es" | "en";
+export type UILanguage = "es" | "en" | "pt";
 
 export interface UIPreferences {
   colorPreset: string;

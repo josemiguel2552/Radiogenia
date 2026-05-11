@@ -17,7 +17,7 @@ export function AppearanceTab() {
           {t("app.ui_language")}
         </Label>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-          {([{ v: "es", l: "Español" }, { v: "en", l: "English" }] as { v: UILanguage; l: string }[]).map((lang) => (
+          {([{ v: "es", l: "Español" }, { v: "en", l: "English" }, { v: "pt", l: "Português" }] as { v: UILanguage; l: string }[]).map((lang) => (
             <button
               key={lang.v}
               type="button"

@@ -18,6 +18,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [position, setPosition] = useState({ x: -1, y: -1 });
   const [selRange, setSelRange] = useState<{ start: number; end: number } | null>(null);
+  const selRangeRef = useRef<{ start: number; end: number } | null>(null);
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,10 +36,12 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, language);
       setBuffer((prev) => {
-        if (selRange && selRange.start !== selRange.end) {
-          const before = prev.slice(0, selRange.start);
-          const after = prev.slice(selRange.end);
+        const sel = selRangeRef.current;
+        if (sel && sel.start !== sel.end) {
+          const before = prev.slice(0, sel.start);
+          const after = prev.slice(sel.end);
           setSelRange(null);
+          selRangeRef.current = null;
           return before + text + after;
         }
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
@@ -55,9 +58,12 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
   const handleSelect = useCallback(() => {
     const ta = textareaRef.current;
     if (ta && ta.selectionStart !== ta.selectionEnd) {
-      setSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+      const range = { start: ta.selectionStart, end: ta.selectionEnd };
+      setSelRange(range);
+      selRangeRef.current = range;
     } else {
       setSelRange(null);
+      selRangeRef.current = null;
     }
   }, []);
 

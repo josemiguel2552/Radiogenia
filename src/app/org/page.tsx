@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ArrowLeft, Loader2, Users, Building2, FileText, BarChart3,
   Plus, Pencil, Trash2, UserPlus, ChevronDown,
-  Check, X, BookOpen, Download, Upload,
+  Check, X, Download, Upload,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
-import type { OrgMembership, OrgSection, OrgTemplate, OrgRecommendation, SectionRole } from "@/lib/types";
+import { useT } from "@/lib/i18n";
+import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
 
 type Tab = "stats" | "members" | "sections";
 
@@ -59,6 +60,7 @@ interface StatsData {
 
 export default function OrgDashboard() {
   const router = useRouter();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("sections");
   const [loading, setLoading] = useState(true);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
@@ -89,23 +91,12 @@ export default function OrgDashboard() {
   const [importSelected, setImportSelected] = useState<Set<number>>(new Set());
   const [importing, setImporting] = useState(false);
 
-  // Recommendations
-  const [orgRecs, setOrgRecs] = useState<OrgRecommendation[]>([]);
-  const [showRecForm, setShowRecForm] = useState(false);
-  const [recSectionId, setRecSectionId] = useState("");
-  const [recTrigger, setRecTrigger] = useState("");
-  const [recText, setRecText] = useState("");
-  const [recGuideline, setRecGuideline] = useState("");
-  const [savingRec, setSavingRec] = useState(false);
-  const [recError, setRecError] = useState("");
-
   // AI upload
-  const [uploadingRecs, setUploadingRecs] = useState<string | null>(null);
   const [uploadingTpls, setUploadingTpls] = useState<string | null>(null);
   const [uploadMsg, setUploadMsg] = useState("");
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates" | "recs">>({});
+  const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates">>({});
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
   const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
@@ -144,16 +135,9 @@ export default function OrgDashboard() {
     } catch { /* ignore */ }
   }, []);
 
-  const loadRecs = useCallback(async () => {
-    try {
-      const res = await fetch("/api/org/recommendations", { cache: "no-store" });
-      if (res.ok) setOrgRecs(await res.json());
-    } catch { /* ignore */ }
-  }, []);
-
   useEffect(() => {
-    Promise.all([loadOrg(), loadMembers(), loadStats(), loadTemplates(), loadRecs()]).finally(() => setLoading(false));
-  }, [loadOrg, loadMembers, loadStats, loadTemplates, loadRecs]);
+    Promise.all([loadOrg(), loadMembers(), loadStats(), loadTemplates()]).finally(() => setLoading(false));
+  }, [loadOrg, loadMembers, loadStats, loadTemplates]);
 
   async function handleSaveSection() {
     if (!sectionName.trim()) return;
@@ -172,7 +156,7 @@ export default function OrgDashboard() {
   }
 
   async function handleDeleteSection(id: string) {
-    if (!confirm("Delete this section? Members will be unassigned.")) return;
+    if (!confirm(t("org.confirm_delete_section"))) return;
     await fetch(`/api/org/sections?id=${id}`, { method: "DELETE" });
     await loadOrg();
   }
@@ -219,7 +203,7 @@ export default function OrgDashboard() {
       }
     } else {
       if (!memberEmail.trim()) {
-        setMemberError("Introduce el email del usuario");
+        setMemberError(t("org.error_enter_email"));
         setSavingMember(false);
         return;
       }
@@ -235,7 +219,7 @@ export default function OrgDashboard() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setMemberError(data.error === "User not found" ? "No existe un usuario registrado con ese email" : data.error || "Error");
+        setMemberError(data.error === "User not found" ? t("org.error_user_not_found") : data.error || "Error");
         setSavingMember(false);
         return;
       }
@@ -280,58 +264,9 @@ export default function OrgDashboard() {
   }
 
   async function handleDeleteTemplate(id: string) {
-    if (!confirm("¿Eliminar esta plantilla compartida?")) return;
+    if (!confirm(t("org.confirm_delete_template"))) return;
     await fetch(`/api/org/templates?id=${id}`, { method: "DELETE" });
     await loadTemplates();
-  }
-
-  // ── Recommendations ──
-  async function handleSaveRec() {
-    if (!recSectionId || !recTrigger.trim() || !recText.trim()) return;
-    setSavingRec(true);
-    setRecError("");
-    const res = await fetch("/api/org/recommendations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        section_id: recSectionId,
-        trigger_keyword: recTrigger.trim(),
-        recommendation_text: recText.trim(),
-        guideline_name: recGuideline.trim(),
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: "Error" }));
-      setRecError(data.error || "Error al crear");
-      setSavingRec(false);
-      return;
-    }
-    setSavingRec(false);
-    setShowRecForm(false);
-    setRecTrigger("");
-    setRecText("");
-    setRecGuideline("");
-    await loadRecs();
-  }
-
-  async function handleDeleteRec(id: string) {
-    if (!confirm("¿Eliminar esta recomendación?")) return;
-    await fetch(`/api/org/recommendations?id=${id}`, { method: "DELETE" });
-    await loadRecs();
-  }
-
-  async function handleUploadRecs(file: File, sectionId: string) {
-    setUploadingRecs(sectionId);
-    setUploadMsg("");
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("section_id", sectionId);
-    const res = await fetch("/api/org/upload-recommendations", { method: "POST", body: fd });
-    const data = await res.json();
-    setUploadingRecs(null);
-    if (!res.ok) { setUploadMsg(data.error || "Error al procesar"); return; }
-    setUploadMsg(`${data.saved} recomendaciones extraídas y guardadas`);
-    await loadRecs();
   }
 
   async function handleUploadTpls(file: File, sectionId: string) {
@@ -343,16 +278,16 @@ export default function OrgDashboard() {
     const res = await fetch("/api/org/upload-templates", { method: "POST", body: fd });
     const data = await res.json();
     setUploadingTpls(null);
-    if (!res.ok) { setUploadMsg(data.error || "Error al procesar"); return; }
-    setUploadMsg(`${data.saved} plantillas extraídas y guardadas`);
+    if (!res.ok) { setUploadMsg(data.error || t("org.error_processing")); return; }
+    setUploadMsg(`${data.saved} ${t("org.templates_extracted_saved")}`);
     await loadTemplates();
   }
 
   const roleLabel = (role: string, chief: boolean) => {
-    if (chief) return "Jefe de Servicio";
-    if (role === "section_chief") return "Jefe de Sección";
-    if (role === "section_editor") return "Editor";
-    return "Radiólogo";
+    if (chief) return t("org.role_org_chief");
+    if (role === "section_chief") return t("org.role_section_chief");
+    if (role === "section_editor") return t("org.role_editor");
+    return t("org.role_radiologist");
   };
 
   const roleColor = (role: string, chief: boolean) => {
@@ -385,15 +320,15 @@ export default function OrgDashboard() {
   if (!orgData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">No organization found</p>
+        <p className="text-gray-500">{t("org.no_organization")}</p>
       </div>
     );
   }
 
   const ALL_TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "stats", label: "Estadísticas", icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "members", label: "Miembros", icon: <Users className="h-4 w-4" /> },
-    { key: "sections", label: "Secciones", icon: <Building2 className="h-4 w-4" /> },
+    { key: "stats", label: t("org.tab_stats"), icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "members", label: t("org.tab_members"), icon: <Users className="h-4 w-4" /> },
+    { key: "sections", label: t("org.tab_sections"), icon: <Building2 className="h-4 w-4" /> },
   ];
 
   const TABS = ALL_TABS.filter((t) => {
@@ -416,7 +351,7 @@ export default function OrgDashboard() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <span className="ml-auto text-[11px] text-blue-200">
-              {orgData.active_members}/{orgData.organization.max_seats} plazas
+              {orgData.active_members}/{orgData.organization.max_seats} {t("org.seats")}
             </span>
           </div>
           <div className="pb-5 pl-1">
@@ -425,21 +360,21 @@ export default function OrgDashboard() {
               <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">{orgData.organization.name}</h1>
             </div>
             <Badge className={`text-[10px] mt-1 ${isOrgChief ? "bg-white/20 text-white border-white/20" : isSectionChief ? "bg-white/20 text-white border-white/20" : "bg-white/20 text-white border-white/20"}`}>
-              {isOrgChief ? "Jefe de Servicio" : isSectionChief ? "Jefe de Sección" : "Editor de Sección"}
+              {isOrgChief ? t("org.role_org_chief") : isSectionChief ? t("org.role_section_chief") : t("org.role_section_editor")}
             </Badge>
             {canViewStats && stats && (
               <div className="flex gap-6 mt-4">
                 <div>
                   <p className="text-2xl font-bold text-white">{stats.total_members}</p>
-                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Radiólogos</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">{t("org.radiologists")}</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">{stats.total_reports_this_month}</p>
-                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Informes/mes</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">{t("org.reports_per_month")}</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">{orgData.sections.length}</p>
-                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">Secciones</p>
+                  <p className="text-[10px] text-blue-200 uppercase tracking-wide">{t("org.tab_sections")}</p>
                 </div>
               </div>
             )}
@@ -474,19 +409,19 @@ export default function OrgDashboard() {
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_members}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Radiólogos</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.radiologists")}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_reports_this_month}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Informes este mes</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.reports_this_month")}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.sections.length}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Secciones</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.tab_sections")}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -494,13 +429,13 @@ export default function OrgDashboard() {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {stats.total_members > 0 ? Math.round(stats.total_reports_this_month / stats.total_members) : 0}
                   </p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">Media/radiólogo</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-1">{t("org.avg_per_radiologist")}</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Per-section breakdown */}
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Por sección</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("org.by_section")}</h3>
             <div className="space-y-2">
               {stats.sections.map((s) => (
                 <Card key={s.id}>
@@ -512,8 +447,8 @@ export default function OrgDashboard() {
                       <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{s.name}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-gray-500">{s.members} miembros</span>
-                      <span className="text-xs font-semibold text-gray-900 dark:text-white block">{s.reports} informes</span>
+                      <span className="text-xs text-gray-500">{s.members} {t("org.members")}</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white block">{s.reports} {t("org.reports")}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -521,17 +456,17 @@ export default function OrgDashboard() {
             </div>
 
             {/* Per-radiologist table */}
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-4">Por radiólogo</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-4">{t("org.by_radiologist")}</h3>
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-gray-800">
-                        <th className="text-left p-3 font-medium text-gray-500">Nombre</th>
-                        <th className="text-left p-3 font-medium text-gray-500">Sección</th>
-                        <th className="text-left p-3 font-medium text-gray-500">Rol</th>
-                        <th className="text-right p-3 font-medium text-gray-500">Informes/mes</th>
+                        <th className="text-left p-3 font-medium text-gray-500">{t("org.name")}</th>
+                        <th className="text-left p-3 font-medium text-gray-500">{t("org.section")}</th>
+                        <th className="text-left p-3 font-medium text-gray-500">{t("org.role")}</th>
+                        <th className="text-right p-3 font-medium text-gray-500">{t("org.reports_per_month")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -563,11 +498,11 @@ export default function OrgDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Miembros ({members.filter((m) => m.is_active).length} activos)
+                {t("org.tab_members")} ({members.filter((m) => m.is_active).length} {t("org.active")})
               </h3>
               <Button size="sm" onClick={openAddMember} className="gap-1.5">
                 <UserPlus className="h-3.5 w-3.5" />
-                Añadir
+                {t("org.add")}
               </Button>
             </div>
 
@@ -586,13 +521,13 @@ export default function OrgDashboard() {
                           {m.user_name || m.user_email}
                         </span>
                         <span className="text-[10px] text-gray-400 block truncate">
-                          {m.section_name || "Sin sección"} {m.user_name ? `· ${m.user_email}` : ""}
+                          {m.section_name || t("org.no_section")} {m.user_name ? `· ${m.user_email}` : ""}
                         </span>
                       </div>
                       <Badge className={`text-[9px] ${roleColor(m.section_role, m.is_org_chief)}`}>
                         {roleLabel(m.section_role, m.is_org_chief)}
                       </Badge>
-                      {!m.is_active && <Badge variant="secondary" className="text-[9px]">Inactivo</Badge>}
+                      {!m.is_active && <Badge variant="secondary" className="text-[9px]">{t("org.inactive")}</Badge>}
                       <div className="flex gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)}>
                           <Pencil className="h-3 w-3" />
@@ -601,7 +536,7 @@ export default function OrgDashboard() {
                           variant="ghost" size="icon"
                           className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
                           onClick={() => handleToggleMemberActive(m)}
-                          title={m.is_active ? "Desactivar" : "Reactivar"}
+                          title={m.is_active ? t("org.deactivate") : t("org.reactivate")}
                         >
                           {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                         </Button>
@@ -619,9 +554,9 @@ export default function OrgDashboard() {
           <div className="space-y-5">
             {isOrgChief && (
               <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-500">{visibleSections.length} secciones</p>
+                <p className="text-xs text-gray-500">{visibleSections.length} {t("org.sections_count")}</p>
                 <Button size="sm" onClick={() => { setSectionName(""); setSectionSlug(""); setShowSectionForm(true); }} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-3.5 w-3.5" /> Nueva sección
+                  <Plus className="h-3.5 w-3.5" /> {t("org.new_section")}
                 </Button>
               </div>
             )}
@@ -632,8 +567,8 @@ export default function OrgDashboard() {
                   <div className="h-16 w-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-4">
                     <Building2 className="h-8 w-8 text-blue-400" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No hay secciones creadas</p>
-                  <p className="text-xs text-gray-400 max-w-xs mx-auto">Crea la primera sección para organizar plantillas, recomendaciones y equipo.</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("org.no_sections_title")}</p>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">{t("org.no_sections_desc")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -641,7 +576,6 @@ export default function OrgDashboard() {
                 const isExpanded = expandedSection === s.id || visibleSections.length === 1;
                 const sMembers = members.filter((m) => m.section_id === s.id && m.is_active);
                 const sTemplates = orgTemplates.filter((t) => t.section_id === s.id);
-                const sRecs = orgRecs.filter((r) => r.section_id === s.id);
                 const sub = getSubTab(s.id);
 
                 return (
@@ -662,7 +596,6 @@ export default function OrgDashboard() {
                               <span className="text-[11px] text-gray-500 flex items-center gap-1"><Users className="h-3 w-3 text-blue-400" /> {sMembers.length}</span>
                             )}
                             <span className="text-[11px] text-gray-500 flex items-center gap-1"><FileText className="h-3 w-3 text-teal-400" /> {sTemplates.length}</span>
-                            <span className="text-[11px] text-gray-500 flex items-center gap-1"><BookOpen className="h-3 w-3 text-amber-400" /> {sRecs.length}</span>
                           </div>
                         </div>
                         {isOrgChief && (
@@ -684,19 +617,14 @@ export default function OrgDashboard() {
                           {canManageMembers && (
                             <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "team" })}
                               className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "team" ? "border-blue-500 text-blue-600 dark:text-blue-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-                              <Users className="h-3.5 w-3.5" /> Equipo
+                              <Users className="h-3.5 w-3.5" /> {t("org.team")}
                               <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "team" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sMembers.length}</span>
                             </button>
                           )}
                           <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "templates" })}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "templates" ? "border-teal-500 text-teal-600 dark:text-teal-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-                            <FileText className="h-3.5 w-3.5" /> Plantillas
+                            <FileText className="h-3.5 w-3.5" /> {t("org.templates")}
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "templates" ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sTemplates.length}</span>
-                          </button>
-                          <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "recs" })}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "recs" ? "border-amber-500 text-amber-600 dark:text-amber-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-                            <BookOpen className="h-3.5 w-3.5" /> Guías
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "recs" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sRecs.length}</span>
                           </button>
                         </div>
 
@@ -707,7 +635,7 @@ export default function OrgDashboard() {
                             sMembers.length === 0 ? (
                               <div className="text-center py-8">
                                 <Users className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                <p className="text-xs text-gray-400">Sin miembros en esta sección</p>
+                                <p className="text-xs text-gray-400">{t("org.no_members_section")}</p>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -735,38 +663,38 @@ export default function OrgDashboard() {
                           {sub === "templates" && (
                             <div>
                               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                                <p className="text-xs text-gray-500">{sTemplates.length} plantilla{sTemplates.length !== 1 ? "s" : ""} compartida{sTemplates.length !== 1 ? "s" : ""}</p>
+                                <p className="text-xs text-gray-500">{sTemplates.length} {sTemplates.length !== 1 ? t("org.shared_template_other") : t("org.shared_template_one")}</p>
                                 <div className="flex gap-2">
                                   <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                     {uploadingTpls === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-violet-500" />}
-                                    {uploadingTpls === s.id ? "Procesando..." : "Extraer de Word"}
+                                    {uploadingTpls === s.id ? t("org.processing") : t("org.extract_from_word")}
                                     <input type="file" accept=".docx,.doc,.pdf" className="hidden" disabled={!!uploadingTpls}
                                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTpls(f, s.id); e.target.value = ""; }} />
                                   </label>
                                   <Button size="sm" variant="outline" className="gap-1.5 text-xs"
                                     onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
-                                    <Download className="h-3.5 w-3.5" /> Catálogo
+                                    <Download className="h-3.5 w-3.5" /> {t("org.catalog")}
                                   </Button>
                                 </div>
                               </div>
-                              {uploadMsg && uploadingTpls === null && !uploadingRecs && (
+                              {uploadMsg && uploadingTpls === null && (
                                 <div className="mb-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">{uploadMsg}</div>
                               )}
                               {sTemplates.length === 0 ? (
                                 <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
                                   <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                  <p className="text-xs text-gray-400 mb-1">Sin plantillas en esta sección</p>
-                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Sube un archivo Word con plantillas y la IA las extraerá, o importa desde el catálogo.</p>
+                                  <p className="text-xs text-gray-400 mb-1">{t("org.no_templates_section")}</p>
+                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">{t("org.no_templates_desc")}</p>
                                   <div className="flex gap-2 justify-center">
                                     <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                       {uploadingTpls === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-violet-500" />}
-                                      Extraer de Word
+                                      {t("org.extract_from_word")}
                                       <input type="file" accept=".docx,.doc,.pdf" className="hidden" disabled={!!uploadingTpls}
                                         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTpls(f, s.id); e.target.value = ""; }} />
                                     </label>
                                     <Button size="sm" variant="outline" className="gap-1.5 text-xs"
                                       onClick={() => { setImportSectionId(s.id); setImportSelected(new Set()); setImportSearch(""); setShowImportDialog(true); }}>
-                                      <Download className="h-3 w-3" /> Catálogo
+                                      <Download className="h-3 w-3" /> {t("org.catalog")}
                                     </Button>
                                   </div>
                                 </div>
@@ -791,70 +719,6 @@ export default function OrgDashboard() {
                             </div>
                           )}
 
-                          {/* ── RECOMMENDATIONS ── */}
-                          {sub === "recs" && (
-                            <div>
-                              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                                <p className="text-xs text-gray-500">{sRecs.length} guía{sRecs.length !== 1 ? "s" : ""} clínica{sRecs.length !== 1 ? "s" : ""}</p>
-                                <div className="flex gap-2">
-                                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                    {uploadingRecs === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-amber-500" />}
-                                    {uploadingRecs === s.id ? "Procesando..." : "Extraer de PDF"}
-                                    <input type="file" accept=".pdf,.docx,.doc" className="hidden" disabled={!!uploadingRecs}
-                                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadRecs(f, s.id); e.target.value = ""; }} />
-                                  </label>
-                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                    onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
-                                    <Plus className="h-3.5 w-3.5" /> Manual
-                                  </Button>
-                                </div>
-                              </div>
-                              {uploadMsg && uploadingRecs === null && !uploadingTpls && (
-                                <div className="mb-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-300">{uploadMsg}</div>
-                              )}
-                              {sRecs.length === 0 ? (
-                                <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-                                  <BookOpen className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                  <p className="text-xs text-gray-400 mb-1">Sin guías clínicas</p>
-                                  <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">Sube un PDF con guías clínicas y la IA extraerá las recomendaciones, o añádelas manualmente.</p>
-                                  <div className="flex gap-2 justify-center">
-                                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                      {uploadingRecs === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-amber-500" />}
-                                      Extraer de PDF
-                                      <input type="file" accept=".pdf,.docx,.doc" className="hidden" disabled={!!uploadingRecs}
-                                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadRecs(f, s.id); e.target.value = ""; }} />
-                                    </label>
-                                    <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                                      onClick={() => { setRecSectionId(s.id); setRecTrigger(""); setRecText(""); setRecGuideline(""); setRecError(""); setShowRecForm(true); }}>
-                                      <Plus className="h-3 w-3" /> Manual
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="space-y-2">
-                                  {sRecs.map((r) => (
-                                    <div key={r.id} className="group p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-sm transition-all">
-                                      <div className="flex items-start gap-3">
-                                        <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                          <BookOpen className="h-4 w-4 text-amber-500" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px] font-semibold">{r.trigger_keyword}</Badge>
-                                            {r.guideline_name && <span className="text-[10px] text-gray-400 italic">{r.guideline_name}</span>}
-                                          </div>
-                                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{r.recommendation_text}</p>
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteRec(r.id)}>
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
@@ -870,22 +734,22 @@ export default function OrgDashboard() {
       <Dialog open={showSectionForm} onOpenChange={setShowSectionForm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nueva sección</DialogTitle>
+            <DialogTitle>{t("org.new_section")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nombre</Label>
+              <Label className="text-xs">{t("org.section_form_name")}</Label>
               <Input
                 value={sectionName}
                 onChange={(e) => { setSectionName(e.target.value); setSectionSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "")); }}
-                placeholder="Radiología de Tórax"
+                placeholder={t("org.section_name_placeholder")}
                 className="h-9"
               />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>{t("org.cancel")}</Button>
               <Button size="sm" onClick={handleSaveSection} disabled={savingSection || !sectionName.trim()}>
-                {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Crear"}
+                {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("org.create")}
               </Button>
             </div>
           </div>
@@ -896,12 +760,12 @@ export default function OrgDashboard() {
       <Dialog open={showMemberForm} onOpenChange={setShowMemberForm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{editingMember ? "Editar miembro" : "Añadir miembro"}</DialogTitle>
+            <DialogTitle>{editingMember ? t("org.edit_member") : t("org.add_member")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {!editingMember && (
               <div className="space-y-1.5">
-                <Label className="text-xs">Email del usuario</Label>
+                <Label className="text-xs">{t("org.user_email")}</Label>
                 <Input
                   value={memberEmail}
                   onChange={(e) => setMemberEmail(e.target.value)}
@@ -909,13 +773,13 @@ export default function OrgDashboard() {
                   className="h-9"
                   type="email"
                 />
-                <p className="text-[10px] text-gray-400">El usuario debe estar registrado en Radiogenia</p>
+                <p className="text-[10px] text-gray-400">{t("org.user_must_be_registered")}</p>
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="text-xs">Sección</Label>
+              <Label className="text-xs">{t("org.section")}</Label>
               <Select value={memberSectionId} onValueChange={setMemberSectionId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("org.select_section")} /></SelectTrigger>
                 <SelectContent>
                   {orgData.sections.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -924,13 +788,13 @@ export default function OrgDashboard() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Rol en la sección</Label>
+              <Label className="text-xs">{t("org.section_role")}</Label>
               <Select value={memberRole} onValueChange={(v) => setMemberRole(v as SectionRole)}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="radiologist">Radiólogo</SelectItem>
-                  <SelectItem value="section_editor">Editor de sección</SelectItem>
-                  {isOrgChief && <SelectItem value="section_chief">Jefe de sección</SelectItem>}
+                  <SelectItem value="radiologist">{t("org.role_radiologist_label")}</SelectItem>
+                  <SelectItem value="section_editor">{t("org.role_section_editor_label")}</SelectItem>
+                  {isOrgChief && <SelectItem value="section_chief">{t("org.role_section_chief_label")}</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -942,16 +806,16 @@ export default function OrgDashboard() {
                   onChange={(e) => setMemberIsChief(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                Jefe de servicio (acceso a toda la organización)
+                {t("org.org_chief_checkbox")}
               </label>
             )}
             {memberError && (
               <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{memberError}</p>
             )}
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>{t("org.cancel")}</Button>
               <Button size="sm" onClick={handleSaveMember} disabled={savingMember || (!editingMember && !memberEmail.trim())}>
-                {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : "Añadir"}
+                {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? t("org.save") : t("org.add")}
               </Button>
             </div>
           </div>
@@ -962,13 +826,13 @@ export default function OrgDashboard() {
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Importar plantillas al servicio</DialogTitle>
+            <DialogTitle>{t("org.import_templates_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
             <div className="space-y-1.5">
-              <Label className="text-xs">Sección destino</Label>
+              <Label className="text-xs">{t("org.destination_section")}</Label>
               <Select value={importSectionId} onValueChange={setImportSectionId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("org.select_section")} /></SelectTrigger>
                 <SelectContent>
                   {orgData.sections.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -979,7 +843,7 @@ export default function OrgDashboard() {
             <Input
               value={importSearch}
               onChange={(e) => setImportSearch(e.target.value)}
-              placeholder="Buscar plantilla..."
+              placeholder={t("org.search_template")}
               className="h-9 text-xs"
             />
             <div className="flex-1 overflow-y-auto border rounded-lg divide-y divide-gray-100 dark:divide-gray-800">
@@ -1010,11 +874,11 @@ export default function OrgDashboard() {
                 })}
             </div>
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[10px] text-gray-400">{importSelected.size} seleccionadas</span>
+              <span className="text-[10px] text-gray-400">{importSelected.size} {t("org.selected")}</span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowImportDialog(false)}>Cancelar</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowImportDialog(false)}>{t("org.cancel")}</Button>
                 <Button size="sm" onClick={handleImportTemplates} disabled={importing || importSelected.size === 0 || !importSectionId}>
-                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `Importar (${importSelected.size})`}
+                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `${t("org.import")} (${importSelected.size})`}
                 </Button>
               </div>
             </div>
@@ -1022,52 +886,6 @@ export default function OrgDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Recommendation form dialog */}
-      <Dialog open={showRecForm} onOpenChange={setShowRecForm}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nueva recomendación</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Sección</Label>
-              <Select value={recSectionId} onValueChange={setRecSectionId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
-                <SelectContent>
-                  {orgData.sections.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Hallazgo trigger</Label>
-              <Input value={recTrigger} onChange={(e) => setRecTrigger(e.target.value)} placeholder="nódulo pulmonar" className="h-9 text-xs" />
-              <p className="text-[10px] text-gray-400">Hallazgo que activa esta recomendación</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Texto de la recomendación</Label>
-              <textarea
-                value={recText}
-                onChange={(e) => setRecText(e.target.value)}
-                placeholder="Seguimiento con TC de baja dosis en 12 meses según criterios Fleischner..."
-                className="w-full h-20 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Guía / Fuente (opcional)</Label>
-              <Input value={recGuideline} onChange={(e) => setRecGuideline(e.target.value)} placeholder="Fleischner Society 2017" className="h-9 text-xs" />
-            </div>
-            {recError && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{recError}</p>}
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowRecForm(false)}>Cancelar</Button>
-              <Button size="sm" onClick={handleSaveRec} disabled={savingRec || !recTrigger.trim() || !recText.trim() || !recSectionId}>
-                {savingRec ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Crear"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

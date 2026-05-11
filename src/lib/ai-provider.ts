@@ -1,5 +1,20 @@
 import type { AIProvider } from "./types";
 
+export interface AIUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
+export interface AIResult {
+  text: string;
+  usage: AIUsage;
+}
+
+export interface StreamResult {
+  stream: ReadableStream<Uint8Array>;
+  getUsage: () => AIUsage | null;
+}
+
 interface GenerateParams {
   provider: AIProvider;
   modelName: string;
@@ -15,6 +30,7 @@ interface ProviderConfig {
   headers: Record<string, string>;
   buildBody: (model: string, system: string, user: string, maxTokens: number) => object;
   extractText: (data: unknown) => string;
+  extractUsage: (data: unknown) => AIUsage;
 }
 
 function getProviderConfig(params: GenerateParams): ProviderConfig {
@@ -40,6 +56,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           const d = data as { content: { type: string; text: string }[] };
           return d.content?.find((c) => c.type === "text")?.text || "";
         },
+        extractUsage: (data: unknown) => {
+          const d = data as { usage?: { input_tokens?: number; output_tokens?: number } };
+          return {
+            inputTokens: d.usage?.input_tokens || 0,
+            outputTokens: d.usage?.output_tokens || 0,
+          };
+        },
       };
 
     case "openai":
@@ -61,6 +84,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
           return d.choices?.[0]?.message?.content || "";
+        },
+        extractUsage: (data: unknown) => {
+          const d = data as { usage?: { prompt_tokens?: number; completion_tokens?: number } };
+          return {
+            inputTokens: d.usage?.prompt_tokens || 0,
+            outputTokens: d.usage?.completion_tokens || 0,
+          };
         },
       };
 
@@ -84,6 +114,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           const d = data as { choices: { message: { content: string } }[] };
           return d.choices?.[0]?.message?.content || "";
         },
+        extractUsage: (data: unknown) => {
+          const d = data as { usage?: { prompt_tokens?: number; completion_tokens?: number } };
+          return {
+            inputTokens: d.usage?.prompt_tokens || 0,
+            outputTokens: d.usage?.completion_tokens || 0,
+          };
+        },
       };
 
     case "gemini":
@@ -98,6 +135,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         extractText: (data: unknown) => {
           const d = data as { candidates: { content: { parts: { text: string }[] } }[] };
           return d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        },
+        extractUsage: (data: unknown) => {
+          const d = data as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } };
+          return {
+            inputTokens: d.usageMetadata?.promptTokenCount || 0,
+            outputTokens: d.usageMetadata?.candidatesTokenCount || 0,
+          };
         },
       };
 
@@ -120,6 +164,13 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
           return d.choices?.[0]?.message?.content || "";
+        },
+        extractUsage: (data: unknown) => {
+          const d = data as { usage?: { prompt_tokens?: number; completion_tokens?: number } };
+          return {
+            inputTokens: d.usage?.prompt_tokens || 0,
+            outputTokens: d.usage?.completion_tokens || 0,
+          };
         },
       };
   }
@@ -145,6 +196,29 @@ export async function generateAI(params: GenerateParams): Promise<string> {
   return config.extractText(data);
 }
 
+export async function generateAIWithUsage(params: GenerateParams): Promise<AIResult> {
+  const config = getProviderConfig(params);
+  const maxTokens = params.maxTokens || 4096;
+  const body = config.buildBody(params.modelName, params.system, params.user, maxTokens);
+
+  const response = await fetch(config.url, {
+    method: "POST",
+    headers: config.headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`AI provider error (${response.status}): ${errText}`);
+  }
+
+  const data = await response.json();
+  return {
+    text: config.extractText(data),
+    usage: config.extractUsage(data),
+  };
+}
+
 /* ── Streaming support ──────────────────────────────────────── */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -166,6 +240,34 @@ function extractStreamToken(parsed: any, provider: AIProvider, eventType: string
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractStreamUsage(parsed: any, provider: AIProvider, eventType: string, usage: AIUsage): void {
+  switch (provider) {
+    case "openai":
+    case "deepseek":
+    case "custom":
+      if (parsed?.usage) {
+        usage.inputTokens = parsed.usage.prompt_tokens || 0;
+        usage.outputTokens = parsed.usage.completion_tokens || 0;
+      }
+      break;
+    case "claude":
+      if (eventType === "message_start" && parsed?.message?.usage) {
+        usage.inputTokens = parsed.message.usage.input_tokens || 0;
+      }
+      if (eventType === "message_delta" && parsed?.usage) {
+        usage.outputTokens = parsed.usage.output_tokens || 0;
+      }
+      break;
+    case "gemini":
+      if (parsed?.usageMetadata) {
+        usage.inputTokens = parsed.usageMetadata.promptTokenCount || 0;
+        usage.outputTokens = parsed.usageMetadata.candidatesTokenCount || 0;
+      }
+      break;
+  }
+}
+
 function extractSSEError(parsed: Record<string, unknown>, provider: AIProvider, eventType: string): string | null {
   if (eventType === "error") {
     const err = parsed as { error?: { message?: string }; message?: string };
@@ -182,7 +284,7 @@ function extractSSEError(parsed: Record<string, unknown>, provider: AIProvider, 
   return null;
 }
 
-function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProvider): ReadableStream<Uint8Array> {
+function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProvider, usageHolder?: AIUsage): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -226,6 +328,9 @@ function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProv
               if (token) {
                 hasTokens = true;
                 controller.enqueue(encoder.encode(token));
+              }
+              if (usageHolder) {
+                extractStreamUsage(parsed, provider, eventType, usageHolder);
               }
             } catch { /* skip unparseable SSE lines */ }
           }
@@ -314,6 +419,62 @@ export async function generateAIStream(params: GenerateParams): Promise<Readable
   }
 
   return withKeepalive(parseSSEToTextStream(response.body, provider));
+}
+
+export async function generateAIStreamWithUsage(params: GenerateParams): Promise<StreamResult> {
+  const { provider, modelName } = params;
+  const config = getProviderConfig(params);
+  const maxTokens = params.maxTokens || 4096;
+  const body = config.buildBody(modelName, params.system, params.user, maxTokens);
+
+  let url = config.url;
+  let requestBody: object;
+
+  if (provider === "gemini") {
+    url = url.replace(":generateContent", ":streamGenerateContent");
+    url += url.includes("?") ? "&alt=sse" : "?alt=sse";
+    requestBody = body;
+  } else if (provider === "openai" || provider === "deepseek" || provider === "custom") {
+    requestBody = { ...body, stream: true, stream_options: { include_usage: true } };
+  } else {
+    requestBody = { ...body, stream: true };
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: config.headers,
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`AI provider error (${response.status}): ${errText}`);
+  }
+
+  const usageHolder: AIUsage = { inputTokens: 0, outputTokens: 0 };
+
+  if (!response.body) {
+    const data = await response.json();
+    const text = config.extractText(data);
+    const usage = config.extractUsage(data);
+    usageHolder.inputTokens = usage.inputTokens;
+    usageHolder.outputTokens = usage.outputTokens;
+    const encoder = new TextEncoder();
+    return {
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(text));
+          controller.close();
+        },
+      }),
+      getUsage: () => ({ ...usageHolder }),
+    };
+  }
+
+  return {
+    stream: withKeepalive(parseSSEToTextStream(response.body, provider, usageHolder)),
+    getUsage: () => ({ ...usageHolder }),
+  };
 }
 
 export async function testConnection(params: Omit<GenerateParams, "system" | "user">): Promise<boolean> {

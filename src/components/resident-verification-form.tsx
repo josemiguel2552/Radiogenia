@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, Upload, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import type { ResidentVerification } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   onStatusChange?: (status: string | null) => void;
 }
 
 export function ResidentVerificationForm({ onStatusChange }: Props) {
+  const t = useT();
   const [verification, setVerification] = useState<ResidentVerification | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +41,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file || !residencyStart || !residencyEnd) {
-      setError("Completa todos los campos obligatorios.");
+      setError(t("rv.error_required"));
       return;
     }
     setError("");
@@ -58,14 +60,14 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Error al enviar la solicitud.");
+        setError(data.error || t("rv.error_submit"));
       } else {
         setVerification(data);
         setSuccess(true);
         onStatusChange?.("pending");
       }
     } catch {
-      setError("Error de red. Inténtalo de nuevo.");
+      setError(t("rv.error_network"));
     }
     setSubmitting(false);
   }
@@ -86,10 +88,10 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
               <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                Verificación aprobada
+                {t("rv.status_approved")}
               </p>
               <p className="text-xs text-gray-500">
-                Tu plan de residente está activo. {verification.institution_name && `Institución: ${verification.institution_name}`}
+                {t("rv.plan_active")} {verification.institution_name && `${t("rv.institution_label")}: ${verification.institution_name}`}
               </p>
             </div>
           </div>
@@ -106,10 +108,10 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             <Clock className="h-5 w-5 text-yellow-600" />
             <div>
               <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                Verificación en revisión
+                {t("rv.status_pending")}
               </p>
               <p className="text-xs text-gray-500">
-                Tu solicitud está siendo revisada. Te notificaremos cuando sea aprobada.
+                {t("rv.pending_desc")}
               </p>
             </div>
           </div>
@@ -126,10 +128,10 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             <XCircle className="h-5 w-5 text-red-600" />
             <div>
               <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                Verificación rechazada
+                {t("rv.status_rejected")}
               </p>
               {verification.admin_notes && (
-                <p className="text-xs text-gray-500">Motivo: {verification.admin_notes}</p>
+                <p className="text-xs text-gray-500">{t("rv.reason")}: {verification.admin_notes}</p>
               )}
             </div>
           </div>
@@ -139,7 +141,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             className="text-xs"
             onClick={() => setVerification(null)}
           >
-            Enviar nueva solicitud
+            {t("rv.submit_new")}
           </Button>
         </CardContent>
       </Card>
@@ -154,10 +156,10 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             <Clock className="h-5 w-5 text-yellow-600" />
             <div>
               <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                Solicitud enviada
+                {t("rv.request_sent")}
               </p>
               <p className="text-xs text-gray-500">
-                Tu documento está siendo revisado. Recibirás una respuesta pronto.
+                {t("rv.request_sent_desc")}
               </p>
             </div>
           </div>
@@ -172,24 +174,24 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
         <div className="flex items-center gap-2 mb-4">
           <GraduationCap className="h-5 w-5 text-green-600" />
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Verificación de residente
+            {t("rv.title")}
           </h3>
           <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
-            $4.99/mes
+            {t("rv.price")}
           </Badge>
         </div>
         <p className="text-xs text-gray-500 mb-4">
-          Sube tu carnet de residente o carta del hospital que acredite tus fechas de residencia para acceder al plan de residente con 150 informes/mes.
+          {t("rv.description")}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <Label className="text-xs">Documento *</Label>
+            <Label className="text-xs">{t("rv.document")} *</Label>
             <div className="mt-1">
               <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
                 <Upload className="h-4 w-4 text-gray-400" />
                 <span className="text-xs text-gray-500 truncate">
-                  {file ? file.name : "Carnet de residente o carta del hospital (PDF, JPG, PNG)"}
+                  {file ? file.name : t("rv.document_placeholder")}
                 </span>
                 <input
                   type="file"
@@ -202,10 +204,10 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
           </div>
 
           <div>
-            <Label className="text-xs">Institución</Label>
+            <Label className="text-xs">{t("rv.institution")}</Label>
             <Input
               className="mt-1 h-8 text-xs"
-              placeholder="Hospital o universidad"
+              placeholder={t("rv.institution_placeholder")}
               value={institutionName}
               onChange={(e) => setInstitutionName(e.target.value)}
             />
@@ -213,7 +215,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">Inicio de residencia *</Label>
+              <Label className="text-xs">{t("rv.residency_start")} *</Label>
               <Input
                 type="date"
                 className="mt-1 h-8 text-xs"
@@ -223,7 +225,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
               />
             </div>
             <div>
-              <Label className="text-xs">Fin de residencia *</Label>
+              <Label className="text-xs">{t("rv.residency_end")} *</Label>
               <Input
                 type="date"
                 className="mt-1 h-8 text-xs"
@@ -241,7 +243,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             className="w-full h-9 text-xs bg-green-600 hover:bg-green-700"
             disabled={submitting || !file}
           >
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar para verificación"}
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("rv.submit")}
           </Button>
         </form>
       </CardContent>

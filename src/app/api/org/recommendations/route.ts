@@ -1,9 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireOrgMembership, requireOrgRole } from "@/lib/auth-helpers";
-
-export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,14 +13,14 @@ export async function GET(req: NextRequest) {
 
     const service = createServiceClient();
     const membership = await requireOrgMembership(user.id);
-    const url = new URL(req.url);
-    const sectionId = url.searchParams.get("section_id");
+    const sectionId = req.nextUrl.searchParams.get("section_id");
 
     let query = service
       .from("org_recommendations")
       .select("*, org_sections(name)")
       .eq("org_id", membership.org_id)
-      .order("trigger_keyword");
+      .order("category")
+      .order("title");
 
     if (sectionId) query = query.eq("section_id", sectionId);
 
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { section_id, trigger_keyword, recommendation_text, source, guideline_name } = await req.json();
-    if (!section_id || !trigger_keyword || !recommendation_text) {
+    const { section_id, category, modality, title, text, tags, source } = await req.json();
+    if (!section_id || !title || !text) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -64,11 +64,16 @@ export async function POST(req: NextRequest) {
       .insert({
         org_id: membership.org_id,
         section_id,
-        trigger_keyword,
-        recommendation_text,
+        category: category || "all",
+        modality: modality || "all",
+        title,
+        text,
+        tags: tags || [],
+        trigger_keyword: title,
+        recommendation_text: text,
         source: source || "manual",
-        guideline_name: guideline_name || "",
         created_by: user.id,
+        updated_by: user.id,
       })
       .select()
       .single();
@@ -88,8 +93,10 @@ export async function PUT(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const service = createServiceClient();
-    const { id, trigger_keyword, recommendation_text } = await req.json();
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const { id, category, modality, title, text, tags, source } = await req.json();
+    if (!id || !title || !text) {
+      return NextResponse.json({ error: "id, title and text required" }, { status: 400 });
+    }
 
     const { data: rec } = await service
       .from("org_recommendations")
@@ -105,11 +112,22 @@ export async function PUT(req: NextRequest) {
       sectionId: rec.section_id,
     });
 
-    const update: Record<string, unknown> = {};
-    if (trigger_keyword !== undefined) update.trigger_keyword = trigger_keyword;
-    if (recommendation_text !== undefined) update.recommendation_text = recommendation_text;
+    const { error } = await service
+      .from("org_recommendations")
+      .update({
+        category: category || "all",
+        modality: modality || "all",
+        title,
+        text,
+        tags: tags || [],
+        trigger_keyword: title,
+        recommendation_text: text,
+        ...(source ? { source } : {}),
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
 
-    const { error } = await service.from("org_recommendations").update(update).eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -125,8 +143,7 @@ export async function DELETE(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const service = createServiceClient();
-    const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+    const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
     const { data: rec } = await service

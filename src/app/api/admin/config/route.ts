@@ -56,7 +56,6 @@ export async function PUT(req: NextRequest) {
     const taskFields = [
       "findings_provider", "findings_model",
       "conclusion_provider", "conclusion_model",
-      "recommendations_provider", "recommendations_model",
       "trace_provider", "trace_model",
       "dictation_correction_provider", "dictation_correction_model",
       "improve_writing_provider", "improve_writing_model",

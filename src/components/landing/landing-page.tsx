@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
-import { usePublicLang, type PublicLang } from "@/lib/public-i18n";
+import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
 
 function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -73,7 +73,7 @@ export function LandingPage() {
               {t("nav.signin")}
             </Link>
             <Link
-              href="/auth/register"
+              href="/waitlist"
               className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-5 py-2 rounded-full transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
             >
               {t("nav.get_started")}
@@ -106,13 +106,13 @@ export function LandingPage() {
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-sm text-gray-300 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-            {lang === "es" ? "Informes radiológicos con IA" : "AI-powered radiology reporting"}
+            {lang === "es" ? "Informes radiológicos con IA" : lang === "pt" ? "Laudos radiológicos com IA" : "AI-powered radiology reporting"}
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-            {lang === "es" ? "Informes radiológicos " : "Radiology reports "}
+            {lang === "es" ? "Informes radiológicos " : lang === "pt" ? "Laudos radiológicos " : "Radiology reports "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-              {lang === "es" ? "en segundos" : "in seconds"}
+              {lang === "es" ? "en segundos" : lang === "pt" ? "em segundos" : "in seconds"}
             </span>
           </h1>
 
@@ -122,7 +122,7 @@ export function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/auth/register"
+              href="/waitlist"
               className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
             >
               {t("hero.cta_primary")}
@@ -170,6 +170,13 @@ export function LandingPage() {
                   Todo lo que necesitas para{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
                     informar más rápido
+                  </span>
+                </>
+              ) : lang === "pt" ? (
+                <>
+                  Tudo o que você precisa para{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    laudar mais rápido
                   </span>
                 </>
               ) : (
@@ -235,6 +242,13 @@ export function LandingPage() {
                     transparentes
                   </span>
                 </>
+              ) : lang === "pt" ? (
+                <>
+                  Preços simples e{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    transparentes
+                  </span>
+                </>
               ) : (
                 <>
                   Simple,{" "}
@@ -276,7 +290,7 @@ export function LandingPage() {
               {t("cta.subtitle")}
             </p>
             <Link
-              href="/auth/register"
+              href="/waitlist"
               className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40"
             >
               {t("cta.button")}
@@ -308,12 +322,12 @@ export function LandingPage() {
 function LangToggle({ lang, setLang }: { lang: PublicLang; setLang: (l: PublicLang) => void }) {
   return (
     <button
-      onClick={() => setLang(lang === "es" ? "en" : "es")}
+      onClick={() => setLang(nextLang(lang))}
       className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
       aria-label="Toggle language"
     >
       <Globe className="h-3.5 w-3.5" />
-      {lang === "es" ? "EN" : "ES"}
+      {langLabel(lang)}
     </button>
   );
 }
@@ -363,7 +377,7 @@ function PricingCard({ plan, planKey, t, lang }: {
       {planKey === "resident" && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-green-500 to-emerald-600 rounded-full">
-            {lang === "es" ? "Residentes" : "Residents"}
+            {lang === "es" ? "Residentes" : lang === "pt" ? "Residentes" : "Residents"}
           </span>
         </div>
       )}
@@ -372,7 +386,7 @@ function PricingCard({ plan, planKey, t, lang }: {
         <h3 className="text-lg font-semibold mb-1">{plan.label}</h3>
         <div className="flex items-baseline gap-1">
           {plan.price === 0 ? (
-            <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : "Free"}</span>
+            <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : lang === "pt" ? "Grátis" : "Free"}</span>
           ) : (
             <>
               <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
@@ -392,7 +406,7 @@ function PricingCard({ plan, planKey, t, lang }: {
       </ul>
 
       <Link
-        href={planKey === "resident" ? "/auth/register?plan=resident" : "/auth/register"}
+        href="/waitlist"
         className={`block text-center text-sm font-semibold py-3 rounded-xl transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
@@ -404,7 +418,7 @@ function PricingCard({ plan, planKey, t, lang }: {
         {plan.price === 0
           ? t("pricing.free_cta")
           : planKey === "resident"
-          ? lang === "es" ? "Verificar y suscribirse" : "Verify & subscribe"
+          ? lang === "es" ? "Verificar y suscribirse" : lang === "pt" ? "Verificar e assinar" : "Verify & subscribe"
           : `${t("pricing.subscribe_cta")} — ${CURRENCY}${plan.price}${t("pricing.per_month")}`}
       </Link>
     </div>

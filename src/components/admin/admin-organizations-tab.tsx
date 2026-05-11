@@ -15,6 +15,7 @@ import {
   Network, Settings,
 } from "lucide-react";
 import type { Organization, OrgSection, SectionRole } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface OrgWithMembers extends Organization {
   active_members: number;
@@ -33,6 +34,7 @@ interface MemberRow {
 }
 
 export function AdminOrganizationsTab() {
+  const t = useT();
   const [orgs, setOrgs] = useState<OrgWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -104,16 +106,16 @@ export function AdminOrganizationsTab() {
       ]);
       if (!secRes.ok) {
         const err = await secRes.json().catch(() => ({ error: `HTTP ${secRes.status}` }));
-        setDetailError(`Secciones: ${err.error || secRes.statusText}`);
+        setDetailError(`${t("admin.org.sections")}: ${err.error || secRes.statusText}`);
       }
       if (!memRes.ok) {
         const err = await memRes.json().catch(() => ({ error: `HTTP ${memRes.status}` }));
-        setDetailError((prev) => prev ? `${prev} | Miembros: ${err.error || memRes.statusText}` : `Miembros: ${err.error || memRes.statusText}`);
+        setDetailError((prev) => prev ? `${prev} | ${t("admin.org.members")}: ${err.error || memRes.statusText}` : `${t("admin.org.members")}: ${err.error || memRes.statusText}`);
       }
       setSections(secRes.ok ? await secRes.json() : []);
       setMembers(memRes.ok ? await memRes.json() : []);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Error de red";
+      const msg = e instanceof Error ? e.message : t("admin.org.network_error");
       setDetailError(msg);
       setSections([]);
       setMembers([]);
@@ -174,7 +176,7 @@ export function AdminOrganizationsTab() {
   }
 
   async function handleDeleteOrg(org: OrgWithMembers) {
-    if (!confirm(`Eliminar "${org.name}"? Se borrarán todas las secciones, miembros y recursos compartidos.`)) return;
+    if (!confirm(t("admin.org.confirm_delete_org").replace("{name}", org.name))) return;
     await fetch(`/api/admin/organizations?id=${org.id}`, { method: "DELETE" });
     setSelectedOrg(null);
     await loadOrgs();
@@ -194,7 +196,7 @@ export function AdminOrganizationsTab() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
-        setSectionError(data.error || "Error al crear la sección");
+        setSectionError(data.error || t("admin.org.error_creating_section"));
         setSavingSection(false);
         return;
       }
@@ -203,17 +205,17 @@ export function AdminOrganizationsTab() {
       setSectionName("");
       await loadOrgDetail(selectedOrg);
     } catch (e) {
-      setSectionError("Error de red al crear la sección");
+      setSectionError(t("admin.org.network_error_creating_section"));
       setSavingSection(false);
     }
   }
 
   async function handleDeleteSection(id: string) {
-    if (!confirm("Eliminar sección? Los miembros quedarán sin sección asignada.")) return;
+    if (!confirm(t("admin.org.confirm_delete_section"))) return;
     const res = await fetch(`/api/admin/organizations/sections?id=${id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: "Error" }));
-      alert(data.error || "Error al eliminar la sección");
+      alert(data.error || t("admin.org.error_deleting_section"));
     }
     if (selectedOrg) await loadOrgDetail(selectedOrg);
   }
@@ -270,7 +272,7 @@ export function AdminOrganizationsTab() {
       const data = await res.json();
       setResetError(data.error || "Error");
     } else {
-      setResetSuccess(`Contraseña actualizada para ${resetMember.user_name || resetMember.user_email}`);
+      setResetSuccess(t("admin.org.password_updated_for").replace("{name}", resetMember.user_name || resetMember.user_email || ""));
     }
     setResettingPassword(false);
   }
@@ -295,7 +297,7 @@ export function AdminOrganizationsTab() {
         });
         const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
         if (!res.ok) {
-          setMemberError(data.error || "Error al actualizar miembro");
+          setMemberError(data.error || t("admin.org.error_updating_member"));
           setSavingMember(false);
           return;
         }
@@ -304,12 +306,12 @@ export function AdminOrganizationsTab() {
         await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
       } else {
         if (!memberEmail.trim()) {
-          setMemberError("Introduce el email del usuario");
+          setMemberError(t("admin.org.enter_user_email"));
           setSavingMember(false);
           return;
         }
         if (isNewUser && (!memberPassword || memberPassword.length < 6)) {
-          setMemberError("La contraseña debe tener al menos 6 caracteres");
+          setMemberError(t("admin.org.password_min_6"));
           setSavingMember(false);
           return;
         }
@@ -334,13 +336,13 @@ export function AdminOrganizationsTab() {
         const result = await res.json().catch(() => ({ error: `Error ${res.status}` }));
 
         if (!res.ok) {
-          setMemberError(result.error || "Error al añadir miembro");
+          setMemberError(result.error || t("admin.org.error_adding_member"));
           setSavingMember(false);
           return;
         }
 
         if (result.user_created) {
-          setMemberSuccess(`Cuenta creada. Email: ${memberEmail.trim().toLowerCase()} / Contraseña: ${memberPassword}`);
+          setMemberSuccess(`${t("admin.org.account_created")}. Email: ${memberEmail.trim().toLowerCase()} / ${t("admin.org.password")}: ${memberPassword}`);
           setSavingMember(false);
           await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
           return;
@@ -351,7 +353,7 @@ export function AdminOrganizationsTab() {
         await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
       }
     } catch (e) {
-      setMemberError("Error de red al guardar");
+      setMemberError(t("admin.org.network_error_saving"));
       setSavingMember(false);
     }
   }
@@ -367,10 +369,10 @@ export function AdminOrganizationsTab() {
   }
 
   const roleLabel = (role: string, chief: boolean) => {
-    if (chief) return "Jefe de Servicio";
-    if (role === "section_chief") return "Jefe de Sección";
-    if (role === "section_editor") return "Editor";
-    return "Radiólogo";
+    if (chief) return t("admin.org.role_org_chief");
+    if (role === "section_chief") return t("admin.org.role_section_chief");
+    if (role === "section_editor") return t("admin.org.role_editor");
+    return t("admin.org.role_radiologist");
   };
 
   const roleColor = (role: string, chief: boolean) => {
@@ -400,11 +402,11 @@ export function AdminOrganizationsTab() {
           </Button>
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate">{selectedOrg.name}</h2>
-            <span className="text-[11px] text-gray-400">{selectedOrg.slug} · {selectedOrg.active_members}/{selectedOrg.max_seats} plazas</span>
+            <span className="text-[11px] text-gray-400">{selectedOrg.slug} · {selectedOrg.active_members}/{selectedOrg.max_seats} {t("admin.org.seats")}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => openEditOrg(selectedOrg)} className="gap-1.5">
             <Pencil className="h-3.5 w-3.5" />
-            Editar
+            {t("edit")}
           </Button>
         </div>
 
@@ -417,7 +419,7 @@ export function AdminOrganizationsTab() {
             }`}
           >
             <Network className="h-3.5 w-3.5" />
-            Organigrama
+            {t("admin.org.org_chart")}
           </button>
           <button
             onClick={() => setDetailTab("manage")}
@@ -426,7 +428,7 @@ export function AdminOrganizationsTab() {
             }`}
           >
             <Settings className="h-3.5 w-3.5" />
-            Gestión
+            {t("admin.org.management")}
           </button>
         </div>
 
@@ -447,10 +449,10 @@ export function AdminOrganizationsTab() {
                   <Card>
                     <CardContent className="text-center py-12">
                       <Network className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-                      <p className="text-sm text-gray-500">El organigrama aparecerá cuando añadas miembros</p>
+                      <p className="text-sm text-gray-500">{t("admin.org.chart_empty")}</p>
                       <Button size="sm" className="mt-4 gap-1.5" onClick={() => setDetailTab("manage")}>
                         <Settings className="h-3.5 w-3.5" />
-                        Ir a Gestión
+                        {t("admin.org.go_to_management")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -461,7 +463,7 @@ export function AdminOrganizationsTab() {
                       <div className="px-5 py-3 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white text-center shadow-lg">
                         <Building2 className="h-5 w-5 mx-auto mb-1" />
                         <p className="text-sm font-bold">{selectedOrg.name}</p>
-                        <p className="text-[10px] opacity-80">{activeMembers.length} miembros activos</p>
+                        <p className="text-[10px] opacity-80">{activeMembers.length} {t("admin.org.active_members")}</p>
                       </div>
 
                       {/* Connector line down */}
@@ -479,7 +481,7 @@ export function AdminOrganizationsTab() {
                               </div>
                               <div className="text-left">
                                 <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">{c.user_name || c.user_email}</p>
-                                <p className="text-[10px] text-purple-600 dark:text-purple-400">Jefe de Servicio</p>
+                                <p className="text-[10px] text-purple-600 dark:text-purple-400">{t("admin.org.role_org_chief")}</p>
                               </div>
                               <Pencil className="h-3 w-3 text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                             </button>
@@ -514,7 +516,7 @@ export function AdminOrganizationsTab() {
                                 {/* Section header */}
                                 <div className="w-full px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-center">
                                   <p className="text-[11px] font-bold text-blue-800 dark:text-blue-200">{s.name}</p>
-                                  <p className="text-[9px] text-blue-500">{sMembers.length} miembros</p>
+                                  <p className="text-[9px] text-blue-500">{sMembers.length} {t("admin.org.members_count")}</p>
                                 </div>
 
                                 {/* Members in this section */}
@@ -531,7 +533,7 @@ export function AdminOrganizationsTab() {
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{sChief.user_name || sChief.user_email}</p>
-                                        <p className="text-[9px] text-blue-500">Jefe de Sección</p>
+                                        <p className="text-[9px] text-blue-500">{t("admin.org.role_section_chief")}</p>
                                       </div>
                                     </button>
                                   )}
@@ -546,7 +548,7 @@ export function AdminOrganizationsTab() {
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{e.user_name || e.user_email}</p>
-                                        <p className="text-[9px] text-amber-500">Editor</p>
+                                        <p className="text-[9px] text-amber-500">{t("admin.org.role_editor")}</p>
                                       </div>
                                     </button>
                                   ))}
@@ -561,13 +563,13 @@ export function AdminOrganizationsTab() {
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 truncate">{r.user_name || r.user_email}</p>
-                                        <p className="text-[9px] text-gray-400">Radiólogo</p>
+                                        <p className="text-[9px] text-gray-400">{t("admin.org.role_radiologist")}</p>
                                       </div>
                                     </button>
                                   ))}
 
                                   {sMembers.length === 0 && (
-                                    <p className="text-[10px] text-gray-400 text-center py-2 italic">Sin miembros</p>
+                                    <p className="text-[10px] text-gray-400 text-center py-2 italic">{t("admin.org.no_members")}</p>
                                   )}
                                 </div>
                               </div>
@@ -581,7 +583,7 @@ export function AdminOrganizationsTab() {
                         <div className="mt-6 w-full">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
-                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Sin sección asignada</span>
+                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{t("admin.org.unassigned_section")}</span>
                             <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
                           </div>
                           <div className="flex gap-2 flex-wrap justify-center">
@@ -606,11 +608,11 @@ export function AdminOrganizationsTab() {
                 <div className="flex gap-2 justify-center pt-2">
                   <Button size="sm" variant="outline" onClick={openAddMember} className="gap-1.5">
                     <UserPlus className="h-3.5 w-3.5" />
-                    Añadir miembro
+                    {t("admin.org.add_member")}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => { setSectionName(""); setShowSectionForm(true); }} className="gap-1.5">
                     <Plus className="h-3.5 w-3.5" />
-                    Nueva sección
+                    {t("admin.org.new_section")}
                   </Button>
                 </div>
               </div>
@@ -622,17 +624,17 @@ export function AdminOrganizationsTab() {
                 {/* ── Sections ── */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Secciones ({sections.length})</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.org.sections")} ({sections.length})</h3>
                     <Button size="sm" onClick={() => { setSectionName(""); setShowSectionForm(true); }} className="gap-1.5">
                       <Plus className="h-3.5 w-3.5" />
-                      Nueva sección
+                      {t("admin.org.new_section")}
                     </Button>
                   </div>
 
                   {sections.length === 0 ? (
                     <Card>
                       <CardContent className="text-center py-6">
-                        <p className="text-xs text-gray-400">No hay secciones. Crea las secciones del servicio de radiología.</p>
+                        <p className="text-xs text-gray-400">{t("admin.org.no_sections_hint")}</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -647,7 +649,7 @@ export function AdminOrganizationsTab() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{s.name}</span>
-                                <span className="text-[10px] text-gray-400">{sMembers.length} miembros</span>
+                                <span className="text-[10px] text-gray-400">{sMembers.length} {t("admin.org.members_count")}</span>
                               </div>
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 flex-shrink-0" onClick={() => handleDeleteSection(s.id)}>
                                 <Trash2 className="h-3 w-3" />
@@ -664,18 +666,18 @@ export function AdminOrganizationsTab() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                      Miembros ({activeMembers.length} activos{members.length > activeMembers.length ? `, ${members.length - activeMembers.length} inactivos` : ""})
+                      {t("admin.org.members")} ({activeMembers.length} {t("admin.org.active_lc")}{members.length > activeMembers.length ? `, ${members.length - activeMembers.length} ${t("admin.org.inactive_lc")}` : ""})
                     </h3>
                     <Button size="sm" onClick={openAddMember} className="gap-1.5">
                       <UserPlus className="h-3.5 w-3.5" />
-                      Añadir miembro
+                      {t("admin.org.add_member")}
                     </Button>
                   </div>
 
                   {members.length === 0 ? (
                     <Card>
                       <CardContent className="text-center py-6">
-                        <p className="text-xs text-gray-400">No hay miembros. Añade al jefe de servicio primero.</p>
+                        <p className="text-xs text-gray-400">{t("admin.org.no_members_hint")}</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -694,25 +696,25 @@ export function AdminOrganizationsTab() {
                                   {m.user_name || m.user_email}
                                 </span>
                                 <span className="text-[10px] text-gray-400 block truncate">
-                                  {m.section_name || "Sin sección"} {m.user_name ? `· ${m.user_email}` : ""}
+                                  {m.section_name || t("admin.org.no_section")} {m.user_name ? `· ${m.user_email}` : ""}
                                 </span>
                               </div>
                               <Badge className={`text-[9px] flex-shrink-0 ${roleColor(m.section_role, m.is_org_chief)}`}>
                                 {roleLabel(m.section_role, m.is_org_chief)}
                               </Badge>
-                              {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">Inactivo</Badge>}
+                              {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.org.inactive")}</Badge>}
                               <div className="flex gap-0.5 flex-shrink-0">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} title="Editar rol">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} title={t("admin.org.edit_role")}>
                                   <Pencil className="h-3 w-3" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" onClick={() => openPasswordReset(m)} title="Cambiar contraseña">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" onClick={() => openPasswordReset(m)} title={t("admin.org.change_password")}>
                                   <KeyRound className="h-3 w-3" />
                                 </Button>
                                 <Button
                                   variant="ghost" size="icon"
                                   className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
                                   onClick={() => handleToggleMember(m)}
-                                  title={m.is_active ? "Desactivar" : "Reactivar"}
+                                  title={m.is_active ? t("admin.org.deactivate") : t("admin.org.reactivate")}
                                 >
                                   {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                                 </Button>
@@ -733,15 +735,15 @@ export function AdminOrganizationsTab() {
         <Dialog open={showSectionForm} onOpenChange={(open) => { setShowSectionForm(open); if (!open) setSectionError(""); }}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>Nueva sección</DialogTitle>
+              <DialogTitle>{t("admin.org.new_section")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Nombre</Label>
+                <Label className="text-xs">{t("admin.org.name")}</Label>
                 <Input
                   value={sectionName}
                   onChange={(e) => setSectionName(e.target.value)}
-                  placeholder="Radiología de Tórax"
+                  placeholder={t("admin.org.section_name_placeholder")}
                   className="h-9"
                 />
               </div>
@@ -749,9 +751,9 @@ export function AdminOrganizationsTab() {
                 <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{sectionError}</p>
               )}
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>Cancelar</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowSectionForm(false)}>{t("cancel")}</Button>
                 <Button size="sm" onClick={handleCreateSection} disabled={savingSection || !sectionName.trim()}>
-                  {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Crear"}
+                  {savingSection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("admin.org.create")}
                 </Button>
               </div>
             </div>
@@ -762,17 +764,17 @@ export function AdminOrganizationsTab() {
         <Dialog open={showMemberForm} onOpenChange={(open) => { setShowMemberForm(open); if (!open) setMemberSuccess(""); }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingMember ? "Editar miembro" : "Añadir miembro al hospital"}</DialogTitle>
+              <DialogTitle>{editingMember ? t("admin.org.edit_member") : t("admin.org.add_member_to_hospital")}</DialogTitle>
             </DialogHeader>
 
             {memberSuccess ? (
               <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                  <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">Cuenta creada correctamente</p>
+                  <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">{t("admin.org.account_created_success")}</p>
                   <p className="text-xs text-green-600 dark:text-green-400 font-mono select-all">{memberSuccess}</p>
-                  <p className="text-[10px] text-green-500 mt-2">Copia estas credenciales y comunícalas al usuario. No se volverán a mostrar.</p>
+                  <p className="text-[10px] text-green-500 mt-2">{t("admin.org.copy_credentials_hint")}</p>
                 </div>
-                <Button size="sm" className="w-full" onClick={() => { setShowMemberForm(false); setMemberSuccess(""); }}>Cerrar</Button>
+                <Button size="sm" className="w-full" onClick={() => { setShowMemberForm(false); setMemberSuccess(""); }}>{t("close")}</Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -785,7 +787,7 @@ export function AdminOrganizationsTab() {
                         isNewUser ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500"
                       }`}
                     >
-                      Crear cuenta nueva
+                      {t("admin.org.create_new_account")}
                     </button>
                     <button
                       onClick={() => setIsNewUser(false)}
@@ -793,7 +795,7 @@ export function AdminOrganizationsTab() {
                         !isNewUser ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500"
                       }`}
                     >
-                      Usuario existente
+                      {t("admin.org.existing_user")}
                     </button>
                   </div>
                 )}
@@ -816,29 +818,29 @@ export function AdminOrganizationsTab() {
                 {/* Name — only for new user creation */}
                 {!editingMember && isNewUser && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Nombre completo</Label>
-                    <Input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Dr. García López" className="h-9" />
+                    <Label className="text-xs">{t("admin.org.full_name")}</Label>
+                    <Input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder={t("admin.org.full_name_placeholder")} className="h-9" />
                   </div>
                 )}
 
                 {/* Email */}
                 {!editingMember && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Email</Label>
+                    <Label className="text-xs">{t("admin.org.email")}</Label>
                     <Input value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} placeholder="doctor@hospital.com" className="h-9" type="email" />
-                    {!isNewUser && <p className="text-[10px] text-gray-400">El usuario ya debe tener cuenta en Radiogenia</p>}
+                    {!isNewUser && <p className="text-[10px] text-gray-400">{t("admin.org.user_must_have_account")}</p>}
                   </div>
                 )}
 
                 {/* Password — only for new user creation */}
                 {!editingMember && isNewUser && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Contraseña</Label>
+                    <Label className="text-xs">{t("admin.org.password")}</Label>
                     <div className="relative">
                       <Input
                         value={memberPassword}
                         onChange={(e) => setMemberPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder={t("admin.org.min_6_chars")}
                         className="h-9 pr-9"
                         type={showPassword ? "text" : "password"}
                       />
@@ -850,17 +852,17 @@ export function AdminOrganizationsTab() {
                         {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                       </button>
                     </div>
-                    <p className="text-[10px] text-gray-400">Comunica estas credenciales al radiólogo tras crearlas</p>
+                    <p className="text-[10px] text-gray-400">{t("admin.org.share_credentials_hint")}</p>
                   </div>
                 )}
 
                 {/* Section */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Sección</Label>
+                  <Label className="text-xs">{t("admin.org.section")}</Label>
                   <Select value={memberSectionId} onValueChange={setMemberSectionId}>
-                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar sección" /></SelectTrigger>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("admin.org.select_section")} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Sin sección</SelectItem>
+                      <SelectItem value="none">{t("admin.org.no_section")}</SelectItem>
                       {sections.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
@@ -870,13 +872,13 @@ export function AdminOrganizationsTab() {
 
                 {/* Role */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Rol</Label>
+                  <Label className="text-xs">{t("admin.org.role")}</Label>
                   <Select value={memberRole} onValueChange={(v) => setMemberRole(v as SectionRole)}>
                     <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="radiologist">Radiólogo</SelectItem>
-                      <SelectItem value="section_editor">Editor de sección</SelectItem>
-                      <SelectItem value="section_chief">Jefe de sección</SelectItem>
+                      <SelectItem value="radiologist">{t("admin.org.role_radiologist")}</SelectItem>
+                      <SelectItem value="section_editor">{t("admin.org.role_section_editor")}</SelectItem>
+                      <SelectItem value="section_chief">{t("admin.org.role_section_chief")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -885,8 +887,8 @@ export function AdminOrganizationsTab() {
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
                   <input type="checkbox" checked={memberIsChief} onChange={(e) => setMemberIsChief(e.target.checked)} className="rounded border-gray-300" />
                   <div>
-                    <span className="font-medium">Jefe de servicio</span>
-                    <span className="text-gray-400 ml-1">(acceso total al hospital)</span>
+                    <span className="font-medium">{t("admin.org.role_org_chief")}</span>
+                    <span className="text-gray-400 ml-1">({t("admin.org.full_hospital_access")})</span>
                   </div>
                 </label>
 
@@ -895,9 +897,9 @@ export function AdminOrganizationsTab() {
                 )}
 
                 <div className="flex gap-2 justify-end">
-                  <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>Cancelar</Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowMemberForm(false)}>{t("cancel")}</Button>
                   <Button size="sm" onClick={handleSaveMember} disabled={savingMember}>
-                    {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? "Guardar" : isNewUser ? "Crear cuenta y añadir" : "Añadir"}
+                    {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? t("save") : isNewUser ? t("admin.org.create_account_and_add") : t("admin.org.add")}
                   </Button>
                 </div>
               </div>
@@ -909,7 +911,7 @@ export function AdminOrganizationsTab() {
         <Dialog open={showPasswordReset} onOpenChange={(open) => { setShowPasswordReset(open); if (!open) setResetSuccess(""); }}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>Restablecer contraseña</DialogTitle>
+              <DialogTitle>{t("admin.org.reset_password")}</DialogTitle>
             </DialogHeader>
             {resetMember && (
               <div className="space-y-4">
@@ -925,18 +927,18 @@ export function AdminOrganizationsTab() {
                     <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                       <p className="text-xs text-green-700 dark:text-green-300">{resetSuccess}</p>
                       <p className="text-xs font-mono mt-1 select-all text-green-600">{newPassword}</p>
-                      <p className="text-[10px] text-green-500 mt-1">Comunica la nueva contraseña al usuario.</p>
+                      <p className="text-[10px] text-green-500 mt-1">{t("admin.org.share_new_password_hint")}</p>
                     </div>
-                    <Button size="sm" className="w-full" onClick={() => setShowPasswordReset(false)}>Cerrar</Button>
+                    <Button size="sm" className="w-full" onClick={() => setShowPasswordReset(false)}>{t("close")}</Button>
                   </div>
                 ) : (
                   <>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Nueva contraseña</Label>
+                      <Label className="text-xs">{t("admin.org.new_password")}</Label>
                       <Input
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder={t("admin.org.min_6_chars")}
                         className="h-9"
                         type="text"
                       />
@@ -945,9 +947,9 @@ export function AdminOrganizationsTab() {
                       <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{resetError}</p>
                     )}
                     <div className="flex gap-2 justify-end">
-                      <Button variant="outline" size="sm" onClick={() => setShowPasswordReset(false)}>Cancelar</Button>
+                      <Button variant="outline" size="sm" onClick={() => setShowPasswordReset(false)}>{t("cancel")}</Button>
                       <Button size="sm" onClick={handleResetPassword} disabled={resettingPassword || newPassword.length < 6}>
-                        {resettingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Cambiar contraseña"}
+                        {resettingPassword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("admin.org.change_password")}
                       </Button>
                     </div>
                   </>
@@ -961,29 +963,29 @@ export function AdminOrganizationsTab() {
         <Dialog open={showOrgForm} onOpenChange={setShowOrgForm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingOrg ? "Editar organización" : "Nueva organización"}</DialogTitle>
+              <DialogTitle>{editingOrg ? t("admin.org.edit_organization") : t("admin.org.new_organization")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Nombre</Label>
+                <Label className="text-xs">{t("admin.org.name")}</Label>
                 <Input value={formName} onChange={(e) => { setFormName(e.target.value); if (!editingOrg) setFormSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} placeholder="Hospital Universitario La Paz" className="h-9" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Slug</Label>
+                <Label className="text-xs">{t("admin.org.slug")}</Label>
                 <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value)} placeholder="hospital-la-paz" className="h-9 font-mono text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Email de facturación</Label>
+                <Label className="text-xs">{t("admin.org.billing_email")}</Label>
                 <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Plazas máximas</Label>
+                <Label className="text-xs">{t("admin.org.max_seats")}</Label>
                 <Input type="number" value={formSeats} onChange={(e) => setFormSeats(Number(e.target.value))} min={1} className="h-9 w-24" />
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>Cancelar</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>{t("cancel")}</Button>
                 <Button size="sm" onClick={handleSaveOrg} disabled={saving || !formName.trim() || !formSlug.trim()}>
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingOrg ? "Guardar" : "Crear"}
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingOrg ? t("save") : t("admin.org.create")}
                 </Button>
               </div>
             </div>
@@ -999,10 +1001,10 @@ export function AdminOrganizationsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Hospitales</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("admin.org.hospitals")}</h2>
         <Button size="sm" onClick={openCreateOrg} className="gap-1.5">
           <Plus className="h-3.5 w-3.5" />
-          Nuevo hospital
+          {t("admin.org.new_hospital")}
         </Button>
       </div>
 
@@ -1010,7 +1012,7 @@ export function AdminOrganizationsTab() {
         <Card>
           <CardContent className="text-center py-12">
             <Building2 className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500">No hay hospitales</p>
+            <p className="text-sm text-gray-500">{t("admin.org.no_hospitals")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -1029,13 +1031,13 @@ export function AdminOrganizationsTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{org.name}</h3>
-                      {!org.is_active && <Badge variant="secondary" className="text-[9px]">Inactivo</Badge>}
+                      {!org.is_active && <Badge variant="secondary" className="text-[9px]">{t("admin.org.inactive")}</Badge>}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-[11px] text-gray-500">{org.slug}</span>
                       <span className="text-[11px] text-gray-500 flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        {org.active_members}/{org.max_seats} plazas
+                        {org.active_members}/{org.max_seats} {t("admin.org.seats")}
                       </span>
                       {org.billing_email && (
                         <span className="text-[11px] text-gray-400 truncate">{org.billing_email}</span>
@@ -1065,11 +1067,11 @@ export function AdminOrganizationsTab() {
       <Card>
         <CardContent className="p-4">
           <p className="text-xs text-gray-500">
-            <strong>Pricing:</strong> 20 €/radiólogo/mes. Sin límites de informes ni dictados para miembros del hospital.
+            <strong>{t("admin.org.pricing_label")}:</strong> {t("admin.org.pricing_detail")}
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Revenue mensual: {orgs.reduce((sum, o) => sum + (o.is_active ? o.active_members * 20 : 0), 0)} €/mes
-            ({orgs.reduce((sum, o) => sum + (o.is_active ? o.active_members : 0), 0)} radiólogos activos)
+            {t("admin.org.monthly_revenue")}: {orgs.reduce((sum, o) => sum + (o.is_active ? o.active_members * 20 : 0), 0)} €/{t("admin.org.month_abbr")}
+            ({orgs.reduce((sum, o) => sum + (o.is_active ? o.active_members : 0), 0)} {t("admin.org.active_radiologists")})
           </p>
         </CardContent>
       </Card>
@@ -1078,29 +1080,29 @@ export function AdminOrganizationsTab() {
       <Dialog open={showOrgForm} onOpenChange={setShowOrgForm}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingOrg ? "Editar organización" : "Nuevo hospital"}</DialogTitle>
+            <DialogTitle>{editingOrg ? t("admin.org.edit_organization") : t("admin.org.new_hospital")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nombre</Label>
+              <Label className="text-xs">{t("admin.org.name")}</Label>
               <Input value={formName} onChange={(e) => { setFormName(e.target.value); if (!editingOrg) setFormSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} placeholder="Hospital Universitario La Paz" className="h-9" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Slug (identificador URL)</Label>
+              <Label className="text-xs">{t("admin.org.slug_url")}</Label>
               <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value)} placeholder="hospital-la-paz" className="h-9 font-mono text-sm" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Email de facturación</Label>
+              <Label className="text-xs">{t("admin.org.billing_email")}</Label>
               <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Plazas máximas</Label>
+              <Label className="text-xs">{t("admin.org.max_seats")}</Label>
               <Input type="number" value={formSeats} onChange={(e) => setFormSeats(Number(e.target.value))} min={1} className="h-9 w-24" />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>{t("cancel")}</Button>
               <Button size="sm" onClick={handleSaveOrg} disabled={saving || !formName.trim() || !formSlug.trim()}>
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingOrg ? "Guardar" : "Crear"}
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingOrg ? t("save") : t("admin.org.create")}
               </Button>
             </div>
           </div>

@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-export type PublicLang = "es" | "en";
+export type PublicLang = "es" | "en" | "pt";
 
 const STORAGE_KEY = "radiogenai_public_lang";
 
 function detectLang(): PublicLang {
   if (typeof window === "undefined") return "es";
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "en" || stored === "es") return stored;
+  if (stored === "en" || stored === "es" || stored === "pt") return stored;
   const nav = navigator.language?.toLowerCase() || "";
+  if (nav.startsWith("pt")) return "pt";
   return nav.startsWith("en") ? "en" : "es";
 }
 
@@ -20,11 +21,11 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "nav.features": "Funciones",
     "nav.pricing": "Precios",
     "nav.signin": "Iniciar sesión",
-    "nav.get_started": "Empieza gratis",
+    "nav.get_started": "Lista de espera",
     // Hero
     "hero.title": "Informes radiológicos en segundos",
     "hero.subtitle": "Dicta tus hallazgos de forma natural. La IA los transcribe, estructura y formatea en un informe profesional — listo para revisar y firmar.",
-    "hero.cta_primary": "Empieza gratis — 30 informes/mes",
+    "hero.cta_primary": "Únete a la lista de espera",
     "hero.cta_secondary": "Ver cómo funciona",
     "hero.badge_no_card": "Sin tarjeta de crédito",
     "hero.badge_hipaa": "Diseño consciente de HIPAA",
@@ -39,7 +40,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.style.title": "Aprendizaje de estilo",
     "feat.style.desc": "La IA aprende tus frases preferidas para hallazgos normales y conclusiones con el tiempo.",
     "feat.conclusions.title": "Conclusiones inteligentes",
-    "feat.conclusions.desc": "Borradores automáticos de conclusiones y recomendaciones basadas en tus hallazgos.",
+    "feat.conclusions.desc": "Borradores automáticos de conclusiones sintetizadas a partir de tus hallazgos.",
     "feat.templates.title": "Plantillas personalizables",
     "feat.templates.desc": "Crea y personaliza plantillas para cualquier tipo de estudio. Tu estructura, a tu manera.",
     "feat.safety.title": "Seguridad clínica",
@@ -57,8 +58,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "pricing.subtitle": "Empieza gratis. Sube de plan cuando necesites más informes.",
     "pricing.all_features": "Todos los planes incluyen todas las funciones.",
     "pricing.per_month": "/mes",
-    "pricing.free_cta": "Empieza gratis",
-    "pricing.subscribe_cta": "Suscribirse",
+    "pricing.free_cta": "Lista de espera",
+    "pricing.subscribe_cta": "Lista de espera",
     "pricing.most_popular": "Más popular",
     "pricing.note": "Nuestra estructura de precios está diseñada para ofrecer el máximo valor manteniendo la calidad del servicio. Todos los planes incluyen el mismo modelo de IA y funciones.",
     // Plan features
@@ -81,7 +82,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // CTA
     "cta.title": "¿Listo para informar más rápido?",
     "cta.subtitle": "Únete a los radiólogos que ahorran horas cada semana con informes asistidos por IA.",
-    "cta.button": "Empieza con 30 informes gratis",
+    "cta.button": "Únete a la lista de espera",
     // Footer
     "footer.legal": "Legal",
     "footer.rights": "Todos los derechos reservados.",
@@ -112,6 +113,35 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.have_account": "¿Ya tienes cuenta?",
     "auth.signin_link": "Iniciar sesión",
     "auth.sidebar_free": "Empieza con 30 informes gratis al mes. Sin tarjeta de crédito.",
+    "auth.join_waitlist": "Únete a la lista de espera",
+    "auth.not_approved_title": "Cuenta pendiente de aprobación",
+    "auth.not_approved_desc": "Tu cuenta aún no ha sido activada. Un administrador revisará tu solicitud y te notificará cuando puedas acceder.",
+    "auth.not_approved_waitlist": "Si aún no te has apuntado a la lista de espera, hazlo para que podamos contactarte.",
+    "auth.logout": "Cerrar sesión",
+    // Waitlist
+    "waitlist.title": "Lista de espera",
+    "waitlist.subtitle": "Apúntate para acceder a Radiogen.AI cuando lancemos.",
+    "waitlist.sidebar": "Estamos preparando el lanzamiento. Apúntate a la lista de espera y sé de los primeros en usar la plataforma.",
+    "waitlist.first_name": "Nombre",
+    "waitlist.first_name_placeholder": "Juan",
+    "waitlist.last_name": "Apellidos",
+    "waitlist.last_name_placeholder": "Pérez García",
+    "waitlist.email": "Email",
+    "waitlist.email_placeholder": "tu@hospital.com",
+    "waitlist.country": "País",
+    "waitlist.country_placeholder": "Selecciona tu país",
+    "waitlist.hospital": "Hospital / Centro",
+    "waitlist.hospital_placeholder": "Hospital Universitario La Paz",
+    "waitlist.role": "Perfil profesional",
+    "waitlist.role_attending": "Facultativo",
+    "waitlist.role_resident": "Residente",
+    "waitlist.submit": "Unirme a la lista de espera",
+    "waitlist.have_account": "¿Ya tienes cuenta?",
+    "waitlist.signin_link": "Iniciar sesión",
+    "waitlist.network_error": "Error de red. Inténtalo de nuevo.",
+    "waitlist.success_title": "¡Estás en la lista!",
+    "waitlist.success_desc": "Te hemos añadido a la lista de espera. Te contactaremos cuando tu acceso esté listo.",
+    "waitlist.back_home": "Volver al inicio",
     // Auth - Forgot password
     "auth.reset_title": "Restablecer contraseña",
     "auth.reset_subtitle": "Introduce tu email y te enviaremos un enlace para restablecerla.",
@@ -119,6 +149,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.check_email": "Revisa tu email",
     "auth.reset_sent": "Hemos enviado un enlace de restablecimiento a {email}. Haz clic en el enlace del email para establecer una nueva contraseña.",
     "auth.back_signin": "Volver a iniciar sesión",
+    "auth.reset_not_registered": "Este email no está registrado en Radiogen.AI.",
+    "auth.reset_join_waitlist": "Únete a la lista de espera para solicitar acceso.",
+    "auth.reset_already_waitlisted": "Ya estás en la lista de espera. Te contactaremos cuando tu acceso esté listo. No es necesario registrarte de nuevo.",
     // Auth - Reset password
     "auth.new_password_title": "Nueva contraseña",
     "auth.new_password_subtitle": "Elige una contraseña segura para tu cuenta.",
@@ -159,11 +192,11 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "nav.features": "Features",
     "nav.pricing": "Pricing",
     "nav.signin": "Sign in",
-    "nav.get_started": "Get started free",
+    "nav.get_started": "Join waitlist",
     // Hero
     "hero.title": "Radiology reports in seconds",
     "hero.subtitle": "Dictate your findings naturally. AI transcribes, structures and formats them into a professional report — ready to review and sign.",
-    "hero.cta_primary": "Start free — 30 reports/month",
+    "hero.cta_primary": "Join the waitlist",
     "hero.cta_secondary": "See how it works",
     "hero.badge_no_card": "No credit card required",
     "hero.badge_hipaa": "HIPAA-conscious design",
@@ -178,7 +211,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.style.title": "Style Learning",
     "feat.style.desc": "The AI learns your preferred phrasing for normal findings and conclusions over time.",
     "feat.conclusions.title": "Smart Conclusions",
-    "feat.conclusions.desc": "Automatic conclusion drafts and evidence-based recommendations from your findings.",
+    "feat.conclusions.desc": "Automatic conclusion drafts synthesized from your findings.",
     "feat.templates.title": "Custom Templates",
     "feat.templates.desc": "Create and customize templates for any study type. Your structure, your way.",
     "feat.safety.title": "Clinical Safety",
@@ -196,8 +229,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "pricing.subtitle": "Start free. Upgrade when you need more reports.",
     "pricing.all_features": "Every plan includes all features.",
     "pricing.per_month": "/mo",
-    "pricing.free_cta": "Get started free",
-    "pricing.subscribe_cta": "Subscribe",
+    "pricing.free_cta": "Join waitlist",
+    "pricing.subscribe_cta": "Join waitlist",
     "pricing.most_popular": "Most popular",
     "pricing.note": "Our pricing structure is designed to deliver maximum value while maintaining service quality. All plans include the same AI model and features.",
     // Plan features
@@ -220,7 +253,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // CTA
     "cta.title": "Ready to report faster?",
     "cta.subtitle": "Join radiologists who save hours every week with AI-assisted reporting.",
-    "cta.button": "Start with 30 free reports",
+    "cta.button": "Join the waitlist",
     // Footer
     "footer.legal": "Legal",
     "footer.rights": "All rights reserved.",
@@ -251,6 +284,35 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.have_account": "Already have an account?",
     "auth.signin_link": "Sign in",
     "auth.sidebar_free": "Start with 30 free reports per month. No credit card required.",
+    "auth.join_waitlist": "Join the waitlist",
+    "auth.not_approved_title": "Account pending approval",
+    "auth.not_approved_desc": "Your account has not been activated yet. An administrator will review your request and notify you when access is granted.",
+    "auth.not_approved_waitlist": "If you haven't signed up for the waitlist yet, please do so we can reach you.",
+    "auth.logout": "Sign out",
+    // Waitlist
+    "waitlist.title": "Waitlist",
+    "waitlist.subtitle": "Sign up for early access to Radiogen.AI.",
+    "waitlist.sidebar": "We're preparing for launch. Join the waitlist and be among the first to use the platform.",
+    "waitlist.first_name": "First name",
+    "waitlist.first_name_placeholder": "Jane",
+    "waitlist.last_name": "Last name",
+    "waitlist.last_name_placeholder": "Smith",
+    "waitlist.email": "Email",
+    "waitlist.email_placeholder": "you@hospital.com",
+    "waitlist.country": "Country",
+    "waitlist.country_placeholder": "Select your country",
+    "waitlist.hospital": "Hospital / Center",
+    "waitlist.hospital_placeholder": "General Hospital",
+    "waitlist.role": "Professional role",
+    "waitlist.role_attending": "Attending",
+    "waitlist.role_resident": "Resident",
+    "waitlist.submit": "Join the waitlist",
+    "waitlist.have_account": "Already have an account?",
+    "waitlist.signin_link": "Sign in",
+    "waitlist.network_error": "Network error. Please try again.",
+    "waitlist.success_title": "You're on the list!",
+    "waitlist.success_desc": "We've added you to the waitlist. We'll reach out when your access is ready.",
+    "waitlist.back_home": "Back to home",
     // Auth - Forgot password
     "auth.reset_title": "Reset your password",
     "auth.reset_subtitle": "Enter your email and we'll send you a link to reset your password.",
@@ -258,6 +320,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.check_email": "Check your email",
     "auth.reset_sent": "We sent a password reset link to {email}. Click the link in the email to set a new password.",
     "auth.back_signin": "Back to sign in",
+    "auth.reset_not_registered": "This email is not registered on Radiogen.AI.",
+    "auth.reset_join_waitlist": "Join the waitlist to request access.",
+    "auth.reset_already_waitlisted": "You're already on the waitlist. We'll reach out when your access is ready. No need to sign up again.",
     // Auth - Reset password
     "auth.new_password_title": "Set new password",
     "auth.new_password_subtitle": "Choose a strong password for your account.",
@@ -293,7 +358,190 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "legal.s9.title": "9. Contact",
     "legal.s9.p": "For questions, data deletion requests, or legal inquiries, please contact us at",
   },
+  pt: {
+    // Nav
+    "nav.features": "Recursos",
+    "nav.pricing": "Preços",
+    "nav.signin": "Entrar",
+    "nav.get_started": "Lista de espera",
+    // Hero
+    "hero.title": "Laudos radiológicos em segundos",
+    "hero.subtitle": "Dite seus achados de forma natural. A IA transcreve, estrutura e formata em um laudo profissional — pronto para revisar e assinar.",
+    "hero.cta_primary": "Entre na lista de espera",
+    "hero.cta_secondary": "Veja como funciona",
+    "hero.badge_no_card": "Sem cartão de crédito",
+    "hero.badge_hipaa": "Design consciente HIPAA",
+    "hero.badge_encrypt": "Criptografia AES-256",
+    // Features
+    "feat.title": "Tudo o que você precisa para laudar mais rápido",
+    "feat.subtitle": "Desenvolvido por radiologistas, para radiologistas.",
+    "feat.voice.title": "Ditado por voz",
+    "feat.voice.desc": "Dite achados de forma natural. A IA transcreve e estrutura seu laudo em tempo real.",
+    "feat.structured.title": "Laudos estruturados",
+    "feat.structured.desc": "Mais de 104 modelos em todas as modalidades. Cada seção é preenchida automaticamente a partir do seu ditado.",
+    "feat.style.title": "Aprendizado de estilo",
+    "feat.style.desc": "A IA aprende suas expressões preferidas para achados normais e conclusões ao longo do tempo.",
+    "feat.conclusions.title": "Conclusões inteligentes",
+    "feat.conclusions.desc": "Rascunhos automáticos de conclusões e recomendações baseadas nos seus achados.",
+    "feat.templates.title": "Modelos personalizáveis",
+    "feat.templates.desc": "Crie e personalize modelos para qualquer tipo de exame. Sua estrutura, do seu jeito.",
+    "feat.safety.title": "Segurança clínica",
+    "feat.safety.desc": "Política de zero alucinações. A IA usa apenas o que você dita. Rastreabilidade completa.",
+    // How it works
+    "how.title": "Como funciona",
+    "how.step1.title": "Dite",
+    "how.step1.desc": "Fale seus achados de forma natural ou digite-os. A IA transcreve em tempo real.",
+    "how.step2.title": "Gere",
+    "how.step2.desc": "A IA estrutura seu ditado em um laudo completo usando seu modelo preferido.",
+    "how.step3.title": "Revise e salve",
+    "how.step3.desc": "Edite o que precisar e salve. A plataforma aprende seu estilo para a próxima vez.",
+    // Pricing
+    "pricing.title": "Preços simples e transparentes",
+    "pricing.subtitle": "Comece grátis. Faça upgrade quando precisar de mais laudos.",
+    "pricing.all_features": "Todos os planos incluem todos os recursos.",
+    "pricing.per_month": "/mês",
+    "pricing.free_cta": "Lista de espera",
+    "pricing.subscribe_cta": "Lista de espera",
+    "pricing.most_popular": "Mais popular",
+    "pricing.note": "Nossa estrutura de preços foi projetada para oferecer o máximo valor mantendo a qualidade do serviço. Todos os planos incluem o mesmo modelo de IA e recursos.",
+    // Plan features
+    "plan.feat.reports_30": "30 laudos/mês",
+    "plan.feat.reports_150": "150 laudos/mês",
+    "plan.feat.reports_400": "400 laudos/mês",
+    "plan.feat.all_modalities": "Todas as modalidades",
+    "plan.feat.dictation_30": "30 min ditado por voz/mês",
+    "plan.feat.dictation_120": "120 min ditado por voz/mês",
+    "plan.feat.dictation_300": "300 min ditado por voz/mês",
+    "plan.feat.style_learning": "Aprendizado de estilo",
+    "plan.feat.custom_templates": "Modelos personalizáveis",
+    "plan.feat.guidelines_2": "2 documentos de diretrizes",
+    "plan.feat.guidelines_5": "5 documentos de diretrizes",
+    "plan.feat.guidelines_15": "15 documentos de diretrizes",
+    "plan.feat.priority_support": "Suporte prioritário",
+    "plan.feat.api_access": "Acesso à API",
+    "plan.feat.bulk_export": "Exportação em massa",
+    "plan.feat.resident_verified": "Preço exclusivo para residentes (verificado)",
+    // CTA
+    "cta.title": "Pronto para laudar mais rápido?",
+    "cta.subtitle": "Junte-se aos radiologistas que economizam horas toda semana com laudos assistidos por IA.",
+    "cta.button": "Entre na lista de espera",
+    // Footer
+    "footer.legal": "Termos legais",
+    "footer.rights": "Todos os direitos reservados.",
+    // Auth - Login
+    "auth.welcome_back": "Bem-vindo de volta",
+    "auth.sign_in_subtitle": "Entre na sua conta",
+    "auth.google": "Continuar com Google",
+    "auth.or_email": "ou entre com e-mail",
+    "auth.email": "E-mail",
+    "auth.email_placeholder": "voce@hospital.com",
+    "auth.password": "Senha",
+    "auth.password_placeholder": "Digite sua senha",
+    "auth.forgot": "Esqueceu a senha?",
+    "auth.signin_btn": "Entrar",
+    "auth.no_account": "Não tem conta?",
+    "auth.create_free": "Crie uma grátis",
+    "auth.sidebar_text": "Laudos radiológicos com IA. Dite, gere, entregue.",
+    // Auth - Register
+    "auth.create_account": "Crie sua conta",
+    "auth.register_subtitle": "Comece a gerar laudos estruturados em segundos",
+    "auth.or_register": "ou cadastre-se com e-mail",
+    "auth.fullname": "Nome completo",
+    "auth.fullname_placeholder": "Dr. João Silva",
+    "auth.password_min": "Mín. 6 caracteres",
+    "auth.accept_terms": "Aceito os Termos de Uso, Política de Privacidade e Termo de Responsabilidade.",
+    "auth.accept_terms_note": "Radiogen.AI é um assistente de redação de laudos. Os textos gerados são rascunhos indicativos que devem ser revisados e validados antes do uso clínico.",
+    "auth.create_btn": "Criar conta",
+    "auth.have_account": "Já tem uma conta?",
+    "auth.signin_link": "Entrar",
+    "auth.sidebar_free": "Comece com 30 laudos grátis por mês. Sem cartão de crédito.",
+    "auth.join_waitlist": "Entre na lista de espera",
+    "auth.not_approved_title": "Conta pendente de aprovação",
+    "auth.not_approved_desc": "Sua conta ainda não foi ativada. Um administrador revisará sua solicitação e notificará quando o acesso for concedido.",
+    "auth.not_approved_waitlist": "Se você ainda não se cadastrou na lista de espera, faça isso para que possamos entrar em contato.",
+    "auth.logout": "Sair",
+    // Waitlist
+    "waitlist.title": "Lista de espera",
+    "waitlist.subtitle": "Cadastre-se para ter acesso antecipado ao Radiogen.AI.",
+    "waitlist.sidebar": "Estamos preparando o lançamento. Entre na lista de espera e seja um dos primeiros a usar a plataforma.",
+    "waitlist.first_name": "Nome",
+    "waitlist.first_name_placeholder": "João",
+    "waitlist.last_name": "Sobrenome",
+    "waitlist.last_name_placeholder": "Silva Santos",
+    "waitlist.email": "E-mail",
+    "waitlist.email_placeholder": "voce@hospital.com",
+    "waitlist.country": "País",
+    "waitlist.country_placeholder": "Selecione seu país",
+    "waitlist.hospital": "Hospital / Centro",
+    "waitlist.hospital_placeholder": "Hospital Universitário",
+    "waitlist.role": "Perfil profissional",
+    "waitlist.role_attending": "Médico titular",
+    "waitlist.role_resident": "Residente",
+    "waitlist.submit": "Entrar na lista de espera",
+    "waitlist.have_account": "Já tem uma conta?",
+    "waitlist.signin_link": "Entrar",
+    "waitlist.network_error": "Erro de rede. Tente novamente.",
+    "waitlist.success_title": "Você está na lista!",
+    "waitlist.success_desc": "Adicionamos você à lista de espera. Entraremos em contato quando seu acesso estiver pronto.",
+    "waitlist.back_home": "Voltar ao início",
+    // Auth - Forgot password
+    "auth.reset_title": "Redefinir senha",
+    "auth.reset_subtitle": "Insira seu e-mail e enviaremos um link para redefinir sua senha.",
+    "auth.send_link": "Enviar link",
+    "auth.check_email": "Verifique seu e-mail",
+    "auth.reset_sent": "Enviamos um link de redefinição de senha para {email}. Clique no link do e-mail para definir uma nova senha.",
+    "auth.back_signin": "Voltar para login",
+    "auth.reset_not_registered": "Este e-mail não está registrado no Radiogen.AI.",
+    "auth.reset_join_waitlist": "Entre na lista de espera para solicitar acesso.",
+    "auth.reset_already_waitlisted": "Você já está na lista de espera. Entraremos em contato quando seu acesso estiver pronto. Não é necessário se cadastrar novamente.",
+    // Auth - Reset password
+    "auth.new_password_title": "Nova senha",
+    "auth.new_password_subtitle": "Escolha uma senha segura para sua conta.",
+    "auth.new_password": "Nova senha",
+    "auth.confirm_password": "Confirmar senha",
+    "auth.confirm_placeholder": "Repita sua senha",
+    "auth.passwords_mismatch": "As senhas não coincidem",
+    "auth.password_too_short": "A senha deve ter pelo menos 6 caracteres",
+    "auth.password_updated": "Senha atualizada",
+    "auth.redirecting": "Redirecionando para o painel...",
+    "auth.update_btn": "Atualizar senha",
+    // Legal
+    "legal.title": "Termos de Uso, Política de Privacidade e Termo de Responsabilidade",
+    "legal.updated": "Última atualização: Abril 2026",
+    "legal.s1.title": "1. Natureza do Serviço",
+    "legal.s1.p1": "Radiogen.AI é uma <b>ferramenta de assistência à redação de laudos</b> projetada exclusivamente para radiologistas licenciados e profissionais médicos qualificados. A plataforma utiliza inteligência artificial para ajudar a estruturar e redigir laudos radiológicos com base no próprio ditado do radiologista.",
+    "legal.s1.p2": "Radiogen.AI <b>NÃO</b> é uma ferramenta de diagnóstico. Não realiza análise de imagens, não interpreta imagens médicas e não gera diagnósticos clínicos autônomos nem recomendações terapêuticas.",
+    "legal.s2.title": "2. Limitação de Responsabilidade",
+    "legal.s2.items": "Todo o conteúdo clínico gerado pela Radiogen.AI é derivado <b>exclusivamente do ditado do radiologista</b>. A IA não adiciona achados clínicos, diagnósticos ou avaliações patológicas que não tenham sido ditados pelo usuário.|O <b>radiologista é o único responsável</b> por revisar, validar, modificar e aprovar cada laudo antes de entregá-lo a pacientes, médicos solicitantes ou incorporá-lo a qualquer prontuário médico.|A Radiogen.AI e seus operadores <b>não assumem responsabilidade alguma</b> por decisões clínicas, erros diagnósticos, omissões ou qualquer resultado adverso para pacientes decorrente do uso de laudos gerados com esta ferramenta.|O usuário reconhece que o texto gerado por IA pode conter erros, imprecisões ou expressões inadequadas, e aceita a plena responsabilidade por validar o resultado final.",
+    "legal.s3.title": "3. Responsabilidade Profissional",
+    "legal.s3.intro": "Ao utilizar a Radiogen.AI, o radiologista confirma que:",
+    "legal.s3.items": "Possui licença médica válida e está qualificado para interpretar exames radiológicos e emitir laudos de radiologia.|Revisará cada laudo gerado por IA em sua totalidade antes de assiná-lo, entregá-lo ou arquivá-lo.|Entende que a IA é um assistente de redação e que o julgamento médico final recai inteiramente sobre o profissional.|Não utilizará a plataforma para substituir a avaliação radiológica profissional.",
+    "legal.s4.title": "4. Privacidade e Segurança de Dados",
+    "legal.s4.items": "<b>Nenhum dado identificável de pacientes é exigido ou armazenado.</b> A plataforma processa apenas texto de ditado anonimizado. Os usuários não devem incluir nomes de pacientes, CPF, datas de nascimento nem qualquer outra informação pessoal identificável (PII) em seus ditados.|O texto do ditado e os laudos gerados são armazenados na conta do usuário para fins de aprendizado de estilo e histórico de laudos. Esses dados são criptografados em repouso e em trânsito.|As chaves de API configuradas pelo administrador são criptografadas usando AES-256-GCM antes do armazenamento.|A Radiogen.AI não vende, compartilha nem transfere dados de usuários a terceiros para fins comerciais ou de marketing.|O processamento de IA é realizado através do provedor de modelo de linguagem configurado pelo administrador (ex.: OpenAI, DeepSeek, Anthropic). O texto do ditado é enviado a esses provedores para processamento. Os usuários devem revisar as políticas de privacidade do provedor de IA configurado.|Os usuários podem solicitar a exclusão de sua conta e de todos os dados associados a qualquer momento, entrando em contato com o administrador.",
+    "legal.s5.title": "5. Usos Proibidos",
+    "legal.s5.items": "Usar a Radiogen.AI como substituto da avaliação radiológica profissional.|Incluir informações identificáveis de pacientes em ditados ou campos de contexto clínico.|Distribuir laudos gerados por IA sem revisão e validação prévia por um radiologista qualificado.|Engenharia reversa, descompilação ou tentativa de extrair o código-fonte ou algoritmos da plataforma.|Compartilhar credenciais de conta com pessoas não autorizadas.",
+    "legal.s6.title": "6. Propriedade Intelectual",
+    "legal.s6.p": "A plataforma Radiogen.AI, incluindo seu código, design, algoritmos e documentação, é propriedade intelectual de seus operadores. Os laudos gerados pelo usuário pertencem ao usuário e à sua instituição. A plataforma não retém propriedade alguma sobre o conteúdo clínico produzido por seus usuários.",
+    "legal.s7.title": "7. Disponibilidade do Serviço",
+    "legal.s7.p": "A Radiogen.AI é fornecida \"no estado em que se encontra\", sem garantias de qualquer tipo, expressas ou implícitas. Não garantimos a disponibilidade ininterrupta do serviço. A plataforma depende de provedores de IA e infraestrutura de terceiros, que podem sofrer interrupções ou degradação do serviço fora do nosso controle.",
+    "legal.s8.title": "8. Alterações nos Termos",
+    "legal.s8.p": "Reservamo-nos o direito de modificar estes termos a qualquer momento. Os usuários serão notificados sobre alterações materiais. O uso continuado da plataforma após a notificação constitui a aceitação dos termos atualizados.",
+    "legal.s9.title": "9. Contato",
+    "legal.s9.p": "Para dúvidas, solicitações de exclusão de dados ou questões legais, entre em contato conosco em",
+  },
 };
+
+export const PUBLIC_LANGS: PublicLang[] = ["es", "en", "pt"];
+
+export function nextLang(current: PublicLang): PublicLang {
+  const idx = PUBLIC_LANGS.indexOf(current);
+  return PUBLIC_LANGS[(idx + 1) % PUBLIC_LANGS.length];
+}
+
+export function langLabel(current: PublicLang): string {
+  const next = nextLang(current);
+  return next.toUpperCase();
+}
 
 export function usePublicLang() {
   const [lang, setLangState] = useState<PublicLang>("es");

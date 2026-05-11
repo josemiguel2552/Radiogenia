@@ -28,6 +28,8 @@ import {
   Outdent,
   FolderOpen,
   Building2,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
@@ -246,6 +248,12 @@ export function TemplatesTab() {
   const [catalogSearch, setCatalogSearch] = useState("");
   const [toggling, setToggling] = useState<Set<string>>(new Set());
 
+  // Hidden global templates
+  const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
+  const [hiddenOpen, setHiddenOpen] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
+  const [justHiddenMsg, setJustHiddenMsg] = useState<string | null>(null);
+
   async function load() {
     setLoading(true);
     const res = await fetch("/api/templates");
@@ -253,12 +261,27 @@ export function TemplatesTab() {
     setLoading(false);
   }
 
+  async function loadHidden() {
+    try {
+      const res = await fetch("/api/templates/hidden");
+      if (res.ok) setHiddenTemplates(await res.json());
+    } catch { /* ignore */ }
+  }
+
   useEffect(() => {
     load();
+    loadHidden();
     fetch("/api/org", { cache: "no-store" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => setHasOrg(!!data?.membership))
       .catch(() => {});
+
+    const handleTemplatesChanged = () => {
+      load();
+      loadHidden();
+    };
+    window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
+    return () => window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
   }, []);
 
   const filtered = templates.filter((tmpl) => {
@@ -322,10 +345,17 @@ export function TemplatesTab() {
     load();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm(t("confirm_delete_template"))) return;
-    await fetch(`/api/templates?id=${id}`, { method: "DELETE" });
+  async function handleDelete(id: string, isGlobal?: boolean) {
+    if (!confirm(isGlobal ? t("tpl.confirm_hide") : t("confirm_delete_template"))) return;
+    const qs = isGlobal ? `id=${id}&global=true` : `id=${id}`;
+    await fetch(`/api/templates?${qs}`, { method: "DELETE" });
+    if (isGlobal) {
+      setJustHiddenMsg(t("tpl.hidden_success"));
+      setTimeout(() => setJustHiddenMsg(null), 2500);
+    }
     load();
+    if (isGlobal) loadHidden();
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
   async function handleCreateNew() {
@@ -358,10 +388,10 @@ export function TemplatesTab() {
         setReviewOpen(true);
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || "Upload failed"));
+        alert(t("tpl.upload_error") + ": " + (data.error || ""));
       }
     } catch (err) {
-      alert("Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("tpl.upload_error") + ": " + (err instanceof Error ? err.message : ""));
     }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -388,6 +418,17 @@ export function TemplatesTab() {
 
   function rejectExtracted(idx: number) {
     setExtractedTemplates((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleRestore(id: string) {
+    setRestoring(id);
+    try {
+      await fetch(`/api/templates/hidden?id=${id}`, { method: "DELETE" });
+      setHiddenTemplates((prev) => prev.filter((h) => h.id !== id));
+      load();
+    } catch { /* ignore */ }
+    setRestoring(null);
+    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
   async function openCatalog() {
@@ -454,7 +495,7 @@ export function TemplatesTab() {
             size="icon"
             variant="outline"
             onClick={openCatalog}
-            title="Importar de sección"
+            title={t("tpl.import_from_section")}
             className="h-8 w-8 shrink-0"
           >
             <Building2 className="h-3.5 w-3.5" />
@@ -487,6 +528,13 @@ export function TemplatesTab() {
         onChange={handleWordUpload}
         className="hidden"
       />
+
+      {justHiddenMsg && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs">
+          <Check className="h-3.5 w-3.5 shrink-0" />
+          {justHiddenMsg}
+        </div>
+      )}
 
       {/* Upload status */}
       {uploading && (
@@ -640,7 +688,17 @@ export function TemplatesTab() {
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
-                          {!tpl.is_global && !tpl.is_default && !tpl.is_org && (
+                          {tpl.is_global ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-gray-400 hover:text-orange-500"
+                              onClick={() => handleDelete(tpl.id, true)}
+                              title={t("tpl.hide")}
+                            >
+                              <EyeOff className="h-3 w-3" />
+                            </Button>
+                          ) : !tpl.is_default && !tpl.is_org && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -661,6 +719,50 @@ export function TemplatesTab() {
           );
         })}
       </div>
+
+      {/* Hidden globals — restore section */}
+      {hiddenTemplates.length > 0 && (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setHiddenOpen(!hiddenOpen)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <EyeOff className="h-3.5 w-3.5 text-gray-400" />
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {hiddenTemplates.length} {t("tpl.hidden_templates")}
+              </span>
+            </div>
+            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${hiddenOpen ? "" : "-rotate-90"}`} />
+          </button>
+          {hiddenOpen && (
+            <div className="px-3 pb-3 space-y-1">
+              {hiddenTemplates.map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-center justify-between gap-2 p-2 rounded-md border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{tplName(h.name)}</p>
+                    <Badge variant="secondary" className="text-[9px] h-4 px-1.5 mt-0.5">{modName(h.modality)}</Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2.5 text-[11px] gap-1 shrink-0"
+                    disabled={restoring === h.id}
+                    onClick={() => handleRestore(h.id)}
+                  >
+                    {restoring === h.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                    {t("tpl.restore")}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
@@ -741,7 +843,7 @@ export function TemplatesTab() {
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
-              placeholder="Buscar plantilla..."
+              placeholder={t("tpl.search")}
               value={catalogSearch}
               onChange={(e) => setCatalogSearch(e.target.value)}
               className="pl-8 h-8 text-xs"

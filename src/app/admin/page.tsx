@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +15,16 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare,
+  Building2, MessageSquare, DollarSign,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 import { Logo } from "@/components/ui/logo";
 import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
 import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
+import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
+import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
 
 interface GlobalConfig {
   id: string;
@@ -38,8 +41,6 @@ interface GlobalConfig {
   findings_model: string | null;
   conclusion_provider: string | null;
   conclusion_model: string | null;
-  recommendations_provider: string | null;
-  recommendations_model: string | null;
   trace_provider: string | null;
   trace_model: string | null;
   dictation_correction_provider: string | null;
@@ -58,7 +59,7 @@ interface FtJob {
   finishedAt: number | null;
 }
 
-type TaskKey = "findings" | "conclusion" | "recommendations" | "trace" | "dictation_correction" | "improve_writing";
+type TaskKey = "findings" | "conclusion" | "trace" | "dictation_correction" | "improve_writing";
 
 interface UserRow {
   id: string;
@@ -84,10 +85,11 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs";
 
 export default function AdminPage() {
   const router = useRouter();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
 
@@ -117,7 +119,6 @@ export default function AdminPage() {
   const [taskOverrides, setTaskOverrides] = useState<Record<TaskKey, { provider: string; model: string }>>({
     findings: { provider: "", model: "" },
     conclusion: { provider: "", model: "" },
-    recommendations: { provider: "", model: "" },
     trace: { provider: "", model: "" },
     dictation_correction: { provider: "", model: "" },
     improve_writing: { provider: "", model: "" },
@@ -128,6 +129,7 @@ export default function AdminPage() {
 
   // Fine-tuning
   const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
+  const [ftModelsList, setFtModelsList] = useState<string[]>([]);
   const [ftUploading, setFtUploading] = useState(false);
   const [ftStarting, setFtStarting] = useState(false);
   const [ftFileId, setFtFileId] = useState<string | null>(null);
@@ -226,7 +228,6 @@ export default function AdminPage() {
       setTaskOverrides({
         findings: isCombo ? { provider: "", model: "" } : { provider: d.findings_provider || "", model: d.findings_model || "" },
         conclusion: { provider: d.conclusion_provider || "", model: d.conclusion_model || "" },
-        recommendations: { provider: d.recommendations_provider || "", model: d.recommendations_model || "" },
         trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
         dictation_correction: { provider: d.dictation_correction_provider || "", model: d.dictation_correction_model || "" },
         improve_writing: { provider: d.improve_writing_provider || "", model: d.improve_writing_model || "" },
@@ -239,6 +240,7 @@ export default function AdminPage() {
       if (ftRes?.ok) {
         const ftData = await ftRes.json();
         setFtJobs(ftData.jobs || []);
+        setFtModelsList(ftData.ftModels || []);
       }
     } catch { /* fine-tune listing may fail if not OpenAI */ }
     if (usersRes?.ok) {
@@ -280,7 +282,7 @@ export default function AdminPage() {
       if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
-      for (const task of ["findings", "conclusion", "recommendations", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
+      for (const task of ["findings", "conclusion", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
         if (task === "findings" && findingsCombo) {
           body.findings_provider = "combo";
           body.findings_model = "gpt4mini+deepseek-v3";
@@ -297,7 +299,7 @@ export default function AdminPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setConfigError((await res.json()).error || "Failed");
+        setConfigError((await res.json()).error || t("admin.failed"));
       } else {
         const d = await res.json();
         setConfig(d);
@@ -311,7 +313,7 @@ export default function AdminPage() {
         setTimeout(() => setConfigSuccess(false), 3000);
       }
     } catch (e) {
-      setConfigError(e instanceof Error ? e.message : "Failed");
+      setConfigError(e instanceof Error ? e.message : t("admin.failed"));
     }
     setSaving(false);
   }
@@ -350,11 +352,11 @@ export default function AdminPage() {
       form.append("file", file);
       const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) { setFtError(data.error || "Upload failed"); return; }
+      if (!res.ok) { setFtError(data.error || t("admin.ft_upload_failed")); return; }
       setFtFileId(data.fileId);
       setFtExamples(data.validExamples);
     } catch (e) {
-      setFtError(e instanceof Error ? e.message : "Upload failed");
+      setFtError(e instanceof Error ? e.message : t("admin.ft_upload_failed"));
     } finally {
       setFtUploading(false);
     }
@@ -371,11 +373,11 @@ export default function AdminPage() {
         body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
       });
       const data = await res.json();
-      if (!res.ok) { setFtError(data.error || "Failed to start"); return; }
+      if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
       setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null }, ...prev]);
       setFtFileId(null);
     } catch (e) {
-      setFtError(e instanceof Error ? e.message : "Failed");
+      setFtError(e instanceof Error ? e.message : t("admin.failed"));
     } finally {
       setFtStarting(false);
     }
@@ -428,11 +430,11 @@ export default function AdminPage() {
   async function handleCreateUser() {
     setCreateError("");
     if (!createEmail || !createPassword) {
-      setCreateError("Email and password are required");
+      setCreateError(t("admin.email_password_required"));
       return;
     }
     if (createPassword.length < 6) {
-      setCreateError("Password must be at least 6 characters");
+      setCreateError(t("admin.password_min_length"));
       return;
     }
     setCreatingUser(true);
@@ -448,7 +450,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setCreateError(data.error || "Failed to create user");
+        setCreateError(data.error || t("admin.failed_create_user"));
       } else {
         setCreateOpen(false);
         setCreateEmail("");
@@ -457,7 +459,7 @@ export default function AdminPage() {
         loadAll();
       }
     } catch {
-      setCreateError("Network error");
+      setCreateError(t("admin.network_error"));
     }
     setCreatingUser(false);
   }
@@ -476,7 +478,7 @@ export default function AdminPage() {
       }
       setTrainingData(d.reports || []);
     } catch (e) {
-      setTrainingError(e instanceof Error ? e.message : "Failed to load training data");
+      setTrainingError(e instanceof Error ? e.message : t("admin.failed_load_training"));
     }
     setTrainingLoading(false);
   }
@@ -505,14 +507,16 @@ export default function AdminPage() {
   const totalReports = users.reduce((s, u) => s + u.report_count, 0);
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
-    { key: "ai", label: "AI Config", icon: <Plug className="h-4 w-4" /> },
-    { key: "plans", label: "Plans", icon: <CreditCard className="h-4 w-4" /> },
-    { key: "orgs", label: "Hospitals", icon: <Building2 className="h-4 w-4" /> },
-    { key: "residents", label: "Residents", icon: <GraduationCap className="h-4 w-4" /> },
-    { key: "support", label: "Support", icon: <MessageSquare className="h-4 w-4" /> },
-    { key: "audit", label: "Audit", icon: <ClipboardList className="h-4 w-4" /> },
+    { key: "overview", label: t("admin.tab_overview"), icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "users", label: t("admin.tab_users"), icon: <Users className="h-4 w-4" /> },
+    { key: "ai", label: t("admin.tab_ai_config"), icon: <Plug className="h-4 w-4" /> },
+    { key: "plans", label: t("admin.tab_plans"), icon: <CreditCard className="h-4 w-4" /> },
+    { key: "orgs", label: t("admin.tab_hospitals"), icon: <Building2 className="h-4 w-4" /> },
+    { key: "residents", label: t("admin.tab_residents"), icon: <GraduationCap className="h-4 w-4" /> },
+    { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-4 w-4" /> },
+    { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
+    { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
+    { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -535,10 +539,10 @@ export default function AdminPage() {
             <Logo size="sm" variant="icon" className="sm:hidden" />
             <Logo size="sm" className="hidden sm:inline-flex" />
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
-              Admin
+              {t("admin.badge")}
             </Badge>
           </div>
-          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title="Refresh">
+          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title={t("admin.refresh")}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -567,18 +571,18 @@ export default function AdminPage() {
         {tab === "overview" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label="Total Users" value={stats?.totalUsers ?? radiologists.length} />
-              <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label="Total Reports" value={stats?.totalReports ?? totalReports} />
-              <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label="Reports This Month" value={stats?.reportsThisMonth ?? 0} />
-              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label="Dictation (min)" value={`${stats?.totalDictationMinutes ?? 0} min`} />
-              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label="MRR" value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
+              <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label={t("admin.total_users")} value={stats?.totalUsers ?? radiologists.length} />
+              <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label={t("admin.total_reports")} value={stats?.totalReports ?? totalReports} />
+              <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label={t("admin.reports_this_month")} value={stats?.reportsThisMonth ?? 0} />
+              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label={t("admin.dictation_min")} value={`${stats?.totalDictationMinutes ?? 0} min`} />
+              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label={t("admin.mrr")} value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Plan distribution */}
               <Card>
                 <div className="px-5 pt-5 pb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Plan Distribution</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.plan_distribution")}</h3>
                 </div>
                 <CardContent className="pt-0 space-y-3">
                   {(["free", "starter", "professional"] as const).map((p) => {
@@ -589,7 +593,7 @@ export default function AdminPage() {
                       <div key={p} className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">{p}</span>
-                          <span className="text-gray-500">{count} users ({pct}%)</span>
+                          <span className="text-gray-500">{count} {t("admin.users_count")} ({pct}%)</span>
                         </div>
                         <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
@@ -608,7 +612,7 @@ export default function AdminPage() {
               {/* Modality usage */}
               <Card>
                 <div className="px-5 pt-5 pb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Reports by Modality</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.reports_by_modality")}</h3>
                 </div>
                 <CardContent className="pt-0 space-y-2">
                   {stats?.modalityCounts && Object.keys(stats.modalityCounts).length > 0 ? (
@@ -622,7 +626,7 @@ export default function AdminPage() {
                         </div>
                       ))
                   ) : (
-                    <p className="text-xs text-gray-400 py-4 text-center">No reports yet</p>
+                    <p className="text-xs text-gray-400 py-4 text-center">{t("admin.no_reports_yet")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -639,11 +643,11 @@ export default function AdminPage() {
                     {selectedProvider?.label || provider} — {modelName}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {config?.updated_at ? `Updated ${new Date(config.updated_at).toLocaleDateString()}` : "Global AI configuration"}
+                    {config?.updated_at ? `${t("admin.updated")} ${new Date(config.updated_at).toLocaleDateString()}` : t("admin.global_ai_config")}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setTab("ai")} className="text-xs gap-1.5">
-                  <Plug className="h-3 w-3" /> Configure
+                  <Plug className="h-3 w-3" /> {t("admin.configure")}
                 </Button>
               </CardContent>
             </Card>
@@ -655,15 +659,15 @@ export default function AdminPage() {
           <Card>
             <div className="flex items-center gap-2 px-5 pt-5 pb-3">
               <Users className="h-4 w-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">User Management</h2>
-              <Badge variant="secondary" className="text-xs">{radiologists.length} radiologists</Badge>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.user_management")}</h2>
+              <Badge variant="secondary" className="text-xs">{radiologists.length} {t("admin.radiologists")}</Badge>
               <Button
                 size="sm"
                 className="ml-auto gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
                 onClick={() => { setCreateOpen(true); setCreateError(""); }}
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                Add User
+                {t("admin.add_user")}
               </Button>
             </div>
             <CardContent className="pt-0">
@@ -671,14 +675,14 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
-                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Plan</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Reports/mo</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">Dictation/mo</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Total</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Joined</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">Actions</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_user")}</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">{t("admin.th_role")}</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_plan")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_reports_mo")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">{t("admin.th_dictation_mo")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_total")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_joined")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -703,8 +707,8 @@ export default function AdminPage() {
                               className="text-[10px]"
                             >
                               {u.role === "admin" ? (
-                                <span className="flex items-center gap-1"><Shield className="h-2.5 w-2.5" /> Admin</span>
-                              ) : "Radiologist"}
+                                <span className="flex items-center gap-1"><Shield className="h-2.5 w-2.5" /> {t("admin.role_admin")}</span>
+                              ) : t("admin.role_radiologist")}
                             </Badge>
                           </td>
                           <td className="py-3 px-2">
@@ -768,14 +772,14 @@ export default function AdminPage() {
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7"
                                   onClick={() => { setEditUser(u); setEditRole(u.role); setEditPlan(u.subscription_plan || "free"); }}
-                                  title="Edit user"
+                                  title={t("admin.edit_user")}
                                 >
                                   <UserCog className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600"
                                   onClick={() => setDeleteConfirm(u)}
-                                  title="Delete user"
+                                  title={t("admin.delete_user")}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
@@ -799,16 +803,16 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Plug className="h-4 w-4 text-blue-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Default Model & API Keys</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.default_model_keys")}</h2>
               </div>
               <CardContent className="space-y-4 pt-0 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Default provider used for all tasks unless overridden below.
+                  {t("admin.default_provider_desc")}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Provider</Label>
+                    <Label className="text-xs">{t("admin.provider")}</Label>
                     <Select value={provider} onValueChange={(v) => {
                       setProvider(v);
                       const prov = PROVIDERS.find((p) => p.value === v);
@@ -824,28 +828,44 @@ export default function AdminPage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Model</Label>
-                    {selectedProvider && selectedProvider.models.length > 0 ? (
-                      <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {selectedProvider.models.map((m) => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <input type="text" value={modelName}
-                        onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
-                        className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                        placeholder="Model name" />
-                    )}
+                    <Label className="text-xs">{t("admin.model")}</Label>
+                    {(() => {
+                      const base = selectedProvider?.models || [];
+                      const ft = provider === "openai"
+                        ? ftModelsList
+                        : [];
+                      const all = [...base, ...ft];
+                      const inList = !modelName || all.includes(modelName);
+                      return all.length > 0 ? (
+                        <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
+                          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {base.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.standard")}</SelectLabel>
+                              {base.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectGroup>}
+                            {ft.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.fine_tuned")}</SelectLabel>
+                              {ft.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectGroup>}
+                            {!inList && modelName && (
+                              <SelectGroup><SelectLabel className="text-[10px]">{t("admin.current")}</SelectLabel>
+                                <SelectItem value={modelName}>{modelName}</SelectItem>
+                              </SelectGroup>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <input type="text" value={modelName}
+                          onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
+                          className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                          placeholder={t("admin.model_name")} />
+                      );
+                    })()}
                   </div>
                 </div>
 
                 {provider === "custom" && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Custom Base URL</Label>
+                    <Label className="text-xs">{t("admin.custom_base_url")}</Label>
                     <input type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)}
                       className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
                       placeholder="https://your-endpoint.com/v1" />
@@ -854,12 +874,12 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">API Key</Label>
+                    <Label className="text-xs">{t("admin.api_key")}</Label>
                     <div className="relative">
                       <input type={showKey ? "text" : "password"} value={apiKey}
                         onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }}
                         className="w-full h-9 px-3 pr-9 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                        placeholder="API key" />
+                        placeholder={t("admin.api_key")} />
                       <button type="button" onClick={() => setShowKey(!showKey)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                         {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -867,7 +887,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">OpenAI / Whisper Key</Label>
+                    <Label className="text-xs">{t("admin.whisper_key")}</Label>
                     <div className="relative">
                       <input type={showWhisperKey ? "text" : "password"} value={whisperKey}
                         onChange={(e) => setWhisperKey(e.target.value)}
@@ -888,18 +908,18 @@ export default function AdminPage() {
                      testResult === true ? <Check className="h-3.5 w-3.5 text-green-600" /> :
                      testResult === false ? <X className="h-3.5 w-3.5 text-red-500" /> :
                      <Plug className="h-3.5 w-3.5" />}
-                    {testResult === true ? "Connected" : testResult === false ? "Failed" : "Test"}
+                    {testResult === true ? t("admin.connected") : testResult === false ? t("admin.failed") : t("admin.test")}
                   </Button>
                   <Button size="sm" onClick={handleSaveConfig} disabled={saving}
                     className="gap-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white">
                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    Save all
+                    {t("admin.save_all")}
                   </Button>
                 </div>
                 {configError && <p className="text-xs text-red-500">{configError}</p>}
-                {configSuccess && <p className="text-xs text-green-600">Configuration saved.</p>}
+                {configSuccess && <p className="text-xs text-green-600">{t("admin.config_saved")}</p>}
                 {config?.updated_at && (
-                  <p className="text-[11px] text-gray-400">Last updated: {new Date(config.updated_at).toLocaleString()}</p>
+                  <p className="text-[11px] text-gray-400">{t("admin.last_updated")}: {new Date(config.updated_at).toLocaleString()}</p>
                 )}
               </CardContent>
             </Card>
@@ -908,19 +928,18 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Zap className="h-4 w-4 text-amber-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Per-Task Model Overrides</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.per_task_overrides")}</h2>
               </div>
               <CardContent className="pt-0 space-y-3">
                 <p className="text-xs text-gray-500">
-                  Assign a different model to each task. Leave empty to use the default above.
+                  {t("admin.per_task_desc")}
                 </p>
                 {([
-                  { key: "findings" as TaskKey, label: "Findings", desc: "Structured report generation" },
-                  { key: "conclusion" as TaskKey, label: "Conclusion", desc: "Clinical conclusion synthesis" },
-                  { key: "recommendations" as TaskKey, label: "Recommendations", desc: "Guideline-based recommendations" },
-                  { key: "trace" as TaskKey, label: "Traceability", desc: "Dictation ↔ findings verification" },
-                  { key: "dictation_correction" as TaskKey, label: "Dictation Correction", desc: "Real-time speech-to-text error correction (default: gpt-4o-mini)" },
-                  { key: "improve_writing" as TaskKey, label: "Improve Writing", desc: "Light paraphrase / wording improvement tool" },
+                  { key: "findings" as TaskKey, label: t("admin.task_findings"), desc: t("admin.task_findings_desc") },
+                  { key: "conclusion" as TaskKey, label: t("admin.task_conclusion"), desc: t("admin.task_conclusion_desc") },
+                  { key: "trace" as TaskKey, label: t("admin.task_traceability"), desc: t("admin.task_traceability_desc") },
+                  { key: "dictation_correction" as TaskKey, label: t("admin.task_dictation_correction"), desc: t("admin.task_dictation_correction_desc") },
+                  { key: "improve_writing" as TaskKey, label: t("admin.task_improve_writing"), desc: t("admin.task_improve_writing_desc") },
                 ]).map(({ key, label, desc }) => {
                   const isComboOverride = key === "findings" && findingsCombo;
                   const o = taskOverrides[key];
@@ -933,16 +952,16 @@ export default function AdminPage() {
                           <p className="text-[10px] text-gray-400">{desc}</p>
                         </div>
                         {isComboOverride ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Combo active</Badge>
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">{t("admin.combo_active")}</Badge>
                         ) : o.provider && o.model ? (
                           <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] text-gray-400">Default</Badge>
+                          <Badge variant="outline" className="text-[10px] text-gray-400">{t("admin.default")}</Badge>
                         )}
                       </div>
                       {isComboOverride ? (
                         <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                          Managed by Combo pipeline below. Disable combo to set a custom model.
+                          {t("admin.combo_managed")}
                         </p>
                       ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
@@ -958,28 +977,48 @@ export default function AdminPage() {
                         }}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="default">Default</SelectItem>
+                            <SelectItem value="default">{t("admin.default")}</SelectItem>
                             {PROVIDERS.map((p) => (
                               <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         {o.provider ? (
-                          taskProv && taskProv.models.length > 0 ? (
-                            <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
-                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Model" /></SelectTrigger>
-                              <SelectContent>
-                                {taskProv.models.map((m) => (
-                                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <input type="text" value={o.model}
-                              onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
-                              className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                              placeholder="Model name" />
-                          )
+                          (() => {
+                            const baseModels = taskProv?.models || [];
+                            const ftModels = o.provider === "openai"
+                              ? ftModelsList
+                              : [];
+                            const allModels = [...baseModels, ...ftModels];
+                            const currentInList = !o.model || allModels.includes(o.model);
+                            return allModels.length > 0 ? (
+                              <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("admin.model")} /></SelectTrigger>
+                                <SelectContent>
+                                  {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.standard")}</SelectLabel>
+                                    {baseModels.map((m) => (
+                                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                                    ))}
+                                  </SelectGroup>}
+                                  {ftModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.fine_tuned")}</SelectLabel>
+                                    {ftModels.map((m) => (
+                                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                                    ))}
+                                  </SelectGroup>}
+                                  {!currentInList && o.model && (
+                                    <SelectGroup><SelectLabel className="text-[10px]">{t("admin.current")}</SelectLabel>
+                                      <SelectItem value={o.model}>{o.model}</SelectItem>
+                                    </SelectGroup>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <input type="text" value={o.model}
+                                onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
+                                className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                                placeholder={t("admin.model_name")} />
+                            );
+                          })()
                         ) : (
                           <div className="h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                             {modelName}
@@ -1001,7 +1040,7 @@ export default function AdminPage() {
                 {(() => {
                   // Collect all providers in use across task overrides that differ from default
                   const extraProviders = new Set<string>();
-                  for (const task of ["findings", "conclusion", "recommendations", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
+                  for (const task of ["findings", "conclusion", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
                     const p = taskOverrides[task].provider;
                     if (p && p !== provider) extraProviders.add(p);
                   }
@@ -1010,8 +1049,8 @@ export default function AdminPage() {
                     { prov: "claude", label: "Anthropic (Claude)", value: anthropicKey, setter: setAnthropicKey },
                     { prov: "gemini", label: "Google (Gemini)", value: googleKey, setter: setGoogleKey },
                     { prov: "deepseek", label: "DeepSeek", value: deepseekKey, setter: setDeepseekKey },
-                    { prov: "custom", label: "Custom Endpoint", value: customProvKey, setter: setCustomProvKey },
-                    { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: "Uses the Whisper key above" },
+                    { prov: "custom", label: t("admin.custom_endpoint"), value: customProvKey, setter: setCustomProvKey },
+                    { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: t("admin.uses_whisper_key") },
                   ];
 
                   // Show fields only for providers different from the default (main key covers default)
@@ -1023,10 +1062,10 @@ export default function AdminPage() {
                     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
                       <div className="flex items-center gap-2">
                         <Eye className="h-3.5 w-3.5 text-blue-500" />
-                        <Label className="text-xs font-semibold text-gray-900 dark:text-white">Provider API Keys</Label>
+                        <Label className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.provider_api_keys")}</Label>
                       </div>
                       <p className="text-[11px] text-gray-500">
-                        The main API key covers {PROVIDERS.find((p) => p.value === provider)?.label || provider}. Add keys for any other providers used above.
+                        {t("admin.main_key_covers")} {PROVIDERS.find((p) => p.value === provider)?.label || provider}. {t("admin.add_keys_other_providers")}
                       </p>
                       <div className="space-y-2">
                         {toShow.map((k) => {
@@ -1036,7 +1075,7 @@ export default function AdminPage() {
                               <Label className="text-xs text-gray-600 dark:text-gray-400 w-32 flex-shrink-0">{k.label}</Label>
                               {k.hint ? (
                                 <div className="flex-1 h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                                  {isSaved ? "Configured (Whisper key)" : k.hint}
+                                  {isSaved ? t("admin.configured_whisper_key") : k.hint}
                                 </div>
                               ) : (
                                 <>
@@ -1045,13 +1084,13 @@ export default function AdminPage() {
                                     value={k.value}
                                     onChange={(e) => k.setter(e.target.value)}
                                     className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                                    placeholder={isSaved ? "••••••••  (saved)" : "API key"}
+                                    placeholder={isSaved ? `••••••••  (${t("admin.saved")})` : t("admin.api_key")}
                                   />
                                   {k.value && !isSaved && (
                                     <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
                                   )}
                                   {isSaved && (
-                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">Saved</Badge>
+                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.saved")}</Badge>
                                   )}
                                 </>
                               )}
@@ -1069,18 +1108,18 @@ export default function AdminPage() {
             <Card className={findingsCombo ? "ring-2 ring-emerald-500/30" : ""}>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <Shield className="h-4 w-4 text-emerald-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Combo: GPT-4 Mini + DeepSeek V3</h2>
-                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Active</Badge>}
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.combo_title")}</h2>
+                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">{t("admin.active")}</Badge>}
               </div>
               <CardContent className="pt-0 space-y-3 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Two-stage findings pipeline that reduces omissions and hallucinations. Stage 1: GPT-4o-mini maps the dictation to template sections as structured JSON with evidence. Stage 2: DeepSeek V3 validates the mapping, correcting any errors without redoing the full generation.
+                  {t("admin.combo_desc")}
                 </p>
                 <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                   <div>
-                    <p className="text-xs font-semibold text-gray-900 dark:text-white">Enable combo pipeline for Findings</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.enable_combo")}</p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
-                      Overrides the Findings task override above. Requires OpenAI + DeepSeek API keys.
+                      {t("admin.enable_combo_desc")}
                     </p>
                   </div>
                   <Switch checked={findingsCombo} onCheckedChange={setFindingsCombo} />
@@ -1088,24 +1127,24 @@ export default function AdminPage() {
 
                 {findingsCombo && (
                   <div className="space-y-2 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
-                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Pipeline stages</p>
+                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{t("admin.pipeline_stages")}</p>
                     <div className="flex items-start gap-2">
                       <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
                       <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">GPT-4o-mini — Mapper</p>
-                        <p className="text-[10px] text-gray-500">Maps dictation → template sections as structured JSON with evidence links.</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.combo_stage1_title")}</p>
+                        <p className="text-[10px] text-gray-500">{t("admin.combo_stage1_desc")}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">2</div>
                       <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">DeepSeek V3 — Validator</p>
-                        <p className="text-[10px] text-gray-500">Validates mapping against dictation. Corrects omissions, hallucinations, and misattributions only.</p>
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.combo_stage2_title")}</p>
+                        <p className="text-[10px] text-gray-500">{t("admin.combo_stage2_desc")}</p>
                       </div>
                     </div>
                     <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1.5">
                       <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                      Conclusion, recommendations, and traceability use their own configured models — unaffected by this pipeline.
+                      {t("admin.combo_note")}
                     </div>
 
                     {/* Key requirement indicators */}
@@ -1118,13 +1157,13 @@ export default function AdminPage() {
                             <div className="flex items-center gap-1.5 text-[10px]">
                               {hasOpenAI ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
                               <span className={hasOpenAI ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                OpenAI API key {hasOpenAI ? "configured" : "— required (set main key or Whisper key)"}
+                                {t("admin.openai_key")} {hasOpenAI ? t("admin.key_configured") : t("admin.key_required_openai")}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5 text-[10px]">
                               {hasDeepSeek ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
                               <span className={hasDeepSeek ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                DeepSeek API key {hasDeepSeek ? "configured" : "— required (set main key or DeepSeek provider key)"}
+                                {t("admin.deepseek_key")} {hasDeepSeek ? t("admin.key_configured") : t("admin.key_required_deepseek")}
                               </span>
                             </div>
                           </>
@@ -1140,44 +1179,44 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <GraduationCap className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Fine-Tuning (OpenAI)</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.fine_tuning_title")}</h2>
               </div>
               <CardContent className="pt-0 space-y-4 max-w-xl">
                 <p className="text-xs text-gray-500">
-                  Upload JSONL training examples, start a fine-tuning job, then assign the resulting model to any task above.
+                  {t("admin.fine_tuning_desc")}
                 </p>
 
                 {/* Step 1: Upload */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">1. Upload training data</Label>
+                  <Label className="text-xs font-semibold">{t("admin.ft_step1")}</Label>
                   <div className="flex gap-2">
                     <label className="flex-1 flex items-center justify-center gap-2 h-9 px-3 border-2 border-dashed rounded-md cursor-pointer text-xs text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors dark:border-gray-700 dark:hover:border-purple-500">
                       <Upload className="h-3.5 w-3.5" />
-                      {ftUploading ? "Uploading..." : ftFileId ? `${ftExamples} examples ready` : "Choose .jsonl file"}
+                      {ftUploading ? t("admin.ft_uploading") : ftFileId ? `${ftExamples} ${t("admin.ft_examples_ready")}` : t("admin.ft_choose_file")}
                       <input type="file" accept=".jsonl,.txt,.json" className="hidden"
                         onChange={(e) => { if (e.target.files?.[0]) handleFtUpload(e.target.files[0]); }} />
                     </label>
                   </div>
-                  {ftFileId && <p className="text-[10px] text-green-600">File uploaded: {ftFileId}</p>}
+                  {ftFileId && <p className="text-[10px] text-green-600">{t("admin.ft_file_uploaded")}: {ftFileId}</p>}
                 </div>
 
                 {/* Step 2: Configure & start */}
                 {ftFileId && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">2. Configure & start job</Label>
+                    <Label className="text-xs font-semibold">{t("admin.ft_step2")}</Label>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Base model</Label>
+                        <Label className="text-[10px] text-gray-400">{t("admin.ft_base_model")}</Label>
                         <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini (recommended)</SelectItem>
-                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o (higher quality)</SelectItem>
+                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini ({t("admin.ft_recommended")})</SelectItem>
+                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o ({t("admin.ft_higher_quality")})</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Suffix</Label>
+                        <Label className="text-[10px] text-gray-400">{t("admin.ft_suffix")}</Label>
                         <input type="text" value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)}
                           className="w-full h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
                           placeholder="radiogenai" />
@@ -1186,7 +1225,7 @@ export default function AdminPage() {
                     <Button size="sm" onClick={handleFtStart} disabled={ftStarting}
                       className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white">
                       {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                      Start fine-tuning
+                      {t("admin.ft_start")}
                     </Button>
                   </div>
                 )}
@@ -1196,7 +1235,7 @@ export default function AdminPage() {
                 {/* Step 3: Jobs list */}
                 {ftJobs.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Fine-tuning jobs</Label>
+                    <Label className="text-xs font-semibold">{t("admin.ft_jobs")}</Label>
                     <div className="space-y-1.5">
                       {ftJobs.map((job) => (
                         <div key={job.jobId} className="flex items-center gap-2 p-2 rounded-md border text-xs dark:border-gray-700">
@@ -1223,7 +1262,7 @@ export default function AdminPage() {
                       ))}
                     </div>
                     <p className="text-[10px] text-gray-400">
-                      Once a job succeeds, copy the fine-tuned model name and assign it to any task above.
+                      {t("admin.ft_jobs_hint")}
                     </p>
                   </div>
                 )}
@@ -1245,30 +1284,30 @@ export default function AdminPage() {
                     <CardContent className="p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-gray-900 dark:text-white">{plan.label}</h3>
-                        <Badge variant="secondary" className="text-xs">{count} users</Badge>
+                        <Badge variant="secondary" className="text-xs">{count} {t("admin.users_count")}</Badge>
                       </div>
                       <div className="flex items-baseline gap-1">
                         {plan.price === 0 ? (
-                          <span className="text-2xl font-bold text-gray-900 dark:text-white">Free</span>
+                          <span className="text-2xl font-bold text-gray-900 dark:text-white">{t("admin.free")}</span>
                         ) : (
                           <>
                             <span className="text-2xl font-bold text-gray-900 dark:text-white">&euro;{plan.price}</span>
-                            <span className="text-xs text-gray-500">/month</span>
+                            <span className="text-xs text-gray-500">/{t("admin.month")}</span>
                           </>
                         )}
                       </div>
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>{plan.reports} reports/month</p>
-                        <p>~{plan.tokensPerReport.toLocaleString()} tokens/report</p>
-                        <p>Cost/report: ~$0.005</p>
+                        <p>{plan.reports} {t("admin.reports_per_month")}</p>
+                        <p>~{plan.tokensPerReport.toLocaleString()} {t("admin.tokens_per_report")}</p>
+                        <p>{t("admin.cost_per_report")}: ~$0.005</p>
                       </div>
                       <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-500">Revenue</span>
+                          <span className="text-gray-500">{t("admin.revenue")}</span>
                           <span className="font-semibold text-gray-900 dark:text-white">${revenue.toFixed(2)}/mo</span>
                         </div>
                         <div className="flex items-center justify-between text-xs mt-1">
-                          <span className="text-gray-500">AI cost</span>
+                          <span className="text-gray-500">{t("admin.ai_cost")}</span>
                           <span className="text-gray-600 dark:text-gray-400">~${(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
                         </div>
                       </div>
@@ -1280,25 +1319,25 @@ export default function AdminPage() {
 
             <Card>
               <CardContent className="p-5">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Token Economics</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t("admin.token_economics")}</h3>
                 <div className="grid md:grid-cols-3 gap-4 text-xs text-gray-600 dark:text-gray-400">
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">Per Report</p>
-                    <p>~8,000 input tokens</p>
-                    <p>~2,000 output tokens</p>
-                    <p>Total: ~10,000 tokens</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.per_report")}</p>
+                    <p>~8,000 {t("admin.input_tokens")}</p>
+                    <p>~2,000 {t("admin.output_tokens")}</p>
+                    <p>{t("admin.total")}: ~10,000 tokens</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">DeepSeek Pricing</p>
-                    <p>Input: $0.27/M tokens</p>
-                    <p>Output: $1.10/M tokens</p>
-                    <p>Per report: ~$0.004-0.005</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.deepseek_pricing")}</p>
+                    <p>{t("admin.input")}: $0.27/M tokens</p>
+                    <p>{t("admin.output")}: $1.10/M tokens</p>
+                    <p>{t("admin.per_report")}: ~$0.004-0.005</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">Margins</p>
-                    <p>Free: marketing cost (~$0.03/user/mo)</p>
-                    <p>Starter: ~87% margin</p>
-                    <p>Professional: ~75% margin</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.margins")}</p>
+                    <p>Free: {t("admin.marketing_cost")} (~$0.03/{t("admin.user_mo")})</p>
+                    <p>Starter: ~87% {t("admin.margin")}</p>
+                    <p>Professional: ~75% {t("admin.margin")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1315,14 +1354,20 @@ export default function AdminPage() {
         {/* ═══ SUPPORT ═══ */}
         {tab === "support" && <AdminSupportTab />}
 
+        {/* ═══ WAITLIST ═══ */}
+        {tab === "waitlist" && <AdminWaitlistTab />}
+
+        {/* ═══ COSTS ═══ */}
+        {tab === "costs" && <AdminCostsTab />}
+
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (
           <div className="space-y-4">
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <ClipboardList className="h-4 w-4 text-blue-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Audit Logs</h2>
-                <Badge variant="secondary" className="text-xs">{auditLogs.length} entries</Badge>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.audit_logs")}</h2>
+                <Badge variant="secondary" className="text-xs">{auditLogs.length} {t("admin.entries")}</Badge>
                 <div className="ml-auto flex gap-1">
                   {["all", "generate_findings", "generate_conclusion", "correction_logged", "save_report", "report_error"].map((f) => (
                     <Button
@@ -1332,7 +1377,7 @@ export default function AdminPage() {
                       className="h-7 text-xs"
                       onClick={() => setAuditFilter(f)}
                     >
-                      {f === "all" ? "All" : f === "generate_findings" ? "Findings" : f === "generate_conclusion" ? "Conclusions" : f === "correction_logged" ? "Corrections" : f === "save_report" ? "Saves" : "Errors"}
+                      {f === "all" ? t("admin.filter_all") : f === "generate_findings" ? t("admin.filter_findings") : f === "generate_conclusion" ? t("admin.filter_conclusions") : f === "correction_logged" ? t("admin.filter_corrections") : f === "save_report" ? t("admin.filter_saves") : t("admin.filter_errors")}
                     </Button>
                   ))}
                 </div>
@@ -1342,12 +1387,12 @@ export default function AdminPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-gray-800">
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Date</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">User</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Action</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Provider / Model</th>
-                        <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">Duration</th>
-                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Details</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_date")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_user")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_action")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_provider_model")}</th>
+                        <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_duration")}</th>
+                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_details")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1380,16 +1425,16 @@ export default function AdminPage() {
                                   className={`text-[10px] ${isCorrection ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : ""}`}
                                 >
                                   {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
-                                  {isCorrection ? "correction" : log.action.replace(/_/g, " ")}
+                                  {isCorrection ? t("admin.correction") : log.action.replace(/_/g, " ")}
                                 </Badge>
                                 {log.had_corrections && !isCorrection && (
-                                  <Badge variant="outline" className="text-[10px] ml-1">edited</Badge>
+                                  <Badge variant="outline" className="text-[10px] ml-1">{t("admin.edited")}</Badge>
                                 )}
                                 {isCorrection && !!meta?.conclusion_changed && (
-                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">conclusion</Badge>
+                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.conclusion_label")}</Badge>
                                 )}
                                 {isCorrection && !!meta?.findings_changed && (
-                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">findings</Badge>
+                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">{t("admin.findings_label")}</Badge>
                                 )}
                               </span>
                               <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:inline w-[140px] shrink-0">
@@ -1405,7 +1450,7 @@ export default function AdminPage() {
                                     const parts: string[] = [];
                                     if (meta?.study_type) parts.push(String(meta.study_type));
                                     if (meta?.modality) parts.push(String(meta.modality));
-                                    return parts.length > 0 ? parts.join(" · ") : "Radiologist correction";
+                                    return parts.length > 0 ? parts.join(" · ") : t("admin.radiologist_correction");
                                   }
                                   const parts: string[] = [];
                                   if (meta?.study_type) parts.push(String(meta.study_type));
@@ -1426,21 +1471,21 @@ export default function AdminPage() {
                               <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
                                 {!!meta?.note && (
                                   <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                                    <span className="font-medium">Error report:</span> {String(meta.note)}
+                                    <span className="font-medium">{t("admin.error_report")}:</span> {String(meta.note)}
                                   </div>
                                 )}
 
                                 {hasTraceIssues && (
                                   <div className="flex gap-3 text-xs">
-                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} matched</Badge>
+                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} {t("admin.matched")}</Badge>
                                     {(Number(meta.trace_unmatched) || 0) > 0 && (
                                       <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                                        {Number(meta.trace_unmatched)} omissions
+                                        {Number(meta.trace_unmatched)} {t("admin.omissions")}
                                       </Badge>
                                     )}
                                     {(Number(meta.trace_hallucinations) || 0) > 0 && (
                                       <Badge variant="destructive" className="text-[10px]">
-                                        {Number(meta.trace_hallucinations)} hallucinations
+                                        {Number(meta.trace_hallucinations)} {t("admin.hallucinations")}
                                       </Badge>
                                     )}
                                   </div>
@@ -1448,7 +1493,7 @@ export default function AdminPage() {
 
                                 {!!meta?.raw_dictation && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Dictation input</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.dictation_input")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.raw_dictation)}
                                     </pre>
@@ -1457,7 +1502,7 @@ export default function AdminPage() {
 
                                 {!!meta?.generated_findings && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Generated findings</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.generated_findings")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                       {String(meta.generated_findings)}
                                     </pre>
@@ -1466,7 +1511,7 @@ export default function AdminPage() {
 
                                 {!!meta?.generated_conclusion && !isCorrection && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">Generated conclusion</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">{t("admin.generated_conclusion")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.generated_conclusion)}
                                     </pre>
@@ -1476,13 +1521,13 @@ export default function AdminPage() {
                                 {isCorrection && !!meta?.conclusion_changed && (
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original conclusion (AI)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_conclusion_ai")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.original_conclusion || "—")}
                                       </pre>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">Corrected conclusion (radiologist)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.corrected_conclusion_rad")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-blue-200 dark:border-blue-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.corrected_conclusion || "—")}
                                       </pre>
@@ -1493,13 +1538,13 @@ export default function AdminPage() {
                                 {isCorrection && !!meta?.findings_changed && (
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Original findings (AI)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_findings_ai")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.original_findings || "—")}
                                       </pre>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">Corrected findings (radiologist)</p>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">{t("admin.corrected_findings_rad")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-purple-200 dark:border-purple-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.corrected_findings || "—")}
                                       </pre>
@@ -1515,7 +1560,7 @@ export default function AdminPage() {
                       {auditLogs.filter((l) => auditFilter === "all" || l.action === auditFilter).length === 0 && (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
-                            No audit logs yet
+                            {t("admin.no_audit_logs")}
                           </td>
                         </tr>
                       )}
@@ -1529,13 +1574,13 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
                 <Database className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Training Data</h2>
-                <Badge variant="secondary" className="text-xs">{trainingData.length} reports</Badge>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.training_data")}</h2>
+                <Badge variant="secondary" className="text-xs">{trainingData.length} {t("admin.reports")}</Badge>
                 <div className="ml-auto flex flex-wrap gap-1.5 items-center">
                   <Select value={trainingModality} onValueChange={(v) => setTrainingModality(v)}>
                     <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All modalities</SelectItem>
+                      <SelectItem value="all">{t("admin.all_modalities")}</SelectItem>
                       <SelectItem value="CT">CT</SelectItem>
                       <SelectItem value="MRI">MRI</SelectItem>
                       <SelectItem value="XRay">XRay</SelectItem>
@@ -1550,33 +1595,33 @@ export default function AdminPage() {
                       onChange={(e) => setTrainingCorrectionsOnly(e.target.checked)}
                       className="rounded border-gray-300"
                     />
-                    Corrections only
+                    {t("admin.corrections_only")}
                   </label>
                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadTrainingData} disabled={trainingLoading}>
                     {trainingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    Load
+                    {t("admin.load")}
                   </Button>
                   <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportJsonl} disabled={exporting || trainingData.length === 0}>
                     {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                    Export JSONL
+                    {t("admin.export_jsonl")}
                   </Button>
                 </div>
               </div>
               <CardContent className="pt-0">
                 {trainingError && (
                   <div className="mb-3 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                    <span className="font-medium">Error loading training data:</span> {trainingError}
+                    <span className="font-medium">{t("admin.error_loading_training")}:</span> {trainingError}
                   </div>
                 )}
                 {trainingLoading ? (
                   <div className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400 mb-2" />
-                    <p className="text-xs text-gray-400">Loading training data...</p>
+                    <p className="text-xs text-gray-400">{t("admin.loading_training_data")}</p>
                   </div>
                 ) : trainingData.length === 0 && !trainingError ? (
                   <div className="text-center py-8 text-gray-400 text-xs">
                     <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    No training data yet — reports are saved automatically when radiologists generate reports
+                    {t("admin.no_training_data")}
                   </div>
                 ) : trainingData.length === 0 ? null : (
                   <div className="space-y-2">
@@ -1595,8 +1640,8 @@ export default function AdminPage() {
                             <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                               <Badge variant="secondary" className="text-[10px]">{r.modality}</Badge>
                               <span className="text-xs font-medium text-gray-900 dark:text-white truncate">{r.study_type}</span>
-                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">corrected</Badge>}
-                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />error</Badge>}
+                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.corrected")}</Badge>}
+                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />{t("admin.error")}</Badge>}
                             </div>
                             <span className="text-[10px] text-gray-400 shrink-0">
                               {r.user_name || r.user_email || "—"} · {new Date(r.created_at).toLocaleDateString()}
@@ -1607,12 +1652,12 @@ export default function AdminPage() {
                             <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
                               {r.error_report_note && (
                                 <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                                  <span className="font-medium">Error report:</span> {r.error_report_note}
+                                  <span className="font-medium">{t("admin.error_report")}:</span> {r.error_report_note}
                                 </div>
                               )}
 
                               <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Input (dictation + clinical context)</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.input_dictation_context")}</p>
                                 {r.clinical_context && (
                                   <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-20 overflow-y-auto mb-1.5 text-gray-500">{r.clinical_context}</pre>
                                 )}
@@ -1622,7 +1667,7 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                 <div>
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">
-                                    AI Generated {findingsChanged && <span className="text-amber-500 normal-case">(modified by radiologist)</span>}
+                                    {t("admin.ai_generated")} {findingsChanged && <span className="text-amber-500 normal-case">({t("admin.modified_by_rad")})</span>}
                                   </p>
                                   <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
 {r.initial_findings_text || r.findings_text || "—"}
@@ -1632,7 +1677,7 @@ export default function AdminPage() {
                                 </div>
                                 <div>
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">
-                                    Final Report {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">(corrected)</span>}
+                                    {t("admin.final_report")} {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">({t("admin.corrected")})</span>}
                                   </p>
                                   <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
 {r.findings_text || "—"}
@@ -1643,8 +1688,8 @@ export default function AdminPage() {
                               </div>
 
                               <div className="flex gap-3 text-[10px] text-gray-400">
-                                {r.provider_used && <span>Provider: {r.provider_used}</span>}
-                                {r.model_used && <span>Model: {r.model_used}</span>}
+                                {r.provider_used && <span>{t("admin.provider")}: {r.provider_used}</span>}
+                                {r.model_used && <span>{t("admin.model")}: {r.model_used}</span>}
                               </div>
                             </div>
                           )}
@@ -1663,7 +1708,7 @@ export default function AdminPage() {
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>{t("admin.edit_user")}</DialogTitle>
           </DialogHeader>
           {editUser && (
             <div className="space-y-4">
@@ -1672,30 +1717,30 @@ export default function AdminPage() {
                 <p className="text-xs text-gray-500">{editUser.email}</p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Role</Label>
+                <Label className="text-xs">{t("admin.role")}</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="radiologist">Radiologist</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="radiologist">{t("admin.role_radiologist")}</SelectItem>
+                    <SelectItem value="admin">{t("admin.role_admin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Subscription Plan</Label>
+                <Label className="text-xs">{t("admin.subscription_plan")}</Label>
                 <Select value={editPlan} onValueChange={setEditPlan}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="free">Free (30 reports/mo)</SelectItem>
-                    <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
-                    <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
+                    <SelectItem value="free">{t("admin.plan_free")}</SelectItem>
+                    <SelectItem value="starter">{t("admin.plan_starter")}</SelectItem>
+                    <SelectItem value="professional">{t("admin.plan_professional")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setEditUser(null)}>Cancel</Button>
+                <Button variant="outline" className="flex-1" onClick={() => setEditUser(null)}>{t("cancel")}</Button>
                 <Button className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white" onClick={handleSaveUser} disabled={savingUser}>
-                  {savingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                  {savingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
                 </Button>
               </div>
             </div>
@@ -1707,17 +1752,17 @@ export default function AdminPage() {
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle>{t("admin.delete_user")}</DialogTitle>
           </DialogHeader>
           {deleteConfirm && (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-white">{deleteConfirm.email}</span>?
-                This will remove all their data including reports, templates, and recommendations.
+                {t("admin.delete_user_confirm")} <span className="font-semibold text-gray-900 dark:text-white">{deleteConfirm.email}</span>?
+                {t("admin.delete_user_warning")}
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-                <Button variant="destructive" className="flex-1" onClick={handleDeleteUser}>Delete</Button>
+                <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirm(null)}>{t("cancel")}</Button>
+                <Button variant="destructive" className="flex-1" onClick={handleDeleteUser}>{t("delete")}</Button>
               </div>
             </div>
           )}
@@ -1728,11 +1773,11 @@ export default function AdminPage() {
       <Dialog open={createOpen} onOpenChange={(open) => { if (!open) setCreateOpen(false); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Add User</DialogTitle>
+            <DialogTitle>{t("admin.add_user")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Email</Label>
+              <Label className="text-xs">{t("admin.email")}</Label>
               <Input
                 type="email"
                 placeholder="user@example.com"
@@ -1741,22 +1786,22 @@ export default function AdminPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Password</Label>
+              <Label className="text-xs">{t("admin.password")}</Label>
               <Input
                 type="password"
-                placeholder="Min. 6 characters"
+                placeholder={t("admin.min_6_chars")}
                 value={createPassword}
                 onChange={(e) => setCreatePassword(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Plan</Label>
+              <Label className="text-xs">{t("admin.plan")}</Label>
               <Select value={createPlan} onValueChange={setCreatePlan}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free (50 reports/mo)</SelectItem>
-                  <SelectItem value="starter">Starter — $7.99 (150 reports/mo)</SelectItem>
-                  <SelectItem value="professional">Professional — $15.99 (400 reports/mo)</SelectItem>
+                  <SelectItem value="free">{t("admin.plan_free")}</SelectItem>
+                  <SelectItem value="starter">{t("admin.plan_starter")}</SelectItem>
+                  <SelectItem value="professional">{t("admin.plan_professional")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1766,13 +1811,13 @@ export default function AdminPage() {
               </p>
             )}
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>{t("cancel")}</Button>
               <Button
                 className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white"
                 onClick={handleCreateUser}
                 disabled={creatingUser}
               >
-                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : t("admin.create")}
               </Button>
             </div>
           </div>

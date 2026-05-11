@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
 
     if (existingProfile) {
       userId = existingProfile.id;
+      await service.from("profiles").update({ approved: true }).eq("id", userId);
     } else {
       // Create new user account
       if (!password || password.length < 6) {
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
         name: name?.trim() || "",
         role: "radiologist",
         subscription_plan: "free",
+        approved: true,
       });
 
       // Ensure model config exists
