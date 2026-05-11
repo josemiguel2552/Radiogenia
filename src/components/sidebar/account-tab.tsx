@@ -444,3 +444,54 @@ export function AccountTab() {
     </div>
   );
 }
+
+export function PasswordSection() {
+  const t = useT();
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleChange = useCallback(async () => {
+    setMsg(null);
+    if (newPw.length < 6) { setMsg({ ok: false, text: t("account.pw_min_length") }); return; }
+    if (newPw !== confirmPw) { setMsg({ ok: false, text: t("account.pw_mismatch") }); return; }
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email || "",
+        password: currentPw,
+      });
+      if (signInError) { setMsg({ ok: false, text: t("account.pw_current_wrong") }); setLoading(false); return; }
+      const { error } = await supabase.auth.updateUser({ password: newPw });
+      if (error) { setMsg({ ok: false, text: error.message }); }
+      else { setMsg({ ok: true, text: t("account.pw_changed") }); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }
+    } catch { setMsg({ ok: false, text: t("gen_error") }); }
+    setLoading(false);
+  }, [currentPw, newPw, confirmPw, t]);
+
+  return (
+    <div>
+      <h4 className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+        <Lock className="h-3.5 w-3.5" />
+        {t("account.change_password")}
+      </h4>
+      <div className="space-y-2">
+        <Input type="password" placeholder={t("account.current_password")} value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} className="h-8 text-xs" />
+        <Input type="password" placeholder={t("account.new_password")} value={newPw} onChange={(e) => setNewPw(e.target.value)} className="h-8 text-xs" />
+        <Input type="password" placeholder={t("account.confirm_password")} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} className="h-8 text-xs" />
+        {msg && (
+          <p className={`text-[11px] ${msg.ok ? "text-green-600" : "text-red-500"}`}>
+            {msg.ok ? <Check className="inline h-3 w-3 mr-1" /> : <AlertTriangle className="inline h-3 w-3 mr-1" />}
+            {msg.text}
+          </p>
+        )}
+        <Button size="sm" className="text-xs w-full" onClick={handleChange} disabled={loading || !currentPw || !newPw || !confirmPw}>
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("account.update_password")}
+        </Button>
+      </div>
+    </div>
+  );
+}
