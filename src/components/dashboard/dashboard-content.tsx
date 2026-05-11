@@ -48,6 +48,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { ResidentVerificationForm } from "@/components/resident-verification-form";
 import { RecommendationPanel } from "./recommendation-panel";
+import { SelectionHighlight } from "@/components/ui/selection-highlight";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -84,6 +85,7 @@ export function DashboardContent() {
   const resolvedDictLangRef = useRef("");
   const [dictSelRange, setDictSelRange] = useState<{ start: number; end: number } | null>(null);
   const dictSelRangeRef = useRef<{ start: number; end: number } | null>(null);
+  const dictTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Report output state
   const [findings, setFindings] = useState("");
@@ -1286,6 +1288,7 @@ export function DashboardContent() {
               </div>
               <div className="relative">
                 <Textarea
+                  ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
@@ -1299,6 +1302,7 @@ export function DashboardContent() {
                   }}
                   className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
                 />
+                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"
@@ -1565,6 +1569,7 @@ export function DashboardContent() {
               </div>
               <div className="relative">
                 <Textarea
+                  ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
@@ -1578,6 +1583,7 @@ export function DashboardContent() {
                   }}
                   className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
                 />
+                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"
