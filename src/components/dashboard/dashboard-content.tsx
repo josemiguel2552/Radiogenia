@@ -520,6 +520,7 @@ export function DashboardContent() {
         if (cfgRes.ok) {
           const cfg = await cfgRes.json();
           if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+          if (cfg.output_language) setOutputLanguage(cfg.output_language);
           if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
         }
       } catch { /* ignore */ }
@@ -641,6 +642,7 @@ export function DashboardContent() {
           studyType: studyName,
           ...(lightParaphrase ? { paraphraseOverride: "light" } : {}),
           reportMode: mode,
+          outputLanguage,
         }),
       });
 
@@ -753,6 +755,7 @@ export function DashboardContent() {
             modality: selectedTemplate.modality,
             studyType: studyName,
             conclusionStyle: style,
+            outputLanguage,
           }),
         });
 

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode } = await req.json();
+    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       findings_length: config?.findings_length || "standard",
       normal_fields_verbosity: config?.normal_fields_verbosity || "standard",
       paraphrase_level: paraphraseOverride || config?.paraphrase_level || "light",
-      output_language: config?.output_language || "es",
+      output_language: reqLang || config?.output_language || "es",
       style_learning_enabled: config?.style_learning_enabled ?? true,
       compact_normals: reportMode === "compact" || (compactOverride !== undefined ? compactOverride : (config?.compact_normals ?? false)),
       dictation_only: reportMode === "dictation_only",
