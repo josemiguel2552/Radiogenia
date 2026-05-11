@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import {
   Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
-  ExternalLink, X, Zap, FileText, Mic, TrendingUp, User,
+  ExternalLink, X, Zap, FileText, Mic, TrendingUp, User, Download, Receipt,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +31,22 @@ interface SubInfo {
     remainingMinutes: number;
   };
 }
+
+interface BillingDetails {
+  paymentMethod: { brand: string; last4: string; expMonth: number; expYear: number } | null;
+  nextInvoice: { amountDue: number; currency: string; dueDate: string | null } | null;
+  invoices: { id: string; date: string; amount: number; currency: string; pdf: string | null; status: string }[];
+}
+
+const CARD_BRANDS: Record<string, string> = {
+  visa: "Visa",
+  mastercard: "Mastercard",
+  amex: "Amex",
+  discover: "Discover",
+  diners: "Diners",
+  jcb: "JCB",
+  unionpay: "UnionPay",
+};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
@@ -61,6 +77,8 @@ export function AccountTab() {
   const [planChangeLoading, setPlanChangeLoading] = useState(false);
   const [planMsg, setPlanMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [billing, setBilling] = useState<BillingDetails | null>(null);
+  const [billingLoading, setBillingLoading] = useState(true);
 
   const loadSub = useCallback(async () => {
     try {
@@ -70,12 +88,21 @@ export function AccountTab() {
     setSubLoading(false);
   }, []);
 
+  const loadBilling = useCallback(async () => {
+    try {
+      const res = await fetch("/api/billing/details");
+      if (res.ok) setBilling(await res.json());
+    } catch { /* ignore */ }
+    setBillingLoading(false);
+  }, []);
+
   useEffect(() => {
     loadSub();
+    loadBilling();
     createClient().auth.getUser().then(({ data }) => {
       if (data.user?.email) setUserEmail(data.user.email);
     });
-  }, [loadSub]);
+  }, [loadSub, loadBilling]);
 
   const handlePasswordChange = useCallback(async () => {
     setPwMsg(null);
@@ -282,18 +309,15 @@ export function AccountTab() {
             </CardContent>
           </Card>
 
-          {/* Payment */}
+          {/* Billing & Payment */}
           <Card>
-            <CardContent className="p-5">
+            <CardContent className="p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
                     <CreditCard className="h-5 w-5 text-purple-500" />
                   </div>
-                  <div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.manage_payment")}</span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Stripe</p>
-                  </div>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.billing_payment")}</span>
                 </div>
                 <Button
                   variant="outline"
@@ -312,6 +336,125 @@ export function AccountTab() {
                   )}
                 </Button>
               </div>
+
+              {/* Payment method + next charge row */}
+              {billingLoading ? (
+                <div className="flex justify-center py-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Card on file */}
+                  <div className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CreditCard className="h-4 w-4 text-purple-500" />
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.card_on_file")}</span>
+                    </div>
+                    {billing?.paymentMethod ? (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {CARD_BRANDS[billing.paymentMethod.brand] || billing.paymentMethod.brand.toUpperCase()} •••• {billing.paymentMethod.last4}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t("account.expires")} {String(billing.paymentMethod.expMonth).padStart(2, "0")}/{billing.paymentMethod.expYear}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-gray-400 dark:text-gray-500">{t("account.no_payment_method")}</p>
+                        <button
+                          type="button"
+                          onClick={openBillingPortal}
+                          className="text-xs text-brand hover:underline mt-1"
+                        >
+                          {t("account.add_payment_method")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Next charge */}
+                  <div className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CalendarClock className="h-4 w-4 text-purple-500" />
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.next_charge")}</span>
+                    </div>
+                    {billing?.nextInvoice ? (
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {billing.nextInvoice.currency === "usd" ? "$" : billing.nextInvoice.currency.toUpperCase() + " "}
+                          {billing.nextInvoice.amountDue.toFixed(2)}
+                        </p>
+                        {billing.nextInvoice.dueDate && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {t("account.on_date").replace("{date}", formatDate(billing.nextInvoice.dueDate))}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Invoice history */}
+              {!billingLoading && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-gray-400" />
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.invoices")}</span>
+                    </div>
+                    {billing && billing.invoices.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={openBillingPortal}
+                        className="text-[11px] text-brand hover:underline flex items-center gap-1"
+                      >
+                        {t("account.view_all_invoices")}
+                        <ExternalLink className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  {billing && billing.invoices.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {billing.invoices.slice(0, 5).map((inv) => (
+                        <div
+                          key={inv.id}
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/30"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                            <div>
+                              <p className="text-xs font-medium text-gray-900 dark:text-white">
+                                {inv.currency === "usd" ? "$" : inv.currency.toUpperCase() + " "}
+                                {inv.amount.toFixed(2)}
+                              </p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                {formatDate(inv.date)}
+                              </p>
+                            </div>
+                          </div>
+                          {inv.pdf && (
+                            <a
+                              href={inv.pdf}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[11px] text-brand hover:underline shrink-0"
+                            >
+                              <Download className="h-3 w-3" />
+                              PDF
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 py-2">{t("account.no_invoices")}</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </>
