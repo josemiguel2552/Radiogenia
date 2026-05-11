@@ -83,6 +83,7 @@ export function DashboardContent() {
   const selectedTemplateIdRef = useRef(selectedTemplateId);
   const resolvedDictLangRef = useRef("");
   const [dictSelRange, setDictSelRange] = useState<{ start: number; end: number } | null>(null);
+  const dictSelRangeRef = useRef<{ start: number; end: number } | null>(null);
 
   // Report output state
   const [findings, setFindings] = useState("");
@@ -284,12 +285,14 @@ export function DashboardContent() {
   const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
     onTranscript: (rawText) => {
-      const text = processVoiceCommands(rawText, resolvedDictLang);
+      const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
       setDictation((prev) => {
-        if (dictSelRange && dictSelRange.start !== dictSelRange.end) {
-          const before = prev.slice(0, dictSelRange.start);
-          const after = prev.slice(dictSelRange.end);
+        const sel = dictSelRangeRef.current;
+        if (sel && sel.start !== sel.end) {
+          const before = prev.slice(0, sel.start);
+          const after = prev.slice(sel.end);
           setDictSelRange(null);
+          dictSelRangeRef.current = null;
           return before + text + after;
         }
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
@@ -342,6 +345,7 @@ export function DashboardContent() {
   useEffect(() => { templatesRef.current = templates; }, [templates]);
   useEffect(() => { selectedTemplateIdRef.current = selectedTemplateId; }, [selectedTemplateId]);
   useEffect(() => { resolvedDictLangRef.current = resolvedDictLang; }, [resolvedDictLang]);
+  useEffect(() => { dictSelRangeRef.current = dictSelRange; }, [dictSelRange]);
 
   // PII detection — debounced on dictation + clinical info changes
   useEffect(() => {
