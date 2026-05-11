@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle } = await req.json();
+    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang } = await req.json();
 
     const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const outputLanguage = config?.output_language || "es";
+    const outputLanguage = reqLang || config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
     const rawStyle = reqStyle || config?.conclusion_style || "grouped";
     const conclusionStyle = (rawStyle === "detailed" ? "grouped" : rawStyle) as ConclusionStyle;
@@ -121,6 +121,7 @@ export async function POST(req: NextRequest) {
     return new Response(passthrough, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
+        "X-Output-Language": outputLanguage,
       },
     });
   } catch (error) {
