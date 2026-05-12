@@ -19,15 +19,27 @@ export async function GET() {
     const service = createServiceClient();
     const { data: profile } = await service
       .from("profiles")
-      .select("subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, pending_plan, pending_plan_effective_date, stripe_customer_id, stripe_subscription_id, referral_bonus_expires_at")
+      .select("subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, pending_plan, pending_plan_effective_date, stripe_customer_id")
       .eq("id", user.id)
       .single();
 
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-    const bonusExpired = profile.referral_bonus_expires_at
-      && new Date(profile.referral_bonus_expires_at).getTime() <= Date.now();
-    const hasPaidSub = !!profile.stripe_subscription_id;
+    let referralBonusExpires: string | null = null;
+    let stripeSubId: string | null = null;
+    try {
+      const { data: extra } = await service
+        .from("profiles")
+        .select("referral_bonus_expires_at, stripe_subscription_id")
+        .eq("id", user.id)
+        .single();
+      referralBonusExpires = extra?.referral_bonus_expires_at ?? null;
+      stripeSubId = extra?.stripe_subscription_id ?? null;
+    } catch { /* columns may not exist yet */ }
+
+    const bonusExpired = referralBonusExpires
+      && new Date(referralBonusExpires).getTime() <= Date.now();
+    const hasPaidSub = !!stripeSubId;
 
     if (bonusExpired && !hasPaidSub && profile.subscription_plan !== "free") {
       await service
