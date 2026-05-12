@@ -158,7 +158,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "invite.invalid_code": "Este código de invitación no es válido.",
     "invite.code_exhausted": "Este código de invitación ya ha sido usado el máximo de veces.",
     "invite.success_title": "¡Cuenta creada!",
-    "invite.success_desc": "Tu plan Starter está activo. Revisa tu email para confirmar tu cuenta y luego inicia sesión.",
+    "invite.success_desc": "Tu cuenta ha sido creada. Revisa tu email para confirmarla. Te notificaremos cuando tu acceso sea aprobado.",
     "invite.error_generic": "Error al crear la cuenta. Inténtalo de nuevo.",
     "invite.google": "Registrarse con Google",
     // Auth - Forgot password
@@ -348,7 +348,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "invite.invalid_code": "This invitation code is not valid.",
     "invite.code_exhausted": "This invitation code has been used the maximum number of times.",
     "invite.success_title": "Account created!",
-    "invite.success_desc": "Your Starter plan is active. Check your email to confirm your account, then sign in.",
+    "invite.success_desc": "Your account has been created. Check your email to confirm it. We'll notify you when your access is approved.",
     "invite.error_generic": "Error creating account. Please try again.",
     "invite.google": "Sign up with Google",
     // Auth - Forgot password
@@ -538,7 +538,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "invite.invalid_code": "Este código de convite não é válido.",
     "invite.code_exhausted": "Este código de convite já foi usado o máximo de vezes.",
     "invite.success_title": "Conta criada!",
-    "invite.success_desc": "Seu plano Starter está ativo. Verifique seu e-mail para confirmar sua conta e depois faça login.",
+    "invite.success_desc": "Sua conta foi criada. Verifique seu e-mail para confirmá-la. Avisaremos quando seu acesso for aprovado.",
     "invite.error_generic": "Erro ao criar a conta. Tente novamente.",
     "invite.google": "Cadastrar com Google",
     // Auth - Forgot password

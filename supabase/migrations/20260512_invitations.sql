@@ -17,6 +17,9 @@ create index if not exists idx_invitations_owner on invitations(owner_id);
 alter table profiles add column if not exists invited_by uuid references auth.users(id);
 alter table profiles add column if not exists invitation_code text;
 alter table profiles add column if not exists referral_bonus_expires_at timestamptz;
+alter table profiles add column if not exists country text;
+alter table profiles add column if not exists hospital text;
+alter table profiles add column if not exists professional_role text;
 
 -- Invitation redemptions log
 create table if not exists invitation_redemptions (

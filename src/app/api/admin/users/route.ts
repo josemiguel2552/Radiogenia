@@ -9,7 +9,7 @@ export async function GET() {
 
     const { data: profiles, error } = await supabase
       .from("profiles")
-      .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at")
+      .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -104,6 +104,39 @@ export async function PUT(req: NextRequest) {
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
+
+    if (approved === true) {
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("invitation_code, invited_by")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.invitation_code && profile?.invited_by) {
+          const bonusExpires = new Date();
+          bonusExpires.setDate(bonusExpires.getDate() + 30);
+          const bonusExpiresIso = bonusExpires.toISOString();
+
+          updates.subscription_plan = "starter";
+          updates.billing_period_start = new Date().toISOString();
+          (updates as Record<string, unknown>).reports_used_this_month = 0;
+          (updates as Record<string, unknown>).dictation_seconds_used = 0;
+          (updates as Record<string, unknown>).referral_bonus_expires_at = bonusExpiresIso;
+
+          await supabase
+            .from("profiles")
+            .update({
+              subscription_plan: "starter",
+              billing_period_start: new Date().toISOString(),
+              reports_used_this_month: 0,
+              dictation_seconds_used: 0,
+              referral_bonus_expires_at: bonusExpiresIso,
+            })
+            .eq("id", profile.invited_by);
+        }
+      } catch { /* invitation columns may not exist */ }
     }
 
     const { error } = await supabase
