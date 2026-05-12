@@ -143,7 +143,7 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan, reports_used_this_month, billing_period_start, org_id")
+    .select("role, email, subscription_plan, reports_used_this_month, billing_period_start, org_id, referral_bonus_expires_at, stripe_subscription_id")
     .eq("id", userId)
     .single();
 
@@ -157,7 +157,27 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
     return { allowed: true, used: profile.reports_used_this_month || 0, limit: 999999, plan: "professional" };
   }
 
-  const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+  let plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+
+  if (
+    profile?.referral_bonus_expires_at &&
+    new Date(profile.referral_bonus_expires_at).getTime() <= Date.now() &&
+    !profile.stripe_subscription_id &&
+    plan !== "free"
+  ) {
+    plan = "free";
+    await service
+      .from("profiles")
+      .update({
+        subscription_plan: "free",
+        reports_used_this_month: 0,
+        dictation_seconds_used: 0,
+        billing_period_start: new Date().toISOString(),
+        referral_bonus_expires_at: null,
+      })
+      .eq("id", userId);
+  }
+
   const planConfig = PLANS[plan];
   const periodStart = new Date(profile?.billing_period_start || Date.now());
   const needsReset = periodStart.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
@@ -180,7 +200,7 @@ export async function checkDictationLimit(userId: string): Promise<{
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan, dictation_seconds_used, billing_period_start, org_id")
+    .select("role, email, subscription_plan, dictation_seconds_used, billing_period_start, org_id, referral_bonus_expires_at, stripe_subscription_id")
     .eq("id", userId)
     .single();
 
@@ -194,7 +214,17 @@ export async function checkDictationLimit(userId: string): Promise<{
     return { allowed: true, usedSeconds: profile.dictation_seconds_used || 0, limitSeconds: 999999 * 60, plan: "professional" };
   }
 
-  const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+  let plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+
+  if (
+    profile?.referral_bonus_expires_at &&
+    new Date(profile.referral_bonus_expires_at).getTime() <= Date.now() &&
+    !profile.stripe_subscription_id &&
+    plan !== "free"
+  ) {
+    plan = "free";
+  }
+
   const planConfig = PLANS[plan];
   const limitSeconds = planConfig.dictationMinutes * 60;
   const periodStart = new Date(profile?.billing_period_start || Date.now());
