@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { code, firstName, lastName, country, hospital, role } = await req.json();
-    if (!code) return NextResponse.json({ error: "Code required" }, { status: 400 });
+    const { code, email, firstName, lastName, country, hospital, role } = await req.json();
+    if (!code || !email) return NextResponse.json({ error: "Code and email required" }, { status: 400 });
 
     const service = createServiceClient();
+    const normalizedEmail = email.trim().toLowerCase();
 
     const { data: profile } = await service
       .from("profiles")
-      .select("invitation_code")
-      .eq("id", user.id)
-      .single();
+      .select("id, invitation_code")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
 
-    if (profile?.invitation_code) {
+    if (!profile) {
+      return NextResponse.json({ error: "profile_not_found" }, { status: 404 });
+    }
+
+    if (profile.invitation_code) {
       return NextResponse.json({ error: "already_redeemed" }, { status: 400 });
     }
 
@@ -37,19 +37,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "code_exhausted" }, { status: 410 });
     }
 
-    if (invitation.owner_id === user.id) {
+    if (invitation.owner_id === profile.id) {
       return NextResponse.json({ error: "cannot_self_invite" }, { status: 400 });
     }
 
-    await service
+    const { count } = await service
       .from("invitations")
-      .update({ used_count: invitation.used_count + 1 })
+      .update({ used_count: invitation.used_count + 1 }, { count: "exact" })
       .eq("id", invitation.id)
       .eq("used_count", invitation.used_count);
 
+    if (!count || count === 0) {
+      return NextResponse.json({ error: "code_exhausted" }, { status: 410 });
+    }
+
     await service
       .from("invitation_redemptions")
-      .insert({ invitation_id: invitation.id, redeemed_by: user.id });
+      .insert({ invitation_id: invitation.id, redeemed_by: profile.id });
 
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
 
@@ -64,7 +68,7 @@ export async function POST(req: NextRequest) {
         ...(hospital ? { hospital } : {}),
         ...(role ? { professional_role: role } : {}),
       })
-      .eq("id", user.id);
+      .eq("id", profile.id);
 
     return NextResponse.json({ ok: true, pending_approval: true });
   } catch (error) {
