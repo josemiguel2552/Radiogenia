@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import {
   Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
   ExternalLink, X, Zap, FileText, Mic, TrendingUp, User, Download, Receipt,
+  Gift, Copy, CheckCheck,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
@@ -79,6 +80,9 @@ export function AccountTab() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [billing, setBilling] = useState<BillingDetails | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
+  const [invite, setInvite] = useState<{ code: string; max_uses: number; used_count: number } | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const loadSub = useCallback(async () => {
     try {
@@ -96,13 +100,22 @@ export function AccountTab() {
     setBillingLoading(false);
   }, []);
 
+  const loadInvite = useCallback(async () => {
+    try {
+      const res = await fetch("/api/invite");
+      if (res.ok) setInvite(await res.json());
+    } catch { /* ignore */ }
+    setInviteLoading(false);
+  }, []);
+
   useEffect(() => {
     loadSub();
     loadBilling();
+    loadInvite();
     createClient().auth.getUser().then(({ data }) => {
       if (data.user?.email) setUserEmail(data.user.email);
     });
-  }, [loadSub, loadBilling]);
+  }, [loadSub, loadBilling, loadInvite]);
 
   const handlePasswordChange = useCallback(async () => {
     setPwMsg(null);
@@ -306,6 +319,52 @@ export function AccountTab() {
                   {planMsg.text}
                 </p>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Invitations */}
+          <Card>
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                  <Gift className="h-5 w-5 text-teal-500" />
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.invitations")}</span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.invite_desc")}</p>
+                </div>
+              </div>
+              {inviteLoading ? (
+                <div className="flex justify-center py-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              ) : invite ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 font-mono text-sm text-gray-900 dark:text-white truncate">
+                      {typeof window !== "undefined" ? `${window.location.origin}/invite/${invite.code}` : `/invite/${invite.code}`}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 gap-1.5"
+                      onClick={() => {
+                        const url = `${window.location.origin}/invite/${invite.code}`;
+                        navigator.clipboard.writeText(url);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                    >
+                      {copied ? <CheckCheck className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copied ? t("account.copied") : t("account.copy_link")}
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>{t("account.invites_used").replace("{used}", String(invite.used_count)).replace("{max}", String(invite.max_uses))}</span>
+                    <span>{invite.max_uses - invite.used_count} {t("account.invites_remaining")}</span>
+                  </div>
+                </>
+              ) : null}
             </CardContent>
           </Card>
 

@@ -19,11 +19,32 @@ export async function GET() {
     const service = createServiceClient();
     const { data: profile } = await service
       .from("profiles")
-      .select("subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, pending_plan, pending_plan_effective_date, stripe_customer_id")
+      .select("subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, pending_plan, pending_plan_effective_date, stripe_customer_id, stripe_subscription_id, referral_bonus_expires_at")
       .eq("id", user.id)
       .single();
 
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+
+    const bonusExpired = profile.referral_bonus_expires_at
+      && new Date(profile.referral_bonus_expires_at).getTime() <= Date.now();
+    const hasPaidSub = !!profile.stripe_subscription_id;
+
+    if (bonusExpired && !hasPaidSub && profile.subscription_plan !== "free") {
+      await service
+        .from("profiles")
+        .update({
+          subscription_plan: "free",
+          referral_bonus_expires_at: null,
+          reports_used_this_month: 0,
+          dictation_seconds_used: 0,
+          billing_period_start: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+      profile.subscription_plan = "free";
+      profile.reports_used_this_month = 0;
+      profile.dictation_seconds_used = 0;
+      profile.billing_period_start = new Date().toISOString();
+    }
 
     const periodStart = profile.billing_period_start || new Date().toISOString();
     const nextPeriod = getNextPeriodDate(periodStart);
