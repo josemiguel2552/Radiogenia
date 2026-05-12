@@ -108,6 +108,7 @@ export async function PUT(req: NextRequest) {
 
     if (approved === true) {
       try {
+        await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
         const { data: profile } = await supabase
           .from("profiles")
           .select("invitation_code, invited_by")
