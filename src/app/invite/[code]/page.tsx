@@ -11,6 +11,13 @@ import { Loader2, Globe, CheckCircle2, Gift, FileText, CreditCard } from "lucide
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 
+const COUNTRIES = [
+  "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
+  "Ecuador", "El Salvador", "España", "Guatemala", "Honduras", "México",
+  "Nicaragua", "Panamá", "Paraguay", "Perú", "Portugal", "Puerto Rico",
+  "República Dominicana", "United States", "Uruguay", "Venezuela", "Other",
+];
+
 type PageState = "loading" | "form" | "success" | "invalid" | "exhausted";
 
 export default function InvitePage() {
@@ -19,8 +26,13 @@ export default function InvitePage() {
   const { lang, setLang, t } = usePublicLang();
 
   const [state, setState] = useState<PageState>("loading");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [country, setCountry] = useState("");
+  const [hospital, setHospital] = useState("");
+  const [role, setRole] = useState<"attending" | "resident">("attending");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,7 +77,14 @@ export default function InvitePage() {
       const res = await fetch("/api/invite/redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({
+          code,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          country,
+          hospital: hospital.trim(),
+          role,
+        }),
       });
 
       if (!res.ok) {
@@ -81,16 +100,6 @@ export default function InvitePage() {
       setError(t("invite.error_generic"));
     }
     setSubmitting(false);
-  }
-
-  async function handleGoogleRegister() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?invite=${code}`,
-      },
-    });
   }
 
   if (state === "loading") {
@@ -176,8 +185,8 @@ export default function InvitePage() {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
+        <div className="w-full max-w-md space-y-6">
           <div className="flex lg:hidden justify-center mb-4">
             <Logo size="md" forceDark />
           </div>
@@ -203,31 +212,32 @@ export default function InvitePage() {
             <span className="flex items-center gap-1"><CreditCard className="h-3.5 w-3.5 text-purple-400" /> {t("invite.no_card")}</span>
           </div>
 
-          {/* Google OAuth */}
-          <button
-            onClick={handleGoogleRegister}
-            type="button"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium text-white transition-colors"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-            </svg>
-            {t("invite.google")}
-          </button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-[#0a0a1a] text-gray-500">{t("auth.or_email")}</span>
-            </div>
-          </div>
-
           <form onSubmit={handleRegister} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-gray-300 text-sm">{t("waitlist.first_name")}</Label>
+                <Input
+                  id="firstName"
+                  placeholder={t("waitlist.first_name_placeholder")}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-gray-300 text-sm">{t("waitlist.last_name")}</Label>
+                <Input
+                  id="lastName"
+                  placeholder={t("waitlist.last_name_placeholder")}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300 text-sm">{t("invite.email")}</Label>
               <Input
@@ -240,6 +250,7 @@ export default function InvitePage() {
                 className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-300 text-sm">{t("invite.password")}</Label>
               <Input
@@ -251,6 +262,54 @@ export default function InvitePage() {
                 required
                 className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country" className="text-gray-300 text-sm">{t("waitlist.country")}</Label>
+              <select
+                id="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                required
+                className="w-full h-11 rounded-md bg-white/5 border border-white/10 text-white px-3 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              >
+                <option value="" disabled className="bg-[#0a0a1a] text-gray-500">{t("waitlist.country_placeholder")}</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c} className="bg-[#0a0a1a]">{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hospital" className="text-gray-300 text-sm">{t("waitlist.hospital")}</Label>
+              <Input
+                id="hospital"
+                placeholder={t("waitlist.hospital_placeholder")}
+                value={hospital}
+                onChange={(e) => setHospital(e.target.value)}
+                required
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300 text-sm">{t("waitlist.role")}</Label>
+              <div className="flex gap-3">
+                {(["attending", "resident"] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRole(r)}
+                    className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                      role === r
+                        ? "border-teal-500/50 bg-teal-500/10 text-teal-400"
+                        : "border-white/10 bg-white/[0.02] text-gray-400 hover:bg-white/5 hover:text-gray-300"
+                    }`}
+                  >
+                    {t(`waitlist.role_${r}`)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {error && (

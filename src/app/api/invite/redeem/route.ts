@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { code } = await req.json();
+    const { code, firstName, lastName, country, hospital, role } = await req.json();
     if (!code) return NextResponse.json({ error: "Code required" }, { status: 400 });
 
     const service = createServiceClient();
@@ -41,10 +41,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "cannot_self_invite" }, { status: 400 });
     }
 
-    const bonusExpires = new Date();
-    bonusExpires.setDate(bonusExpires.getDate() + 30);
-    const bonusExpiresIso = bonusExpires.toISOString();
-
     await service
       .from("invitations")
       .update({ used_count: invitation.used_count + 1 })
@@ -55,32 +51,22 @@ export async function POST(req: NextRequest) {
       .from("invitation_redemptions")
       .insert({ invitation_id: invitation.id, redeemed_by: user.id });
 
+    const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
+
     await service
       .from("profiles")
       .update({
-        subscription_plan: "starter",
-        billing_period_start: new Date().toISOString(),
-        reports_used_this_month: 0,
-        dictation_seconds_used: 0,
-        approved: true,
+        approved: false,
         invited_by: invitation.owner_id,
         invitation_code: invitation.code,
-        referral_bonus_expires_at: bonusExpiresIso,
+        ...(fullName ? { name: fullName } : {}),
+        ...(country ? { country } : {}),
+        ...(hospital ? { hospital } : {}),
+        ...(role ? { professional_role: role } : {}),
       })
       .eq("id", user.id);
 
-    await service
-      .from("profiles")
-      .update({
-        subscription_plan: "starter",
-        billing_period_start: new Date().toISOString(),
-        reports_used_this_month: 0,
-        dictation_seconds_used: 0,
-        referral_bonus_expires_at: bonusExpiresIso,
-      })
-      .eq("id", invitation.owner_id);
-
-    return NextResponse.json({ ok: true, plan: "starter", bonusExpires: bonusExpiresIso });
+    return NextResponse.json({ ok: true, pending_approval: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
