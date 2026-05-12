@@ -48,7 +48,10 @@ export default function InvitePage() {
         const data = await res.json();
         setState(data.error === "code_exhausted" ? "exhausted" : "invalid");
       }
-    }).catch(() => setState("invalid"));
+    }).catch((err) => {
+      console.error("[invite] validation error:", err);
+      setState("invalid");
+    });
   }, [code]);
 
   async function handleRegister(e: React.FormEvent) {
@@ -74,34 +77,42 @@ export default function InvitePage() {
         return;
       }
 
-      const res = await fetch("/api/invite/redeem", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          email,
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          country,
-          hospital: hospital.trim(),
-          role,
-        }),
+      const redeemBody = JSON.stringify({
+        code,
+        email,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        country,
+        hospital: hospital.trim(),
+        role,
       });
 
-      if (!res.ok) {
-        const data = await res.json();
+      let res: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
+        res = await fetch("/api/invite/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: redeemBody,
+        });
+        if (res.ok || res.status !== 404) break;
+      }
+
+      if (!res || !res.ok) {
+        const data = res ? await res.json().catch(() => ({})) : {};
         if (data.error === "code_exhausted") {
           setState("exhausted");
           return;
         }
-        setError(t("invite.error_generic"));
+        setError(data.error || t("invite.error_generic"));
         setSubmitting(false);
         return;
       }
 
       setState("success");
-    } catch {
-      setError(t("invite.error_generic"));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || t("invite.error_generic"));
     }
     setSubmitting(false);
   }
