@@ -79,6 +79,7 @@ export default function InvitePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code,
+          email,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           country,
@@ -93,6 +94,9 @@ export default function InvitePage() {
           setState("exhausted");
           return;
         }
+        setError(t("invite.error_generic"));
+        setSubmitting(false);
+        return;
       }
 
       setState("success");

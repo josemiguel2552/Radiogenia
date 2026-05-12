@@ -95,7 +95,7 @@ export async function PUT(req: NextRequest) {
 
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
-    const updates: Record<string, string | boolean> = {};
+    const updates: Record<string, string | boolean | number | null> = {};
     if (role && (role === "admin" || role === "radiologist")) updates.role = role;
     if (subscription_plan && ["free", "starter", "professional"].includes(subscription_plan)) {
       updates.subscription_plan = subscription_plan;
@@ -121,22 +121,35 @@ export async function PUT(req: NextRequest) {
 
           updates.subscription_plan = "starter";
           updates.billing_period_start = new Date().toISOString();
-          (updates as Record<string, unknown>).reports_used_this_month = 0;
-          (updates as Record<string, unknown>).dictation_seconds_used = 0;
-          (updates as Record<string, unknown>).referral_bonus_expires_at = bonusExpiresIso;
+          updates.reports_used_this_month = 0;
+          updates.dictation_seconds_used = 0;
+          updates.referral_bonus_expires_at = bonusExpiresIso;
 
-          await supabase
+          const { data: referrer } = await supabase
             .from("profiles")
-            .update({
-              subscription_plan: "starter",
-              billing_period_start: new Date().toISOString(),
-              reports_used_this_month: 0,
-              dictation_seconds_used: 0,
-              referral_bonus_expires_at: bonusExpiresIso,
-            })
-            .eq("id", profile.invited_by);
+            .select("subscription_plan")
+            .eq("id", profile.invited_by)
+            .single();
+
+          const PLAN_RANK: Record<string, number> = { free: 0, resident: 1, starter: 2, professional: 3 };
+          const referrerRank = PLAN_RANK[referrer?.subscription_plan || "free"] ?? 0;
+
+          if (referrerRank < PLAN_RANK.starter) {
+            await supabase
+              .from("profiles")
+              .update({
+                subscription_plan: "starter",
+                billing_period_start: new Date().toISOString(),
+                reports_used_this_month: 0,
+                dictation_seconds_used: 0,
+                referral_bonus_expires_at: bonusExpiresIso,
+              })
+              .eq("id", profile.invited_by);
+          }
         }
-      } catch { /* invitation columns may not exist */ }
+      } catch (err) {
+        console.error("[admin] referral bonus error:", err);
+      }
     }
 
     const { error } = await supabase

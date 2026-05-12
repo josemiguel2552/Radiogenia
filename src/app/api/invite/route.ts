@@ -38,17 +38,20 @@ export async function GET() {
     const maxUses = isAdmin ? 50 : 3;
 
     let code = generateCode();
-    let attempts = 0;
-    while (attempts < 5) {
+    let inserted = false;
+    for (let i = 0; i < 5; i++) {
       const { error } = await service.from("invitations").insert({
         code,
         owner_id: user.id,
         max_uses: maxUses,
         used_count: 0,
       });
-      if (!error) break;
+      if (!error) { inserted = true; break; }
       code = generateCode();
-      attempts++;
+    }
+
+    if (!inserted) {
+      return NextResponse.json({ error: "Failed to generate invite code" }, { status: 500 });
     }
 
     const { data: created } = await service
