@@ -35,6 +35,7 @@ export default function InvitePage() {
   const [role, setRole] = useState<"attending" | "resident">("attending");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     if (!code) { setState("invalid"); return; }
@@ -327,6 +328,24 @@ export default function InvitePage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-teal-500 focus:ring-teal-500"
+                />
+                <span className="text-xs text-gray-400 leading-relaxed">
+                  {t("auth.accept_terms").split(/Términos de Uso|Terms of Use|Termos de Uso/)[0]}
+                  <Link href="/legal" target="_blank" className="text-teal-400 hover:text-teal-300 underline">
+                    {lang === "es" ? "Términos de Uso, Política de Privacidad y Descargo de Responsabilidad" : lang === "pt" ? "Termos de Uso, Política de Privacidade e Termo de Responsabilidade" : "Terms of Use, Privacy Policy and Liability Disclaimer"}
+                  </Link>.
+                </span>
+              </label>
+              <p className="text-[10px] text-gray-500 ml-6 leading-relaxed">{t("auth.accept_terms_note")}</p>
+            </div>
+
             {error && (
               <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>
             )}
@@ -334,7 +353,7 @@ export default function InvitePage() {
             <Button
               type="submit"
               className="w-full h-11 bg-gradient-to-r from-[#0F766E] to-[#1E3A5F] hover:from-[#14917F] hover:to-[#254A75] font-semibold shadow-lg shadow-teal-500/20"
-              disabled={submitting}
+              disabled={submitting || !acceptedTerms}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("invite.submit")}
             </Button>
