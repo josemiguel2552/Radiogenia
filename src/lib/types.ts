@@ -13,6 +13,7 @@ export interface PlanConfig {
   guidelineDocuments: number;
   features: string[];
   highlight?: boolean;
+  stripePriceId?: string;
 }
 
 export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
