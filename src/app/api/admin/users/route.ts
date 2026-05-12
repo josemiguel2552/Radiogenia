@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { sendApprovalEmail } from "@/lib/email";
 
 export async function GET() {
   try {
@@ -159,6 +160,21 @@ export async function PUT(req: NextRequest) {
       .eq("id", userId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (approved === true) {
+      try {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("email, name")
+          .eq("id", userId)
+          .single();
+        if (p?.email) {
+          await sendApprovalEmail(p.email, p.name);
+        }
+      } catch (err) {
+        console.error("[admin] approval email error:", err);
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
