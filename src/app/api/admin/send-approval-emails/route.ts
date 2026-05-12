@@ -10,17 +10,18 @@ export async function POST() {
 
     const { data: users } = await supabase
       .from("profiles")
-      .select("id, email, name")
-      .eq("approved", true)
-      .not("invitation_code", "is", null);
+      .select("id, email, name, role")
+      .eq("approved", true);
 
-    if (!users || users.length === 0) {
-      return NextResponse.json({ sent: 0, message: "No approved invited users found" });
+    const filtered = (users || []).filter((u) => u.role !== "admin");
+
+    if (filtered.length === 0) {
+      return NextResponse.json({ sent: 0, message: "No users found" });
     }
 
     let sent = 0;
     const errors: string[] = [];
-    for (const u of users) {
+    for (const u of filtered) {
       try {
         await sendApprovalEmail(u.email, u.name);
         sent++;
@@ -29,7 +30,7 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({ sent, total: users.length, errors });
+    return NextResponse.json({ sent, total: filtered.length, errors });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
