@@ -71,6 +71,11 @@ interface UserRow {
   dictation_seconds_used: number;
   created_at: string;
   report_count: number;
+  approved?: boolean;
+  invitation_code?: string;
+  country?: string;
+  hospital?: string;
+  professional_role?: string;
 }
 
 interface Stats {
@@ -416,6 +421,15 @@ export default function AdminPage() {
     loadAll();
   }
 
+  async function handleApproveUser(userId: string, approved: boolean) {
+    await fetch("/api/admin/users", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, approved }),
+    });
+    loadAll();
+  }
+
   async function handleDeleteUser() {
     if (!deleteConfirm) return;
     await fetch("/api/admin/users", {
@@ -504,6 +518,7 @@ export default function AdminPage() {
   }
 
   const radiologists = users.filter((u) => u.role !== "admin");
+  const pendingUsers = users.filter((u) => u.approved === false && u.invitation_code);
   const totalReports = users.reduce((s, u) => s + u.report_count, 0);
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
@@ -661,6 +676,11 @@ export default function AdminPage() {
               <Users className="h-4 w-4 text-blue-500" />
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.user_management")}</h2>
               <Badge variant="secondary" className="text-xs">{radiologists.length} {t("admin.radiologists")}</Badge>
+              {pendingUsers.length > 0 && (
+                <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-xs">
+                  {pendingUsers.length} {t("admin.pending_users")}
+                </Badge>
+              )}
               <Button
                 size="sm"
                 className="ml-auto gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
@@ -677,6 +697,7 @@ export default function AdminPage() {
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_user")}</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">{t("admin.th_role")}</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_status")}</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_plan")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_reports_mo")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">{t("admin.th_dictation_mo")}</th>
@@ -699,6 +720,9 @@ export default function AdminPage() {
                             <div>
                               <p className="text-gray-900 dark:text-white font-medium text-xs">{u.name || "—"}</p>
                               <p className="text-[11px] text-gray-500">{u.email}</p>
+                              {(u.hospital || u.country) && (
+                                <p className="text-[10px] text-gray-400">{[u.hospital, u.country].filter(Boolean).join(" · ")}</p>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-2 hidden sm:table-cell">
@@ -710,6 +734,35 @@ export default function AdminPage() {
                                 <span className="flex items-center gap-1"><Shield className="h-2.5 w-2.5" /> {t("admin.role_admin")}</span>
                               ) : t("admin.role_radiologist")}
                             </Badge>
+                          </td>
+                          <td className="py-3 px-2">
+                            {u.role !== "admin" && (
+                              u.approved === false && u.invitation_code ? (
+                                <div className="flex items-center gap-1">
+                                  <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px]">
+                                    {t("admin.pending_approval")}
+                                  </Badge>
+                                  <Button
+                                    variant="ghost" size="icon" className="h-6 w-6"
+                                    onClick={() => handleApproveUser(u.id, true)}
+                                    title={t("admin.approve")}
+                                  >
+                                    <Check className="h-3.5 w-3.5 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost" size="icon" className="h-6 w-6"
+                                    onClick={() => { setDeleteConfirm(u); }}
+                                    title={t("admin.reject")}
+                                  >
+                                    <X className="h-3.5 w-3.5 text-red-500" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
+                                  {t("admin.approved")}
+                                </Badge>
+                              )
+                            )}
                           </td>
                           <td className="py-3 px-2">
                             {u.role !== "admin" && (
