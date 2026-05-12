@@ -322,52 +322,6 @@ export function AccountTab() {
             </CardContent>
           </Card>
 
-          {/* Invitations */}
-          <Card>
-            <CardContent className="p-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
-                  <Gift className="h-5 w-5 text-teal-500" />
-                </div>
-                <div>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.invitations")}</span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.invite_desc")}</p>
-                </div>
-              </div>
-              {inviteLoading ? (
-                <div className="flex justify-center py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                </div>
-              ) : invite ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 font-mono text-sm text-gray-900 dark:text-white truncate">
-                      {typeof window !== "undefined" ? `${window.location.origin}/invite/${invite.code}` : `/invite/${invite.code}`}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 gap-1.5"
-                      onClick={() => {
-                        const url = `${window.location.origin}/invite/${invite.code}`;
-                        navigator.clipboard.writeText(url);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                    >
-                      {copied ? <CheckCheck className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-                      {copied ? t("account.copied") : t("account.copy_link")}
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{t("account.invites_used").replace("{used}", String(invite.used_count)).replace("{max}", String(invite.max_uses))}</span>
-                    <span>{invite.max_uses - invite.used_count} {t("account.invites_remaining")}</span>
-                  </div>
-                </>
-              ) : null}
-            </CardContent>
-          </Card>
-
           {/* Billing & Payment */}
           <Card>
             <CardContent className="p-5 space-y-4">
@@ -520,6 +474,52 @@ export function AccountTab() {
       ) : (
         <p className="text-sm text-gray-400">{t("account.sub_error")}</p>
       )}
+
+      {/* Invitations */}
+      <Card>
+        <CardContent className="p-5 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
+              <Gift className="h-5 w-5 text-teal-500" />
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.invitations")}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.invite_desc")}</p>
+            </div>
+          </div>
+          {inviteLoading ? (
+            <div className="flex justify-center py-3">
+              <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            </div>
+          ) : invite ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 font-mono text-sm text-gray-900 dark:text-white truncate">
+                  {typeof window !== "undefined" ? `${window.location.origin}/invite/${invite.code}` : `/invite/${invite.code}`}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                  onClick={() => {
+                    const url = `${window.location.origin}/invite/${invite.code}`;
+                    navigator.clipboard.writeText(url);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                >
+                  {copied ? <CheckCheck className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? t("account.copied") : t("account.copy_link")}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>{t("account.invites_used").replace("{used}", String(invite.used_count)).replace("{max}", String(invite.max_uses))}</span>
+                <span>{invite.max_uses - invite.used_count} {t("account.invites_remaining")}</span>
+              </div>
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
 
       {/* Security */}
       <Card>
