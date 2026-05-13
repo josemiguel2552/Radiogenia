@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-helpers";
 
-const SIZE_MAP: Record<string, string> = {
+const SIZE_MAP_V3: Record<string, string> = {
   square: "1024x1024",
   landscape: "1792x1024",
   portrait: "1024x1792",
+};
+
+const SIZE_MAP_V2: Record<string, string> = {
+  square: "1024x1024",
+  landscape: "1024x1024",
+  portrait: "1024x1024",
 };
 
 export async function POST(req: NextRequest) {
@@ -21,7 +27,10 @@ export async function POST(req: NextRequest) {
     }
 
     const apiKey = openaiKey;
-    const size = SIZE_MAP[aspect] || "1024x1024";
+    const model = imageModel || "dall-e-3";
+    const isV3 = model === "dall-e-3";
+    const sizeMap = isV3 ? SIZE_MAP_V3 : SIZE_MAP_V2;
+    const size = sizeMap[aspect] || "1024x1024";
 
     const styleGuide = style === "minimal"
       ? "Clean minimal design with lots of white space. Modern sans-serif typography."
@@ -33,17 +42,19 @@ export async function POST(req: NextRequest) {
 
     const fullPrompt = `${styleGuide} Brand: Radiogen.AI (radiology AI assistant). ${prompt}. No text in the image unless specifically requested. High quality, suitable for social media marketing.`;
 
+    const body: Record<string, unknown> = {
+      model,
+      prompt: fullPrompt,
+      n: 1,
+      size,
+      response_format: "b64_json",
+    };
+    if (isV3) body.quality = "standard";
+
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: imageModel || "dall-e-3",
-        prompt: fullPrompt,
-        n: 1,
-        size,
-        quality: "standard",
-        response_format: "b64_json",
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
