@@ -37,7 +37,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData, type HighlightedTextHandle } from "./trace-highlight";
+import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
@@ -2006,21 +2006,11 @@ function OutputCard({
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
-  const highlightRef = useRef<HighlightedTextHandle>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
 
   useEffect(() => {
     if (!showTrace) setEditing(false);
   }, [showTrace]);
-
-  function handleDone() {
-    if (highlightRef.current) {
-      const edited = highlightRef.current.getText();
-      if (edited !== value) onChange(edited);
-    }
-    setEditing(false);
-    onEdit?.();
-  }
 
   return (
     <Card>
@@ -2041,11 +2031,11 @@ function OutputCard({
               {t("edit")}
             </button>
           )}
-          {editing && showTrace && (
+          {editing && (
             <button
               type="button"
-              onClick={handleDone}
-              className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors"
+              onClick={() => { setEditing(false); onEdit?.(); }}
+              className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 dark:text-green-400 font-medium transition-colors"
             >
               <CheckCheck className="h-3 w-3" />
               OK
@@ -2069,15 +2059,8 @@ function OutputCard({
           >
             {value}
           </div>
-        ) : showTrace ? (
-          <HighlightedText
-            ref={highlightRef}
-            text={value}
-            highlights={traceHighlights}
-            isDark={!!isDark}
-            editable={editing}
-            minHeight={minHeight}
-          />
+        ) : showTrace && !editing ? (
+          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
         ) : (
           <Textarea
             value={value}
