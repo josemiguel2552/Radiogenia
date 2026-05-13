@@ -21,33 +21,62 @@ function buildPrompt(prompt: string, style: string) {
   return `${styleGuide} Brand: Radiogen.AI (radiology AI assistant). ${prompt}. No text in the image unless specifically requested. High quality, suitable for social media marketing.`;
 }
 
+async function fetchImageAsBase64(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to download generated image");
+  const buf = Buffer.from(await res.arrayBuffer());
+  const contentType = res.headers.get("content-type") || "image/png";
+  return `data:${contentType};base64,${buf.toString("base64")}`;
+}
+
 async function generateTogether(apiKey: string, fullPrompt: string, aspect: string, model: string) {
+  const body: Record<string, unknown> = {
+    model: model || "black-forest-labs/FLUX.1-schnell",
+    prompt: fullPrompt,
+    n: 1,
+    steps: 4,
+    width: aspect === "landscape" ? 1024 : aspect === "portrait" ? 768 : 1024,
+    height: aspect === "landscape" ? 768 : aspect === "portrait" ? 1024 : 1024,
+  };
+
   const res = await fetch("https://api.together.xyz/v1/images/generations", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: model || "black-forest-labs/FLUX.1-schnell",
-      prompt: fullPrompt,
-      n: 1,
-      steps: 4,
-      response_format: "b64_json",
-      width: aspect === "landscape" ? 1024 : aspect === "portrait" ? 768 : 1024,
-      height: aspect === "landscape" ? 768 : aspect === "portrait" ? 1024 : 1024,
-    }),
+    body: JSON.stringify(body),
   });
 
+  const responseText = await res.text();
+
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    let msg = "Together AI image generation failed";
-    try { msg = JSON.parse(text)?.error?.message || JSON.parse(text)?.error || msg; } catch { msg = text || msg; }
+    let msg = `Together AI error (${res.status})`;
+    try {
+      const j = JSON.parse(responseText);
+      msg = j.error?.message || j.error?.type || j.error || j.message || msg;
+    } catch {
+      msg = responseText.slice(0, 200) || msg;
+    }
     throw new Error(msg);
   }
 
-  const data = await res.json();
-  const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw new Error("No image data returned from Together AI");
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error("Together AI returned invalid JSON");
+  }
 
-  return { image: `data:image/png;base64,${b64}` };
+  const item = data.data?.[0];
+  if (!item) throw new Error("No image data returned from Together AI");
+
+  if (item.b64_json) {
+    return { image: `data:image/png;base64,${item.b64_json}` };
+  }
+  if (item.url) {
+    const b64 = await fetchImageAsBase64(item.url);
+    return { image: b64 };
+  }
+
+  throw new Error("Together AI returned no image URL or base64");
 }
 
 async function generateReplicate(apiKey: string, fullPrompt: string, aspect: string, model: string) {
@@ -70,14 +99,25 @@ async function generateReplicate(apiKey: string, fullPrompt: string, aspect: str
     }),
   });
 
+  const responseText = await res.text();
+
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    let msg = "Replicate image generation failed";
-    try { const j = JSON.parse(text); msg = j.detail || j.error || msg; } catch { msg = text || msg; }
+    let msg = `Replicate error (${res.status})`;
+    try {
+      const j = JSON.parse(responseText);
+      msg = j.detail || j.error || j.title || msg;
+    } catch {
+      msg = responseText.slice(0, 200) || msg;
+    }
     throw new Error(msg);
   }
 
-  const data = await res.json();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error("Replicate returned invalid JSON");
+  }
 
   if (data.status === "starting" || data.status === "processing") {
     const pollUrl = data.urls?.get || `https://api.replicate.com/v1/predictions/${data.id}`;
@@ -89,9 +129,7 @@ async function generateReplicate(apiKey: string, fullPrompt: string, aspect: str
       const pollData = await poll.json();
       if (pollData.status === "succeeded") {
         const imgUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
-        const imgRes = await fetch(imgUrl);
-        const buf = Buffer.from(await imgRes.arrayBuffer());
-        return { image: `data:image/png;base64,${buf.toString("base64")}` };
+        return { image: await fetchImageAsBase64(imgUrl) };
       }
       if (pollData.status === "failed" || pollData.status === "canceled") {
         throw new Error(pollData.error || "Replicate generation failed");
@@ -100,12 +138,13 @@ async function generateReplicate(apiKey: string, fullPrompt: string, aspect: str
     throw new Error("Replicate generation timed out");
   }
 
-  const imgUrl = Array.isArray(data.output) ? data.output[0] : data.output;
-  if (!imgUrl) throw new Error("No image URL returned from Replicate");
+  if (data.status === "succeeded" || data.output) {
+    const imgUrl = Array.isArray(data.output) ? data.output[0] : data.output;
+    if (!imgUrl) throw new Error("No image URL returned from Replicate");
+    return { image: await fetchImageAsBase64(imgUrl) };
+  }
 
-  const imgRes = await fetch(imgUrl);
-  const buf = Buffer.from(await imgRes.arrayBuffer());
-  return { image: `data:image/png;base64,${buf.toString("base64")}` };
+  throw new Error(`Replicate unexpected status: ${data.status}`);
 }
 
 export async function POST(req: NextRequest) {
@@ -134,7 +173,6 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[marketing/generate-image]", error);
     const message = error instanceof Error ? error.message : String(error);
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
