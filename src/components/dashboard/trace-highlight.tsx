@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
+import { useMemo } from "react";
 import { AlertTriangle, Check, ShieldAlert } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -188,40 +188,23 @@ function renderParts(parts: ReturnType<typeof buildParts>, isDark: boolean) {
   });
 }
 
-export interface HighlightedTextHandle {
-  getText: () => string;
-}
-
-export const HighlightedText = forwardRef<HighlightedTextHandle, {
+export function HighlightedText({
+  text,
+  highlights,
+  isDark,
+}: {
   text: string;
   highlights: HighlightSpan[];
   isDark: boolean;
-  editable?: boolean;
-  minHeight?: number;
-}>(function HighlightedText({ text, highlights, isDark, editable, minHeight }, fwdRef) {
-  const divRef = useRef<HTMLDivElement>(null);
+}) {
   const parts = useMemo(() => buildParts(text, highlights), [text, highlights]);
 
-  useImperativeHandle(fwdRef, () => ({
-    getText: () => divRef.current?.innerText || text,
-  }), [text]);
-
   return (
-    <div
-      ref={divRef}
-      contentEditable={editable}
-      suppressContentEditableWarning
-      className={`text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border bg-white dark:bg-gray-900 min-h-[80px] ${
-        editable
-          ? "border-blue-300 dark:border-blue-600 outline-none focus:ring-1 focus:ring-blue-400 cursor-text"
-          : "border-gray-200 dark:border-gray-700"
-      }`}
-      style={minHeight ? { minHeight } : undefined}
-    >
+    <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[80px]">
       {renderParts(parts, isDark)}
     </div>
   );
-});
+}
 
 export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boolean }) {
   const t = useT();
