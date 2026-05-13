@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
+import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 
 const PLATFORM_LIMITS: Record<string, number> = {
   linkedin: 3000,
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const config = await getGlobalAIConfig();
-    const apiKey = config.apiKey;
+    const apiKey = resolveApiKey(config, "openai");
     const charLimit = PLATFORM_LIMITS[platform] || 2000;
     const lang = language || "es";
 

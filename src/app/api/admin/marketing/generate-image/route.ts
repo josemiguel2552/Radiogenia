@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
+import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 
 const SIZE_MAP: Record<string, string> = {
   square: "1024x1024",
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const config = await getGlobalAIConfig();
-    const apiKey = config.apiKey;
+    const apiKey = resolveApiKey(config, "openai");
     const size = SIZE_MAP[aspect] || "1024x1024";
 
     const styleGuide = style === "minimal"
