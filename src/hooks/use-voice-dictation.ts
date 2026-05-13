@@ -224,7 +224,7 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   const connectWs = useCallback((apiKey: string, skipKeywords = false) => {
     const params = new URLSearchParams({
-      model: "nova-3",
+      model: "nova-3-medical",
       language,
       smart_format: "true",
       punctuate: "true",
