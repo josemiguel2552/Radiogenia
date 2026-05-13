@@ -10,9 +10,10 @@ import {
   Loader2, Copy, CheckCheck, Trash2, Download, Save,
   MessageSquareText, ImageIcon, FolderOpen, Sparkles,
   KeyRound, Eye, EyeOff, ChevronDown, ChevronUp,
+  Palette,
 } from "lucide-react";
 
-type SubTab = "posts" | "images" | "library";
+type SubTab = "posts" | "images" | "brand" | "library";
 type PostType = "testimonial" | "tip" | "promo" | "educational" | "announcement";
 type Platform = "linkedin" | "facebook" | "instagram" | "x";
 type ImageStyle = "minimal" | "gradient" | "medical" | "tech";
@@ -71,6 +72,187 @@ function loadKeys(): MarketingKeys {
 
 function saveKeys(keys: MarketingKeys) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
+}
+
+interface BrandAsset {
+  id: string;
+  label: string;
+  category: string;
+  width: number;
+  height: number;
+  bg: "gradient" | "dark" | "white" | "transparent";
+  logoVariant: "full" | "icon";
+  description: string;
+}
+
+const BRAND_ASSETS: BrandAsset[] = [
+  // Profile Pictures
+  { id: "profile-dark", label: "Perfil (fondo oscuro)", category: "Perfil", width: 400, height: 400, bg: "dark", logoVariant: "icon", description: "Instagram, Facebook, X, LinkedIn" },
+  { id: "profile-gradient", label: "Perfil (gradiente)", category: "Perfil", width: 400, height: 400, bg: "gradient", logoVariant: "icon", description: "Versión con gradiente de marca" },
+  { id: "profile-white", label: "Perfil (fondo blanco)", category: "Perfil", width: 400, height: 400, bg: "white", logoVariant: "icon", description: "Para fondos claros" },
+  { id: "profile-transparent", label: "Perfil (transparente)", category: "Perfil", width: 400, height: 400, bg: "transparent", logoVariant: "icon", description: "PNG sin fondo" },
+  // Full Logo
+  { id: "logo-dark-h", label: "Logo completo (oscuro)", category: "Logo", width: 1200, height: 400, bg: "dark", logoVariant: "full", description: "Logo horizontal fondo oscuro" },
+  { id: "logo-white-h", label: "Logo completo (blanco)", category: "Logo", width: 1200, height: 400, bg: "white", logoVariant: "full", description: "Logo horizontal fondo blanco" },
+  { id: "logo-gradient-h", label: "Logo completo (gradiente)", category: "Logo", width: 1200, height: 400, bg: "gradient", logoVariant: "full", description: "Logo horizontal con gradiente" },
+  { id: "logo-transparent-h", label: "Logo completo (transparente)", category: "Logo", width: 1200, height: 400, bg: "transparent", logoVariant: "full", description: "Logo horizontal sin fondo" },
+  // Banners
+  { id: "banner-x", label: "Banner X / Twitter", category: "Banners", width: 1500, height: 500, bg: "gradient", logoVariant: "full", description: "1500×500px" },
+  { id: "banner-fb", label: "Banner Facebook", category: "Banners", width: 820, height: 312, bg: "gradient", logoVariant: "full", description: "820×312px" },
+  { id: "banner-linkedin", label: "Banner LinkedIn", category: "Banners", width: 1584, height: 396, bg: "gradient", logoVariant: "full", description: "1584×396px" },
+  { id: "banner-yt", label: "Banner YouTube", category: "Banners", width: 2560, height: 1440, bg: "gradient", logoVariant: "full", description: "2560×1440px" },
+  // Post sizes
+  { id: "post-square", label: "Post cuadrado", category: "Posts", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "Instagram/Facebook 1080×1080" },
+  { id: "post-landscape", label: "Post paisaje", category: "Posts", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "Facebook/LinkedIn 1200×630" },
+  { id: "post-story", label: "Story / Reel", category: "Posts", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "Instagram/FB Story 1080×1920" },
+  // Favicons
+  { id: "icon-512", label: "App Icon 512", category: "Iconos", width: 512, height: 512, bg: "gradient", logoVariant: "icon", description: "PWA / App Store 512×512" },
+  { id: "icon-192", label: "App Icon 192", category: "Iconos", width: 192, height: 192, bg: "gradient", logoVariant: "icon", description: "PWA 192×192" },
+  { id: "favicon", label: "Favicon", category: "Iconos", width: 32, height: 32, bg: "gradient", logoVariant: "icon", description: "Favicon 32×32" },
+];
+
+function buildLogoSvg(w: number, h: number, variant: "full" | "icon", bg: "gradient" | "dark" | "white" | "transparent"): string {
+  const iconSize = variant === "icon"
+    ? Math.min(w, h) * 0.6
+    : Math.min(w * 0.18, h * 0.55);
+  const iconX = variant === "icon" ? (w - iconSize) / 2 : w / 2 - iconSize * 2.2;
+  const iconY = (h - iconSize) / 2;
+  const scale = iconSize / 32;
+
+  const textDark = bg === "white" || bg === "transparent";
+  const mainColor = textDark ? "#111827" : "#ffffff";
+  const accentColor = textDark ? "#0d9488" : "#5EEAD4";
+
+  let bgRect = "";
+  if (bg === "gradient") {
+    bgRect = `<defs><linearGradient id="bg-grad" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-grad)"/>`;
+  } else if (bg === "dark") {
+    bgRect = `<rect width="${w}" height="${h}" fill="#0f172a"/>`;
+  } else if (bg === "white") {
+    bgRect = `<rect width="${w}" height="${h}" fill="#ffffff"/>`;
+  }
+
+  const iconSvg = `<g transform="translate(${iconX},${iconY}) scale(${scale})">
+    <rect width="32" height="32" rx="7" fill="url(#icon-grad)"/>
+    <path d="M10 8h7a5 5 0 0 1 0 10h-3l5 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="2.2" fill="#5EEAD4"/>
+  </g>`;
+
+  let textSvg = "";
+  if (variant === "full") {
+    const fontSize = iconSize * 1.1;
+    const textX = iconX + iconSize + iconSize * 0.4;
+    const textY = h / 2 + fontSize * 0.35;
+    textSvg = `<text x="${textX}" y="${textY}" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="${fontSize}" letter-spacing="-0.02em">
+      <tspan fill="${mainColor}">Radiogen</tspan><tspan fill="${accentColor}">.AI</tspan>
+    </text>`;
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <defs><linearGradient id="icon-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/></linearGradient></defs>
+    ${bgRect}
+    ${iconSvg}
+    ${textSvg}
+  </svg>`;
+}
+
+function renderAndDownload(asset: BrandAsset) {
+  const svg = buildLogoSvg(asset.width, asset.height, asset.logoVariant, asset.bg);
+  const blob = new Blob([svg], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = asset.width;
+    canvas.height = asset.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0, asset.width, asset.height);
+    URL.revokeObjectURL(url);
+    const pngUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = pngUrl;
+    a.download = `radiogenai-${asset.id}-${asset.width}x${asset.height}.png`;
+    a.click();
+  };
+  img.src = url;
+}
+
+function getPreviewDataUrl(asset: BrandAsset): string {
+  const previewW = 200;
+  const previewH = Math.round((asset.height / asset.width) * previewW);
+  const svg = buildLogoSvg(previewW, previewH, asset.logoVariant, asset.bg);
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function BrandKitSection() {
+  const categories = Array.from(new Set(BRAND_ASSETS.map(a => a.category)));
+
+  const handleDownloadAll = () => {
+    BRAND_ASSETS.forEach((asset, i) => {
+      setTimeout(() => renderAndDownload(asset), i * 300);
+    });
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-teal-500" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Brand Kit — Radiogen.AI</h3>
+            <Badge variant="secondary" className="text-[10px]">{BRAND_ASSETS.length} assets</Badge>
+          </div>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleDownloadAll}>
+            <Download className="h-3 w-3" />
+            Descargar todo
+          </Button>
+        </div>
+
+        {categories.map(cat => (
+          <div key={cat} className="space-y-2">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{cat}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {BRAND_ASSETS.filter(a => a.category === cat).map(asset => (
+                <div
+                  key={asset.id}
+                  className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+                >
+                  <div
+                    className="relative flex items-center justify-center overflow-hidden"
+                    style={{
+                      height: asset.width === asset.height ? 120 : asset.height > asset.width ? 160 : 80,
+                      background: asset.bg === "transparent" ? "repeating-conic-gradient(#d1d5db 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" : "#f3f4f6",
+                    }}
+                  >
+                    <img
+                      src={getPreviewDataUrl(asset)}
+                      alt={asset.label}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  <div className="p-2 space-y-1">
+                    <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{asset.label}</p>
+                    <p className="text-[10px] text-gray-500">{asset.description}</p>
+                    <p className="text-[10px] text-gray-400">{asset.width}×{asset.height}px</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-7 text-[11px] gap-1 mt-1"
+                      onClick={() => renderAndDownload(asset)}
+                    >
+                      <Download className="h-3 w-3" />
+                      Descargar PNG
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function AdminMarketingTab() {
@@ -217,6 +399,7 @@ export function AdminMarketingTab() {
   const SUB_TABS: { key: SubTab; label: string; icon: React.ReactNode }[] = [
     { key: "posts", label: "Posts", icon: <MessageSquareText className="h-3.5 w-3.5" /> },
     { key: "images", label: "Imágenes", icon: <ImageIcon className="h-3.5 w-3.5" /> },
+    { key: "brand", label: "Brand Kit", icon: <Palette className="h-3.5 w-3.5" /> },
     { key: "library", label: "Biblioteca", icon: <FolderOpen className="h-3.5 w-3.5" /> },
   ];
 
@@ -624,6 +807,8 @@ export function AdminMarketingTab() {
           </CardContent>
         </Card>
       )}
+
+      {subTab === "brand" && <BrandKitSection />}
 
       {subTab === "library" && (
         <Card>
