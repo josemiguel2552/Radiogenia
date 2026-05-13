@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendApprovalEmail } from "@/lib/email";
 
-const EUROPE_OR_UNKNOWN = ["España", "Portugal", "Other"];
+const MANUAL_APPROVAL_COUNTRIES = ["España", "Portugal"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       .insert({ invitation_id: invitation.id, redeemed_by: profile.id });
 
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
-    const needsManualApproval = !country || EUROPE_OR_UNKNOWN.includes(country);
+    const needsManualApproval = !country || MANUAL_APPROVAL_COUNTRIES.includes(country);
     const autoApproved = !needsManualApproval;
 
     const bonusExpires = new Date();
