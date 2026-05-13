@@ -18,7 +18,12 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const quota = await checkReportLimit(user.id);
+    const [body, globalConfig, quota] = await Promise.all([
+      req.json(),
+      getGlobalAIConfig(),
+      checkReportLimit(user.id),
+    ]);
+
     if (!quota.allowed) {
       return NextResponse.json({
         error: `Monthly report limit reached (${quota.used}/${quota.limit}). Upgrade your plan for more reports.`,
@@ -29,9 +34,8 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang } = await req.json();
+    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang } = body;
 
-    const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
 
     let { data: config } = await service
@@ -181,43 +185,37 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
     });
 
-    if (outLang !== "en") {
-      const reader = rawStream.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullText += decoder.decode(value, { stream: true });
-      }
-      fullText += decoder.decode();
-
-      const usage = getUsage();
-      if (usage) {
-        logAICost({ userId: user.id, action: "generate_findings", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
-      }
-
-      const enforced = enforceOutputLanguage(fullText, outLang);
-      const encoder = new TextEncoder();
-      const body = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode(enforced));
-          controller.close();
-        },
-      });
-      return new Response(body, { headers: responseHeaders });
-    }
-
     const reader = rawStream.getReader();
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
     const userId = user.id;
+    const needsEnforce = outLang !== "en";
+
     const passthrough = new ReadableStream({
       async start(controller) {
         try {
+          let buffer = "";
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            controller.enqueue(value);
+
+            if (!needsEnforce) {
+              controller.enqueue(value);
+              continue;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lastNewline = buffer.lastIndexOf("\n");
+            if (lastNewline !== -1) {
+              const ready = buffer.slice(0, lastNewline + 1);
+              buffer = buffer.slice(lastNewline + 1);
+              controller.enqueue(encoder.encode(enforceOutputLanguage(ready, outLang)));
+            }
+          }
+
+          if (needsEnforce && buffer) {
+            buffer += decoder.decode();
+            controller.enqueue(encoder.encode(enforceOutputLanguage(buffer, outLang)));
           }
         } finally {
           controller.close();
