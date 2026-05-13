@@ -37,7 +37,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
+import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData, type HighlightedTextHandle } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
@@ -2006,11 +2006,21 @@ function OutputCard({
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
+  const highlightRef = useRef<HighlightedTextHandle>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
 
   useEffect(() => {
     if (!showTrace) setEditing(false);
   }, [showTrace]);
+
+  function handleDone() {
+    if (highlightRef.current) {
+      const edited = highlightRef.current.getText();
+      if (edited !== value) onChange(edited);
+    }
+    setEditing(false);
+    onEdit?.();
+  }
 
   return (
     <Card>
@@ -2034,7 +2044,7 @@ function OutputCard({
           {editing && showTrace && (
             <button
               type="button"
-              onClick={() => { setEditing(false); onEdit?.(); }}
+              onClick={handleDone}
               className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors"
             >
               <CheckCheck className="h-3 w-3" />
@@ -2061,11 +2071,11 @@ function OutputCard({
           </div>
         ) : showTrace ? (
           <HighlightedText
+            ref={highlightRef}
             text={value}
             highlights={traceHighlights}
             isDark={!!isDark}
             editable={editing}
-            onTextChange={editing ? onChange : undefined}
             minHeight={minHeight}
           />
         ) : (
