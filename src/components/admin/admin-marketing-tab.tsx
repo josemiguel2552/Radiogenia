@@ -48,15 +48,25 @@ const STORAGE_KEY = "radiogenai_marketing_keys";
 interface MarketingKeys {
   openaiKey: string;
   textModel: string;
+  imageProvider: "together" | "replicate";
+  imageApiKey: string;
   imageModel: string;
 }
+
+const DEFAULTS: MarketingKeys = {
+  openaiKey: "",
+  textModel: "gpt-4o-mini",
+  imageProvider: "together",
+  imageApiKey: "",
+  imageModel: "black-forest-labs/FLUX.1-schnell",
+};
 
 function loadKeys(): MarketingKeys {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { openaiKey: "", textModel: "gpt-4o-mini", imageModel: "dall-e-3", ...JSON.parse(raw) };
+    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
   } catch { /* ignore */ }
-  return { openaiKey: "", textModel: "gpt-4o-mini", imageModel: "dall-e-3" };
+  return DEFAULTS;
 }
 
 function saveKeys(keys: MarketingKeys) {
@@ -84,7 +94,7 @@ export function AdminMarketingTab() {
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [keys, setKeys] = useState<MarketingKeys>({ openaiKey: "", textModel: "gpt-4o-mini", imageModel: "dall-e-3" });
+  const [keys, setKeys] = useState<MarketingKeys>(DEFAULTS);
   const [showKey, setShowKey] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
 
@@ -144,7 +154,7 @@ export function AdminMarketingTab() {
   }
 
   async function handleGenerateImage() {
-    if (!keys.openaiKey) { setGeneratedImage("Error: Configura tu API Key de OpenAI arriba"); return; }
+    if (!keys.imageApiKey) { setGeneratedImage("Error: Configura tu API Key de imágenes arriba"); return; }
     setImageLoading(true);
     setGeneratedImage("");
     try {
@@ -155,7 +165,8 @@ export function AdminMarketingTab() {
           prompt: imagePrompt,
           style: imageStyle,
           aspect,
-          openaiKey: keys.openaiKey,
+          imageApiKey: keys.imageApiKey,
+          imageProvider: keys.imageProvider,
           imageModel: keys.imageModel,
         }),
       });
@@ -220,39 +231,42 @@ export function AdminMarketingTab() {
           <div className="flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-semibold text-gray-900 dark:text-white">API Keys</span>
-            {keys.openaiKey ? (
-              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">Configurada</Badge>
+            {keys.openaiKey && keys.imageApiKey ? (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">Configuradas</Badge>
             ) : (
-              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">Sin configurar</Badge>
+              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">
+                {!keys.openaiKey && !keys.imageApiKey ? "Sin configurar" : "Incompleta"}
+              </Badge>
             )}
           </div>
           {configOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
         </button>
         {configOpen && (
-          <CardContent className="pt-0 pb-5 px-5 space-y-4 border-t border-gray-100 dark:border-gray-800">
-            <div className="space-y-1.5">
-              <Label className="text-xs">OpenAI API Key</Label>
-              <div className="relative">
-                <Input
-                  type={showKey ? "text" : "password"}
-                  value={keys.openaiKey}
-                  onChange={(e) => updateKey("openaiKey", e.target.value)}
-                  placeholder="sk-..."
-                  className="pr-10 font-mono text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <p className="text-[10px] text-gray-400">Se guarda solo en este navegador. Usada para generar posts e imágenes.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          <CardContent className="pt-0 pb-5 px-5 space-y-5 border-t border-gray-100 dark:border-gray-800">
+            {/* Text generation */}
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Texto (OpenAI)</p>
               <div className="space-y-1.5">
-                <Label className="text-xs">Modelo de texto</Label>
+                <Label className="text-xs">OpenAI API Key</Label>
+                <div className="relative">
+                  <Input
+                    type={showKey ? "text" : "password"}
+                    value={keys.openaiKey}
+                    onChange={(e) => updateKey("openaiKey", e.target.value)}
+                    placeholder="sk-..."
+                    className="pr-10 font-mono text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Modelo</Label>
                 <select
                   value={keys.textModel}
                   onChange={(e) => updateKey("textModel", e.target.value)}
@@ -263,17 +277,76 @@ export function AdminMarketingTab() {
                   <option value="gpt-4-turbo">GPT-4 Turbo</option>
                 </select>
               </div>
+            </div>
+
+            {/* Image generation */}
+            <div className="space-y-3 border-t border-gray-100 dark:border-gray-800 pt-4">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Imágenes</p>
               <div className="space-y-1.5">
-                <Label className="text-xs">Modelo de imagen</Label>
+                <Label className="text-xs">Proveedor</Label>
+                <div className="flex gap-1">
+                  {([
+                    { key: "together", label: "Together AI", desc: "Flux Schnell ~$0.003/img" },
+                    { key: "replicate", label: "Replicate", desc: "Flux Pro ~$0.005/img" },
+                  ] as const).map((p) => (
+                    <button
+                      key={p.key}
+                      onClick={() => {
+                        updateKey("imageProvider", p.key);
+                        updateKey("imageModel", p.key === "together" ? "black-forest-labs/FLUX.1-schnell" : "black-forest-labs/flux-1.1-pro");
+                      }}
+                      className={`flex-1 h-9 rounded-md text-xs font-medium transition-colors ${
+                        keys.imageProvider === p.key
+                          ? "bg-purple-500 text-white"
+                          : "border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                      title={p.desc}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">{keys.imageProvider === "together" ? "Together AI" : "Replicate"} API Key</Label>
+                <div className="relative">
+                  <Input
+                    type={showKey ? "text" : "password"}
+                    value={keys.imageApiKey}
+                    onChange={(e) => updateKey("imageApiKey", e.target.value)}
+                    placeholder={keys.imageProvider === "together" ? "tog-..." : "r8_..."}
+                    className="pr-10 font-mono text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Modelo</Label>
                 <select
                   value={keys.imageModel}
                   onChange={(e) => updateKey("imageModel", e.target.value)}
                   className="w-full h-9 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm px-2 text-gray-900 dark:text-white"
                 >
-                  <option value="dall-e-3">DALL·E 3 (mejor calidad)</option>
-                  <option value="dall-e-2">DALL·E 2 (más barato)</option>
+                  {keys.imageProvider === "together" ? (
+                    <>
+                      <option value="black-forest-labs/FLUX.1-schnell">Flux Schnell (rápido, $0.003)</option>
+                      <option value="black-forest-labs/FLUX.1-pro">Flux Pro (mejor, $0.028)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="black-forest-labs/flux-1.1-pro">Flux 1.1 Pro ($0.005)</option>
+                      <option value="black-forest-labs/flux-schnell">Flux Schnell ($0.003)</option>
+                    </>
+                  )}
                 </select>
               </div>
+              <p className="text-[10px] text-gray-400">Las keys se guardan solo en este navegador.</p>
             </div>
           </CardContent>
         )}
@@ -446,7 +519,7 @@ export function AdminMarketingTab() {
             <div className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-purple-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Generador de Imágenes</h3>
-              <Badge variant="secondary" className="text-[10px]">DALL·E 3</Badge>
+              <Badge variant="secondary" className="text-[10px]">{keys.imageProvider === "together" ? "Together AI" : "Replicate"}</Badge>
             </div>
 
             <div className="space-y-1.5">
