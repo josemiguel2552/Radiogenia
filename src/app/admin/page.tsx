@@ -15,7 +15,7 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare, DollarSign,
+  Building2, MessageSquare, DollarSign, Megaphone,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -25,6 +25,7 @@ import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
+import { AdminMarketingTab } from "@/components/admin/admin-marketing-tab";
 
 interface GlobalConfig {
   id: string;
@@ -90,7 +91,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs" | "marketing";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -532,6 +533,7 @@ export default function AdminPage() {
     { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
     { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
     { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
+    { key: "marketing", label: "Marketing", icon: <Megaphone className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -1412,6 +1414,9 @@ export default function AdminPage() {
 
         {/* ═══ COSTS ═══ */}
         {tab === "costs" && <AdminCostsTab />}
+
+        {/* ═══ MARKETING ═══ */}
+        {tab === "marketing" && <AdminMarketingTab />}
 
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (
