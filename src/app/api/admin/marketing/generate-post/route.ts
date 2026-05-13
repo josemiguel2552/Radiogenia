@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 const PLATFORM_LIMITS: Record<string, number> = {
   linkedin: 3000,
@@ -11,14 +11,17 @@ const PLATFORM_LIMITS: Record<string, number> = {
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
-    const { type, platform, tone, language, customPrompt } = await req.json();
+    const { type, platform, tone, language, customPrompt, openaiKey, textModel } = await req.json();
 
     if (!type || !platform) {
       return NextResponse.json({ error: "type and platform required" }, { status: 400 });
     }
 
-    const config = await getGlobalAIConfig();
-    const apiKey = resolveApiKey(config, "openai");
+    if (!openaiKey) {
+      return NextResponse.json({ error: "OpenAI API key required. Configure it in the API Keys section." }, { status: 400 });
+    }
+
+    const apiKey = openaiKey;
     const charLimit = PLATFORM_LIMITS[platform] || 2000;
     const lang = language || "es";
 
@@ -63,7 +66,7 @@ REGLAS:
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: textModel || "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
