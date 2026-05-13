@@ -385,7 +385,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
               <div className="min-w-0">
                 <Logo size="sm" className="hidden md:inline-flex" />
                 <h1 className="md:hidden text-base font-bold tracking-tight text-gray-900 dark:text-white truncate">
-                  <span className="text-[#1E3A5F] dark:text-white">Radiogen</span>
+                  <span className="text-gray-900 dark:text-white">Radiogen</span>
                   <span className="text-teal-600 dark:text-teal-400">.AI</span>
                 </h1>
                 <p className="text-[10px] md:text-[11px] text-gray-500 dark:text-gray-400 truncate">
