@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import { AlertTriangle, Check, ShieldAlert } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -144,67 +144,88 @@ function buildHighlights(text: string, fragments: { fragment: string; colorIdx: 
   return spans;
 }
 
+function buildParts(text: string, highlights: HighlightSpan[]) {
+  const result: { text: string; highlight?: HighlightSpan }[] = [];
+  let pos = 0;
+  for (const h of highlights) {
+    if (h.start > pos) result.push({ text: text.slice(pos, h.start) });
+    result.push({ text: text.slice(h.start, h.end), highlight: h });
+    pos = h.end;
+  }
+  if (pos < text.length) result.push({ text: text.slice(pos) });
+  return result;
+}
+
+function renderParts(parts: ReturnType<typeof buildParts>, isDark: boolean) {
+  return parts.map((p, i) => {
+    if (!p.highlight) return <span key={i}>{p.text}</span>;
+    const h = p.highlight;
+    const color = h.isHallucination
+      ? HALLUCINATION_COLOR
+      : h.isUnmatched
+      ? UNMATCHED_COLOR
+      : TRACE_COLORS[h.colorIdx % TRACE_COLORS.length];
+    const tooltip = h.isHallucination
+      ? `⚠ Hallucination — ${h.section}`
+      : h.isUnmatched
+      ? `⚠ Not found in findings`
+      : `→ ${h.section}`;
+    return (
+      <mark
+        key={i}
+        className="rounded px-0.5 relative cursor-default"
+        style={{
+          backgroundColor: isDark ? color.dark : color.bg,
+          color: "inherit",
+          borderBottom: `2px solid ${color.text}`,
+          textDecoration: h.isHallucination ? "line-through" : undefined,
+        }}
+        title={tooltip}
+      >
+        {p.text}
+      </mark>
+    );
+  });
+}
+
 export function HighlightedText({
   text,
   highlights,
   isDark,
-  inline,
+  editable,
+  onTextChange,
+  minHeight,
 }: {
   text: string;
   highlights: HighlightSpan[];
   isDark: boolean;
-  inline?: boolean;
+  editable?: boolean;
+  onTextChange?: (text: string) => void;
+  minHeight?: number;
 }) {
-  const parts = useMemo(() => {
-    const result: { text: string; highlight?: HighlightSpan }[] = [];
-    let pos = 0;
-    for (const h of highlights) {
-      if (h.start > pos) {
-        result.push({ text: text.slice(pos, h.start) });
-      }
-      result.push({ text: text.slice(h.start, h.end), highlight: h });
-      pos = h.end;
+  const ref = useRef<HTMLDivElement>(null);
+  const parts = useMemo(() => buildParts(text, highlights), [text, highlights]);
+
+  const handleInput = useCallback(() => {
+    if (ref.current && onTextChange) {
+      onTextChange(ref.current.innerText);
     }
-    if (pos < text.length) {
-      result.push({ text: text.slice(pos) });
-    }
-    return result;
-  }, [text, highlights]);
+  }, [onTextChange]);
 
   return (
-    <div className={inline
-      ? "text-sm leading-relaxed whitespace-pre-wrap"
-      : "text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[80px]"
-    }>
-      {parts.map((p, i) => {
-        if (!p.highlight) return <span key={i}>{p.text}</span>;
-        const h = p.highlight;
-        const color = h.isHallucination
-          ? HALLUCINATION_COLOR
-          : h.isUnmatched
-          ? UNMATCHED_COLOR
-          : TRACE_COLORS[h.colorIdx % TRACE_COLORS.length];
-        const tooltip = h.isHallucination
-          ? `⚠ Hallucination — ${h.section}`
-          : h.isUnmatched
-          ? `⚠ Not found in findings`
-          : `→ ${h.section}`;
-        return (
-          <mark
-            key={i}
-            className="rounded px-0.5 relative cursor-default"
-            style={{
-              backgroundColor: isDark ? color.dark : color.bg,
-              color: "inherit",
-              borderBottom: `2px solid ${color.text}`,
-              textDecoration: h.isHallucination ? "line-through" : undefined,
-            }}
-            title={tooltip}
-          >
-            {p.text}
-          </mark>
-        );
-      })}
+    <div
+      ref={ref}
+      contentEditable={editable}
+      suppressContentEditableWarning
+      onInput={editable ? handleInput : undefined}
+      className={`text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border bg-white dark:bg-gray-900 min-h-[80px] ${
+        editable
+          ? "border-blue-300 dark:border-blue-600 outline-none focus:ring-1 focus:ring-blue-400 cursor-text"
+          : "border-gray-200 dark:border-gray-700"
+      }`}
+      style={minHeight ? { minHeight } : undefined}
+    >
+      {renderParts(parts, isDark)}
     </div>
   );
 }

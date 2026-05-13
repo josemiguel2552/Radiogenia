@@ -2059,20 +2059,15 @@ function OutputCard({
           >
             {value}
           </div>
-        ) : showTrace && !editing ? (
-          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
-        ) : showTrace && editing ? (
-          <div className="relative rounded-md border border-blue-300 dark:border-blue-600 overflow-hidden" style={{ minHeight }}>
-            <div className="absolute inset-0 pointer-events-none whitespace-pre-wrap text-sm leading-relaxed p-3 text-transparent bg-white dark:bg-gray-900 overflow-hidden">
-              <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} inline />
-            </div>
-            <textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="relative w-full text-sm leading-relaxed p-3 bg-transparent text-gray-900 dark:text-gray-100 resize-none outline-none caret-gray-900 dark:caret-white"
-              style={{ minHeight }}
-            />
-          </div>
+        ) : showTrace ? (
+          <HighlightedText
+            text={value}
+            highlights={traceHighlights}
+            isDark={!!isDark}
+            editable={editing}
+            onTextChange={editing ? onChange : undefined}
+            minHeight={minHeight}
+          />
         ) : (
           <Textarea
             value={value}
