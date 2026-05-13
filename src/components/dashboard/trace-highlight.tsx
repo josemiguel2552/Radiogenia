@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useCallback } from "react";
+import { useMemo, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import { AlertTriangle, Check, ShieldAlert } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -188,36 +188,29 @@ function renderParts(parts: ReturnType<typeof buildParts>, isDark: boolean) {
   });
 }
 
-export function HighlightedText({
-  text,
-  highlights,
-  isDark,
-  editable,
-  onTextChange,
-  minHeight,
-}: {
+export interface HighlightedTextHandle {
+  getText: () => string;
+}
+
+export const HighlightedText = forwardRef<HighlightedTextHandle, {
   text: string;
   highlights: HighlightSpan[];
   isDark: boolean;
   editable?: boolean;
-  onTextChange?: (text: string) => void;
   minHeight?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
+}>(function HighlightedText({ text, highlights, isDark, editable, minHeight }, fwdRef) {
+  const divRef = useRef<HTMLDivElement>(null);
   const parts = useMemo(() => buildParts(text, highlights), [text, highlights]);
 
-  const handleInput = useCallback(() => {
-    if (ref.current && onTextChange) {
-      onTextChange(ref.current.innerText);
-    }
-  }, [onTextChange]);
+  useImperativeHandle(fwdRef, () => ({
+    getText: () => divRef.current?.innerText || text,
+  }), [text]);
 
   return (
     <div
-      ref={ref}
+      ref={divRef}
       contentEditable={editable}
       suppressContentEditableWarning
-      onInput={editable ? handleInput : undefined}
       className={`text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border bg-white dark:bg-gray-900 min-h-[80px] ${
         editable
           ? "border-blue-300 dark:border-blue-600 outline-none focus:ring-1 focus:ring-blue-400 cursor-text"
@@ -228,7 +221,7 @@ export function HighlightedText({
       {renderParts(parts, isDark)}
     </div>
   );
-}
+});
 
 export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boolean }) {
   const t = useT();
