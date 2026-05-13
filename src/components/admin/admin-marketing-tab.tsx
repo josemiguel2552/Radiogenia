@@ -336,7 +336,7 @@ export function AdminMarketingTab() {
                   {keys.imageProvider === "together" ? (
                     <>
                       <option value="black-forest-labs/FLUX.1-schnell">Flux Schnell (rápido, $0.003)</option>
-                      <option value="black-forest-labs/FLUX.1-pro">Flux Pro (mejor, $0.028)</option>
+                      <option value="black-forest-labs/FLUX.1-dev">Flux Dev (mejor calidad, $0.025)</option>
                     </>
                   ) : (
                     <>
