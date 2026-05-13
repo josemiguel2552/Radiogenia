@@ -148,10 +148,12 @@ export function HighlightedText({
   text,
   highlights,
   isDark,
+  inline,
 }: {
   text: string;
   highlights: HighlightSpan[];
   isDark: boolean;
+  inline?: boolean;
 }) {
   const parts = useMemo(() => {
     const result: { text: string; highlight?: HighlightSpan }[] = [];
@@ -170,7 +172,10 @@ export function HighlightedText({
   }, [text, highlights]);
 
   return (
-    <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[80px]">
+    <div className={inline
+      ? "text-sm leading-relaxed whitespace-pre-wrap"
+      : "text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[80px]"
+    }>
       {parts.map((p, i) => {
         if (!p.highlight) return <span key={i}>{p.text}</span>;
         const h = p.highlight;

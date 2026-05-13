@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Flag,
   Pencil,
+  CheckCheck,
   Wand2,
   GraduationCap,
   AlignLeft,
@@ -1724,7 +1725,8 @@ export function DashboardContent() {
             icon={<FileText className="h-3.5 w-3.5 text-brand" />}
             loading={loadingFindings}
             value={findings}
-            onChange={(v) => { setFindings(v); reportDirtyRef.current = true; setTraceData(null); setRepairMessage(null); }}
+            onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
+            onEdit={() => { setTraceData(null); setRepairMessage(null); }}
             minHeight={140}
             traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
             traceLocked={loadingTrace}
@@ -1983,6 +1985,7 @@ function OutputCard({
   loading,
   value,
   onChange,
+  onEdit,
   minHeight,
   headerExtra,
   traceHighlights,
@@ -1994,6 +1997,7 @@ function OutputCard({
   loading: boolean;
   value: string;
   onChange: (v: string) => void;
+  onEdit?: () => void;
   minHeight: number;
   headerExtra?: React.ReactNode;
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
@@ -2001,7 +2005,13 @@ function OutputCard({
   isDark?: boolean;
 }) {
   const t = useT();
+  const [editing, setEditing] = useState(false);
   const showTrace = traceHighlights && traceHighlights.length > 0;
+
+  useEffect(() => {
+    if (!showTrace) setEditing(false);
+  }, [showTrace]);
+
   return (
     <Card>
       <div className="flex items-center justify-between px-4 pt-3 pb-1.5 gap-2">
@@ -2011,14 +2021,24 @@ function OutputCard({
         </h3>
         <div className="flex items-center gap-2">
           {headerExtra}
-          {showTrace && !traceLocked && (
+          {showTrace && !traceLocked && !editing && (
             <button
               type="button"
-              onClick={() => onChange(value)}
+              onClick={() => setEditing(true)}
               className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
             >
               <Pencil className="h-3 w-3" />
               {t("edit")}
+            </button>
+          )}
+          {editing && showTrace && (
+            <button
+              type="button"
+              onClick={() => { setEditing(false); onEdit?.(); }}
+              className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors"
+            >
+              <CheckCheck className="h-3 w-3" />
+              OK
             </button>
           )}
           {loading && <LoadingDots size="xs" className="text-brand" />}
@@ -2039,8 +2059,20 @@ function OutputCard({
           >
             {value}
           </div>
-        ) : showTrace ? (
+        ) : showTrace && !editing ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
+        ) : showTrace && editing ? (
+          <div className="relative rounded-md border border-blue-300 dark:border-blue-600 overflow-hidden" style={{ minHeight }}>
+            <div className="absolute inset-0 pointer-events-none whitespace-pre-wrap text-sm leading-relaxed p-3 text-transparent bg-white dark:bg-gray-900 overflow-hidden">
+              <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} inline />
+            </div>
+            <textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="relative w-full text-sm leading-relaxed p-3 bg-transparent text-gray-900 dark:text-gray-100 resize-none outline-none caret-gray-900 dark:caret-white"
+              style={{ minHeight }}
+            />
+          </div>
         ) : (
           <Textarea
             value={value}
