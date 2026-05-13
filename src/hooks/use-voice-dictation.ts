@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { getRadiologyKeywords } from "@/lib/radiology-keywords";
+import { getRadiologyKeyterms, resolveDeepgramLanguage } from "@/lib/radiology-keywords";
 
 const LEVEL_THROTTLE_MS = 80;
 
@@ -223,9 +223,10 @@ export function useVoiceDictation({
   // DEEPGRAM: WebSocket connection (can be called independently on retry)
   // ══════════════════════════════════════════════════════════════
   const connectWs = useCallback((apiKey: string, skipKeywords = false) => {
+    const dgLang = resolveDeepgramLanguage(language);
     const params = new URLSearchParams({
-      model: language.startsWith("en") ? "nova-3-medical" : "nova-3",
-      language,
+      model: dgLang.startsWith("en") ? "nova-3-medical" : "nova-3",
+      language: dgLang,
       smart_format: "true",
       punctuate: "true",
       numerals: "true",
@@ -239,8 +240,8 @@ export function useVoiceDictation({
     });
 
     if (!skipKeywords) {
-      const keywords = getRadiologyKeywords(language);
-      keywords.forEach((kw) => params.append("keywords", kw));
+      const keyterms = getRadiologyKeyterms(dgLang);
+      keyterms.forEach((kt) => params.append("keyterm", kt));
     }
 
     const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`, ["token", apiKey]);
