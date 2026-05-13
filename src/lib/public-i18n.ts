@@ -159,6 +159,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "invite.code_exhausted": "Este código de invitación ya ha sido usado el máximo de veces.",
     "invite.success_title": "¡Cuenta creada!",
     "invite.success_desc": "Tu cuenta ha sido creada. Recibirás un email cuando tu acceso sea aprobado.",
+    "invite.success_auto": "¡Tu cuenta está lista! Ya puedes iniciar sesión y empezar a usar Radiogen.AI con tu plan Starter gratuito durante 30 días.",
     "invite.error_generic": "Error al crear la cuenta. Inténtalo de nuevo.",
     "invite.google": "Registrarse con Google",
     // Auth - Forgot password
@@ -349,6 +350,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "invite.code_exhausted": "This invitation code has been used the maximum number of times.",
     "invite.success_title": "Account created!",
     "invite.success_desc": "Your account has been created. You'll receive an email when your access is approved.",
+    "invite.success_auto": "Your account is ready! You can now sign in and start using Radiogen.AI with your free Starter plan for 30 days.",
     "invite.error_generic": "Error creating account. Please try again.",
     "invite.google": "Sign up with Google",
     // Auth - Forgot password
@@ -539,6 +541,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "invite.code_exhausted": "Este código de convite já foi usado o máximo de vezes.",
     "invite.success_title": "Conta criada!",
     "invite.success_desc": "Sua conta foi criada. Você receberá um email quando seu acesso for aprovado.",
+    "invite.success_auto": "Sua conta está pronta! Já pode fazer login e começar a usar o Radiogen.AI com seu plano Starter gratuito por 30 dias.",
     "invite.error_generic": "Erro ao criar a conta. Tente novamente.",
     "invite.google": "Cadastrar com Google",
     // Auth - Forgot password
