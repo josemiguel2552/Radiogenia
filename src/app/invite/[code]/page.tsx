@@ -18,7 +18,7 @@ const COUNTRIES = [
   "República Dominicana", "United States", "Uruguay", "Venezuela", "Other",
 ];
 
-type PageState = "loading" | "form" | "success" | "invalid" | "exhausted";
+type PageState = "loading" | "form" | "success" | "success_pending" | "invalid" | "exhausted";
 
 export default function InvitePage() {
   const params = useParams();
@@ -110,7 +110,8 @@ export default function InvitePage() {
         return;
       }
 
-      setState("success");
+      const redeemData = await res.json().catch(() => ({}));
+      setState(redeemData.auto_approved ? "success" : "success_pending");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg || t("invite.error_generic"));
@@ -144,7 +145,8 @@ export default function InvitePage() {
     );
   }
 
-  if (state === "success") {
+  if (state === "success" || state === "success_pending") {
+    const autoApproved = state === "success";
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
         <div className="max-w-md w-full text-center space-y-6">
@@ -156,11 +158,19 @@ export default function InvitePage() {
               </div>
             </div>
             <h1 className="text-xl font-bold text-white">{t("invite.success_title")}</h1>
-            <p className="text-sm text-gray-400 leading-relaxed">{t("invite.success_desc")}</p>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              {autoApproved ? t("invite.success_auto") : t("invite.success_desc")}
+            </p>
           </div>
-          <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
-            {t("invite.signin_link")}
-          </Link>
+          {autoApproved ? (
+            <Link href="/auth/login" className="inline-block px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0F766E] to-[#1E3A5F] text-white text-sm font-semibold hover:from-[#14917F] hover:to-[#254A75] shadow-lg shadow-teal-500/20">
+              {t("invite.signin_link")}
+            </Link>
+          ) : (
+            <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
+              {t("invite.signin_link")}
+            </Link>
+          )}
         </div>
       </div>
     );

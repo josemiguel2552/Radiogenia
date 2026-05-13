@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendApprovalEmail } from "@/lib/email";
+
+const EUROPE_OR_UNKNOWN = ["España", "Portugal", "Other"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,21 +59,74 @@ export async function POST(req: NextRequest) {
       .insert({ invitation_id: invitation.id, redeemed_by: profile.id });
 
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
+    const needsManualApproval = !country || EUROPE_OR_UNKNOWN.includes(country);
+    const autoApproved = !needsManualApproval;
+
+    const bonusExpires = new Date();
+    bonusExpires.setDate(bonusExpires.getDate() + 30);
+    const bonusExpiresIso = bonusExpires.toISOString();
 
     await service
       .from("profiles")
       .update({
-        approved: false,
+        approved: autoApproved,
         invited_by: invitation.owner_id,
         invitation_code: invitation.code,
         ...(fullName ? { name: fullName } : {}),
         ...(country ? { country } : {}),
         ...(hospital ? { hospital } : {}),
         ...(role ? { professional_role: role } : {}),
+        ...(autoApproved ? {
+          subscription_plan: "starter",
+          billing_period_start: new Date().toISOString(),
+          reports_used_this_month: 0,
+          dictation_seconds_used: 0,
+          referral_bonus_expires_at: bonusExpiresIso,
+        } : {}),
       })
       .eq("id", profile.id);
 
-    return NextResponse.json({ ok: true, pending_approval: true });
+    if (autoApproved) {
+      try {
+        await service.auth.admin.updateUserById(profile.id, { email_confirm: true });
+      } catch (err) {
+        console.error("[redeem] email confirm error:", err);
+      }
+
+      try {
+        await sendApprovalEmail(normalizedEmail, fullName);
+      } catch (err) {
+        console.error("[redeem] approval email error:", err);
+      }
+
+      try {
+        const { data: referrer } = await service
+          .from("profiles")
+          .select("subscription_plan")
+          .eq("id", invitation.owner_id)
+          .single();
+
+        const PLAN_RANK: Record<string, number> = { free: 0, resident: 1, starter: 2, professional: 3 };
+        const referrerRank = PLAN_RANK[referrer?.subscription_plan || "free"] ?? 0;
+
+        if (referrerRank < PLAN_RANK.starter) {
+          await service
+            .from("profiles")
+            .update({
+              subscription_plan: "starter",
+              billing_period_start: new Date().toISOString(),
+              reports_used_this_month: 0,
+              dictation_seconds_used: 0,
+              referral_bonus_expires_at: bonusExpiresIso,
+            })
+            .eq("id", invitation.owner_id);
+        }
+      } catch (err) {
+        console.error("[redeem] referrer bonus error:", err);
+      }
+    }
+
+    return NextResponse.json({ ok: true, auto_approved: autoApproved, pending_approval: !autoApproved });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
