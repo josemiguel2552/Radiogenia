@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 const SIZE_MAP: Record<string, string> = {
   square: "1024x1024",
@@ -10,14 +10,17 @@ const SIZE_MAP: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
-    const { prompt, style, aspect } = await req.json();
+    const { prompt, style, aspect, openaiKey, imageModel } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "prompt required" }, { status: 400 });
     }
 
-    const config = await getGlobalAIConfig();
-    const apiKey = config.apiKey;
+    if (!openaiKey) {
+      return NextResponse.json({ error: "OpenAI API key required. Configure it in the API Keys section." }, { status: 400 });
+    }
+
+    const apiKey = openaiKey;
     const size = SIZE_MAP[aspect] || "1024x1024";
 
     const styleGuide = style === "minimal"
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "dall-e-3",
+        model: imageModel || "dall-e-3",
         prompt: fullPrompt,
         n: 1,
         size,

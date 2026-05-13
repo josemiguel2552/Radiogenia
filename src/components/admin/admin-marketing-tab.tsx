@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import {
   Loader2, Copy, CheckCheck, Trash2, Download, Save,
   MessageSquareText, ImageIcon, FolderOpen, Sparkles,
+  KeyRound, Eye, EyeOff, ChevronDown, ChevronUp,
 } from "lucide-react";
 
 type SubTab = "posts" | "images" | "library";
@@ -42,6 +43,26 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   x: "bg-gray-900 dark:bg-gray-700",
 };
 
+const STORAGE_KEY = "radiogenai_marketing_keys";
+
+interface MarketingKeys {
+  openaiKey: string;
+  textModel: string;
+  imageModel: string;
+}
+
+function loadKeys(): MarketingKeys {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { openaiKey: "", textModel: "gpt-4o-mini", imageModel: "dall-e-3", ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return { openaiKey: "", textModel: "gpt-4o-mini", imageModel: "dall-e-3" };
+}
+
+function saveKeys(keys: MarketingKeys) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
+}
+
 export function AdminMarketingTab() {
   const [subTab, setSubTab] = useState<SubTab>("posts");
   const [postType, setPostType] = useState<PostType>("promo");
@@ -63,6 +84,14 @@ export function AdminMarketingTab() {
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [keys, setKeys] = useState<MarketingKeys>({ openaiKey: "", textModel: "gpt-4o-mini", imageModel: "dall-e-3" });
+  const [showKey, setShowKey] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
+
+  useEffect(() => {
+    setKeys(loadKeys());
+  }, []);
+
   const loadAssets = useCallback(async () => {
     setAssetsLoading(true);
     try {
@@ -79,7 +108,16 @@ export function AdminMarketingTab() {
     if (subTab === "library") loadAssets();
   }, [subTab, loadAssets]);
 
+  function updateKey<K extends keyof MarketingKeys>(field: K, value: MarketingKeys[K]) {
+    setKeys((prev) => {
+      const next = { ...prev, [field]: value };
+      saveKeys(next);
+      return next;
+    });
+  }
+
   async function handleGeneratePost() {
+    if (!keys.openaiKey) { setGeneratedPost("Error: Configura tu API Key de OpenAI arriba"); return; }
     setPostLoading(true);
     setGeneratedPost("");
     try {
@@ -92,6 +130,8 @@ export function AdminMarketingTab() {
           tone,
           language,
           customPrompt: customPrompt.trim() || undefined,
+          openaiKey: keys.openaiKey,
+          textModel: keys.textModel,
         }),
       });
       const data = await res.json();
@@ -104,13 +144,20 @@ export function AdminMarketingTab() {
   }
 
   async function handleGenerateImage() {
+    if (!keys.openaiKey) { setGeneratedImage("Error: Configura tu API Key de OpenAI arriba"); return; }
     setImageLoading(true);
     setGeneratedImage("");
     try {
       const res = await fetch("/api/admin/marketing/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, style: imageStyle, aspect }),
+        body: JSON.stringify({
+          prompt: imagePrompt,
+          style: imageStyle,
+          aspect,
+          openaiKey: keys.openaiKey,
+          imageModel: keys.imageModel,
+        }),
       });
       const data = await res.json();
       if (res.ok) setGeneratedImage(data.image);
@@ -164,6 +211,74 @@ export function AdminMarketingTab() {
 
   return (
     <div className="space-y-4">
+      {/* ── API Keys config ── */}
+      <Card>
+        <button
+          onClick={() => setConfigOpen(!configOpen)}
+          className="w-full px-5 py-3 flex items-center justify-between text-left"
+        >
+          <div className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">API Keys</span>
+            {keys.openaiKey ? (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">Configurada</Badge>
+            ) : (
+              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">Sin configurar</Badge>
+            )}
+          </div>
+          {configOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+        </button>
+        {configOpen && (
+          <CardContent className="pt-0 pb-5 px-5 space-y-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="space-y-1.5">
+              <Label className="text-xs">OpenAI API Key</Label>
+              <div className="relative">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  value={keys.openaiKey}
+                  onChange={(e) => updateKey("openaiKey", e.target.value)}
+                  placeholder="sk-..."
+                  className="pr-10 font-mono text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400">Se guarda solo en este navegador. Usada para generar posts e imágenes.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Modelo de texto</Label>
+                <select
+                  value={keys.textModel}
+                  onChange={(e) => updateKey("textModel", e.target.value)}
+                  className="w-full h-9 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm px-2 text-gray-900 dark:text-white"
+                >
+                  <option value="gpt-4o-mini">GPT-4o Mini (rápido, barato)</option>
+                  <option value="gpt-4o">GPT-4o (mejor calidad)</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Modelo de imagen</Label>
+                <select
+                  value={keys.imageModel}
+                  onChange={(e) => updateKey("imageModel", e.target.value)}
+                  className="w-full h-9 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm px-2 text-gray-900 dark:text-white"
+                >
+                  <option value="dall-e-3">DALL·E 3 (mejor calidad)</option>
+                  <option value="dall-e-2">DALL·E 2 (más barato)</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
         {SUB_TABS.map((t) => (
           <button
