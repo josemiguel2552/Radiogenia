@@ -22,8 +22,6 @@ function buildPrompt(prompt: string, style: string) {
 }
 
 async function generateTogether(apiKey: string, fullPrompt: string, aspect: string, model: string) {
-  const aspectRatio = ASPECT_MAP[aspect] || "1:1";
-
   const res = await fetch("https://api.together.xyz/v1/images/generations", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -33,14 +31,16 @@ async function generateTogether(apiKey: string, fullPrompt: string, aspect: stri
       n: 1,
       steps: 4,
       response_format: "b64_json",
-      width: aspect === "landscape" ? 1280 : aspect === "portrait" ? 768 : 1024,
-      height: aspect === "landscape" ? 768 : aspect === "portrait" ? 1280 : 1024,
+      width: aspect === "landscape" ? 1024 : aspect === "portrait" ? 768 : 1024,
+      height: aspect === "landscape" ? 768 : aspect === "portrait" ? 1024 : 1024,
     }),
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Together AI image generation failed");
+    const text = await res.text().catch(() => "");
+    let msg = "Together AI image generation failed";
+    try { msg = JSON.parse(text)?.error?.message || JSON.parse(text)?.error || msg; } catch { msg = text || msg; }
+    throw new Error(msg);
   }
 
   const data = await res.json();
@@ -71,8 +71,10 @@ async function generateReplicate(apiKey: string, fullPrompt: string, aspect: str
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || err.error || "Replicate image generation failed");
+    const text = await res.text().catch(() => "");
+    let msg = "Replicate image generation failed";
+    try { const j = JSON.parse(text); msg = j.detail || j.error || msg; } catch { msg = text || msg; }
+    throw new Error(msg);
   }
 
   const data = await res.json();
@@ -130,7 +132,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[marketing/generate-image]", error);
+    const message = error instanceof Error ? error.message : String(error);
     const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
     return NextResponse.json({ error: message }, { status });
   }
