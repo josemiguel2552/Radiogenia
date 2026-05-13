@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 const FROM = process.env.EMAIL_FROM || "Radiogen.AI <noreply@radiogen.ai>";
 
 export async function sendApprovalEmail(to: string, name: string | null) {
@@ -9,7 +13,7 @@ export async function sendApprovalEmail(to: string, name: string | null) {
     ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/login`
     : "https://radiogen.ai/auth/login";
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: "Tu cuenta en Radiogen.AI ha sido aprobada",
