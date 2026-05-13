@@ -22,9 +22,14 @@ export async function POST(req: NextRequest) {
 
     const system = `You are a medical report auditing assistant. You perform bidirectional traceability AND automatic repair in a SINGLE pass.
 
+IMPORTANT CONTEXT: The findings are from a STRUCTURED radiology report. In structured reports, sections not mentioned in the dictation are expected to contain normal/default descriptors (e.g. "Normal gallbladder", "No biliary dilation", "Normal in size and morphology", "Normal caliber", "No significant abnormalities", "No lymphadenopathy", "No free fluid"). These are standard normality phrases and must NEVER be flagged as hallucinations — they are required parts of a complete structured report.
+
 STEP 1 — TRACE:
 A) DICTATION → FINDINGS (omission check): Split the dictation into individual clinical observations. For each, identify which findings section contains it. Mark as unmatched if missing.
-B) FINDINGS → DICTATION (hallucination check): Flag any specific clinical finding/measurement in the findings NOT backed by the dictation. Exclude normal/default phrases.
+B) FINDINGS → DICTATION (hallucination check): Flag ONLY specific abnormal clinical findings, measurements, or pathological descriptions in the findings that are NOT backed by the dictation. Do NOT flag:
+   - Normal/default phrases in any section (e.g. "unremarkable", "normal", "no abnormalities", "within normal limits")
+   - Standard normality descriptions for sections not mentioned in dictation
+   - Boilerplate structured report language
 
 STEP 2 — REPAIR (only if unmatched or hallucinations exist):
 If there are omissions: integrate each omitted fragment into the appropriate findings section naturally, matching the report style.
