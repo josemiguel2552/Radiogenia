@@ -488,6 +488,44 @@ Rules:
     system += `\n\n${COMPACT_NORMALS_INSTRUCTION[lang] || COMPACT_NORMALS_INSTRUCTION.en}`;
   }
 
+  const FINAL_VERIFICATION: Record<string, string> = {
+    es: `
+
+⚠️⚠️⚠️ VERIFICACIÓN FINAL OBLIGATORIA — EJECUTA ESTOS PASOS MENTALMENTE ANTES DE RESPONDER:
+
+PASO 1 — ANTI-OMISIÓN: Enumera cada hallazgo individual del dictado (positivo Y negativo). ¿Cada uno aparece en tu informe? Si falta ALGUNO, agrégalo a la sección correcta o a "Otros hallazgos:". Un hallazgo omitido puede causar un error diagnóstico.
+
+PASO 2 — ANTI-ALUCINACIÓN: Revisa cada frase de tu informe que describe un hallazgo anormal (patológico). ¿Cada hallazgo anormal tiene respaldo directo en el dictado? Si NO lo tiene, ELIMÍNALO inmediatamente. Las frases de NORMALIDAD en secciones no mencionadas NO son alucinaciones — son parte obligatoria del informe estructurado.
+
+PASO 3 — DATOS EXACTOS: Verifica que cada medida (mm, cm), número, lateralidad (derecha/izquierda), y ubicación anatómica coincide EXACTAMENTE con el dictado. No redondees, no cambies lateralidad, no muevas hallazgos entre secciones incorrectas.
+
+Si detectas un error en cualquier paso, CORRÍGELO antes de responder.`,
+    en: `
+
+⚠️⚠️⚠️ MANDATORY FINAL VERIFICATION — EXECUTE THESE STEPS MENTALLY BEFORE RESPONDING:
+
+STEP 1 — ANTI-OMISSION: List every individual finding from the dictation (positive AND negative). Does each one appear in your report? If ANY is missing, add it to the correct section or "Additional findings:". An omitted finding can cause a diagnostic error.
+
+STEP 2 — ANTI-HALLUCINATION: Review every sentence in your report that describes an abnormal (pathological) finding. Does each abnormal finding have direct support in the dictation? If NOT, REMOVE it immediately. NORMALITY phrases in unmentioned sections are NOT hallucinations — they are a required part of the structured report.
+
+STEP 3 — EXACT DATA: Verify that every measurement (mm, cm), number, laterality (right/left), and anatomical location matches EXACTLY with the dictation. Do not round, do not swap laterality, do not move findings to incorrect sections.
+
+If you detect an error in any step, CORRECT it before responding.`,
+    pt: `
+
+⚠️⚠️⚠️ VERIFICAÇÃO FINAL OBRIGATÓRIA — EXECUTE ESTES PASSOS MENTALMENTE ANTES DE RESPONDER:
+
+PASSO 1 — ANTI-OMISSÃO: Enumere cada achado individual do ditado (positivo E negativo). Cada um aparece no seu laudo? Se ALGUM estiver faltando, adicione-o à seção correta ou a "Outros achados:". Um achado omitido pode causar um erro diagnóstico.
+
+PASSO 2 — ANTI-ALUCINAÇÃO: Revise cada frase do seu laudo que descreve um achado anormal (patológico). Cada achado anormal tem suporte direto no ditado? Se NÃO tiver, REMOVA-O imediatamente. Frases de NORMALIDADE em seções não mencionadas NÃO são alucinações — são parte obrigatória do laudo estruturado.
+
+PASSO 3 — DADOS EXATOS: Verifique que cada medida (mm, cm), número, lateralidade (direita/esquerda) e localização anatômica coincide EXATAMENTE com o ditado. Não arredonde, não troque lateralidade, não mova achados para seções incorretas.
+
+Se detectar um erro em qualquer passo, CORRIJA antes de responder.`,
+  };
+
+  system += FINAL_VERIFICATION[lang] || FINAL_VERIFICATION.en;
+
   const langReminder = lang === "es"
     ? `\n\nIDIOMA: Tu salida COMPLETA debe estar en ${LANGUAGE_LABEL[lang]}. No mezcles con otros idiomas.`
     : `\n\nLANGUAGE: Write your ENTIRE output in ${LANGUAGE_LABEL[lang]}, not in the dictation language. Do not mix languages.`;

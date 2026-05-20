@@ -154,7 +154,9 @@ REGLAS:
 - Para omisiones: usa action "add_finding", section_label = sección correcta (o "Otros hallazgos" si no encaja en ninguna), corrected_text = texto completo de la sección incluyendo el hallazgo omitido.
 - Si no hay errores: {"status":"validated","corrections":[]}
 - Si hay errores: {"status":"corrected","corrections":[...]}
-- Devuelve SOLO JSON válido.`;
+- Devuelve SOLO JSON válido.
+
+VERIFICACIÓN DE DATOS EXACTOS: Si un hallazgo incluye medidas (mm, cm), lateralidad (derecha/izquierda), conteos o localizaciones específicas, verifica que coincidan EXACTAMENTE con el dictado. Si hay discrepancia, corrige con action "replace".`;
 
     const user = `DICTADO ORIGINAL:\n${dictation}\n\nMAPPING JSON:\n${mappingJson}`;
     return { system, user };
@@ -180,7 +182,9 @@ RULES:
 - For omissions: use action "add_finding", section_label = correct section (or "Additional findings" if it fits nowhere), corrected_text = full section text including the omitted finding.
 - No errors: {"status":"validated","corrections":[]}
 - Errors found: {"status":"corrected","corrections":[...]}
-- Return ONLY valid JSON.`;
+- Return ONLY valid JSON.
+
+EXACT DATA VERIFICATION: If a finding includes measurements (mm, cm), laterality (right/left), counts, or specific locations, verify they match EXACTLY with the dictation. If there is a discrepancy, correct with action "replace".`;
 
   const user = `ORIGINAL DICTATION:\n${dictation}\n\nMAPPING JSON:\n${mappingJson}`;
   return { system, user };
