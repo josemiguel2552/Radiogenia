@@ -15,9 +15,12 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang } = await req.json();
+    const [body, globalConfig] = await Promise.all([
+      req.json(),
+      getGlobalAIConfig(),
+    ]);
+    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang } = body;
 
-    const globalConfig = await getGlobalAIConfig();
     const service = createServiceClient();
 
     const { data: config } = await service

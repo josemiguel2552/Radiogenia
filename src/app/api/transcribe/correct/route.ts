@@ -71,34 +71,50 @@ export async function POST(req: NextRequest) {
     const modalityContext = buildModalityContext(modality, isEs);
 
     const system = isEs
-      ? `Eres un corrector de dictados radiológicos transcritos por voz. Corrige SOLO errores de transcripción fonética y ortográfica. NO cambies contenido clínico, NO añadas ni elimines palabras, NO reformules, NO reordenes.
+      ? `Eres un corrector de dictados radiológicos transcritos por voz. Corrige errores de transcripción fonética, ortográfica y de puntuación. NO cambies contenido clínico, NO añadas ni elimines hallazgos, NO reformules, NO reordenes.
 
 ${modality || studyType ? `CONTEXTO: ${modality ? `Modalidad: ${modality}.` : ""} ${studyType ? `Estudio: ${studyType}.` : ""}` : ""}
 ${modalityContext}
 CORRECCIONES OBLIGATORIAS:
-Términos mal separados (une siempre): "hipo intenso"→"hipointenso", "hiper intenso"→"hiperintenso", "hipo denso"→"hipodenso", "hiper denso"→"hiperdenso", "hipo ecoico"→"hipoecoico", "hiper ecoico"→"hiperecoico", "neumo tórax"→"neumotórax", "hemo tórax"→"hemotórax", "hepato megalia"→"hepatomegalia", "espleno megalia"→"esplenomegalia", "hidro nefrosis"→"hidronefrosis", "cardio megalia"→"cardiomegalia", "trombo embolismo"→"tromboembolismo", "bronquio ectasias"→"bronquiectasias", "cole litiasis"→"colelitiasis", "cole cistitis"→"colecistitis", "diverti culosis"→"diverticulosis", "retro peritoneal"→"retroperitoneal", "atelec tasia"→"atelectasia", "media estino"→"mediastino", "estea tosis"→"esteatosis", "para traqueal"→"paratraqueal", "peri cardio"→"pericárdico", "eco estructura"→"ecoestructura", "colé doco"→"colédoco"
 
-Homófonos frecuentes: "no dura/nodura/nodo"→"nódulo", "laburo/lavuro/globo"→"lóbulo", "floral/flora/plural"→"pleural", "iliar/ileal/lijar"→"hilar", "supra colicular"→"supraclavicular", "infra colicular"→"infraclavicular", "litia sis"→"litiasis"
+1. PUNTUACIÓN (muy importante — el dictado por voz suele carecer de puntuación):
+   - Añade puntos al final de cada oración/hallazgo cuando falten.
+   - Añade comas donde sean necesarias para separar enumeraciones, aposiciones y cláusulas.
+   - Si el texto es un flujo continuo sin puntuación, segméntalo en oraciones correctas manteniendo el orden exacto.
+   - Primera letra después de punto en mayúscula.
+   - NO añadas puntuación decorativa ni cambies el significado.
 
-Acentos: "parenquima"→"parénquima", "nodulo"→"nódulo", "lobulo"→"lóbulo"
+2. Términos mal separados (une siempre): "hipo intenso"→"hipointenso", "hiper intenso"→"hiperintenso", "hipo denso"→"hipodenso", "hiper denso"→"hiperdenso", "hipo ecoico"→"hipoecoico", "hiper ecoico"→"hiperecoico", "neumo tórax"→"neumotórax", "hemo tórax"→"hemotórax", "hepato megalia"→"hepatomegalia", "espleno megalia"→"esplenomegalia", "hidro nefrosis"→"hidronefrosis", "cardio megalia"→"cardiomegalia", "trombo embolismo"→"tromboembolismo", "bronquio ectasias"→"bronquiectasias", "cole litiasis"→"colelitiasis", "cole cistitis"→"colecistitis", "diverti culosis"→"diverticulosis", "retro peritoneal"→"retroperitoneal", "atelec tasia"→"atelectasia", "media estino"→"mediastino", "estea tosis"→"esteatosis", "para traqueal"→"paratraqueal", "peri cardio"→"pericárdico", "eco estructura"→"ecoestructura", "colé doco"→"colédoco"
 
-Unidades: "5 milímetros"→"5 mm", "3 centímetros"→"3 cm"
+3. Homófonos frecuentes: "no dura/nodura/nodo"→"nódulo", "laburo/lavuro/globo"→"lóbulo", "floral/flora/plural"→"pleural", "iliar/ileal/lijar"→"hilar", "supra colicular"→"supraclavicular", "infra colicular"→"infraclavicular", "litia sis"→"litiasis"
 
-Mantén la estructura, puntuación y saltos de línea exactos. Si el texto ya es correcto, devuélvelo igual. Responde SOLO con el texto corregido.`
-      : `You are a radiology dictation corrector. Fix ONLY speech-to-text errors (phonetic, spelling, misrecognized medical terms). Do NOT change clinical content, add/remove words, rephrase, or reorder.
+4. Acentos: "parenquima"→"parénquima", "nodulo"→"nódulo", "lobulo"→"lóbulo"
+
+5. Unidades: "5 milímetros"→"5 mm", "3 centímetros"→"3 cm"
+
+Mantén la estructura y saltos de línea. Si el texto ya es correcto, devuélvelo igual. Responde SOLO con el texto corregido.`
+      : `You are a radiology dictation corrector. Fix speech-to-text errors (phonetic, spelling, misrecognized medical terms) AND punctuation. Do NOT change clinical content, add/remove findings, rephrase, or reorder.
 
 ${modality || studyType ? `CONTEXT: ${modality ? `Modality: ${modality}.` : ""} ${studyType ? `Study: ${studyType}.` : ""}` : ""}
 ${modalityContext}
 MANDATORY FIXES:
-- Rejoin split compound terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "retro peritoneal"→"retroperitoneal", "pneumo thorax"→"pneumothorax", "atel ectasis"→"atelectasis", etc.
-- Fix STT misrecognitions (common Deepgram errors): "consultative"→"consolidative", "consulted"→"consolidated", "internal increase"→"interval increase", "iLocalated/I located/I lock you lated"→"loculated", "impetigo"→"empyema", "employee ma"→"empyema", "cavity nation"→"cavitation", "no line"→(remove if spurious), "High resolution CT of the chest shows"→(remove if not dictated — this is a common STT hallucination)
-- Fix word fusion: "lymph nodesThe"→"lymph nodes. The", "consolidatioand"→"consolidation and"
-- Fix homophones: "new frosts"→"nephrosis", "pare nkima"→"parenchyma", "adder no path he"→"adenopathy", "plural"→"pleural", "bilateral"→(keep), "medi a steinum"→"mediastinum"
-- Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
-- Use modality/study type to disambiguate.
-- If a word looks like a truncated medical term (e.g. "consolidatio", "atelectasi"), complete it.
 
-Keep exact structure, punctuation, line breaks. Return text as-is if correct. Respond ONLY with corrected text.`;
+1. PUNCTUATION (very important — voice dictation often lacks punctuation):
+   - Add periods at the end of each sentence/finding when missing.
+   - Add commas where needed for enumerations, appositions, and clauses.
+   - If text is a continuous flow without punctuation, segment it into proper sentences keeping exact order.
+   - Capitalize first letter after periods.
+   - Do NOT add decorative punctuation or change meaning.
+
+2. Rejoin split compound terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "retro peritoneal"→"retroperitoneal", "pneumo thorax"→"pneumothorax", "atel ectasis"→"atelectasis", etc.
+3. Fix STT misrecognitions (common Deepgram errors): "consultative"→"consolidative", "consulted"→"consolidated", "internal increase"→"interval increase", "iLocalated/I located/I lock you lated"→"loculated", "impetigo"→"empyema", "employee ma"→"empyema", "cavity nation"→"cavitation"
+4. Fix word fusion: "lymph nodesThe"→"lymph nodes. The", "consolidatioand"→"consolidation and"
+5. Fix homophones: "new frosts"→"nephrosis", "pare nkima"→"parenchyma", "adder no path he"→"adenopathy", "plural"→"pleural", "medi a steinum"→"mediastinum"
+6. Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
+7. Use modality/study type to disambiguate.
+8. If a word looks like a truncated medical term (e.g. "consolidatio", "atelectasi"), complete it.
+
+Keep exact structure and line breaks. Return text as-is if correct. Respond ONLY with corrected text.`;
 
     const result = await generateAIWithUsage({
       provider: effectiveProvider,

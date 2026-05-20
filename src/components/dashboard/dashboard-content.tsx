@@ -208,12 +208,13 @@ export function DashboardContent() {
       body: JSON.stringify({ dictation_language: lang }),
     }).catch(() => {});
   };
-  const runCorrection = useRef(() => {
+  const runCorrection = useRef((force?: boolean) => {
     if (correctingRef.current) return;
     const full = dictationRef.current;
     const alreadyCorrected = correctedLenRef.current;
     const newText = full.slice(alreadyCorrected).trim();
-    if (!newText || newText.length < 3) {
+    if (!newText || (!force && newText.length < 3)) {
+      if (newText) return;
       correctedLenRef.current = full.length;
       setIsCorrecting(false);
       return;
@@ -256,8 +257,8 @@ export function DashboardContent() {
       .finally(() => {
         correctingRef.current = false;
         const remaining = dictationRef.current.length - correctedLenRef.current;
-        if (remaining > 3) {
-          setTimeout(() => runCorrection.current(), 150);
+        if (remaining > 0) {
+          setTimeout(() => runCorrection.current(remaining <= 3), 150);
         } else {
           setIsCorrecting(false);
         }
@@ -336,8 +337,8 @@ export function DashboardContent() {
           return;
         }
         const remaining = dictationRef.current.length - correctedLenRef.current;
-        if (remaining > 3) {
-          runCorrection.current();
+        if (remaining > 0) {
+          runCorrection.current(true);
         }
       };
       setTimeout(waitAndCorrect, 250);
@@ -511,20 +512,18 @@ export function DashboardContent() {
   // Seed defaults (if needed) then load templates + user config
   useEffect(() => {
     async function seedAndLoad() {
-      try {
-        await fetch("/api/seed", { method: "POST" });
-      } catch { /* seed may already exist */ }
-      const res = await fetch("/api/templates");
-      if (res.ok) setTemplates(await res.json());
-      try {
-        const cfgRes = await fetch("/api/model-config");
-        if (cfgRes.ok) {
-          const cfg = await cfgRes.json();
-          if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
-          if (cfg.output_language) setOutputLanguage(cfg.output_language);
-          if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
-        }
-      } catch { /* ignore */ }
+      const [, tplRes, cfgRes] = await Promise.all([
+        fetch("/api/seed", { method: "POST" }).catch(() => null),
+        fetch("/api/templates"),
+        fetch("/api/model-config").catch(() => null),
+      ]);
+      if (tplRes.ok) setTemplates(await tplRes.json());
+      if (cfgRes?.ok) {
+        const cfg = await cfgRes.json();
+        if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+        if (cfg.output_language) setOutputLanguage(cfg.output_language);
+        if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
+      }
     }
     seedAndLoad();
 
@@ -960,18 +959,6 @@ export function DashboardContent() {
   }
 
   async function copyFormatted(mode: "findings" | "findings_conclusion" | "full") {
-    logCorrectionIfNeeded();
-    await flushCorrections();
-    // Refresh signature in case user changed it in the sidebar
-    try {
-      const sRes = await fetch("/api/signatures");
-      if (sRes.ok) {
-        const sigs: { is_active: boolean; body: string }[] = await sRes.json();
-        const active = sigs.find((s) => s.is_active);
-        activeSignatureRef.current = active ? active.body : null;
-      }
-    } catch { /* use cached value */ }
-
     const title = getStudyTitle();
     const cleanFindings = cleanReport(findings);
     const cleanConclusion = cleanReport(conclusion);
@@ -992,6 +979,17 @@ export function DashboardContent() {
 
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
     copyText(text, id);
+
+    logCorrectionIfNeeded();
+    flushCorrections().catch(() => {});
+    fetch("/api/signatures").then((sRes) => {
+      if (sRes.ok) return sRes.json();
+    }).then((sigs: { is_active: boolean; body: string }[] | undefined) => {
+      if (sigs) {
+        const active = sigs.find((s) => s.is_active);
+        activeSignatureRef.current = active ? active.body : null;
+      }
+    }).catch(() => {});
   }
   copyFormattedRef.current = copyFormatted;
 
@@ -1001,10 +999,18 @@ export function DashboardContent() {
         e.preventDefault();
         copyFormattedRef.current?.("findings_conclusion");
       }
+      if (e.ctrlKey && e.key === "a") {
+        const tag = (e.target as HTMLElement)?.tagName;
+        const isInput = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          toggleRecording();
+        }
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [toggleRecording]);
 
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
