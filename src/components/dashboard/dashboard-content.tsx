@@ -1316,6 +1316,11 @@ export function DashboardContent() {
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
+                {!isRecording && !isTranscribing && !isCorrecting && (
+                  <div className="absolute top-1 right-1">
+                    <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+                  </div>
+                )}
                 {(isRecording || isTranscribing || isCorrecting) && (
                   <div className="absolute bottom-2 right-2">
                     <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
@@ -1597,6 +1602,11 @@ export function DashboardContent() {
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
+                {!isRecording && !isTranscribing && !isCorrecting && (
+                  <div className="absolute top-1 right-1">
+                    <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+                  </div>
+                )}
                 {(isRecording || isTranscribing || isCorrecting) && (
                   <div className="absolute bottom-2 right-2">
                     <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
