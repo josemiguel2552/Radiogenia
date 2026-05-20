@@ -170,6 +170,11 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
           <span className="text-[9px] font-bold text-white dark:text-gray-900">+</span>
         </div>
 
+        {/* Beta badge */}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold px-1 py-px rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase tracking-wider shadow">
+          Beta
+        </div>
+
         {/* Text indicator badge */}
         {hasText && !expanded && (
           <div className="absolute -top-2 -left-2 h-6 min-w-[1.5rem] px-1 rounded-full bg-brand text-brand-fg text-[10px] font-bold flex items-center justify-center shadow">
@@ -197,6 +202,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
           <GripVertical className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex-1">
             {t("dash.voice_dictation")}
+            <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase tracking-wider">{t("dash.voice_beta")}</span>
           </span>
           <div className="flex items-center gap-0.5">
             <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-mono">+</kbd>
