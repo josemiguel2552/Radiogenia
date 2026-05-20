@@ -93,6 +93,7 @@ Si el informe resultante tiene más secciones que hallazgos dictados, estás hac
 
 ⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA, SIN EXCEPCIONES:
 - CADA hallazgo del dictado DEBE aparecer en el informe. Si un hallazgo encaja en una sección del template, ponlo ahí. Si NO encaja en NINGUNA sección, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+- NUNCA fuerces un hallazgo en una sección anatómica incorrecta. La sección debe corresponder ANATÓMICAMENTE al hallazgo (ej: "Tráquea y bronquios" NO es tiroides; nódulos tiroideos van a "Otros hallazgos" si no hay sección de tiroides).
 - NUNCA omitas un hallazgo dictado. Es preferible tener una sección "Otros hallazgos" larga que perder un solo dato clínico.
 - Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta. Si falta alguno, añádelo a "Otros hallazgos".`,
 
@@ -105,6 +106,7 @@ If the resulting report has more sections than dictated findings, you are doing 
 
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
 - EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
+- NEVER force a finding into an incorrect anatomical section. The section must ANATOMICALLY match the finding (e.g., "Trachea and bronchi" is NOT thyroid; thyroid nodules go to "Additional findings" if no thyroid section exists).
 - NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
 
@@ -117,6 +119,7 @@ Se o relatório resultante tiver mais seções do que achados ditados, você est
 
 ⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA, SEM EXCEÇÕES:
 - CADA achado do ditado DEVE aparecer no laudo. Se um achado se encaixa em uma seção do template, coloque-o lá. Se NÃO se encaixa em NENHUMA seção, você DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
+- NUNCA force um achado em uma seção anatômica incorreta. A seção deve corresponder ANATOMICAMENTE ao achado (ex: "Traqueia e brônquios" NÃO é tireoide; nódulos tireoidianos vão para "Outros achados" se não houver seção de tireoide).
 - NUNCA omita um achado ditado. Uma seção "Outros achados" longa é preferível a perder um único dado clínico.
 - Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta. Se faltar algum, adicione-o a "Outros achados".`,
 };
@@ -131,6 +134,7 @@ NO escribas secciones de normalidad. El informe SOLO contiene lo que el radiólo
 
 ⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA, SIN EXCEPCIONES:
 - CADA hallazgo del dictado DEBE aparecer en el informe. Si un hallazgo encaja en una sección del template, ponlo ahí. Si NO encaja en NINGUNA sección, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+- NUNCA fuerces un hallazgo en una sección anatómica incorrecta. La sección debe corresponder ANATÓMICAMENTE al hallazgo (ej: "Tráquea y bronquios" NO es tiroides; nódulos tiroideos van a "Otros hallazgos" si no hay sección de tiroides).
 - NUNCA omitas un hallazgo dictado. Es preferible tener una sección "Otros hallazgos" larga que perder un solo dato clínico.
 - Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta. Si falta alguno, añádelo a "Otros hallazgos".`,
 
@@ -143,6 +147,7 @@ Do NOT write normality sections. The report ONLY contains what the radiologist d
 
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
 - EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
+- NEVER force a finding into an incorrect anatomical section. The section must ANATOMICALLY match the finding (e.g., "Trachea and bronchi" is NOT thyroid; thyroid nodules go to "Additional findings" if no thyroid section exists).
 - NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
 
@@ -155,6 +160,7 @@ NÃO escreva seções de normalidade. O laudo contém APENAS o que o radiologist
 
 ⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA, SEM EXCEÇÕES:
 - CADA achado do ditado DEVE aparecer no laudo. Se um achado se encaixa em uma seção do template, coloque-o lá. Se NÃO se encaixa em NENHUMA seção, você DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
+- NUNCA force um achado em uma seção anatômica incorreta. A seção deve corresponder ANATOMICAMENTE ao achado (ex: "Traqueia e brônquios" NÃO é tireoide; nódulos tireoidianos vão para "Outros achados" se não houver seção de tireoide).
 - NUNCA omita um achado ditado. Uma seção "Outros achados" longa é preferível a perder um único dado clínico.
 - Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta. Se faltar algum, adicione-o a "Outros achados".`,
 };
@@ -190,10 +196,11 @@ REGLAS OBLIGATORIAS:
 5. NO añadas diagnósticos, caracterizaciones ni interpretaciones que el radiólogo no haya dictado. Si dicta "lesión adrenal de 18 mm con densidad de 20 UH", escribe exactamente eso — NO añadas "compatible con adenoma", "sugestivo de quiste", etc. El radiólogo describe datos; tú los transcribes fielmente.
 6. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
 6. HALLAZGOS SIN SECCIÓN — OBLIGATORIO:
-   Si un hallazgo dictado NO encaja claramente en NINGUNA sección del template, DEBES añadir una sección final llamada "Otros hallazgos:" al final del informe con TODOS los hallazgos huérfanos agrupados.
+   Si un hallazgo dictado NO encaja claramente en NINGUNA sección anatómica del template, DEBES añadir una sección final llamada "Otros hallazgos:" al final del informe con TODOS los hallazgos huérfanos agrupados.
    - NUNCA omitas un hallazgo dictado por falta de sección adecuada.
-   - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos".
-   - Ejemplos: hallazgos incidentales en órganos no cubiertos por el template, hallazgos de partes blandas en un template óseo, adenopatías en un template que no las incluye, etc.
+   - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos". Cada hallazgo DEBE ir en la sección que corresponde ANATÓMICAMENTE. Si la estructura anatómica del hallazgo NO es la estructura de la sección, NO lo pongas ahí.
+   - EJEMPLOS de hallazgos que VAN a "Otros hallazgos": nódulos tiroideos en un template de tórax sin sección de tiroides, hallazgos en partes blandas en un template óseo, adenopatías en un template que no las incluye, hallazgos tiroideos en una sección de tráquea, hallazgos mamarios en un template torácico, etc.
+   - La sección debe corresponderse ANATÓMICAMENTE con el hallazgo. "Tráquea y bronquios" NO es tiroides. "Pulmón" NO es pleura si hay sección de pleura. "Hígado" NO es vesícula si hay sección de vesícula.
    - Si TODOS los hallazgos encajan en secciones existentes, NO añadas esta sección.
 
 FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
@@ -240,10 +247,11 @@ REGRAS OBRIGATÓRIAS:
 5. NÃO adicione diagnósticos, caracterizações nem interpretações que o radiologista não tenha ditado. Se dita "lesão adrenal de 18 mm com densidade de 20 UH", escreva exatamente isso — NÃO adicione "compatível com adenoma", "sugestivo de cisto", etc.
 6. IGNORE completamente a seção "CONCLUSÃO" do template — NÃO a inclua na resposta.
 6. ACHADOS SEM SEÇÃO — OBRIGATÓRIO:
-   Se um achado ditado NÃO se encaixa claramente em NENHUMA seção do template, você DEVE adicionar uma seção final chamada "Outros achados:" ao final do laudo com TODOS os achados órfãos agrupados.
+   Se um achado ditado NÃO se encaixa claramente em NENHUMA seção anatômica do template, você DEVE adicionar uma seção final chamada "Outros achados:" ao final do laudo com TODOS os achados órfãos agrupados.
    - NUNCA omita um achado ditado por falta de seção adequada.
-   - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados".
-   - Exemplos: achados incidentais em órgãos não cobertos pelo template, achados de partes moles em um template ósseo, linfonodomegalias em um template que não as inclui, etc.
+   - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados". Cada achado DEVE ir na seção que corresponde ANATOMICAMENTE. Se a estrutura anatômica do achado NÃO é a estrutura da seção, NÃO o coloque lá.
+   - EXEMPLOS de achados que VÃO para "Outros achados": nódulos tireoidianos em um template de tórax sem seção de tireoide, achados em partes moles em um template ósseo, linfonodomegalias em um template que não as inclui, achados tireoidianos em uma seção de traqueia, achados mamários em um template torácico, etc.
+   - A seção deve corresponder ANATOMICAMENTE ao achado. "Traqueia e brônquios" NÃO é tireoide. "Pulmão" NÃO é pleura se houver seção de pleura. "Fígado" NÃO é vesícula se houver seção de vesícula.
    - Se TODOS os achados se encaixam em seções existentes, NÃO adicione esta seção.
 
 FORMATO DE SAÍDA — ESTRITO, SEM EXCEÇÕES:
@@ -289,10 +297,11 @@ MANDATORY RULES:
 5. Do NOT add diagnoses, characterizations, or interpretations the radiologist did not dictate. If they dictate "18 mm adrenal lesion with density of 20 HU", write exactly that — do NOT add "consistent with adenoma", "suggestive of cyst", etc. The radiologist reports data; you transcribe faithfully.
 6. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
 6. FINDINGS WITHOUT A SECTION — MANDATORY:
-   If a dictated finding does NOT clearly fit ANY template section, you MUST add a final section called "Additional findings:" at the end of the report with ALL orphan findings grouped together.
+   If a dictated finding does NOT clearly fit ANY anatomical section of the template, you MUST add a final section called "Additional findings:" at the end of the report with ALL orphan findings grouped together.
    - NEVER omit a dictated finding due to lack of a matching section.
-   - NEVER force a finding into an incorrect anatomical section just to avoid creating "Additional findings".
-   - Examples: incidental findings in organs not covered by the template, soft tissue findings in a bone template, lymphadenopathy in a template that doesn't include it, etc.
+   - NEVER force a finding into an incorrect anatomical section just to avoid creating "Additional findings". Each finding MUST go in the section that corresponds ANATOMICALLY. If the anatomical structure of the finding is NOT the structure of the section, do NOT place it there.
+   - EXAMPLES of findings that GO to "Additional findings": thyroid nodules in a chest template without a thyroid section, soft tissue findings in a bone template, lymphadenopathy in a template that doesn't include it, thyroid findings in a "trachea and bronchi" section, breast findings in a thoracic template, etc.
+   - The section must ANATOMICALLY match the finding. "Trachea and bronchi" is NOT thyroid. "Lung" is NOT pleura if there is a pleura section. "Liver" is NOT gallbladder if there is a gallbladder section.
    - If ALL findings fit existing sections, do NOT add this section.
 
 OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
@@ -357,7 +366,13 @@ REGLAS (sin excepciones):
 4. NO inventes hallazgos patológicos ni diagnósticos que el radiólogo no haya dictado.
 5. NO añadas diagnósticos, caracterizaciones ni interpretaciones que el radiólogo no haya dictado.
 6. Ignora completamente la sección "CONCLUSIÓN" del template — NO la incluyas.
-7. HALLAZGOS SIN SECCIÓN: Si un hallazgo dictado NO encaja en NINGUNA sección del template, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+7. HALLAZGOS SIN SECCIÓN — OBLIGATORIO:
+   Si un hallazgo dictado NO encaja claramente en NINGUNA sección anatómica del template, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+   - NUNCA omitas un hallazgo dictado por falta de sección adecuada.
+   - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos". Cada hallazgo DEBE ir en la sección que corresponde ANATÓMICAMENTE. Si la estructura anatómica del hallazgo NO es la estructura de la sección, NO lo pongas ahí.
+   - EJEMPLOS de hallazgos que VAN a "Otros hallazgos": nódulos tiroideos en un template de tórax sin sección de tiroides, hallazgos en partes blandas en un template óseo, adenopatías en un template que no las incluye, hallazgos tiroideos en una sección de tráquea, hallazgos mamarios en un template torácico, etc.
+   - La sección debe corresponderse ANATÓMICAMENTE con el hallazgo. "Tráquea y bronquios" NO es tiroides. "Pulmón" NO es pleura si hay sección de pleura. "Hígado" NO es vesícula si hay sección de vesícula.
+   - Si TODOS los hallazgos encajan en secciones existentes, NO añadas esta sección.
 
 ⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA:
 - CADA hallazgo del dictado DEBE aparecer en el informe. NUNCA omitas un hallazgo dictado.
@@ -394,7 +409,13 @@ REGRAS (sem exceções):
 4. NÃO invente achados patológicos nem diagnósticos que o radiologista não tenha ditado.
 5. NÃO adicione diagnósticos, caracterizações nem interpretações que o radiologista não tenha ditado.
 6. Ignore completamente a seção "CONCLUSÃO" do template — NÃO a inclua.
-7. ACHADOS SEM SEÇÃO: Se um achado ditado NÃO se encaixa em NENHUMA seção do template, DEVE adicionar "Outros achados:" ao final.
+7. ACHADOS SEM SEÇÃO — OBRIGATÓRIO:
+   Se um achado ditado NÃO se encaixa claramente em NENHUMA seção anatômica do template, DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
+   - NUNCA omita um achado ditado por falta de seção adequada.
+   - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados". Cada achado DEVE ir na seção que corresponde ANATOMICAMENTE. Se a estrutura anatômica do achado NÃO é a estrutura da seção, NÃO o coloque lá.
+   - EXEMPLOS de achados que VÃO para "Outros achados": nódulos tireoidianos em um template de tórax sem seção de tireoide, achados em partes moles em um template ósseo, linfonodomegalias em um template que não as inclui, achados tireoidianos em uma seção de traqueia, etc.
+   - A seção deve corresponder ANATOMICAMENTE ao achado. "Traqueia e brônquios" NÃO é tireoide. "Pulmão" NÃO é pleura se houver seção de pleura.
+   - Se TODOS os achados se encaixam em seções existentes, NÃO adicione esta seção.
 
 ⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA:
 - CADA achado do ditado DEVE aparecer no laudo. NUNCA omita um achado ditado.
@@ -430,7 +451,13 @@ RULES (no exceptions):
 4. Do NOT invent pathological findings or diagnoses the radiologist did not dictate.
 5. Do NOT add diagnoses, characterizations, or interpretations the radiologist did not dictate.
 6. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
-7. FINDINGS WITHOUT A SECTION: If a dictated finding does NOT fit ANY template section, you MUST add "Additional findings:" at the end with ALL orphan findings.
+7. FINDINGS WITHOUT A SECTION — MANDATORY:
+   If a dictated finding does NOT clearly fit ANY anatomical section of the template, you MUST add "Additional findings:" at the end with ALL orphan findings grouped together.
+   - NEVER omit a dictated finding due to lack of a matching section.
+   - NEVER force a finding into an incorrect anatomical section just to avoid creating "Additional findings". Each finding MUST go in the section that corresponds ANATOMICALLY. If the anatomical structure of the finding is NOT the structure of the section, do NOT place it there.
+   - EXAMPLES of findings that GO to "Additional findings": thyroid nodules in a chest template without a thyroid section, soft tissue findings in a bone template, lymphadenopathy in a template that doesn't include it, thyroid findings in a "trachea and bronchi" section, breast findings in a thoracic template, etc.
+   - The section must ANATOMICALLY match the finding. "Trachea and bronchi" is NOT thyroid. "Lung" is NOT pleura if there is a pleura section. "Liver" is NOT gallbladder if there is a gallbladder section.
+   - If ALL findings fit existing sections, do NOT add this section.
 
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE:
 - EVERY dictated finding MUST appear in the report. NEVER omit a dictated finding.
@@ -520,6 +547,8 @@ PASO 2 — ANTI-ALUCINACIÓN: Revisa cada frase de tu informe que describe un ha
 
 PASO 3 — DATOS EXACTOS: Verifica que cada medida (mm, cm), número, lateralidad (derecha/izquierda), y ubicación anatómica coincide EXACTAMENTE con el dictado. No redondees, no cambies lateralidad, no muevas hallazgos entre secciones incorrectas.
 
+PASO 4 — SECCIÓN ANATÓMICA CORRECTA: Para CADA hallazgo dictado colocado en una sección, verifica que la estructura anatómica del hallazgo CORRESPONDE a la sección del template. Ej: nódulos tiroideos NO van en "Tráquea y bronquios"; hallazgos pleurales NO van en "Pulmón" si existe sección de pleura. Si un hallazgo está en una sección incorrecta, MUÉVELO a la sección correcta o a "Otros hallazgos:".
+
 Si detectas un error en cualquier paso, CORRÍGELO antes de responder.`,
     en: `
 
@@ -531,6 +560,8 @@ STEP 2 — ANTI-HALLUCINATION: Review every sentence in your report that describ
 
 STEP 3 — EXACT DATA: Verify that every measurement (mm, cm), number, laterality (right/left), and anatomical location matches EXACTLY with the dictation. Do not round, do not swap laterality, do not move findings to incorrect sections.
 
+STEP 4 — CORRECT ANATOMICAL SECTION: For EACH dictated finding placed in a section, verify that the anatomical structure of the finding MATCHES the template section. E.g.: thyroid nodules do NOT go in "Trachea and bronchi"; pleural findings do NOT go in "Lung" if a pleura section exists. If a finding is in an incorrect section, MOVE it to the correct section or to "Additional findings:".
+
 If you detect an error in any step, CORRECT it before responding.`,
     pt: `
 
@@ -541,6 +572,8 @@ PASSO 1 — ANTI-OMISSÃO: Enumere cada achado individual do ditado (positivo E 
 PASSO 2 — ANTI-ALUCINAÇÃO: Revise cada frase do seu laudo que descreve um achado anormal (patológico). Cada achado anormal tem suporte direto no ditado? Se NÃO tiver, REMOVA-O imediatamente. Frases de NORMALIDADE em seções não mencionadas NÃO são alucinações — são parte obrigatória do laudo estruturado.
 
 PASSO 3 — DADOS EXATOS: Verifique que cada medida (mm, cm), número, lateralidade (direita/esquerda) e localização anatômica coincide EXATAMENTE com o ditado. Não arredonde, não troque lateralidade, não mova achados para seções incorretas.
+
+PASSO 4 — SEÇÃO ANATÔMICA CORRETA: Para CADA achado ditado colocado em uma seção, verifique que a estrutura anatômica do achado CORRESPONDE à seção do template. Ex: nódulos tireoidianos NÃO vão em "Traqueia e brônquios"; achados pleurais NÃO vão em "Pulmão" se houver seção de pleura. Se um achado está em uma seção incorreta, MOVA-O para a seção correta ou para "Outros achados:".
 
 Se detectar um erro em qualquer passo, CORRIJA antes de responder.`,
   };

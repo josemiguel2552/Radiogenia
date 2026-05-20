@@ -144,7 +144,7 @@ function buildValidatorPrompt(dictation: string, mappingJson: string, lang: Outp
 TU ÚNICA TAREA — buscar estos 4 tipos de error:
 1. OMISIONES (LA MÁS IMPORTANTE): un dato clínico del dictado no aparece en NINGUNA sección del mapping. Revisa CADA frase del dictado y verifica que está representada en alguna sección. Si un hallazgo no encaja en ninguna sección existente, usa action "add_finding" con section_label "Otros hallazgos" para añadirlo. NUNCA se debe perder un hallazgo dictado.
 2. ALUCINACIONES: el mapping contiene un hallazgo clínico específico que NO está en el dictado. Las frases de normalidad para secciones no mencionadas NO son alucinaciones. La sección "Otros hallazgos" con hallazgos que SÍ están en el dictado NO es una alucinación — es una sección legítima para hallazgos que no encajan en el template.
-3. ERRORES DE SECCIÓN: un hallazgo está en la sección anatómica incorrecta.
+3. ERRORES DE SECCIÓN: un hallazgo está en la sección anatómica INCORRECTA. La sección debe corresponder ANATÓMICAMENTE al hallazgo. Ejemplos de error: nódulos tiroideos en "Tráquea y bronquios" (tiroides NO es tráquea), hallazgos pleurales en "Pulmón" cuando hay sección de pleura, hallazgos vesiculares en "Hígado" cuando hay sección de vesícula. Si detectas esto, usa action "add_finding" con section_label "Otros hallazgos" y "remove_hallucination" para eliminar el hallazgo de la sección incorrecta.
 4. IDIOMA INCORRECTO: TODA la salida (labels y textos) debe estar en ESPAÑOL. Si un label o texto está en inglés u otro idioma, corrígelo traduciéndolo al español. Esto incluye frases de normalidad como "No significant abnormalities", "Normal in size", etc. — TODAS deben estar en español.
 
 REGLAS:
@@ -172,7 +172,7 @@ VERIFICACIÓN DE DATOS EXACTOS: Si un hallazgo incluye medidas (mm, cm), lateral
 CHECK FOR 4 ERROR TYPES:
 1. OMISSIONS (MOST IMPORTANT): dictation content missing from ANY section in the mapping. Check EVERY phrase in the dictation and verify it is represented in some section. If a finding does not fit any existing section, use action "add_finding" with section_label "Additional findings" to add it. A dictated finding must NEVER be lost.
 2. HALLUCINATIONS: specific clinical finding in mapping NOT in dictation. Normal phrases for unmentioned sections are NOT hallucinations. The "Additional findings" section containing findings that ARE in the dictation is NOT a hallucination — it is a legitimate catch-all for findings that do not fit any template section.
-3. WRONG SECTION: finding in incorrect anatomical section.
+3. WRONG SECTION: finding in incorrect anatomical section. The section must ANATOMICALLY match the finding. Examples of errors: thyroid nodules in "Trachea and bronchi" (thyroid is NOT trachea), pleural findings in "Lung" when a pleura section exists, gallbladder findings in "Liver" when a gallbladder section exists. If you detect this, use action "add_finding" with section_label "Additional findings" and "remove_hallucination" to remove the finding from the wrong section.
 4. WRONG LANGUAGE: ALL output (labels and text) must be in ${l}. If any label or text is in a different language, correct it by translating to ${l}. This includes normality phrases like "No significant abnormalities", "Normal in size" etc. — ALL must be in ${l}.
 
 RULES:
