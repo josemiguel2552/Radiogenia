@@ -42,17 +42,38 @@ const PARAPHRASE_INSTRUCTIONS: Record<OutputLanguage, Record<ParaphraseLevel, st
   es: {
     none: "Transcribe los hallazgos dictados de forma literal. No cambies ninguna palabra. Solo ubícalos en la sección correcta.",
     light: "Puedes corregir gramática, orden sintáctico y errores de terminología médica (ej: 'supracolicular'→'supraclavicular', 'arthrosis' en abdomen→'artrosis/hidronefrosis'). Usa el término anatómico o patológico correcto según el contexto clínico y la modalidad. No cambies ningún dato clínico, medida ni descriptor.",
-    free: "Puedes reescribir los hallazgos con estilo radiológico profesional. Mantén todos los datos clínicos intactos.",
+    free: `Reescribe los hallazgos con estilo radiológico profesional, fluido y bien estructurado. Mejoras permitidas:
+- Mejorar la fluidez y legibilidad de las frases.
+- Reorganizar el orden DENTRO de cada sección para mayor claridad (ej: primero el dato principal, luego descriptores).
+- Usar vocabulario radiológico profesional y preciso.
+- Eliminar repeticiones y redundancias.
+- Unificar el estilo entre secciones (concordancia de tiempo verbal, estructura paralela).
+- Corregir gramática, ortografía y terminología.
+PROHIBIDO: añadir hallazgos, diagnósticos, interpretaciones o información que NO esté en el dictado. PROHIBIDO: omitir cualquier hallazgo, medida, lateralidad o dato clínico del dictado. Cada dato dictado DEBE aparecer en la salida. Si el radiólogo dijo "12 mm", no escribas "1.2 cm" ni redondees. Si dijo "derecho", no cambies a "izquierdo". Mantén la INTEGRIDAD CLÍNICA absoluta mientras mejoras la FORMA.`,
   },
   en: {
     none: "Transcribe dictated findings literally. Do not change any words. Only place them in the correct section.",
     light: "You may correct grammar, syntax, and medical terminology errors (e.g. 'supracolicular'→'supraclavicular', 'arthrosis' in abdomen→'hydronephrosis'). Use the correct anatomical/pathological term based on clinical context and modality. Do not change any clinical data, measurements or descriptors.",
-    free: "You may rewrite findings in professional radiological style. Keep all clinical data intact.",
+    free: `Rewrite findings in professional, fluent, well-structured radiological style. Allowed improvements:
+- Improve sentence flow and readability.
+- Reorganize order WITHIN each section for clarity (e.g., main finding first, then descriptors).
+- Use precise, professional radiological vocabulary.
+- Remove repetitions and redundancies.
+- Unify style across sections (verb tense consistency, parallel structure).
+- Correct grammar, spelling, and terminology.
+FORBIDDEN: adding findings, diagnoses, interpretations, or information NOT in the dictation. FORBIDDEN: omitting any finding, measurement, laterality, or clinical data from the dictation. Every dictated data point MUST appear in the output. If the radiologist said "12 mm", do not write "1.2 cm" or round. If they said "right", do not change to "left". Maintain ABSOLUTE CLINICAL INTEGRITY while improving the FORM.`,
   },
   pt: {
     none: "Transcreva os achados ditados de forma literal. Não mude nenhuma palavra. Apenas coloque-os na seção correta.",
     light: "Pode corrigir gramática, ordem sintática e erros de terminologia médica (ex: 'supracolicular'→'supraclavicular'). Use o termo anatômico/patológico correto de acordo com o contexto clínico e a modalidade. Não mude nenhum dado clínico, medida ou descritor.",
-    free: "Pode reescrever os achados com estilo radiológico profissional. Mantenha todos os dados clínicos intactos.",
+    free: `Reescreva os achados com estilo radiológico profissional, fluido e bem estruturado. Melhorias permitidas:
+- Melhorar a fluidez e legibilidade das frases.
+- Reorganizar a ordem DENTRO de cada seção para maior clareza (ex: primeiro o achado principal, depois descritores).
+- Usar vocabulário radiológico profissional e preciso.
+- Eliminar repetições e redundâncias.
+- Unificar o estilo entre seções (concordância verbal, estrutura paralela).
+- Corrigir gramática, ortografia e terminologia.
+PROIBIDO: adicionar achados, diagnósticos, interpretações ou informação que NÃO esteja no ditado. PROIBIDO: omitir qualquer achado, medida, lateralidade ou dado clínico do ditado. Cada dado ditado DEVE aparecer na saída. Se o radiologista disse "12 mm", não escreva "1,2 cm" nem arredonde. Se disse "direito", não mude para "esquerdo". Mantenha a INTEGRIDADE CLÍNICA absoluta enquanto melhora a FORMA.`,
   },
 };
 

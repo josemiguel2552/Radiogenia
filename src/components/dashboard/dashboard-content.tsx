@@ -641,7 +641,7 @@ export function DashboardContent() {
           dictation,
           modality: selectedTemplate.modality,
           studyType: studyName,
-          ...(lightParaphrase ? { paraphraseOverride: "light" } : {}),
+          ...(lightParaphrase ? { paraphraseOverride: "free" } : {}),
           reportMode: mode,
           outputLanguage,
         }),
