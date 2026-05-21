@@ -289,11 +289,15 @@ export function DashboardContent() {
   const whisperDictationStartRef = useRef(0);
   const whisperTemplateSectionsRef = useRef("");
   const whisperStudyContextRef = useRef<string | undefined>(undefined);
+  const whisperModalityRef = useRef("");
+  const whisperStudyTypeRef = useRef("");
 
   const { isRecording, isTranscribing, isRefining, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
     templateSections: whisperTemplateSectionsRef.current,
     studyContext: whisperStudyContextRef.current,
+    modality: whisperModalityRef.current,
+    studyType: whisperStudyTypeRef.current,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
       setDictation((prev) => {
@@ -359,11 +363,11 @@ export function DashboardContent() {
         const before = prev.slice(0, startIdx);
         const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
         const updated = before + sep + whisperText;
-        correctedLenRef.current = 0;
+        correctedLenRef.current = updated.length;
         return updated;
       });
+      setIsCorrecting(false);
       setTraceData(null);
-      setTimeout(() => runCorrection.current(true), 300);
     },
   });
 
@@ -592,7 +596,11 @@ export function DashboardContent() {
   }, [selectedTemplate, sec]);
 
   useEffect(() => { whisperTemplateSectionsRef.current = templateFieldLabels.join(", "); }, [templateFieldLabels]);
-  useEffect(() => { whisperStudyContextRef.current = selectedTemplate ? `${selectedTemplate.modality || ""} ${selectedTemplate.name || ""}`.trim() : undefined; }, [selectedTemplate]);
+  useEffect(() => {
+    whisperStudyContextRef.current = selectedTemplate ? `${selectedTemplate.modality || ""} ${selectedTemplate.name || ""}`.trim() : undefined;
+    whisperModalityRef.current = selectedTemplate?.modality || "";
+    whisperStudyTypeRef.current = selectedTemplate?.name || "";
+  }, [selectedTemplate]);
 
   async function handleHideTemplate(tpl: UserTemplate) {
     if (tpl.is_global) {

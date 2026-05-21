@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     const taskModel = globalConfig.taskOverrides?.dictation_correction;
     const effectiveProvider = taskModel?.provider || "openai";
-    const effectiveModel = taskModel?.modelName || "gpt-4o";
+    const effectiveModel = taskModel?.modelName || "gpt-4o-mini";
     const apiKey = resolveApiKey(globalConfig, effectiveProvider);
 
     const isEs = !language || language.startsWith("es");
