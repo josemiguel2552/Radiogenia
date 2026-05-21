@@ -20,23 +20,33 @@ function buildCorrectionPrompt(modality: string, studyType: string, isEs: boolea
 
 ${ctx}
 CORRECCIONES OBLIGATORIAS:
-1. PUNTUACIÓN: Añade puntos al final de cada oración cuando falten. Añade comas donde sean necesarias. Primera letra después de punto en mayúscula.
-2. Términos mal separados: "hipo intenso"→"hipointenso", "hiper denso"→"hiperdenso", "neumo tórax"→"neumotórax", "hepato megalia"→"hepatomegalia", "retro peritoneal"→"retroperitoneal", "atelec tasia"→"atelectasia", "eco estructura"→"ecoestructura", etc.
-3. Homófonos: "no dura"→"nódulo", "laburo"→"lóbulo", "floral/plural"→"pleural", "iliar"→"hilar"
-4. Acentos: "parenquima"→"parénquima", "nodulo"→"nódulo", "lobulo"→"lóbulo"
-5. Unidades: "5 milímetros"→"5 mm", "3 centímetros"→"3 cm"
+1. PUNTUACIÓN (MUY IMPORTANTE — prioridad máxima):
+   - Cada hallazgo/oración DEBE terminar con punto.
+   - Si el texto es un flujo continuo sin puntuación, segméntalo en oraciones correctas manteniendo el orden exacto.
+   - Añade comas donde sean necesarias para enumeraciones, aposiciones y cláusulas.
+   - Primera letra después de punto en mayúscula.
+2. ARTEFACTOS DE COMANDOS DE VOZ: "línea peritoneal" o "peritoneal line" al final de un hallazgo es un comando de voz mal reconocido ("nueva línea") — elimínalo y pon punto + salto de línea. NO es un hallazgo clínico.
+3. Términos mal separados: "hipo intenso"→"hipointenso", "hiper denso"→"hiperdenso", "neumo tórax"→"neumotórax", "hepato megalia"→"hepatomegalia", "retro peritoneal"→"retroperitoneal", "atelec tasia"→"atelectasia", "eco estructura"→"ecoestructura", etc.
+4. Homófonos: "no dura"→"nódulo", "laburo"→"lóbulo", "floral/plural"→"pleural", "iliar"→"hilar"
+5. Acentos: "parenquima"→"parénquima", "nodulo"→"nódulo", "lobulo"→"lóbulo"
+6. Unidades: "5 milímetros"→"5 mm", "3 centímetros"→"3 cm"
 
 Mantén la estructura y saltos de línea. Responde SOLO con el texto corregido.`
     : `You are a radiology dictation corrector. Fix speech-to-text errors (phonetic, spelling, misrecognized medical terms) AND punctuation. Do NOT change clinical content, add/remove findings, rephrase, or reorder.
 
 ${ctx}
 MANDATORY FIXES:
-1. PUNCTUATION: Add periods at end of sentences when missing. Add commas where needed. Capitalize after periods.
-2. Rejoin split terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "pneumo thorax"→"pneumothorax", "atel ectasis"→"atelectasis", etc.
-3. Fix STT misrecognitions: "consultative"→"consolidative", "internal increase"→"interval increase", "plural"→"pleural"
-4. Fix word fusion: "lymph nodesThe"→"lymph nodes. The"
-5. Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
-6. Complete truncated medical terms.
+1. PUNCTUATION (HIGHEST PRIORITY):
+   - Every finding/sentence MUST end with a period.
+   - If text is a continuous flow without punctuation, segment it into proper sentences keeping exact order.
+   - Add commas where needed for enumerations, appositions, and clauses.
+   - Capitalize first letter after periods.
+2. VOICE COMMAND ARTIFACTS: "peritoneal line" at the end of a finding is a misheard voice command "new line" — remove it entirely and add a period + line break. It is NOT a clinical finding. "high laryn pharynopathy/laryngeal apathy"→"hilar lymphadenopathy".
+3. Rejoin split terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "pneumo thorax"→"pneumothorax", "atel ectasis"→"atelectasis", etc.
+4. Fix STT misrecognitions: "consultative"→"consolidative", "internal increase"→"interval increase", "plural"→"pleural"
+5. Fix word fusion: "lymph nodesThe"→"lymph nodes. The"
+6. Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
+7. Complete truncated medical terms.
 
 Keep exact structure and line breaks. Respond ONLY with corrected text.`;
 }

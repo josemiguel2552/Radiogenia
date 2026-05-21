@@ -363,13 +363,14 @@ export function DashboardContent() {
         whisperSkipRef.current = false;
         return;
       }
+      const processed = processVoiceCommands(whisperText, resolvedDictLangRef.current || resolvedDictLang);
       const startIdx = whisperDictationStartRef.current;
       whisperDictationStartRef.current = -1;
       setDictation((prev) => {
         if (startIdx > prev.length) return prev;
         const before = prev.slice(0, startIdx);
         const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
-        const updated = before + sep + whisperText;
+        const updated = before + sep + processed;
         correctedLenRef.current = updated.length;
         return updated;
       });

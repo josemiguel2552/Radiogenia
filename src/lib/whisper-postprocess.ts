@@ -28,6 +28,13 @@ const ARTIFACT_RULES: [RegExp, string][] = [
   // Period-space-period artifacts
   [/\.\s+\./g, "."],
 
+  // Whisper/Deepgram confuse "new line" / "nueva línea" with "peritoneal line"
+  [/,?\s*\bperitoneal line\b[.,]?\s*/gi, ".\n"],
+
+  // Common radiology STT misrecognitions
+  [/\bhigh laryn(?:geal)? pharynopathy\b/gi, "hilar lymphadenopathy"],
+  [/\blaryn pharynopathy\b/gi, "lymphadenopathy"],
+
   // Whisper confuses "nueva línea" with "nueve" → outputs "9" in non-numeric context
   // Standalone "9" between words (not part of a measurement like "9 mm" or "9.5")
   [/(?<=\.\s*)9(?=\s+[A-Za-zÁ-Úá-ú])/g, "\n"],
