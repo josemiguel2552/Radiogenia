@@ -67,6 +67,7 @@ MODALIDAD: ${params.modality}
 REGLAS:
 1. Devuelve UN objeto JSON con un array "sections", una entrada por sección del template, en el MISMO ORDEN.
 2. Cada entrada: {"label":"Nombre de sección en español","text":"Descripción en español.","source":"dictation|normal_default|negative_dictated","evidence":"fragmento exacto del dictado o null"}
+   IMPORTANTE: En el campo "text", si hay múltiples hallazgos, sepáralos con PUNTOS (.), NUNCA con punto y coma (;).
 3. Valores de "source":
    - "dictation": el radiólogo mencionó un hallazgo positivo. "evidence" = fragmento exacto del dictado.
    - "negative_dictated": el radiólogo dictó explícitamente la AUSENCIA de algo (ej: "no masa", "sin litiasis"). "evidence" = fragmento exacto. Incluye el hallazgo negativo fielmente.
@@ -114,6 +115,7 @@ MODALITY: ${params.modality}
 RULES:
 1. Return ONE JSON object with a "sections" array, one entry per template section, SAME ORDER.
 2. Each entry: {"label":"Section name in ${l}","text":"Description in ${l}.","source":"dictation|normal_default|negative_dictated","evidence":"exact dictation fragment or null"}
+   IMPORTANT: In the "text" field, if there are multiple findings, separate them with PERIODS (.), NEVER with semicolons (;).
 3. "source" values:
    - "dictation": positive finding mentioned. "evidence" = exact dictation fragment.
    - "negative_dictated": radiologist explicitly stated ABSENCE (e.g. "no mass"). "evidence" = exact fragment.
