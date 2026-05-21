@@ -24,6 +24,8 @@ interface UseVoiceDictationOptions {
   onWhisperRefine?: (whisperText: string, deepgramText: string) => void;
   templateSections?: string;
   studyContext?: string;
+  modality?: string;
+  studyType?: string;
 }
 
 interface CachedToken {
@@ -45,6 +47,8 @@ export function useVoiceDictation({
   onWhisperRefine,
   templateSections,
   studyContext,
+  modality,
+  studyType,
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -85,6 +89,10 @@ export function useVoiceDictation({
   templateSectionsRef.current = templateSections;
   const studyContextRef = useRef(studyContext);
   studyContextRef.current = studyContext;
+  const modalityRef = useRef(modality);
+  modalityRef.current = modality;
+  const studyTypeRef = useRef(studyType);
+  studyTypeRef.current = studyType;
 
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
@@ -403,15 +411,10 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   // Whisper refinement: send buffered audio for accurate final transcript
   // ══════════════════════════════════════════════════════════════
-  const sendWhisperRefinement = useCallback(async (durationSec: number) => {
-    const blobs = whisperAudioRef.current;
-    const dgText = dgAccumulatedRef.current;
-    whisperAudioRef.current = [];
-    dgAccumulatedRef.current = "";
+  const sendWhisperRefinement = useCallback(async (durationSec: number, snapshotBlobs: Blob[], snapshotDgText: string) => {
+    if (!snapshotBlobs.length || !snapshotDgText.trim() || !onWhisperRefineRef.current) return;
 
-    if (!blobs.length || !dgText.trim() || !onWhisperRefineRef.current) return;
-
-    const audioBlob = new Blob(blobs, { type: blobs[0]?.type || "audio/webm" });
+    const audioBlob = new Blob(snapshotBlobs, { type: snapshotBlobs[0]?.type || "audio/webm" });
     if (audioBlob.size < 1000) return;
 
     setIsRefining(true);
@@ -420,15 +423,17 @@ export function useVoiceDictation({
       form.append("audio", audioBlob, "dictation.webm");
       form.append("language", language);
       form.append("duration_seconds", String(Math.round(durationSec)));
-      form.append("context", dgText.slice(-200));
+      form.append("context", snapshotDgText.slice(-200));
       if (templateSectionsRef.current) form.append("template_sections", templateSectionsRef.current);
       if (studyContextRef.current) form.append("study_context", studyContextRef.current);
+      if (modalityRef.current) form.append("modality", modalityRef.current);
+      if (studyTypeRef.current) form.append("study_type", studyTypeRef.current);
 
-      const res = await fetch("/api/transcribe", { method: "POST", body: form });
+      const res = await fetch("/api/transcribe/refine", { method: "POST", body: form });
       if (res.ok) {
         const data = await res.json();
         if (data.text?.trim()) {
-          onWhisperRefineRef.current(data.text.trim(), dgText);
+          onWhisperRefineRef.current(data.text.trim(), snapshotDgText);
         }
       }
     } catch { /* Whisper refinement is best-effort */ }
@@ -463,6 +468,16 @@ export function useVoiceDictation({
     }
     recorderRef.current = null;
 
+    // Snapshot audio blobs and DG text immediately, start Whisper refinement NOW (before drain)
+    const snapshotBlobs = [...whisperAudioRef.current];
+    const snapshotDgText = dgAccumulatedRef.current + (interimTextRef.current ? (dgAccumulatedRef.current ? " " : "") + interimTextRef.current : "");
+    whisperAudioRef.current = [];
+    dgAccumulatedRef.current = "";
+
+    if (durationSec >= 2) {
+      sendWhisperRefinement(durationSec, snapshotBlobs, snapshotDgText);
+    }
+
     // Stop the level meter and keep-alive but keep WS open for draining
     if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
     if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null; }
@@ -475,14 +490,10 @@ export function useVoiceDictation({
       const pending = interimTextRef.current;
       if (pending) {
         interimTextRef.current = "";
-        dgAccumulatedRef.current += (dgAccumulatedRef.current ? " " : "") + pending;
         onTranscriptRef.current(pending);
       }
       cleanup();
       setTimeout(() => onRecordingDone?.(), 50);
-      if (durationSec >= 2) {
-        sendWhisperRefinement(durationSec);
-      }
     };
 
     // Give recorder's final ondataavailable time to send, then tell Deepgram to finalize
