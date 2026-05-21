@@ -86,11 +86,13 @@ CORRECCIONES OBLIGATORIAS:
 
 2. Términos mal separados (une siempre): "hipo intenso"→"hipointenso", "hiper intenso"→"hiperintenso", "hipo denso"→"hipodenso", "hiper denso"→"hiperdenso", "hipo ecoico"→"hipoecoico", "hiper ecoico"→"hiperecoico", "neumo tórax"→"neumotórax", "hemo tórax"→"hemotórax", "hepato megalia"→"hepatomegalia", "espleno megalia"→"esplenomegalia", "hidro nefrosis"→"hidronefrosis", "cardio megalia"→"cardiomegalia", "trombo embolismo"→"tromboembolismo", "bronquio ectasias"→"bronquiectasias", "cole litiasis"→"colelitiasis", "cole cistitis"→"colecistitis", "diverti culosis"→"diverticulosis", "retro peritoneal"→"retroperitoneal", "atelec tasia"→"atelectasia", "media estino"→"mediastino", "estea tosis"→"esteatosis", "para traqueal"→"paratraqueal", "peri cardio"→"pericárdico", "eco estructura"→"ecoestructura", "colé doco"→"colédoco"
 
-3. Homófonos frecuentes: "no dura/nodura/nodo"→"nódulo", "laburo/lavuro/globo"→"lóbulo", "floral/flora/plural"→"pleural", "iliar/ileal/lijar"→"hilar", "supra colicular"→"supraclavicular", "infra colicular"→"infraclavicular", "litia sis"→"litiasis"
+3. ARTEFACTOS DE COMANDOS DE VOZ: "línea peritoneal" o "peritoneal line" al final de un hallazgo es un comando de voz mal reconocido ("nueva línea") — elimínalo y pon punto + salto de línea. NO es un hallazgo clínico.
 
-4. Acentos: "parenquima"→"parénquima", "nodulo"→"nódulo", "lobulo"→"lóbulo"
+4. Homófonos frecuentes: "no dura/nodura/nodo"→"nódulo", "laburo/lavuro/globo"→"lóbulo", "floral/flora/plural"→"pleural", "iliar/ileal/lijar"→"hilar", "supra colicular"→"supraclavicular", "infra colicular"→"infraclavicular", "litia sis"→"litiasis"
 
-5. Unidades: "5 milímetros"→"5 mm", "3 centímetros"→"3 cm"
+5. Acentos: "parenquima"→"parénquima", "nodulo"→"nódulo", "lobulo"→"lóbulo"
+
+6. Unidades: "5 milímetros"→"5 mm", "3 centímetros"→"3 cm"
 
 Mantén la estructura y saltos de línea. Si el texto ya es correcto, devuélvelo igual. Responde SOLO con el texto corregido.`
       : `You are a radiology dictation corrector. Fix speech-to-text errors (phonetic, spelling, misrecognized medical terms) AND punctuation. Do NOT change clinical content, add/remove findings, rephrase, or reorder.
@@ -107,12 +109,13 @@ MANDATORY FIXES:
    - Do NOT add decorative punctuation or change meaning.
 
 2. Rejoin split compound terms: "hypo intense"→"hypointense", "hyper dense"→"hyperdense", "retro peritoneal"→"retroperitoneal", "pneumo thorax"→"pneumothorax", "atel ectasis"→"atelectasis", etc.
-3. Fix STT misrecognitions (common Deepgram errors): "consultative"→"consolidative", "consulted"→"consolidated", "internal increase"→"interval increase", "iLocalated/I located/I lock you lated"→"loculated", "impetigo"→"empyema", "employee ma"→"empyema", "cavity nation"→"cavitation"
-4. Fix word fusion: "lymph nodesThe"→"lymph nodes. The", "consolidatioand"→"consolidation and"
-5. Fix homophones: "new frosts"→"nephrosis", "pare nkima"→"parenchyma", "adder no path he"→"adenopathy", "plural"→"pleural", "medi a steinum"→"mediastinum"
-6. Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
-7. Use modality/study type to disambiguate.
-8. If a word looks like a truncated medical term (e.g. "consolidatio", "atelectasi"), complete it.
+3. Fix STT misrecognitions (common Deepgram errors): "consultative"→"consolidative", "consulted"→"consolidated", "internal increase"→"interval increase", "iLocalated/I located/I lock you lated"→"loculated", "impetigo"→"empyema", "employee ma"→"empyema", "cavity nation"→"cavitation", "high laryn pharynopathy/high laryngeal apathy"→"hiliar lymphadenopathy" or "hilar lymphadenopathy", "laryn pharynopathy"→"lymphadenopathy"
+4. VOICE COMMAND ARTIFACTS: "peritoneal line" at the end of a finding is a misheard voice command "new line" — remove it entirely and add a period + line break instead. It is NOT a clinical finding.
+5. Fix word fusion: "lymph nodesThe"→"lymph nodes. The", "consolidatioand"→"consolidation and"
+6. Fix homophones: "new frosts"→"nephrosis", "pare nkima"→"parenchyma", "adder no path he"→"adenopathy", "plural"→"pleural", "medi a steinum"→"mediastinum"
+7. Units: "5 millimeters"→"5 mm", "3 centimeters"→"3 cm"
+8. Use modality/study type to disambiguate.
+9. If a word looks like a truncated medical term (e.g. "consolidatio", "atelectasi"), complete it.
 
 Keep exact structure and line breaks. Return text as-is if correct. Respond ONLY with corrected text.`;
 
