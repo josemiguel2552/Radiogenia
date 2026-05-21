@@ -286,7 +286,8 @@ export function DashboardContent() {
     }, 1500);
   });
 
-  const whisperDictationStartRef = useRef(0);
+  const whisperDictationStartRef = useRef(-1);
+  const whisperSkipRef = useRef(false);
   const whisperTemplateSectionsRef = useRef("");
   const whisperStudyContextRef = useRef<string | undefined>(undefined);
   const whisperModalityRef = useRef("");
@@ -303,13 +304,14 @@ export function DashboardContent() {
       setDictation((prev) => {
         const sel = dictSelRangeRef.current;
         if (sel && sel.start !== sel.end) {
+          whisperSkipRef.current = true;
           const before = prev.slice(0, sel.start);
           const after = prev.slice(sel.end);
           setDictSelRange(null);
           dictSelRangeRef.current = null;
           return before + text + after;
         }
-        if (whisperDictationStartRef.current === 0) {
+        if (whisperDictationStartRef.current === -1) {
           whisperDictationStartRef.current = prev.length + (prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? 1 : 0);
         }
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
@@ -357,9 +359,14 @@ export function DashboardContent() {
       setTimeout(waitAndCorrect, 250);
     },
     onWhisperRefine: (whisperText, _deepgramText) => {
+      if (whisperSkipRef.current || whisperDictationStartRef.current === -1) {
+        whisperSkipRef.current = false;
+        return;
+      }
       const startIdx = whisperDictationStartRef.current;
-      whisperDictationStartRef.current = 0;
+      whisperDictationStartRef.current = -1;
       setDictation((prev) => {
+        if (startIdx > prev.length) return prev;
         const before = prev.slice(0, startIdx);
         const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
         const updated = before + sep + whisperText;
@@ -370,6 +377,13 @@ export function DashboardContent() {
       setTraceData(null);
     },
   });
+
+  useEffect(() => {
+    if (isRecording) {
+      whisperDictationStartRef.current = -1;
+      whisperSkipRef.current = false;
+    }
+  }, [isRecording]);
 
   useEffect(() => { dictationRef.current = dictation; }, [dictation]);
   useEffect(() => { templatesRef.current = templates; }, [templates]);
@@ -1334,7 +1348,7 @@ export function DashboardContent() {
                   ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
-                  onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); }}
                   onSelect={(e) => {
                     const ta = e.currentTarget;
                     if (ta.selectionStart !== ta.selectionEnd) {
@@ -1620,7 +1634,7 @@ export function DashboardContent() {
                   ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
-                  onChange={(e) => { setDictation(e.target.value); setTraceData(null); setRepairMessage(null); }}
+                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); }}
                   onSelect={(e) => {
                     const ta = e.currentTarget;
                     if (ta.selectionStart !== ta.selectionEnd) {

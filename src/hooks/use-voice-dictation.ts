@@ -83,6 +83,7 @@ export function useVoiceDictation({
   // ── Whisper refinement refs ──
   const whisperAudioRef = useRef<Blob[]>([]);
   const dgAccumulatedRef = useRef("");
+  const whisperSessionRef = useRef(0);
   const onWhisperRefineRef = useRef(onWhisperRefine);
   onWhisperRefineRef.current = onWhisperRefine;
   const templateSectionsRef = useRef(templateSections);
@@ -387,6 +388,7 @@ export function useVoiceDictation({
 
     whisperAudioRef.current = [];
     dgAccumulatedRef.current = "";
+    whisperSessionRef.current++;
 
     recorder.ondataavailable = (e) => {
       if (e.data.size === 0) return;
@@ -411,7 +413,7 @@ export function useVoiceDictation({
   // ══════════════════════════════════════════════════════════════
   // Whisper refinement: send buffered audio for accurate final transcript
   // ══════════════════════════════════════════════════════════════
-  const sendWhisperRefinement = useCallback(async (durationSec: number, snapshotBlobs: Blob[], snapshotDgText: string) => {
+  const sendWhisperRefinement = useCallback(async (durationSec: number, snapshotBlobs: Blob[], snapshotDgText: string, sessionId: number) => {
     if (!snapshotBlobs.length || !snapshotDgText.trim() || !onWhisperRefineRef.current) return;
 
     const audioBlob = new Blob(snapshotBlobs, { type: snapshotBlobs[0]?.type || "audio/webm" });
@@ -430,6 +432,7 @@ export function useVoiceDictation({
       if (studyTypeRef.current) form.append("study_type", studyTypeRef.current);
 
       const res = await fetch("/api/transcribe/refine", { method: "POST", body: form });
+      if (whisperSessionRef.current !== sessionId) { setIsRefining(false); return; }
       if (res.ok) {
         const data = await res.json();
         if (data.text?.trim()) {
@@ -475,7 +478,7 @@ export function useVoiceDictation({
     dgAccumulatedRef.current = "";
 
     if (durationSec >= 2) {
-      sendWhisperRefinement(durationSec, snapshotBlobs, snapshotDgText);
+      sendWhisperRefinement(durationSec, snapshotBlobs, snapshotDgText, whisperSessionRef.current);
     }
 
     // Stop the level meter and keep-alive but keep WS open for draining
