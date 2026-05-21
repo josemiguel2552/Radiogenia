@@ -21,6 +21,9 @@ interface UseVoiceDictationOptions {
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
   onRecordingDone?: () => void;
+  onWhisperRefine?: (whisperText: string, deepgramText: string) => void;
+  templateSections?: string;
+  studyContext?: string;
 }
 
 interface CachedToken {
@@ -39,9 +42,13 @@ export function useVoiceDictation({
   onError,
   onQuotaUpdate,
   onRecordingDone,
+  onWhisperRefine,
+  templateSections,
+  studyContext,
 }: UseVoiceDictationOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [interimText, setInterimText] = useState("");
 
@@ -68,6 +75,16 @@ export function useVoiceDictation({
   const retryCountRef = useRef(0);
   const audioBufferRef = useRef<Blob[]>([]);
   const MAX_RETRIES = 2;
+
+  // ── Whisper refinement refs ──
+  const whisperAudioRef = useRef<Blob[]>([]);
+  const dgAccumulatedRef = useRef("");
+  const onWhisperRefineRef = useRef(onWhisperRefine);
+  onWhisperRefineRef.current = onWhisperRefine;
+  const templateSectionsRef = useRef(templateSections);
+  templateSectionsRef.current = templateSections;
+  const studyContextRef = useRef(studyContext);
+  studyContextRef.current = studyContext;
 
   // ── Pre-fetched token ──
   const cachedTokenRef = useRef<CachedToken | null>(null);
@@ -278,6 +295,7 @@ export function useVoiceDictation({
             interimTextRef.current = "";
             setInterimText("");
             setIsTranscribing(false);
+            dgAccumulatedRef.current += (dgAccumulatedRef.current ? " " : "") + transcript;
             onTranscriptRef.current(transcript);
           } else {
             interimTextRef.current = transcript;
@@ -359,8 +377,12 @@ export function useVoiceDictation({
     recorderRef.current = recorder;
     audioBufferRef.current = [];
 
+    whisperAudioRef.current = [];
+    dgAccumulatedRef.current = "";
+
     recorder.ondataavailable = (e) => {
       if (e.data.size === 0) return;
+      whisperAudioRef.current.push(e.data);
       const ws = wsRef.current;
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(e.data);
@@ -377,6 +399,41 @@ export function useVoiceDictation({
   }, [initAudio, runLevelMeter, connectWs]);
 
   startDeepgramRef.current = startDeepgram;
+
+  // ══════════════════════════════════════════════════════════════
+  // Whisper refinement: send buffered audio for accurate final transcript
+  // ══════════════════════════════════════════════════════════════
+  const sendWhisperRefinement = useCallback(async (durationSec: number) => {
+    const blobs = whisperAudioRef.current;
+    const dgText = dgAccumulatedRef.current;
+    whisperAudioRef.current = [];
+    dgAccumulatedRef.current = "";
+
+    if (!blobs.length || !dgText.trim() || !onWhisperRefineRef.current) return;
+
+    const audioBlob = new Blob(blobs, { type: blobs[0]?.type || "audio/webm" });
+    if (audioBlob.size < 1000) return;
+
+    setIsRefining(true);
+    try {
+      const form = new FormData();
+      form.append("audio", audioBlob, "dictation.webm");
+      form.append("language", language);
+      form.append("duration_seconds", String(Math.round(durationSec)));
+      form.append("context", dgText.slice(-200));
+      if (templateSectionsRef.current) form.append("template_sections", templateSectionsRef.current);
+      if (studyContextRef.current) form.append("study_context", studyContextRef.current);
+
+      const res = await fetch("/api/transcribe", { method: "POST", body: form });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text?.trim()) {
+          onWhisperRefineRef.current(data.text.trim(), dgText);
+        }
+      }
+    } catch { /* Whisper refinement is best-effort */ }
+    setIsRefining(false);
+  }, [language]);
 
   // ══════════════════════════════════════════════════════════════
   // Public API
@@ -397,6 +454,7 @@ export function useVoiceDictation({
   }, [fetchToken, startDeepgram, onError, onQuotaUpdate]);
 
   const stopRecording = useCallback(() => {
+    const durationSec = dgStartRef.current > 0 ? (Date.now() - dgStartRef.current) / 1000 : 0;
     reportStreamingUsage();
 
     const recorder = recorderRef.current;
@@ -417,10 +475,14 @@ export function useVoiceDictation({
       const pending = interimTextRef.current;
       if (pending) {
         interimTextRef.current = "";
+        dgAccumulatedRef.current += (dgAccumulatedRef.current ? " " : "") + pending;
         onTranscriptRef.current(pending);
       }
       cleanup();
       setTimeout(() => onRecordingDone?.(), 50);
+      if (durationSec >= 2) {
+        sendWhisperRefinement(durationSec);
+      }
     };
 
     // Give recorder's final ondataavailable time to send, then tell Deepgram to finalize
@@ -447,7 +509,7 @@ export function useVoiceDictation({
         finalize();
       }
     }, 250);
-  }, [cleanup, reportStreamingUsage, onRecordingDone]);
+  }, [cleanup, reportStreamingUsage, onRecordingDone, sendWhisperRefinement]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
@@ -460,6 +522,7 @@ export function useVoiceDictation({
   return {
     isRecording,
     isTranscribing,
+    isRefining,
     audioLevel,
     interimText,
     toggleRecording,

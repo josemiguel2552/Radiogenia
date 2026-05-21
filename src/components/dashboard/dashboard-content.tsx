@@ -286,8 +286,14 @@ export function DashboardContent() {
     }, 1500);
   });
 
-  const { isRecording, isTranscribing, audioLevel, interimText, toggleRecording } = useVoiceDictation({
+  const whisperDictationStartRef = useRef(0);
+  const whisperTemplateSectionsRef = useRef("");
+  const whisperStudyContextRef = useRef<string | undefined>(undefined);
+
+  const { isRecording, isTranscribing, isRefining, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
+    templateSections: whisperTemplateSectionsRef.current,
+    studyContext: whisperStudyContextRef.current,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
       setDictation((prev) => {
@@ -298,6 +304,9 @@ export function DashboardContent() {
           setDictSelRange(null);
           dictSelRangeRef.current = null;
           return before + text + after;
+        }
+        if (whisperDictationStartRef.current === 0) {
+          whisperDictationStartRef.current = prev.length + (prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? 1 : 0);
         }
         const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
         return prev + sep + text;
@@ -342,6 +351,19 @@ export function DashboardContent() {
         }
       };
       setTimeout(waitAndCorrect, 250);
+    },
+    onWhisperRefine: (whisperText, _deepgramText) => {
+      const startIdx = whisperDictationStartRef.current;
+      whisperDictationStartRef.current = 0;
+      setDictation((prev) => {
+        const before = prev.slice(0, startIdx);
+        const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
+        const updated = before + sep + whisperText;
+        correctedLenRef.current = 0;
+        return updated;
+      });
+      setTraceData(null);
+      setTimeout(() => runCorrection.current(true), 300);
     },
   });
 
@@ -568,6 +590,9 @@ export function DashboardContent() {
     }
     return labels;
   }, [selectedTemplate, sec]);
+
+  useEffect(() => { whisperTemplateSectionsRef.current = templateFieldLabels.join(", "); }, [templateFieldLabels]);
+  useEffect(() => { whisperStudyContextRef.current = selectedTemplate ? `${selectedTemplate.modality || ""} ${selectedTemplate.name || ""}`.trim() : undefined; }, [selectedTemplate]);
 
   async function handleHideTemplate(tpl: UserTemplate) {
     if (tpl.is_global) {
@@ -1322,15 +1347,15 @@ export function DashboardContent() {
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
-                {!isRecording && !isTranscribing && !isCorrecting && (
+                {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
                   <div className="absolute top-1 right-1">
                     <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
                   </div>
                 )}
-                {(isRecording || isTranscribing || isCorrecting) && (
+                {(isRecording || isTranscribing || isCorrecting || isRefining) && (
                   <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
                     </Badge>
                   </div>
                 )}
@@ -1608,15 +1633,15 @@ export function DashboardContent() {
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
-                {!isRecording && !isTranscribing && !isCorrecting && (
+                {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
                   <div className="absolute top-1 right-1">
                     <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
                   </div>
                 )}
-                {(isRecording || isTranscribing || isCorrecting) && (
+                {(isRecording || isTranscribing || isCorrecting || isRefining) && (
                   <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
                     </Badge>
                   </div>
                 )}
