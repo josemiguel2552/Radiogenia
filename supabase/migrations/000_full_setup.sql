@@ -414,19 +414,37 @@ create policy "Authenticated users can read global templates"
   using (auth.role() = 'authenticated');
 
 drop policy if exists "Authenticated can insert global templates" on public.global_templates;
-create policy "Authenticated can insert global templates"
+drop policy if exists "Only admin can insert global templates" on public.global_templates;
+create policy "Only admin can insert global templates"
   on public.global_templates for insert
-  with check (auth.role() = 'authenticated');
+  with check (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and role = 'admin'
+    )
+  );
 
 drop policy if exists "Authenticated can update global templates" on public.global_templates;
-create policy "Authenticated can update global templates"
+drop policy if exists "Only admin can update global templates" on public.global_templates;
+create policy "Only admin can update global templates"
   on public.global_templates for update
-  using (auth.role() = 'authenticated');
+  using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and role = 'admin'
+    )
+  );
 
 drop policy if exists "Authenticated can delete global templates" on public.global_templates;
-create policy "Authenticated can delete global templates"
+drop policy if exists "Only admin can delete global templates" on public.global_templates;
+create policy "Only admin can delete global templates"
   on public.global_templates for delete
-  using (auth.role() = 'authenticated');
+  using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and role = 'admin'
+    )
+  );
 
 -- Clean up old default user templates (now served from global_templates)
 delete from public.user_templates where is_default = true;
