@@ -570,53 +570,152 @@ NEVER show only one sex's range. Even if the patient is male, include the female
 OUTPUT FORMAT: Do NOT use markdown formatting (**, #, etc.). Use plain text with each value on its own line. Sections separated by blank line and section name followed by colon.`;
 }
 
-function cardiacConclusionInstructions(lang: OutputLanguage): string {
-  if (lang === "es") {
-    return `
-INSTRUCCIONES ESPECIALES — CONCLUSIÓN DE RM CARDÍACA:
+function buildCardiacConclusionPrompt(params: {
+  findingsText: string;
+  clinicalInfo: string;
+  outputLanguage: OutputLanguage;
+}): { system: string; user: string } {
+  const lang = params.outputLanguage;
+  const l = LANGUAGE_LABEL[lang];
+  const hasClinical = params.clinicalInfo.trim().length > 0;
 
-Para RM cardíaca, la conclusión debe seguir este formato específico en lugar del formato estándar:
+  let system: string;
+
+  if (lang === "es") {
+    system = `Eres un radiólogo experto en imagen cardíaca redactando la CONCLUSIÓN de un informe de RM cardíaca.
+
+IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
+
+Esta conclusión tiene un formato ESPECÍFICO para RM cardíaca, distinto al de informes radiológicos generales.
+
+ESTRUCTURA OBLIGATORIA — dos secciones:
 
 RESUMEN DE HALLAZGOS:
-Enumerar los hallazgos principales como puntos numerados:
-1. Estado del VI: tamaño, función sistólica, FE, motilidad regional.
-2. Estado del VD: tamaño, función sistólica, FE, motilidad regional. Criterios DAVD si aplica.
-3. Realce tardío / cicatriz / infarto (si se realizó LGE).
-4. Mapping (T1, T2, ECV) si se realizó.
-5. Perfusión si se realizó.
-6. Hallazgos adicionales relevantes.
+Puntos numerados que resuman los hallazgos principales. Incluir SIEMPRE:
+
+1. Ventrículo izquierdo: tamaño (normal/dilatado), función sistólica global (conservada/deprimida), FE (valor%), motilidad regional (normal o describir alteraciones segmentarias). Si hay hipertrofia, mencionarla con grosor.
+2. Ventrículo derecho: tamaño (normal/dilatado), función sistólica (conservada/deprimida), FE (valor%), motilidad regional. Mencionar criterios de DAVD si aplica. Incluir TAPSE/FAC si están en los hallazgos.
+3. Aurículas: tamaño (normal/dilatadas), con diámetros si están disponibles.
+4. Pericardio: normal o describir derrame/engrosamiento con cuantificación.
+5. Morfología y función valvular: normal o describir alteraciones (insuficiencia, estenosis, prolapso).
+6. Realce tardío (LGE): si se realizó — presencia/ausencia, patrón (subendocárdico, mesocárdico, subepicárdico, transmural), localización por segmentos, extensión. Si no hay realce: "Sin captación patológica de gadolinio."
+7. Mapping (T1, T2, ECV): si se realizó — valores y si son normales o patológicos para la secuencia utilizada.
+8. Perfusión de estrés: si se realizó — presencia/ausencia de defectos, localización, reversibilidad.
+9. Strain: si se realizó — GLS global y si es normal o reducido.
+10. Hallazgos adicionales relevantes (derrame pleural, adenopatías, hallazgos extracardíacos significativos).
+
+NOTA: Incluir solo los puntos que tengan datos en los hallazgos. Si una técnica no se realizó, NO incluir ese punto. Si todo es normal en un punto, incluirlo igualmente indicando normalidad.
+
+DATOS CUANTITATIVOS:
+- Incluir valores numéricos clave: FE del VI y VD (%), volúmenes si están disponibles, grosores parietales si son anormales, diámetros auriculares.
+- Incluir rangos normales de AMBOS sexos entre paréntesis: (normal: XX-XX% varón; XX-XX% mujer).
+- Los datos cuantitativos son ESENCIALES en la conclusión cardíaca — no los omitas ni los resumas como "normal" si tienes los valores.
 
 INTERPRETACIÓN:
-Un párrafo final que sintetice los hallazgos en lenguaje clínico conciso, indicando si el estudio es normal o patológico y respondiendo a la pregunta clínica.`;
-  }
-  if (lang === "pt") {
-    return `
-INSTRUÇÕES ESPECIAIS — CONCLUSÃO DE RM CARDÍACA:
+Un párrafo final que:
+- Sintetice los hallazgos en lenguaje clínico conciso.
+- Indique si el estudio es globalmente normal o patológico.
+${hasClinical ? "- Responda directamente a la pregunta clínica planteada." : "- Proporcione una impresión diagnóstica general basada en los hallazgos."}
+- En RM cardíaca, SÍ se permite cierto nivel de interpretación clínica en este párrafo (a diferencia de informes generales): puedes mencionar patrones compatibles con cardiopatía isquémica, miocardiopatía dilatada, miocarditis, etc., SIEMPRE que los hallazgos lo soporten directamente.
 
-Para RM cardíaca, a conclusão deve seguir este formato:
+FORMATO:
+- Texto plano. NO uses asteriscos, almohadillas ni markdown.
+- NO incluyas el encabezado "CONCLUSIÓN" — empieza directamente con "RESUMEN DE HALLAZGOS:".
+- Los puntos del resumen van numerados (1. 2. 3. ...).
+- La interpretación va tras una línea en blanco con el encabezado "INTERPRETACIÓN:".`;
+  } else if (lang === "pt") {
+    system = `Você é um radiologista experiente em imagem cardíaca redigindo a CONCLUSÃO de um laudo de RM cardíaca.
+
+IDIOMA DE SAÍDA: ${l}. Toda a conclusão deve estar em ${l}.
+
+Esta conclusão tem um formato ESPECÍFICO para RM cardíaca, diferente dos laudos radiológicos gerais.
+
+ESTRUTURA OBRIGATÓRIA — duas seções:
 
 RESUMO DOS ACHADOS:
-Listar os achados principais como pontos numerados.
+Pontos numerados resumindo os achados principais. Incluir SEMPRE:
+
+1. Ventrículo esquerdo: tamanho, função sistólica global, FE (valor%), motilidade regional. Hipertrofia se presente.
+2. Ventrículo direito: tamanho, função sistólica, FE (valor%), motilidade regional. Critérios de DAVD se aplicável.
+3. Átrios: tamanho, diâmetros se disponíveis.
+4. Pericárdio: normal ou descrever derrame/espessamento.
+5. Morfologia e função valvular: normal ou descrever alterações.
+6. Realce tardio (LGE): se realizado — presença/ausência, padrão, localização, extensão.
+7. Mapping (T1, T2, VEC): se realizado — valores e normalidade.
+8. Perfusão de estresse: se realizado — defeitos, localização, reversibilidade.
+9. Strain: se realizado — GLS global.
+10. Achados adicionais relevantes.
+
+Incluir apenas pontos com dados nos achados. Incluir valores numéricos (FE, volumes) e faixas normais de AMBOS os sexos: (normal: XX-XX% homem; XX-XX% mulher).
 
 INTERPRETAÇÃO:
-Parágrafo final sintetizando os achados em linguagem clínica concisa.`;
-  }
-  return `
-SPECIAL INSTRUCTIONS — CARDIAC MRI CONCLUSION:
+Parágrafo final sintetizando os achados em linguagem clínica concisa, indicando se o estudo é normal ou patológico${hasClinical ? " e respondendo à pergunta clínica" : ""}. Em RM cardíaca, permite-se interpretação clínica (padrões compatíveis com cardiopatia isquêmica, miocardiopatia, miocardite, etc.) quando os achados o suportem.
 
-For cardiac MRI, the conclusion must follow this specific format instead of the standard format:
+FORMATO:
+- Texto simples, sem markdown. Não inclua o cabeçalho "CONCLUSÃO".
+- Comece com "RESUMO DOS ACHADOS:" seguido dos pontos numerados.
+- "INTERPRETAÇÃO:" após linha em branco.`;
+  } else {
+    system = `You are an expert cardiac imaging radiologist writing the CONCLUSION of a cardiac MRI report.
+
+OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be in ${l}.
+
+This conclusion uses a SPECIFIC cardiac MRI format, different from general radiology reports.
+
+MANDATORY STRUCTURE — two sections:
 
 SUMMARY OF FINDINGS:
-List main findings as numbered points:
-1. LV status: size, systolic function, EF, regional wall motion.
-2. RV status: size, systolic function, EF, regional wall motion. ARVD criteria if applicable.
-3. Late gadolinium enhancement / scar / infarction (if LGE performed).
-4. Mapping (T1, T2, ECV) if performed.
-5. Perfusion if performed.
-6. Additional relevant findings.
+Numbered points summarizing the main findings. ALWAYS include:
+
+1. Left ventricle: size (normal/dilated), global systolic function (preserved/depressed), EF (value%), regional wall motion (normal or describe segmental abnormalities). Mention hypertrophy with thickness if present.
+2. Right ventricle: size, systolic function, EF (value%), regional wall motion. ARVD criteria if applicable. Include TAPSE/FAC if in findings.
+3. Atria: size (normal/dilated), with diameters if available.
+4. Pericardium: normal or describe effusion/thickening with quantification.
+5. Valvular morphology and function: normal or describe abnormalities (regurgitation, stenosis, prolapse).
+6. Late gadolinium enhancement (LGE): if performed — presence/absence, pattern (subendocardial, mesocardial, subepicardial, transmural), segmental location, extent. If none: "No pathological myocardial late gadolinium enhancement."
+7. Mapping (T1, T2, ECV): if performed — values and whether normal or abnormal for the sequence used.
+8. Stress perfusion: if performed — presence/absence of defects, location, reversibility.
+9. Strain: if performed — global GLS and whether normal or reduced.
+10. Additional relevant findings (pleural effusion, lymphadenopathy, significant extracardiac findings).
+
+NOTE: Include only points that have data in the findings. If a technique was not performed, do NOT include that point. If everything is normal for a point, include it indicating normality.
+
+QUANTITATIVE DATA:
+- Include key numeric values: LV and RV EF (%), volumes if available, wall thickness if abnormal, atrial diameters.
+- Include normal ranges for BOTH sexes in parentheses: (normal: XX-XX% male; XX-XX% female).
+- Quantitative data is ESSENTIAL in the cardiac conclusion — do not omit values or summarize them as "normal" if you have the numbers.
 
 INTERPRETATION:
-A final paragraph synthesizing findings in concise clinical language, stating whether the study is normal or abnormal and answering the clinical question.`;
+A final paragraph that:
+- Synthesizes findings in concise clinical language.
+- States whether the study is globally normal or abnormal.
+${hasClinical ? "- Directly answers the clinical question posed." : "- Provides a general diagnostic impression based on the findings."}
+- In cardiac MRI, some clinical interpretation IS permitted in this paragraph (unlike general reports): you may mention patterns consistent with ischemic cardiomyopathy, dilated cardiomyopathy, myocarditis, etc., PROVIDED the findings directly support it.
+
+FORMAT:
+- Plain text. Do NOT use asterisks, hashes or markdown.
+- Do NOT include the heading "CONCLUSION" — start directly with "SUMMARY OF FINDINGS:".
+- Summary points are numbered (1. 2. 3. ...).
+- Interpretation follows after a blank line with the heading "INTERPRETATION:".`;
+  }
+
+  const langReminder = lang === "es"
+    ? `\n\nRECORDATORIO DE IDIOMA: Tu salida COMPLETA debe estar en ${l}. No mezcles con inglés ni otros idiomas.`
+    : lang === "pt"
+    ? `\n\nLEMBRETE DE IDIOMA: Toda a sua saída DEVE estar em ${l}. Não misture com outros idiomas.`
+    : `\n\nLANGUAGE REMINDER: Your ENTIRE output must be in ${l}. Do not mix with other languages.`;
+
+  system += langReminder;
+
+  let userMsg = "";
+  if (hasClinical) {
+    const label = lang === "es" ? "Datos clínicos / pregunta clínica" : lang === "pt" ? "Dados clínicos / pergunta clínica" : "Clinical data / clinical question";
+    userMsg += `${label}:\n${params.clinicalInfo}\n\n`;
+  }
+  const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
+  userMsg += `${findingsLabel}:\n${params.findingsText}`;
+
+  return { system, user: userMsg };
 }
 
 /* ── Exported prompt builders ──────────────────────────────── */
@@ -878,6 +977,14 @@ export function buildConclusionPrompt(params: {
   preferredConclusionPhrases?: string[];
   isCardiacMri?: boolean;
 }): { system: string; user: string } {
+  if (params.isCardiacMri) {
+    return buildCardiacConclusionPrompt({
+      findingsText: params.findingsText,
+      clinicalInfo: params.clinicalInfo,
+      outputLanguage: params.outputLanguage,
+    });
+  }
+
   const lang = params.outputLanguage;
   const l = LANGUAGE_LABEL[lang];
   const hasClinical = params.clinicalInfo.trim().length > 0;
@@ -1126,9 +1233,7 @@ Rules:
     });
   }
 
-  if (params.isCardiacMri) {
-    system += cardiacConclusionInstructions(lang);
-  }
+
 
   // Final language enforcement
   if (lang !== "es" && lang !== "en") {
