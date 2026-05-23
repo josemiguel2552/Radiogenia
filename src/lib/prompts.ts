@@ -347,6 +347,259 @@ function modalityTerminology(modality: string, lang: OutputLanguage): string {
   return `- ${use} appropriate terminology for ${modality} in ${LANGUAGE_LABEL[lang]}. Do not mix terms from other modalities.`;
 }
 
+/* ── RECIST 1.1 structured report instructions ────────────── */
+
+interface RecistConfig {
+  isBaseline: boolean;
+  priorReport?: string;
+}
+
+function recistInstructions(lang: OutputLanguage, config: RecistConfig): string {
+  const { isBaseline, priorReport } = config;
+
+  if (lang === "es") {
+    return `
+INSTRUCCIONES ESPECIALES — INFORME RECIST 1.1:
+
+Este es un informe de evaluación de respuesta tumoral según criterios RECIST 1.1.
+IGNORA el template de secciones genérico y estructura el informe con las siguientes secciones, EN ESTE ORDEN EXACTO:
+
+1. Técnica:
+   Modalidad, fase de adquisición y contraste según lo dictado.
+
+2. Información clínica:
+   Tipo de tumor, tratamiento actual y motivo del estudio según lo dictado.
+
+3. Comparación:
+   ${isBaseline ? "Estudio basal — sin estudios previos de referencia." : "Referencia al estudio previo y al estudio basal. Extraer fechas del informe previo si están disponibles."}
+
+4. LESIONES TARGET:
+   Tabla en texto plano con formato:
+   # | Órgano / Localización | Medida actual (mm) | ${isBaseline ? "" : "Medida basal (mm) | Medida previa (mm) |"}
+   - Numerar cada lesión: T1, T2, ..., hasta T5 máximo.
+   - Máximo 2 lesiones target por órgano.
+   - Ganglios linfáticos: medir EJE CORTO. Especificarlo entre paréntesis.
+   - Lesiones no ganglionares: medir DIÁMETRO MAYOR (eje largo).
+   - Si una lesión ha desaparecido: 0 mm.
+   - Si un ganglio target ha disminuido pero persiste: medir su eje corto actual.
+
+   SUMATORIO:
+   - Suma de diámetros actual: ___ mm  ← CALCULAR: sumar todas las medidas actuales de lesiones target
+   ${isBaseline ? "" : `- Suma baseline: ___ mm  ← EXTRAER del informe previo
+   - Suma nadir: ___ mm  ← EXTRAER del informe previo (la suma más baja alcanzada en cualquier evaluación previa)
+   - Suma del estudio previo: ___ mm  ← EXTRAER del informe previo
+
+   CÁLCULOS AUTOMÁTICOS:
+   - Cambio vs baseline: ___% ← CALCULAR: ((suma_actual - suma_baseline) / suma_baseline) × 100
+   - Cambio vs nadir: ___% ← CALCULAR: ((suma_actual - suma_nadir) / suma_nadir) × 100
+   - Cambio absoluto vs nadir: ___ mm ← CALCULAR: suma_actual - suma_nadir
+
+   CATEGORÍA TARGET:
+   Aplicar reglas RECIST 1.1:
+   - CR (Respuesta completa): Todas las lesiones target desaparecidas Y todos los ganglios target < 10 mm eje corto.
+   - PR (Respuesta parcial): Suma actual ≤ 70% de suma baseline (disminución ≥ 30%).
+   - PD (Progresión): Suma actual ≥ 120% de suma nadir Y (suma actual - suma nadir) ≥ 5 mm.
+   - SD (Enfermedad estable): No cumple CR, PR ni PD.
+   NOTA: PR se compara con BASELINE. PD se compara con NADIR.`}
+
+5. LESIONES NON-TARGET:
+   Lista de cada lesión non-target con:
+   - Órgano / localización
+   - Estado actual: presente / ausente / progresión inequívoca
+   ${isBaseline ? "" : `
+   CATEGORÍA NON-TARGET:
+   - CR: Todas desaparecidas, todos los ganglios < 10 mm.
+   - non-CR/non-PD: Persistencia de una o más lesiones non-target.
+   - PD: Progresión inequívoca de lesiones non-target.`}
+
+6. LESIONES NUEVAS:
+   - Listar cualquier lesión nueva (órgano, localización, tamaño si disponible).
+   - Si no hay: "No se identifican lesiones nuevas."
+   - Una lesión nueva SIEMPRE implica PD en la respuesta global.
+
+7. HALLAZGOS ADICIONALES:
+   Otros hallazgos radiológicos no relacionados con la evaluación tumoral (si dictados). Si no hay, omitir esta sección.
+
+${isBaseline ? "" : `8. TABLA RESUMEN RECIST 1.1:
+   Respuesta target: [CR/PR/SD/PD]
+   Respuesta non-target: [CR/non-CR-non-PD/PD/No evaluadas]
+   Lesiones nuevas: [Sí/No]
+
+   RESPUESTA GLOBAL: [CALCULAR según tabla RECIST 1.1:]
+   - CR: target CR + non-target CR + no nuevas
+   - PR: target CR o PR + non-target no PD + no nuevas
+   - SD: target SD + non-target no PD + no nuevas
+   - PD: target PD, O non-target PD, O lesiones nuevas`}
+
+${priorReport ? `INFORME RECIST PREVIO (proporcionado por el radiólogo — EXTRAER datos de aquí):
+---
+${priorReport}
+---
+INSTRUCCIONES PARA EL INFORME PREVIO:
+- EXTRAE las lesiones target previamente definidas (mismas lesiones, mismo orden).
+- EXTRAE la suma de diámetros baseline, la suma nadir y la suma del estudio previo.
+- Las lesiones target del estudio actual DEBEN ser las MISMAS que las del estudio previo (mismos órganos/localizaciones).
+- Si el radiólogo dicta una medida para una lesión ya definida, úsala. Si no la menciona, indica "no evaluada".` : ""}
+
+FORMATO: Texto plano, sin markdown. Cada valor en su línea. Secciones separadas por línea en blanco y nombre seguido de dos puntos.`;
+  }
+
+  if (lang === "pt") {
+    return `
+INSTRUÇÕES ESPECIAIS — LAUDO RECIST 1.1:
+
+Este é um laudo de avaliação de resposta tumoral segundo critérios RECIST 1.1.
+IGNORE o template genérico e estruture o laudo com as seguintes seções:
+
+1. Técnica
+2. Informação clínica
+3. Comparação: ${isBaseline ? "Estudo basal." : "Referência ao estudo prévio e basal."}
+4. LESÕES TARGET: tabela com # | Órgão | Medida atual${isBaseline ? "" : " | Basal | Prévia"}, suma, ${isBaseline ? "" : "cálculos (% vs basal/nadir), categoria target (CR/PR/SD/PD)"}
+5. LESÕES NON-TARGET: lista com estado${isBaseline ? "" : ", categoria non-target"}
+6. LESÕES NOVAS
+7. ACHADOS ADICIONAIS (se houver)
+${isBaseline ? "" : `8. TABELA RESUMO RECIST 1.1: resposta target + non-target + novas → resposta global`}
+
+${isBaseline ? "" : `Regras RECIST 1.1: PR = ≥30% diminuição vs basal. PD = ≥20% aumento vs nadir E ≥5mm absoluto. CR = todas desaparecidas. SD = nem PR nem PD.`}
+
+${priorReport ? `LAUDO RECIST PRÉVIO:\n---\n${priorReport}\n---\nEXTRAIA: lesões target, soma basal, soma nadir, soma prévia.` : ""}
+
+FORMATO: Texto simples, sem markdown.`;
+  }
+
+  return `
+SPECIAL INSTRUCTIONS — RECIST 1.1 REPORT:
+
+This is a tumor response evaluation report per RECIST 1.1 criteria.
+IGNORE the generic section template and structure the report with these sections, IN THIS EXACT ORDER:
+
+1. Technique
+2. Clinical information
+3. Comparison: ${isBaseline ? "Baseline study — no prior studies." : "Reference to prior and baseline studies."}
+4. TARGET LESIONS: plain text table with # | Organ / Location | Current (mm)${isBaseline ? "" : " | Baseline (mm) | Prior (mm)"}, sum, ${isBaseline ? "" : "calculations (% vs baseline/nadir), target category (CR/PR/SD/PD)"}
+5. NON-TARGET LESIONS: list with status${isBaseline ? "" : ", non-target category"}
+6. NEW LESIONS
+7. ADDITIONAL FINDINGS (if any)
+${isBaseline ? "" : `8. RECIST 1.1 SUMMARY TABLE: target + non-target + new → overall response`}
+
+${isBaseline ? "" : `RECIST 1.1 rules: PR = ≥30% decrease vs baseline. PD = ≥20% increase vs nadir AND ≥5mm absolute. CR = all disappeared, nodes <10mm. SD = neither PR nor PD. New lesion = always PD.`}
+
+${priorReport ? `PRIOR RECIST REPORT:\n---\n${priorReport}\n---\nEXTRACT: target lesions, baseline sum, nadir sum, prior sum. Use the SAME target lesions in the same order.` : ""}
+
+FORMAT: Plain text, no markdown. Each value on its own line. Sections separated by blank line and name followed by colon.`;
+}
+
+function buildRecistConclusionPrompt(params: {
+  findingsText: string;
+  clinicalInfo: string;
+  outputLanguage: OutputLanguage;
+  isBaseline: boolean;
+}): { system: string; user: string } {
+  const lang = params.outputLanguage;
+  const l = LANGUAGE_LABEL[lang];
+  const hasClinical = params.clinicalInfo.trim().length > 0;
+
+  let system: string;
+
+  if (lang === "es") {
+    system = `Eres un radiólogo experto redactando la CONCLUSIÓN de un informe de evaluación de respuesta tumoral RECIST 1.1.
+
+IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
+
+ESTRUCTURA OBLIGATORIA:
+
+${params.isBaseline ? `EVALUACIÓN BASAL RECIST 1.1:
+
+1. Lesiones target definidas: enumerar las lesiones target seleccionadas con órgano, localización y medida basal.
+2. Suma de diámetros basal: ___ mm.
+3. Lesiones non-target: enumerar con órgano y localización.
+4. Hallazgos adicionales relevantes (si los hay).` : `EVALUACIÓN RECIST 1.1:
+
+1. Respuesta global: [CR/PR/SD/PD] según criterios RECIST 1.1.
+2. Lesiones target:
+   - Suma de diámetros actual: ___ mm (baseline: ___ mm, nadir: ___ mm).
+   - Cambio vs baseline: ___%.
+   - Cambio vs nadir: ___%.
+   - Categoría target: [CR/PR/SD/PD].
+3. Lesiones non-target: [CR/non-CR-non-PD/PD].
+4. Lesiones nuevas: [Sí (describir) / No].
+5. Hallazgos adicionales relevantes (si los hay).`}
+
+${hasClinical ? "Responder a la pregunta clínica si fue planteada." : ""}
+
+REGLAS:
+- ${params.isBaseline ? "En estudio basal no hay categoría de respuesta — solo se definen las lesiones y la suma basal." : "El PRIMER punto siempre es la respuesta global RECIST 1.1."}
+- Incluir datos cuantitativos: sumas (mm), porcentajes de cambio.
+- DESCRIBIR, NO DIAGNOSTICAR. La categoría RECIST (CR/PR/SD/PD) es un dato objetivo calculado según criterios estandarizados, no un juicio clínico.
+- NO recomendar cambios de tratamiento.
+- NO emitir pronósticos.
+
+FORMATO:
+- Puntos numerados. Texto plano. Sin markdown.
+- NO incluir el encabezado "CONCLUSIÓN".`;
+  } else if (lang === "pt") {
+    system = `Você é um radiologista experiente redigindo a CONCLUSÃO de um laudo RECIST 1.1.
+
+IDIOMA: ${l}.
+
+${params.isBaseline ? `AVALIAÇÃO BASAL RECIST 1.1:
+1. Lesões target definidas com medidas basais.
+2. Soma de diâmetros basal.
+3. Lesões non-target.
+4. Achados adicionais.` : `AVALIAÇÃO RECIST 1.1:
+1. Resposta global: [CR/PR/SD/PD].
+2. Lesões target: soma atual, basal, nadir, % mudança, categoria.
+3. Lesões non-target: categoria.
+4. Lesões novas.
+5. Achados adicionais.`}
+
+DESCREVA, NÃO DIAGNOSTIQUE. Sem markdown.`;
+  } else {
+    system = `You are an expert radiologist writing the CONCLUSION of a RECIST 1.1 tumor response evaluation report.
+
+OUTPUT LANGUAGE: ${l}.
+
+${params.isBaseline ? `BASELINE RECIST 1.1 EVALUATION:
+1. Defined target lesions with organ, location and baseline measurement.
+2. Baseline sum of diameters: ___ mm.
+3. Non-target lesions: list with organ and location.
+4. Additional relevant findings.` : `RECIST 1.1 EVALUATION:
+1. Overall response: [CR/PR/SD/PD] per RECIST 1.1 criteria.
+2. Target lesions: current sum ___ mm (baseline: ___ mm, nadir: ___ mm), % change vs baseline, % change vs nadir, target category.
+3. Non-target lesions: [CR/non-CR-non-PD/PD].
+4. New lesions: [Yes (describe) / No].
+5. Additional relevant findings.`}
+
+${hasClinical ? "Answer the clinical question if posed." : ""}
+
+RULES:
+- ${params.isBaseline ? "Baseline study has no response category — only define lesions and baseline sum." : "FIRST point is always the overall RECIST 1.1 response."}
+- Include quantitative data: sums (mm), percentage changes.
+- DESCRIBE, do NOT DIAGNOSE. RECIST category is an objective calculated criterion, not a clinical judgment.
+- Do NOT recommend treatment changes. Do NOT issue prognoses.
+
+FORMAT: Numbered points. Plain text. No markdown. Do NOT include "CONCLUSION" heading.`;
+  }
+
+  const langReminder = lang === "es"
+    ? `\n\nRECORDATORIO: Salida COMPLETA en ${l}.`
+    : lang === "pt"
+    ? `\n\nLEMBRETE: Saída COMPLETA em ${l}.`
+    : `\n\nREMINDER: ENTIRE output in ${l}.`;
+
+  system += langReminder;
+
+  let userMsg = "";
+  if (hasClinical) {
+    const label = lang === "es" ? "Datos clínicos / pregunta clínica" : lang === "pt" ? "Dados clínicos / pergunta clínica" : "Clinical data / clinical question";
+    userMsg += `${label}:\n${params.clinicalInfo}\n\n`;
+  }
+  const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
+  userMsg += `${findingsLabel}:\n${params.findingsText}`;
+
+  return { system, user: userMsg };
+}
+
 /* ── Cardiac MRI structured report instructions ──────────── */
 
 function cardiacMriInstructions(lang: OutputLanguage, techniques: string[]): string {
@@ -866,6 +1119,7 @@ export function buildFindingsPrompt(params: {
   styleSamples?: string[];
   preferredNormalPhrases?: PreferredNormalPhrase[];
   cardiacTechniques?: string[];
+  recistConfig?: RecistConfig;
 }): { system: string; user: string } {
   const lang = params.outputLanguage;
 
@@ -881,6 +1135,10 @@ ${PARAPHRASE_INSTRUCTIONS[lang][params.paraphraseLevel]}`;
 
   if (params.cardiacTechniques && params.cardiacTechniques.length > 0) {
     system += cardiacMriInstructions(lang, params.cardiacTechniques);
+  }
+
+  if (params.recistConfig) {
+    system += recistInstructions(lang, params.recistConfig);
   }
 
   if (!params.dictationOnly && params.preferredNormalPhrases && params.preferredNormalPhrases.length > 0) {
@@ -976,12 +1234,23 @@ export function buildConclusionPrompt(params: {
   conclusionStyle?: ConclusionStyle;
   preferredConclusionPhrases?: string[];
   isCardiacMri?: boolean;
+  isRecistStudy?: boolean;
+  recistConfig?: RecistConfig;
 }): { system: string; user: string } {
   if (params.isCardiacMri) {
     return buildCardiacConclusionPrompt({
       findingsText: params.findingsText,
       clinicalInfo: params.clinicalInfo,
       outputLanguage: params.outputLanguage,
+    });
+  }
+
+  if (params.isRecistStudy) {
+    return buildRecistConclusionPrompt({
+      findingsText: params.findingsText,
+      clinicalInfo: params.clinicalInfo,
+      outputLanguage: params.outputLanguage,
+      isBaseline: params.recistConfig?.isBaseline ?? false,
     });
   }
 

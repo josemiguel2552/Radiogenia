@@ -35,6 +35,7 @@ import {
   Trash2,
   HelpCircle,
   Heart,
+  Target,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -67,6 +68,8 @@ export function DashboardContent() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [contrastOption, setContrastOption] = useState<string>("default");
   const [cardiacTechniques, setCardiacTechniques] = useState<Record<string, boolean>>({});
+  const [recistBaseline, setRecistBaseline] = useState(true);
+  const [recistPriorReport, setRecistPriorReport] = useState("");
 
   // Clinical info state
   const [clinicalInfo, setClinicalInfo] = useState("");
@@ -628,6 +631,12 @@ export function DashboardContent() {
     return selectedTemplate.modality === "MRI" && /card[ií]a|cardiac|coraz[oó]n/.test(name);
   }, [selectedTemplate]);
 
+  const isRecistStudy = useMemo(() => {
+    if (!selectedTemplate) return false;
+    const name = (selectedTemplate.name || "").toLowerCase();
+    return /recist|seguimiento\s*(oncol|tumoral)|tumor\s*response|oncol[oó]g.*seguimiento/.test(name);
+  }, [selectedTemplate]);
+
   const templateFieldLabels = useMemo(() => {
     if (!selectedTemplate) return [];
     const text = selectedTemplate.structure?.template || "";
@@ -720,6 +729,7 @@ export function DashboardContent() {
           reportMode: mode,
           outputLanguage,
           ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
+          ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
         }),
       });
 
@@ -834,6 +844,7 @@ export function DashboardContent() {
             conclusionStyle: style,
             outputLanguage,
             ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
+            ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
           }),
         });
 
@@ -1707,6 +1718,56 @@ export function DashboardContent() {
                     {cardiacTechniques.mapping && <p>• <b>Mapping</b>: {t("dash.cardiac_guide_mapping")}</p>}
                     {cardiacTechniques.stress && <p>• <b>{t("dash.cardiac_stress")}</b>: {t("dash.cardiac_guide_stress")}</p>}
                     {cardiacTechniques.strain && <p>• <b>Strain</b>: {t("dash.cardiac_guide_strain")}</p>}
+                  </div>
+                </div>
+              )}
+
+              {/* RECIST 1.1 config + dictation guide */}
+              {isRecistStudy && (
+                <div className="rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold text-indigo-800 dark:text-indigo-300">RECIST 1.1</p>
+                    <Target className="h-3.5 w-3.5 text-indigo-400" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    {[
+                      { key: true, label: t("dash.recist_baseline") },
+                      { key: false, label: t("dash.recist_followup") },
+                    ].map((opt) => (
+                      <button
+                        key={String(opt.key)}
+                        type="button"
+                        onClick={() => setRecistBaseline(opt.key)}
+                        className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
+                          recistBaseline === opt.key
+                            ? "bg-indigo-100 dark:bg-indigo-900/40 border-indigo-400 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  {!recistBaseline && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-medium text-indigo-700 dark:text-indigo-300">
+                        {t("dash.recist_prior_report")}
+                      </label>
+                      <textarea
+                        value={recistPriorReport}
+                        onChange={(e) => setRecistPriorReport(e.target.value)}
+                        placeholder={t("dash.recist_prior_placeholder")}
+                        className="w-full rounded-md border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-900 px-2.5 py-2 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-y min-h-[60px] max-h-[200px]"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                  <div className="text-[10px] leading-relaxed text-indigo-900/70 dark:text-indigo-300/70 space-y-1 pt-0.5">
+                    <p className="font-semibold text-indigo-800 dark:text-indigo-300">{t("dash.recist_guide_title")}</p>
+                    <p>• {t("dash.recist_guide_target")}</p>
+                    <p>• {t("dash.recist_guide_nontarget")}</p>
+                    <p>• {t("dash.recist_guide_new")}</p>
+                    <p className="text-indigo-600/60 dark:text-indigo-400/60 italic">• {t("dash.recist_guide_calc")}</p>
                   </div>
                 </div>
               )}
