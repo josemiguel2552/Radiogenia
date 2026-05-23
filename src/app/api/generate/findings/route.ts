@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang } = body;
+    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques } = body;
 
     const service = createServiceClient();
 
@@ -157,6 +157,7 @@ export async function POST(req: NextRequest) {
       compactNormals: safeConfig.compact_normals,
       dictationOnly: safeConfig.dictation_only,
       preferredNormalPhrases,
+      cardiacTechniques: Array.isArray(cardiacTechniques) ? cardiacTechniques : undefined,
     });
 
     const isImproveWriting = !!paraphraseOverride;

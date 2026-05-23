@@ -347,6 +347,268 @@ function modalityTerminology(modality: string, lang: OutputLanguage): string {
   return `- ${use} appropriate terminology for ${modality} in ${LANGUAGE_LABEL[lang]}. Do not mix terms from other modalities.`;
 }
 
+/* ── Cardiac MRI structured report instructions ──────────── */
+
+function cardiacMriInstructions(lang: OutputLanguage, techniques: string[]): string {
+  const hasContrast = techniques.includes("contrast");
+  const hasMapping = techniques.includes("mapping");
+  const hasStress = techniques.includes("stress");
+  const hasStrain = techniques.includes("strain");
+
+  if (lang === "es") {
+    return `
+INSTRUCCIONES ESPECIALES — INFORME DE RM CARDÍACA:
+
+Este es un informe de RM cardíaca. IGNORA el template de secciones genérico y en su lugar estructura el informe con las siguientes secciones, EN ESTE ORDEN EXACTO:
+
+1. **Técnicas realizadas:**
+   Lista las técnicas de imagen según lo que el radiólogo haya indicado. Incluye como mínimo:
+   - Sincronización vectorcardiográfica
+   - Imágenes de localización scout
+   - Cine SSFP (balanced steady-state free precession) en múltiples planos
+   ${hasContrast ? "- Realce tardío miocárdico (LGE) en múltiples planos\n   - Administración intravenosa de gadolinio" : ""}
+   ${hasMapping ? "- Mapping T1 y T2" : ""}
+   ${hasStress ? "- Perfusión miocárdica en reposo y estrés" : ""}
+   ${hasStrain ? "- Feature-tracking / Strain miocárdico" : ""}
+
+2. **Calidad del examen:** (según dictado, si no se menciona: "Adecuada")
+3. **Intensidad de campo:** (si dictado, ej: 1.5T o 3T)
+4. **SC (BSA):** Calcular automáticamente a partir de peso y talla si están dictados, usando fórmula de Du Bois: BSA = 0.007184 × peso(kg)^0.425 × talla(cm)^0.725
+
+5. **Ventrículo izquierdo (VI):**
+   Formatear así, cada valor en su propia línea:
+   - Grosor pared anteroseptal: ___ mm (normal: ≤12 mm varón; ≤10 mm mujer)
+   - Grosor pared inferolateral: ___ mm (normal: ≤11 mm varón; ≤10 mm mujer)
+   - Diámetro telediastólico VI: ___ mm
+   - Índice diámetro telediastólico VI: ___ mm/m² (normal: ≤30 mm/m² varón; ≤32 mm/m² mujer)
+   - Volumen telediastólico (VTD): ___ ml (normal: 83-207 ml varón; 70-155 ml mujer)
+   - Índice VTD: ___ ml/m² (normal: 47-107 ml/m² varón; 45-93 ml/m² mujer)
+   - Volumen telesistólico (VTS): ___ ml (normal: 19-88 ml varón; 15-64 ml mujer)
+   - Índice VTS: ___ ml/m² (normal: 11-47 ml/m² varón; 10-38 ml/m² mujer)
+   - Volumen sistólico (VS): ___ ml (normal: 55-127 ml varón; 47-99 ml mujer)  ← CALCULAR: VS = VTD - VTS
+   - Gasto cardíaco: ___ L/min (FC ___ lpm)  ← CALCULAR: GC = VS × FC / 1000
+   - Fracción de eyección (FE): ___% (normal: 51-76% varón; 52-79% mujer)  ← CALCULAR: FE = VS/VTD × 100
+   - Masa VI: ___ g (normal: 57-152 g varón; 43-103 g mujer)
+   - Índice masa VI: ___ g/m² (normal: 36-75 g/m² varón; 30-59 g/m² mujer)  ← CALCULAR: masa/BSA
+   - Motilidad regional VI: (según dictado)
+
+   CÁLCULOS AUTOMÁTICOS: Si el radiólogo dicta VTD y VTS, CALCULA automáticamente VS, FE y GC. Si dicta masa y BSA está disponible, CALCULA el índice de masa. Si dicta volúmenes y BSA, CALCULA los índices volumétricos.
+
+6. **Ventrículo derecho (VD):**
+   - Diámetro telediastólico VD: ___ mm
+   - Volumen telediastólico (VTD): ___ ml (normal: 87-244 ml varón; 68-176 ml mujer)
+   - Índice VTD: ___ ml/m² (normal: 53-123 ml/m² varón; 48-104 ml/m² mujer)
+   - Volumen telesistólico (VTS): ___ ml (normal: 29-117 ml varón; 20-80 ml mujer)
+   - Índice VTS: ___ ml/m² (normal: 17-59 ml/m² varón; 13-48 ml/m² mujer)
+   - Volumen sistólico (VS): ___ ml (normal: 43-146 ml varón; 39-109 ml mujer)  ← CALCULAR: VS = VTD - VTS
+   - Fracción de eyección (FE): ___% (normal: 42-72% varón; 46-74% mujer)  ← CALCULAR: FE = VS/VTD × 100
+   - Motilidad regional VD: (según dictado)
+
+7. **Aurículas:**
+   - Diámetro transversal AI (4 cámaras): ___ mm (normal: 33-53 varón; 31-51 mujer)
+   - Índice diámetro AI: ___ mm/m² (normal: 16-29 varón; 18-32 mujer)
+   - Diámetro transversal AD (4 cámaras): ___ mm (normal: 37-59 varón; 32-54 mujer)
+   - Índice diámetro AD: ___ mm/m² (normal: 21-32 varón; 20-34 mujer)
+
+8. **Pericardio:**
+   - Grosor pericárdico (normal 0,7-2,0 mm; anormal >4 mm): ___
+   - Derrame pericárdico: ___
+
+9. **Morfología y función valvular:**
+   Describir según dictado. Si no se menciona: "Sin alteraciones valvulares significativas."
+
+${hasContrast ? `10. **Realce tardío (LGE):**
+   Describir patrón, localización, extensión y tipo (transmural, subendocárdico, mesocárdico, subepicárdico). Si no hay realce: "Sin captación patológica de gadolinio en el miocardio."
+` : ""}
+${hasMapping ? `**Mapping:**
+   - T1 nativo miocárdico VI (Base: ___ ms; Medio: ___ ms; Apex: ___ ms) — rango normal para la secuencia
+   - T2 nativo miocárdico VI (Base: ___ ms; Medio: ___ ms; Apex: ___ ms) — rango normal para la secuencia
+   - VEC (ECV) calculado VI (Base: ___%; Medio: ___%; Apex: ___%) — rango normal para la secuencia
+   Indicar hematocrito si disponible.
+` : ""}
+${hasStress ? `**Perfusión de estrés:**
+   Describir defectos de perfusión en reposo y estrés, localización por segmentos, reversibilidad.
+` : ""}
+${hasStrain ? `**Strain miocárdico:**
+   - GLS (strain longitudinal global): ___%
+   - Valores regionales si disponibles
+` : ""}
+
+REGLA DE CÁLCULOS: Cuando el radiólogo dicta los valores brutos (VTD, VTS, peso, talla, masa, FC), DEBES calcular automáticamente todos los valores derivados:
+- VS = VTD - VTS
+- FE = (VS / VTD) × 100 (redondear a entero)
+- Índices = valor / BSA (redondear a 1 decimal)
+- BSA (Du Bois) = 0.007184 × peso^0.425 × talla^0.725
+- GC = VS × FC / 1000 (redondear a 1 decimal)
+
+Incluye los rangos normales según sexo entre paréntesis junto a cada valor, SIEMPRE.
+
+FORMATO DE SALIDA: NO uses formato markdown (**, #, etc.). Usa texto plano con cada valor en su propia línea. Las secciones se separan con una línea en blanco y el nombre de la sección seguido de dos puntos.`;
+  }
+
+  if (lang === "pt") {
+    return `
+INSTRUÇÕES ESPECIAIS — LAUDO DE RM CARDÍACA:
+
+Este é um laudo de RM cardíaca. IGNORE o template de seções genérico e estruture o laudo com as seguintes seções, NESTA ORDEM EXATA:
+
+1. **Técnicas realizadas:** (listar técnicas de imagem)
+2. **Qualidade do exame**
+3. **Intensidade de campo**
+4. **SC (BSA):** Calcular automaticamente (Du Bois: BSA = 0.007184 × peso^0.425 × altura^0.725)
+
+5. **Ventrículo esquerdo (VE):** com grosuras, volumes, FE, massa e índices — incluir faixas normais por sexo
+6. **Ventrículo direito (VD):** com volumes, FE e índices
+7. **Átrios:** diâmetros e índices de AE e AD
+8. **Pericárdio:** espessura e derrame
+9. **Morfologia e função valvular**
+${hasContrast ? "10. **Realce tardio (LGE):** padrão, localização, extensão, tipo" : ""}
+${hasMapping ? "**Mapping:** valores T1, T2, VEC por segmentos" : ""}
+${hasStress ? "**Perfusão de estresse:** defeitos em repouso/estresse, reversibilidade" : ""}
+${hasStrain ? "**Strain miocárdico:** GLS global e valores regionais" : ""}
+
+REGRA DE CÁLCULOS AUTOMÁTICOS: VS = VTD - VTS; FE = VS/VTD × 100; Índices = valor/BSA; GC = VS × FC / 1000.
+Sempre inclua faixas normais por sexo entre parênteses.`;
+  }
+
+  // English
+  return `
+SPECIAL INSTRUCTIONS — CARDIAC MRI REPORT:
+
+This is a cardiac MRI report. IGNORE the generic section template and structure the report with the following sections, IN THIS EXACT ORDER:
+
+1. **Techniques Performed:** (list imaging techniques)
+   Include at minimum:
+   - Vectorcardiographic gating
+   - Scout images for cardiac localization
+   - Balanced steady-state free precession cine imaging in multiple planes
+   ${hasContrast ? "- Myocardial delayed enhancement imaging in multiple planes\n   - Intravenous administration of gadolinium contrast" : ""}
+   ${hasMapping ? "- T1 and T2 mapping" : ""}
+   ${hasStress ? "- Myocardial perfusion at rest and stress" : ""}
+   ${hasStrain ? "- Feature-tracking / Myocardial strain" : ""}
+
+2. **Exam Quality:** (from dictation, default: "Good")
+3. **Field strength:** (e.g. 1.5T or 3T)
+4. **BSA:** Auto-calculate from weight and height using Du Bois: BSA = 0.007184 × weight(kg)^0.425 × height(cm)^0.725
+
+5. **Left Ventricle (LV):**
+   Each value on its own line:
+   - Anteroseptal wall thickness: ___ mm (normal: ≤12mm male; ≤10mm female)
+   - Inferolateral wall thickness: ___ mm (normal: ≤11mm male; ≤10mm female)
+   - LV End-diastolic dimension: ___ mm
+   - LV End-diastolic dimension index: ___ mm/m² (normal: ≤30 mm/m² male; ≤32 mm/m² female)
+   - LV End-diastolic volume (EDV): ___ ml (normal: 83-207 ml male; 70-155 ml female)
+   - LV EDV index: ___ ml/m² (normal: 47-107 ml/m² male; 45-93 ml/m² female)
+   - LV End-systolic volume (ESV): ___ ml (normal: 19-88 ml male; 15-64 ml female)
+   - LV ESV index: ___ ml/m² (normal: 11-47 ml/m² male; 10-38 ml/m² female)
+   - LV Stroke volume (SV): ___ ml (normal: 55-127 ml male; 47-99 ml female)  ← CALCULATE: SV = EDV - ESV
+   - Cardiac output: ___ L/min (HR ___ bpm)  ← CALCULATE: CO = SV × HR / 1000
+   - LV Ejection fraction (EF): ___% (normal: 51-76% male; 52-79% female)  ← CALCULATE: EF = SV/EDV × 100
+   - LV mass: ___ g (normal: 57-152 g male; 43-103 g female)
+   - LV mass index: ___ g/m² (normal: 36-75 g/m² male; 30-59 g/m² female)  ← CALCULATE: mass/BSA
+   - LV regional wall motion: (from dictation)
+
+6. **Right Ventricle (RV):**
+   - RV End-diastolic dimension: ___ mm
+   - RV EDV: ___ ml (normal: 87-244 ml male; 68-176 ml female)
+   - RV EDV index: ___ ml/m² (normal: 53-123 ml/m² male; 48-104 ml/m² female)
+   - RV ESV: ___ ml (normal: 29-117 ml male; 20-80 ml female)
+   - RV ESV index: ___ ml/m² (normal: 17-59 ml/m² male; 13-48 ml/m² female)
+   - RV SV: ___ ml (normal: 43-146 ml male; 39-109 ml female)  ← CALCULATE: SV = EDV - ESV
+   - RV EF: ___% (normal: 42-72% male; 46-74% female)  ← CALCULATE: EF = SV/EDV × 100
+   - RV regional wall motion: (from dictation)
+
+7. **Atria:**
+   - LA dimension (4-chamber transverse): ___ mm (normal: 33-53 male; 31-51 female)
+   - LA dimension index: ___ mm/m² (normal: 16-29 male; 18-32 female)
+   - RA dimension (4-chamber transverse): ___ mm (normal: 37-59 male; 32-54 female)
+   - RA dimension index: ___ mm/m² (normal: 21-32 male; 20-34 female)
+
+8. **Pericardium:**
+   - Pericardial thickness (normal 0.7-2.0mm, abnormal >4mm): ___
+   - Pericardial effusion: ___
+
+9. **Valvular morphology and function:**
+   From dictation. If unmentioned: "No significant valvular abnormality."
+
+${hasContrast ? `10. **Late Gadolinium Enhancement (LGE):**
+   Describe pattern, location, extent, and type (transmural, subendocardial, mesocardial, subepicardial). If none: "No pathological myocardial late gadolinium enhancement."
+` : ""}
+${hasMapping ? `**Mapping:**
+   - Native myocardial T1 values (Base: ___ ms; Mid: ___ ms; Apex: ___ ms) — local normal ranges
+   - Native T2 values (Base: ___ ms; Mid: ___ ms; Apex: ___ ms) — local normal ranges
+   - Calculated ECV (Base: ___%; Mid: ___%; Apex: ___%) — local normal ranges
+   State hematocrit if available.
+` : ""}
+${hasStress ? `**Stress Perfusion:**
+   Describe perfusion defects at rest and stress, segmental location, reversibility.
+` : ""}
+${hasStrain ? `**Myocardial Strain:**
+   - GLS (global longitudinal strain): ___%
+   - Regional values if available
+` : ""}
+
+AUTO-CALCULATION RULE: When the radiologist dictates raw values (EDV, ESV, weight, height, mass, HR), you MUST auto-calculate all derived values:
+- SV = EDV - ESV
+- EF = (SV / EDV) × 100 (round to integer)
+- Indices = value / BSA (round to 1 decimal)
+- BSA (Du Bois) = 0.007184 × weight^0.425 × height^0.725
+- CO = SV × HR / 1000 (round to 1 decimal)
+
+Always include sex-specific normal ranges in parentheses next to each value.
+
+OUTPUT FORMAT: Do NOT use markdown formatting (**, #, etc.). Use plain text with each value on its own line. Sections separated by blank line and section name followed by colon.`;
+}
+
+function cardiacConclusionInstructions(lang: OutputLanguage): string {
+  if (lang === "es") {
+    return `
+INSTRUCCIONES ESPECIALES — CONCLUSIÓN DE RM CARDÍACA:
+
+Para RM cardíaca, la conclusión debe seguir este formato específico en lugar del formato estándar:
+
+RESUMEN DE HALLAZGOS:
+Enumerar los hallazgos principales como puntos numerados:
+1. Estado del VI: tamaño, función sistólica, FE, motilidad regional.
+2. Estado del VD: tamaño, función sistólica, FE, motilidad regional. Criterios DAVD si aplica.
+3. Realce tardío / cicatriz / infarto (si se realizó LGE).
+4. Mapping (T1, T2, ECV) si se realizó.
+5. Perfusión si se realizó.
+6. Hallazgos adicionales relevantes.
+
+INTERPRETACIÓN:
+Un párrafo final que sintetice los hallazgos en lenguaje clínico conciso, indicando si el estudio es normal o patológico y respondiendo a la pregunta clínica.`;
+  }
+  if (lang === "pt") {
+    return `
+INSTRUÇÕES ESPECIAIS — CONCLUSÃO DE RM CARDÍACA:
+
+Para RM cardíaca, a conclusão deve seguir este formato:
+
+RESUMO DOS ACHADOS:
+Listar os achados principais como pontos numerados.
+
+INTERPRETAÇÃO:
+Parágrafo final sintetizando os achados em linguagem clínica concisa.`;
+  }
+  return `
+SPECIAL INSTRUCTIONS — CARDIAC MRI CONCLUSION:
+
+For cardiac MRI, the conclusion must follow this specific format instead of the standard format:
+
+SUMMARY OF FINDINGS:
+List main findings as numbered points:
+1. LV status: size, systolic function, EF, regional wall motion.
+2. RV status: size, systolic function, EF, regional wall motion. ARVD criteria if applicable.
+3. Late gadolinium enhancement / scar / infarction (if LGE performed).
+4. Mapping (T1, T2, ECV) if performed.
+5. Perfusion if performed.
+6. Additional relevant findings.
+
+INTERPRETATION:
+A final paragraph synthesizing findings in concise clinical language, stating whether the study is normal or abnormal and answering the clinical question.`;
+}
+
 /* ── Exported prompt builders ──────────────────────────────── */
 
 function dictationOnlySystemPrompt(lang: OutputLanguage, modality: string): string {
@@ -494,6 +756,7 @@ export function buildFindingsPrompt(params: {
   dictationOnly?: boolean;
   styleSamples?: string[];
   preferredNormalPhrases?: PreferredNormalPhrase[];
+  cardiacTechniques?: string[];
 }): { system: string; user: string } {
   const lang = params.outputLanguage;
 
@@ -506,6 +769,10 @@ export function buildFindingsPrompt(params: {
 ${LENGTH_INSTRUCTIONS[lang][params.findingsLength]}
 ${params.dictationOnly ? "" : params.compactNormals ? "" : VERBOSITY_INSTRUCTIONS[lang][params.normalFieldsVerbosity]}
 ${PARAPHRASE_INSTRUCTIONS[lang][params.paraphraseLevel]}`;
+
+  if (params.cardiacTechniques && params.cardiacTechniques.length > 0) {
+    system += cardiacMriInstructions(lang, params.cardiacTechniques);
+  }
 
   if (!params.dictationOnly && params.preferredNormalPhrases && params.preferredNormalPhrases.length > 0) {
     const block = lang === "es"
@@ -599,6 +866,7 @@ export function buildConclusionPrompt(params: {
   outputLanguage: OutputLanguage;
   conclusionStyle?: ConclusionStyle;
   preferredConclusionPhrases?: string[];
+  isCardiacMri?: boolean;
 }): { system: string; user: string } {
   const lang = params.outputLanguage;
   const l = LANGUAGE_LABEL[lang];
@@ -846,6 +1114,10 @@ Rules:
     params.preferredConclusionPhrases.forEach((p, i) => {
       system += `\n--- ${i + 1} ---\n${p}`;
     });
+  }
+
+  if (params.isCardiacMri) {
+    system += cardiacConclusionInstructions(lang);
   }
 
   // Final language enforcement
