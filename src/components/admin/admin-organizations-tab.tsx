@@ -47,6 +47,7 @@ export function AdminOrganizationsTab() {
   const [formSlug, setFormSlug] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formSeats, setFormSeats] = useState(50);
+  const [formIsPilot, setFormIsPilot] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Selected org for management
@@ -137,6 +138,7 @@ export function AdminOrganizationsTab() {
     setFormSlug("");
     setFormEmail("");
     setFormSeats(50);
+    setFormIsPilot(false);
     setShowOrgForm(true);
   }
 
@@ -146,6 +148,7 @@ export function AdminOrganizationsTab() {
     setFormSlug(org.slug);
     setFormEmail(org.billing_email || "");
     setFormSeats(org.max_seats);
+    setFormIsPilot(org.is_pilot || false);
     setShowOrgForm(true);
   }
 
@@ -158,6 +161,7 @@ export function AdminOrganizationsTab() {
       slug: formSlug.trim().toLowerCase().replace(/\s+/g, "-"),
       billing_email: formEmail.trim() || null,
       max_seats: formSeats,
+      is_pilot: formIsPilot,
     };
     await fetch("/api/admin/organizations", {
       method: editingOrg ? "PUT" : "POST",
@@ -1011,6 +1015,13 @@ export function AdminOrganizationsTab() {
                 <Label className="text-xs">{t("admin.org.max_seats")}</Label>
                 <Input type="number" value={formSeats} onChange={(e) => setFormSeats(Number(e.target.value))} min={1} className="h-9 w-24" />
               </div>
+              <label className="flex items-center gap-2 text-xs cursor-pointer">
+                <input type="checkbox" checked={formIsPilot} onChange={(e) => setFormIsPilot(e.target.checked)} className="rounded border-gray-300" />
+                <div>
+                  <span className="font-medium">{t("pilot.is_pilot")}</span>
+                  <span className="text-gray-400 ml-1">({t("pilot.is_pilot_hint")})</span>
+                </div>
+              </label>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>{t("cancel")}</Button>
                 <Button size="sm" onClick={handleSaveOrg} disabled={saving || !formName.trim() || !formSlug.trim()}>
@@ -1060,6 +1071,7 @@ export function AdminOrganizationsTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{org.name}</h3>
+                      {org.is_pilot && <Badge variant="outline" className="text-[9px] border-indigo-400/50 text-indigo-600 dark:text-indigo-400">{t("pilot.is_pilot")}</Badge>}
                       {!org.is_active && <Badge variant="secondary" className="text-[9px]">{t("admin.org.inactive")}</Badge>}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">

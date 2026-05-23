@@ -15,7 +15,7 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare, DollarSign, Megaphone,
+  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -26,6 +26,7 @@ import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
 import { AdminMarketingTab } from "@/components/admin/admin-marketing-tab";
+import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 
 interface GlobalConfig {
   id: string;
@@ -91,7 +92,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs" | "marketing";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs" | "marketing" | "pilot";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -534,6 +535,7 @@ export default function AdminPage() {
     { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
     { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
     { key: "marketing", label: "Marketing", icon: <Megaphone className="h-4 w-4" /> },
+    { key: "pilot", label: t("admin.tab_pilot"), icon: <FlaskConical className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -1417,6 +1419,7 @@ export default function AdminPage() {
 
         {/* ═══ MARKETING ═══ */}
         {tab === "marketing" && <AdminMarketingTab />}
+        {tab === "pilot" && <AdminPilotTab />}
 
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (

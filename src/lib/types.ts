@@ -273,6 +273,7 @@ export interface Organization {
   stripe_subscription_id: string | null;
   max_seats: number;
   is_active: boolean;
+  is_pilot: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;

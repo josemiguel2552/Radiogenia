@@ -71,7 +71,7 @@ export async function PUT(req: NextRequest) {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { id, name, slug, billing_email, max_seats, is_active } = await req.json();
+    const { id, name, slug, billing_email, max_seats, is_active, is_pilot } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing organization id" }, { status: 400 });
 
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -80,6 +80,7 @@ export async function PUT(req: NextRequest) {
     if (billing_email !== undefined) update.billing_email = billing_email;
     if (max_seats !== undefined) update.max_seats = max_seats;
     if (is_active !== undefined) update.is_active = is_active;
+    if (is_pilot !== undefined) update.is_pilot = is_pilot;
 
     const { error } = await service.from("organizations").update(update).eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

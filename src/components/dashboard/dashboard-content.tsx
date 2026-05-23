@@ -50,6 +50,8 @@ import { Input } from "@/components/ui/input";
 import { ResidentVerificationForm } from "@/components/resident-verification-form";
 import { RecommendationPanel } from "./recommendation-panel";
 import { SelectionHighlight } from "@/components/ui/selection-highlight";
+import { NpsSurvey } from "./nps-survey";
+import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -119,6 +121,11 @@ export function DashboardContent() {
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
   const [piiDismissed, setPiiDismissed] = useState(false);
+
+  // Pilot metrics
+  const reportStartTimeRef = useRef(0);
+  const dictationCharsRef = useRef(0);
+  const [showNpsSurvey, setShowNpsSurvey] = useState(false);
 
   // Active signature for copy
   const activeSignatureRef = useRef<string | null>(null);
@@ -301,6 +308,7 @@ export function DashboardContent() {
     studyType: whisperStudyTypeRef.current,
     onTranscript: (rawText) => {
       const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
+      dictationCharsRef.current += text.length;
       setDictation((prev) => {
         const sel = dictSelRangeRef.current;
         if (sel && sel.start !== sel.end) {
@@ -480,6 +488,23 @@ export function DashboardContent() {
             })], { type: "application/json" }),
           );
         }
+      }
+
+      // Flush pilot metrics edit distance on unload
+      if (s.lastSavedReportId && s.initialFindings) {
+        const finalText = s.findings + s.conclusion;
+        const origText = s.initialFindings + s.initialConclusion;
+        const editDist = computeEditDistance(origText, finalText);
+        navigator.sendBeacon(
+          "/api/metrics",
+          new Blob([JSON.stringify({
+            _method: "PATCH",
+            report_id: s.lastSavedReportId,
+            final_length: finalText.length,
+            edit_distance: editDist,
+            report_end_at: new Date().toISOString(),
+          })], { type: "application/json" }),
+        );
       }
     }
 
@@ -943,6 +968,35 @@ export function DashboardContent() {
                 },
               }),
             }).catch(() => {});
+
+            // Pilot metrics — fire-and-forget
+            const templateTextForMetrics = templateText;
+            const totalInputChars = dictation.length;
+            const dictChars = dictationCharsRef.current;
+            const { total: secTotal, filled: secFilled } = computeStructuralCompleteness(templateTextForMetrics, findingsText);
+            const aiDraftLen = findingsText.length + conclusionText.length;
+            fetch("/api/metrics", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                report_id: saved.id,
+                report_start_at: reportStartTimeRef.current ? new Date(reportStartTimeRef.current).toISOString() : null,
+                report_end_at: new Date().toISOString(),
+                dictation_chars: dictChars,
+                manual_chars: Math.max(0, totalInputChars - dictChars),
+                total_chars: totalInputChars,
+                template_sections_total: secTotal,
+                template_sections_filled: secFilled,
+                ai_draft_length: aiDraftLen,
+                final_length: aiDraftLen,
+                edit_distance: 0,
+              }),
+            }).catch(() => {});
+
+            // Check NPS survey eligibility
+            fetch("/api/pilot/survey").then((r) => r.ok ? r.json() : null).then((d) => {
+              if (d?.showSurvey) setShowNpsSurvey(true);
+            }).catch(() => {});
           }
         } else {
           const errBody = await res.text().catch(() => "");
@@ -1030,6 +1084,25 @@ export function DashboardContent() {
 
     logCorrectionIfNeeded();
     flushCorrections().catch(() => {});
+
+    // Update pilot metrics with final edit distance
+    if (lastSavedReportId && initialFindings) {
+      const finalText = findings + conclusion;
+      const origText = initialFindings + initialConclusion;
+      const editDist = computeEditDistance(origText, finalText);
+      fetch("/api/metrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _method: "PATCH",
+          report_id: lastSavedReportId,
+          final_length: finalText.length,
+          edit_distance: editDist,
+          report_end_at: new Date().toISOString(),
+        }),
+      }).catch(() => {});
+    }
+
     fetch("/api/signatures").then((sRes) => {
       if (sRes.ok) return sRes.json();
     }).then((sigs: { is_active: boolean; body: string }[] | undefined) => {
@@ -1194,6 +1267,8 @@ export function DashboardContent() {
     setErrorReported(false);
     correctionLoggedRef.current = false;
     correctedLenRef.current = 0;
+    reportStartTimeRef.current = 0;
+    dictationCharsRef.current = 0;
     stopCorrectionLoop.current();
     if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
     localStorage.removeItem("radiogenai_draft");
@@ -1349,7 +1424,7 @@ export function DashboardContent() {
                   ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
-                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); }}
+                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
                   onSelect={(e) => {
                     const ta = e.currentTarget;
                     if (ta.selectionStart !== ta.selectionEnd) {
@@ -1635,7 +1710,7 @@ export function DashboardContent() {
                   ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
-                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); }}
+                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
                   onSelect={(e) => {
                     const ta = e.currentTarget;
                     if (ta.selectionStart !== ta.selectionEnd) {
@@ -1891,6 +1966,8 @@ export function DashboardContent() {
           });
         }}
       />
+
+      <NpsSurvey open={showNpsSurvey} onClose={() => setShowNpsSurvey(false)} />
 
       {/* Limit reached dialog (reports or dictation) */}
       <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>
