@@ -261,6 +261,7 @@ export const DICTATION_LANGUAGES: { value: DictationLanguage; label: string }[] 
 /* ── Hospital / Organization types ─────────────────────────── */
 
 export type SectionRole = "section_chief" | "section_editor" | "radiologist";
+export type StaffType = "attending" | "resident";
 
 export interface Organization {
   id: string;
@@ -293,6 +294,7 @@ export interface OrgMember {
   section_id: string | null;
   is_org_chief: boolean;
   section_role: SectionRole;
+  staff_type: StaffType;
   is_active: boolean;
   joined_at: string;
   deactivated_at: string | null;
@@ -309,6 +311,7 @@ export interface OrgMembership {
   section_name: string | null;
   is_org_chief: boolean;
   section_role: SectionRole;
+  staff_type: StaffType;
 }
 
 export interface OrgTemplate {

@@ -70,6 +70,8 @@ create table if not exists public.org_members (
   is_org_chief boolean not null default false,
   section_role text not null default 'radiologist'
     check (section_role in ('section_chief', 'section_editor', 'radiologist')),
+  staff_type text not null default 'attending'
+    check (staff_type in ('attending', 'resident')),
   is_active boolean not null default true,
   joined_at timestamptz not null default now(),
   deactivated_at timestamptz,

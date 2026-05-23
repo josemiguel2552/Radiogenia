@@ -27,6 +27,7 @@ interface MemberRow {
   section_id: string | null;
   is_org_chief: boolean;
   section_role: SectionRole;
+  staff_type: "attending" | "resident";
   is_active: boolean;
   user_email: string | null;
   user_name: string | null;
@@ -70,6 +71,7 @@ export function AdminOrganizationsTab() {
   const [showPassword, setShowPassword] = useState(false);
   const [memberSectionId, setMemberSectionId] = useState("");
   const [memberRole, setMemberRole] = useState<SectionRole>("radiologist");
+  const [memberStaffType, setMemberStaffType] = useState<"attending" | "resident">("attending");
   const [memberIsChief, setMemberIsChief] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
   const [memberError, setMemberError] = useState("");
@@ -230,6 +232,7 @@ export function AdminOrganizationsTab() {
     setShowPassword(false);
     setMemberSectionId(sections[0]?.id || "");
     setMemberRole("radiologist");
+    setMemberStaffType("attending");
     setMemberIsChief(false);
     setMemberError("");
     setMemberSuccess("");
@@ -244,6 +247,7 @@ export function AdminOrganizationsTab() {
     setMemberPassword("");
     setMemberSectionId(m.section_id || "");
     setMemberRole(m.section_role);
+    setMemberStaffType(m.staff_type || "attending");
     setMemberIsChief(m.is_org_chief);
     setMemberError("");
     setMemberSuccess("");
@@ -292,6 +296,7 @@ export function AdminOrganizationsTab() {
             id: editingMember.id,
             section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
             section_role: memberRole,
+            staff_type: memberStaffType,
             is_org_chief: memberIsChief,
           }),
         });
@@ -321,6 +326,7 @@ export function AdminOrganizationsTab() {
           email: memberEmail.trim().toLowerCase(),
           section_id: memberSectionId && memberSectionId !== "none" ? memberSectionId : null,
           section_role: memberRole,
+          staff_type: memberStaffType,
           is_org_chief: memberIsChief,
         };
         if (isNewUser) {
@@ -558,12 +564,12 @@ export function AdminOrganizationsTab() {
                                     <button key={r.id} onClick={() => openEditMember(r)}
                                       className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer"
                                     >
-                                      <div className="h-6 w-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                      <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${r.staff_type === "resident" ? "bg-emerald-500" : "bg-gray-400"}`}>
                                         {(r.user_name || r.user_email || "?")[0].toUpperCase()}
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
                                         <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 truncate">{r.user_name || r.user_email}</p>
-                                        <p className="text-[9px] text-gray-400">{t("admin.org.role_radiologist")}</p>
+                                        <p className="text-[9px] text-gray-400">{r.staff_type === "resident" ? t("admin.org.staff_resident") : t("admin.org.role_radiologist")}</p>
                                       </div>
                                     </button>
                                   ))}
@@ -702,6 +708,11 @@ export function AdminOrganizationsTab() {
                               <Badge className={`text-[9px] flex-shrink-0 ${roleColor(m.section_role, m.is_org_chief)}`}>
                                 {roleLabel(m.section_role, m.is_org_chief)}
                               </Badge>
+                              {m.staff_type === "resident" && (
+                                <Badge variant="outline" className="text-[9px] flex-shrink-0 border-emerald-400/50 text-emerald-600 dark:text-emerald-400">
+                                  {t("admin.org.staff_resident")}
+                                </Badge>
+                              )}
                               {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.org.inactive")}</Badge>}
                               <div className="flex gap-0.5 flex-shrink-0">
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} title={t("admin.org.edit_role")}>
@@ -879,6 +890,18 @@ export function AdminOrganizationsTab() {
                       <SelectItem value="radiologist">{t("admin.org.role_radiologist")}</SelectItem>
                       <SelectItem value="section_editor">{t("admin.org.role_section_editor")}</SelectItem>
                       <SelectItem value="section_chief">{t("admin.org.role_section_chief")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Staff type */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{t("admin.org.staff_type")}</Label>
+                  <Select value={memberStaffType} onValueChange={(v) => setMemberStaffType(v as "attending" | "resident")}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="attending">{t("admin.org.staff_attending")}</SelectItem>
+                      <SelectItem value="resident">{t("admin.org.staff_resident")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

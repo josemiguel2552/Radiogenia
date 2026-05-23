@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { decrypt } from "@/lib/encryption";
-import { PLANS, type AIProvider, type UserRole, type SubscriptionPlan, type OrgMembership, type SectionRole } from "@/lib/types";
+import { PLANS, type AIProvider, type UserRole, type SubscriptionPlan, type OrgMembership, type SectionRole, type StaffType } from "@/lib/types";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
@@ -330,7 +330,7 @@ export async function getOrgMembership(userId: string): Promise<OrgMembership | 
   const service = createServiceClient();
   const { data } = await service
     .from("org_members")
-    .select("org_id, section_id, is_org_chief, section_role, organizations(name), org_sections(name)")
+    .select("org_id, section_id, is_org_chief, section_role, staff_type, organizations(name), org_sections(name)")
     .eq("user_id", userId)
     .eq("is_active", true)
     .maybeSingle();
@@ -347,6 +347,7 @@ export async function getOrgMembership(userId: string): Promise<OrgMembership | 
     section_name: sec?.name || null,
     is_org_chief: data.is_org_chief,
     section_role: data.section_role as SectionRole,
+    staff_type: (data.staff_type as StaffType) || "attending",
   };
 }
 

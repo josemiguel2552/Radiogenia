@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { org_id, email, name, password, section_id, section_role, is_org_chief } = await req.json();
+    const { org_id, email, name, password, section_id, section_role, is_org_chief, staff_type } = await req.json();
     if (!org_id || !email) {
       return NextResponse.json({ error: "Missing org_id or email" }, { status: 400 });
     }
@@ -134,6 +134,7 @@ export async function POST(req: NextRequest) {
       user_id: userId,
       section_id: section_id || null,
       section_role: section_role || "radiologist",
+      staff_type: staff_type || "attending",
       is_org_chief: is_org_chief ?? false,
       is_active: true,
       deactivated_at: null,
@@ -168,13 +169,14 @@ export async function PUT(req: NextRequest) {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { id, section_id, section_role, is_org_chief, is_active } = await req.json();
+    const { id, section_id, section_role, is_org_chief, staff_type, is_active } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing member id" }, { status: 400 });
 
     const update: Record<string, unknown> = {};
     if (section_id !== undefined) update.section_id = section_id || null;
     if (section_role !== undefined) update.section_role = section_role;
     if (is_org_chief !== undefined) update.is_org_chief = is_org_chief;
+    if (staff_type !== undefined) update.staff_type = staff_type;
 
     if (is_active !== undefined) {
       update.is_active = is_active;
