@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       req.json(),
       getGlobalAIConfig(),
     ]);
-    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang } = body;
+    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques } = body;
 
     const service = createServiceClient();
 
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
       outputLanguage: outputLanguage as OutputLanguage,
       conclusionStyle,
       preferredConclusionPhrases,
+      isCardiacMri: Array.isArray(cardiacTechniques) && cardiacTechniques.length > 0,
     });
 
     const taskModel = globalConfig.taskOverrides?.conclusion;

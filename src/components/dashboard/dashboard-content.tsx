@@ -831,6 +831,7 @@ export function DashboardContent() {
             studyType: studyName,
             conclusionStyle: style,
             outputLanguage,
+            ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
           }),
         });
 
