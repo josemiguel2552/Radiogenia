@@ -615,8 +615,8 @@ INTERPRETACIÓN:
 Un párrafo final que:
 - Sintetice los hallazgos en lenguaje clínico conciso.
 - Indique si el estudio es globalmente normal o patológico.
-${hasClinical ? "- Responda directamente a la pregunta clínica planteada." : "- Proporcione una impresión diagnóstica general basada en los hallazgos."}
-- En RM cardíaca, SÍ se permite cierto nivel de interpretación clínica en este párrafo (a diferencia de informes generales): puedes mencionar patrones compatibles con cardiopatía isquémica, miocardiopatía dilatada, miocarditis, etc., SIEMPRE que los hallazgos lo soporten directamente.
+${hasClinical ? "- Responda directamente a la pregunta clínica planteada." : "- Resuma los hallazgos principales y su significado radiológico."}
+- DESCRIBE hallazgos radiológicos, NO emitas diagnósticos. No uses: "compatible con", "sugestivo de", "en relación con", "cardiopatía isquémica", "miocardiopatía", "miocarditis". Describe lo que ves: patrón de realce, distribución, valores alterados.
 
 FORMATO:
 - Texto plano. NO uses asteriscos, almohadillas ni markdown.
@@ -649,7 +649,7 @@ Pontos numerados resumindo os achados principais. Incluir SEMPRE:
 Incluir apenas pontos com dados nos achados. Incluir valores numéricos (FE, volumes) e faixas normais de AMBOS os sexos: (normal: XX-XX% homem; XX-XX% mulher).
 
 INTERPRETAÇÃO:
-Parágrafo final sintetizando os achados em linguagem clínica concisa, indicando se o estudo é normal ou patológico${hasClinical ? " e respondendo à pergunta clínica" : ""}. Em RM cardíaca, permite-se interpretação clínica (padrões compatíveis com cardiopatia isquêmica, miocardiopatia, miocardite, etc.) quando os achados o suportem.
+Parágrafo final sintetizando os achados em linguagem clínica concisa, indicando se o estudo é globalmente normal ou patológico${hasClinical ? " e respondendo à pergunta clínica" : ""}. DESCREVA achados radiológicos, NÃO emita diagnósticos. Não use: "compatível com", "sugestivo de", "cardiopatia isquêmica", "miocardiopatia", "miocardite". Descreva o que vê: padrão de realce, distribuição, valores alterados.
 
 FORMATO:
 - Texto simples, sem markdown. Não inclua o cabeçalho "CONCLUSÃO".
@@ -689,8 +689,8 @@ INTERPRETATION:
 A final paragraph that:
 - Synthesizes findings in concise clinical language.
 - States whether the study is globally normal or abnormal.
-${hasClinical ? "- Directly answers the clinical question posed." : "- Provides a general diagnostic impression based on the findings."}
-- In cardiac MRI, some clinical interpretation IS permitted in this paragraph (unlike general reports): you may mention patterns consistent with ischemic cardiomyopathy, dilated cardiomyopathy, myocarditis, etc., PROVIDED the findings directly support it.
+${hasClinical ? "- Directly answers the clinical question posed." : "- Summarizes the main findings and their radiological significance."}
+- DESCRIBE radiological findings, do NOT issue diagnoses. Do not use: "consistent with", "suggestive of", "in keeping with", "ischemic cardiomyopathy", "dilated cardiomyopathy", "myocarditis". Describe what you see: enhancement pattern, distribution, abnormal values.
 
 FORMAT:
 - Plain text. Do NOT use asterisks, hashes or markdown.
