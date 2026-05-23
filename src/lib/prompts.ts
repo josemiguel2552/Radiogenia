@@ -441,7 +441,10 @@ REGLA DE CÁLCULOS: Cuando el radiólogo dicta los valores brutos (VTD, VTS, pes
 - BSA (Du Bois) = 0.007184 × peso^0.425 × talla^0.725
 - GC = VS × FC / 1000 (redondear a 1 decimal)
 
-Incluye los rangos normales según sexo entre paréntesis junto a cada valor, SIEMPRE.
+RANGOS NORMALES — OBLIGATORIO AMBOS SEXOS:
+Junto a CADA valor numérico, incluye SIEMPRE los rangos normales de AMBOS sexos entre paréntesis, con el formato:
+(normal: XX-XX varón; XX-XX mujer)
+NUNCA muestres solo el rango de un sexo. Aunque el paciente sea varón, incluye también el rango femenino, y viceversa. El radiólogo necesita ambos rangos como referencia.
 
 FORMATO DE SALIDA: NO uses formato markdown (**, #, etc.). Usa texto plano con cada valor en su propia línea. Las secciones se separan con una línea en blanco y el nombre de la sección seguido de dos puntos.`;
   }
@@ -468,7 +471,11 @@ ${hasStress ? "**Perfusão de estresse:** defeitos em repouso/estresse, reversib
 ${hasStrain ? "**Strain miocárdico:** GLS global e valores regionais" : ""}
 
 REGRA DE CÁLCULOS AUTOMÁTICOS: VS = VTD - VTS; FE = VS/VTD × 100; Índices = valor/BSA; GC = VS × FC / 1000.
-Sempre inclua faixas normais por sexo entre parênteses.`;
+
+FAIXAS NORMAIS — AMBOS OS SEXOS OBRIGATÓRIO:
+Junto a CADA valor numérico, inclua SEMPRE as faixas normais de AMBOS os sexos entre parênteses:
+(normal: XX-XX homem; XX-XX mulher)
+NUNCA mostre apenas a faixa de um sexo. O radiologista precisa de ambas as faixas como referência.`;
   }
 
   // English
@@ -555,7 +562,10 @@ AUTO-CALCULATION RULE: When the radiologist dictates raw values (EDV, ESV, weigh
 - BSA (Du Bois) = 0.007184 × weight^0.425 × height^0.725
 - CO = SV × HR / 1000 (round to 1 decimal)
 
-Always include sex-specific normal ranges in parentheses next to each value.
+NORMAL RANGES — BOTH SEXES MANDATORY:
+Next to EVERY numeric value, ALWAYS include normal ranges for BOTH sexes in parentheses, with the format:
+(normal: XX-XX male; XX-XX female)
+NEVER show only one sex's range. Even if the patient is male, include the female range too, and vice versa. The radiologist needs both ranges as reference.
 
 OUTPUT FORMAT: Do NOT use markdown formatting (**, #, etc.). Use plain text with each value on its own line. Sections separated by blank line and section name followed by colon.`;
 }
