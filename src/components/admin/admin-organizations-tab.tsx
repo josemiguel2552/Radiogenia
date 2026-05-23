@@ -29,6 +29,7 @@ interface MemberRow {
   section_role: SectionRole;
   staff_type: "attending" | "resident";
   is_active: boolean;
+  consent_accepted_at: string | null;
   user_email: string | null;
   user_name: string | null;
   section_name: string | null;
@@ -711,6 +712,11 @@ export function AdminOrganizationsTab() {
                               {m.staff_type === "resident" && (
                                 <Badge variant="outline" className="text-[9px] flex-shrink-0 border-emerald-400/50 text-emerald-600 dark:text-emerald-400">
                                   {t("admin.org.staff_resident")}
+                                </Badge>
+                              )}
+                              {!m.consent_accepted_at && m.is_active && (
+                                <Badge variant="outline" className="text-[9px] flex-shrink-0 border-red-400/50 text-red-500 dark:text-red-400">
+                                  {t("admin.org.consent_pending")}
                                 </Badge>
                               )}
                               {!m.is_active && <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.org.inactive")}</Badge>}
