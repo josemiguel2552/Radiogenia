@@ -83,7 +83,11 @@ interface BrandAsset {
   bg: "gradient" | "dark" | "white" | "transparent";
   logoVariant: "full" | "icon";
   description: string;
+  tagline?: string;
 }
+
+const TAGLINE_ES = "Informes radiológicos con IA";
+const TAGLINE_EN = "AI-Powered Radiology Reports";
 
 const BRAND_ASSETS: BrandAsset[] = [
   // Profile Pictures
@@ -91,37 +95,68 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "profile-gradient", label: "Perfil (gradiente)", category: "Perfil", width: 400, height: 400, bg: "gradient", logoVariant: "icon", description: "Versión con gradiente de marca" },
   { id: "profile-white", label: "Perfil (fondo blanco)", category: "Perfil", width: 400, height: 400, bg: "white", logoVariant: "icon", description: "Para fondos claros" },
   { id: "profile-transparent", label: "Perfil (transparente)", category: "Perfil", width: 400, height: 400, bg: "transparent", logoVariant: "icon", description: "PNG sin fondo" },
+  { id: "profile-tiktok", label: "Perfil TikTok", category: "Perfil", width: 200, height: 200, bg: "gradient", logoVariant: "icon", description: "TikTok 200×200" },
   // Full Logo
   { id: "logo-dark-h", label: "Logo completo (oscuro)", category: "Logo", width: 1200, height: 400, bg: "dark", logoVariant: "full", description: "Logo horizontal fondo oscuro" },
   { id: "logo-white-h", label: "Logo completo (blanco)", category: "Logo", width: 1200, height: 400, bg: "white", logoVariant: "full", description: "Logo horizontal fondo blanco" },
   { id: "logo-gradient-h", label: "Logo completo (gradiente)", category: "Logo", width: 1200, height: 400, bg: "gradient", logoVariant: "full", description: "Logo horizontal con gradiente" },
   { id: "logo-transparent-h", label: "Logo completo (transparente)", category: "Logo", width: 1200, height: 400, bg: "transparent", logoVariant: "full", description: "Logo horizontal sin fondo" },
-  // Banners
-  { id: "banner-x", label: "Banner X / Twitter", category: "Banners", width: 1500, height: 500, bg: "gradient", logoVariant: "full", description: "1500×500px" },
-  { id: "banner-fb", label: "Banner Facebook", category: "Banners", width: 820, height: 312, bg: "gradient", logoVariant: "full", description: "820×312px" },
-  { id: "banner-linkedin", label: "Banner LinkedIn", category: "Banners", width: 1584, height: 396, bg: "gradient", logoVariant: "full", description: "1584×396px" },
-  { id: "banner-yt", label: "Banner YouTube", category: "Banners", width: 2560, height: 1440, bg: "gradient", logoVariant: "full", description: "2560×1440px" },
+  { id: "logo-tagline-dark", label: "Logo + tagline (oscuro)", category: "Logo", width: 1200, height: 400, bg: "dark", logoVariant: "full", description: "Con eslogan", tagline: TAGLINE_ES },
+  { id: "logo-tagline-white", label: "Logo + tagline (blanco)", category: "Logo", width: 1200, height: 400, bg: "white", logoVariant: "full", description: "Con eslogan", tagline: TAGLINE_ES },
+  { id: "logo-tagline-en", label: "Logo + tagline (EN)", category: "Logo", width: 1200, height: 400, bg: "dark", logoVariant: "full", description: "English tagline", tagline: TAGLINE_EN },
+  // Banners — social media
+  { id: "banner-x", label: "Banner X / Twitter", category: "Banners Redes", width: 1500, height: 500, bg: "gradient", logoVariant: "full", description: "1500×500px", tagline: TAGLINE_ES },
+  { id: "banner-fb", label: "Banner Facebook", category: "Banners Redes", width: 820, height: 312, bg: "gradient", logoVariant: "full", description: "820×312px", tagline: TAGLINE_ES },
+  { id: "banner-linkedin", label: "Banner LinkedIn", category: "Banners Redes", width: 1584, height: 396, bg: "gradient", logoVariant: "full", description: "1584×396px", tagline: TAGLINE_ES },
+  { id: "banner-yt", label: "Banner YouTube", category: "Banners Redes", width: 2560, height: 1440, bg: "gradient", logoVariant: "full", description: "2560×1440px", tagline: TAGLINE_ES },
+  { id: "banner-tiktok", label: "Banner TikTok", category: "Banners Redes", width: 1150, height: 150, bg: "gradient", logoVariant: "full", description: "TikTok perfil 1150×150" },
   // Post sizes
-  { id: "post-square", label: "Post cuadrado", category: "Posts", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "Instagram/Facebook 1080×1080" },
-  { id: "post-landscape", label: "Post paisaje", category: "Posts", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "Facebook/LinkedIn 1200×630" },
-  { id: "post-story", label: "Story / Reel", category: "Posts", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "Instagram/FB Story 1080×1920" },
-  // Favicons
+  { id: "post-square", label: "Post cuadrado", category: "Posts", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "Instagram/Facebook 1080×1080", tagline: TAGLINE_ES },
+  { id: "post-landscape", label: "Post paisaje", category: "Posts", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "Facebook/LinkedIn 1200×630", tagline: TAGLINE_ES },
+  { id: "post-story", label: "Story / Reel", category: "Posts", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "Instagram/FB/TikTok Story 1080×1920", tagline: TAGLINE_ES },
+  { id: "post-pin", label: "Pin Pinterest", category: "Posts", width: 1000, height: 1500, bg: "gradient", logoVariant: "full", description: "Pinterest 1000×1500", tagline: TAGLINE_ES },
+  // Email
+  { id: "email-header", label: "Cabecera email", category: "Email", width: 600, height: 120, bg: "gradient", logoVariant: "full", description: "Header para newsletters" },
+  { id: "email-header-white", label: "Cabecera email (blanco)", category: "Email", width: 600, height: 120, bg: "white", logoVariant: "full", description: "Header fondo claro" },
+  { id: "email-sig", label: "Firma email", category: "Email", width: 500, height: 80, bg: "transparent", logoVariant: "full", description: "Firma para correos" },
+  { id: "email-footer", label: "Footer email", category: "Email", width: 600, height: 60, bg: "dark", logoVariant: "full", description: "Pie de newsletter" },
+  // Web / OG
+  { id: "og-image", label: "OG Image (web)", category: "Web", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "Open Graph / meta image", tagline: TAGLINE_ES },
+  { id: "og-image-en", label: "OG Image (EN)", category: "Web", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "Open Graph English", tagline: TAGLINE_EN },
+  { id: "watermark", label: "Marca de agua", category: "Web", width: 300, height: 80, bg: "transparent", logoVariant: "full", description: "Para superponer en imágenes" },
+  { id: "powered-badge", label: "Powered by badge", category: "Web", width: 240, height: 48, bg: "dark", logoVariant: "full", description: "Badge para integrar en webs" },
+  { id: "powered-badge-light", label: "Powered by badge (claro)", category: "Web", width: 240, height: 48, bg: "white", logoVariant: "full", description: "Badge fondo claro" },
+  // Presentation
+  { id: "slide-cover", label: "Slide portada", category: "Presentación", width: 1920, height: 1080, bg: "gradient", logoVariant: "full", description: "16:9 portada presentación", tagline: TAGLINE_ES },
+  { id: "slide-header", label: "Slide cabecera", category: "Presentación", width: 1920, height: 200, bg: "gradient", logoVariant: "full", description: "Strip superior para slides" },
+  // Favicons / App Icons
   { id: "icon-512", label: "App Icon 512", category: "Iconos", width: 512, height: 512, bg: "gradient", logoVariant: "icon", description: "PWA / App Store 512×512" },
   { id: "icon-192", label: "App Icon 192", category: "Iconos", width: 192, height: 192, bg: "gradient", logoVariant: "icon", description: "PWA 192×192" },
+  { id: "icon-180", label: "Apple Touch Icon", category: "Iconos", width: 180, height: 180, bg: "gradient", logoVariant: "icon", description: "iOS home 180×180" },
   { id: "favicon", label: "Favicon", category: "Iconos", width: 32, height: 32, bg: "gradient", logoVariant: "icon", description: "Favicon 32×32" },
+  { id: "whatsapp-icon", label: "WhatsApp Business", category: "Iconos", width: 640, height: 640, bg: "gradient", logoVariant: "icon", description: "WhatsApp Business perfil" },
 ];
 
-function buildLogoSvg(w: number, h: number, variant: "full" | "icon", bg: "gradient" | "dark" | "white" | "transparent"): string {
+function buildLogoSvg(
+  w: number, h: number,
+  variant: "full" | "icon",
+  bg: "gradient" | "dark" | "white" | "transparent",
+  opts?: { tagline?: string; subtextSize?: number },
+): string {
+  const pad = w * 0.05;
   const iconSize = variant === "icon"
     ? Math.min(w, h) * 0.6
-    : Math.min(w * 0.18, h * 0.55);
-  const iconX = variant === "icon" ? (w - iconSize) / 2 : w / 2 - iconSize * 2.2;
-  const iconY = (h - iconSize) / 2;
+    : Math.min(h * 0.5, w * 0.1);
+  const iconX = variant === "icon" ? (w - iconSize) / 2 : pad;
+  const iconY = opts?.tagline
+    ? h * 0.5 - iconSize * 0.65
+    : (h - iconSize) / 2;
   const scale = iconSize / 32;
 
   const textDark = bg === "white" || bg === "transparent";
   const mainColor = textDark ? "#111827" : "#ffffff";
   const accentColor = textDark ? "#0d9488" : "#5EEAD4";
+  const subColor = textDark ? "#6b7280" : "rgba(255,255,255,0.6)";
 
   let bgRect = "";
   if (bg === "gradient") {
@@ -141,12 +176,19 @@ function buildLogoSvg(w: number, h: number, variant: "full" | "icon", bg: "gradi
 
   let textSvg = "";
   if (variant === "full") {
-    const fontSize = iconSize * 1.1;
-    const textX = iconX + iconSize + iconSize * 0.4;
-    const textY = h / 2 + fontSize * 0.35;
+    const textX = iconX + iconSize + iconSize * 0.35;
+    const availWidth = w - textX - pad;
+    const fontSize = Math.min(iconSize * 1.1, availWidth / 6.5, h * 0.4);
+    const textY = opts?.tagline
+      ? h * 0.5 - fontSize * 0.15
+      : h / 2 + fontSize * 0.35;
     textSvg = `<text x="${textX}" y="${textY}" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="${fontSize}" letter-spacing="-0.02em">
-      <tspan fill="${mainColor}">Radiogen</tspan><tspan fill="${accentColor}">.AI</tspan>
+      <tspan fill="${mainColor}">Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan>
     </text>`;
+    if (opts?.tagline) {
+      const subSize = opts.subtextSize || fontSize * 0.28;
+      textSvg += `<text x="${textX}" y="${textY + subSize * 1.6}" font-family="system-ui,-apple-system,sans-serif" font-weight="500" font-size="${subSize}" fill="${subColor}" letter-spacing="0.02em">${escSvg(opts.tagline)}</text>`;
+    }
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
@@ -157,8 +199,12 @@ function buildLogoSvg(w: number, h: number, variant: "full" | "icon", bg: "gradi
   </svg>`;
 }
 
+function escSvg(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function renderAndDownload(asset: BrandAsset) {
-  const svg = buildLogoSvg(asset.width, asset.height, asset.logoVariant, asset.bg);
+  const svg = buildLogoSvg(asset.width, asset.height, asset.logoVariant, asset.bg, asset.tagline ? { tagline: asset.tagline } : undefined);
   const blob = new Blob([svg], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
   const img = new Image();
@@ -181,12 +227,22 @@ function renderAndDownload(asset: BrandAsset) {
 function getPreviewDataUrl(asset: BrandAsset): string {
   const previewW = 200;
   const previewH = Math.round((asset.height / asset.width) * previewW);
-  const svg = buildLogoSvg(previewW, previewH, asset.logoVariant, asset.bg);
+  const svg = buildLogoSvg(previewW, previewH, asset.logoVariant, asset.bg, asset.tagline ? { tagline: asset.tagline } : undefined);
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+const BRAND_COLORS = [
+  { name: "Azul marino", hex: "#1E3A5F", usage: "Fondo principal, headers" },
+  { name: "Teal", hex: "#0F766E", usage: "Acento primario, CTAs" },
+  { name: "Teal claro", hex: "#5EEAD4", usage: "Acento '.ai', highlights" },
+  { name: "Slate oscuro", hex: "#0f172a", usage: "Fondos dark mode" },
+  { name: "Blanco", hex: "#FFFFFF", usage: "Texto sobre oscuro, fondos claros" },
+  { name: "Gris 400", hex: "#9ca3af", usage: "Texto secundario" },
+];
+
 function BrandKitSection() {
   const categories = Array.from(new Set(BRAND_ASSETS.map(a => a.category)));
+  const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
   const handleDownloadAll = () => {
     BRAND_ASSETS.forEach((asset, i) => {
@@ -194,64 +250,149 @@ function BrandKitSection() {
     });
   };
 
+  const copyColor = (hex: string) => {
+    navigator.clipboard.writeText(hex);
+    setCopiedColor(hex);
+    setTimeout(() => setCopiedColor(null), 1500);
+  };
+
   return (
-    <Card>
-      <CardContent className="p-5 space-y-5">
-        <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {/* Color palette + typography */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
           <div className="flex items-center gap-2">
             <Palette className="h-4 w-4 text-teal-500" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Brand Kit — Radiogen.AI</h3>
-            <Badge variant="secondary" className="text-[10px]">{BRAND_ASSETS.length} assets</Badge>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Identidad de marca</h3>
           </div>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleDownloadAll}>
-            <Download className="h-3 w-3" />
-            Descargar todo
-          </Button>
-        </div>
 
-        {categories.map(cat => (
-          <div key={cat} className="space-y-2">
-            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{cat}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {BRAND_ASSETS.filter(a => a.category === cat).map(asset => (
-                <div
-                  key={asset.id}
-                  className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+          {/* Colors */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Paleta de colores</p>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {BRAND_COLORS.map((c) => (
+                <button
+                  key={c.hex}
+                  onClick={() => copyColor(c.hex)}
+                  className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-teal-400 transition-colors text-left"
                 >
-                  <div
-                    className="relative flex items-center justify-center overflow-hidden"
-                    style={{
-                      height: asset.width === asset.height ? 120 : asset.height > asset.width ? 160 : 80,
-                      background: asset.bg === "transparent" ? "repeating-conic-gradient(#d1d5db 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" : "#f3f4f6",
-                    }}
+                  <div className="h-12 w-full" style={{ backgroundColor: c.hex }} />
+                  <div className="p-1.5">
+                    <p className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{c.name}</p>
+                    <p className="text-[9px] font-mono text-gray-400">{copiedColor === c.hex ? "Copiado!" : c.hex}</p>
+                    <p className="text-[9px] text-gray-400 truncate">{c.usage}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Typography */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tipografía</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                <p className="text-lg font-extrabold text-gray-900 dark:text-white" style={{ fontFamily: "system-ui,-apple-system,sans-serif" }}>Radiogen<span className="text-teal-400">.ai</span></p>
+                <p className="text-[10px] text-gray-400 mt-1">Font: system-ui / Inter · Weight: 800</p>
+              </div>
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Informes radiológicos con IA</p>
+                <p className="text-[10px] text-gray-400 mt-1">Tagline · Weight: 500</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Taglines / Copy */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Textos de marca</p>
+            <div className="space-y-1.5">
+              {[
+                { label: "Tagline ES", text: "Informes radiológicos con IA" },
+                { label: "Tagline EN", text: "AI-Powered Radiology Reports" },
+                { label: "Bio corta ES", text: "Radiogen.ai — Genera informes radiológicos estructurados con IA. Dictado por voz, plantillas personalizables, trazabilidad completa." },
+                { label: "Bio corta EN", text: "Radiogen.ai — Generate structured radiology reports with AI. Voice dictation, custom templates, full traceability." },
+                { label: "Bio larga ES", text: "Radiogen.ai es la plataforma de informes radiológicos potenciada por inteligencia artificial. Dicta tus hallazgos por voz, selecciona la plantilla y genera informes estructurados con conclusión automática en segundos. Compatible con cualquier modalidad: TC, RM, ecografía, radiografía, mamografía y procedimientos. Incluye trazabilidad de hallazgos, aprendizaje de estilo, gestión hospitalaria multiusuario y cumplimiento RGPD." },
+                { label: "CTA principal", text: "Prueba Radiogen.ai gratis — 30 informes/mes sin compromiso" },
+                { label: "CTA hospital", text: "Programa piloto hospitalario — Solicita una demo para tu servicio de radiología" },
+                { label: "Hashtags", text: "#Radiologia #IA #RadiologyAI #InformesRadiologicos #Teleradiologia #MedTech #HealthTech #Diagnostico #ImagenMedica" },
+                { label: "Web URL", text: "https://radiogen.ai" },
+                { label: "Email contacto", text: "info@radiogen.ai" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-start gap-2 p-2 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+                  <Badge variant="secondary" className="text-[9px] shrink-0 mt-0.5">{item.label}</Badge>
+                  <p className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 min-w-0">{item.text}</p>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(item.text); setCopiedColor(item.label); setTimeout(() => setCopiedColor(null), 1500); }}
+                    className="shrink-0 text-gray-400 hover:text-teal-500 transition-colors"
                   >
-                    <img
-                      src={getPreviewDataUrl(asset)}
-                      alt={asset.label}
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                  <div className="p-2 space-y-1">
-                    <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{asset.label}</p>
-                    <p className="text-[10px] text-gray-500">{asset.description}</p>
-                    <p className="text-[10px] text-gray-400">{asset.width}×{asset.height}px</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-7 text-[11px] gap-1 mt-1"
-                      onClick={() => renderAndDownload(asset)}
-                    >
-                      <Download className="h-3 w-3" />
-                      Descargar PNG
-                    </Button>
-                  </div>
+                    {copiedColor === item.label ? <CheckCheck className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                  </button>
                 </div>
               ))}
             </div>
           </div>
-        ))}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Assets grid */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-teal-500" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Assets descargables</h3>
+              <Badge variant="secondary" className="text-[10px]">{BRAND_ASSETS.length} assets</Badge>
+            </div>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleDownloadAll}>
+              <Download className="h-3 w-3" />
+              Descargar todo
+            </Button>
+          </div>
+
+          {categories.map(cat => (
+            <div key={cat} className="space-y-2">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{cat}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {BRAND_ASSETS.filter(a => a.category === cat).map(asset => (
+                  <div
+                    key={asset.id}
+                    className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+                  >
+                    <div
+                      className="relative flex items-center justify-center overflow-hidden"
+                      style={{
+                        height: asset.width === asset.height ? 120 : asset.height > asset.width ? 160 : 80,
+                        background: asset.bg === "transparent" ? "repeating-conic-gradient(#d1d5db 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" : "#f3f4f6",
+                      }}
+                    >
+                      <img
+                        src={getPreviewDataUrl(asset)}
+                        alt={asset.label}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                    <div className="p-2 space-y-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{asset.label}</p>
+                      <p className="text-[10px] text-gray-500">{asset.description}</p>
+                      <p className="text-[10px] text-gray-400">{asset.width}×{asset.height}px</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-7 text-[11px] gap-1 mt-1"
+                        onClick={() => renderAndDownload(asset)}
+                      >
+                        <Download className="h-3 w-3" />
+                        Descargar PNG
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
