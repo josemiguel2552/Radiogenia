@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Download, Clock, FileText, Users, Pencil, Star, Mic, CheckSquare, Printer } from "lucide-react";
+import { Loader2, Download, Clock, FileText, Users, Pencil, Star, Mic, CheckSquare, Printer, ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import {
   ResponsiveContainer,
@@ -43,6 +43,12 @@ interface MetricRow {
   ai_draft_length: number;
   final_length: number;
   edit_distance: number;
+  ai_findings_text: string;
+  final_findings_text: string;
+  ai_conclusion_text: string;
+  final_conclusion_text: string;
+  recommendations_text: string;
+  study_type: string;
   created_at: string;
 }
 
@@ -63,6 +69,7 @@ export function AdminPilotTab() {
   const [surveys, setSurveys] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [expandedReport, setExpandedReport] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/pilot")
@@ -176,6 +183,12 @@ export function AdminPilotTab() {
     if (surveys.length === 0) return 0;
     return Math.round(surveys.reduce((s, r) => s + r.score, 0) / surveys.length * 10) / 10;
   }, [surveys]);
+
+  const reportsWithTexts = useMemo(() => {
+    return metrics
+      .filter((m) => m.ai_findings_text || m.final_findings_text)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }, [metrics]);
 
   const exportCsv = useCallback(() => {
     const headers = ["Usuario", "Email", "Tipo", "Sección", "Informes", "Tiempo medio (min)", "Dictado %", "Edición %", "Completitud %", "Última actividad"];
@@ -662,6 +675,105 @@ export function AdminPilotTab() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Report detail — original vs edited */}
+          {reportsWithTexts.length > 0 && (
+            <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+              <div className="px-4 py-3 border-b flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5" />
+                  {t("pilot.report_detail")}
+                </h3>
+                <span className="text-[10px] text-gray-400">{reportsWithTexts.length}</span>
+              </div>
+              <ScrollArea className="max-h-[600px]">
+                <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {reportsWithTexts.map((m) => {
+                    const isExpanded = expandedReport === m.id;
+                    const findingsChanged = m.final_findings_text && m.ai_findings_text && m.final_findings_text !== m.ai_findings_text;
+                    const conclusionChanged = m.final_conclusion_text && m.ai_conclusion_text && m.final_conclusion_text !== m.ai_conclusion_text;
+                    const hasChanges = findingsChanged || conclusionChanged;
+                    const editPct = m.ai_draft_length > 0 ? Math.round(Math.min(1, m.edit_distance / m.ai_draft_length) * 100) : 0;
+                    return (
+                      <div key={m.id}>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedReport(isExpanded ? null : m.id)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-medium text-gray-900 dark:text-white">{m.user_name}</span>
+                              {m.study_type && <span className="text-[10px] text-gray-400 truncate">{m.study_type}</span>}
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5">
+                              <span className="text-[10px] text-gray-400">{m.created_at.slice(0, 16).replace("T", " ")}</span>
+                              {hasChanges ? (
+                                <Badge variant="outline" className="text-[9px] border-amber-400/50 text-amber-600">{editPct}% {t("pilot.edit_rate").toLowerCase()}</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[9px] border-emerald-400/50 text-emerald-600">{t("pilot.no_changes")}</Badge>
+                              )}
+                              {m.recommendations_text && (
+                                <Badge variant="outline" className="text-[9px] border-blue-400/50 text-blue-600">{t("pilot.recommendations")}</Badge>
+                              )}
+                            </div>
+                          </div>
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-gray-400 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 text-gray-400 shrink-0" />}
+                        </button>
+                        {isExpanded && (
+                          <div className="px-4 pb-4 space-y-3">
+                            {/* Findings comparison */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                              <div>
+                                <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1">{t("pilot.ai_findings")}</p>
+                                <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-2.5 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                                  {m.ai_findings_text || "—"}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold mb-1" style={{ color: findingsChanged ? "#d97706" : "#059669" }}>
+                                  {t("pilot.final_findings")} {findingsChanged ? "✎" : "✓"}
+                                </p>
+                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto ${findingsChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-emerald-50 dark:bg-emerald-950/20 text-gray-700 dark:text-gray-300"}`}>
+                                  {m.final_findings_text || m.ai_findings_text || "—"}
+                                </div>
+                              </div>
+                            </div>
+                            {/* Conclusion comparison */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                              <div>
+                                <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1">{t("pilot.ai_conclusion")}</p>
+                                <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-2.5 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                                  {m.ai_conclusion_text || "—"}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold mb-1" style={{ color: conclusionChanged ? "#d97706" : "#059669" }}>
+                                  {t("pilot.final_conclusion")} {conclusionChanged ? "✎" : "✓"}
+                                </p>
+                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto ${conclusionChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-emerald-50 dark:bg-emerald-950/20 text-gray-700 dark:text-gray-300"}`}>
+                                  {m.final_conclusion_text || m.ai_conclusion_text || "—"}
+                                </div>
+                              </div>
+                            </div>
+                            {/* Recommendations */}
+                            {m.recommendations_text && (
+                              <div>
+                                <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1">{t("pilot.recommendations")}</p>
+                                <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 p-2.5 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                  {m.recommendations_text}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
           )}
         </>

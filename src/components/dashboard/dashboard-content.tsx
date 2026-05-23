@@ -504,6 +504,8 @@ export function DashboardContent() {
             final_length: finalText.length,
             edit_distance: editDist,
             report_end_at: new Date().toISOString(),
+            final_findings_text: s.findings,
+            final_conclusion_text: s.conclusion,
           })], { type: "application/json" }),
         );
       }
@@ -993,6 +995,9 @@ export function DashboardContent() {
                 ai_draft_length: aiDraftLen,
                 final_length: aiDraftLen,
                 edit_distance: 0,
+                ai_findings_text: findingsText,
+                ai_conclusion_text: conclusionText,
+                study_type: studyName,
               }),
             }).catch(() => {});
 
@@ -1088,11 +1093,12 @@ export function DashboardContent() {
     logCorrectionIfNeeded();
     flushCorrections().catch(() => {});
 
-    // Update pilot metrics with final edit distance
+    // Update pilot metrics with final edit distance + final texts
     if (lastSavedReportId && initialFindings) {
       const finalText = findings + conclusion;
       const origText = initialFindings + initialConclusion;
       const editDist = computeEditDistance(origText, finalText);
+      const recsText = selectedRecTexts.length > 0 ? selectedRecTexts.map((r) => "- " + r).join("\n") : "";
       fetch("/api/metrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1102,6 +1108,9 @@ export function DashboardContent() {
           final_length: finalText.length,
           edit_distance: editDist,
           report_end_at: new Date().toISOString(),
+          final_findings_text: findings,
+          final_conclusion_text: conclusion,
+          recommendations_text: recsText,
         }),
       }).catch(() => {});
     }

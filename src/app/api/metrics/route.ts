@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
       if (body.edit_distance !== undefined) update.edit_distance = body.edit_distance;
       if (body.report_end_at) update.report_end_at = body.report_end_at;
       if (body.duration_seconds !== undefined) update.duration_seconds = body.duration_seconds;
+      if (body.final_findings_text !== undefined) update.final_findings_text = body.final_findings_text;
+      if (body.final_conclusion_text !== undefined) update.final_conclusion_text = body.final_conclusion_text;
+      if (body.recommendations_text !== undefined) update.recommendations_text = body.recommendations_text;
 
       await service
         .from("report_metrics")
@@ -53,6 +56,12 @@ export async function POST(req: NextRequest) {
       ai_draft_length: body.ai_draft_length || 0,
       final_length: body.final_length || 0,
       edit_distance: body.edit_distance || 0,
+      ai_findings_text: body.ai_findings_text || "",
+      ai_conclusion_text: body.ai_conclusion_text || "",
+      final_findings_text: "",
+      final_conclusion_text: "",
+      recommendations_text: "",
+      study_type: body.study_type || "",
     });
 
     return NextResponse.json({ ok: true });
