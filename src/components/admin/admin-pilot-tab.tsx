@@ -407,50 +407,128 @@ export function AdminPilotTab() {
     return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
   }
 
-  if (pilotOrgs.length === 0) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-sm text-gray-500">{t("pilot.no_pilot_orgs")}</p>
-        <p className="text-xs text-gray-400 mt-1">{t("pilot.mark_pilot_hint")}</p>
-      </div>
-    );
-  }
+  const noPilotOrgs = pilotOrgs.length === 0;
 
   return (
     <div className="space-y-6">
+      {noPilotOrgs && (
+        <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+          <p className="text-xs text-amber-700 dark:text-amber-400">{t("pilot.no_pilot_orgs")} — {t("pilot.mark_pilot_hint")}</p>
+        </div>
+      )}
+
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="min-w-[200px]">
-          <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.select_org")}</label>
-          <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("pilot.select_org")} /></SelectTrigger>
-            <SelectContent>
-              {pilotOrgs.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+      {!noPilotOrgs && (
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="min-w-[200px]">
+            <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.select_org")}</label>
+            <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("pilot.select_org")} /></SelectTrigger>
+              <SelectContent>
+                {pilotOrgs.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.from")}</label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 text-xs w-[140px]" />
+          </div>
+          <div>
+            <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.to")}</label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 text-xs w-[140px]" />
+          </div>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={exportCsv} disabled={userBreakdown.length === 0}>
+            <Download className="h-3.5 w-3.5" />
+            {t("pilot.export_csv")}
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={printReport} disabled={!summary}>
+            <Printer className="h-3.5 w-3.5" />
+            {t("pilot.print_report")}
+          </Button>
         </div>
-        <div>
-          <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.from")}</label>
-          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 text-xs w-[140px]" />
-        </div>
-        <div>
-          <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.to")}</label>
-          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 text-xs w-[140px]" />
-        </div>
-        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={exportCsv} disabled={userBreakdown.length === 0}>
-          <Download className="h-3.5 w-3.5" />
-          {t("pilot.export_csv")}
-        </Button>
-        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={printReport} disabled={!summary}>
-          <Printer className="h-3.5 w-3.5" />
-          {t("pilot.print_report")}
-        </Button>
-      </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-brand" /></div>
-      ) : !selectedOrgId ? null : metrics.length === 0 ? (
-        <div className="text-center py-16 text-sm text-gray-400">{t("pilot.no_data")}</div>
+      ) : (!noPilotOrgs && !selectedOrgId) ? null : (noPilotOrgs || metrics.length === 0) ? (
+        <>
+          {/* Summary cards — zeroed when no data */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Clock className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.avg_time")}</span></div>
+              <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0:00</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><FileText className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.total_reports")}</span></div>
+              <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Users className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.active_users")}</span></div>
+              <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Mic className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.adoption_rate")}</span></div>
+              <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0%</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><CheckSquare className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.completeness")}</span></div>
+              <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0%</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Pencil className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.edit_rate")}</span></div>
+              <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0%</p>
+            </div>
+          </div>
+
+          {/* Empty chart placeholders */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">{t("pilot.time_per_report")}</h3>
+              <div className="h-[200px] flex items-center justify-center text-xs text-gray-300 dark:text-gray-600">{t("pilot.no_data")}</div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">{t("pilot.reports_per_day")}</h3>
+              <div className="h-[200px] flex items-center justify-center text-xs text-gray-300 dark:text-gray-600">{t("pilot.no_data")}</div>
+            </div>
+          </div>
+
+          {/* Empty user table */}
+          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+            <div className="px-4 py-3 border-b">
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("pilot.user_breakdown")}</h3>
+            </div>
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th className="text-left px-3 py-2 font-medium text-gray-500">{t("pilot.col_user")}</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-500">{t("pilot.col_type")}</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-500">{t("pilot.col_reports")}</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-500">{t("pilot.col_avg_time")}</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-500">{t("pilot.col_dictation")}</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-500">{t("pilot.col_completeness")}</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-500">{t("pilot.col_edit_rate")}</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-500">{t("pilot.col_last")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-300 dark:text-gray-600">{t("pilot.no_data")}</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* NPS placeholder */}
+          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("pilot.nps_results")}</h3>
+              <div className="flex items-center gap-1.5">
+                <Star className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+                <span className="text-lg font-bold text-gray-300 dark:text-gray-600">0</span>
+                <span className="text-xs text-gray-400">/ 5 (0)</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-300 dark:text-gray-600 text-center py-4">{t("pilot.no_data")}</p>
+          </div>
+        </>
       ) : (
         <>
           {/* Summary cards */}

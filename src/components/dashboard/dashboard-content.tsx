@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Trash2,
   HelpCircle,
+  Heart,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -1652,10 +1653,13 @@ export function DashboardContent() {
                 </div>
               </div>
 
-              {/* Cardiac MRI techniques (only when cardiac template selected) */}
+              {/* Cardiac MRI techniques + dictation guide */}
               {isCardiacMri && (
-                <div className="space-y-1.5">
-                  <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t("dash.cardiac_techniques")}</p>
+                <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20 p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold text-red-800 dark:text-red-300">{t("dash.cardiac_techniques")}</p>
+                    <Heart className="h-3.5 w-3.5 text-red-400" />
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       { key: "contrast", label: t("dash.cardiac_contrast") },
@@ -1667,15 +1671,27 @@ export function DashboardContent() {
                         key={tech.key}
                         type="button"
                         onClick={() => setCardiacTechniques((prev) => ({ ...prev, [tech.key]: !prev[tech.key] }))}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                        className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
                           cardiacTechniques[tech.key]
-                            ? "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
-                            : "border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                            ? "bg-red-100 dark:bg-red-900/40 border-red-400 dark:border-red-700 text-red-700 dark:text-red-300"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         }`}
                       >
                         {tech.label}
                       </button>
                     ))}
+                  </div>
+                  <div className="text-[10px] leading-relaxed text-red-900/70 dark:text-red-300/70 space-y-1 pt-0.5">
+                    <p className="font-semibold text-red-800 dark:text-red-300">{t("dash.cardiac_guide_title")}</p>
+                    <p>• <b>{t("dash.cardiac_guide_patient")}</b>: {t("dash.cardiac_guide_patient_vals")}</p>
+                    <p>• <b>VI</b>: VTD, VTS, masa{outputLanguage === "en" ? " — SV, EF, indices auto-calculated" : " — VS, FE e índices se calculan auto."}</p>
+                    <p>• <b>VD</b>: VTD, VTS{outputLanguage === "en" ? " — SV, EF auto-calculated" : " — VS, FE se calculan auto."}</p>
+                    <p>• {t("dash.cardiac_guide_atria")}</p>
+                    <p>• {t("dash.cardiac_guide_pericardium")}</p>
+                    {cardiacTechniques.contrast && <p>• <b>{t("dash.cardiac_contrast")}</b>: {t("dash.cardiac_guide_lge")}</p>}
+                    {cardiacTechniques.mapping && <p>• <b>Mapping</b>: {t("dash.cardiac_guide_mapping")}</p>}
+                    {cardiacTechniques.stress && <p>• <b>{t("dash.cardiac_stress")}</b>: {t("dash.cardiac_guide_stress")}</p>}
+                    {cardiacTechniques.strain && <p>• <b>Strain</b>: {t("dash.cardiac_guide_strain")}</p>}
                   </div>
                 </div>
               )}
