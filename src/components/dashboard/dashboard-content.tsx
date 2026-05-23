@@ -1694,10 +1694,15 @@ export function DashboardContent() {
                   <div className="text-[10px] leading-relaxed text-red-900/70 dark:text-red-300/70 space-y-1 pt-0.5">
                     <p className="font-semibold text-red-800 dark:text-red-300">{t("dash.cardiac_guide_title")}</p>
                     <p>• <b>{t("dash.cardiac_guide_patient")}</b>: {t("dash.cardiac_guide_patient_vals")}</p>
-                    <p>• <b>VI</b>: VTD, VTS, masa{outputLanguage === "en" ? " — SV, EF, indices auto-calculated" : " — VS, FE e índices se calculan auto."}</p>
-                    <p>• <b>VD</b>: VTD, VTS{outputLanguage === "en" ? " — SV, EF auto-calculated" : " — VS, FE se calculan auto."}</p>
+                    <p>• {t("dash.cardiac_guide_quality")}</p>
+                    <p>• {t("dash.cardiac_guide_lv_walls")}</p>
+                    <p>• {t("dash.cardiac_guide_lv_vols")}</p>
+                    <p>• {t("dash.cardiac_guide_lv_motion")}</p>
+                    <p>• {t("dash.cardiac_guide_rv")}</p>
+                    <p>• {t("dash.cardiac_guide_rv_motion")}</p>
                     <p>• {t("dash.cardiac_guide_atria")}</p>
                     <p>• {t("dash.cardiac_guide_pericardium")}</p>
+                    <p>• {t("dash.cardiac_guide_valvular")}</p>
                     {cardiacTechniques.contrast && <p>• <b>{t("dash.cardiac_contrast")}</b>: {t("dash.cardiac_guide_lge")}</p>}
                     {cardiacTechniques.mapping && <p>• <b>Mapping</b>: {t("dash.cardiac_guide_mapping")}</p>}
                     {cardiacTechniques.stress && <p>• <b>{t("dash.cardiac_stress")}</b>: {t("dash.cardiac_guide_stress")}</p>}
