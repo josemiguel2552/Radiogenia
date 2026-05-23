@@ -51,7 +51,6 @@ import { RecommendationPanel } from "./recommendation-panel";
 import { SelectionHighlight } from "@/components/ui/selection-highlight";
 import { NpsSurvey } from "./nps-survey";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
-import { CardiacMriForm, type CardiacMriOutput } from "./cardiac-mri-form";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -66,6 +65,7 @@ export function DashboardContent() {
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [contrastOption, setContrastOption] = useState<string>("default");
+  const [cardiacTechniques, setCardiacTechniques] = useState<Record<string, boolean>>({});
 
   // Clinical info state
   const [clinicalInfo, setClinicalInfo] = useState("");
@@ -625,11 +625,6 @@ export function DashboardContent() {
     return selectedTemplate.modality === "MRI" && /card[ií]a|cardiac|coraz[oó]n/.test(name);
   }, [selectedTemplate]);
 
-  const handleCardiacOutput = useCallback((output: CardiacMriOutput) => {
-    setDictation(output.dictationText);
-    if (!reportStartTimeRef.current && output.hasValues) reportStartTimeRef.current = Date.now();
-  }, []);
-
   const templateFieldLabels = useMemo(() => {
     if (!selectedTemplate) return [];
     const text = selectedTemplate.structure?.template || "";
@@ -698,8 +693,13 @@ export function DashboardContent() {
     setTraceActive(false);
     setRepairMessage(null);
 
-    const studyName = selectedTemplate.name +
+    let studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
+
+    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
+    if (activeTechs.length > 0) {
+      studyName += ` (${activeTechs.join(", ")})`;
+    }
 
     // Stream findings — text appears progressively
     let findingsText = "";
@@ -716,6 +716,7 @@ export function DashboardContent() {
           ...(lightParaphrase ? { paraphraseOverride: "free" } : {}),
           reportMode: mode,
           outputLanguage,
+          ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
         }),
       });
 
@@ -1269,6 +1270,7 @@ export function DashboardContent() {
     correctedLenRef.current = 0;
     reportStartTimeRef.current = 0;
     dictationCharsRef.current = 0;
+    setCardiacTechniques({});
     stopCorrectionLoop.current();
     if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
     localStorage.removeItem("radiogenai_draft");
@@ -1401,13 +1403,9 @@ export function DashboardContent() {
 
           <Card>
             <CardContent className="p-3 space-y-2.5">
-              {isCardiacMri ? (
-                <CardiacMriForm outputLanguage={outputLanguage} onOutput={handleCardiacOutput} />
-              ) : (
-                <>
-                  {/* Language selector */}
-                  <div className="flex items-center gap-1">
-                    <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+              {/* Language selector */}
+              <div className="flex items-center gap-1">
+                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
                     {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
                       <button
                         key={l.value}
@@ -1478,8 +1476,6 @@ export function DashboardContent() {
                     </div>
                   )}
                   {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
-                </>
-              )}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="relative">
@@ -1656,6 +1652,34 @@ export function DashboardContent() {
                 </div>
               </div>
 
+              {/* Cardiac MRI techniques (only when cardiac template selected) */}
+              {isCardiacMri && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t("dash.cardiac_techniques")}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { key: "contrast", label: t("dash.cardiac_contrast") },
+                      { key: "stress", label: t("dash.cardiac_stress") },
+                      { key: "mapping", label: t("dash.cardiac_mapping") },
+                      { key: "strain", label: t("dash.cardiac_strain") },
+                    ].map((tech) => (
+                      <button
+                        key={tech.key}
+                        type="button"
+                        onClick={() => setCardiacTechniques((prev) => ({ ...prev, [tech.key]: !prev[tech.key] }))}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                          cardiacTechniques[tech.key]
+                            ? "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
+                            : "border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                        }`}
+                      >
+                        {tech.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Row 3: Clinical context (collapsible) */}
               <div>
                 <button
@@ -1682,13 +1706,9 @@ export function DashboardContent() {
           {/* Dictation + Generate */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              {isCardiacMri ? (
-                <CardiacMriForm outputLanguage={outputLanguage} onOutput={handleCardiacOutput} />
-              ) : (
-                <>
-                  {/* Language selector */}
-                  <div className="flex items-center gap-1">
-                    <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+              {/* Language selector */}
+              <div className="flex items-center gap-1">
+                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
                     {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
                       <button
                         key={l.value}
@@ -1759,8 +1779,6 @@ export function DashboardContent() {
                     </div>
                   )}
                   {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
-                </>
-              )}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="relative">
