@@ -34,7 +34,6 @@ import {
   RotateCcw,
   Trash2,
   HelpCircle,
-  EyeOff,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -653,17 +652,6 @@ export function DashboardContent() {
     whisperModalityRef.current = selectedTemplate?.modality || "";
     whisperStudyTypeRef.current = selectedTemplate?.name || "";
   }, [selectedTemplate]);
-
-  async function handleHideTemplate(tpl: UserTemplate) {
-    if (tpl.is_global) {
-      await fetch(`/api/templates?id=${tpl.id}&global=true`, { method: "DELETE" });
-    } else if (!tpl.is_org) {
-      await fetch(`/api/templates?id=${tpl.id}`, { method: "DELETE" });
-    }
-    setTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
-    if (selectedTemplateId === tpl.id) setSelectedTemplateId("");
-    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
-  }
 
   async function loadHiddenTemplates() {
     try {
@@ -1645,17 +1633,6 @@ export function DashboardContent() {
                     })()}
                   </SelectContent>
                 </Select>
-
-                {selectedTemplate && (
-                  <button
-                    type="button"
-                    onClick={() => handleHideTemplate(selectedTemplate)}
-                    className="p-1.5 text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors rounded"
-                    title={t("dash.hide_template")}
-                  >
-                    <EyeOff className="h-3.5 w-3.5" />
-                  </button>
-                )}
 
                 <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
                   {[
