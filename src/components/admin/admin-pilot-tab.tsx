@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Download, Clock, FileText, Users, Pencil, Star, Mic, CheckSquare } from "lucide-react";
+import { Loader2, Download, Clock, FileText, Users, Pencil, Star, Mic, CheckSquare, Printer } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import {
   ResponsiveContainer,
@@ -190,6 +190,213 @@ export function AdminPilotTab() {
     URL.revokeObjectURL(url);
   }, [userBreakdown, selectedOrgId]);
 
+  const printReport = useCallback(() => {
+    if (!summary) return;
+    const orgName = pilotOrgs.find((o) => o.id === selectedOrgId)?.name || "";
+    const genDate = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const rangeFrom = fromDate || "inicio";
+    const rangeTo = toDate || "hoy";
+    const fmtMinPrint = (sec: number) => {
+      const m = Math.floor(sec / 60);
+      const s = Math.round(sec % 60);
+      return `${m}:${s.toString().padStart(2, "0")}`;
+    };
+    const adoptionPct = Math.round(summary.adoptionRate * 100);
+    const completenessPct = Math.round(summary.avgCompleteness * 100);
+    const editPct = Math.round(summary.avgEditRate * 100);
+
+    // Generate insights
+    const insights: string[] = [];
+    if (adoptionPct >= 70) insights.push(`La tasa de adopción del dictado es alta (${adoptionPct}%), lo que indica buena aceptación de la herramienta.`);
+    else if (adoptionPct >= 40) insights.push(`La tasa de adopción del dictado es moderada (${adoptionPct}%). Hay margen de mejora en el uso de la funcionalidad de dictado.`);
+    else insights.push(`La tasa de adopción del dictado es baja (${adoptionPct}%). Se recomienda formación adicional sobre la funcionalidad de dictado.`);
+
+    if (completenessPct >= 80) insights.push(`La completitud de secciones es excelente (${completenessPct}%), los informes se rellenan de forma exhaustiva.`);
+    else if (completenessPct >= 50) insights.push(`La completitud de secciones es aceptable (${completenessPct}%), aunque algunas secciones quedan sin rellenar.`);
+    else insights.push(`La completitud de secciones es baja (${completenessPct}%). Muchas secciones de los informes quedan vacías.`);
+
+    if (editPct <= 20) insights.push(`La tasa de edición sobre el borrador de IA es muy baja (${editPct}%), lo que indica alta calidad del borrador automático.`);
+    else if (editPct <= 50) insights.push(`La tasa de edición sobre el borrador de IA es moderada (${editPct}%), los médicos realizan ajustes razonables.`);
+    else insights.push(`La tasa de edición sobre el borrador de IA es alta (${editPct}%). Se recomienda revisar la calidad de las plantillas de IA.`);
+
+    if (dailyData.length >= 2) {
+      const firstAvg = dailyData[0].avgMin;
+      const lastAvg = dailyData[dailyData.length - 1].avgMin;
+      if (lastAvg < firstAvg) insights.push(`El tiempo medio por informe ha disminuido de ${firstAvg} min a ${lastAvg} min, mostrando mejora en eficiencia.`);
+      else if (lastAvg > firstAvg) insights.push(`El tiempo medio por informe ha aumentado de ${firstAvg} min a ${lastAvg} min. Puede requerir atención.`);
+    }
+
+    if (surveys.length > 0) {
+      if (npsAvg >= 4) insights.push(`La satisfacción de los usuarios es alta con una puntuación media de ${npsAvg}/5.`);
+      else if (npsAvg >= 3) insights.push(`La satisfacción de los usuarios es aceptable (${npsAvg}/5), con margen de mejora.`);
+      else insights.push(`La satisfacción de los usuarios es baja (${npsAvg}/5). Se recomienda recoger feedback cualitativo adicional.`);
+    }
+
+    // Executive summary
+    const execSummary = `Durante el periodo analizado (${rangeFrom} - ${rangeTo}), ${summary.activeUsers} usuarios activos generaron ${summary.totalReports} informes con un tiempo medio de ${fmtMinPrint(summary.avgDuration)} por informe. La tasa de adopción del dictado alcanzó el ${adoptionPct}% y la completitud media de secciones fue del ${completenessPct}%.`;
+
+    // Daily trend bars
+    const maxCount = Math.max(...dailyData.map((d) => d.count), 1);
+    const maxAvg = Math.max(...dailyData.map((d) => d.avgMin), 1);
+
+    const dailyRowsHtml = dailyData.map((d) => {
+      const countBarW = Math.round((d.count / maxCount) * 100);
+      const avgBarW = Math.round((d.avgMin / maxAvg) * 100);
+      return `<tr>
+        <td style="padding:3px 8px;border:1px solid #e5e7eb;font-size:10px;white-space:nowrap;">${d.day}</td>
+        <td style="padding:3px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right;">${d.count}</td>
+        <td style="padding:3px 4px;border:1px solid #e5e7eb;width:120px;"><div style="background:#6366f1;height:12px;width:${countBarW}%;border-radius:2px;"></div></td>
+        <td style="padding:3px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right;">${d.avgMin}</td>
+        <td style="padding:3px 4px;border:1px solid #e5e7eb;width:120px;"><div style="background:#10b981;height:12px;width:${avgBarW}%;border-radius:2px;"></div></td>
+      </tr>`;
+    }).join("");
+
+    // User breakdown rows
+    const userRowsHtml = userBreakdown.map((u) =>
+      `<tr>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;">${u.name}</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;">${u.staff === "resident" ? "Residente" : "Adjunto"}</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;text-align:center;">${u.reports}</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;text-align:center;">${u.avgMin} min</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;text-align:center;">${u.dictPct}%</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;text-align:center;">${u.completePct}%</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;text-align:center;">${u.editPct}%</td>
+      </tr>`
+    ).join("");
+
+    // NPS rows
+    const npsRowsHtml = surveys.map((s) =>
+      `<tr>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;">${s.user_name}</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;text-align:center;">${"★".repeat(s.score)}${"☆".repeat(5 - s.score)}</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;">${s.feedback_text || "-"}</td>
+        <td style="padding:3px 6px;border:1px solid #e5e7eb;font-size:10px;white-space:nowrap;">${s.created_at.slice(0, 10)}</td>
+      </tr>`
+    ).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe de Métricas del Piloto - Radiogenia</title>
+<style>
+  @page { size: A4; margin: 15mm 15mm 15mm 15mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1f2937; font-size: 11px; line-height: 1.4; }
+  .page { page-break-after: always; padding: 0; }
+  .page:last-child { page-break-after: auto; }
+  .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 20px 24px; border-radius: 8px; margin-bottom: 16px; }
+  .header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 11px; opacity: 0.9; }
+  .section { margin-bottom: 14px; }
+  .section h2 { font-size: 13px; font-weight: 700; color: #4f46e5; border-bottom: 2px solid #6366f1; padding-bottom: 4px; margin-bottom: 8px; }
+  .section h3 { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .summary-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; font-size: 11px; line-height: 1.6; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f3f4f6; padding: 4px 6px; text-align: left; font-size: 10px; font-weight: 600; border: 1px solid #e5e7eb; color: #374151; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .metric-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; text-align: center; }
+  .metric-card .value { font-size: 20px; font-weight: 700; color: #4f46e5; }
+  .metric-card .label { font-size: 9px; color: #6b7280; margin-top: 2px; }
+  .insight { padding: 4px 0; font-size: 10px; line-height: 1.5; }
+  .insight::before { content: "\\2022"; color: #6366f1; font-weight: bold; margin-right: 6px; }
+  .footer { text-align: center; font-size: 9px; color: #9ca3af; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none; }
+  }
+  @media screen {
+    body { max-width: 210mm; margin: 0 auto; padding: 10mm; background: #f3f4f6; }
+    .page { background: white; padding: 15mm; margin-bottom: 10mm; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px; }
+  }
+</style>
+</head>
+<body>
+<!-- PAGE 1 -->
+<div class="page">
+  <div class="header">
+    <h1>Informe de Métricas del Piloto - Radiogenia</h1>
+    <p><strong>${orgName}</strong> &nbsp;|&nbsp; Periodo: ${rangeFrom} a ${rangeTo} &nbsp;|&nbsp; Generado: ${genDate}</p>
+  </div>
+
+  <div class="section">
+    <h2>Resumen ejecutivo</h2>
+    <div class="summary-box">${execSummary}</div>
+  </div>
+
+  <div class="section">
+    <h2>Estadísticas generales</h2>
+    <div class="metrics-grid">
+      <div class="metric-card"><div class="value">${fmtMinPrint(summary.avgDuration)}</div><div class="label">Tiempo medio / informe</div></div>
+      <div class="metric-card"><div class="value">${summary.totalReports}</div><div class="label">Total de informes</div></div>
+      <div class="metric-card"><div class="value">${summary.activeUsers}</div><div class="label">Usuarios activos</div></div>
+      <div class="metric-card"><div class="value">${adoptionPct}%</div><div class="label">Tasa de adopción dictado</div></div>
+      <div class="metric-card"><div class="value">${completenessPct}%</div><div class="label">Completitud secciones</div></div>
+      <div class="metric-card"><div class="value">${editPct}%</div><div class="label">Tasa de edición IA</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Tendencias diarias</h2>
+    <table>
+      <thead><tr>
+        <th>Día</th><th style="text-align:right">Informes</th><th>Vol.</th><th style="text-align:right">Tiempo (min)</th><th>Tiempo</th>
+      </tr></thead>
+      <tbody>${dailyRowsHtml}</tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page">
+  <div class="section">
+    <h2>Desglose por usuario</h2>
+    <table>
+      <thead><tr>
+        <th>Usuario</th><th>Tipo</th><th style="text-align:center">Informes</th><th style="text-align:center">T. medio</th><th style="text-align:center">Dictado</th><th style="text-align:center">Completitud</th><th style="text-align:center">Edición</th>
+      </tr></thead>
+      <tbody>${userRowsHtml}</tbody>
+    </table>
+  </div>
+
+  ${surveys.length > 0 ? `
+  <div class="section" style="margin-top:18px;">
+    <h2>Resultados NPS</h2>
+    <p style="font-size:11px;margin-bottom:8px;">Puntuación media: <strong style="color:#4f46e5;font-size:14px;">${npsAvg}</strong> / 5 &nbsp;(${surveys.length} respuestas)</p>
+    <table>
+      <thead><tr>
+        <th>Usuario</th><th style="text-align:center">Puntuación</th><th>Comentario</th><th>Fecha</th>
+      </tr></thead>
+      <tbody>${npsRowsHtml}</tbody>
+    </table>
+  </div>` : ""}
+</div>
+
+<!-- PAGE 3 -->
+<div class="page">
+  <div class="section">
+    <h2>Análisis e insights</h2>
+    <div class="summary-box">
+      ${insights.map((ins) => `<div class="insight">${ins}</div>`).join("")}
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Informe generado automáticamente por Radiogenia &mdash; ${genDate}</p>
+    <p style="margin-top:2px;">Este documento es confidencial y para uso interno del hospital.</p>
+  </div>
+</div>
+</body>
+</html>`;
+
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+    }
+  }, [summary, dailyData, userBreakdown, surveys, npsAvg, pilotOrgs, selectedOrgId, fromDate, toDate]);
+
   const fmtMin = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = Math.round(sec % 60);
@@ -233,6 +440,10 @@ export function AdminPilotTab() {
         <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={exportCsv} disabled={userBreakdown.length === 0}>
           <Download className="h-3.5 w-3.5" />
           {t("pilot.export_csv")}
+        </Button>
+        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={printReport} disabled={!summary}>
+          <Printer className="h-3.5 w-3.5" />
+          {t("pilot.print_report")}
         </Button>
       </div>
 

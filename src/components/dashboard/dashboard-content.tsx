@@ -52,6 +52,7 @@ import { RecommendationPanel } from "./recommendation-panel";
 import { SelectionHighlight } from "@/components/ui/selection-highlight";
 import { NpsSurvey } from "./nps-survey";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
+import { CardiacMriForm, type CardiacMriOutput } from "./cardiac-mri-form";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -618,6 +619,17 @@ export function DashboardContent() {
   });
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+
+  const isCardiacMri = useMemo(() => {
+    if (!selectedTemplate) return false;
+    const name = (selectedTemplate.name || "").toLowerCase();
+    return selectedTemplate.modality === "MRI" && /card[ií]a|cardiac|coraz[oó]n/.test(name);
+  }, [selectedTemplate]);
+
+  const handleCardiacOutput = useCallback((output: CardiacMriOutput) => {
+    setDictation(output.dictationText);
+    if (!reportStartTimeRef.current && output.hasValues) reportStartTimeRef.current = Date.now();
+  }, []);
 
   const templateFieldLabels = useMemo(() => {
     if (!selectedTemplate) return [];
@@ -1401,79 +1413,85 @@ export function DashboardContent() {
 
           <Card>
             <CardContent className="p-3 space-y-2.5">
-              {/* Language selector */}
-              <div className="flex items-center gap-1">
-                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
-                {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
-                  <button
-                    key={l.value}
-                    type="button"
-                    onClick={() => changeDictLang(l.value)}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                      resolvedDictLang === l.value
-                        ? "bg-brand text-white"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    {l.value.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-              <div className="relative">
-                <Textarea
-                  ref={dictTextareaRef}
-                  placeholder={t("dash.dictation_placeholder")}
-                  value={dictation}
-                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
-                  onSelect={(e) => {
-                    const ta = e.currentTarget;
-                    if (ta.selectionStart !== ta.selectionEnd) {
-                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
-                    } else {
-                      setDictSelRange(null);
-                    }
-                  }}
-                  className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
-                />
-                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
-                <Button
-                  variant={isRecording ? "destructive" : "secondary"}
-                  size="icon"
-                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
-                  style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
-                  onClick={toggleRecording}
-                >
-                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
-                  <div className="absolute top-1 right-1">
-                    <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+              {isCardiacMri ? (
+                <CardiacMriForm outputLanguage={outputLanguage} onOutput={handleCardiacOutput} />
+              ) : (
+                <>
+                  {/* Language selector */}
+                  <div className="flex items-center gap-1">
+                    <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+                    {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                      <button
+                        key={l.value}
+                        type="button"
+                        onClick={() => changeDictLang(l.value)}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                          resolvedDictLang === l.value
+                            ? "bg-brand text-white"
+                            : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        {l.value.toUpperCase()}
+                      </button>
+                    ))}
                   </div>
-                )}
-                {(isRecording || isTranscribing || isCorrecting || isRefining) && (
-                  <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
-                    </Badge>
+                  <div className="relative">
+                    <Textarea
+                      ref={dictTextareaRef}
+                      placeholder={t("dash.dictation_placeholder")}
+                      value={dictation}
+                      onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
+                      onSelect={(e) => {
+                        const ta = e.currentTarget;
+                        if (ta.selectionStart !== ta.selectionEnd) {
+                          setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                        } else {
+                          setDictSelRange(null);
+                        }
+                      }}
+                      className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
+                    />
+                    <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
+                    <Button
+                      variant={isRecording ? "destructive" : "secondary"}
+                      size="icon"
+                      className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
+                      style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
+                      onClick={toggleRecording}
+                    >
+                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
+                      <div className="absolute top-1 right-1">
+                        <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+                      </div>
+                    )}
+                    {(isRecording || isTranscribing || isCorrecting || isRefining) && (
+                      <div className="absolute bottom-2 right-2">
+                        <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                          {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Texto seleccionado — al dictar se reemplazará
-                  </p>
-                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
-                </div>
+                  {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Texto seleccionado — al dictar se reemplazará
+                      </p>
+                      <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                    </div>
+                  )}
+                  {interimText && isRecording && (
+                    <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                      <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
+                      <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
+                    </div>
+                  )}
+                  {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+                </>
               )}
-              {interimText && isRecording && (
-                <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-                  <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
-                </div>
-              )}
-              {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="relative">
@@ -1687,79 +1705,85 @@ export function DashboardContent() {
           {/* Dictation + Generate */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              {/* Language selector */}
-              <div className="flex items-center gap-1">
-                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
-                {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
-                  <button
-                    key={l.value}
-                    type="button"
-                    onClick={() => changeDictLang(l.value)}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                      resolvedDictLang === l.value
-                        ? "bg-brand text-white"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    {l.value.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-              <div className="relative">
-                <Textarea
-                  ref={dictTextareaRef}
-                  placeholder={t("dash.dictation_placeholder")}
-                  value={dictation}
-                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
-                  onSelect={(e) => {
-                    const ta = e.currentTarget;
-                    if (ta.selectionStart !== ta.selectionEnd) {
-                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
-                    } else {
-                      setDictSelRange(null);
-                    }
-                  }}
-                  className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
-                />
-                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
-                <Button
-                  variant={isRecording ? "destructive" : "secondary"}
-                  size="icon"
-                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
-                  style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
-                  onClick={toggleRecording}
-                >
-                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
-                  <div className="absolute top-1 right-1">
-                    <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+              {isCardiacMri ? (
+                <CardiacMriForm outputLanguage={outputLanguage} onOutput={handleCardiacOutput} />
+              ) : (
+                <>
+                  {/* Language selector */}
+                  <div className="flex items-center gap-1">
+                    <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+                    {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                      <button
+                        key={l.value}
+                        type="button"
+                        onClick={() => changeDictLang(l.value)}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                          resolvedDictLang === l.value
+                            ? "bg-brand text-white"
+                            : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        {l.value.toUpperCase()}
+                      </button>
+                    ))}
                   </div>
-                )}
-                {(isRecording || isTranscribing || isCorrecting || isRefining) && (
-                  <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                      {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
-                    </Badge>
+                  <div className="relative">
+                    <Textarea
+                      ref={dictTextareaRef}
+                      placeholder={t("dash.dictation_placeholder")}
+                      value={dictation}
+                      onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
+                      onSelect={(e) => {
+                        const ta = e.currentTarget;
+                        if (ta.selectionStart !== ta.selectionEnd) {
+                          setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                        } else {
+                          setDictSelRange(null);
+                        }
+                      }}
+                      className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
+                    />
+                    <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
+                    <Button
+                      variant={isRecording ? "destructive" : "secondary"}
+                      size="icon"
+                      className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
+                      style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
+                      onClick={toggleRecording}
+                    >
+                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
+                      <div className="absolute top-1 right-1">
+                        <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+                      </div>
+                    )}
+                    {(isRecording || isTranscribing || isCorrecting || isRefining) && (
+                      <div className="absolute bottom-2 right-2">
+                        <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                          {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Texto seleccionado — al dictar se reemplazará
-                  </p>
-                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
-                </div>
+                  {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Texto seleccionado — al dictar se reemplazará
+                      </p>
+                      <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                    </div>
+                  )}
+                  {interimText && isRecording && (
+                    <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                      <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
+                      <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
+                    </div>
+                  )}
+                  {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+                </>
               )}
-              {interimText && isRecording && (
-                <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-                  <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
-                </div>
-              )}
-              {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="relative">
