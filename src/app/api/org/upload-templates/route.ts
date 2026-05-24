@@ -4,9 +4,9 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig } from "@/lib/auth-helpers";
-import { requireOrgRole } from "@/lib/auth-helpers";
-import { generateAI } from "@/lib/ai-provider";
+import { getGlobalAIConfig, requireOrgRole } from "@/lib/auth-helpers";
+import { generateAIWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
 
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     const globalConfig = await getGlobalAIConfig();
 
-    const text = await generateAI({
+    const aiResult = await generateAIWithUsage({
       provider: globalConfig.provider,
       modelName: globalConfig.modelName,
       apiKey: globalConfig.apiKey,
@@ -71,6 +71,9 @@ export async function POST(req: NextRequest) {
       user: `Extract and classify all radiology report templates from this document:\n\n${docText.substring(0, 20000)}`,
     });
 
+    logAICost({ userId: user.id, action: "extract_templates", provider: globalConfig.provider, model: globalConfig.modelName, inputTokens: aiResult.usage.inputTokens, outputTokens: aiResult.usage.outputTokens }).catch(() => {});
+
+    const text = aiResult.text;
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return NextResponse.json({ error: "No se pudieron extraer plantillas del documento." }, { status: 400 });
 
