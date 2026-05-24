@@ -3,7 +3,8 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, checkDocumentLimit } from "@/lib/auth-helpers";
-import { generateAI } from "@/lib/ai-provider";
+import { generateAIWithUsage } from "@/lib/ai-provider";
+import { logAICost } from "@/lib/log-ai-cost";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
 
@@ -64,7 +65,7 @@ Return ONLY valid JSON array. Example:
 
 If the document contains a single template, still return it as an array with one element.`;
 
-    const text = await generateAI({
+    const aiResult = await generateAIWithUsage({
       provider: globalConfig.provider,
       modelName: globalConfig.modelName,
       apiKey: globalConfig.apiKey,
@@ -73,6 +74,9 @@ If the document contains a single template, still return it as an array with one
       user: `Extract and classify all radiology report templates from this document:\n\n${docText.substring(0, 20000)}`,
     });
 
+    logAICost({ userId: user.id, action: "extract_templates", provider: globalConfig.provider, model: globalConfig.modelName, inputTokens: aiResult.usage.inputTokens, outputTokens: aiResult.usage.outputTokens }).catch(() => {});
+
+    const text = aiResult.text;
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return NextResponse.json({ error: "Could not parse AI response" }, { status: 500 });
 
