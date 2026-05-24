@@ -3,8 +3,8 @@
 -- Run 20260524_pilot_demo_cleanup.sql to remove all of it.
 
 -- 1. Create pilot organization
-INSERT INTO public.organizations (id, name, is_pilot, created_at)
-VALUES ('a0681e56-3187-41d7-a927-ef23940e7446', 'Hospital Universitario Demo', true, now() - interval '30 days')
+INSERT INTO public.organizations (id, name, slug, is_pilot, created_at)
+VALUES ('a0681e56-3187-41d7-a927-ef23940e7446', 'Hospital Universitario Demo', 'hospital-universitario-demo', true, now() - interval '30 days')
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Create 10 user profiles
