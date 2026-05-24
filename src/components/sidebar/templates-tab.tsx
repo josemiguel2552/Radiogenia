@@ -223,6 +223,7 @@ export function TemplatesTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [editTemplate, setEditTemplate] = useState<UserTemplate | null>(null);
+  const [creatingNew, setCreatingNew] = useState(false);
   const [editName, setEditName] = useState("");
   const [editModality, setEditModality] = useState("");
   const [editSection, setEditSection] = useState("");
@@ -313,6 +314,7 @@ export function TemplatesTab() {
   }
 
   function openEdit(t: UserTemplate) {
+    setCreatingNew(false);
     setEditTemplate(t);
     setEditName(t.name);
     setEditModality(t.modality);
@@ -325,12 +327,21 @@ export function TemplatesTab() {
     setSaving(true);
     const templateText = serializeTemplateSections(editFields);
     const updatedStructure = { ...editTemplate.structure, template: templateText, title: editName, technique: editModality, section: editSection };
-    await fetch("/api/templates", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: editTemplate.id, name: editName, modality: editModality, structure: updatedStructure }),
-    });
+    if (creatingNew) {
+      await fetch("/api/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName, modality: editModality, structure: updatedStructure }),
+      });
+    } else {
+      await fetch("/api/templates", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editTemplate.id, name: editName, modality: editModality, structure: updatedStructure }),
+      });
+    }
     setEditTemplate(null);
+    setCreatingNew(false);
     setSaving(false);
     load();
   }
@@ -358,17 +369,13 @@ export function TemplatesTab() {
     window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
-  async function handleCreateNew() {
-    await fetch("/api/templates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "New Template",
-        modality: "CT",
-        structure: { id: -1, title: "New Template", template: "FINDINGS\n{findings}\nCONCLUSION\n{conclusion}", technique: "CT", section: "Head and neck" },
-      }),
-    });
-    load();
+  function handleCreateNew() {
+    setCreatingNew(true);
+    setEditTemplate({ id: "__new__", name: "", modality: "", structure: { id: -1, title: "", template: "", technique: "", section: "" } } as UserTemplate);
+    setEditName("");
+    setEditModality("");
+    setEditSection("");
+    setEditFields([{ id: nextFieldId(), label: "", indent: 0 }]);
   }
 
   async function handleWordUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -764,11 +771,11 @@ export function TemplatesTab() {
         </div>
       )}
 
-      {/* Edit Dialog */}
-      <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) setEditTemplate(null); }}>
+      {/* Edit / Create Dialog */}
+      <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) { setEditTemplate(null); setCreatingNew(false); } }}>
         <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
-            <DialogTitle>{t("tpl.edit_dialog")}</DialogTitle>
+            <DialogTitle>{creatingNew ? t("tpl.create_blank") : t("tpl.edit_dialog")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -823,8 +830,8 @@ export function TemplatesTab() {
             <DialogClose asChild>
               <Button variant="outline">{t("cancel")}</Button>
             </DialogClose>
-            <Button onClick={handleSave} disabled={saving || editFields.every((f) => !f.label.trim())}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("tpl.save_changes")}
+            <Button onClick={handleSave} disabled={saving || (!editName.trim() && !creatingNew) || (creatingNew && (!editName.trim() || !editModality || !editSection))}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : creatingNew ? t("tpl.create_save") : t("tpl.save_changes")}
             </Button>
           </DialogFooter>
         </DialogContent>

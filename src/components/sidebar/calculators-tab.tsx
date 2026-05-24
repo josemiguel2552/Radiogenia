@@ -2611,6 +2611,157 @@ function NoduleDTCalc() {
 }
 
 /* ═══════════════════════════════════════════
+   T1/T2 Mapping & ECV Calculator
+   ═══════════════════════════════════════════ */
+
+function T1T2MappingCalc() {
+  const [nativeT1, setNativeT1] = useState("");
+  const [nativeT2, setNativeT2] = useState("");
+  const [postT1Myo, setPostT1Myo] = useState("");
+  const [preT1Blood, setPreT1Blood] = useState("");
+  const [postT1Blood, setPostT1Blood] = useState("");
+  const [hematocrit, setHematocrit] = useState("");
+  const [fieldStrength, setFieldStrength] = useState<"1.5" | "3">("1.5");
+
+  const nT1 = parseFloat(nativeT1);
+  const nT2 = parseFloat(nativeT2);
+  const pT1M = parseFloat(postT1Myo);
+  const preT1B = parseFloat(preT1Blood);
+  const pT1B = parseFloat(postT1Blood);
+  const hct = parseFloat(hematocrit);
+
+  const canCalcECV =
+    nativeT1 !== "" && !isNaN(nT1) && nT1 > 0 &&
+    postT1Myo !== "" && !isNaN(pT1M) && pT1M > 0 &&
+    preT1Blood !== "" && !isNaN(preT1B) && preT1B > 0 &&
+    postT1Blood !== "" && !isNaN(pT1B) && pT1B > 0 &&
+    hematocrit !== "" && !isNaN(hct) && hct > 0 && hct < 100;
+
+  const ecv = canCalcECV
+    ? (1 - hct / 100) * ((1 / pT1M - 1 / nT1) / (1 / pT1B - 1 / preT1B)) * 100
+    : null;
+
+  function interpretT1() {
+    if (nativeT1 === "" || isNaN(nT1)) return null;
+    const normalLow = fieldStrength === "1.5" ? 950 : 1050;
+    const normalHigh = fieldStrength === "1.5" ? 1050 : 1200;
+    if (nT1 < normalLow) return { text: "T1 reducido: considerar sobrecarga de hierro, Fabry, grasa/lipoma", color: "blue" as const };
+    if (nT1 > normalHigh) return { text: "T1 elevado: considerar fibrosis, amiloidosis, edema", color: "red" as const };
+    return { text: "T1 nativo dentro de rango normal", color: "green" as const };
+  }
+
+  function interpretT2() {
+    if (nativeT2 === "" || isNaN(nT2)) return null;
+    const normalLow = fieldStrength === "1.5" ? 45 : 40;
+    const normalHigh = fieldStrength === "1.5" ? 55 : 50;
+    if (nT2 > normalHigh) return { text: "T2 elevado: edema agudo / miocarditis", color: "red" as const };
+    if (nT2 < normalLow) return { text: "T2 reducido: considerar sobrecarga de hierro", color: "blue" as const };
+    return { text: "T2 nativo dentro de rango normal", color: "green" as const };
+  }
+
+  function interpretECV() {
+    if (ecv === null) return null;
+    if (ecv >= 25 && ecv <= 30) return { text: "ECV normal (25-30%)", color: "green" as const };
+    if (ecv > 30 && ecv <= 40) return { text: "ECV elevado: fibrosis intersticial, edema", color: "yellow" as const };
+    if (ecv > 40) return { text: "ECV muy elevado: amiloidosis, fibrosis severa", color: "red" as const };
+    if (ecv < 25) return { text: "ECV bajo: considerar artefacto o variante", color: "blue" as const };
+    return null;
+  }
+
+  const t1Result = interpretT1();
+  const t2Result = interpretT2();
+  const ecvResult = interpretECV();
+
+  const copyText = [
+    nativeT1 ? `T1 nativo: ${nativeT1} ms` : "",
+    nativeT2 ? `T2 nativo: ${nativeT2} ms` : "",
+    ecv !== null ? `ECV: ${ecv.toFixed(1)}%` : "",
+    t1Result ? t1Result.text : "",
+    t2Result ? t2Result.text : "",
+    ecvResult ? ecvResult.text : "",
+  ].filter(Boolean).join(". ");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">SCMR Consensus (Messroghli et al., JCMR 2017)</p>
+        <ResetButton onClick={() => { setNativeT1(""); setNativeT2(""); setPostT1Myo(""); setPreT1Blood(""); setPostT1Blood(""); setHematocrit(""); }} />
+      </div>
+
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">Campo magnético</Label>
+        <OptionPills
+          options={[
+            { key: "1.5", label: "1.5T" },
+            { key: "3", label: "3T" },
+          ]}
+          value={fieldStrength}
+          onChange={(v) => setFieldStrength(v as "1.5" | "3")}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput label="T1 nativo miocardio" value={nativeT1} onChange={setNativeT1} unit="ms" min={0} step={1} />
+        <NumInput label="T2 nativo miocardio" value={nativeT2} onChange={setNativeT2} unit="ms" min={0} step={1} />
+      </div>
+
+      <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">Para cálculo de ECV:</p>
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput label="T1 post-contraste mio" value={postT1Myo} onChange={setPostT1Myo} unit="ms" min={0} step={1} />
+        <NumInput label="T1 pre-contraste sangre" value={preT1Blood} onChange={setPreT1Blood} unit="ms" min={0} step={1} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput label="T1 post-contraste sangre" value={postT1Blood} onChange={setPostT1Blood} unit="ms" min={0} step={1} />
+        <NumInput label="Hematocrito" value={hematocrit} onChange={setHematocrit} unit="%" min={0} max={100} step={1} />
+      </div>
+
+      {t1Result && (
+        <ResultBox label="T1 nativo" value={`${nativeT1} ms`} interpretation={t1Result.text} color={t1Result.color} />
+      )}
+      {t2Result && (
+        <ResultBox label="T2 nativo" value={`${nativeT2} ms`} interpretation={t2Result.text} color={t2Result.color} />
+      )}
+      {ecv !== null && ecvResult && (
+        <ResultBox label="ECV" value={`${ecv.toFixed(1)}%`} interpretation={ecvResult.text} color={ecvResult.color} />
+      )}
+
+      {/* Reference table */}
+      <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 mt-2">
+        <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 mb-1">Valores de referencia ({fieldStrength}T)</p>
+        <table className="w-full text-[10px]">
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="text-left py-0.5 px-1 font-semibold text-gray-600 dark:text-gray-300">Parámetro</th>
+              <th className="text-left py-0.5 px-1 font-semibold text-gray-600 dark:text-gray-300">Normal</th>
+              <th className="text-left py-0.5 px-1 font-semibold text-gray-600 dark:text-gray-300">Patológico</th>
+            </tr>
+          </thead>
+          <tbody className="text-gray-600 dark:text-gray-400">
+            <tr className="border-b border-gray-100 dark:border-gray-800/50">
+              <td className="py-0.5 px-1">T1 nativo</td>
+              <td className="py-0.5 px-1">{fieldStrength === "1.5" ? "950–1050 ms" : "1050–1200 ms"}</td>
+              <td className="py-0.5 px-1">↑ fibrosis, amiloide, edema; ↓ hierro, Fabry</td>
+            </tr>
+            <tr className="border-b border-gray-100 dark:border-gray-800/50">
+              <td className="py-0.5 px-1">T2 nativo</td>
+              <td className="py-0.5 px-1">{fieldStrength === "1.5" ? "45–55 ms" : "40–50 ms"}</td>
+              <td className="py-0.5 px-1">↑ edema agudo, miocarditis</td>
+            </tr>
+            <tr className="border-b border-gray-100 dark:border-gray-800/50">
+              <td className="py-0.5 px-1">ECV</td>
+              <td className="py-0.5 px-1">25–30%</td>
+              <td className="py-0.5 px-1">↑ fibrosis, amiloidosis, edema</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
    CHEAT SHEETS — additional
    ═══════════════════════════════════════════ */
 
@@ -2668,6 +2819,45 @@ function TransplantUSSheet() {
   );
 }
 
+function CTPerfusionDiagrams() {
+  const patterns = [
+    { label: "Normal", cbf: "N", cbv: "N", mtt: "N", tmax: "N", color: "#22c55e", bgColor: "#dcfce7" },
+    { label: "Core (infarto)", cbf: "↓↓", cbv: "↓↓", mtt: "↑↑", tmax: "↑↑", color: "#ef4444", bgColor: "#fee2e2" },
+    { label: "Penumbra", cbf: "↓", cbv: "N/↑", mtt: "↑", tmax: "↑", color: "#eab308", bgColor: "#fef9c3" },
+    { label: "Perfusión de lujo", cbf: "↑", cbv: "↑", mtt: "N/↓", tmax: "N", color: "#3b82f6", bgColor: "#dbeafe" },
+  ];
+  return (
+    <div className="mt-3">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-2">Patrones visuales CTP</p>
+      <div className="grid grid-cols-2 gap-2">
+        {patterns.map((p) => (
+          <div key={p.label} className="border border-gray-200 dark:border-gray-700 rounded-md p-1.5">
+            <p className="text-[10px] font-semibold text-center mb-1" style={{ color: p.color }}>{p.label}</p>
+            <svg viewBox="0 0 100 50" className="w-full h-10">
+              {/* CBF box */}
+              <rect x="2" y="5" width="22" height="40" rx="3" fill={p.bgColor} stroke={p.color} strokeWidth="1.5" />
+              <text x="13" y="22" textAnchor="middle" fontSize="7" fill={p.color} fontWeight="bold">CBF</text>
+              <text x="13" y="36" textAnchor="middle" fontSize="9" fill={p.color} fontWeight="bold">{p.cbf}</text>
+              {/* CBV box */}
+              <rect x="27" y="5" width="22" height="40" rx="3" fill={p.bgColor} stroke={p.color} strokeWidth="1.5" />
+              <text x="38" y="22" textAnchor="middle" fontSize="7" fill={p.color} fontWeight="bold">CBV</text>
+              <text x="38" y="36" textAnchor="middle" fontSize="9" fill={p.color} fontWeight="bold">{p.cbv}</text>
+              {/* MTT box */}
+              <rect x="52" y="5" width="22" height="40" rx="3" fill={p.bgColor} stroke={p.color} strokeWidth="1.5" />
+              <text x="63" y="22" textAnchor="middle" fontSize="7" fill={p.color} fontWeight="bold">MTT</text>
+              <text x="63" y="36" textAnchor="middle" fontSize="9" fill={p.color} fontWeight="bold">{p.mtt}</text>
+              {/* Tmax box */}
+              <rect x="77" y="5" width="22" height="40" rx="3" fill={p.bgColor} stroke={p.color} strokeWidth="1.5" />
+              <text x="88" y="22" textAnchor="middle" fontSize="6.5" fill={p.color} fontWeight="bold">Tmax</text>
+              <text x="88" y="36" textAnchor="middle" fontSize="9" fill={p.color} fontWeight="bold">{p.tmax}</text>
+            </svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CTPerfusionSheet() {
   const t = useT();
   return (
@@ -2683,6 +2873,7 @@ function CTPerfusionSheet() {
           ["Tmax", t("calc.ctp_tmax_desc"), "< 6 s"],
         ]}
       />
+      <CTPerfusionDiagrams />
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.ctp_ischemia")}</p>
       <SheetTable
         headers={[t("calc.ctp_zone"), t("calc.ctp_criteria"), t("calc.ctp_interpretation")]}
@@ -2705,10 +2896,210 @@ function CTPerfusionSheet() {
 }
 
 /* ═══════════════════════════════════════════
+   CHEAT SHEETS — Pediatric Radiology
+   ═══════════════════════════════════════════ */
+
+function PediatricCXRSheet() {
+  return (
+    <CheatSheet title="Radiografía de tórax pediátrica" source="Defined values from Defined Literature; Defined Pediatric Radiology Textbooks; ACR Appropriateness Criteria Pediatric">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Timo normal vs patología</p>
+      <SheetTable
+        headers={["Hallazgo", "Timo normal", "Patológico"]}
+        rows={[
+          ["Forma", "Vela de barco / signo de ola", "Masa mediastínica irregular"],
+          ["Bordes", "Lisos, ondulados con costillas", "Lobulados, irregulares"],
+          ["Signo de la vela", "Presente < 2 años (normal)", "Ausente en neonato = DiGeorge"],
+          ["Compresión", "No comprime vía aérea", "Desplaza/comprime tráquea"],
+          ["Evolución", "Involuciona con estrés/edad", "Crece progresivamente"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Patrones comunes por edad</p>
+      <SheetTable
+        headers={["Patología", "Edad típica", "Patrón radiológico clave"]}
+        rows={[
+          ["SDR (EMH)", "Pretérmino", "Vidrio esmerilado difuso, broncograma aéreo, bajo volumen"],
+          ["TTN", "RN término (cesárea)", "Líquido cisural, cardiomegalia leve, hiperinflación, resolución 24-48h"],
+          ["SAM", "RN postérmino", "Hiperinsuflación, atelectasias parcheadas, neumotórax"],
+          ["Bronquiolitis", "< 2 años (VRS)", "Hiperinsuflación, engrosamiento peribronquial, atelectasias subsegmentarias"],
+          ["Neumonía redonda", "< 8 años", "Opacidad redonda (simula masa), típica en lóbulos inferiores"],
+          ["Cuerpo extraño", "1-3 años", "Atrapamiento aéreo unilateral (espiración), enfisema obstructivo"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Abordaje sistemático Rx tórax pediátrica</p>
+      <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+        <p>1. <span className="font-semibold">Técnica:</span> Rotación (clavículas simétricas), inspiración (6 costillas ant.), penetración</p>
+        <p>2. <span className="font-semibold">Vía aérea:</span> Tráquea centrada, calibre subglótico, bronquios principales</p>
+        <p>3. <span className="font-semibold">Timo/mediastino:</span> Normal hasta 2-3 años, silueta cardíaca</p>
+        <p>4. <span className="font-semibold">Pulmones:</span> Volumen, simetría, patrón (intersticial vs alveolar)</p>
+        <p>5. <span className="font-semibold">Corazón:</span> ICT &lt; 0.60 en neonatos, &lt; 0.55 en &gt; 1 año</p>
+        <p>6. <span className="font-semibold">Huesos/partes blandas:</span> Fracturas, enfisema subcutáneo, catéteres</p>
+      </div>
+    </CheatSheet>
+  );
+}
+
+function PediatricHydronephrosisSheet() {
+  return (
+    <CheatSheet title="Hidronefrosis pediátrica" source="SFU Grading System; UTD Classification (Nguyen et al., J Pediatr Urol 2014); ACR Appropriateness Criteria 2020">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Clasificación SFU (Society of Fetal Urology)</p>
+      <SheetTable
+        headers={["Grado", "Hallazgo ecográfico", "Significado clínico"]}
+        rows={[
+          ["Grado 1", "Pelvis renal ligeramente dilatada", "Leve, generalmente fisiológica"],
+          ["Grado 2", "Pelvis dilatada + algunos cálices visualizados", "Leve-moderada"],
+          ["Grado 3", "Pelvis + todos los cálices dilatados, parénquima normal", "Moderada, requiere seguimiento"],
+          ["Grado 4", "Dilatación severa + adelgazamiento del parénquima", "Severa, probable obstrucción"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">DAP (Diámetro anteroposterior pelvis renal)</p>
+      <SheetTable
+        headers={["Edad/Trimestre", "Normal", "Leve", "Moderada", "Severa"]}
+        rows={[
+          ["2do trimestre", "< 4 mm", "4-7 mm", "7-10 mm", "> 10 mm"],
+          ["3er trimestre", "< 7 mm", "7-10 mm", "10-15 mm", "> 15 mm"],
+          ["Neonato (< 48h)", "< 10 mm", "10-15 mm", "15-20 mm", "> 20 mm"],
+          ["Lactante (> 48h)", "< 10 mm", "10-15 mm", "15-20 mm", "> 20 mm"],
+          ["Niño > 1 año", "< 10 mm", "10-15 mm", "15-20 mm", "> 20 mm"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Clasificación UTD (Urinary Tract Dilation)</p>
+      <SheetTable
+        headers={["Categoría", "Criterios", "Seguimiento"]}
+        rows={[
+          ["UTD P1 (prenatal bajo riesgo)", "DAP 4-7mm (2T) o 7-10mm (3T), sin dilatación calicial", "Eco postnatal > 48h"],
+          ["UTD P2 (prenatal riesgo intermedio)", "DAP 7-10mm (2T) o 10-15mm (3T), dilatación calicial", "Eco postnatal + considerar CUMS"],
+          ["UTD P3 (prenatal alto riesgo)", "DAP >10mm (2T) o >15mm (3T), parénquima anormal, uréter dilatado, vejiga anormal", "Eco urgente + CUMS + renograma"],
+          ["UTD A1 (postnatal bajo riesgo)", "DAP 10-15mm, cálices centrales dilatados, parénquima normal", "Eco seriada, resolución esperada"],
+          ["UTD A2-3 (postnatal alto riesgo)", "DAP >15mm, dilatación periférica, parénquima adelgazado, uréter visible", "CUMS + renograma MAG3 + urología"],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function PediatricTumorsSheet() {
+  return (
+    <CheatSheet title="Tumores pediátricos por edad" source="Defined values from Defined Literature; Defined Pediatric Oncology Radiology; ESPR guidelines">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Tumores comunes por grupo etario</p>
+      <SheetTable
+        headers={["Edad", "Tumor", "Localización", "Características imagen"]}
+        rows={[
+          ["< 1 año", "Neuroblastoma", "Suprarrenal/paraespinal", "Masa heterogénea, calcificaciones (90%), cruza línea media, envuelve vasos"],
+          ["< 1 año", "Teratoma sacrococcígeo", "Sacro/pelvis", "Masa mixta sólido-quística, grasa, calcificaciones"],
+          ["1-5 años", "Tumor de Wilms (nefroblastoma)", "Renal", "Masa intrarrenal bien definida, pseudocápsula, trombo vena renal/VCI (4-10%)"],
+          ["1-5 años", "Hepatoblastoma", "Hígado", "Masa sólida heterogénea, calcificaciones, AFP elevada"],
+          ["1-5 años", "Rabdomiosarcoma", "Cabeza/cuello, GU", "Masa sólida invasiva, realce heterogéneo"],
+          ["5-10 años", "Linfoma (Hodgkin/NH)", "Mediastino/abdomen", "Adenopatías, masa mediastínica anterior, patrón sandwich"],
+          ["5-10 años", "Tumores fosa posterior", "Cerebelo/4to ventrículo", "Meduloblastoma (vermis), astrocitoma (hemisferio), ependimoma (4V)"],
+          ["> 10 años", "Osteosarcoma", "Metáfisis huesos largos", "Masa ósea agresiva, reacción perióstica sunburst, triángulo de Codman"],
+          ["> 10 años", "Sarcoma de Ewing", "Diáfisis/huesos planos", "Lesión permeativa, reacción perióstica en capas de cebolla, masa partes blandas"],
+          ["> 10 años", "Tumores células germinales", "Mediastino/gónadas/pineal", "Masa heterogénea, calcificaciones, marcadores séricos"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Claves diagnósticas</p>
+      <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+        <p>• <span className="font-semibold">Neuroblastoma vs Wilms:</span> NB cruza línea media, envuelve vasos, calcifica; Wilms desplaza vasos, intrarrenal, pseudocápsula</p>
+        <p>• <span className="font-semibold">Meduloblastoma vs Ependimoma:</span> Medulo en vermis, restricción difusión; Ependimoma sale por forámenes de Luschka</p>
+        <p>• <span className="font-semibold">Osteosarcoma vs Ewing:</span> Osteo en metáfisis, produce osteoide; Ewing en diáfisis, reacción perióstica laminar</p>
+      </div>
+    </CheatSheet>
+  );
+}
+
+function CryptorchidismSheet() {
+  return (
+    <CheatSheet title="Criptorquidia - Ecografía" source="AUA/EAU Guidelines on Cryptorchidism; Defined values from Defined Literature; ESPR guidelines pediatric scrotal US">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Clasificación por localización</p>
+      <SheetTable
+        headers={["Localización", "Frecuencia", "Hallazgo ecográfico"]}
+        rows={[
+          ["Canalicular (canal inguinal)", "72%", "Testículo entre anillo inguinal interno y externo"],
+          ["Inguinal superficial (ectópico)", "20%", "Superficial al anillo externo, fuera del trayecto normal"],
+          ["Abdominal (intraperitoneal)", "8%", "No visible por eco; requiere RM o laparoscopia"],
+          ["Prescrotal (alto escrotal)", "Variable", "En la parte superior del escroto, testículo retráctil"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Protocolo ecográfico</p>
+      <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+        <p>1. <span className="font-semibold">Transductor:</span> Lineal alta frecuencia (7-15 MHz)</p>
+        <p>2. <span className="font-semibold">Exploración:</span> Desde anillo inguinal interno → canal inguinal → escroto</p>
+        <p>3. <span className="font-semibold">Medir:</span> Longitud, ancho, grosor del testículo; comparar con contralateral</p>
+        <p>4. <span className="font-semibold">Doppler color:</span> Evaluar vascularización (flujo reducido en testículo atrófico)</p>
+        <p>5. <span className="font-semibold">Maniobra de Valsalva:</span> Diferenciar retráctil vs verdadero no descendido</p>
+      </div>
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Criterios de medición</p>
+      <SheetTable
+        headers={["Parámetro", "Normal", "Sospecha atrofia"]}
+        rows={[
+          ["Volumen testicular (fórmula elipsoide)", "Longitud × Ancho × AP × 0.52", "< 50% del contralateral"],
+          ["Longitud neonato", "10-15 mm", "< 8 mm"],
+          ["Longitud 1-10 años (prepuberal)", "15-20 mm", "< 10 mm o asimetría marcada"],
+          ["Ecogenicidad", "Homogénea, hipoecogénica respecto a partes blandas", "Heterogénea, hiperecogénica"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Cuándo sospechar malignidad</p>
+      <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+        <p>• Testículo no descendido en adulto (riesgo ×5-10 de tumor testicular)</p>
+        <p>• Masa focal sólida hipervascular dentro del testículo</p>
+        <p>• Microcalcificaciones (≥5 por campo): asociadas a neoplasia intratubular (TIN)</p>
+        <p>• Aumento de tamaño unilateral sin antecedente inflamatorio</p>
+        <p>• Seminoma es el tipo más frecuente en testículos no descendidos</p>
+      </div>
+    </CheatSheet>
+  );
+}
+
+function TransfontanellarUSSheet() {
+  return (
+    <CheatSheet title="Ecografía transfontanelar" source="Defined Papile Classification (Papile et al., J Pediatr 1978); de Vries PVL Grading; AIUM Practice Parameter Neurosonography 2020">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Anatomía normal - Referencias</p>
+      <SheetTable
+        headers={["Estructura", "Plano coronal", "Plano sagital"]}
+        rows={[
+          ["Cuerpo calloso", "Línea ecogénica entre hemisferios", "Estructura curvilínea superior al 3er ventrículo"],
+          ["Ventrículos laterales", "Cavidades anecoicas bilaterales simétricas", "Cuerpo, asta frontal y occipital"],
+          ["Plexo coroideo", "Ecogénico dentro de ventrículos laterales", "Recorre el piso del ventrículo"],
+          ["Surco caudotalámico", "Entre núcleo caudado y tálamo", "Ubicación de la matriz germinal"],
+          ["Cisterna magna", "No se ve bien", "Espacio anecoico posterior al cerebelo (< 10 mm)"],
+          ["Tálamos", "Estructuras ecogénicas mediales", "Rodean el 3er ventrículo"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Hemorragia de la matriz germinal - Clasificación de Papile</p>
+      <SheetTable
+        headers={["Grado", "Hallazgo", "Pronóstico"]}
+        rows={[
+          ["Grado I", "Hemorragia subependimaria (matriz germinal aislada)", "Excelente, resolución espontánea"],
+          ["Grado II", "Hemorragia intraventricular SIN dilatación (< 50% ventrículo)", "Bueno, baja morbilidad"],
+          ["Grado III", "Hemorragia intraventricular CON dilatación ventricular (> 50%)", "Reservado, hidrocefalia 50-80%"],
+          ["Grado IV", "Hemorragia intraparenquimatosa (infarto hemorrágico periventricular)", "Malo, secuelas motoras/cognitivas severas"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Leucomalacia periventricular (LPV) - Clasificación de De Vries</p>
+      <SheetTable
+        headers={["Grado", "Eco fase aguda", "Eco fase crónica", "Pronóstico"]}
+        rows={[
+          ["Grado I", "Hiperecogenicidad periventricular transitoria (< 7 días)", "Normal", "Bueno"],
+          ["Grado II", "Hiperecogenicidad periventricular persistente (> 7 días)", "Quistes periventriculares pequeños frontoparietal", "Variable, diplejía espástica posible"],
+          ["Grado III", "Hiperecogenicidad periventricular extensa", "Quistes periventriculares extensos (fronto-parieto-occipital)", "Malo, cuadriplejía espástica"],
+          ["Grado IV", "Hiperecogenicidad sustancia blanca difusa incluyendo subcortical", "Quistes extensos subcorticales + porencefalia", "Muy malo, discapacidad severa"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">Mediciones de referencia</p>
+      <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+        <p>• <span className="font-semibold">Índice ventricular (Levene):</span> Distancia entre hoz y pared lateral del ventrículo. Normal &lt; 13 mm en RN a término</p>
+        <p>• <span className="font-semibold">Ancho del asta frontal:</span> Normal &lt; 3 mm en neonatos</p>
+        <p>• <span className="font-semibold">Ratio ventrículo/hemisferio:</span> Normal &lt; 0.35</p>
+        <p>• <span className="font-semibold">3er ventrículo:</span> Normal &lt; 3 mm en neonato a término</p>
+      </div>
+    </CheatSheet>
+  );
+}
+
+/* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "t1t2_mapping";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -2723,6 +3114,7 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "lung_tnm", emoji: "🫁" },
   { id: "larynx_tnm", emoji: "🗣️" },
   { id: "nodule_dt", emoji: "📈" },
+  { id: "t1t2_mapping", emoji: "❤️‍🔥" },
 ];
 
 export function CalculatorsTab() {
@@ -2743,6 +3135,7 @@ export function CalculatorsTab() {
     lung_tnm: t("calc.lung_tnm_title"),
     larynx_tnm: t("calc.larynx_tnm_title"),
     nodule_dt: t("calc.dt_title"),
+    t1t2_mapping: "T1/T2 Mapping & ECV",
   };
 
   const q = search.toLowerCase();
@@ -2826,6 +3219,16 @@ export function CalculatorsTab() {
         { id: "transplant_us", component: <TransplantUSSheet />, label: t("calc.tx_us_title") },
       ],
     },
+    {
+      key: "pediatrics", label: "Pediatría", icon: "👶",
+      sheets: [
+        { id: "ped_cxr", component: <PediatricCXRSheet />, label: "Rx tórax pediátrica" },
+        { id: "ped_hydro", component: <PediatricHydronephrosisSheet />, label: "Hidronefrosis pediátrica" },
+        { id: "ped_tumors", component: <PediatricTumorsSheet />, label: "Tumores pediátricos" },
+        { id: "ped_crypto", component: <CryptorchidismSheet />, label: "Criptorquidia" },
+        { id: "ped_transf", component: <TransfontanellarUSSheet />, label: "Eco transfontanelar" },
+      ],
+    },
   ], [t]);
 
   return (
@@ -2885,6 +3288,7 @@ export function CalculatorsTab() {
                   {c.id === "lung_tnm" && <LungTNMCalc />}
                   {c.id === "larynx_tnm" && <LarynxTNMCalc />}
                   {c.id === "nodule_dt" && <NoduleDTCalc />}
+                  {c.id === "t1t2_mapping" && <T1T2MappingCalc />}
                 </div>
               )}
             </div>
