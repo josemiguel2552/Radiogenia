@@ -1240,6 +1240,1030 @@ export const DEFAULT_TEMPLATES: Template[] = [
   ].join("\n")),
 
   // ═══════════════════════════════════════════
+  //  RADIOGRAFÍAS (XRay) — ampliación II
+  // ═══════════════════════════════════════════
+
+  t(98, "Radiografía de mandíbula", "XRay", "Head and neck", [
+    fld("Mandibular body"),
+    fld("Rami and angles"),
+    fld("Condyles"),
+    fld("Coronoid processes"),
+    fld("Dental structures"),
+    fld("Temporomandibular joints"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(99, "Radiografía de huesos nasales", "XRay", "Head and neck", [
+    fld("Nasal bones"),
+    fld("Nasal septum"),
+    fld("Anterior nasal spine"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(100, "Radiografía de cavum", "XRay", "Head and neck", [
+    fld("Nasopharyngeal airway"),
+    fld("Adenoid tissue"),
+    fld("Posterior pharyngeal wall"),
+    fld("Soft palate"),
+    fld("Cervical spine"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(101, "Radiografía de parrilla costal", "XRay", "Thorax", [
+    fld("Right ribs"),
+    fld("Left ribs"),
+    fld("Costal cartilage"),
+    fld("Sternum"),
+    fld("Lung parenchyma"),
+    fld("Pleura"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(102, "Radiografía de esternón", "XRay", "Thorax", [
+    fld("Manubrium"),
+    fld("Sternal body"),
+    fld("Xiphoid process"),
+    fld("Sternoclavicular joints"),
+    fld("Sternal alignment"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(103, "Radiografía de articulaciones esternoclaviculares", "XRay", "Thorax", [
+    fld("Right sternoclavicular joint"),
+    fld("Left sternoclavicular joint"),
+    fld("Medial clavicles"),
+    fld("Manubrium"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(104, "Radiografía de abdomen en bipedestación", "XRay", "Abdomen and pelvis", [
+    fld("Air-fluid levels"),
+    fld("Bowel gas pattern"),
+    fld("Diaphragm and free air"),
+    fld("Solid organ outlines"),
+    fld("Peritoneal fat planes"),
+    fld("Bone structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(105, "Radiografía de abdomen en decúbito lateral", "XRay", "Abdomen and pelvis", [
+    fld("Free intraperitoneal air"),
+    fld("Bowel gas pattern"),
+    fld("Air-fluid levels"),
+    fld("Solid organ outlines"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(106, "Radiografía de sacro y cóccix", "XRay", "Abdomen and pelvis", [
+    fld("Sacrum"),
+    fld("Coccyx"),
+    fld("Sacrococcygeal alignment"),
+    fld("Sacroiliac joints"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(107, "Telerradiografía de columna completa", "XRay", "Spine", [
+    fld("Global coronal alignment"),
+    fld("Global sagittal alignment"),
+    fld("Cobb angles"),
+    fld("Vertebral body morphology"),
+    fld("Pelvic parameters"),
+    fld("Risser sign"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(108, "Radiografía de charnela lumbosacra", "XRay", "Spine", [
+    fld("L5 vertebral body"),
+    fld("S1 vertebral body"),
+    fld("L5-S1 disc space"),
+    fld("Pars interarticularis"),
+    fld("Facet joints L5-S1"),
+    fld("Alignment and listhesis"),
+    fld("Sacroiliac joints"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(109, "Radiografía de charnela dorsolumbar", "XRay", "Spine", [
+    fld("T11-T12 vertebral bodies"),
+    fld("L1-L2 vertebral bodies"),
+    fld("Intervertebral disc spaces"),
+    fld("Alignment and curvature"),
+    fld("Posterior elements"),
+    fld("Paravertebral soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(110, "Radiografía de calcáneo", "XRay", "Lower limbs", [
+    fld("Calcaneal body"),
+    fld("Posterior tuberosity"),
+    fld("Bohler angle"),
+    fld("Crucial angle of Gissane"),
+    fld("Subtalar joint"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(111, "Radiografía de dedos del pie", "XRay", "Lower limbs", [
+    fld("Phalanges"),
+    fld("Interphalangeal joints"),
+    fld("Metatarsophalangeal joints"),
+    fld("Distal metatarsals"),
+    fld("Alignment"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(112, "Goniometría de miembros inferiores", "XRay", "Lower limbs", [
+    fld("Mechanical axis"),
+    fld("Anatomical femoral axis"),
+    fld("Anatomical tibial axis"),
+    fld("Leg length discrepancy"),
+    fld("Hip joints"),
+    fld("Knee joints"),
+    fld("Ankle joints"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(113, "Radiografía de clavícula", "XRay", "Upper limbs", [
+    fld("Clavicular shaft"),
+    fld("Acromioclavicular joint"),
+    fld("Sternoclavicular joint"),
+    fld("Cortex and medullary canal"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(114, "Radiografía de escápula", "XRay", "Upper limbs", [
+    fld("Scapular body"),
+    fld("Spine of scapula"),
+    fld("Acromion"),
+    fld("Coracoid process"),
+    fld("Glenoid"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(115, "Radiografía de dedos de la mano", "XRay", "Upper limbs", [
+    fld("Phalanges"),
+    fld("Interphalangeal joints"),
+    fld("Metacarpophalangeal joints"),
+    fld("Distal metacarpals"),
+    fld("Alignment"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  // ═══════════════════════════════════════════
+  //  TOMOGRAFÍAS (CT) — ampliación II
+  // ═══════════════════════════════════════════
+
+  t(116, "TC de órbitas", "CT", "Head and neck", [
+    fld("Globes"),
+    fld("Extraocular muscles"),
+    fld("Optic nerves"),
+    fld("Lacrimal glands"),
+    fld("Orbital fat"),
+    fld("Orbital walls"),
+    fld("Paranasal sinuses"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(117, "TC de base de cráneo", "CT", "Head and neck", [
+    fld("Anterior cranial fossa"),
+    fld("Middle cranial fossa"),
+    fld("Posterior cranial fossa"),
+    fld("Foramen magnum"),
+    fld("Skull base foramina"),
+    fld("Clivus"),
+    fld("Petrous bones"),
+    fld("Paranasal sinuses"),
+    fld("Included intracranial structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(118, "TC dental", "CT", "Head and neck", [
+    fld("Maxillary alveolar ridge"),
+    fld("Mandibular alveolar ridge"),
+    fld("Dental structures"),
+    fld("Bone height and width"),
+    fld("Mandibular canal"),
+    fld("Maxillary sinuses"),
+    fld("Temporomandibular joints"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(119, "TC de alta resolución pulmonar (TACAR)", "CT", "Thorax", [
+    fld("Distribution pattern"),
+    fld("Ground-glass opacities"),
+    fld("Consolidation"),
+    fld("Reticular pattern"),
+    fld("Honeycombing"),
+    fld("Traction bronchiectasis"),
+    fld("Nodules"),
+    fld("Mosaic attenuation"),
+    fld("Mediastinal lymph nodes"),
+    fld("Pleura"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(120, "TC coronario", "CT", "Thorax", [
+    fld("Calcium score"),
+    fld("Left main coronary artery"),
+    fld("Left anterior descending artery"),
+    fld("Left circumflex artery"),
+    fld("Right coronary artery"),
+    fld("Coronary dominance"),
+    fld("Cardiac chambers"),
+    fld("Pericardium"),
+    fld("Aortic root"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(121, "TC de pared torácica", "CT", "Thorax", [
+    fld("Chest wall soft tissues"),
+    fld("Muscles"),
+    fld("Ribs and sternum"),
+    fld("Scapulae and clavicles"),
+    fld("Thoracic spine"),
+    fld("Lung parenchyma"),
+    fld("Pleura"),
+    fld("Axillae"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(122, "Urografía-TC", "CT", "Abdomen and pelvis", [
+    fld("Right kidney"),
+    fld("Left kidney"),
+    fld("Right ureter"),
+    fld("Left ureter"),
+    fld("Bladder"),
+    fld("Renal enhancement pattern"),
+    fld("Excretory phase"),
+    fld("Adrenal glands"),
+    fld("Other intraabdominal structures"),
+    fld("Bone structures"),
+  ].join("\n")),
+
+  t(123, "Enterografía-TC", "CT", "Abdomen and pelvis", [
+    fld("Duodenum"),
+    fld("Jejunum"),
+    fld("Ileum"),
+    fld("Terminal ileum"),
+    fld("Colon"),
+    fld("Bowel wall enhancement"),
+    fld("Mesenteric fat and vessels"),
+    fld("Mesenteric lymph nodes"),
+    fld("Solid abdominal organs"),
+    fld("Peritoneum"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(124, "TC hepático multifásico", "CT", "Abdomen and pelvis", [
+    fld("Liver parenchyma"),
+    fld("Arterial phase enhancement"),
+    fld("Portal venous phase"),
+    fld("Delayed phase"),
+    fld("Hepatic focal lesions"),
+    fld("LI-RADS category"),
+    fld("Portal vein and hepatic veins"),
+    fld("Gallbladder and bile ducts"),
+    fld("Spleen"),
+    fld("Other intraabdominal structures"),
+    fld("Bone structures"),
+  ].join("\n")),
+
+  t(125, "TC de columna cervical", "CT", "Spine", [
+    fld("Vertebral bodies C1-C7"),
+    fld("Intervertebral discs"),
+    fld("Spinal canal"),
+    fld("Neural foramina"),
+    fld("Facet joints"),
+    fld("Uncovertebral joints"),
+    fld("Craniocervical junction"),
+    fld("Paravertebral soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(126, "TC de columna torácica", "CT", "Spine", [
+    fld("Vertebral bodies T1-T12"),
+    fld("Intervertebral discs"),
+    fld("Spinal canal"),
+    fld("Neural foramina"),
+    fld("Costovertebral joints"),
+    fld("Pedicles and posterior elements"),
+    fld("Paravertebral soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(127, "TC de columna sacra", "CT", "Spine", [
+    fld("Sacral segments"),
+    fld("Sacral canal"),
+    fld("Sacral foramina"),
+    fld("Sacroiliac joints"),
+    fld("Coccyx"),
+    fld("Presacral soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(128, "TC de rodilla", "CT", "Lower limbs", [
+    fld("Distal femur"),
+    fld("Proximal tibia"),
+    fld("Fibular head"),
+    fld("Patella"),
+    fld("Articular surfaces"),
+    fld("Tibial plateau"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(129, "TC de tobillo", "CT", "Lower limbs", [
+    fld("Distal tibia"),
+    fld("Distal fibula"),
+    fld("Talus"),
+    fld("Calcaneus"),
+    fld("Articular surfaces"),
+    fld("Syndesmosis"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(130, "TC de cadera", "CT", "Lower limbs", [
+    fld("Femoral head"),
+    fld("Femoral neck"),
+    fld("Acetabulum"),
+    fld("Hip joint"),
+    fld("Greater and lesser trochanter"),
+    fld("Pelvic ring"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(131, "TC de hombro", "CT", "Upper limbs", [
+    fld("Humeral head"),
+    fld("Glenoid"),
+    fld("Glenohumeral joint"),
+    fld("Acromioclavicular joint"),
+    fld("Acromion and coracoid"),
+    fld("Scapula"),
+    fld("Clavicle"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(132, "TC de muñeca", "CT", "Upper limbs", [
+    fld("Distal radius"),
+    fld("Distal ulna"),
+    fld("Carpal bones"),
+    fld("Articular surfaces"),
+    fld("Carpal alignment"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(133, "TC de codo", "CT", "Upper limbs", [
+    fld("Distal humerus"),
+    fld("Proximal radius"),
+    fld("Proximal ulna"),
+    fld("Articular surfaces"),
+    fld("Coronoid and olecranon"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  // ═══════════════════════════════════════════
+  //  RESONANCIAS (MRI) — ampliación II
+  // ═══════════════════════════════════════════
+
+  t(134, "RM de órbitas", "MRI", "Head and neck", [
+    fld("Globes"),
+    fld("Extraocular muscles"),
+    fld("Optic nerves and chiasm"),
+    fld("Lacrimal glands"),
+    fld("Orbital fat"),
+    fld("Orbital walls"),
+    fld("Intraconal and extraconal spaces"),
+    fld("Cavernous sinuses"),
+    fld("Paranasal sinuses"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(135, "RM de oído interno", "MRI", "Head and neck", [
+    fld("Internal auditory canals"),
+    fld("Cerebellopontine angles"),
+    fld("Cochlea"),
+    fld("Vestibule and semicircular canals"),
+    fld("Vestibular and cochlear nerves"),
+    fld("Facial nerves"),
+    fld("Middle ears"),
+    fld("Mastoid air cells"),
+    fld("Brainstem"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(136, "RM de hipófisis", "MRI", "Head and neck", [
+    fld("Pituitary gland"),
+    fld("Pituitary stalk"),
+    fld("Sella turcica"),
+    fld("Suprasellar cistern"),
+    fld("Optic chiasm"),
+    fld("Cavernous sinuses"),
+    fld("Internal carotid arteries"),
+    fld("Sphenoid sinus"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(137, "RM de aorta torácica", "MRI", "Thorax", [
+    fld("Ascending aorta"),
+    fld("Aortic arch"),
+    fld("Descending thoracic aorta"),
+    fld("Aortic wall"),
+    fld("Aortic valve"),
+    fld("Branch vessels"),
+    fld("Heart chambers"),
+    fld("Pericardium"),
+    fld("Lung parenchyma"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(138, "RM de mediastino", "MRI", "Thorax", [
+    fld("Anterior mediastinum"),
+    fld("Middle mediastinum"),
+    fld("Posterior mediastinum"),
+    fld("Mediastinal lymph nodes"),
+    fld("Great vessels"),
+    fld("Trachea and bronchi"),
+    fld("Esophagus"),
+    fld("Chest wall"),
+    fld("Lung parenchyma"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(139, "RM de pared torácica", "MRI", "Thorax", [
+    fld("Chest wall mass or lesion"),
+    fld("Muscles"),
+    fld("Ribs and sternum"),
+    fld("Pleura"),
+    fld("Lung parenchyma"),
+    fld("Axillae"),
+    fld("Bone marrow signal"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(140, "Colangio-RM", "MRI", "Abdomen and pelvis", [
+    fld("Intrahepatic bile ducts"),
+    fld("Common hepatic duct"),
+    fld("Common bile duct"),
+    fld("Pancreatic duct"),
+    fld("Ampulla of Vater"),
+    fld("Gallbladder"),
+    fld("Liver"),
+    fld("Pancreas"),
+    fld("Other intraabdominal structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(141, "RM renal", "MRI", "Abdomen and pelvis", [
+    fld("Right kidney"),
+    fld("Left kidney"),
+    fld("Renal masses"),
+    fld("Renal arteries and veins"),
+    fld("Collecting systems"),
+    fld("Ureters"),
+    fld("Adrenal glands"),
+    fld("Retroperitoneum"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(142, "Entero-RM", "MRI", "Abdomen and pelvis", [
+    fld("Duodenum"),
+    fld("Jejunum"),
+    fld("Ileum"),
+    fld("Terminal ileum"),
+    fld("Colon"),
+    fld("Bowel wall signal and enhancement"),
+    fld("Mesenteric fat and vessels"),
+    fld("Mesenteric lymph nodes"),
+    fld("Fistulae and abscesses"),
+    fld("Solid abdominal organs"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(143, "RM de plexo lumbosacro", "MRI", "Spine", [
+    fld("Nerve roots L1-S3"),
+    fld("Lumbosacral plexus"),
+    fld("Femoral nerve"),
+    fld("Sciatic nerve"),
+    fld("Psoas and iliacus muscles"),
+    fld("Piriformis muscles"),
+    fld("Lumbar spine"),
+    fld("Pelvic structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(144, "RM de sacro y cóccix", "MRI", "Spine", [
+    fld("Sacral bone marrow"),
+    fld("Sacral canal"),
+    fld("Coccyx"),
+    fld("Presacral space"),
+    fld("Sacroiliac joints"),
+    fld("Sacral nerve roots"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(145, "RM de médula espinal", "MRI", "Spine", [
+    fld("Spinal cord signal cervical"),
+    fld("Spinal cord signal thoracic"),
+    fld("Conus medullaris"),
+    fld("Cauda equina"),
+    fld("Cord expansion or atrophy"),
+    fld("Enhancement pattern"),
+    fld("CSF spaces"),
+    fld("Vertebral bodies"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(146, "RM de muslo", "MRI", "Lower limbs", [
+    fld("Femur"),
+    fld("Quadriceps muscles"),
+    fld("Hamstring muscles"),
+    fld("Adductor muscles"),
+    fld("Bone marrow signal"),
+    fld("Fasciae"),
+    fld("Neurovascular structures"),
+    fld("Subcutaneous tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(147, "RM de pierna", "MRI", "Lower limbs", [
+    fld("Tibia and fibula"),
+    fld("Anterior compartment"),
+    fld("Lateral compartment"),
+    fld("Superficial posterior compartment"),
+    fld("Deep posterior compartment"),
+    fld("Bone marrow signal"),
+    fld("Interosseous membrane"),
+    fld("Neurovascular structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(148, "RM de antepié", "MRI", "Lower limbs", [
+    fld("Metatarsals"),
+    fld("Phalanges"),
+    fld("Metatarsophalangeal joints"),
+    fld("Plantar plates"),
+    fld("Intermetatarsal spaces"),
+    fld("Tendons"),
+    fld("Bone marrow signal"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(149, "RM de mano", "MRI", "Upper limbs", [
+    fld("Metacarpals"),
+    fld("Phalanges"),
+    fld("Metacarpophalangeal joints"),
+    fld("Interphalangeal joints"),
+    fld("Flexor tendons"),
+    fld("Extensor tendons"),
+    fld("Collateral ligaments"),
+    fld("Bone marrow signal"),
+    fld("Soft tissues"),
+  ].join("\n")),
+
+  t(150, "RM de brazo", "MRI", "Upper limbs", [
+    fld("Humerus"),
+    fld("Biceps and triceps muscles"),
+    fld("Deltoid muscle"),
+    fld("Bone marrow signal"),
+    fld("Fasciae"),
+    fld("Brachial neurovascular bundle"),
+    fld("Subcutaneous tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(151, "RM de antebrazo", "MRI", "Upper limbs", [
+    fld("Radius and ulna"),
+    fld("Flexor compartment"),
+    fld("Extensor compartment"),
+    fld("Interosseous membrane"),
+    fld("Bone marrow signal"),
+    fld("Neurovascular structures"),
+    fld("Subcutaneous tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  // ═══════════════════════════════════════════
+  //  MAMOGRAFÍA — ampliación
+  // ═══════════════════════════════════════════
+
+  t(152, "Tomosíntesis mamaria", "Mammography", "Thorax", [
+    fld("Breast composition"),
+    fld("Right breast"),
+    fld("Left breast"),
+    fld("Masses"),
+    fld("Calcifications"),
+    fld("Architectural distortion"),
+    fld("Axillary lymph nodes"),
+    fld("Skin and nipple"),
+  ].join("\n")),
+
+  t(153, "Mamografía con contraste (CEM)", "Mammography", "Thorax", [
+    fld("Breast composition"),
+    fld("Right breast enhancement"),
+    fld("Left breast enhancement"),
+    fld("Enhancing lesions"),
+    fld("Non-enhancing lesions"),
+    fld("Background parenchymal enhancement"),
+    fld("Axillary lymph nodes"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(154, "Galactografía", "Mammography", "Thorax", [
+    fld("Cannulated duct"),
+    fld("Ductal morphology"),
+    fld("Filling defects"),
+    fld("Ductal dilatation"),
+    fld("Extravasation"),
+    fld("Breast parenchyma"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  // ═══════════════════════════════════════════
+  //  ECOGRAFÍAS (Ultrasound) — ampliación II
+  // ═══════════════════════════════════════════
+
+  t(155, "Ecografía transfontanelar", "Ultrasound", "Head and neck", [
+    fld("Lateral ventricles"),
+    fld("Third ventricle"),
+    fld("Periventricular white matter"),
+    fld("Cerebral parenchyma"),
+    fld("Germinal matrix"),
+    fld("Posterior fossa"),
+    fld("Midline structures"),
+    fld("Doppler findings"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(156, "Ecografía de glándulas salivales", "Ultrasound", "Head and neck", [
+    fld("Right parotid gland"),
+    fld("Left parotid gland"),
+    fld("Right submandibular gland"),
+    fld("Left submandibular gland"),
+    fld("Sublingual glands"),
+    fld("Salivary ducts"),
+    fld("Cervical lymph nodes"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(157, "Ecografía de partes blandas cervicales", "Ultrasound", "Head and neck", [
+    fld("Skin and subcutaneous tissues"),
+    fld("Cervical muscles"),
+    fld("Target lesion"),
+    fld("Doppler findings"),
+    fld("Relationship to adjacent structures"),
+    fld("Cervical lymph nodes"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(158, "Ecografía pleural", "Ultrasound", "Thorax", [
+    fld("Right pleural space"),
+    fld("Left pleural space"),
+    fld("Pleural effusion characteristics"),
+    fld("Pleural thickening"),
+    fld("Diaphragm"),
+    fld("Lung sliding"),
+    fld("Adjacent lung parenchyma"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(159, "Ecografía pulmonar", "Ultrasound", "Thorax", [
+    fld("Right anterior zones"),
+    fld("Right lateral zones"),
+    fld("Right posterior zones"),
+    fld("Left anterior zones"),
+    fld("Left lateral zones"),
+    fld("Left posterior zones"),
+    fld("B-lines"),
+    fld("Consolidation"),
+    fld("Pleural effusion"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(160, "Ecografía axilar", "Ultrasound", "Thorax", [
+    fld("Right axillary lymph nodes"),
+    fld("Left axillary lymph nodes"),
+    fld("Lymph node morphology"),
+    fld("Cortical thickness"),
+    fld("Hilum preservation"),
+    fld("Doppler findings"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(161, "Ecografía apendicular", "Ultrasound", "Abdomen and pelvis", [
+    fld("Appendix visualization"),
+    fld("Appendix diameter"),
+    fld("Wall thickness"),
+    fld("Periappendiceal fat"),
+    fld("Free fluid"),
+    fld("Appendicolith"),
+    fld("Doppler findings"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(162, "Ecografía de hernias inguinales", "Ultrasound", "Abdomen and pelvis", [
+    fld("Right inguinal canal"),
+    fld("Left inguinal canal"),
+    fld("Hernia content"),
+    fld("Hernia sac"),
+    fld("Reducibility with Valsalva"),
+    fld("Spermatic cord"),
+    fld("Femoral region"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(163, "Ecografía prostática", "Ultrasound", "Abdomen and pelvis", [
+    fld("Prostate size and volume"),
+    fld("Peripheral zone"),
+    fld("Transition zone"),
+    fld("Central zone"),
+    fld("Seminal vesicles"),
+    fld("Bladder"),
+    fld("Post-void residual"),
+    fld("Doppler findings"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(164, "Ecografía de cadera adulto", "Ultrasound", "Lower limbs", [
+    fld("Hip joint effusion"),
+    fld("Femoral head and neck"),
+    fld("Synovium"),
+    fld("Periarticular tendons"),
+    fld("Bursae"),
+    fld("Soft tissues"),
+    fld("Doppler findings"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(165, "Ecografía de muslo", "Ultrasound", "Lower limbs", [
+    fld("Quadriceps muscles"),
+    fld("Hamstring muscles"),
+    fld("Adductor muscles"),
+    fld("Target lesion"),
+    fld("Fasciae"),
+    fld("Doppler findings"),
+    fld("Subcutaneous tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(166, "Ecografía de pantorrilla", "Ultrasound", "Lower limbs", [
+    fld("Gastrocnemius muscles"),
+    fld("Soleus muscle"),
+    fld("Plantaris tendon"),
+    fld("Achilles tendon proximal"),
+    fld("Muscle tears or collections"),
+    fld("Deep veins"),
+    fld("Baker cyst"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(167, "Ecografía de codo", "Ultrasound", "Upper limbs", [
+    fld("Common extensor tendon"),
+    fld("Common flexor tendon"),
+    fld("Biceps tendon insertion"),
+    fld("Triceps tendon"),
+    fld("Ulnar nerve"),
+    fld("Elbow joint effusion"),
+    fld("Bursae"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(168, "Ecografía de muñeca", "Ultrasound", "Upper limbs", [
+    fld("Extensor tendons"),
+    fld("Flexor tendons"),
+    fld("Median nerve"),
+    fld("Ulnar nerve"),
+    fld("Radiocarpal joint"),
+    fld("Dorsal ganglia"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(169, "Ecografía de mano", "Ultrasound", "Upper limbs", [
+    fld("Flexor tendons"),
+    fld("Extensor tendons"),
+    fld("Metacarpophalangeal joints"),
+    fld("Interphalangeal joints"),
+    fld("Collateral ligaments"),
+    fld("Pulleys"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  // ═══════════════════════════════════════════
+  //  PROCEDIMIENTOS — ampliación
+  // ═══════════════════════════════════════════
+
+  t(170, "PAAF tiroidea guiada por ecografía", "Procedures", "Head and neck", [
+    fld("Target nodule"),
+    fld("Nodule TI-RADS category"),
+    fld("Needle gauge"),
+    fld("Number of passes"),
+    fld("Specimen adequacy"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(171, "Sialografía", "Procedures", "Head and neck", [
+    fld("Cannulated duct"),
+    fld("Main duct"),
+    fld("Intraglandular ducts"),
+    fld("Gland parenchyma"),
+    fld("Filling defects"),
+    fld("Strictures"),
+    fld("Contrast extravasation"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(172, "Infiltración de ATM", "Procedures", "Head and neck", [
+    fld("Target joint"),
+    fld("Guidance modality"),
+    fld("Needle placement"),
+    fld("Injected substance and volume"),
+    fld("Joint distension"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(173, "Toracocentesis guiada por imagen", "Procedures", "Thorax", [
+    fld("Pleural effusion location and size"),
+    fld("Guidance modality"),
+    fld("Access site and needle"),
+    fld("Aspirated volume and appearance"),
+    fld("Post-procedure pneumothorax check"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(174, "Biopsia pulmonar transtorácica", "Procedures", "Thorax", [
+    fld("Target lesion location and size"),
+    fld("Guidance modality"),
+    fld("Access route"),
+    fld("Needle type and gauge"),
+    fld("Number of passes"),
+    fld("Specimen adequacy"),
+    fld("Post-procedure pneumothorax"),
+    fld("Complications"),
+  ].join("\n")),
+
+  t(175, "Colocación de catéter venoso central", "Procedures", "Thorax", [
+    fld("Access vein"),
+    fld("Catheter type"),
+    fld("Number of lumens"),
+    fld("Catheter tip position"),
+    fld("Pneumothorax check"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(176, "Nefrostomía percutánea", "Procedures", "Abdomen and pelvis", [
+    fld("Target kidney and calyx"),
+    fld("Guidance modality"),
+    fld("Catheter type and size"),
+    fld("Degree of hydronephrosis"),
+    fld("Aspirated material"),
+    fld("Nephrostogram findings"),
+    fld("Catheter position"),
+    fld("Complications"),
+  ].join("\n")),
+
+  t(177, "Quimioembolización hepática (TACE)", "Procedures", "Abdomen and pelvis", [
+    fld("Access site"),
+    fld("Hepatic artery anatomy"),
+    fld("Feeding arteries"),
+    fld("Target lesion"),
+    fld("Embolic agent and dose"),
+    fld("Stasis endpoint"),
+    fld("Non-target embolization"),
+    fld("Complications"),
+  ].join("\n")),
+
+  t(178, "Drenaje biliar percutáneo", "Procedures", "Abdomen and pelvis", [
+    fld("Target bile duct"),
+    fld("Guidance modality"),
+    fld("Catheter type and size"),
+    fld("Cholangiogram findings"),
+    fld("Level and cause of obstruction"),
+    fld("Catheter position"),
+    fld("Aspirated material"),
+    fld("Complications"),
+  ].join("\n")),
+
+  t(179, "Vertebroplastia / cifoplastia", "Procedures", "Spine", [
+    fld("Target vertebral level"),
+    fld("Fracture type"),
+    fld("Guidance modality"),
+    fld("Approach"),
+    fld("Cement type and volume"),
+    fld("Cement distribution"),
+    fld("Cement leakage"),
+    fld("Complications"),
+  ].join("\n")),
+
+  t(180, "Infiltración epidural", "Procedures", "Spine", [
+    fld("Target level"),
+    fld("Approach"),
+    fld("Guidance modality"),
+    fld("Epidural space confirmation"),
+    fld("Injected substance and volume"),
+    fld("Contrast spread"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(181, "Bloqueo facetario", "Procedures", "Spine", [
+    fld("Target facet joints"),
+    fld("Guidance modality"),
+    fld("Needle placement"),
+    fld("Injected substance and volume"),
+    fld("Contrast spread"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(182, "Angioplastia de miembros inferiores", "Procedures", "Lower limbs", [
+    fld("Access site"),
+    fld("Target lesion"),
+    fld("Stenosis degree pre"),
+    fld("Balloon or stent type and size"),
+    fld("Residual stenosis post"),
+    fld("Run-off post-procedure"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(183, "Embolización de varices", "Procedures", "Lower limbs", [
+    fld("Access site"),
+    fld("Target vein"),
+    fld("Sclerosant or embolic agent"),
+    fld("Volume injected"),
+    fld("Venous occlusion confirmation"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(184, "Infiltración articular de rodilla o cadera", "Procedures", "Lower limbs", [
+    fld("Target joint"),
+    fld("Guidance modality"),
+    fld("Joint effusion"),
+    fld("Aspirated material"),
+    fld("Injected substance and volume"),
+    fld("Needle placement"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(185, "Infiltración de hombro", "Procedures", "Upper limbs", [
+    fld("Target structure"),
+    fld("Guidance modality"),
+    fld("Needle placement"),
+    fld("Aspirated material"),
+    fld("Injected substance and volume"),
+    fld("Complications"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(186, "Artrografía", "Procedures", "Upper limbs", [
+    fld("Target joint"),
+    fld("Guidance modality"),
+    fld("Contrast type and volume"),
+    fld("Joint distension"),
+    fld("Articular surfaces"),
+    fld("Labrum or ligaments"),
+    fld("Capsular integrity"),
+    fld("Complications"),
+  ].join("\n")),
+
+  t(187, "Fistulografía de acceso vascular", "Procedures", "Upper limbs", [
+    fld("Access type"),
+    fld("Arterial anastomosis"),
+    fld("Venous outflow"),
+    fld("Stenosis"),
+    fld("Aneurysm or pseudoaneurysm"),
+    fld("Accessory veins"),
+    fld("Central veins"),
+    fld("Complications"),
+  ].join("\n")),
+
+  // ═══════════════════════════════════════════
   //  RECIST 1.1
   // ═══════════════════════════════════════════
   t(97, "RECIST 1.1 – Seguimiento oncológico", "RECIST", "Thorax", [
