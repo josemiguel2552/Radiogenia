@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,63 +64,36 @@ export default function InvitePage() {
     setSubmitting(true);
 
     try {
-      const supabase = createClient();
-
-      let signUpResult;
-      try {
-        signUpResult = await supabase.auth.signUp({
+      const res = await fetch("/api/invite/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
           email,
           password,
-          options: { data: { invitation_code: code } },
-        });
-      } catch {
-        setError(t("invite.error_generic"));
-        setSubmitting(false);
-        return;
-      }
-
-      if (signUpResult.error) {
-        const msg = signUpResult.error.message;
-        if (msg.includes("already registered") || msg.includes("already been registered")) {
-          setError(lang === "es" ? "Este email ya está registrado. Inicia sesión en su lugar." : lang === "pt" ? "Este email já está registrado. Faça login." : "This email is already registered. Please sign in instead.");
-        } else {
-          setError(msg);
-        }
-        setSubmitting(false);
-        return;
-      }
-
-      const redeemBody = JSON.stringify({
-        code,
-        email,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        country,
-        hospital: hospital.trim(),
-        role,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          country,
+          hospital: hospital.trim(),
+          role,
+        }),
       });
 
-      let res: Response | null = null;
-      try {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
-          res = await fetch("/api/invite/redeem", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: redeemBody,
-          });
-          if (res.ok || res.status !== 404) break;
-        }
-      } catch {
-        setError(t("invite.error_generic"));
-        setSubmitting(false);
-        return;
-      }
+      const data = await res.json().catch(() => ({}));
 
-      if (!res || !res.ok) {
-        const data = res ? await res.json().catch(() => ({})) : {};
+      if (!res.ok) {
         if (data.error === "code_exhausted") {
           setState("exhausted");
+          return;
+        }
+        if (data.error === "already_registered") {
+          setError(lang === "es" ? "Este email ya está registrado. Inicia sesión en su lugar." : lang === "pt" ? "Este email já está registrado. Faça login." : "This email is already registered. Please sign in instead.");
+          setSubmitting(false);
+          return;
+        }
+        if (data.error === "password_too_short") {
+          setError(t("auth.password_too_short") || "Password must be at least 6 characters");
+          setSubmitting(false);
           return;
         }
         setError(data.error || t("invite.error_generic"));
@@ -129,8 +101,7 @@ export default function InvitePage() {
         return;
       }
 
-      const redeemData = await res.json().catch(() => ({}));
-      setState(redeemData.auto_approved ? "success" : "success_pending");
+      setState(data.auto_approved ? "success" : "success_pending");
     } catch {
       setError(t("invite.error_generic"));
     }
