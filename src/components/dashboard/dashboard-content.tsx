@@ -633,6 +633,7 @@ export function DashboardContent() {
 
   const isRecistStudy = useMemo(() => {
     if (!selectedTemplate) return false;
+    if (selectedTemplate.modality === "RECIST") return true;
     const name = (selectedTemplate.name || "").toLowerCase();
     return /recist|seguimiento\s*(oncol|tumoral)|tumor\s*response|oncol[oó]g.*seguimiento/.test(name);
   }, [selectedTemplate]);

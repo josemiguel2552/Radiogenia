@@ -14,7 +14,7 @@ const SYSTEM_PROMPT = `You are a radiology informatics expert. Given a document 
 
 For each template found, return a JSON object with:
 - "title": the name of the template (e.g. "Brain MRI", "Chest CT scan")
-- "technique": the imaging modality, MUST be one of: CT, MRI, Ultrasound, XRay, Mammography, Procedures
+- "technique": the imaging modality, MUST be one of: CT, MRI, Ultrasound, XRay, Mammography, RECIST, Procedures
 - "template": the template text with section headers formatted as **Section Name**: {section_name_placeholder}. Use ****FINDINGS**** at the start and ****CONCLUSION**** before the conclusion section.
 
 Return ONLY valid JSON array. If a single template, return array with one element.`;
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     if (!jsonMatch) return NextResponse.json({ error: "No se pudieron extraer plantillas del documento." }, { status: 400 });
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const validTechniques = ["CT", "MRI", "Ultrasound", "XRay", "Mammography", "Procedures"];
+    const validTechniques = ["CT", "MRI", "Ultrasound", "XRay", "Mammography", "RECIST", "Procedures"];
 
     interface ExtractedTemplate { title: string; technique: string; template: string }
     const templates = (parsed as ExtractedTemplate[]).map((t, idx) => ({
