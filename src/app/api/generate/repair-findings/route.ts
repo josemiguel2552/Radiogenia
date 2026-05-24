@@ -3,12 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
+    if (!rl.allowed) return rl.errorResponse!;
 
     const { findings, omissions, hallucinations, outputLanguage } = await req.json();
     if (!findings) {

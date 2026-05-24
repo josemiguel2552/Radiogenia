@@ -7,6 +7,7 @@ import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { postprocessWhisper } from "@/lib/whisper-postprocess";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAudioCost, logAICost } from "@/lib/log-ai-cost";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 function buildCorrectionPrompt(modality: string, studyType: string, isEs: boolean): string {
   const ctx = modality || studyType
@@ -56,6 +57,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = rateLimit(`transcribe:${user.id}`, RATE_LIMITS.transcribe);
+    if (!rl.allowed) return rl.errorResponse!;
 
     const globalConfig = await getGlobalAIConfig();
 
