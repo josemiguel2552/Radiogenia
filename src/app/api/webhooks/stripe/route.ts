@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendPaymentFailedEmail, sendPlanChangeEmail } from "@/lib/email";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
 import Stripe from "stripe";
 
@@ -101,6 +102,17 @@ export async function POST(req: NextRequest) {
           .update(update)
           .eq("stripe_customer_id", customerId);
 
+        if (isActive && event.type === "customer.subscription.updated") {
+          const { data: profile } = await service
+            .from("profiles")
+            .select("email, name")
+            .eq("stripe_customer_id", customerId)
+            .single();
+          if (profile?.email) {
+            sendPlanChangeEmail(profile.email, profile.name, plan).catch(() => {});
+          }
+        }
+
         console.log(`[stripe-webhook] ${event.type}: customer=${customerId}, plan=${plan}, active=${isActive}`);
         break;
       }
@@ -153,6 +165,18 @@ export async function POST(req: NextRequest) {
         const customerId = typeof invoice.customer === "string"
           ? invoice.customer
           : invoice.customer?.id;
+
+        if (customerId) {
+          const { data: profile } = await service
+            .from("profiles")
+            .select("email, name")
+            .eq("stripe_customer_id", customerId)
+            .single();
+          if (profile?.email) {
+            sendPaymentFailedEmail(profile.email, profile.name).catch(() => {});
+          }
+        }
+
         console.warn(`[stripe-webhook] invoice.payment_failed: customer=${customerId}, invoice=${invoice.id}`);
         break;
       }
