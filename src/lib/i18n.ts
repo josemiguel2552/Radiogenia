@@ -189,6 +189,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "help.config_desc": "En la pestaña 'Config IA' del panel lateral puedes personalizar: longitud de hallazgos, frases de normalidad preferidas, idioma de salida y modo compacto.",
     "help.legal_title": "Aviso legal",
     "help.legal_desc": "Radiogen.AI es una herramienta de apoyo a la redacción de informes radiológicos. Los textos generados son borradores orientativos que deben ser revisados y validados por el profesional antes de su uso clínico.",
+    "onboarding.welcome": "Bienvenido a Radiogen.AI",
+    "onboarding.next": "Siguiente",
+    "onboarding.prev": "Anterior",
+    "onboarding.start": "Empezar",
     // Top navigation tabs
     "nav.reports": "Informes",
     "nav.templates": "Plantillas",
@@ -1844,6 +1848,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "org.error_user_not_found": "Usuario no encontrado. Debe estar registrado en Radiogenia.",
     "org.error_processing": "Error al procesar el archivo",
     "org.templates_extracted_saved": "plantillas extraídas y guardadas",
+    "cookie.message": "Usamos cookies esenciales para el funcionamiento de la plataforma y cookies analíticas para mejorar la experiencia. Consulte nuestra",
+    "cookie.privacy_link": "política de privacidad",
+    "cookie.accept": "Aceptar todo",
+    "cookie.reject": "Solo esenciales",
   },
   en: {
     save: "Save", cancel: "Cancel", delete: "Delete", edit: "Edit",
@@ -2027,6 +2035,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "help.config_desc": "In the 'AI Config' tab of the side panel you can customize: findings length, preferred normality phrases, output language, and compact mode.",
     "help.legal_title": "Legal notice",
     "help.legal_desc": "Radiogen.AI is a radiology report drafting assistant. Generated texts are indicative drafts that should be reviewed and validated by the professional before clinical use.",
+    "onboarding.welcome": "Welcome to Radiogen.AI",
+    "onboarding.next": "Next",
+    "onboarding.prev": "Back",
+    "onboarding.start": "Get started",
     // Top navigation tabs
     "nav.reports": "Reports",
     "nav.templates": "Templates",
@@ -3646,6 +3658,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "org.error_user_not_found": "User not found. They must be registered on Radiogenia.",
     "org.error_processing": "Error processing the file",
     "org.templates_extracted_saved": "templates extracted and saved",
+    "cookie.message": "We use essential cookies for platform functionality and analytics cookies to improve the experience. See our",
+    "cookie.privacy_link": "privacy policy",
+    "cookie.accept": "Accept all",
+    "cookie.reject": "Essential only",
   },
   pt: {
     // Common
@@ -3832,6 +3848,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "help.config_desc": "Na aba 'Config IA' do painel lateral você pode personalizar: extensão dos achados, frases de normalidade preferidas, idioma do laudo e modo compacto.",
     "help.legal_title": "Aviso legal",
     "help.legal_desc": "Radiogen.AI é uma ferramenta de apoio à redação de laudos radiológicos. Os textos gerados são rascunhos orientativos que devem ser revisados e validados pelo profissional antes do uso clínico.",
+    "onboarding.welcome": "Bem-vindo ao Radiogen.AI",
+    "onboarding.next": "Próximo",
+    "onboarding.prev": "Anterior",
+    "onboarding.start": "Começar",
     // Top navigation tabs
     "nav.reports": "Laudos",
     "nav.templates": "Templates",
@@ -5455,6 +5475,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "org.error_user_not_found": "Usuário não encontrado. Deve estar registrado no Radiogenia.",
     "org.error_processing": "Erro ao processar o arquivo",
     "org.templates_extracted_saved": "modelos extraídos e salvos",
+    "cookie.message": "Usamos cookies essenciais para o funcionamento da plataforma e cookies analíticos para melhorar a experiência. Consulte nossa",
+    "cookie.privacy_link": "política de privacidade",
+    "cookie.accept": "Aceitar tudo",
+    "cookie.reject": "Apenas essenciais",
   },
 };
 

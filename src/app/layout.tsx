@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { CookieBanner } from "@/components/cookie-banner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -56,7 +57,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <CookieBanner />
+      </body>
     </html>
   );
 }

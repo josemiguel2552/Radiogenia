@@ -52,6 +52,7 @@ import { ResidentVerificationForm } from "@/components/resident-verification-for
 import { RecommendationPanel } from "./recommendation-panel";
 import { SelectionHighlight } from "@/components/ui/selection-highlight";
 import { NpsSurvey } from "./nps-survey";
+import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 
 export function DashboardContent() {
@@ -2080,6 +2081,7 @@ export function DashboardContent() {
       />
 
       <NpsSurvey open={showNpsSurvey} onClose={() => setShowNpsSurvey(false)} />
+      <OnboardingDialog />
 
       {/* Limit reached dialog (reports or dictation) */}
       <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>

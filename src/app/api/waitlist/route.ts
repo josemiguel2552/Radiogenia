@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendWaitlistConfirmation } from "@/lib/email";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
@@ -30,6 +31,8 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    sendWaitlistConfirmation(email.trim().toLowerCase(), firstName.trim()).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch {
