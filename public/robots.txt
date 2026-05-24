@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /legal
+Allow: /waitlist
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /org
+Disallow: /api/
+Disallow: /auth/
+
+Sitemap: https://radiogen.ai/sitemap.xml
