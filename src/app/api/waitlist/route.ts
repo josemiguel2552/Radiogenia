@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    sendWaitlistConfirmation(email.trim().toLowerCase(), firstName.trim()).catch(() => {});
+    sendWaitlistConfirmation(email.trim().toLowerCase(), firstName.trim()).catch((err) => {
+      console.error("[waitlist] email error:", err instanceof Error ? err.message : err);
+    });
 
     return NextResponse.json({ ok: true });
   } catch {
