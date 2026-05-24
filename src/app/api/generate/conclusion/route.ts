@@ -7,6 +7,7 @@ import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAIStreamWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
+    if (!rl.allowed) return rl.errorResponse!;
 
     const [body, globalConfig] = await Promise.all([
       req.json(),

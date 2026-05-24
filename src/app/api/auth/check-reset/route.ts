@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rl = rateLimit(`auth:${ip}`, RATE_LIMITS.auth);
+    if (!rl.allowed) return rl.errorResponse!;
+
     const { email } = await req.json();
     if (!email?.trim()) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });

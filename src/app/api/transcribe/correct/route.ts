@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 function buildModalityContext(modality: string | undefined, isEs: boolean): string {
   if (!modality) return "";
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = rateLimit(`transcribe:${user.id}`, RATE_LIMITS.transcribe);
+    if (!rl.allowed) return rl.errorResponse!;
 
     const { text, modality, studyType, language } = await req.json();
     if (!text || typeof text !== "string" || text.trim().length < 3) {

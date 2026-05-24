@@ -10,6 +10,7 @@ import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
 import { translateSectionLabel, translateTemplate, enforceOutputLanguage } from "@/lib/section-translate";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -17,6 +18,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
+    if (!rl.allowed) return rl.errorResponse!;
 
     const [body, globalConfig, quota] = await Promise.all([
       req.json(),
