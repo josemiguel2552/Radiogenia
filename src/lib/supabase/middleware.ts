@@ -23,6 +23,9 @@ export async function updateSession(request: NextRequest) {
             supabaseResponse.cookies.set(name, value, {
               ...options,
               maxAge: SESSION_MAX_AGE_S,
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+              path: "/",
             })
           );
         },
