@@ -365,26 +365,26 @@ Este es un informe de evaluación de respuesta tumoral según criterios RECIST 1
 IGNORA el template de secciones genérico y estructura el informe con las siguientes secciones, EN ESTE ORDEN EXACTO:
 
 1. Técnica:
-   Modalidad, fase de adquisición y contraste según lo dictado.
+   Modalidad y fase de adquisición según lo dictado. Si el radiólogo no dicta la técnica, inferirla de la región anatómica del estudio (ej: TC con contraste i.v. en fase portal).
 
 2. Información clínica:
-   Tipo de tumor, tratamiento actual y motivo del estudio según lo dictado.
+   Tipo de tumor, tratamiento actual y motivo del estudio según lo dictado. Si el radiólogo NO dicta información clínica, DEJAR ESTE CAMPO EN BLANCO — no escribir "no especificado" ni inventar datos.
 
 3. Comparación:
-   ${isBaseline ? "Estudio basal — sin estudios previos de referencia." : "Referencia al estudio previo y al estudio basal. Extraer fechas del informe previo si están disponibles."}
+   ${isBaseline ? "Estudio basal — sin estudios previos de referencia." : "Referencia al estudio previo y al estudio basal. Extraer fechas del informe previo si están disponibles. Si no se proporciona fecha de comparación, DEJAR EN BLANCO."}
 
-4. LESIONES TARGET:
+4. LESIONES DIANA:
    Tabla en texto plano con formato:
    # | Órgano / Localización | Medida actual (mm) | ${isBaseline ? "" : "Medida basal (mm) | Medida previa (mm) |"}
    - Numerar cada lesión: T1, T2, ..., hasta T5 máximo.
-   - Máximo 2 lesiones target por órgano.
+   - Máximo 2 lesiones diana por órgano.
    - Ganglios linfáticos: medir EJE CORTO. Especificarlo entre paréntesis.
    - Lesiones no ganglionares: medir DIÁMETRO MAYOR (eje largo).
    - Si una lesión ha desaparecido: 0 mm.
-   - Si un ganglio target ha disminuido pero persiste: medir su eje corto actual.
+   - Si un ganglio diana ha disminuido pero persiste: medir su eje corto actual.
 
    SUMATORIO:
-   - Suma de diámetros actual: ___ mm  ← CALCULAR: sumar todas las medidas actuales de lesiones target
+   - Suma de diámetros actual: ___ mm  ← CALCULAR: sumar todas las medidas actuales de lesiones diana
    ${isBaseline ? "" : `- Suma baseline: ___ mm  ← EXTRAER del informe previo
    - Suma nadir: ___ mm  ← EXTRAER del informe previo (la suma más baja alcanzada en cualquier evaluación previa)
    - Suma del estudio previo: ___ mm  ← EXTRAER del informe previo
@@ -394,23 +394,23 @@ IGNORA el template de secciones genérico y estructura el informe con las siguie
    - Cambio vs nadir: ___% ← CALCULAR: ((suma_actual - suma_nadir) / suma_nadir) × 100
    - Cambio absoluto vs nadir: ___ mm ← CALCULAR: suma_actual - suma_nadir
 
-   CATEGORÍA TARGET:
+   CATEGORÍA DIANA:
    Aplicar reglas RECIST 1.1:
-   - CR (Respuesta completa): Todas las lesiones target desaparecidas Y todos los ganglios target < 10 mm eje corto.
+   - CR (Respuesta completa): Todas las lesiones diana desaparecidas Y todos los ganglios diana < 10 mm eje corto.
    - PR (Respuesta parcial): Suma actual ≤ 70% de suma baseline (disminución ≥ 30%).
    - PD (Progresión): Suma actual ≥ 120% de suma nadir Y (suma actual - suma nadir) ≥ 5 mm.
    - SD (Enfermedad estable): No cumple CR, PR ni PD.
    NOTA: PR se compara con BASELINE. PD se compara con NADIR.`}
 
-5. LESIONES NON-TARGET:
-   Lista de cada lesión non-target con:
+5. LESIONES NO DIANA:
+   Lista de cada lesión no diana con:
    - Órgano / localización
    - Estado actual: presente / ausente / progresión inequívoca
    ${isBaseline ? "" : `
-   CATEGORÍA NON-TARGET:
+   CATEGORÍA NO DIANA:
    - CR: Todas desaparecidas, todos los ganglios < 10 mm.
-   - non-CR/non-PD: Persistencia de una o más lesiones non-target.
-   - PD: Progresión inequívoca de lesiones non-target.`}
+   - non-CR/non-PD: Persistencia de una o más lesiones no diana.
+   - PD: Progresión inequívoca de lesiones no diana.`}
 
 6. LESIONES NUEVAS:
    - Listar cualquier lesión nueva (órgano, localización, tamaño si disponible).
@@ -436,9 +436,9 @@ ${priorReport ? `INFORME RECIST PREVIO (proporcionado por el radiólogo — EXTR
 ${priorReport}
 ---
 INSTRUCCIONES PARA EL INFORME PREVIO:
-- EXTRAE las lesiones target previamente definidas (mismas lesiones, mismo orden).
+- EXTRAE las lesiones diana previamente definidas (mismas lesiones, mismo orden).
 - EXTRAE la suma de diámetros baseline, la suma nadir y la suma del estudio previo.
-- Las lesiones target del estudio actual DEBEN ser las MISMAS que las del estudio previo (mismos órganos/localizaciones).
+- Las lesiones diana del estudio actual DEBEN ser las MISMAS que las del estudio previo (mismos órganos/localizaciones).
 - Si el radiólogo dicta una medida para una lesión ya definida, úsala. Si no la menciona, indica "no evaluada".` : ""}
 
 FORMATO: Texto plano, sin markdown. Cada valor en su línea. Secciones separadas por línea en blanco y nombre seguido de dos puntos.`;
@@ -510,18 +510,18 @@ ESTRUCTURA OBLIGATORIA:
 
 ${params.isBaseline ? `EVALUACIÓN BASAL RECIST 1.1:
 
-1. Lesiones target definidas: enumerar las lesiones target seleccionadas con órgano, localización y medida basal.
+1. Lesiones diana definidas: enumerar las lesiones diana seleccionadas con órgano, localización y medida basal.
 2. Suma de diámetros basal: ___ mm.
-3. Lesiones non-target: enumerar con órgano y localización.
+3. Lesiones no diana: enumerar con órgano y localización.
 4. Hallazgos adicionales relevantes (si los hay).` : `EVALUACIÓN RECIST 1.1:
 
 1. Respuesta global: [CR/PR/SD/PD] según criterios RECIST 1.1.
-2. Lesiones target:
+2. Lesiones diana:
    - Suma de diámetros actual: ___ mm (baseline: ___ mm, nadir: ___ mm).
    - Cambio vs baseline: ___%.
    - Cambio vs nadir: ___%.
-   - Categoría target: [CR/PR/SD/PD].
-3. Lesiones non-target: [CR/non-CR-non-PD/PD].
+   - Categoría diana: [CR/PR/SD/PD].
+3. Lesiones no diana: [CR/non-CR-non-PD/PD].
 4. Lesiones nuevas: [Sí (describir) / No].
 5. Hallazgos adicionales relevantes (si los hay).`}
 

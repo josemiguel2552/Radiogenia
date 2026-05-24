@@ -1242,21 +1242,20 @@ export const DEFAULT_TEMPLATES: Template[] = [
   // ═══════════════════════════════════════════
   //  RECIST 1.1
   // ═══════════════════════════════════════════
-  t(97, "RECIST 1.1 – Seguimiento oncológico", "RECIST", "Abdomen and pelvis", [
-    fld("Clinical information"),
-    fld("Technique"),
-    fld("Comparison"),
-    "***Target lesions***:",
-    fld("Target lesion 1"),
-    fld("Target lesion 2"),
-    fld("Target lesion 3"),
-    fld("Target lesion 4"),
-    fld("Target lesion 5"),
-    "***Non-target lesions***:",
-    fld("Non-target lesion 1"),
-    fld("Non-target lesion 2"),
-    fld("Non-target lesion 3"),
-    fld("New lesions"),
-    fld("Additional findings"),
+  t(97, "RECIST 1.1 – Seguimiento oncológico", "RECIST", "Thorax", [
+    fld("Información clínica"),
+    fld("Comparación"),
+    "***Lesiones diana***:",
+    fld("Lesión diana 1"),
+    fld("Lesión diana 2"),
+    fld("Lesión diana 3"),
+    fld("Lesión diana 4"),
+    fld("Lesión diana 5"),
+    "***Lesiones no diana***:",
+    fld("Lesión no diana 1"),
+    fld("Lesión no diana 2"),
+    fld("Lesión no diana 3"),
+    fld("Lesiones nuevas"),
+    fld("Hallazgos adicionales"),
   ].join("\n")),
 ];
