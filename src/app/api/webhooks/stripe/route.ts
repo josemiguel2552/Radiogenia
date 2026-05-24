@@ -109,7 +109,9 @@ export async function POST(req: NextRequest) {
             .eq("stripe_customer_id", customerId)
             .single();
           if (profile?.email) {
-            sendPlanChangeEmail(profile.email, profile.name, plan).catch(() => {});
+            sendPlanChangeEmail(profile.email, profile.name, plan).catch((err) => {
+              console.error("[stripe-webhook] plan change email error:", err instanceof Error ? err.message : err);
+            });
           }
         }
 
@@ -173,7 +175,9 @@ export async function POST(req: NextRequest) {
             .eq("stripe_customer_id", customerId)
             .single();
           if (profile?.email) {
-            sendPaymentFailedEmail(profile.email, profile.name).catch(() => {});
+            sendPaymentFailedEmail(profile.email, profile.name).catch((err) => {
+              console.error("[stripe-webhook] payment failed email error:", err instanceof Error ? err.message : err);
+            });
           }
         }
 
