@@ -1551,6 +1551,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "pilot.recommendations": "Recomendaciones",
     "pilot.no_changes": "Sin cambios",
     "pilot.study": "Estudio",
+    "pilot.guides": "Guías descargables",
+    "pilot.guide_radiologist": "Guía del radiólogo",
+    "pilot.guide_chief": "Guía del jefe de servicio",
+    "pilot.guides_hint": "Documentos PDF genéricos (2 páginas) para distribuir al equipo del hospital antes del inicio del piloto.",
     // Admin – Overview
     "admin.total_users": "Usuarios totales",
     "admin.total_reports": "Informes totales",
@@ -3348,6 +3352,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "pilot.recommendations": "Recommendations",
     "pilot.no_changes": "No changes",
     "pilot.study": "Study",
+    "pilot.guides": "Downloadable guides",
+    "pilot.guide_radiologist": "Radiologist guide",
+    "pilot.guide_chief": "Department chief guide",
+    "pilot.guides_hint": "Generic PDF documents (2 pages) to distribute to the hospital team before the pilot starts.",
     // Admin – Overview
     "admin.total_users": "Total Users",
     "admin.total_reports": "Total Reports",
@@ -5152,6 +5160,10 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "pilot.recommendations": "Recomendações",
     "pilot.no_changes": "Sem alterações",
     "pilot.study": "Exame",
+    "pilot.guides": "Guias para download",
+    "pilot.guide_radiologist": "Guia do radiologista",
+    "pilot.guide_chief": "Guia do chefe de serviço",
+    "pilot.guides_hint": "Documentos PDF genéricos (2 páginas) para distribuir à equipa do hospital antes do início do piloto.",
     // Admin – Overview
     "admin.total_users": "Usuários totais",
     "admin.total_reports": "Relatórios totais",

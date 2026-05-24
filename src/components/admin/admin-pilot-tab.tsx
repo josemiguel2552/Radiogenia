@@ -203,6 +203,154 @@ export function AdminPilotTab() {
     URL.revokeObjectURL(url);
   }, [userBreakdown, selectedOrgId]);
 
+  const guideStyles = `@page{size:A4;margin:14mm 15mm;}*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1f2937;font-size:11px;line-height:1.5;}.page{page-break-after:always;}.page:last-child{page-break-after:auto;}.hdr{background:linear-gradient(135deg,#1E3A5F,#0F766E);color:#fff;padding:16px 22px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}.hdr h1{font-size:18px;font-weight:700;}.hdr .sub{font-size:10px;opacity:.85;margin-top:2px;}.hdr .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;}h2{font-size:12.5px;font-weight:700;color:#1E3A5F;border-bottom:2px solid #0F766E;padding-bottom:3px;margin:12px 0 7px;}h3{font-size:11px;font-weight:600;color:#374151;margin:7px 0 3px;}p{font-size:10.5px;line-height:1.5;margin-bottom:5px;}.step{display:flex;gap:9px;margin-bottom:7px;}.sn{background:#0F766E;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}.sc{flex:1;}.sc strong{font-size:10.5px;}.sc p{font-size:10px;margin-top:1px;}.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 11px;margin:7px 0;font-size:10px;}.tip strong{color:#166534;}.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}.cd{border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;}.cd h3{margin:0 0 3px;font-size:10px;color:#1E3A5F;}.cd p{font-size:9.5px;margin:0;}ul{padding-left:14px;margin:3px 0 7px;}li{font-size:10px;margin-bottom:2px;}.ft{text-align:center;font-size:9px;color:#9ca3af;margin-top:14px;padding-top:7px;border-top:1px solid #e5e7eb;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}@media screen{body{max-width:210mm;margin:0 auto;padding:10mm;background:#f3f4f6;}.page{background:#fff;padding:15mm;margin-bottom:10mm;box-shadow:0 1px 3px rgba(0,0,0,.1);border-radius:4px;}}`;
+
+  const downloadRadiologistGuide = useCallback(() => {
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Radiogenia — Guía de inicio rápido</title><style>${guideStyles}</style></head><body>
+<div class="page">
+  <div class="hdr"><div><h1>Guía de inicio rápido</h1><div class="sub">Para radiólogos y jefes de sección</div></div><div class="logo">Radiogenia</div></div>
+
+  <h2>¿Qué es Radiogenia?</h2>
+  <p>Radiogenia es una plataforma de informes radiológicos asistida por inteligencia artificial. Permite dictar hallazgos por voz y generar automáticamente informes estructurados y completos, reduciendo el tiempo de informado y mejorando la consistencia.</p>
+
+  <h2>Acceso a la plataforma</h2>
+  <p>Accede desde cualquier navegador (Chrome, Safari, Firefox) en ordenador, tablet o móvil. Introduce tu email y contraseña, o usa tu cuenta de Google. Si es tu primera vez, recibirás una invitación por email.</p>
+
+  <h2>Cómo crear un informe</h2>
+  <div class="step"><div class="sn">1</div><div class="sc"><strong>Selecciona modalidad y región</strong><p>Elige el tipo de estudio (Rx, TC, RM, Ecografía, Mamografía, Procedimientos) y la región anatómica.</p></div></div>
+  <div class="step"><div class="sn">2</div><div class="sc"><strong>Elige la plantilla</strong><p>Selecciona la plantilla que mejor se ajuste. Hay más de 180 plantillas disponibles cubriendo todas las combinaciones de modalidad y región.</p></div></div>
+  <div class="step"><div class="sn">3</div><div class="sc"><strong>Dicta los hallazgos</strong><p>Pulsa el botón de micrófono y dicta de forma natural. Puedes dictar sección por sección o de forma libre — la IA organizará la información en los campos correspondientes.</p></div></div>
+  <div class="step"><div class="sn">4</div><div class="sc"><strong>Revisa el informe generado</strong><p>La IA genera hallazgos estructurados y conclusión automáticamente. Revisa el texto y edita lo que consideres necesario.</p></div></div>
+  <div class="step"><div class="sn">5</div><div class="sc"><strong>Copia o exporta</strong><p>Cuando el informe esté listo, cópialo al portapapeles para pegarlo en tu sistema RIS/PACS habitual.</p></div></div>
+
+  <div class="tip"><strong>Consejo:</strong> No necesitas seguir un orden estricto al dictar. Habla de forma natural — la IA se encarga de organizar y estructurar la información en el formato correcto de la plantilla.</div>
+</div>
+
+<div class="page">
+  <h2>Dictado por voz — Consejos</h2>
+  <ul>
+    <li>Habla con naturalidad, como si dictaras a un transcriptor humano.</li>
+    <li>No es necesario deletrear ni usar comandos especiales.</li>
+    <li>Puedes indicar medidas directamente: «nódulo de 12 milímetros en LSD».</li>
+    <li>Para referirte a un campo, simplemente nómbralo: «en parénquima pulmonar...».</li>
+    <li>El sistema funciona mejor con frases completas que con palabras sueltas.</li>
+    <li>Si te equivocas, simplemente corrige editando el texto generado.</li>
+  </ul>
+
+  <h2>Plantillas disponibles</h2>
+  <p>El sistema incluye plantillas predefinidas para todas las modalidades y regiones anatómicas:</p>
+  <div class="g2">
+    <div class="cd"><h3>Radiología convencional</h3><p>Tórax, abdomen, columna, extremidades, cráneo, senos paranasales, parrilla costal, etc.</p></div>
+    <div class="cd"><h3>Tomografía computarizada</h3><p>Cráneo, cuello, tórax, abdomen, TAP, angioTC, TACAR, coronario, politraumatismo, ictus, etc.</p></div>
+    <div class="cd"><h3>Resonancia magnética</h3><p>Cerebral, columna, articulaciones, abdomen, pelvis, cardíaca, mama, próstata, etc.</p></div>
+    <div class="cd"><h3>Ecografía y Doppler</h3><p>Abdominal, tiroidea, mamaria, MSK, obstétrica, vascular, transfontanelar, etc.</p></div>
+  </div>
+  <p style="margin-top:5px;">También incluye plantillas de mamografía (tomosíntesis, CEM, galactografía) y procedimientos intervencionistas (biopsias, drenajes, infiltraciones, vertebroplastia, TACE, etc.).</p>
+
+  <h2>RECIST 1.1 — Seguimiento oncológico</h2>
+  <p>Para seguimiento oncológico, selecciona la plantilla RECIST 1.1. Permite:</p>
+  <ul>
+    <li>Dictar lesiones diana (máximo 5) y no diana con sus medidas.</li>
+    <li>Pegar el informe RECIST previo para comparación automática.</li>
+    <li>Cálculo automático: suma de diámetros, % cambio vs. basal/nadir y categoría de respuesta (RC, RP, EE, PE).</li>
+  </ul>
+
+  <h2>Plantillas personalizadas</h2>
+  <p>Si necesitas una plantilla que no existe, puedes crear una personalizada desde el menú de plantillas. Quedan guardadas en tu perfil y pueden compartirse con tu sección.</p>
+
+  <h2>Resolución de problemas</h2>
+  <ul>
+    <li><strong>El micrófono no funciona:</strong> da permisos de micrófono al navegador. Usa Chrome para mejor compatibilidad.</li>
+    <li><strong>No genera conclusión:</strong> verifica que has dictado hallazgos en al menos un campo.</li>
+    <li><strong>No encuentro mi plantilla:</strong> revisa los filtros de modalidad y región, o usa el buscador.</li>
+  </ul>
+
+  <div class="ft">
+    <p>Radiogenia — Informes radiológicos inteligentes</p>
+    <p>Para soporte técnico, contacta con el administrador de tu centro.</p>
+  </div>
+</div></body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
+  }, []);
+
+  const downloadChiefGuide = useCallback(() => {
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Radiogenia — Guía del jefe de servicio</title><style>${guideStyles}</style></head><body>
+<div class="page">
+  <div class="hdr"><div><h1>Guía del jefe de servicio</h1><div class="sub">Funciones de gestión y administración</div></div><div class="logo">Radiogenia</div></div>
+
+  <h2>¿Qué es Radiogenia?</h2>
+  <p>Radiogenia es una plataforma de informes radiológicos asistida por IA. Los radiólogos dictan hallazgos por voz y la IA genera informes estructurados completos, mejorando la eficiencia y la consistencia del informado. El uso clínico sigue un flujo sencillo: seleccionar plantilla, dictar hallazgos, revisar borrador de IA, editar si es necesario y copiar al RIS.</p>
+  <p>Para una guía detallada del flujo de dictado, consulte el documento <em>«Guía de inicio rápido para radiólogos»</em>, que se distribuye a todo el equipo.</p>
+
+  <h2>Tu perfil como jefe de servicio</h2>
+  <p>Como jefe de servicio, tienes acceso a funciones de gestión adicionales no disponibles para el resto de radiólogos.</p>
+
+  <h3>1. Gestión de secciones</h3>
+  <p>Desde la configuración de tu organización puedes ver y gestionar las secciones del servicio (neurorradiología, abdomen, MSK, tórax, mama, etc.). Cada sección puede tener un jefe de sección que gestiona sus propios miembros y plantillas.</p>
+
+  <h3>2. Gestión de usuarios</h3>
+  <p>Puedes invitar nuevos miembros al servicio mediante email. Cada usuario se asigna a una o más secciones con su rol correspondiente (radiólogo o jefe de sección). Tú como jefe de servicio tienes visibilidad sobre todas las secciones.</p>
+
+  <h3>3. Plantillas del servicio</h3>
+  <p>Además de las +180 plantillas globales, puedes crear plantillas personalizadas a nivel de servicio disponibles para todos los radiólogos de tu hospital. Esto permite estandarizar el formato de informes según los protocolos de tu centro.</p>
+
+  <h3>4. Panel de actividad del servicio</h3>
+  <p>Tienes acceso a un panel con estadísticas del uso de la plataforma en tu servicio:</p>
+  <ul>
+    <li>Número total de informes generados y volumen diario.</li>
+    <li>Tiempo medio de informado por estudio.</li>
+    <li>Tasa de uso del dictado por voz frente a escritura manual.</li>
+    <li>Grado de completitud de las secciones de las plantillas.</li>
+    <li>Porcentaje de edición sobre el borrador generado por la IA.</li>
+    <li>Tendencias de uso a lo largo del tiempo.</li>
+  </ul>
+  <p>Esta información permite evaluar la adopción de la herramienta, detectar áreas de mejora y justificar la inversión con datos objetivos.</p>
+</div>
+
+<div class="page">
+  <h2>Métricas durante el periodo piloto</h2>
+  <p>Durante la fase de prueba, se recopilan métricas de uso para evaluar el impacto de la herramienta. Como jefe de servicio podrás acceder a un informe detallado que incluye:</p>
+  <ul>
+    <li><strong>Resumen ejecutivo:</strong> visión general del periodo con datos clave de uso.</li>
+    <li><strong>Tendencias diarias:</strong> evolución del volumen y tiempos de informado.</li>
+    <li><strong>Desglose por usuario:</strong> actividad individualizada de cada radiólogo (informes, tiempos, tasa de dictado y edición).</li>
+    <li><strong>Encuesta de satisfacción:</strong> valoración del equipo sobre la herramienta (1-5).</li>
+    <li><strong>Análisis automático:</strong> insights generados sobre adopción, calidad y eficiencia.</li>
+  </ul>
+  <p>Este informe puede exportarse en CSV o imprimirse en PDF desde el panel de administración.</p>
+
+  <h2>Cómo invitar nuevos usuarios</h2>
+  <div class="step"><div class="sn">1</div><div class="sc"><p>Accede a la configuración de tu organización desde el menú lateral.</p></div></div>
+  <div class="step"><div class="sn">2</div><div class="sc"><p>En la sección de miembros, introduce el email del nuevo radiólogo.</p></div></div>
+  <div class="step"><div class="sn">3</div><div class="sc"><p>Selecciona su sección y rol. El usuario recibirá un email de invitación automático.</p></div></div>
+
+  <h2>Buenas prácticas para el piloto</h2>
+  <ul>
+    <li>Anima al equipo a empezar con estudios rutinarios antes de pasar a casos complejos.</li>
+    <li>Recoge feedback informal de los radiólogos durante las primeras semanas.</li>
+    <li>Revisa las métricas semanalmente para detectar patrones de uso y posibles problemas.</li>
+    <li>Si la tasa de edición es alta en alguna plantilla concreta, puede necesitar ajustes — contacta con soporte.</li>
+    <li>Aprovecha la encuesta de satisfacción integrada para medir la percepción del equipo.</li>
+  </ul>
+
+  <h2>Resolución de problemas</h2>
+  <ul>
+    <li><strong>Un usuario no puede acceder:</strong> verifica que la invitación se envió correctamente y que aceptó el email.</li>
+    <li><strong>Plantillas no visibles:</strong> comprueba que están publicadas y asignadas a las secciones correctas.</li>
+    <li><strong>Problemas con el micrófono:</strong> recomienda Chrome y verificar permisos del navegador.</li>
+  </ul>
+
+  <div class="ft">
+    <p>Radiogenia — Informes radiológicos inteligentes</p>
+    <p>Para soporte técnico, contacta con soporte@radiogenia.com</p>
+    <p style="margin-top:2px;font-style:italic;">Documento confidencial — Uso exclusivo del jefe de servicio.</p>
+  </div>
+</div></body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
+  }, []);
+
   const printReport = useCallback(() => {
     if (!summary) return;
     const orgName = pilotOrgs.find((o) => o.id === selectedOrgId)?.name || "";
@@ -429,6 +577,22 @@ export function AdminPilotTab() {
           <p className="text-xs text-amber-700 dark:text-amber-400">{t("pilot.no_pilot_orgs")} — {t("pilot.mark_pilot_hint")}</p>
         </div>
       )}
+
+      {/* Downloadable pilot guides */}
+      <div className="rounded-lg border border-white/10 bg-white/5 dark:bg-gray-900/50 p-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t("pilot.guides")}:</span>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={downloadRadiologistGuide}>
+            <FileText className="h-3.5 w-3.5" />
+            {t("pilot.guide_radiologist")}
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={downloadChiefGuide}>
+            <FileText className="h-3.5 w-3.5" />
+            {t("pilot.guide_chief")}
+          </Button>
+        </div>
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">{t("pilot.guides_hint")}</p>
+      </div>
 
       {/* Controls */}
       {!noPilotOrgs && (
