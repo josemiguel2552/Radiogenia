@@ -66,14 +66,27 @@ export default function InvitePage() {
 
     try {
       const supabase = createClient();
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { invitation_code: code } },
-      });
 
-      if (signUpError) {
-        setError(signUpError.message);
+      let signUpResult;
+      try {
+        signUpResult = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { invitation_code: code } },
+        });
+      } catch {
+        setError(t("invite.error_generic"));
+        setSubmitting(false);
+        return;
+      }
+
+      if (signUpResult.error) {
+        const msg = signUpResult.error.message;
+        if (msg.includes("already registered") || msg.includes("already been registered")) {
+          setError(lang === "es" ? "Este email ya está registrado. Inicia sesión en su lugar." : lang === "pt" ? "Este email já está registrado. Faça login." : "This email is already registered. Please sign in instead.");
+        } else {
+          setError(msg);
+        }
         setSubmitting(false);
         return;
       }
@@ -89,14 +102,20 @@ export default function InvitePage() {
       });
 
       let res: Response | null = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
-        res = await fetch("/api/invite/redeem", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: redeemBody,
-        });
-        if (res.ok || res.status !== 404) break;
+      try {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
+          res = await fetch("/api/invite/redeem", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: redeemBody,
+          });
+          if (res.ok || res.status !== 404) break;
+        }
+      } catch {
+        setError(t("invite.error_generic"));
+        setSubmitting(false);
+        return;
       }
 
       if (!res || !res.ok) {
@@ -112,9 +131,8 @@ export default function InvitePage() {
 
       const redeemData = await res.json().catch(() => ({}));
       setState(redeemData.auto_approved ? "success" : "success_pending");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || t("invite.error_generic"));
+    } catch {
+      setError(t("invite.error_generic"));
     }
     setSubmitting(false);
   }
