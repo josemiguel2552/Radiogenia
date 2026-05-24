@@ -227,6 +227,7 @@ export const MODALITIES = [
   "Ultrasound",
   "XRay",
   "Mammography",
+  "RECIST",
   "Procedures",
 ] as const;
 

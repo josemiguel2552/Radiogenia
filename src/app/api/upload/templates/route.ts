@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
 For each template found, return a JSON object with:
 - "title": the name of the template (e.g. "Brain MRI", "Chest CT scan")
-- "technique": the imaging modality, MUST be one of: CT, MRI, Ultrasound, XRay, Mammography, Procedures
+- "technique": the imaging modality, MUST be one of: CT, MRI, Ultrasound, XRay, Mammography, RECIST, Procedures
 - "section": the anatomical section, MUST be one of: Head and neck, Thorax, Abdomen and pelvis, Spine, Upper limbs, Lower limbs
 - "template": the template text with section headers formatted as **Section Name**: {section_name_placeholder}. Use ****FINDINGS**** at the start and ****CONCLUSION**** before the conclusion section.
 
@@ -82,7 +82,7 @@ If the document contains a single template, still return it as an array with one
 
     const templates = JSON.parse(jsonMatch[0]);
 
-    const validTechniques = ["CT", "MRI", "Ultrasound", "XRay", "Mammography", "Procedures"];
+    const validTechniques = ["CT", "MRI", "Ultrasound", "XRay", "Mammography", "RECIST", "Procedures"];
     const validSections = ["Head and neck", "Thorax", "Abdomen and pelvis", "Spine", "Upper limbs", "Lower limbs"];
 
     const normalized = templates.map((t: { title: string; technique: string; section: string; template: string }, idx: number) => ({
