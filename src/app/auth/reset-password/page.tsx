@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,15 +19,6 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        // User arrived via reset link — session is set
-      }
-    });
-  }, []);
-
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) {
@@ -42,19 +32,27 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     setError("");
-    const supabase = createClient();
 
-    const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      setError(error.message);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Error updating password");
+        setLoading(false);
+      } else {
+        setSuccess(true);
+        setTimeout(() => {
+          router.push("/dashboard");
+          router.refresh();
+        }, 2000);
+      }
+    } catch {
+      setError("Network error. Please try again.");
       setLoading(false);
-    } else {
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
-      }, 2000);
     }
   }
 

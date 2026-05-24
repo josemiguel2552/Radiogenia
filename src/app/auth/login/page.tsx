@@ -37,13 +37,22 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+      } else {
+        window.location.href = "/dashboard";
+      }
+    } catch {
+      setError("Network error. Please try again.");
       setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
     }
   }
 

@@ -11,6 +11,8 @@ export async function GET(request: Request) {
   }
 
   const code = searchParams.get("code");
+  const type = searchParams.get("type");
+
   if (code) {
     const supabase = await createClient();
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -18,6 +20,10 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         `${origin}/auth/login?error=${encodeURIComponent(exchangeError.message)}`
       );
+    }
+
+    if (type === "recovery") {
+      return NextResponse.redirect(`${origin}/auth/reset-password`);
     }
   }
 
