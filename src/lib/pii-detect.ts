@@ -637,3 +637,61 @@ export function detectPii(text: string): PiiMatch[] {
 export function hasPii(text: string): boolean {
   return detectPii(text).length > 0;
 }
+
+// ---------------------------------------------------------------------------
+// Server-side PII stripping — replaces detected PII with safe placeholders
+// ---------------------------------------------------------------------------
+
+const PII_PLACEHOLDER: Record<PiiMatch["type"], string> = {
+  dni: "[DNI]",
+  nie: "[NIE]",
+  phone: "[TELÉFONO]",
+  email: "[EMAIL]",
+  ssn: "[NSS]",
+  name: "[NOMBRE]",
+  curp: "[CURP]",
+  cpf: "[CPF]",
+  rut: "[RUT]",
+  cedula: "[CÉDULA]",
+  nhc: "[NHC]",
+};
+
+export interface StripPiiResult {
+  cleaned: string;
+  strippedCount: number;
+  strippedTypes: Record<string, number>;
+}
+
+export function stripPii(text: string): StripPiiResult {
+  if (!text) return { cleaned: text, strippedCount: 0, strippedTypes: {} };
+
+  const matches = detectPii(text);
+  if (matches.length === 0) return { cleaned: text, strippedCount: 0, strippedTypes: {} };
+
+  const sorted = [...matches].sort((a, b) => b.index - a.index);
+
+  const strippedTypes: Record<string, number> = {};
+  let result = text;
+  const replaced = new Set<number>();
+
+  for (const match of sorted) {
+    const alreadyReplaced = [...replaced].some(
+      (idx) => match.index >= idx && match.index < idx + PII_PLACEHOLDER[match.type].length,
+    );
+    if (alreadyReplaced) continue;
+
+    const placeholder = PII_PLACEHOLDER[match.type];
+    result =
+      result.slice(0, match.index) +
+      placeholder +
+      result.slice(match.index + match.value.length);
+    replaced.add(match.index);
+    strippedTypes[match.type] = (strippedTypes[match.type] || 0) + 1;
+  }
+
+  return {
+    cleaned: result,
+    strippedCount: matches.length,
+    strippedTypes,
+  };
+}

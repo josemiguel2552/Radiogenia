@@ -8,6 +8,7 @@ import { generateAIStreamWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { stripPii } from "@/lib/pii-detect";
 import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -23,7 +24,10 @@ export async function POST(req: NextRequest) {
       req.json(),
       getGlobalAIConfig(),
     ]);
-    const { findingsText, clinicalInfo, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
+    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
+
+    const { cleaned: findingsText } = stripPii(rawFindings || "");
+    const { cleaned: clinicalInfo } = stripPii(rawClinical || "");
 
     const service = createServiceClient();
 

@@ -4,6 +4,7 @@ import { getGlobalAIConfig } from "@/lib/auth-helpers";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { stripPii } from "@/lib/pii-detect";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +15,9 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const { findings, omissions, hallucinations, outputLanguage } = await req.json();
+    const body = await req.json();
+    const { cleaned: findings } = stripPii(body.findings || "");
+    const { omissions, hallucinations, outputLanguage } = body;
     if (!findings) {
       return NextResponse.json({ error: "Missing findings" }, { status: 400 });
     }

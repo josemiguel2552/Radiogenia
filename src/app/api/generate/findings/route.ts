@@ -11,6 +11,7 @@ import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality } from "@/lib/normality-defaults";
 import { translateSectionLabel, translateTemplate, enforceOutputLanguage } from "@/lib/section-translate";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { stripPii } from "@/lib/pii-detect";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -38,7 +39,12 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
+    const { template, dictation: rawDictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
+
+    const { cleaned: dictation, strippedCount, strippedTypes } = stripPii(rawDictation || "");
+    if (strippedCount > 0) {
+      console.log(`[findings] PII stripped: ${strippedCount} items`, strippedTypes);
+    }
 
     const service = createServiceClient();
 
