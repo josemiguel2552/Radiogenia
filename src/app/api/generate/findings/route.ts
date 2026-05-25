@@ -8,7 +8,7 @@ import { generateAIStreamWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
-import { getDefaultsForModality } from "@/lib/normality-defaults";
+import { getDefaultsForModality, type NormalityLang } from "@/lib/normality-defaults";
 import { translateSectionLabel, translateTemplate, enforceOutputLanguage } from "@/lib/section-translate";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
@@ -77,11 +77,14 @@ export async function POST(req: NextRequest) {
       dictation_only: reportMode === "dictation_only",
     };
 
+    const outLang = safeConfig.output_language as OutputLanguage;
+
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
     if (safeConfig.style_learning_enabled) {
       try {
         const mod = modality || "CT";
-        const defaults = getDefaultsForModality(mod);
+        const normalityLang: NormalityLang = outLang === "es" ? "es" : "en";
+        const defaults = getDefaultsForModality(mod, normalityLang);
         const defaultKeys = new Set(defaults.map((d) => d.section_label));
 
         let overrides: { section_label: string; phrase: string }[] = [];
@@ -95,7 +98,6 @@ export async function POST(req: NextRequest) {
         } catch { /* table may not exist */ }
 
         const overrideMap = new Map(overrides.map((o) => [o.section_label, o.phrase]));
-        const outLang = safeConfig.output_language as OutputLanguage;
 
         preferredNormalPhrases = defaults.map((d) => ({
           label: translateSectionLabel(d.section_label, outLang),
@@ -113,7 +115,6 @@ export async function POST(req: NextRequest) {
       } catch { /* ignore */ }
     }
 
-    const outLang = safeConfig.output_language as OutputLanguage;
     const translatedTemplate = translateTemplate(template, outLang);
 
     const responseHeaders = {
