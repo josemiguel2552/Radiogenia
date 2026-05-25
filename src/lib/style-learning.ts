@@ -74,7 +74,7 @@ function looksPathological(body: string): boolean {
  * - Sections the user EDITED (changed wording → learn their preferred phrasing)
  * - Sections the user KEPT as-is (confirmed the AI phrasing → reinforce it)
  */
-export function extractNormalityPhrases(
+function extractNormalityPhrases(
   initial: string,
   final: string,
 ): PreferredNormalPhrase[] {
@@ -110,7 +110,7 @@ export function extractNormalityPhrases(
  * still extract normality phrases from the final text alone — any section
  * that is short and doesn't look pathological is probably a normal field.
  */
-export function extractNormalityPhrasesFromFinal(
+function extractNormalityPhrasesFromFinal(
   final: string,
 ): PreferredNormalPhrase[] {
   const sections = splitSections(final);
@@ -149,7 +149,7 @@ export function extractConclusionStyle(final: string): string[] {
 
 /* ── Top-N selection ───────────────────────────────────────── */
 
-export function pickTopPhrases<T extends { frequency: number; last_seen_at: string }>(
+function pickTopPhrases<T extends { frequency: number; last_seen_at: string }>(
   rows: T[],
   n: number,
 ): T[] {

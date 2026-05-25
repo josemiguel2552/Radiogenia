@@ -31,7 +31,6 @@ export interface GlobalAIConfig {
 }
 
 export const COMBO_PROVIDER_VALUE = "combo";
-export const COMBO_MODEL_VALUE = "gpt4mini+deepseek-v3";
 
 export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider): string {
   if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider]!;
@@ -223,6 +222,16 @@ export async function checkDictationLimit(userId: string): Promise<{
     plan !== "free"
   ) {
     plan = "free";
+    await service
+      .from("profiles")
+      .update({
+        subscription_plan: "free",
+        reports_used_this_month: 0,
+        dictation_seconds_used: 0,
+        billing_period_start: new Date().toISOString(),
+        referral_bonus_expires_at: null,
+      })
+      .eq("id", userId);
   }
 
   const planConfig = PLANS[plan];
@@ -376,12 +385,3 @@ export async function requireOrgRole(
   throw new Error("Insufficient org permissions");
 }
 
-async function isOrgMember(userId: string): Promise<boolean> {
-  const service = createServiceClient();
-  const { data } = await service
-    .from("profiles")
-    .select("org_id")
-    .eq("id", userId)
-    .single();
-  return !!data?.org_id;
-}

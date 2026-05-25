@@ -1524,29 +1524,3 @@ Rules:
   return { system, user: userMsg };
 }
 
-export function buildFullPromptPreview(params: {
-  template: string;
-  findingsLength: FindingsLength;
-  normalFieldsVerbosity: NormalFieldsVerbosity;
-  paraphraseLevel: ParaphraseLevel;
-  outputLanguage: OutputLanguage;
-  styleSamplesCount: number;
-}): string {
-  const lang = params.outputLanguage;
-  const l = LANGUAGE_LABEL[lang];
-
-  let preview = `SYSTEM PROMPT (Agent 1 — Findings):
----
-Expert radiologist writing structured reports in ${l}...
-
-${LENGTH_INSTRUCTIONS[lang][params.findingsLength]}
-${VERBOSITY_INSTRUCTIONS[lang][params.normalFieldsVerbosity]}
-${PARAPHRASE_INSTRUCTIONS[lang][params.paraphraseLevel]}`;
-
-  if (params.styleSamplesCount > 0) {
-    preview += `\n\n[${params.styleSamplesCount} few-shot style examples will be injected]`;
-  }
-
-  preview += `\n\nTemplate: ${params.template}\nDictation: [radiologist's dictation text]`;
-  return preview;
-}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendPaymentFailedEmail, sendPlanChangeEmail } from "@/lib/email";
-import { PLANS, type SubscriptionPlan } from "@/lib/types";
+import { type SubscriptionPlan } from "@/lib/types";
 import Stripe from "stripe";
 
 function getStripe(): Stripe | null {

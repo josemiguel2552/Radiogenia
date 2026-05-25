@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
             .eq("study_type", body.study_type);
           learnedPhrases = count || 0;
         } catch (learnErr) {
-          console.error("Style learning error:", learnErr);
+          console.error("[reports] Style learning error:", learnErr);
         }
       }
     }
