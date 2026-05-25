@@ -207,7 +207,7 @@ FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
 - Primera letra de la sección en MAYÚSCULA, el resto en minúsculas. Dos puntos. Un espacio. Descripción. Punto final.
 - Una línea por sección. Sin líneas en blanco entre secciones. Sin saltos de línea dentro de una sección.
-- Si una sección tiene MÚLTIPLES hallazgos, sepáralos con PUNTOS (.), NUNCA con punto y coma (;). Ej: "Hígado: Lesión hipodensa de 15 mm en segmento VI. Quiste simple de 8 mm en segmento III."
+- Si una sección tiene MÚLTIPLES hallazgos, sepáralos con PUNTOS (.), NUNCA con comas (,) ni punto y coma (;). Cada hallazgo distinto es una oración independiente que termina en punto. Ej CORRECTO: "Hígado: Lesión hipodensa de 15 mm en segmento VI. Quiste simple de 8 mm en segmento III." Ej INCORRECTO: "Hígado: Lesión hipodensa de 15 mm en segmento VI, quiste simple de 8 mm en segmento III."
 - NO uses asteriscos (*), almohadillas (#), guiones (-), viñetas, negritas ni ningún formato markdown.
 - NO numeres las secciones.
 - NO añadas encabezados como "HALLAZGOS", "FINDINGS" ni agrupaciones. Solo la lista plana de secciones.
@@ -259,7 +259,7 @@ FORMATO DE SAÍDA — ESTRITO, SEM EXCEÇÕES:
 - Cada seção é exatamente UMA linha com o formato: "Seção anatômica: Descrição."
 - Primeira letra da seção em MAIÚSCULA, o restante em minúsculas. Dois pontos. Um espaço. Descrição. Ponto final.
 - Uma linha por seção. Sem linhas em branco entre seções. Sem quebras de linha dentro de uma seção.
-- Se uma seção tem MÚLTIPLOS achados, separe-os com PONTOS (.), NUNCA com ponto e vírgula (;). Ex: "Fígado: Lesão hipodensa de 15 mm no segmento VI. Cisto simples de 8 mm no segmento III."
+- Se uma seção tem MÚLTIPLOS achados, separe-os com PONTOS (.), NUNCA com vírgulas (,) nem ponto e vírgula (;). Cada achado distinto é uma frase independente terminada em ponto. Ex CORRETO: "Fígado: Lesão hipodensa de 15 mm no segmento VI. Cisto simples de 8 mm no segmento III." Ex INCORRETO: "Fígado: Lesão hipodensa de 15 mm no segmento VI, cisto simples de 8 mm no segmento III."
 - NÃO use asteriscos (*), cerquilhas (#), hífens (-), marcadores, negrito nem nenhuma formatação markdown.
 - NÃO numere as seções.
 - NÃO adicione cabeçalhos como "ACHADOS" nem agrupamentos. Apenas a lista plana de seções.
@@ -310,7 +310,7 @@ OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Each section is exactly ONE line with the format: "Anatomical section: Description."
 - First letter of section name in UPPERCASE, rest in lowercase. Colon. One space. Description. Period.
 - One line per section. No blank lines between sections. No line breaks within a section.
-- If a section has MULTIPLE findings, separate them with PERIODS (.), NEVER with semicolons (;). E.g.: "Liver: 15 mm hypodense lesion in segment VI. Simple 8 mm cyst in segment III."
+- If a section has MULTIPLE findings, separate them with PERIODS (.), NEVER with commas (,) or semicolons (;). Each distinct finding is an independent sentence ending with a period. CORRECT: "Liver: 15 mm hypodense lesion in segment VI. Simple 8 mm cyst in segment III." INCORRECT: "Liver: 15 mm hypodense lesion in segment VI, simple 8 mm cyst in segment III."
 - Do NOT use asteriscos (*), hashes (#), dashes (-), bullets, bold or any markdown formatting.
 - Do NOT number the sections.
 - Do NOT add headings like "FINDINGS" or groupings. Only the flat list of sections.
@@ -1014,7 +1014,7 @@ FRASES ABSOLUTAMENTE PROHIBIDAS:
 FORMATO DE SALIDA — ESTRICTO:
 - Cada sección es UNA línea: "Sección anatómica: Descripción."
 - Primera letra en MAYÚSCULA. Dos puntos. Espacio. Descripción. Punto final.
-- Si hay múltiples hallazgos en una sección, sepáralos con PUNTOS (.), NUNCA con punto y coma (;).
+- Si hay múltiples hallazgos en una sección, sepáralos con PUNTOS (.), NUNCA con comas (,) ni punto y coma (;). Cada hallazgo es una oración independiente.
 - Sin líneas en blanco. Sin markdown. Sin numeración. Sin encabezados.
 - TRADUCE los nombres de las secciones al ${l}.`;
   }
@@ -1058,7 +1058,7 @@ FRASES ABSOLUTAMENTE PROIBIDAS:
 FORMATO DE SAÍDA — ESTRITO:
 - Cada seção é UMA linha: "Seção anatômica: Descrição."
 - Primeira letra em MAIÚSCULA. Dois pontos. Espaço. Descrição. Ponto final.
-- Se houver múltiplos achados em uma seção, separe-os com PONTOS (.), NUNCA com ponto e vírgula (;).
+- Se houver múltiplos achados em uma seção, separe-os com PONTOS (.), NUNCA com vírgulas (,) nem ponto e vírgula (;). Cada achado é uma frase independente.
 - Sem linhas em branco. Sem markdown. Sem numeração. Sem cabeçalhos.
 - TRADUZA os nomes das seções para ${l}.`;
   }
@@ -1101,7 +1101,7 @@ ABSOLUTELY FORBIDDEN PHRASES:
 OUTPUT FORMAT — STRICT:
 - Each section is ONE line: "Anatomical section: Description."
 - First letter UPPERCASE. Colon. Space. Description. Period.
-- If a section has MULTIPLE findings, separate them with PERIODS (.), NEVER with semicolons (;).
+- If a section has MULTIPLE findings, separate them with PERIODS (.), NEVER with commas (,) or semicolons (;). Each finding is an independent sentence.
 - No blank lines. No markdown. No numbering. No headings.
 - TRANSLATE section names into ${l}.`;
 }

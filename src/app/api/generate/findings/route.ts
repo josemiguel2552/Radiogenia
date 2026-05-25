@@ -9,7 +9,7 @@ import { logAICost } from "@/lib/log-ai-cost";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality, type NormalityLang } from "@/lib/normality-defaults";
-import { translateSectionLabel, translateTemplate, enforceOutputLanguage } from "@/lib/section-translate";
+import { translateSectionLabel, translateTemplate, enforceOutputLanguage, enforcePeriodSeparation } from "@/lib/section-translate";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
@@ -212,23 +212,20 @@ export async function POST(req: NextRequest) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            if (!needsEnforce) {
-              controller.enqueue(value);
-              continue;
-            }
-
             buffer += decoder.decode(value, { stream: true });
             const lastNewline = buffer.lastIndexOf("\n");
             if (lastNewline !== -1) {
               const ready = buffer.slice(0, lastNewline + 1);
               buffer = buffer.slice(lastNewline + 1);
-              controller.enqueue(encoder.encode(enforceOutputLanguage(ready, outLang)));
+              const processed = needsEnforce ? enforceOutputLanguage(ready, outLang) : enforcePeriodSeparation(ready);
+              controller.enqueue(encoder.encode(processed));
             }
           }
 
-          if (needsEnforce && buffer) {
+          if (buffer) {
             buffer += decoder.decode();
-            controller.enqueue(encoder.encode(enforceOutputLanguage(buffer, outLang)));
+            const processed = needsEnforce ? enforceOutputLanguage(buffer, outLang) : enforcePeriodSeparation(buffer);
+            controller.enqueue(encoder.encode(processed));
           }
         } finally {
           controller.close();
