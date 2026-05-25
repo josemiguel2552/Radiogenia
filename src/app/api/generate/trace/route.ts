@@ -6,6 +6,7 @@ import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { stripPii } from "@/lib/pii-detect";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +17,10 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const { dictation, findings, outputLanguage } = await req.json();
+    const body = await req.json();
+    const { cleaned: dictation } = stripPii(body.dictation || "");
+    const { cleaned: findings } = stripPii(body.findings || "");
+    const { outputLanguage } = body;
     if (!dictation || !findings) {
       return NextResponse.json({ error: "Missing dictation or findings" }, { status: 400 });
     }
