@@ -459,6 +459,7 @@ function getTiradsRec(level: string, t: (k: string) => string): string {
 function TiradsCalc() {
   const t = useT();
   const [selections, setSelections] = useState<Record<string, string>>({});
+  const [fociSelections, setFociSelections] = useState<string[]>([]);
 
   const categoryLabels: Record<string, string> = {
     composition: t("calc.tirads_composition"),
@@ -468,14 +469,22 @@ function TiradsCalc() {
     foci: t("calc.tirads_foci"),
   };
 
+  const fociCategory = TIRADS_CATEGORIES.find((c) => c.key === "foci")!;
+  const fociPts = fociSelections.reduce((sum, key) => {
+    const opt = fociCategory.options.find((o) => o.key === key);
+    return sum + (opt?.pts ?? 0);
+  }, 0);
+
   const totalPts = TIRADS_CATEGORIES.reduce((sum, cat) => {
+    if (cat.key === "foci") return sum + fociPts;
     const sel = selections[cat.key];
     if (!sel) return sum;
     const opt = cat.options.find((o) => o.key === sel);
     return sum + (opt?.pts ?? 0);
   }, 0);
 
-  const allSelected = TIRADS_CATEGORIES.every((cat) => selections[cat.key]);
+  const allSelected = TIRADS_CATEGORIES.filter((c) => c.key !== "foci").every((cat) => selections[cat.key])
+    && fociSelections.length > 0;
   const result = allSelected ? getTiradsLevel(totalPts) : null;
 
   const copyText = result
@@ -485,17 +494,25 @@ function TiradsCalc() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] text-gray-400">ACR TI-RADS 2017</p>
-        <ResetButton onClick={() => setSelections({})} />
+        <p className="text-[10px] text-gray-400">ACR TI-RADS 2017 (Tessler et al., JACR)</p>
+        <ResetButton onClick={() => { setSelections({}); setFociSelections([]); }} />
       </div>
       {TIRADS_CATEGORIES.map((cat) => (
         <div key={cat.key}>
           <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{categoryLabels[cat.key]}</Label>
-          <OptionPills
-            options={cat.options.map((o) => ({ key: o.key, label: `${o.label} (${o.pts})` }))}
-            value={selections[cat.key] || ""}
-            onChange={(v) => setSelections((p) => ({ ...p, [cat.key]: v }))}
-          />
+          {cat.key === "foci" ? (
+            <MultiPills
+              options={cat.options.map((o) => ({ key: o.key, label: `${o.label} (${o.pts})` }))}
+              value={fociSelections}
+              onChange={setFociSelections}
+            />
+          ) : (
+            <OptionPills
+              options={cat.options.map((o) => ({ key: o.key, label: `${o.label} (${o.pts})` }))}
+              value={selections[cat.key] || ""}
+              onChange={(v) => setSelections((p) => ({ ...p, [cat.key]: v }))}
+            />
+          )}
         </div>
       ))}
       {result && (
@@ -1043,7 +1060,7 @@ function LungTNMCalc() {
     }
     if (nStage === "N2b") {
       if (isT34) return { stage: "IIIB", color: "red" };
-      if (isT12) return { stage: "IIIB", color: "red" };
+      if (isT12) return { stage: "IIIA", color: "yellow" };
     }
     if (nStage === "N2a") {
       if (isT34) return { stage: "IIIB", color: "red" };
