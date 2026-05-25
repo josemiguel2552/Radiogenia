@@ -1551,7 +1551,7 @@ function OradsSheet() {
 function LungRadsSheet() {
   const t = useT();
   return (
-    <CheatSheet title="Lung-RADS v2022" source="ACR Lung-RADS v2022 (Defined et al., Radiology 2022)">
+    <CheatSheet title="Lung-RADS v2022" source="ACR Lung-RADS v2022 (Kazerooni et al., Radiology 2024)">
       <SheetTable
         headers={[t("calc.category"), t("calc.finding"), t("calc.recommendation")]}
         rows={[
@@ -1651,7 +1651,7 @@ function OvarianIncidentalSheet() {
 function GallbladderPolypSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.gb_polyp_title")} source="European Society of Gastrointestinal & Abdominal Radiology (Defined et al., Eur Radiol 2017) / Joint ESG-ESGAR 2022">
+    <CheatSheet title={t("calc.gb_polyp_title")} source="Wiles et al., Radiology 2017 / Joint ESG-ESGAR Guideline 2022">
       <SheetTable
         headers={[t("calc.size"), t("calc.risk_factors"), t("calc.recommendation")]}
         rows={[
@@ -1723,7 +1723,7 @@ function SpineNomenclatureSheet() {
 function ForaminalStenosisSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.foraminal_title")} source="Lee et al., AJNR 1988 / Defined by Wildermuth et al., Radiology 1998">
+    <CheatSheet title={t("calc.foraminal_title")} source="Lee et al., AJNR 1988 / Wildermuth et al., Radiology 1998">
       <SheetTable
         headers={[t("calc.grade"), t("calc.description"), t("calc.foraminal_fat")]}
         rows={[
@@ -2149,7 +2149,7 @@ function VertebralFractureSheet() {
         rows={[
           ["0", "< 20%", t("calc.vfx_g0")],
           ["1 (" + t("calc.mild") + ")", "20–25%", t("calc.vfx_g1")],
-          ["2 (" + t("calc.moderate") + ")", "26–40%", t("calc.vfx_g2")],
+          ["2 (" + t("calc.moderate") + ")", "25–40%", t("calc.vfx_g2")],
           ["3 (" + t("calc.severe") + ")", "> 40%", t("calc.vfx_g3")],
         ]}
       />
@@ -2271,7 +2271,7 @@ function BreastUSLexiconSheet() {
 function BreastImplantSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.breast_implant_title")} source="ACR / FDA (2020) / Defined NCCN">
+    <CheatSheet title={t("calc.breast_implant_title")} source="ACR / FDA (2020) / NCCN Guidelines">
       <SheetTable
         headers={[t("calc.finding"), t("calc.description"), t("calc.recommendation")]}
         rows={[
@@ -2373,7 +2373,7 @@ function BrainTumorSheet() {
 function VascularTerritoriesSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.vasc_territories_title")} source="Defined anatomy / Tatu et al., Neurology 1998">
+    <CheatSheet title={t("calc.vasc_territories_title")} source="Tatu et al., Neurology 1998">
       <SheetTable
         headers={[t("calc.artery"), t("calc.territory"), t("calc.key_structures")]}
         rows={[
@@ -2453,7 +2453,7 @@ function PadClassSheet() {
 function DVTPESheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.dvt_pe_title")} source="Defined radiology findings / Defined CTPA reporting">
+    <CheatSheet title={t("calc.dvt_pe_title")} source="ESC 2019 / AHA 2011 / CTPA reporting standards">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.pe_location")}</p>
       <SheetTable
         headers={[t("calc.location"), t("calc.description"), t("calc.severity")]}
@@ -2785,7 +2785,7 @@ function T1T2MappingCalc() {
 function ResistiveIndexSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.ri_title")} source="Defined AIUM standards; Bude & Rubin, Radiology 1999; Defined values from peer-reviewed literature">
+    <CheatSheet title={t("calc.ri_title")} source="AIUM Practice Parameters; Bude & Rubin, Radiology 1999">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.ri_formula")}</p>
       <p className="text-[10px] text-gray-500 mb-2">RI = (PSV − EDV) / PSV</p>
       <SheetTable
@@ -2808,7 +2808,7 @@ function ResistiveIndexSheet() {
 function TransplantUSSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.tx_us_title")} source="ACR Appropriateness Criteria 2022; AIUM guidelines; Defined Doppler values from published transplant literature">
+    <CheatSheet title={t("calc.tx_us_title")} source="ACR Appropriateness Criteria 2022; AIUM Practice Parameters">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.tx_hepatic")}</p>
       <SheetTable
         headers={[t("calc.tx_parameter"), t("calc.tx_normal"), t("calc.tx_abnormal")]}
@@ -2918,7 +2918,7 @@ function CTPerfusionSheet() {
 
 function PediatricCXRSheet() {
   return (
-    <CheatSheet title="Radiografía de tórax pediátrica" source="Defined values from Defined Literature; Defined Pediatric Radiology Textbooks; ACR Appropriateness Criteria Pediatric">
+    <CheatSheet title="Radiografía de tórax pediátrica" source="ACR Appropriateness Criteria Pediatric; Caffey&apos;s Pediatric Diagnostic Imaging">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Timo normal vs patología</p>
       <SheetTable
         headers={["Hallazgo", "Timo normal", "Patológico"]}
@@ -2996,7 +2996,7 @@ function PediatricHydronephrosisSheet() {
 
 function PediatricTumorsSheet() {
   return (
-    <CheatSheet title="Tumores pediátricos por edad" source="Defined values from Defined Literature; Defined Pediatric Oncology Radiology; ESPR guidelines">
+    <CheatSheet title="Tumores pediátricos por edad" source="ESPR Guidelines">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Tumores comunes por grupo etario</p>
       <SheetTable
         headers={["Edad", "Tumor", "Localización", "Características imagen"]}
@@ -3025,7 +3025,7 @@ function PediatricTumorsSheet() {
 
 function CryptorchidismSheet() {
   return (
-    <CheatSheet title="Criptorquidia - Ecografía" source="AUA/EAU Guidelines on Cryptorchidism; Defined values from Defined Literature; ESPR guidelines pediatric scrotal US">
+    <CheatSheet title="Criptorquidia - Ecografía" source="AUA/EAU Guidelines on Cryptorchidism; ESPR Guidelines Pediatric Scrotal US">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Clasificación por localización</p>
       <SheetTable
         headers={["Localización", "Frecuencia", "Hallazgo ecográfico"]}
@@ -3068,7 +3068,7 @@ function CryptorchidismSheet() {
 
 function TransfontanellarUSSheet() {
   return (
-    <CheatSheet title="Ecografía transfontanelar" source="Defined Papile Classification (Papile et al., J Pediatr 1978); de Vries PVL Grading; AIUM Practice Parameter Neurosonography 2020">
+    <CheatSheet title="Ecografía transfontanelar" source="Papile et al., J Pediatr 1978; de Vries PVL Grading; AIUM Practice Parameter Neurosonography 2020">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Anatomía normal - Referencias</p>
       <SheetTable
         headers={["Estructura", "Plano coronal", "Plano sagital"]}
