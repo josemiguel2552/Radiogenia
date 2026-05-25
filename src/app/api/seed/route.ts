@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
 
 export async function POST() {
   try {
+    const { userId } = await requireAdmin();
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const user = { id: userId };
 
     // Wait for the profile row to exist
     for (let attempt = 0; attempt < 5; attempt++) {

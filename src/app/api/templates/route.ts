@@ -130,10 +130,16 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    body.user_id = user.id;
-    body.is_default = false;
+    const insertPayload = {
+      user_id: user.id,
+      name: body.name || "",
+      modality: body.modality || "",
+      base_template_id: body.base_template_id ?? null,
+      structure: body.structure || {},
+      is_default: false,
+    };
 
-    const { data, error } = await supabase.from("user_templates").insert(body).select().single();
+    const { data, error } = await supabase.from("user_templates").insert(insertPayload).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const templateText = body.structure?.template || "";
@@ -158,11 +164,18 @@ export async function PUT(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { id, ...updates } = body;
+    const { id } = body;
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    const updatePayload: Record<string, unknown> = {};
+    if (body.name !== undefined) updatePayload.name = body.name;
+    if (body.modality !== undefined) updatePayload.modality = body.modality;
+    if (body.structure !== undefined) updatePayload.structure = body.structure;
+    if (body.base_template_id !== undefined) updatePayload.base_template_id = body.base_template_id;
 
     const { data, error } = await supabase
       .from("user_templates")
-      .update(updates)
+      .update(updatePayload)
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
@@ -170,8 +183,8 @@ export async function PUT(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    const templateText = updates.structure?.template || "";
-    const modality = updates.modality || data?.modality || "";
+    const templateText = body.structure?.template || "";
+    const modality = body.modality || data?.modality || "";
     if (templateText && modality) {
       try {
         await syncNormalityPhrases(supabase, user.id, modality, templateText);

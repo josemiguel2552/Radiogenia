@@ -28,9 +28,14 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    body.user_id = user.id;
+    const insertPayload = {
+      user_id: user.id,
+      modality: body.modality || "",
+      original_text: body.original_text || "",
+      edited_text: body.edited_text || "",
+    };
 
-    const { data, error } = await supabase.from("style_samples").insert(body).select().single();
+    const { data, error } = await supabase.from("style_samples").insert(insertPayload).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
   } catch (error) {
