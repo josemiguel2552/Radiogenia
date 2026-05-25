@@ -7067,10 +7067,285 @@ const modalityNames: Record<UILanguage, Record<string, string>> = {
   },
 };
 
+// --- Bidirectional reverse maps for template names ---
+let _reverseTemplateNameMaps: Record<UILanguage, Record<string, string>> | null = null;
+
+function getReverseTemplateNameMaps(): Record<UILanguage, Record<string, string>> {
+  if (_reverseTemplateNameMaps) return _reverseTemplateNameMaps;
+  const maps: Record<UILanguage, Record<string, string>> = { es: {}, en: {}, pt: {} };
+  for (const [esName, enName] of Object.entries(templateNames.en)) {
+    const ptName = templateNames.pt[esName] || esName;
+    const esL = esName.toLowerCase();
+    const enL = enName.toLowerCase();
+    const ptL = ptName.toLowerCase();
+    maps.es[enL] = esName;  maps.es[ptL] = esName;
+    maps.en[esL] = enName;  maps.en[ptL] = enName;
+    maps.pt[esL] = ptName;  maps.pt[enL] = ptName;
+  }
+  _reverseTemplateNameMaps = maps;
+  return maps;
+}
+
+// --- Medical term dictionary for auto-translating custom template names ---
+const tplTerms: Record<string, Record<UILanguage, string>> = {
+  // Study types / procedures
+  polytrauma: { es: "Politraumatismo", en: "Polytrauma", pt: "Politraumatismo" },
+  politraumatismo: { es: "Politraumatismo", en: "Polytrauma", pt: "Politraumatismo" },
+  mammography: { es: "Mamografía", en: "Mammography", pt: "Mamografia" },
+  mamografía: { es: "Mamografía", en: "Mammography", pt: "Mamografia" },
+  mamografia: { es: "Mamografía", en: "Mammography", pt: "Mamografia" },
+  hysterosalpingography: { es: "Histerosalpingografía", en: "Hysterosalpingography", pt: "Histerossalpingografia" },
+  histerosalpingografía: { es: "Histerosalpingografía", en: "Hysterosalpingography", pt: "Histerossalpingografia" },
+  cystography: { es: "Cistografía", en: "Cystography", pt: "Cistografia" },
+  cistografía: { es: "Cistografía", en: "Cystography", pt: "Cistografia" },
+  arteriography: { es: "Arteriografía", en: "Arteriography", pt: "Arteriografia" },
+  arteriografía: { es: "Arteriografía", en: "Arteriography", pt: "Arteriografia" },
+  biopsy: { es: "Biopsia", en: "Biopsy", pt: "Biópsia" },
+  biopsia: { es: "Biopsia", en: "Biopsy", pt: "Biópsia" },
+  drainage: { es: "Drenaje", en: "Drainage", pt: "Drenagem" },
+  drenaje: { es: "Drenaje", en: "Drainage", pt: "Drenagem" },
+  angiography: { es: "Angiografía", en: "Angiography", pt: "Angiografia" },
+  angiografía: { es: "Angiografía", en: "Angiography", pt: "Angiografia" },
+  fluoroscopy: { es: "Fluoroscopia", en: "Fluoroscopy", pt: "Fluoroscopia" },
+  fluoroscopia: { es: "Fluoroscopia", en: "Fluoroscopy", pt: "Fluoroscopia" },
+  enterography: { es: "Enterografía", en: "Enterography", pt: "Enterografia" },
+  enterografía: { es: "Enterografía", en: "Enterography", pt: "Enterografia" },
+  urography: { es: "Urografía", en: "Urography", pt: "Urografia" },
+  urografía: { es: "Urografía", en: "Urography", pt: "Urografia" },
+  cholangiography: { es: "Colangiografía", en: "Cholangiography", pt: "Colangiografia" },
+  colangiografía: { es: "Colangiografía", en: "Cholangiography", pt: "Colangiografia" },
+  myelography: { es: "Mielografía", en: "Myelography", pt: "Mielografia" },
+  mielografía: { es: "Mielografía", en: "Myelography", pt: "Mielografia" },
+  sialography: { es: "Sialografía", en: "Sialography", pt: "Sialografia" },
+  sialografía: { es: "Sialografía", en: "Sialography", pt: "Sialografia" },
+  defecography: { es: "Defecografía", en: "Defecography", pt: "Defecografia" },
+  defecografía: { es: "Defecografía", en: "Defecography", pt: "Defecografia" },
+  embolization: { es: "Embolización", en: "Embolization", pt: "Embolização" },
+  embolización: { es: "Embolización", en: "Embolization", pt: "Embolização" },
+  angioplasty: { es: "Angioplastia", en: "Angioplasty", pt: "Angioplastia" },
+  angioplastia: { es: "Angioplastia", en: "Angioplasty", pt: "Angioplastia" },
+  // Modalities
+  ct: { es: "TC", en: "CT", pt: "TC" },
+  tc: { es: "TC", en: "CT", pt: "TC" },
+  mri: { es: "RM", en: "MRI", pt: "RM" },
+  rm: { es: "RM", en: "MRI", pt: "RM" },
+  ultrasound: { es: "Ecografía", en: "Ultrasound", pt: "Ultrassonografia" },
+  ecografía: { es: "Ecografía", en: "Ultrasound", pt: "Ultrassonografia" },
+  ecografia: { es: "Ecografía", en: "Ultrasound", pt: "Ultrassonografia" },
+  "x-ray": { es: "Radiografía", en: "X-ray", pt: "Radiografia" },
+  xray: { es: "Radiografía", en: "X-ray", pt: "Radiografia" },
+  radiografía: { es: "Radiografía", en: "X-ray", pt: "Radiografia" },
+  radiografia: { es: "Radiografía", en: "X-ray", pt: "Radiografia" },
+  doppler: { es: "Doppler", en: "Doppler", pt: "Doppler" },
+  angiotc: { es: "AngioTC", en: "CT angiography", pt: "AngioTC" },
+  pet: { es: "PET", en: "PET", pt: "PET" },
+  "pet-ct": { es: "PET-TC", en: "PET-CT", pt: "PET-TC" },
+  "pet/ct": { es: "PET/TC", en: "PET/CT", pt: "PET/TC" },
+  spect: { es: "SPECT", en: "SPECT", pt: "SPECT" },
+  // Anatomy
+  head: { es: "cráneo", en: "head", pt: "crânio" },
+  cráneo: { es: "cráneo", en: "head", pt: "crânio" },
+  skull: { es: "cráneo", en: "skull", pt: "crânio" },
+  brain: { es: "cerebral", en: "brain", pt: "cerebral" },
+  cerebral: { es: "cerebral", en: "brain", pt: "cerebral" },
+  neck: { es: "cuello", en: "neck", pt: "pescoço" },
+  cuello: { es: "cuello", en: "neck", pt: "pescoço" },
+  chest: { es: "tórax", en: "chest", pt: "tórax" },
+  tórax: { es: "tórax", en: "chest", pt: "tórax" },
+  torax: { es: "tórax", en: "chest", pt: "tórax" },
+  thorax: { es: "tórax", en: "chest", pt: "tórax" },
+  abdomen: { es: "abdomen", en: "abdomen", pt: "abdome" },
+  abdominal: { es: "abdominal", en: "abdominal", pt: "abdominal" },
+  pelvis: { es: "pelvis", en: "pelvis", pt: "pelve" },
+  pelvic: { es: "pélvica", en: "pelvic", pt: "pélvica" },
+  spine: { es: "columna", en: "spine", pt: "coluna" },
+  columna: { es: "columna", en: "spine", pt: "coluna" },
+  cervical: { es: "cervical", en: "cervical", pt: "cervical" },
+  thoracic: { es: "torácica", en: "thoracic", pt: "torácica" },
+  torácica: { es: "torácica", en: "thoracic", pt: "torácica" },
+  lumbar: { es: "lumbar", en: "lumbar", pt: "lombar" },
+  lumbosacral: { es: "lumbosacra", en: "lumbosacral", pt: "lombossacra" },
+  cervicothoracic: { es: "cervicotorácica", en: "cervicothoracic", pt: "cervicotorácica" },
+  cervicotorácica: { es: "cervicotorácica", en: "cervicothoracic", pt: "cervicotorácica" },
+  liver: { es: "hígado", en: "liver", pt: "fígado" },
+  hígado: { es: "hígado", en: "liver", pt: "fígado" },
+  hepatic: { es: "hepático", en: "hepatic", pt: "hepático" },
+  hepático: { es: "hepático", en: "hepatic", pt: "hepático" },
+  pancreas: { es: "páncreas", en: "pancreas", pt: "pâncreas" },
+  páncreas: { es: "páncreas", en: "pancreas", pt: "pâncreas" },
+  kidney: { es: "riñón", en: "kidney", pt: "rim" },
+  kidneys: { es: "riñones", en: "kidneys", pt: "rins" },
+  renal: { es: "renal", en: "renal", pt: "renal" },
+  prostate: { es: "próstata", en: "prostate", pt: "próstata" },
+  próstata: { es: "próstata", en: "prostate", pt: "próstata" },
+  breast: { es: "mama", en: "breast", pt: "mama" },
+  mama: { es: "mama", en: "breast", pt: "mama" },
+  shoulder: { es: "hombro", en: "shoulder", pt: "ombro" },
+  hombro: { es: "hombro", en: "shoulder", pt: "ombro" },
+  knee: { es: "rodilla", en: "knee", pt: "joelho" },
+  rodilla: { es: "rodilla", en: "knee", pt: "joelho" },
+  ankle: { es: "tobillo", en: "ankle", pt: "tornozelo" },
+  tobillo: { es: "tobillo", en: "ankle", pt: "tornozelo" },
+  foot: { es: "pie", en: "foot", pt: "pé" },
+  pie: { es: "pie", en: "foot", pt: "pé" },
+  hip: { es: "cadera", en: "hip", pt: "quadril" },
+  cadera: { es: "cadera", en: "hip", pt: "quadril" },
+  wrist: { es: "muñeca", en: "wrist", pt: "punho" },
+  muñeca: { es: "muñeca", en: "wrist", pt: "punho" },
+  hand: { es: "mano", en: "hand", pt: "mão" },
+  mano: { es: "mano", en: "hand", pt: "mão" },
+  elbow: { es: "codo", en: "elbow", pt: "cotovelo" },
+  codo: { es: "codo", en: "elbow", pt: "cotovelo" },
+  cardiac: { es: "cardíaca", en: "cardiac", pt: "cardíaca" },
+  cardíaca: { es: "cardíaca", en: "cardiac", pt: "cardíaca" },
+  heart: { es: "corazón", en: "heart", pt: "coração" },
+  thyroid: { es: "tiroides", en: "thyroid", pt: "tireoide" },
+  tiroides: { es: "tiroides", en: "thyroid", pt: "tireoide" },
+  testicular: { es: "testicular", en: "testicular", pt: "testicular" },
+  rectal: { es: "rectal", en: "rectal", pt: "retal" },
+  rectum: { es: "recto", en: "rectum", pt: "reto" },
+  recto: { es: "recto", en: "rectum", pt: "reto" },
+  aorta: { es: "aorta", en: "aorta", pt: "aorta" },
+  carotid: { es: "carótidas", en: "carotid", pt: "carótidas" },
+  carótidas: { es: "carótidas", en: "carotid", pt: "carótidas" },
+  portal: { es: "portal", en: "portal", pt: "portal" },
+  pulmonary: { es: "pulmonar", en: "pulmonary", pt: "pulmonar" },
+  pulmonar: { es: "pulmonar", en: "pulmonary", pt: "pulmonar" },
+  sacroiliac: { es: "sacroilíaca", en: "sacroiliac", pt: "sacroilíaca" },
+  sacroilíaca: { es: "sacroilíaca", en: "sacroiliac", pt: "sacroilíaca" },
+  forearm: { es: "antebrazo", en: "forearm", pt: "antebraço" },
+  antebrazo: { es: "antebrazo", en: "forearm", pt: "antebraço" },
+  humerus: { es: "húmero", en: "humerus", pt: "úmero" },
+  húmero: { es: "húmero", en: "humerus", pt: "úmero" },
+  femur: { es: "fémur", en: "femur", pt: "fêmur" },
+  fémur: { es: "fémur", en: "femur", pt: "fêmur" },
+  tibia: { es: "tibia", en: "tibia", pt: "tíbia" },
+  fibula: { es: "peroné", en: "fibula", pt: "fíbula" },
+  peroné: { es: "peroné", en: "fibula", pt: "fíbula" },
+  orbit: { es: "órbita", en: "orbit", pt: "órbita" },
+  órbita: { es: "órbita", en: "orbit", pt: "órbita" },
+  orbits: { es: "órbitas", en: "orbits", pt: "órbitas" },
+  sella: { es: "silla turca", en: "sella", pt: "sela turca" },
+  finger: { es: "dedo", en: "finger", pt: "dedo" },
+  fingers: { es: "dedos", en: "fingers", pt: "dedos" },
+  toe: { es: "dedo del pie", en: "toe", pt: "dedo do pé" },
+  // Modifiers
+  multiparametric: { es: "multiparamétrica", en: "multiparametric", pt: "multiparamétrica" },
+  multiparamétrica: { es: "multiparamétrica", en: "multiparametric", pt: "multiparamétrica" },
+  diagnostic: { es: "diagnóstica", en: "diagnostic", pt: "diagnóstica" },
+  diagnóstica: { es: "diagnóstica", en: "diagnostic", pt: "diagnóstica" },
+  percutaneous: { es: "percutáneo", en: "percutaneous", pt: "percutânea" },
+  percutáneo: { es: "percutáneo", en: "percutaneous", pt: "percutânea" },
+  female: { es: "femenina", en: "female", pt: "feminina" },
+  femenina: { es: "femenina", en: "female", pt: "feminina" },
+  male: { es: "masculina", en: "male", pt: "masculina" },
+  masculina: { es: "masculina", en: "male", pt: "masculina" },
+  venous: { es: "venoso", en: "venous", pt: "venoso" },
+  arterial: { es: "arterial", en: "arterial", pt: "arterial" },
+  obstetric: { es: "obstétrica", en: "obstetric", pt: "obstétrica" },
+  obstétrica: { es: "obstétrica", en: "obstetric", pt: "obstétrica" },
+  maxillofacial: { es: "maxilofacial", en: "maxillofacial", pt: "maxilofacial" },
+  maxilofacial: { es: "maxilofacial", en: "maxillofacial", pt: "maxilofacial" },
+  complete: { es: "completa", en: "complete", pt: "completa" },
+  completa: { es: "completa", en: "complete", pt: "completa" },
+  whole: { es: "completa", en: "whole", pt: "completa" },
+  infant: { es: "infantil", en: "infant", pt: "infantil" },
+  infantil: { es: "infantil", en: "infant", pt: "infantil" },
+  pediatric: { es: "pediátrico", en: "pediatric", pt: "pediátrico" },
+  pediátrico: { es: "pediátrico", en: "pediatric", pt: "pediátrico" },
+  musculoskeletal: { es: "musculoesquelética", en: "musculoskeletal", pt: "musculoesquelética" },
+  musculoesquelética: { es: "musculoesquelética", en: "musculoskeletal", pt: "musculoesquelética" },
+  "image-guided": { es: "guiada por imagen", en: "image-guided", pt: "guiada por imagem" },
+  contrast: { es: "contraste", en: "contrast", pt: "contraste" },
+  contraste: { es: "contraste", en: "contrast", pt: "contraste" },
+  bilateral: { es: "bilateral", en: "bilateral", pt: "bilateral" },
+  dynamic: { es: "dinámica", en: "dynamic", pt: "dinâmica" },
+  dinámica: { es: "dinámica", en: "dynamic", pt: "dinâmica" },
+  functional: { es: "funcional", en: "functional", pt: "funcional" },
+  funcional: { es: "funcional", en: "functional", pt: "funcional" },
+  // Multi-word terms
+  "stroke code": { es: "código ictus", en: "stroke code", pt: "código AVC" },
+  "código ictus": { es: "código ictus", en: "stroke code", pt: "código AVC" },
+  "código avc": { es: "código ictus", en: "stroke code", pt: "código AVC" },
+  "soft tissue": { es: "partes blandas", en: "soft tissue", pt: "partes moles" },
+  "partes blandas": { es: "partes blandas", en: "soft tissue", pt: "partes moles" },
+  "partes moles": { es: "partes blandas", en: "soft tissue", pt: "partes moles" },
+  "temporal bone": { es: "peñascos", en: "temporal bone", pt: "ossos temporais" },
+  peñascos: { es: "peñascos", en: "temporal bone", pt: "ossos temporais" },
+  "brachial plexus": { es: "plexo braquial", en: "brachial plexus", pt: "plexo braquial" },
+  "plexo braquial": { es: "plexo braquial", en: "brachial plexus", pt: "plexo braquial" },
+  "paranasal sinuses": { es: "senos paranasales", en: "paranasal sinuses", pt: "seios paranasais" },
+  "senos paranasales": { es: "senos paranasales", en: "paranasal sinuses", pt: "seios paranasais" },
+  tmj: { es: "ATM", en: "TMJ", pt: "ATM" },
+  atm: { es: "ATM", en: "TMJ", pt: "ATM" },
+  "lower extremity": { es: "miembros inferiores", en: "lower extremity", pt: "membros inferiores" },
+  "miembros inferiores": { es: "miembros inferiores", en: "lower extremity", pt: "membros inferiores" },
+  "upper extremity": { es: "miembros superiores", en: "upper extremity", pt: "membros superiores" },
+  "miembros superiores": { es: "miembros superiores", en: "upper extremity", pt: "membros superiores" },
+  "urinary tract": { es: "vías urinarias", en: "urinary tract", pt: "vias urinárias" },
+  "vías urinarias": { es: "vías urinarias", en: "urinary tract", pt: "vias urinárias" },
+  "first trimester": { es: "primer trimestre", en: "first trimester", pt: "primeiro trimestre" },
+  "primer trimestre": { es: "primer trimestre", en: "first trimester", pt: "primeiro trimestre" },
+  "second trimester": { es: "segundo trimestre", en: "second trimester", pt: "segundo trimestre" },
+  "third trimester": { es: "tercer trimestre", en: "third trimester", pt: "terceiro trimestre" },
+  "supra-aortic": { es: "supraaórticos", en: "supra-aortic", pt: "supra-aórticos" },
+  supraaórticos: { es: "supraaórticos", en: "supra-aortic", pt: "supra-aórticos" },
+};
+
+function autoTranslateTemplateName(name: string, lang: UILanguage): string | null {
+  const lower = name.toLowerCase().trim();
+  if (!lower) return null;
+
+  const reverseMaps = getReverseTemplateNameMaps();
+  const reverseMatch = reverseMaps[lang]?.[lower];
+  if (reverseMatch) return reverseMatch;
+
+  const termMatch = tplTerms[lower];
+  if (termMatch?.[lang] && termMatch[lang].toLowerCase() !== lower) return termMatch[lang];
+
+  const words = lower.split(/\s+/);
+  if (words.length > 1) {
+    const translated: string[] = [];
+    let i = 0;
+    while (i < words.length) {
+      let matched = false;
+      for (let len = Math.min(3, words.length - i); len > 1; len--) {
+        const phrase = words.slice(i, i + len).join(" ");
+        const term = tplTerms[phrase];
+        if (term?.[lang]) {
+          translated.push(term[lang]);
+          i += len;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        const term = tplTerms[words[i]];
+        if (term?.[lang]) {
+          translated.push(term[lang]);
+        } else {
+          translated.push(words[i]);
+        }
+        i++;
+      }
+    }
+    const result = translated.join(" ");
+    if (result.toLowerCase() !== lower) {
+      return result.charAt(0).toUpperCase() + result.slice(1);
+    }
+  }
+
+  return null;
+}
+
 export function useTemplateName() {
   const { prefs } = useUIPrefs();
   const lang = (prefs.uiLanguage || "es") as UILanguage;
-  return useCallback((name: string) => templateNames[lang]?.[name] ?? name, [lang]);
+  return useCallback((name: string) => templateNames[lang]?.[name] ?? autoTranslateTemplateName(name, lang) ?? name, [lang]);
+}
+
+export function translateTemplateName(name: string, lang: UILanguage): string {
+  return templateNames[lang]?.[name] ?? autoTranslateTemplateName(name, lang) ?? name;
 }
 
 export function useModality() {
