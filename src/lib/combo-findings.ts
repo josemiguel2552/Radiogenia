@@ -1,7 +1,7 @@
 import { generateAIWithUsage, type AIUsage } from "@/lib/ai-provider";
 import type { GlobalAIConfig } from "@/lib/auth-helpers";
 import { resolveApiKey } from "@/lib/auth-helpers";
-import { enforceOutputLanguage } from "@/lib/section-translate";
+import { enforceOutputLanguage, translateSectionLabel } from "@/lib/section-translate";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 
 interface ComboParams {
@@ -339,10 +339,17 @@ export async function runComboFindings(
 
   console.log(`[combo] Result — status=${validatorResult.status}, corrections=${validatorResult.corrections.length}`);
 
-  // ── Apply corrections and format ──
-  const finalSections = validatorResult.corrections.length > 0
+  // ── Apply corrections and enforce label language ──
+  let finalSections = validatorResult.corrections.length > 0
     ? applyCorrections(parsed.sections, validatorResult.corrections)
     : parsed.sections;
+
+  if (params.outputLanguage !== "en") {
+    finalSections = finalSections.map((s) => ({
+      ...s,
+      label: translateSectionLabel(s.label, params.outputLanguage),
+    }));
+  }
 
   const rawText = sectionsToText(finalSections, params.compactNormals, !!params.dictationOnly, params.outputLanguage);
   return {
