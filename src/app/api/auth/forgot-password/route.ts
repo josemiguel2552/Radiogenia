@@ -13,6 +13,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
 
+    const origin = req.nextUrl.origin;
+    const safeRedirect = typeof redirectTo === "string" && (redirectTo.startsWith("/") || redirectTo.startsWith(origin))
+      ? redirectTo
+      : `${origin}/reset-password`;
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -28,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase.auth.resetPasswordForEmail(
       email.trim().toLowerCase(),
-      { redirectTo }
+      { redirectTo: safeRedirect }
     );
 
     if (error) {

@@ -153,20 +153,10 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Already on this plan" }, { status: 400 });
     }
 
-    const isDowngrade = PLANS[plan as SubscriptionPlan].price < PLANS[currentPlan].price;
-    const isFreeToFree = currentPlan === "free" && plan === "free";
+    const isUpgrade = PLANS[plan as SubscriptionPlan].price > PLANS[currentPlan].price;
 
-    if (isDowngrade || isFreeToFree) {
-      const effectiveDate = getNextPeriodDate(profile.billing_period_start || new Date().toISOString());
-      await service
-        .from("profiles")
-        .update({
-          pending_plan: plan,
-          pending_plan_effective_date: effectiveDate.toISOString(),
-        })
-        .eq("id", user.id);
-
-      return NextResponse.json({ ok: true, deferred: true, effectiveDate: effectiveDate.toISOString() });
+    if (isUpgrade) {
+      return NextResponse.json({ error: "Upgrades require payment via Stripe checkout" }, { status: 402 });
     }
 
     const effectiveDate = getNextPeriodDate(profile.billing_period_start || new Date().toISOString());

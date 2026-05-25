@@ -7301,7 +7301,10 @@ function autoTranslateTemplateName(name: string, lang: UILanguage): string | nul
   if (reverseMatch) return reverseMatch;
 
   const termMatch = tplTerms[lower];
-  if (termMatch?.[lang] && termMatch[lang].toLowerCase() !== lower) return termMatch[lang];
+  if (termMatch?.[lang] && termMatch[lang].toLowerCase() !== lower) {
+    const val = termMatch[lang];
+    return val.charAt(0).toUpperCase() + val.slice(1);
+  }
 
   const words = lower.split(/\s+/);
   if (words.length > 1) {
