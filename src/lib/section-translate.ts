@@ -826,6 +826,18 @@ const NORMALITY_PHRASE_PT: [RegExp, string][] = [
   [/\bNormal corticomedullary differentiation\b/gi, "Diferenciação corticomedular normal"],
 ];
 
+export function enforcePeriodSeparation(text: string): string {
+  if (!text) return text;
+  return text.replace(/^([^:\n]+:\s*)(.+)$/gm, (_match, prefix: string, desc: string) => {
+    let fixed = desc.replace(/;\s*/g, ". ");
+    fixed = fixed.replace(/,\s+(?=[A-ZÁÉÍÓÚÑÀÈÌÒÙÂÊÎÔÛÃÕÇ])/g, ". ");
+    if (fixed !== desc) {
+      fixed = fixed.replace(/\.\s*\./g, ".");
+    }
+    return prefix + fixed;
+  });
+}
+
 export function enforceOutputLanguage(text: string, lang: OutputLanguage): string {
   if (lang === "en" || !text) return text;
 
@@ -848,6 +860,8 @@ export function enforceOutputLanguage(text: string, lang: OutputLanguage): strin
       result = result.replace(pattern, replacement);
     }
   }
+
+  result = enforcePeriodSeparation(result);
 
   return result;
 }
