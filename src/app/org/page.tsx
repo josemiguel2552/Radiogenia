@@ -102,7 +102,7 @@ export default function OrgDashboard() {
   const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
   const isSectionEditor = !isOrgChief && orgData?.membership.section_role === "section_editor";
   const canManageMembers = isOrgChief || isSectionChief;
-  const canViewStats = isOrgChief || isSectionChief;
+  const canViewStats = isOrgChief;
 
   const loadOrg = useCallback(async () => {
     try {

@@ -248,6 +248,8 @@ export function TemplatesTab() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const [tplSubTab, setTplSubTab] = useState<"all" | "hospital">("all");
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   // Hidden global templates
   const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
@@ -438,15 +440,27 @@ export function TemplatesTab() {
     window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
 
-  async function openCatalog() {
-    setCatalogOpen(true);
+  async function loadCatalog() {
     setCatalogLoading(true);
     setCatalogSearch("");
     try {
       const res = await fetch("/api/templates/catalog");
-      if (res.ok) setCatalog(await res.json());
+      if (res.ok) {
+        setCatalog(await res.json());
+        setCatalogLoaded(true);
+      }
     } catch { /* ignore */ }
     setCatalogLoading(false);
+  }
+
+  async function openCatalog() {
+    setCatalogOpen(true);
+    await loadCatalog();
+  }
+
+  function switchToHospitalTab() {
+    setTplSubTab("hospital");
+    if (!catalogLoaded) loadCatalog();
   }
 
   async function toggleImport(item: CatalogItem) {
@@ -486,46 +500,69 @@ export function TemplatesTab() {
         </p>
       </div>
 
+      {/* Sub-tabs: All / Hospital */}
+      {hasOrg && (
+        <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <button
+            type="button"
+            onClick={() => setTplSubTab("all")}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              tplSubTab === "all"
+                ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            {t("tpl.tab_all")}
+          </button>
+          <button
+            type="button"
+            onClick={switchToHospitalTab}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              tplSubTab === "hospital"
+                ? "bg-white dark:bg-gray-900 text-teal-700 dark:text-teal-400 shadow-sm"
+                : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            <Building2 className="h-3.5 w-3.5" />
+            {t("tpl.tab_hospital")}
+          </button>
+        </div>
+      )}
+
       {/* Search + actions */}
       <div className="flex items-center gap-1.5">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input
             placeholder={t("tpl.search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={tplSubTab === "all" ? search : catalogSearch}
+            onChange={(e) => tplSubTab === "all" ? setSearch(e.target.value) : setCatalogSearch(e.target.value)}
             className="pl-8 h-8 text-xs"
           />
         </div>
-        {hasOrg && (
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={openCatalog}
-            title={t("tpl.import_from_section")}
-            className="h-8 w-8 shrink-0"
-          >
-            <Building2 className="h-3.5 w-3.5" />
-          </Button>
+        {tplSubTab === "all" && (
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              title={t("tpl.upload_word")}
+              className="h-8 w-8 shrink-0"
+            >
+              <Upload className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="default"
+              onClick={handleCreateNew}
+              title={t("tpl.create_blank")}
+              className="h-8 w-8 shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </>
         )}
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={() => fileRef.current?.click()}
-          title={t("tpl.upload_word")}
-          className="h-8 w-8 shrink-0"
-        >
-          <Upload className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="default"
-          onClick={handleCreateNew}
-          title={t("tpl.create_blank")}
-          className="h-8 w-8 shrink-0"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
       </div>
 
       <input
@@ -542,6 +579,112 @@ export function TemplatesTab() {
           {justHiddenMsg}
         </div>
       )}
+
+      {/* ═══ HOSPITAL SECTION TEMPLATES TAB ═══ */}
+      {tplSubTab === "hospital" && (
+        <div className="space-y-3">
+          {catalogLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+            </div>
+          ) : catalog.length === 0 ? (
+            <div className="text-center py-10 px-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
+              <Building2 className="h-10 w-10 mx-auto mb-3 text-gray-300 dark:text-gray-700" />
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t("tpl.no_hospital_templates")}</p>
+              <p className="text-[11px] text-gray-400 mt-1">{t("tpl.no_hospital_templates_hint")}</p>
+            </div>
+          ) : (() => {
+            const q = catalogSearch.toLowerCase();
+            const filteredCat = catalog.filter((c) =>
+              c.name.toLowerCase().includes(q) ||
+              tplName(c.name).toLowerCase().includes(q) ||
+              c.modality.toLowerCase().includes(q) ||
+              modName(c.modality).toLowerCase().includes(q) ||
+              c.section_name.toLowerCase().includes(q)
+            );
+            const groupedCat = new Map<string, CatalogItem[]>();
+            filteredCat.forEach((c) => {
+              const key = c.section_name || "Hospital";
+              if (!groupedCat.has(key)) groupedCat.set(key, []);
+              groupedCat.get(key)!.push(c);
+            });
+            const importedCount = catalog.filter((c) => c.imported).length;
+
+            return (
+              <>
+                <div className="flex items-center gap-2 px-1">
+                  <Badge variant="secondary" className="text-[10px]">
+                    {importedCount} {t("tpl.imported_count")}
+                  </Badge>
+                  <span className="text-[10px] text-gray-400">
+                    {t("tpl.of_available").replace("{n}", String(catalog.length))}
+                  </span>
+                </div>
+
+                {filteredCat.length === 0 && (
+                  <p className="text-center text-xs text-gray-400 py-6">{t("no_match_search")}</p>
+                )}
+
+                {Array.from(groupedCat.entries()).map(([secName, items]) => (
+                  <div key={secName} className="space-y-1">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                        {secName}
+                      </span>
+                      <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                    </div>
+
+                    <div className="space-y-1">
+                      {items.map((item) => (
+                        <div
+                          key={item.id}
+                          className={`flex items-center justify-between gap-2 p-2 rounded-md border transition-all ${
+                            item.imported
+                              ? "border-teal-300 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10"
+                              : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50"
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                              {tplName(item.name)}
+                            </p>
+                            <Badge variant="secondary" className="text-[9px] h-4 px-1.5 mt-0.5">
+                              {modName(item.modality)}
+                            </Badge>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={item.imported ? "default" : "outline"}
+                            className={`h-7 px-3 text-[11px] shrink-0 ${
+                              item.imported
+                                ? "bg-teal-600 hover:bg-teal-700 text-white"
+                                : "text-teal-600 border-teal-300 hover:bg-teal-50 dark:border-teal-800 dark:hover:bg-teal-900/20"
+                            }`}
+                            disabled={toggling.has(item.id)}
+                            onClick={() => toggleImport(item)}
+                          >
+                            {toggling.has(item.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : item.imported ? (
+                              <><Check className="h-3 w-3 mr-1" /> {t("tpl.imported")}</>
+                            ) : (
+                              <><Plus className="h-3 w-3 mr-1" /> {t("tpl.import")}</>
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ═══ ALL TEMPLATES TAB ═══ */}
+      {tplSubTab === "all" && <>
 
       {/* Upload status */}
       {uploading && (
@@ -770,6 +913,8 @@ export function TemplatesTab() {
           )}
         </div>
       )}
+
+      </>}
 
       {/* Edit / Create Dialog */}
       <Dialog open={!!editTemplate} onOpenChange={(open) => { if (!open) { setEditTemplate(null); setCreatingNew(false); } }}>
