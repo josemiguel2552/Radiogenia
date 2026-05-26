@@ -16,8 +16,11 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
-import { useT } from "@/lib/i18n";
+import { useT, useModality as useModalityLabel } from "@/lib/i18n";
+import { MODALITIES } from "@/lib/types";
 import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
+import { SectionEditor, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
+import type { TemplateField } from "@/components/shared/template-section-editor";
 
 type Tab = "stats" | "members" | "sections";
 
@@ -61,6 +64,7 @@ interface StatsData {
 export default function OrgDashboard() {
   const router = useRouter();
   const t = useT();
+  const modLabel = useModalityLabel();
   const [tab, setTab] = useState<Tab>("sections");
   const [loading, setLoading] = useState(true);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
@@ -94,6 +98,14 @@ export default function OrgDashboard() {
   // AI upload
   const [uploadingTpls, setUploadingTpls] = useState<string | null>(null);
   const [uploadMsg, setUploadMsg] = useState("");
+
+  // Create template from scratch
+  const [showCreateTpl, setShowCreateTpl] = useState(false);
+  const [createTplSectionId, setCreateTplSectionId] = useState("");
+  const [createTplName, setCreateTplName] = useState("");
+  const [createTplModality, setCreateTplModality] = useState("");
+  const [createTplFields, setCreateTplFields] = useState<TemplateField[]>([{ id: nextFieldId(), label: "", indent: 0 }]);
+  const [savingTpl, setSavingTpl] = useState(false);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [sectionSubTab, setSectionSubTab] = useState<Record<string, "team" | "templates">>({});
@@ -266,6 +278,40 @@ export default function OrgDashboard() {
   async function handleDeleteTemplate(id: string) {
     if (!confirm(t("org.confirm_delete_template"))) return;
     await fetch(`/api/org/templates?id=${id}`, { method: "DELETE" });
+    await loadTemplates();
+  }
+
+  function openCreateTemplate(sectionId: string) {
+    setCreateTplSectionId(sectionId);
+    setCreateTplName("");
+    setCreateTplModality("");
+    setCreateTplFields([{ id: nextFieldId(), label: "", indent: 0 }]);
+    setShowCreateTpl(true);
+  }
+
+  async function handleCreateTemplate() {
+    if (!createTplName.trim() || !createTplModality || !createTplSectionId) return;
+    setSavingTpl(true);
+    const templateText = serializeTemplateSections(createTplFields);
+    const structure = {
+      id: -1,
+      title: createTplName.trim(),
+      template: templateText,
+      technique: createTplModality,
+      section: "",
+    };
+    await fetch("/api/org/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        section_id: createTplSectionId,
+        name: createTplName.trim(),
+        modality: createTplModality,
+        structure,
+      }),
+    });
+    setSavingTpl(false);
+    setShowCreateTpl(false);
     await loadTemplates();
   }
 
@@ -664,7 +710,10 @@ export default function OrgDashboard() {
                             <div>
                               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                                 <p className="text-xs text-gray-500">{sTemplates.length} {sTemplates.length !== 1 ? t("org.shared_template_other") : t("org.shared_template_one")}</p>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
+                                  <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => openCreateTemplate(s.id)}>
+                                    <Plus className="h-3.5 w-3.5 text-teal-500" /> {t("org.create_template")}
+                                  </Button>
                                   <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                     {uploadingTpls === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-violet-500" />}
                                     {uploadingTpls === s.id ? t("org.processing") : t("org.extract_from_word")}
@@ -685,7 +734,10 @@ export default function OrgDashboard() {
                                   <FileText className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
                                   <p className="text-xs text-gray-400 mb-1">{t("org.no_templates_section")}</p>
                                   <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">{t("org.no_templates_desc")}</p>
-                                  <div className="flex gap-2 justify-center">
+                                  <div className="flex gap-2 justify-center flex-wrap">
+                                    <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => openCreateTemplate(s.id)}>
+                                      <Plus className="h-3 w-3 text-teal-500" /> {t("org.create_template")}
+                                    </Button>
                                     <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                       {uploadingTpls === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-violet-500" />}
                                       {t("org.extract_from_word")}
@@ -818,6 +870,48 @@ export default function OrgDashboard() {
                 {savingMember ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : editingMember ? t("org.save") : t("org.add")}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create template from scratch */}
+      <Dialog open={showCreateTpl} onOpenChange={setShowCreateTpl}>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{t("org.create_template")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("org.template_name")}</Label>
+              <Input
+                value={createTplName}
+                onChange={(e) => setCreateTplName(e.target.value)}
+                placeholder={t("org.template_name_ph")}
+                className="h-9 text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("org.template_modality")}</Label>
+              <Select value={createTplModality} onValueChange={setCreateTplModality}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("org.select_modality")} /></SelectTrigger>
+                <SelectContent>
+                  {MODALITIES.map((m) => (
+                    <SelectItem key={m} value={m}>{modLabel(m)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("org.template_structure")}</Label>
+              <p className="text-[10px] text-gray-400">{t("org.template_structure_hint")}</p>
+              <SectionEditor fields={createTplFields} onChange={setCreateTplFields} />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end pt-3 border-t">
+            <Button variant="outline" size="sm" onClick={() => setShowCreateTpl(false)}>{t("org.cancel")}</Button>
+            <Button size="sm" onClick={handleCreateTemplate} disabled={savingTpl || !createTplName.trim() || !createTplModality}>
+              {savingTpl ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("org.create")}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
