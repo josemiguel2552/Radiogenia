@@ -548,6 +548,7 @@ export function RecommendationsTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9 text-xs"
+            autoComplete="off"
           />
         </div>
         <Button
@@ -1010,6 +1011,7 @@ export function RecommendationsTab() {
               value={catalogSearch}
               onChange={(e) => setCatalogSearch(e.target.value)}
               className="pl-8 h-8 text-xs"
+              autoComplete="off"
             />
           </div>
 
