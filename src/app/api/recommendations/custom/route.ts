@@ -29,42 +29,38 @@ export async function GET() {
       ...(row.overrides ? { overrides: row.overrides } : {}),
     }));
 
-    // Merge imported org recommendations
+    // Auto-include ALL org recommendations for user's section (no import needed)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let orgRecs: any[] = [];
     try {
       const membership = await getOrgMembership(user.id);
       if (membership) {
         const service = createServiceClient();
-        const { data: imports } = await service
-          .from("user_recommendation_imports")
-          .select("org_recommendation_id")
-          .eq("user_id", user.id);
+        let query = service
+          .from("org_recommendations")
+          .select("*, org_sections(name)")
+          .eq("org_id", membership.org_id);
 
-        const importedIds = (imports || []).map((r: { org_recommendation_id: string }) => r.org_recommendation_id);
-
-        if (importedIds.length > 0) {
-          const { data: orgData } = await service
-            .from("org_recommendations")
-            .select("*, org_sections(name)")
-            .eq("org_id", membership.org_id)
-            .in("id", importedIds);
-
-          orgRecs = (orgData || []).map((r) => {
-            const sec = r.org_sections as unknown as { name: string } | null;
-            return {
-              id: r.id,
-              category: r.category || "all",
-              modality: r.modality || "all",
-              title: { es: r.title || r.trigger_keyword, en: r.title || r.trigger_keyword, pt: r.title || r.trigger_keyword },
-              text: { es: r.text || r.recommendation_text, en: r.text || r.recommendation_text, pt: r.text || r.recommendation_text },
-              tags: r.tags || [],
-              source: sec?.name || "Hospital",
-              scope: "org" as const,
-              section_name: sec?.name || "",
-            };
-          });
+        if (membership.section_id && !membership.is_org_chief) {
+          query = query.eq("section_id", membership.section_id);
         }
+
+        const { data: orgData } = await query.order("category").order("title");
+
+        orgRecs = (orgData || []).map((r) => {
+          const sec = r.org_sections as unknown as { name: string } | null;
+          return {
+            id: r.id,
+            category: r.category || "all",
+            modality: r.modality || "all",
+            title: { es: r.title || r.trigger_keyword, en: r.title || r.trigger_keyword, pt: r.title || r.trigger_keyword },
+            text: { es: r.text || r.recommendation_text, en: r.text || r.recommendation_text, pt: r.text || r.recommendation_text },
+            tags: r.tags || [],
+            source: sec?.name || "Hospital",
+            scope: "org" as const,
+            section_name: sec?.name || "",
+          };
+        });
       }
     } catch { /* org tables may not exist */ }
 
