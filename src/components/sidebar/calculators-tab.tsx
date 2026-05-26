@@ -3237,13 +3237,13 @@ export function CalculatorsTab() {
       ],
     },
     {
-      key: "pediatrics", label: "Pediatría", icon: "👶",
+      key: "pediatrics", label: t("calc.section_pediatrics"), icon: "👶",
       sheets: [
-        { id: "ped_cxr", component: <PediatricCXRSheet />, label: "Rx tórax pediátrica" },
-        { id: "ped_hydro", component: <PediatricHydronephrosisSheet />, label: "Hidronefrosis pediátrica" },
-        { id: "ped_tumors", component: <PediatricTumorsSheet />, label: "Tumores pediátricos" },
-        { id: "ped_crypto", component: <CryptorchidismSheet />, label: "Criptorquidia" },
-        { id: "ped_transf", component: <TransfontanellarUSSheet />, label: "Eco transfontanelar" },
+        { id: "ped_cxr", component: <PediatricCXRSheet />, label: t("calc.ped_cxr") },
+        { id: "ped_hydro", component: <PediatricHydronephrosisSheet />, label: t("calc.ped_hydro") },
+        { id: "ped_tumors", component: <PediatricTumorsSheet />, label: t("calc.ped_tumors") },
+        { id: "ped_crypto", component: <CryptorchidismSheet />, label: t("calc.ped_crypto") },
+        { id: "ped_transf", component: <TransfontanellarUSSheet />, label: t("calc.ped_transf") },
       ],
     },
   ], [t]);

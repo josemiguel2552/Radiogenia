@@ -27,6 +27,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useT, useSection, useModality } from "@/lib/i18n";
+import { useUIPrefs } from "@/lib/ui-prefs";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import { MODALITIES, SECTIONS } from "@/lib/types";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
@@ -116,7 +117,8 @@ export function RecommendationsTab() {
   const [orgDeleteConfirm, setOrgDeleteConfirm] = useState<string | null>(null);
   const [orgSaving, setOrgSaving] = useState(false);
 
-  const lang: OutputLanguage = (typeof window !== "undefined" && (localStorage.getItem("radiogenai_lang") as OutputLanguage)) || "es";
+  const { prefs } = useUIPrefs();
+  const lang: OutputLanguage = (prefs.uiLanguage as OutputLanguage) || "es";
 
   useEffect(() => {
     setCustomRecs(loadCustomLocal());

@@ -71,7 +71,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "8. Disponibilidad del Servicio",
           content: [
-            "Radiogen.AI se proporciona \"tal cual\" sin garantías de ningún tipo, expresas o implícitas. No garantizamos la disponibilidad ininterrumpida del servicio. La plataforma depende de proveedores de IA y de infraestructura de terceros, que pueden experimentar interrupciones o degradación del servicio fuera de nuestro control.",
+            "Radiogen.AI se proporciona \"tal cual\" sin garantías de ningún tipo, expresas o implícitas. No garantizamos la disponibilidad ininterrumpida del servicio. La plataforma depende de infraestructura tecnológica que puede experimentar interrupciones o degradación del servicio fuera de nuestro control.",
           ],
         },
         {
@@ -151,9 +151,8 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "6. Transferencias Internacionales",
           content: [
-            "El procesamiento de IA se realiza a través de proveedores de modelos de lenguaje (OpenAI, Anthropic, DeepSeek u otros configurados por el administrador). El texto de dictado anonimizado puede enviarse a servidores de estos proveedores ubicados fuera del Espacio Económico Europeo.",
-            "Estas transferencias están amparadas por: las Cláusulas Contractuales Tipo de la Comisión Europea (SCCs); el marco de adecuación de la UE-EE.UU. (EU-U.S. Data Privacy Framework) cuando sea aplicable; las políticas de procesamiento de datos de cada proveedor.",
-            "Los usuarios pueden consultar las políticas de privacidad del proveedor de IA configurado por su administrador.",
+            "El procesamiento de IA se realiza íntegramente en la infraestructura de Radiogen.AI. El texto de dictado anonimizado es procesado dentro de nuestra plataforma con medidas de seguridad que garantizan la protección de los datos.",
+            "Cuando las necesidades del servicio requieran transferencias internacionales de datos, estas estarán amparadas por: las Cláusulas Contractuales Tipo de la Comisión Europea (SCCs); el marco de adecuación de la UE-EE.UU. (EU-U.S. Data Privacy Framework) cuando sea aplicable.",
           ],
         },
         {
@@ -192,25 +191,20 @@ export const LEGAL_DOCS: Record<string, Docs> = {
             "Texto de dictado radiológico anonimizado (transcripción de voz a texto).",
             "Hallazgos y conclusiones de informes radiológicos (texto generado).",
             "Preferencias de estilo del radiólogo (frases normales, plantillas).",
-            "NO se procesan datos identificativos de pacientes. El sistema detecta y elimina automáticamente cualquier dato personal (DNI, NIE, teléfonos, nombres, NHC, CPF, CURP, RUT, cédula) antes de enviar texto a proveedores de IA.",
+            "NO se procesan datos identificativos de pacientes. El sistema detecta y elimina automáticamente cualquier dato personal (DNI, NIE, teléfonos, nombres, NHC, CPF, CURP, RUT, cédula) antes del procesamiento.",
           ],
         },
         {
-          title: "3. Procesamiento por Proveedores de IA",
+          title: "3. Procesamiento mediante IA",
           content: [
-            "El texto de dictado anonimizado se envía a proveedores de modelos de lenguaje para las siguientes operaciones: generación de hallazgos estructurados a partir del dictado; generación de conclusiones radiológicas; corrección de errores de transcripción por voz; mejora de redacción.",
-            "Los proveedores actualmente soportados son: OpenAI (GPT-4o, GPT-4o-mini, Whisper), Anthropic (Claude), DeepSeek, Google (Gemini). El administrador de la organización configura qué proveedor se utiliza.",
-            "Radiogen.AI no utiliza los datos de los usuarios para entrenar modelos de IA propios ni de terceros. Los proveedores de IA están contractualmente obligados a no utilizar los datos de API para entrenamiento.",
+            "El texto de dictado anonimizado se procesa mediante modelos de inteligencia artificial para las siguientes operaciones: generación de hallazgos estructurados a partir del dictado; generación de conclusiones radiológicas; corrección de errores de transcripción por voz; mejora de redacción.",
+            "Radiogen.AI no utiliza los datos de los usuarios para entrenar modelos de IA. Todos los datos procesados son tratados de forma transitoria y no se almacenan con fines de entrenamiento.",
           ],
         },
         {
           title: "4. Subencargados",
           content: [
-            "Supabase (base de datos y autenticación) — datos de cuenta e informes, ubicación EU.",
-            "Vercel (hosting y CDN) — código de la aplicación, ubicación global con edge EU.",
-            "Stripe (facturación) — datos de pago, PCI DSS Level 1.",
-            "Resend (email transaccional) — dirección de email del usuario.",
-            "OpenAI / Anthropic / DeepSeek / Google (procesamiento IA) — texto de dictado anonimizado, según configuración.",
+            "Radiogen.AI utiliza subencargados para la prestación del servicio. La lista actualizada de subencargados puede ser consultada por el administrador de la organización.",
             "El operador notificará a los usuarios sobre cambios en los subencargados con al menos 30 días de antelación.",
           ],
         },
@@ -276,7 +270,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "5. Sin Datos de Pacientes",
           content: [
-            "La IA procesa exclusivamente texto de dictado. No tiene acceso a imágenes médicas, datos demográficos de pacientes ni historial clínico. El sistema detecta y elimina automáticamente datos identificativos de pacientes (PII) que puedan aparecer en el dictado antes de enviarlo al proveedor de IA.",
+            "La IA procesa exclusivamente texto de dictado. No tiene acceso a imágenes médicas, datos demográficos de pacientes ni historial clínico. El sistema detecta y elimina automáticamente datos identificativos de pacientes (PII) que puedan aparecer en el dictado antes del procesamiento.",
           ],
         },
         {
@@ -350,7 +344,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "8. Service Availability",
           content: [
-            "Radiogen.AI is provided \"as is\" without warranties of any kind, express or implied. We do not guarantee uninterrupted service availability. The platform depends on third-party AI providers and infrastructure, which may experience downtime or service degradation outside our control.",
+            "Radiogen.AI is provided \"as is\" without warranties of any kind, express or implied. We do not guarantee uninterrupted service availability. The platform depends on technology infrastructure that may experience downtime or service degradation outside our control.",
           ],
         },
         {
@@ -430,8 +424,8 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "6. International Transfers",
           content: [
-            "AI processing is performed through language model providers (OpenAI, Anthropic, DeepSeek, or others configured by the administrator). Anonymized dictation text may be sent to servers of these providers located outside the European Economic Area.",
-            "These transfers are covered by: EU Standard Contractual Clauses (SCCs); the EU-U.S. Data Privacy Framework where applicable; each provider's data processing policies.",
+            "AI processing is performed within the Radiogen.AI infrastructure. Anonymized dictation text is processed within our platform with security measures that ensure data protection.",
+            "Where service requirements necessitate international data transfers, these are covered by: EU Standard Contractual Clauses (SCCs); the EU-U.S. Data Privacy Framework where applicable.",
           ],
         },
         {
@@ -459,9 +453,9 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       updated: "Last updated: May 2026",
       sections: [
         { title: "1. Object and Scope", content: ["This Data Processing Agreement (DPA) establishes the conditions under which Radiogen.AI processes anonymized clinical data on behalf of the user and their organization, in compliance with Art. 28 of the GDPR."] },
-        { title: "2. Data Categories Processed", content: ["Anonymized radiology dictation text (voice-to-text transcription).", "Report findings and conclusions (generated text).", "Radiologist style preferences (normal phrases, templates).", "NO patient-identifiable data is processed. The system automatically detects and removes any personal data (IDs, phone numbers, names, medical record numbers) before sending text to AI providers."] },
-        { title: "3. AI Provider Processing", content: ["Anonymized dictation text is sent to language model providers for: generation of structured findings from dictation; generation of radiological conclusions; voice transcription error correction; writing improvement.", "Currently supported providers: OpenAI (GPT-4o, GPT-4o-mini, Whisper), Anthropic (Claude), DeepSeek, Google (Gemini). The organization administrator configures which provider is used.", "Radiogen.AI does not use user data to train its own or third-party AI models. AI providers are contractually bound not to use API data for training."] },
-        { title: "4. Sub-processors", content: ["Supabase (database and authentication) — account data and reports, EU location.", "Vercel (hosting and CDN) — application code, global with EU edge.", "Stripe (billing) — payment data, PCI DSS Level 1.", "Resend (transactional email) — user email address.", "OpenAI / Anthropic / DeepSeek / Google (AI processing) — anonymized dictation text, per configuration.", "The operator will notify users of changes to sub-processors with at least 30 days' notice."] },
+        { title: "2. Data Categories Processed", content: ["Anonymized radiology dictation text (voice-to-text transcription).", "Report findings and conclusions (generated text).", "Radiologist style preferences (normal phrases, templates).", "NO patient-identifiable data is processed. The system automatically detects and removes any personal data (IDs, phone numbers, names, medical record numbers) before processing."] },
+        { title: "3. AI Processing", content: ["Anonymized dictation text is processed through AI models for: generation of structured findings from dictation; generation of radiological conclusions; voice transcription error correction; writing improvement.", "Radiogen.AI does not use user data to train AI models. All processed data is handled transiently and is not stored for training purposes."] },
+        { title: "4. Sub-processors", content: ["Radiogen.AI uses sub-processors for service provision. The updated list of sub-processors can be consulted by the organization administrator.", "The operator will notify users of changes to sub-processors with at least 30 days' notice."] },
         { title: "5. Security Measures", content: ["Technical measures detailed in the Privacy Policy apply, including: encryption at rest and in transit, per-user isolation (RLS), automatic PII detection, immutable audit logs, rate limiting, and HTTP security headers."] },
         { title: "6. Breach Notification", content: ["In the event of a security breach affecting personal data, Radiogen.AI will notify the affected organization within a maximum of 72 hours of detection, in accordance with Art. 33 of the GDPR."] },
         { title: "7. Data Deletion", content: ["Upon service termination or user request, Radiogen.AI will delete all personal data and generated content within a maximum of 30 days, unless legal retention obligations apply."] },
@@ -476,7 +470,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         { title: "2. Zero Hallucination Policy", content: ["The system is designed with a strict \"zero hallucination\" policy: the AI should only use information provided in the radiologist's dictation. However, language models are probabilistic and may, in exceptional cases, introduce undictated text, omit dictated information, or rephrase findings in ways that alter meaning.", "For this reason, complete human review of every report before clinical use is MANDATORY, not optional."] },
         { title: "3. Known Limitations", content: ["Transcription errors: the speech-to-text engine (Whisper) may misinterpret medical terms, especially in noisy environments or with strong accents. Automatic corrections are applied but are not infallible.", "Cross-modality terminology: while the system adapts vocabulary by modality (CT, MRI, ultrasound, etc.), it may occasionally use incorrect terminology for the study modality.", "Punctuation and structure: the AI adds punctuation and structure to continuous dictation, which may occasionally alter finding groupings.", "Language: the system supports Spanish, English, and Portuguese. Correction quality may vary between languages."] },
         { title: "4. Professional Responsibility", content: ["The radiologist is the SOLE party responsible for the final content of the radiology report. Signing or approving an AI-assisted report implies that the professional has reviewed, validated, and assumes complete responsibility for its content.", "Radiogen.AI assumes no liability for errors, omissions, or adverse consequences arising from reports that have not been adequately reviewed by a qualified professional."] },
-        { title: "5. No Patient Data", content: ["The AI processes only dictation text. It has no access to medical images, patient demographics, or clinical history. The system automatically detects and removes patient-identifiable data (PII) from dictation before sending it to the AI provider."] },
+        { title: "5. No Patient Data", content: ["The AI processes only dictation text. It has no access to medical images, patient demographics, or clinical history. The system automatically detects and removes patient-identifiable data (PII) from dictation before processing."] },
         { title: "6. Transparency", content: ["Radiogen.AI maintains an audit trail of all AI operations: findings generation, conclusions, dictation corrections, and writing improvements. This log is available to the organization administrator.", "AI processing costs are recorded and can be consulted in the administration panel."] },
         { title: "7. Continuous Improvement", content: ["The dictation correction and report generation system is continuously improved. Changes to AI models, correction rules, or system behavior are documented and communicated to administrators. Radiogen.AI does not use user data to train AI models."] },
       ],
@@ -496,15 +490,15 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "2. Dados Coletados", content: ["Dados de conta (nome, e-mail, senha hash, função profissional), dados de uso (laudos, ditados anonimizados, preferências), dados técnicos (IP, user-agent, timestamps). NÃO são coletados dados identificáveis de pacientes."] },
       { title: "3. Base Legal", content: ["Execução do contrato (Art. 6.1.b RGPD), interesse legítimo (Art. 6.1.f), consentimento (Art. 6.1.a), obrigação legal (Art. 6.1.c)."] },
       { title: "4. Direitos do Titular", content: ["Acesso, retificação, exclusão, limitação, portabilidade, oposição e decisões automatizadas (Arts. 15-22 RGPD/LGPD). Solicitações: legal@radiogen.ai, prazo de resposta: 30 dias."] },
-      { title: "5. Transferências Internacionais", content: ["O processamento de IA pode envolver transferências para servidores fora do EEE, amparadas por SCCs e o framework EU-EUA."] },
+      { title: "5. Transferências Internacionais", content: ["O processamento de IA é realizado na infraestrutura do Radiogen.AI. Quando necessárias, transferências internacionais de dados são amparadas por SCCs e o framework EU-EUA."] },
       { title: "6. Medidas de Segurança", content: ["Criptografia AES-256-GCM em repouso, TLS 1.3 em trânsito, RLS no banco de dados, detecção automática de PII, rate limiting, headers de segurança HTTP, trilha de auditoria imutável."] },
       { title: "7. Contato", content: ["legal@radiogen.ai."] },
     ]},
     data_processing: { title: "Acordo de Tratamento de Dados", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Objeto", content: ["Este DPA estabelece as condições de processamento de dados clínicos anonimizados pelo Radiogen.AI (Art. 28 RGPD/LGPD)."] },
       { title: "2. Dados Processados", content: ["Texto de ditado radiológico anonimizado, achados e conclusões de laudos, preferências de estilo. NÃO são processados dados identificáveis de pacientes."] },
-      { title: "3. Provedores de IA", content: ["Texto anonimizado é enviado a provedores de IA (OpenAI, Anthropic, DeepSeek, Google) para geração de achados, conclusões e correção de ditado. Os dados NÃO são usados para treinamento de modelos."] },
-      { title: "4. Subprocessadores", content: ["Supabase (banco de dados), Vercel (hospedagem), Stripe (pagamentos), Resend (e-mail), provedores de IA (conforme configuração)."] },
+      { title: "3. Processamento por IA", content: ["O texto anonimizado é processado por modelos de inteligência artificial para geração de achados, conclusões e correção de ditado. Os dados NÃO são usados para treinamento de modelos."] },
+      { title: "4. Subprocessadores", content: ["O Radiogen.AI utiliza subprocessadores para a prestação do serviço. A lista atualizada pode ser consultada pelo administrador da organização."] },
       { title: "5. Notificação de Violações", content: ["Em caso de violação de segurança, o Radiogen.AI notificará a organização afetada em até 72 horas (Art. 33 RGPD)."] },
       { title: "6. Contato", content: ["legal@radiogen.ai."] },
     ]},
@@ -513,7 +507,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "2. Política de Zero Alucinações", content: ["O sistema é projetado para usar apenas informações ditadas pelo radiologista. No entanto, modelos de linguagem são probabilísticos e podem, em casos excepcionais, introduzir texto não ditado. A revisão humana completa é OBRIGATÓRIA."] },
       { title: "3. Limitações Conhecidas", content: ["Erros de transcrição, terminologia cruzada entre modalidades, alterações de pontuação e estrutura, variação de qualidade entre idiomas."] },
       { title: "4. Responsabilidade Profissional", content: ["O radiologista é o ÚNICO responsável pelo conteúdo final do laudo. A assinatura de um laudo gerado com assistência de IA implica revisão e validação completas."] },
-      { title: "5. Sem Dados de Pacientes", content: ["A IA processa apenas texto de ditado anonimizado. Dados identificáveis são automaticamente detectados e removidos antes do envio ao provedor de IA."] },
+      { title: "5. Sem Dados de Pacientes", content: ["A IA processa apenas texto de ditado anonimizado. Dados identificáveis são automaticamente detectados e removidos antes do processamento."] },
       { title: "6. Contato", content: ["legal@radiogen.ai."] },
     ]},
   },
