@@ -5,147 +5,249 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2, FileText } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
-const S = {
-  h2: 'color:#2563eb;border-bottom:2px solid #e2e8f0;padding-bottom:4px;font-size:14px;margin:18px 0 6px;',
-  h3: 'color:#1e40af;font-size:12px;margin:10px 0 4px;',
-  p: 'font-size:10px;margin:0 0 6px;line-height:1.5;',
-  ul: 'font-size:10px;margin:0 0 6px;padding-left:16px;line-height:1.5;',
-  th: 'text-align:left;padding:4px 6px;border:1px solid #e2e8f0;font-size:9px;background:#f8fafc;',
-  td: 'padding:4px 6px;border:1px solid #e2e8f0;font-size:9px;',
-  tbl: 'width:100%;border-collapse:collapse;margin:4px 0 8px;',
+const LOGO_SVG = `<svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="7" fill="url(#lg)"/>
+  <path d="M10 8h7a5 5 0 0 1 0 10h-3l5 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="24" cy="24" r="2.2" fill="#5EEAD4"/>
+  <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/>
+  </linearGradient></defs>
+</svg>`;
+
+const C = {
+  navy: "#1E3A5F",
+  teal: "#0F766E",
+  lteal: "#5EEAD4",
+  dark: "#0f172a",
+  bg: "#f8fafc",
+  bdr: "#e2e8f0",
+  txt: "#334155",
+  sub: "#64748b",
+  muted: "#94a3b8",
 };
+
+function card(borderColor: string) {
+  return `background:white;border:1px solid ${C.bdr};border-left:3px solid ${borderColor};border-radius:8px;padding:10px 12px;margin:0 0 8px;`;
+}
+
+function numCircle(color: string) {
+  return `display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${color};color:white;font-size:9px;font-weight:700;margin-right:6px;flex-shrink:0;`;
+}
+
+function sectionTitle(num: string) {
+  return `<div style="display:flex;align-items:center;margin:14px 0 6px;">
+    <span style="${numCircle(C.teal)}">${num}</span>
+    <span style="font-size:12px;font-weight:700;color:${C.navy};letter-spacing:0.3px;">`;
+}
 
 function getManualHTML(): string {
   return `
-<div style="font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a2e;line-height:1.5;max-width:100%;">
+<div style="font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;color:${C.txt};line-height:1.5;max-width:100%;">
 
-<div style="text-align:center;padding:20px 0 12px;border-bottom:3px solid #2563eb;">
-  <h1 style="font-size:22px;font-weight:700;color:#2563eb;margin:0;">Radiogen.AI</h1>
-  <p style="font-size:13px;color:#475569;margin:4px 0 0;">Manual para Hospitales y Radiólogos</p>
-  <p style="font-size:9px;color:#94a3b8;margin:4px 0 0;">Versión 2.0 — 2025 | Documento confidencial</p>
+<!-- ═══ HEADER ═══ -->
+<div style="background:linear-gradient(135deg,${C.dark} 0%,${C.navy} 50%,${C.teal} 100%);border-radius:10px;padding:20px 24px;margin:0 0 14px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(94,234,212,0.08);"></div>
+  <div style="position:absolute;bottom:-30px;left:40%;width:80px;height:80px;border-radius:50%;background:rgba(94,234,212,0.05);"></div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+    ${LOGO_SVG}
+    <div>
+      <span style="font-size:22px;font-weight:800;color:white;letter-spacing:-0.5px;">Radiogen</span><span style="font-size:22px;font-weight:800;color:${C.lteal};letter-spacing:-0.5px;">.AI</span>
+    </div>
+  </div>
+  <p style="font-size:13px;color:rgba(255,255,255,0.9);margin:0 0 2px;font-weight:500;">Manual para Hospitales y Radiólogos</p>
+  <p style="font-size:9px;color:rgba(255,255,255,0.5);margin:0;">Versión 2.0 — 2025 | Documento confidencial</p>
 </div>
 
-<h2 style="${S.h2}">1. Introducción</h2>
-<p style="${S.p}"><strong>Radiogen.AI</strong> es un asistente de informes radiológicos con IA que genera borradores estructurados a partir de dictado por voz o texto libre. Funciona desde cualquier navegador, sin instalación. Soporta informes en español, inglés y portugués.</p>
-<div style="background:#fef3c7;border-left:3px solid #f59e0b;padding:6px 10px;border-radius:3px;font-size:9px;margin:0 0 8px;">
-  <strong>Importante:</strong> Los textos generados son <strong>borradores</strong> que deben ser validados por el radiólogo antes de su uso clínico.
+<!-- ═══ INTRO ═══ -->
+${sectionTitle("1")}Introducción</span></div>
+<div style="${card(C.teal)}">
+  <p style="font-size:10px;margin:0 0 6px;line-height:1.6;color:${C.txt};"><strong style="color:${C.navy};">Radiogen.AI</strong> es un asistente de informes radiológicos con IA que genera borradores estructurados a partir de dictado por voz o texto libre. Funciona desde cualquier navegador, sin instalación. Soporta informes en español, inglés y portugués.</p>
+  <div style="background:linear-gradient(135deg,#fef3c7,#fef9c3);border-left:3px solid #f59e0b;padding:5px 10px;border-radius:4px;font-size:9px;color:#92400e;">
+    <strong>Importante:</strong> Los textos generados son <strong>borradores</strong> que deben ser validados por el radiólogo antes de su uso clínico.
+  </div>
 </div>
 
-<h2 style="${S.h2}">2. Flujo de trabajo</h2>
-<div style="background:#f1f5f9;border-left:3px solid #2563eb;padding:6px 10px;border-radius:3px;font-size:9px;margin:0 0 8px;">
-  1. Seleccionar modalidad y plantilla &rarr; 2. Dictar o escribir hallazgos &rarr; 3. Generar hallazgos (IA) &rarr; 4. Revisar y editar &rarr; 5. Generar conclusión (IA) &rarr; 6. Seleccionar recomendaciones &rarr; 7. Copiar al RIS/PACS
+<!-- ═══ WORKFLOW ═══ -->
+${sectionTitle("2")}Flujo de trabajo</span></div>
+<div style="background:linear-gradient(135deg,${C.dark},${C.navy});border-radius:8px;padding:10px 14px;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+  <span style="background:${C.teal};color:white;padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">1. Modalidad</span>
+  <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
+  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">2. Dictar</span>
+  <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
+  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">3. Hallazgos IA</span>
+  <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
+  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">4. Revisar</span>
+  <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
+  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">5. Conclusión IA</span>
+  <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
+  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">6. Recomendaciones</span>
+  <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
+  <span style="background:${C.teal};color:white;padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">7. RIS/PACS</span>
 </div>
 
-<div style="display:flex;gap:12px;">
+<!-- ═══ VOICE + CONFIG (2 columns) ═══ -->
+<div style="display:flex;gap:8px;">
 <div style="flex:1;">
-<h2 style="${S.h2}">3. Dictado por voz</h2>
-<ul style="${S.ul}">
-  <li>Pulse el micrófono, dicte (máx. 120s/clip) y pulse para detener.</li>
-  <li>Idiomas: español, inglés, portugués o auto-detección.</li>
-  <li>Corrección automática de terminología médica radiológica.</li>
-  <li>Puede dictar múltiples clips que se concatenan.</li>
-</ul>
-</div>
-<div style="flex:1;">
-<h2 style="${S.h2}">4. Configuración de informes</h2>
-<p style="${S.p}">El radiólogo puede configurar:</p>
-<ul style="${S.ul}">
-  <li><strong>Idioma de salida:</strong> Español, inglés o portugués para el informe generado.</li>
-  <li><strong>Idioma de dictado:</strong> Independiente del idioma del informe.</li>
-  <li><strong>Estilo de conclusión:</strong> Concisa (párrafo) o agrupada (por categorías).</li>
-</ul>
-<p style="${S.p}">Los demás parámetros del modelo IA (longitud, verbosidad, paráfrasis) son gestionados de forma centralizada por el administrador.</p>
-</div>
-</div>
-
-<h2 style="${S.h2}">5. Plantillas (198 predefinidas)</h2>
-<table style="${S.tbl}">
-  <tr><th style="${S.th}">Modalidad</th><th style="${S.th}">Plantillas</th><th style="${S.th}">Ejemplos</th></tr>
-  <tr><td style="${S.td}"><strong>TC</strong></td><td style="${S.td}">~50</td><td style="${S.td}">Cráneo, tórax, abdomen, politrauma, código ictus, AngioTC, TACAR</td></tr>
-  <tr><td style="${S.td}"><strong>RM</strong></td><td style="${S.td}">~40</td><td style="${S.td}">Cerebral, columna, rodilla, hombro, cardíaca, próstata, mama</td></tr>
-  <tr><td style="${S.td}"><strong>Ecografía</strong></td><td style="${S.td}">~25</td><td style="${S.td}">Abdominal, tiroides, mama, vascular, obstétrica, musculoesquelética</td></tr>
-  <tr><td style="${S.td}"><strong>Radiografía</strong></td><td style="${S.td}">~35</td><td style="${S.td}">Tórax, abdomen, columna, extremidades</td></tr>
-  <tr><td style="${S.td}"><strong>Mamografía</strong></td><td style="${S.td}">~10</td><td style="${S.td}">Screening, diagnóstica</td></tr>
-  <tr><td style="${S.td}"><strong>RECIST</strong></td><td style="${S.td}">~12</td><td style="${S.td}">Seguimiento oncológico multi-región</td></tr>
-  <tr><td style="${S.td}"><strong>Procedimientos</strong></td><td style="${S.td}">~8</td><td style="${S.td}">Biopsias, drenajes, arteriografías</td></tr>
-</table>
-<p style="${S.p}">Puede crear <strong>plantillas personalizadas</strong> y compartir plantillas a nivel de organización por sección.</p>
-
-<h2 style="${S.h2}">6. Calculadoras y guías de referencia</h2>
-<div style="display:flex;gap:12px;">
-<div style="flex:1;">
-<h3 style="${S.h3}">13 Calculadoras interactivas</h3>
-<p style="${S.p}">Washout adrenal, volumen tiroideo, volumen prostático + PSA, ACR TI-RADS, PI-RADS v2.1, Bosniak 2019, ASPECTS, On-Track/Off-Track (hombro), lesión renal, TNM pulmonar 9.ª ed., TNM laríngeo 8.ª ed., calculadora de tiempo de duplicación nodular, mapeo T1/T2 y VEC.</p>
-</div>
-<div style="flex:1;">
-<h3 style="${S.h3}">30+ Guías de referencia</h3>
-<p style="${S.p}">Fleischner 2017, LI-RADS v2018, Lung-RADS v2022, BI-RADS v5, O-RADS, PI-RADS, BTS, hallazgos incidentales ACR (hígado, adrenal, páncreas, ovario, vesícula), nomenclatura de columna NASS/ASSR, anatomía RM (hombro, rodilla, tobillo), guías pediátricas.</p>
-</div>
-</div>
-
-<h2 style="${S.h2}">7. Recomendaciones clínicas (50+)</h2>
-<p style="${S.p}">Biblioteca de recomendaciones basadas en guías de sociedades médicas (Fleischner, ACR, Bosniak, LI-RADS, BI-RADS, O-RADS, Lung-RADS). El radiólogo selecciona manualmente las recomendaciones que desea incluir en cada informe. El sistema las ordena por frecuencia de uso y relevancia con el texto de la conclusión. También puede crear recomendaciones personalizadas y compartirlas a nivel de organización.</p>
-
-<div style="display:flex;gap:12px;">
-<div style="flex:1;">
-<h2 style="${S.h2}">8. Aprendizaje de estilo</h2>
-<p style="${S.p}">Cuando el radiólogo edita un informe generado, el sistema registra las correcciones para adaptar futuras generaciones. Captura las frases de normalidad preferidas (cómo describe hallazgos normales) y muestras de conclusiones recientes como referencia de estilo. Se activa desde Preferencias.</p>
-</div>
-<div style="flex:1;">
-<h2 style="${S.h2}">9. Firmas</h2>
-<p style="${S.p}">Configure una o más firmas (nombre, especialidad, colegiado). La firma activa se adjunta automáticamente al copiar el informe. Útil si trabaja en varios centros.</p>
-</div>
-</div>
-
-<h2 style="${S.h2}">10. Gestión de organización (hospitales)</h2>
-<div style="display:flex;gap:12px;">
-<div style="flex:1;">
-<div style="background:#f1f5f9;padding:8px;border-radius:6px;font-size:9px;font-family:monospace;color:#334155;">
-  Organización (Hospital)<br>
-  ├── Sección: Tórax<br>
-  │&nbsp;&nbsp;├── Jefe de sección<br>
-  │&nbsp;&nbsp;├── Radiólogos / Residentes<br>
-  ├── Sección: Abdomen<br>
-  ├── Sección: Neurología<br>
-  └── Sección: MSK
+${sectionTitle("3")}Dictado por voz</span></div>
+<div style="${card("#6366f1")}">
+  <ul style="font-size:9px;margin:0;padding-left:14px;line-height:1.7;color:${C.txt};">
+    <li>Pulse el micrófono, dicte (máx. 120s/clip) y pulse para detener.</li>
+    <li>Idiomas: español, inglés, portugués o auto-detección.</li>
+    <li>Corrección automática de terminología médica radiológica.</li>
+    <li>Puede dictar múltiples clips que se concatenan.</li>
+  </ul>
 </div>
 </div>
 <div style="flex:1;">
-<table style="${S.tbl}">
-  <tr><th style="${S.th}">Rol</th><th style="${S.th}">Permisos</th></tr>
-  <tr><td style="${S.td}"><strong>Jefe de org.</strong></td><td style="${S.td}">Admin total: miembros, secciones, plantillas, métricas</td></tr>
-  <tr><td style="${S.td}"><strong>Jefe de sección</strong></td><td style="${S.td}">Gestionar su sección</td></tr>
-  <tr><td style="${S.td}"><strong>Editor</strong></td><td style="${S.td}">Editar plantillas y frases</td></tr>
-  <tr><td style="${S.td}"><strong>Radiólogo</strong></td><td style="${S.td}">Uso estándar</td></tr>
-</table>
-<p style="${S.p}">Recursos compartidos: plantillas, frases de normalidad y recomendaciones por sección. Invitación por enlace con código.</p>
+${sectionTitle("4")}Configuración de informes</span></div>
+<div style="${card("#8b5cf6")}">
+  <ul style="font-size:9px;margin:0;padding-left:14px;line-height:1.7;color:${C.txt};">
+    <li><strong style="color:${C.navy};">Idioma de salida:</strong> Español, inglés o portugués.</li>
+    <li><strong style="color:${C.navy};">Idioma de dictado:</strong> Independiente del informe.</li>
+    <li><strong style="color:${C.navy};">Estilo de conclusión:</strong> Concisa o agrupada.</li>
+  </ul>
+  <p style="font-size:8px;color:${C.muted};margin:4px 0 0;font-style:italic;">Otros parámetros (longitud, verbosidad, paráfrasis) son gestionados por el administrador.</p>
+</div>
+</div>
+</div>
+
+<!-- ═══ TEMPLATES ═══ -->
+${sectionTitle("5")}Plantillas (198 predefinidas)</span></div>
+<div style="${card(C.navy)}">
+  <table style="width:100%;border-collapse:collapse;margin:2px 0;">
+    <tr style="background:linear-gradient(135deg,${C.navy},${C.teal});">
+      <th style="text-align:left;padding:4px 8px;font-size:8px;color:white;font-weight:600;">Modalidad</th>
+      <th style="text-align:center;padding:4px 6px;font-size:8px;color:white;font-weight:600;">N.º</th>
+      <th style="text-align:left;padding:4px 8px;font-size:8px;color:white;font-weight:600;">Ejemplos</th>
+    </tr>
+    <tr><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>TC</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};">~50</td><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Cráneo, tórax, abdomen, politrauma, código ictus, AngioTC, TACAR</td></tr>
+    <tr style="background:${C.bg};"><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>RM</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};">~40</td><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Cerebral, columna, rodilla, hombro, cardíaca, próstata, mama</td></tr>
+    <tr><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>Ecografía</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};">~25</td><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Abdominal, tiroides, mama, vascular, obstétrica, MSK</td></tr>
+    <tr style="background:${C.bg};"><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>Radiografía</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};">~35</td><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Tórax, abdomen, columna, extremidades</td></tr>
+    <tr><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>Mamografía</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};">~10</td><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Screening, diagnóstica</td></tr>
+    <tr style="background:${C.bg};"><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>RECIST</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};">~12</td><td style="padding:3px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Seguimiento oncológico multi-región</td></tr>
+    <tr><td style="padding:3px 8px;font-size:8px;"><strong>Procedimientos</strong></td><td style="text-align:center;padding:3px 6px;font-size:8px;">~8</td><td style="padding:3px 8px;font-size:8px;color:${C.sub};">Biopsias, drenajes, arteriografías</td></tr>
+  </table>
+  <p style="font-size:8px;color:${C.muted};margin:4px 0 0;font-style:italic;">Puede crear plantillas personalizadas y compartir a nivel de organización por sección.</p>
+</div>
+
+<!-- ═══ CALCULATORS + REFERENCES (2 columns) ═══ -->
+${sectionTitle("6")}Calculadoras y guías de referencia</span></div>
+<div style="display:flex;gap:8px;">
+<div style="flex:1;">
+  <div style="${card("#6366f1")}">
+    <p style="font-size:9px;font-weight:700;color:#6366f1;margin:0 0 4px;">13 Calculadoras interactivas</p>
+    <p style="font-size:8px;margin:0;line-height:1.6;color:${C.sub};">Washout adrenal, volumen tiroideo, volumen prostático + PSA, ACR TI-RADS, PI-RADS v2.1, Bosniak 2019, ASPECTS, On-Track/Off-Track, lesión renal, TNM pulmonar 9.ª ed., TNM laríngeo 8.ª ed., tiempo de duplicación nodular, mapeo T1/T2 y VEC.</p>
+  </div>
+</div>
+<div style="flex:1;">
+  <div style="${card("#0ea5e9")}">
+    <p style="font-size:9px;font-weight:700;color:#0ea5e9;margin:0 0 4px;">30+ Guías de referencia</p>
+    <p style="font-size:8px;margin:0;line-height:1.6;color:${C.sub};">Fleischner 2017, LI-RADS v2018, Lung-RADS v2022, BI-RADS v5, O-RADS, PI-RADS, BTS, incidentales ACR (hígado, adrenal, páncreas, ovario, vesícula), NASS/ASSR, anatomía RM, guías pediátricas.</p>
+  </div>
 </div>
 </div>
 
-<h2 style="${S.h2}">11. Seguridad y privacidad</h2>
-<ul style="${S.ul}">
-  <li><strong>Detección PII:</strong> Elimina automáticamente nombres de pacientes, MRN, UIDs DICOM del texto antes de enviarlo al modelo de IA.</li>
-  <li><strong>Cifrado:</strong> HTTPS/TLS en tránsito, AES en reposo para claves. Claves temporales de 120s para transcripción de voz.</li>
-  <li><strong>Cabeceras seguras:</strong> HSTS, X-Frame-Options, Content-Type-Options, Referrer-Policy, Permissions-Policy.</li>
-  <li><strong>Control de acceso:</strong> Roles y permisos (RBAC), rate limiting, aprobación manual de cuentas.</li>
-  <li><strong>GDPR:</strong> Residencia de datos en la UE, registro de auditoría completo de todas las acciones.</li>
-</ul>
+<!-- ═══ RECOMMENDATIONS ═══ -->
+${sectionTitle("7")}Recomendaciones clínicas (50+)</span></div>
+<div style="${card(C.teal)}">
+  <p style="font-size:9px;margin:0;line-height:1.6;color:${C.txt};">Biblioteca basada en guías de sociedades médicas (Fleischner, ACR, Bosniak, LI-RADS, BI-RADS, O-RADS, Lung-RADS). El radiólogo <strong>selecciona manualmente</strong> las recomendaciones a incluir en cada informe. El sistema las ordena por frecuencia de uso y relevancia. Puede crear recomendaciones personalizadas y compartirlas por organización.</p>
+</div>
 
-<h2 style="${S.h2}">12. Preguntas frecuentes</h2>
-<table style="${S.tbl}">
-  <tr><td style="${S.td}"><strong>¿Es un sistema de diagnóstico?</strong></td><td style="${S.td}">No. Genera borradores que deben ser validados por el radiólogo.</td></tr>
-  <tr><td style="${S.td}"><strong>¿Se envían datos de pacientes a la IA?</strong></td><td style="${S.td}">No. El sistema detecta y elimina datos personales (PII) antes de enviar el texto al modelo.</td></tr>
-  <tr><td style="${S.td}"><strong>¿Funciona sin internet?</strong></td><td style="${S.td}">No. Es una aplicación web que requiere conexión.</td></tr>
-  <tr><td style="${S.td}"><strong>¿Qué micrófono necesito?</strong></td><td style="${S.td}">Cualquier micrófono compatible con el navegador. Recomendado: USB de escritorio.</td></tr>
-  <tr><td style="${S.td}"><strong>¿El jefe de servicio ve los informes?</strong></td><td style="${S.td}">No. Solo métricas agregadas de productividad, nunca contenido de informes individuales.</td></tr>
-  <tr><td style="${S.td}"><strong>Navegadores soportados</strong></td><td style="${S.td}">Chrome 90+, Firefox 90+, Safari 15+, Edge 90+. No requiere instalación.</td></tr>
-  <tr><td style="${S.td}"><strong>Idiomas</strong></td><td style="${S.td}">Interfaz, informes y dictado en ES/EN/PT, configurables de forma independiente.</td></tr>
-</table>
+<!-- ═══ STYLE LEARNING + SIGNATURES (2 columns) ═══ -->
+<div style="display:flex;gap:8px;">
+<div style="flex:1;">
+${sectionTitle("8")}Aprendizaje de estilo</span></div>
+<div style="${card("#a855f7")}">
+  <p style="font-size:9px;margin:0;line-height:1.6;color:${C.txt};">Cuando el radiólogo edita un informe generado, el sistema registra las correcciones para adaptar futuras generaciones. Captura las frases de normalidad preferidas y muestras de conclusiones recientes como referencia de estilo. Se activa desde Preferencias.</p>
+</div>
+</div>
+<div style="flex:1;">
+${sectionTitle("9")}Firmas</span></div>
+<div style="${card("#ec4899")}">
+  <p style="font-size:9px;margin:0;line-height:1.6;color:${C.txt};">Configure una o más firmas (nombre, especialidad, colegiado). La firma activa se adjunta automáticamente al copiar el informe. Útil si trabaja en varios centros.</p>
+</div>
+</div>
+</div>
 
-<div style="text-align:center;margin-top:20px;padding-top:12px;border-top:2px solid #e2e8f0;">
-  <p style="font-size:12px;font-weight:600;color:#2563eb;margin:0;">Radiogen.AI</p>
-  <p style="font-size:9px;color:#94a3b8;margin:4px 0 0;">Asistente de informes radiológicos con IA</p>
-  <p style="font-size:8px;color:#cbd5e1;margin:4px 0 0;">Los textos generados son borradores que deben ser validados antes de su uso clínico.</p>
+<!-- ═══ ORGANIZATION ═══ -->
+${sectionTitle("10")}Gestión de organización (hospitales)</span></div>
+<div style="display:flex;gap:8px;">
+<div style="flex:1;">
+  <div style="${card(C.navy)}">
+    <div style="background:linear-gradient(135deg,${C.dark},${C.navy});border-radius:6px;padding:8px 10px;font-size:8px;font-family:'SF Mono',Monaco,Consolas,monospace;color:${C.lteal};line-height:1.8;">
+      Organización (Hospital)<br>
+      ├── Sección: Tórax<br>
+      │&nbsp;&nbsp;├── Jefe de sección<br>
+      │&nbsp;&nbsp;├── Radiólogos / Residentes<br>
+      ├── Sección: Abdomen<br>
+      ├── Sección: Neurología<br>
+      └── Sección: MSK
+    </div>
+  </div>
+</div>
+<div style="flex:1;">
+  <div style="${card(C.teal)}">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr style="background:linear-gradient(135deg,${C.navy},${C.teal});">
+        <th style="text-align:left;padding:3px 6px;font-size:8px;color:white;font-weight:600;">Rol</th>
+        <th style="text-align:left;padding:3px 6px;font-size:8px;color:white;font-weight:600;">Permisos</th>
+      </tr>
+      <tr><td style="padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>Jefe de org.</strong></td><td style="padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Admin total: miembros, secciones, plantillas, métricas</td></tr>
+      <tr style="background:${C.bg};"><td style="padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>Jefe sección</strong></td><td style="padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Gestionar su sección</td></tr>
+      <tr><td style="padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};"><strong>Editor</strong></td><td style="padding:3px 6px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Editar plantillas y frases</td></tr>
+      <tr style="background:${C.bg};"><td style="padding:3px 6px;font-size:8px;"><strong>Radiólogo</strong></td><td style="padding:3px 6px;font-size:8px;color:${C.sub};">Uso estándar</td></tr>
+    </table>
+    <p style="font-size:8px;color:${C.muted};margin:4px 0 0;">Recursos compartidos por sección. Invitación por enlace con código.</p>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SECURITY ═══ -->
+${sectionTitle("11")}Seguridad y privacidad</span></div>
+<div style="background:linear-gradient(135deg,${C.dark},${C.navy});border-radius:8px;padding:10px 14px;margin:0 0 10px;">
+  <div style="display:flex;flex-wrap:wrap;gap:6px;">
+    <div style="flex:1;min-width:45%;background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;">
+      <p style="font-size:8px;font-weight:700;color:${C.lteal};margin:0 0 2px;">Detección PII</p>
+      <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">Elimina nombres, MRN, UIDs DICOM antes de enviar a IA.</p>
+    </div>
+    <div style="flex:1;min-width:45%;background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;">
+      <p style="font-size:8px;font-weight:700;color:${C.lteal};margin:0 0 2px;">Cifrado</p>
+      <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">HTTPS/TLS en tránsito, AES en reposo. Claves temporales 120s.</p>
+    </div>
+    <div style="flex:1;min-width:45%;background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;">
+      <p style="font-size:8px;font-weight:700;color:${C.lteal};margin:0 0 2px;">Control de acceso</p>
+      <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">RBAC, rate limiting, aprobación manual, cabeceras seguras.</p>
+    </div>
+    <div style="flex:1;min-width:45%;background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;">
+      <p style="font-size:8px;font-weight:700;color:${C.lteal};margin:0 0 2px;">GDPR</p>
+      <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">Residencia UE, registro de auditoría completo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FAQ ═══ -->
+${sectionTitle("12")}Preguntas frecuentes</span></div>
+<div style="${card(C.navy)}">
+  <table style="width:100%;border-collapse:collapse;">
+    <tr><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};font-weight:600;color:${C.navy};width:35%;">¿Es un sistema de diagnóstico?</td><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">No. Genera borradores que debe validar el radiólogo.</td></tr>
+    <tr style="background:${C.bg};"><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};font-weight:600;color:${C.navy};">¿Se envían datos de pacientes?</td><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">No. El sistema detecta y elimina PII antes de enviar al modelo.</td></tr>
+    <tr><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};font-weight:600;color:${C.navy};">¿El jefe ve los informes?</td><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">No. Solo métricas agregadas, nunca contenido individual.</td></tr>
+    <tr style="background:${C.bg};"><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};font-weight:600;color:${C.navy};">¿Funciona sin internet?</td><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">No. Es una aplicación web que requiere conexión.</td></tr>
+    <tr><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};font-weight:600;color:${C.navy};">Navegadores soportados</td><td style="padding:4px 8px;font-size:8px;border-bottom:1px solid ${C.bdr};color:${C.sub};">Chrome 90+, Firefox 90+, Safari 15+, Edge 90+.</td></tr>
+    <tr style="background:${C.bg};"><td style="padding:4px 8px;font-size:8px;font-weight:600;color:${C.navy};">Idiomas</td><td style="padding:4px 8px;font-size:8px;color:${C.sub};">Interfaz, informes y dictado en ES/EN/PT independientes.</td></tr>
+  </table>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<div style="background:linear-gradient(135deg,${C.dark},${C.navy});border-radius:8px;padding:14px 20px;margin:12px 0 0;text-align:center;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
+    ${LOGO_SVG.replace('width="40" height="40"', 'width="24" height="24"')}
+    <span style="font-size:16px;font-weight:800;color:white;">Radiogen</span><span style="font-size:16px;font-weight:800;color:${C.lteal};">.AI</span>
+  </div>
+  <p style="font-size:9px;color:rgba(255,255,255,0.6);margin:0 0 4px;">Asistente de informes radiológicos con IA</p>
+  <p style="font-size:7px;color:rgba(255,255,255,0.3);margin:0;">Los textos generados son borradores que deben ser validados antes de su uso clínico.</p>
 </div>
 
 </div>`;
@@ -186,7 +288,7 @@ export function AdminManualDownload() {
 
   return (
     <div className="flex items-center gap-4 p-5">
-      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center shrink-0">
         <FileText className="h-5 w-5 text-white" />
       </div>
       <div className="flex-1 min-w-0">
