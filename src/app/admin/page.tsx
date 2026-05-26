@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -587,19 +587,20 @@ export default function AdminPage() {
 
       <div className="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-6">
         {/* Tab navigation */}
-        <div className="flex overflow-x-auto gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl scrollbar-hide">
-          {TABS.map((t) => (
+        <div className="flex flex-wrap gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl">
+          {TABS.map((tb) => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
-                tab === t.key
+              key={tb.key}
+              ref={(el) => { if (tb.key === tab && el) el.scrollIntoView({ block: "nearest", inline: "nearest" }); }}
+              onClick={() => setTab(tb.key)}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+                tab === tb.key
                   ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
               }`}
             >
-              {t.icon}
-              <span>{t.label}</span>
+              {tb.icon}
+              <span>{tb.label}</span>
             </button>
           ))}
         </div>
