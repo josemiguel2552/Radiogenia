@@ -9,22 +9,28 @@ export async function GET() {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { data: orgs, error } = await service
-      .from("organizations")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data: orgs, error }, { data: memberRows }] = await Promise.all([
+      service
+        .from("organizations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      service
+        .from("org_members")
+        .select("org_id")
+        .eq("is_active", true),
+    ]);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Enrich with member counts
-    const enriched = await Promise.all((orgs || []).map(async (org) => {
-      const { count } = await service
-        .from("org_members")
-        .select("id", { count: "exact", head: true })
-        .eq("org_id", org.id)
-        .eq("is_active", true);
+    const countMap = new Map<string, number>();
+    for (const m of memberRows || []) {
+      countMap.set(m.org_id, (countMap.get(m.org_id) || 0) + 1);
+    }
 
-      return { ...org, active_members: count || 0 };
+    const enriched = (orgs || []).map((org) => ({
+      ...org,
+      active_members: countMap.get(org.id) || 0,
     }));
 
     return NextResponse.json(enriched, {

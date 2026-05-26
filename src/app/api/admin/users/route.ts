@@ -12,10 +12,12 @@ export async function GET() {
       supabase
         .from("profiles")
         .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(1000),
       supabase
         .from("reports")
-        .select("user_id"),
+        .select("user_id")
+        .limit(50000),
     ]);
 
     if (error) {
