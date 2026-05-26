@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Mic, FileText, Brain, Sparkles, Layout, Shield,
   ChevronRight, Check, ArrowRight, Globe,
+  Lock, ShieldCheck, Eye, ScrollText, Server, Fingerprint,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
@@ -31,6 +32,15 @@ const FEATURE_KEYS = [
   { icon: Layout, key: "templates", color: "from-blue-600 to-cyan-500" },
   { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
 ];
+
+const SECURITY_ITEMS = [
+  { icon: Lock, key: "encryption" },
+  { icon: Fingerprint, key: "pii" },
+  { icon: Shield, key: "rls" },
+  { icon: Eye, key: "zero_data" },
+  { icon: ScrollText, key: "audit" },
+  { icon: Server, key: "rate_limit" },
+] as const;
 
 const PLAN_ORDER: SubscriptionPlan[] = ["free", "resident", "starter", "professional"];
 
@@ -277,6 +287,63 @@ export function LandingPage() {
             <p className="text-xs text-gray-500 max-w-2xl mx-auto leading-relaxed">
               {t("pricing.note")}
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Security & Compliance ─── */}
+      <section id="security" className="relative py-32 px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent" />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              {lang === "es" ? (
+                <>
+                  Seguridad y privacidad{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                    de nivel hospitalario
+                  </span>
+                </>
+              ) : lang === "pt" ? (
+                <>
+                  Segurança e privacidade{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                    de nível hospitalar
+                  </span>
+                </>
+              ) : (
+                <>
+                  Hospital-grade{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                    security & privacy
+                  </span>
+                </>
+              )}
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              {t("security.subtitle")}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+            {SECURITY_ITEMS.map((item) => (
+              <div key={item.key} className="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/20 transition-all duration-300 hover:bg-white/[0.04]">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/10 mb-4">
+                  <item.icon className="h-5 w-5 text-emerald-400" />
+                </div>
+                <h3 className="text-base font-semibold mb-2">{t(`security.${item.key}.title`)}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{t(`security.${item.key}.desc`)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
+            {(["soc2", "gdpr", "hipaa_badge", "hsts"] as const).map((badge) => (
+              <span key={badge} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                {t(`security.badge_${badge}`)}
+              </span>
+            ))}
           </div>
         </div>
       </section>

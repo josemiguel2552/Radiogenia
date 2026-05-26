@@ -122,9 +122,6 @@ export async function POST(req: NextRequest) {
       "X-Output-Language": safeConfig.output_language,
     };
 
-    // Increment report usage BEFORE responding (must complete before serverless fn dies)
-    await incrementReportUsage(user.id);
-
     // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek V3 validator ──
     if (globalConfig.findingsComboEnabled) {
       console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek V3, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
@@ -141,6 +138,8 @@ export async function POST(req: NextRequest) {
         dictationOnly: safeConfig.dictation_only,
         preferredNormalPhrases,
       });
+
+      await incrementReportUsage(user.id);
 
       logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.mapper.provider, model: comboUsage.mapper.model, inputTokens: comboUsage.mapper.usage.inputTokens, outputTokens: comboUsage.mapper.usage.outputTokens });
       logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.validator.provider, model: comboUsage.validator.model, inputTokens: comboUsage.validator.usage.inputTokens, outputTokens: comboUsage.validator.usage.outputTokens });
@@ -197,6 +196,8 @@ export async function POST(req: NextRequest) {
       system,
       user: userPrompt,
     });
+
+    await incrementReportUsage(user.id);
 
     const reader = rawStream.getReader();
     const encoder = new TextEncoder();

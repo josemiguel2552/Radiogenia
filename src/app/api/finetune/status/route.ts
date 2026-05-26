@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
       error: job.error?.message || null,
       createdAt: job.created_at,
       finishedAt: job.finished_at || null,
+      trainingFile: job.training_file || null,
+      hyperparams: job.hyperparameters || null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -42,16 +44,14 @@ export async function GET() {
     const globalConfig = await getGlobalAIConfig();
     const apiKey = resolveApiKey(globalConfig, "openai");
 
+    const headers = { Authorization: `Bearer ${apiKey}` };
+
     const [jobsRes, modelsRes] = await Promise.all([
-      fetch("https://api.openai.com/v1/fine_tuning/jobs?limit=20", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      }),
-      fetch("https://api.openai.com/v1/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      }),
+      fetch("https://api.openai.com/v1/fine_tuning/jobs?limit=100", { headers }),
+      fetch("https://api.openai.com/v1/models", { headers }),
     ]);
 
-    let jobs: { jobId: string; status: string; fineTunedModel: string | null; model: string; createdAt: number; finishedAt: number | null }[] = [];
+    let jobs: { jobId: string; status: string; fineTunedModel: string | null; model: string; createdAt: number; finishedAt: number | null; trainedTokens: number | null; trainingFile: string | null; nEpochs: number | string | null }[] = [];
     if (jobsRes.ok) {
       const data = await jobsRes.json();
       jobs = (data.data || []).map((job: Record<string, unknown>) => ({
@@ -61,8 +61,26 @@ export async function GET() {
         model: job.model as string,
         createdAt: job.created_at as number,
         finishedAt: (job.finished_at as number) || null,
+        trainedTokens: (job.trained_tokens as number) || null,
+        trainingFile: (job.training_file as string) || null,
+        nEpochs: (job.hyperparameters as Record<string, unknown>)?.n_epochs ?? null,
       }));
     }
+
+    // Fetch file metadata for training files
+    const fileIds = [...new Set(jobs.map((j) => j.trainingFile).filter(Boolean))] as string[];
+    const fileMap: Record<string, { filename: string; bytes: number; createdAt: number }> = {};
+    await Promise.all(
+      fileIds.map(async (fid) => {
+        try {
+          const r = await fetch(`https://api.openai.com/v1/files/${fid}`, { headers });
+          if (r.ok) {
+            const f = await r.json();
+            fileMap[fid] = { filename: f.filename, bytes: f.bytes, createdAt: f.created_at };
+          }
+        } catch { /* ignore */ }
+      }),
+    );
 
     let ftModels: string[] = [];
     if (modelsRes.ok) {
@@ -72,7 +90,7 @@ export async function GET() {
         .map((m: Record<string, unknown>) => m.id as string);
     }
 
-    return NextResponse.json({ jobs, ftModels });
+    return NextResponse.json({ jobs, ftModels, fileMap });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

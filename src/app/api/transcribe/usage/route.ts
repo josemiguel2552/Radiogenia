@@ -14,8 +14,15 @@ export async function POST(req: NextRequest) {
     const { seconds } = await req.json();
     const rounded = Math.max(1, Math.ceil(Number(seconds) || 0));
 
-    const newUsed = await incrementDictationUsage(user.id, rounded);
     const quota = await checkDictationLimit(user.id);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: "Dictation limit reached", dictation: { usedSeconds: quota.usedSeconds, limitSeconds: quota.limitSeconds } },
+        { status: 429 },
+      );
+    }
+
+    const newUsed = await incrementDictationUsage(user.id, rounded);
 
     logAudioCost({ userId: user.id, action: "deepgram_transcription", provider: "deepgram", model: "deepgram-nova-2", durationSeconds: rounded }).catch(() => {});
 
