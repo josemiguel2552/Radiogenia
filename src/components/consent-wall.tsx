@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, ShieldCheck, FileText, Lock, Brain } from "lucide-react";
+import { Loader2, ShieldCheck, FileText, Lock, Brain, ExternalLink } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 interface ConsentStatus {
@@ -127,6 +127,16 @@ export function ConsentWall({ children }: { children: React.ReactNode }) {
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
                         {t(`consent.doc.${doc}_desc`)}
                       </p>
+                      <a
+                        href={`/legal/doc/${doc}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-[11px] text-brand hover:underline mt-1"
+                      >
+                        {t("consent.read_full")}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
                     </div>
                   </label>
                 );
