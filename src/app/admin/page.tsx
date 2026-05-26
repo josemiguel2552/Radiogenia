@@ -728,8 +728,7 @@ export default function AdminPage() {
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_status")}</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_plan")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_reports_mo")}</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden lg:table-cell">{t("admin.th_dictation_mo")}</th>
-                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_total")}</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_dictation_mo")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_joined")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_actions")}</th>
                     </tr>
@@ -823,7 +822,7 @@ export default function AdminPage() {
                               </div>
                             )}
                           </td>
-                          <td className="py-3 px-2 text-right hidden lg:table-cell">
+                          <td className="py-3 px-2 text-right">
                             {u.role !== "admin" && (
                               <div className="inline-flex items-center gap-2">
                                 <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -837,12 +836,6 @@ export default function AdminPage() {
                                 </span>
                               </div>
                             )}
-                          </td>
-                          <td className="py-3 px-2 text-right">
-                            <span className="flex items-center justify-end gap-1 text-gray-600 dark:text-gray-400 text-xs">
-                              <FileText className="h-3 w-3" />
-                              {u.report_count}
-                            </span>
                           </td>
                           <td className="py-3 px-2 text-right text-gray-500 text-[11px] hidden md:table-cell">
                             {new Date(u.created_at).toLocaleDateString()}
