@@ -1636,6 +1636,89 @@ export const DEFAULT_TEMPLATES: Template[] = [
     fld("Other findings"),
   ].join("\n")),
 
+  t(191, "TC de columna completa", "CT", "Spine", [
+    fld("Cervical spine"),
+    fld("Thoracic spine"),
+    fld("Lumbar spine"),
+    fld("Sacrum and coccyx"),
+    fld("Spinal canal"),
+    fld("Paravertebral soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(192, "TC renal", "CT", "Abdomen and pelvis", [
+    fld("Right kidney"),
+    fld("Left kidney"),
+    fld("Renal pelvis and ureters"),
+    fld("Urinary bladder"),
+    fld("Adrenal glands"),
+    fld("Adjacent structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(193, "TC de mano", "CT", "Upper limbs", [
+    fld("Metacarpals"),
+    fld("Phalanges"),
+    fld("Carpal bones"),
+    fld("Articular surfaces"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(194, "TC de pie", "CT", "Lower limbs", [
+    fld("Metatarsals"),
+    fld("Phalanges"),
+    fld("Tarsal bones"),
+    fld("Articular surfaces"),
+    fld("Soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(195, "TC de articulaciones sacroilíacas", "CT", "Spine", [
+    fld("Right sacroiliac joint"),
+    fld("Left sacroiliac joint"),
+    fld("Sacrum"),
+    fld("Iliac bones"),
+    fld("Periarticular soft tissues"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(196, "TC de abdomen y pelvis con contraste", "CT", "Abdomen and pelvis", [
+    fld("Liver and gallbladder"),
+    fld("Pancreas"),
+    fld("Spleen"),
+    fld("Kidneys and adrenal glands"),
+    fld("Gastrointestinal tract"),
+    fld("Mesenteric and retroperitoneal structures"),
+    fld("Pelvic organs"),
+    fld("Lymph nodes"),
+    fld("Vascular structures"),
+    fld("Bone structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(197, "TC de tórax con contraste", "CT", "Thorax", [
+    fld("Lung parenchyma"),
+    fld("Mediastinum and hila"),
+    fld("Vascular structures"),
+    fld("Lymph nodes"),
+    fld("Pleura"),
+    fld("Heart and pericardium"),
+    fld("Chest wall"),
+    fld("Upper abdomen"),
+    fld("Bone structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(198, "TC de antebrazo", "CT", "Upper limbs", [
+    fld("Radius"),
+    fld("Ulna"),
+    fld("Interosseous membrane"),
+    fld("Soft tissues"),
+    fld("Adjacent joints"),
+    fld("Other findings"),
+  ].join("\n")),
+
   // ═══════════════════════════════════════════
   //  RESONANCIAS (MRI) — ampliación II
   // ═══════════════════════════════════════════

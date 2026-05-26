@@ -12,25 +12,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "recommendation_ids required" }, { status: 400 });
     }
 
-    for (const recId of recommendation_ids) {
-      const { data: existing } = await supabase
-        .from("recommendation_usage")
-        .select("id, usage_count")
-        .eq("user_id", user.id)
-        .eq("recommendation_id", recId)
-        .maybeSingle();
+    const { data: existingRows } = await supabase
+      .from("recommendation_usage")
+      .select("id, recommendation_id, usage_count")
+      .eq("user_id", user.id)
+      .in("recommendation_id", recommendation_ids);
 
+    const existingMap = new Map(
+      (existingRows || []).map((r: { id: string; recommendation_id: string; usage_count: number }) => [r.recommendation_id, r]),
+    );
+
+    const updates: PromiseLike<unknown>[] = [];
+    const inserts: { user_id: string; recommendation_id: string; usage_count: number }[] = [];
+    const now = new Date().toISOString();
+
+    for (const recId of recommendation_ids) {
+      const existing = existingMap.get(recId);
       if (existing) {
-        await supabase
-          .from("recommendation_usage")
-          .update({ usage_count: existing.usage_count + 1, last_used_at: new Date().toISOString() })
-          .eq("id", existing.id);
+        updates.push(
+          supabase
+            .from("recommendation_usage")
+            .update({ usage_count: existing.usage_count + 1, last_used_at: now })
+            .eq("id", existing.id),
+        );
       } else {
-        await supabase
-          .from("recommendation_usage")
-          .insert({ user_id: user.id, recommendation_id: recId, usage_count: 1 });
+        inserts.push({ user_id: user.id, recommendation_id: recId, usage_count: 1 });
       }
     }
+
+    if (inserts.length > 0) updates.push(supabase.from("recommendation_usage").insert(inserts));
+    await Promise.all(updates);
 
     return NextResponse.json({ ok: true });
   } catch {

@@ -43,7 +43,7 @@ export async function POST() {
         const batch = payload.slice(i, i + 25);
         const { error: tErr } = await supabase.from("global_templates").insert(batch);
         if (tErr) {
-          console.error("Global template seed error:", tErr);
+          console.error("[seed] Global template seed error:", tErr);
           return NextResponse.json({ error: "Failed to seed global templates: " + tErr.message }, { status: 500 });
         }
       }

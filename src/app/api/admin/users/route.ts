@@ -8,18 +8,19 @@ export async function GET() {
     await requireAdmin();
     const supabase = createServiceClient();
 
-    const { data: profiles, error } = await supabase
-      .from("profiles")
-      .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role")
-      .order("created_at", { ascending: false });
+    const [{ data: profiles, error }, { data: reportCounts }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("reports")
+        .select("user_id"),
+    ]);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    const { data: reportCounts } = await supabase
-      .from("reports")
-      .select("user_id");
 
     const countMap = new Map<string, number>();
     for (const r of reportCounts || []) {

@@ -65,7 +65,7 @@ async function tryCreateTable(): Promise<boolean> {
   }
 
   console.error(
-    "Could not auto-create signatures table. Run migration 015_signatures.sql in your Supabase SQL Editor."
+    "[signatures] Could not auto-create signatures table. Run migration 015_signatures.sql in your Supabase SQL Editor."
   );
   return false;
 }

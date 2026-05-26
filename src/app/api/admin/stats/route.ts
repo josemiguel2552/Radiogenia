@@ -7,14 +7,19 @@ export async function GET() {
     await requireAdmin();
     const supabase = createServiceClient();
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, role, subscription_plan, reports_used_this_month, dictation_seconds_used, created_at");
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const { data: reports } = await supabase
-      .from("reports")
-      .select("id, user_id, modality, created_at")
-      .order("created_at", { ascending: false });
+    const [{ data: profiles }, { data: reports }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, role, subscription_plan, reports_used_this_month, dictation_seconds_used, created_at"),
+      supabase
+        .from("reports")
+        .select("id, user_id, modality, created_at")
+        .gte("created_at", thirtyDaysAgo.toISOString())
+        .order("created_at", { ascending: false }),
+    ]);
 
     const users = profiles || [];
     const allReports = reports || [];
@@ -34,27 +39,17 @@ export async function GET() {
 
     const mrr = planCounts.starter * 7.99 + planCounts.professional * 15.99;
 
+    const now = new Date();
     const reportsThisMonth = allReports.filter((r) => {
       const d = new Date(r.created_at);
-      const now = new Date();
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     }).length;
 
-    // Reports per day (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const reportsPerDay: Record<string, number> = {};
-    for (const r of allReports) {
-      const d = new Date(r.created_at);
-      if (d >= thirtyDaysAgo) {
-        const key = d.toISOString().split("T")[0];
-        reportsPerDay[key] = (reportsPerDay[key] || 0) + 1;
-      }
-    }
-
-    // Reports per modality
     const modalityCounts: Record<string, number> = {};
     for (const r of allReports) {
+      const key = new Date(r.created_at).toISOString().split("T")[0];
+      reportsPerDay[key] = (reportsPerDay[key] || 0) + 1;
       modalityCounts[r.modality] = (modalityCounts[r.modality] || 0) + 1;
     }
 
