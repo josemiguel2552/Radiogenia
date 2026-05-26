@@ -27,6 +27,7 @@ import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
 import { AdminMarketingTab } from "@/components/admin/admin-marketing-tab";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
+import { AdminManualDownload } from "@/components/admin/admin-manual-download";
 
 interface GlobalConfig {
   id: string;
@@ -179,6 +180,8 @@ export default function AdminPage() {
   const [auditFilter, setAuditFilter] = useState<string>("all");
   const [auditLoading, setAuditLoading] = useState(false);
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
+  const [auditCursor, setAuditCursor] = useState<string | null>(null);
+  const [auditLoadingMore, setAuditLoadingMore] = useState(false);
 
   // Training data
   interface TrainingRow {
@@ -256,10 +259,11 @@ export default function AdminPage() {
     }
 
     try {
-      const auditRes = await fetch("/api/admin/audit-logs?limit=100");
+      const auditRes = await fetch("/api/admin/audit-logs?limit=200");
       if (auditRes?.ok) {
         const d = await auditRes.json();
         setAuditLogs(d.logs || []);
+        setAuditCursor(d.nextCursor || null);
       }
     } catch { /* audit_logs table may not exist yet */ }
 
@@ -267,6 +271,20 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  const loadMoreAuditLogs = useCallback(async () => {
+    if (!auditCursor || auditLoadingMore) return;
+    setAuditLoadingMore(true);
+    try {
+      const res = await fetch(`/api/admin/audit-logs?limit=200&cursor=${encodeURIComponent(auditCursor)}`);
+      if (res.ok) {
+        const d = await res.json();
+        setAuditLogs((prev) => [...prev, ...(d.logs || [])]);
+        setAuditCursor(d.nextCursor || null);
+      }
+    } catch { /* ignore */ }
+    setAuditLoadingMore(false);
+  }, [auditCursor, auditLoadingMore]);
 
   useEffect(() => {
     if (tab === "audit" && trainingData.length === 0 && !trainingLoading) {
@@ -669,6 +687,11 @@ export default function AdminPage() {
                   <Plug className="h-3 w-3" /> {t("admin.configure")}
                 </Button>
               </CardContent>
+            </Card>
+
+            {/* Hospital manual download */}
+            <Card>
+              <AdminManualDownload />
             </Card>
           </div>
         )}
@@ -1628,6 +1651,23 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+                {auditCursor && (
+                  <div className="flex justify-center pt-3 pb-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5"
+                      onClick={loadMoreAuditLogs}
+                      disabled={auditLoadingMore}
+                    >
+                      {auditLoadingMore ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> {t("admin.loading")}</>
+                      ) : (
+                        <>{t("admin.load_more")} ({auditLogs.length} {t("admin.loaded")})</>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
