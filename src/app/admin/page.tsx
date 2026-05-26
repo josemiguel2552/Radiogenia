@@ -587,19 +587,19 @@ export default function AdminPage() {
 
       <div className="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-6">
         {/* Tab navigation */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl">
+        <div className="flex overflow-x-auto gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl scrollbar-hide">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all truncate ${
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 tab === t.key
                   ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
               }`}
             >
               {t.icon}
-              <span className="truncate">{t.label}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
