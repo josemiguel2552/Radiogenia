@@ -1565,6 +1565,9 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "pilot.col_completeness": "Completitud",
     "pilot.col_edit_rate": "Edición",
     "pilot.col_last": "Última act.",
+    "pilot.col_email": "Email",
+    "pilot.col_section": "Sección",
+    "pilot.col_avg_time_long": "Tiempo medio (min)",
     "pilot.nps_results": "Encuesta de satisfacción",
     "pilot.survey_title": "¿Cómo valorarías tu experiencia con Radiogenia?",
     "pilot.survey_feedback": "Comentarios (opcional)",
@@ -3446,6 +3449,9 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "pilot.col_completeness": "Completeness",
     "pilot.col_edit_rate": "Edit rate",
     "pilot.col_last": "Last active",
+    "pilot.col_email": "Email",
+    "pilot.col_section": "Section",
+    "pilot.col_avg_time_long": "Avg time (min)",
     "pilot.nps_results": "Satisfaction survey",
     "pilot.survey_title": "How would you rate your experience with Radiogenia?",
     "pilot.survey_feedback": "Comments (optional)",
@@ -5334,6 +5340,9 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "pilot.col_completeness": "Completude",
     "pilot.col_edit_rate": "Edição",
     "pilot.col_last": "Última ativ.",
+    "pilot.col_email": "Email",
+    "pilot.col_section": "Seção",
+    "pilot.col_avg_time_long": "Tempo médio (min)",
     "pilot.nps_results": "Pesquisa de satisfação",
     "pilot.survey_title": "Como você avaliaria sua experiência com o Radiogenia?",
     "pilot.survey_feedback": "Comentários (opcional)",
@@ -7017,6 +7026,8 @@ const sections: Record<UILanguage, Record<string, string>> = {
     "Lower limbs": "Membros inferiores",
   },
 };
+
+export const _uiDictionary = ui;
 
 export function useT() {
   const { prefs } = useUIPrefs();

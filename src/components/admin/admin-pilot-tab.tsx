@@ -191,7 +191,7 @@ export function AdminPilotTab() {
   }, [metrics]);
 
   const exportCsv = useCallback(() => {
-    const headers = ["Usuario", "Email", "Tipo", "Sección", "Informes", "Tiempo medio (min)", "Dictado %", "Edición %", "Completitud %", "Última actividad"];
+    const headers = [t("pilot.col_user"), t("pilot.col_email"), t("pilot.col_type"), t("pilot.col_section"), t("pilot.col_reports"), t("pilot.col_avg_time_long"), t("pilot.col_dictation"), t("pilot.col_edit_rate"), t("pilot.col_completeness"), t("pilot.col_last")];
     const rows = userBreakdown.map((u) => [u.name, u.email, u.staff, u.section, u.reports, u.avgMin, u.dictPct, u.editPct, u.completePct, u.lastAt].join(","));
     const csv = [headers.join(","), ...rows].join("\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
