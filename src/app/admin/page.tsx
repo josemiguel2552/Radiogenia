@@ -60,6 +60,15 @@ interface FtJob {
   model: string;
   createdAt: number;
   finishedAt: number | null;
+  trainedTokens: number | null;
+  trainingFile: string | null;
+  nEpochs: number | string | null;
+}
+
+interface FtFileInfo {
+  filename: string;
+  bytes: number;
+  createdAt: number;
 }
 
 type TaskKey = "findings" | "conclusion" | "trace" | "dictation_correction" | "improve_writing";
@@ -138,6 +147,7 @@ export default function AdminPage() {
   // Fine-tuning
   const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
   const [ftModelsList, setFtModelsList] = useState<string[]>([]);
+  const [ftFileMap, setFtFileMap] = useState<Record<string, FtFileInfo>>({});
   const [ftUploading, setFtUploading] = useState(false);
   const [ftStarting, setFtStarting] = useState(false);
   const [ftFileId, setFtFileId] = useState<string | null>(null);
@@ -251,6 +261,7 @@ export default function AdminPage() {
         const ftData = await ftRes.json();
         setFtJobs(ftData.jobs || []);
         setFtModelsList(ftData.ftModels || []);
+        setFtFileMap(ftData.fileMap || {});
       }
     } catch { /* fine-tune listing may fail if not OpenAI */ }
     if (usersRes?.ok) {
@@ -308,11 +319,6 @@ export default function AdminPage() {
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
       for (const task of ["findings", "conclusion", "trace", "dictation_correction", "improve_writing"] as TaskKey[]) {
-        if (task === "findings" && findingsCombo) {
-          body.findings_provider = "combo";
-          body.findings_model = "gpt4mini+deepseek-v3";
-          continue;
-        }
         const o = taskOverrides[task];
         body[`${task}_provider`] = o.provider || "";
         body[`${task}_model`] = o.model || "";
@@ -399,7 +405,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
-      setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null }, ...prev]);
+      setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null, trainedTokens: null, trainingFile: null, nEpochs: null }, ...prev]);
       setFtFileId(null);
     } catch (e) {
       setFtError(e instanceof Error ? e.message : t("admin.failed"));
@@ -418,7 +424,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setFtJobs((prev) => prev.map((j) => j.jobId === jobId ? { ...j, status: data.status, fineTunedModel: data.fineTunedModel, finishedAt: data.finishedAt } : j));
+        setFtJobs((prev) => prev.map((j) => j.jobId === jobId ? { ...j, status: data.status, fineTunedModel: data.fineTunedModel, finishedAt: data.finishedAt, trainedTokens: data.trainedTokens } : j));
       }
     } catch { /* ignore */ }
     setFtChecking(false);
@@ -1015,29 +1021,22 @@ export default function AdminPage() {
                   { key: "dictation_correction" as TaskKey, label: t("admin.task_dictation_correction"), desc: t("admin.task_dictation_correction_desc") },
                   { key: "improve_writing" as TaskKey, label: t("admin.task_improve_writing"), desc: t("admin.task_improve_writing_desc") },
                 ]).map(({ key, label, desc }) => {
-                  const isComboOverride = key === "findings" && findingsCombo;
                   const o = taskOverrides[key];
                   const taskProv = PROVIDERS.find((p) => p.value === o.provider);
                   return (
-                    <div key={key} className={`rounded-lg border p-3 space-y-2 ${isComboOverride ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-900/10" : ""}`}>
+                    <div key={key} className="rounded-lg border p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-semibold text-gray-900 dark:text-white">{label}</p>
                           <p className="text-[10px] text-gray-400">{desc}</p>
                         </div>
-                        {isComboOverride ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">{t("admin.combo_active")}</Badge>
-                        ) : o.provider && o.model ? (
+                        {o.provider && o.model ? (
                           <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] text-gray-400">{t("admin.default")}</Badge>
                         )}
                       </div>
-                      {isComboOverride ? (
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                          {t("admin.combo_managed")}
-                        </p>
-                      ) : (
+                      {(
                       <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
                         <Select value={o.provider || "default"} onValueChange={(v) => {
                           const val = v === "default" ? "" : v;
@@ -1178,74 +1177,107 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* ── Combo GPT-4 Mini + DeepSeek V3 ── */}
-            <Card className={findingsCombo ? "ring-2 ring-emerald-500/30" : ""}>
+            {/* ── Dictation pipeline config ── */}
+            <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-                <Shield className="h-4 w-4 text-emerald-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.combo_title")}</h2>
-                {findingsCombo && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">{t("admin.active")}</Badge>}
+                <Mic className="h-4 w-4 text-blue-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.dictation_config_title")}</h2>
               </div>
-              <CardContent className="pt-0 space-y-3 max-w-xl">
-                <p className="text-xs text-gray-500">
-                  {t("admin.combo_desc")}
-                </p>
-                <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.enable_combo")}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {t("admin.enable_combo_desc")}
-                    </p>
+              <CardContent className="pt-0 space-y-4 max-w-xl">
+                <p className="text-xs text-gray-500">{t("admin.dictation_config_desc")}</p>
+
+                {/* Pipeline visual */}
+                <div className="space-y-3 p-3 rounded-lg border border-blue-200 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-900/10">
+                  <p className="text-[11px] font-semibold text-blue-700 dark:text-blue-400">{t("admin.dictation_pipeline")}</p>
+
+                  {/* Step 1: STT */}
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_stt")}</p>
+                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_stt_desc")}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">Whisper-1 (OpenAI)</Badge>
+                        <Badge variant="outline" className="text-[10px]">temp: 0</Badge>
+                      </div>
+                    </div>
                   </div>
-                  <Switch checked={findingsCombo} onCheckedChange={setFindingsCombo} />
+
+                  {/* Step 2: Postprocess */}
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-[10px] font-bold text-violet-600 dark:text-violet-400">2</div>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_postprocess")}</p>
+                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_postprocess_desc")}</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3: AI Correction */}
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">3</div>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_correction")}</p>
+                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_correction_desc")}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {taskOverrides.dictation_correction.provider || provider || "openai"}: {taskOverrides.dictation_correction.model || "gpt-4o-mini"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 4: PII stripping */}
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-[10px] font-bold text-red-600 dark:text-red-400">4</div>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_pii")}</p>
+                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_pii_desc")}</p>
+                    </div>
+                  </div>
                 </div>
 
-                {findingsCombo && (
-                  <div className="space-y-2 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-900/10">
-                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{t("admin.pipeline_stages")}</p>
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.combo_stage1_title")}</p>
-                        <p className="text-[10px] text-gray-500">{t("admin.combo_stage1_desc")}</p>
+                {/* Correction rules */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.dict_rules_title")}</p>
+                  <p className="text-[10px] text-gray-500">{t("admin.dict_rules_desc")}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { key: "punctuation", icon: "✏️" },
+                      { key: "compounds", icon: "🔗" },
+                      { key: "homophones", icon: "🔊" },
+                      { key: "voice_cmds", icon: "🎤" },
+                      { key: "accents", icon: "Á" },
+                      { key: "units", icon: "📏" },
+                    ] as const).map((rule) => (
+                      <div key={rule.key} className="flex items-start gap-2 p-2 rounded-md border dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                        <span className="text-xs flex-shrink-0 mt-0.5">{rule.icon}</span>
+                        <div>
+                          <p className="text-[11px] font-medium text-gray-900 dark:text-white">{t(`admin.dict_rule_${rule.key}`)}</p>
+                          <p className="text-[10px] text-gray-400 leading-tight">{t(`admin.dict_rule_${rule.key}_desc`)}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">2</div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.combo_stage2_title")}</p>
-                        <p className="text-[10px] text-gray-500">{t("admin.combo_stage2_desc")}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1.5">
-                      <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                      {t("admin.combo_note")}
-                    </div>
-
-                    {/* Key requirement indicators */}
-                    <div className="mt-2 space-y-1">
-                      {(() => {
-                        const hasOpenAI = (apiKey && apiKey !== "••••••••" && provider === "openai") || (whisperKey && whisperKey !== "••••••••");
-                        const hasDeepSeek = (apiKey && apiKey !== "••••••••" && provider === "deepseek") || (deepseekKey && deepseekKey !== "••••••••");
-                        return (
-                          <>
-                            <div className="flex items-center gap-1.5 text-[10px]">
-                              {hasOpenAI ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
-                              <span className={hasOpenAI ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                {t("admin.openai_key")} {hasOpenAI ? t("admin.key_configured") : t("admin.key_required_openai")}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px]">
-                              {hasDeepSeek ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-400" />}
-                              <span className={hasDeepSeek ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                {t("admin.deepseek_key")} {hasDeepSeek ? t("admin.key_configured") : t("admin.key_required_deepseek")}
-                              </span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
+                    ))}
                   </div>
-                )}
+                </div>
+
+                {/* Modality-aware terminology */}
+                <div className="p-3 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Shield className="h-3.5 w-3.5 text-blue-500" />
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.dict_modality_title")}</p>
+                  </div>
+                  <p className="text-[10px] text-gray-500">{t("admin.dict_modality_desc")}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {["TC/CT", "RM/MRI", "Eco/US", "Rx/XRay", "MG/Mammo"].map((mod) => (
+                      <Badge key={mod} variant="secondary" className="text-[10px]">{mod}</Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-gray-400 flex items-center gap-1.5">
+                  <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                  {t("admin.dict_model_hint")}
+                </p>
               </CardContent>
             </Card>
 
@@ -1309,31 +1341,75 @@ export default function AdminPage() {
                 {/* Step 3: Jobs list */}
                 {ftJobs.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">{t("admin.ft_jobs")}</Label>
-                    <div className="space-y-1.5">
-                      {ftJobs.map((job) => (
-                        <div key={job.jobId} className="flex items-center gap-2 p-2 rounded-md border text-xs dark:border-gray-700">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-mono text-[10px] text-gray-500 truncate">{job.jobId}</p>
-                            <p className="text-gray-700 dark:text-gray-300">{job.model}</p>
+                    <Label className="text-xs font-semibold">{t("admin.ft_jobs")} ({ftJobs.length})</Label>
+                    <div className="space-y-2">
+                      {ftJobs.map((job) => {
+                        const file = job.trainingFile ? ftFileMap[job.trainingFile] : null;
+                        return (
+                          <div key={job.jobId} className="p-3 rounded-lg border text-xs dark:border-gray-700 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-mono text-[10px] text-gray-500 truncate">{job.jobId}</p>
+                              </div>
+                              <Badge variant={job.status === "succeeded" ? "default" : job.status === "failed" ? "destructive" : "secondary"}
+                                className="text-[10px] flex-shrink-0">
+                                {job.status}
+                              </Badge>
+                              {job.status !== "succeeded" && job.status !== "failed" && (
+                                <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => handleFtCheckStatus(job.jobId)}
+                                  disabled={ftChecking}>
+                                  <RefreshCw className={`h-3 w-3 ${ftChecking ? "animate-spin" : ""}`} />
+                                </Button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                              <div>
+                                <span className="text-gray-400">{t("admin.ft_base_model")}: </span>
+                                <span className="text-gray-700 dark:text-gray-300">{job.model}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">{t("admin.ft_date")}: </span>
+                                <span className="text-gray-700 dark:text-gray-300">{new Date(job.createdAt * 1000).toLocaleDateString()}</span>
+                              </div>
+                              {job.finishedAt && (
+                                <div>
+                                  <span className="text-gray-400">{t("admin.ft_finished")}: </span>
+                                  <span className="text-gray-700 dark:text-gray-300">{new Date(job.finishedAt * 1000).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                              {job.trainedTokens != null && (
+                                <div>
+                                  <span className="text-gray-400">Tokens: </span>
+                                  <span className="text-gray-700 dark:text-gray-300">{job.trainedTokens.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {job.nEpochs != null && (
+                                <div>
+                                  <span className="text-gray-400">Epochs: </span>
+                                  <span className="text-gray-700 dark:text-gray-300">{job.nEpochs}</span>
+                                </div>
+                              )}
+                              {file && (
+                                <div className="col-span-2">
+                                  <span className="text-gray-400">{t("admin.ft_training_file")}: </span>
+                                  <span className="text-gray-700 dark:text-gray-300">{file.filename}</span>
+                                  <span className="text-gray-400 ml-1">({(file.bytes / 1024).toFixed(0)} KB)</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {job.fineTunedModel && (
+                              <div className="pt-1 border-t dark:border-gray-700">
+                                <span className="text-gray-400 text-[10px]">{t("admin.ft_result_model")}: </span>
+                                <Badge variant="outline" className="text-[10px] text-purple-600">
+                                  {job.fineTunedModel}
+                                </Badge>
+                              </div>
+                            )}
                           </div>
-                          <Badge variant={job.status === "succeeded" ? "default" : job.status === "failed" ? "destructive" : "secondary"}
-                            className="text-[10px] flex-shrink-0">
-                            {job.status}
-                          </Badge>
-                          {job.fineTunedModel && (
-                            <Badge variant="outline" className="text-[10px] text-purple-600 flex-shrink-0 max-w-[140px] truncate">
-                              {job.fineTunedModel}
-                            </Badge>
-                          )}
-                          {job.status !== "succeeded" && job.status !== "failed" && (
-                            <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => handleFtCheckStatus(job.jobId)}
-                              disabled={ftChecking}>
-                              <RefreshCw className={`h-3 w-3 ${ftChecking ? "animate-spin" : ""}`} />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <p className="text-[10px] text-gray-400">
                       {t("admin.ft_jobs_hint")}
