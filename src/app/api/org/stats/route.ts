@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
 
     const membership = await requireOrgRole(user.id, {
       chief: true,
-      sectionRoles: ["section_chief"],
     });
 
     const service = createServiceClient();
