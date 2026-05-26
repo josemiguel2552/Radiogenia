@@ -1508,7 +1508,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     // Admin – Main page
     "admin.badge": "Admin",
     "admin.refresh": "Actualizar",
-    "admin.tab_overview": "Resumen",
+    "admin.tab_overview": "Overview",
     "admin.tab_users": "Usuarios",
     "admin.tab_ai_config": "Config IA",
     "admin.tab_plans": "Planes",
@@ -5159,7 +5159,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     // Admin – Main page
     "admin.badge": "Admin",
     "admin.refresh": "Atualizar",
-    "admin.tab_overview": "Visão geral",
+    "admin.tab_overview": "Overview",
     "admin.tab_users": "Usuários",
     "admin.tab_ai_config": "Config IA",
     "admin.tab_plans": "Planos",
