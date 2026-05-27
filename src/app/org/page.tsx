@@ -394,7 +394,7 @@ export default function OrgDashboard() {
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-900 dark:via-indigo-900 dark:to-gray-950">
         <div className="max-w-5xl mx-auto px-4 md:px-6">
           <div className="flex items-center gap-3 pt-4 pb-2">
-            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10" aria-label={t("common.back")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <span className="ml-auto text-[11px] text-blue-200">
@@ -576,14 +576,14 @@ export default function OrgDashboard() {
                       </Badge>
                       {!m.is_active && <Badge variant="secondary" className="text-[9px]">{t("org.inactive")}</Badge>}
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} aria-label={t("common.edit")}>
                           <Pencil className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost" size="icon"
                           className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
                           onClick={() => handleToggleMemberActive(m)}
-                          title={m.is_active ? t("org.deactivate") : t("org.reactivate")}
+                          aria-label={m.is_active ? t("org.deactivate") : t("org.reactivate")}
                         >
                           {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                         </Button>
@@ -646,7 +646,7 @@ export default function OrgDashboard() {
                           </div>
                         </div>
                         {isOrgChief && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }} aria-label={t("common.delete")}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
@@ -762,7 +762,7 @@ export default function OrgDashboard() {
                                         <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
                                         <Badge className={`text-[9px] mt-0.5 ${modalityColor(t.modality)}`}>{t.modality}</Badge>
                                       </div>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)} aria-label={t("common.delete")}>
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </div>

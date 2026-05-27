@@ -1847,6 +1847,13 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "admin.ai_generated": "Generado por IA",
     "admin.modified_by_rad": "modificado por radiólogo",
     "admin.final_report": "Informe final",
+    // Common
+    "common.back": "Volver",
+    "common.edit": "Editar",
+    "common.delete": "Eliminar",
+    "common.save": "Guardar",
+    "common.cancel": "Cancelar",
+    "common.close": "Cerrar",
     // Org management
     "org.inactive": "Inactivo",
     "org.deactivate": "Desactivar",
@@ -3731,6 +3738,13 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "admin.ai_generated": "AI Generated",
     "admin.modified_by_rad": "modified by radiologist",
     "admin.final_report": "Final Report",
+    // Common
+    "common.back": "Back",
+    "common.edit": "Edit",
+    "common.delete": "Delete",
+    "common.save": "Save",
+    "common.cancel": "Cancel",
+    "common.close": "Close",
     // Org management
     "org.inactive": "Inactive",
     "org.deactivate": "Deactivate",
@@ -5622,6 +5636,13 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "admin.ai_generated": "Gerado por IA",
     "admin.modified_by_rad": "modificado pelo radiologista",
     "admin.final_report": "Relatório final",
+    // Common
+    "common.back": "Voltar",
+    "common.edit": "Editar",
+    "common.delete": "Excluir",
+    "common.save": "Salvar",
+    "common.cancel": "Cancelar",
+    "common.close": "Fechar",
     // Org management
     "org.inactive": "Inativo",
     "org.deactivate": "Desativar",
