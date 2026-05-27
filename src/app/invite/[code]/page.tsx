@@ -237,6 +237,7 @@ export default function InvitePage() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
+                  autoComplete="given-name"
                   className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
                 />
               </div>
@@ -248,6 +249,7 @@ export default function InvitePage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
+                  autoComplete="family-name"
                   className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
                 />
               </div>
@@ -262,6 +264,7 @@ export default function InvitePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
               />
             </div>
@@ -275,6 +278,8 @@ export default function InvitePage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
+                autoComplete="new-password"
                 className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
               />
             </div>

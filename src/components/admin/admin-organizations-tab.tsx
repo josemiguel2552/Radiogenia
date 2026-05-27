@@ -1020,6 +1020,7 @@ export function AdminOrganizationsTab() {
                         placeholder={t("admin.org.min_6_chars")}
                         className="h-9"
                         type="text"
+                        minLength={6}
                       />
                     </div>
                     {resetError && (
