@@ -31,7 +31,6 @@ import {
   List,
   X,
   RotateCcw,
-  Trash2,
   HelpCircle,
   Heart,
   Target,

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Loader2, Plus, Pencil, Trash2, Users, Building2, ArrowLeft,
-  UserPlus, Shield, Crown, Check, X, KeyRound, Eye, EyeOff,
+  UserPlus, Check, X, KeyRound, Eye, EyeOff,
   Network, Settings,
 } from "lucide-react";
 import type { Organization, OrgSection, SectionRole } from "@/lib/types";

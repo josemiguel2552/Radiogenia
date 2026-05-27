@@ -21,7 +21,6 @@ import {
   Settings,
   Shield,
   X,
-  Menu,
   Building2,
   MessageSquare,
   Calculator,

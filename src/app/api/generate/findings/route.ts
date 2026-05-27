@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { template, dictation: rawDictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
+    const { template, dictation: rawDictation, modality, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
 
     const { cleaned: dictation, strippedCount, strippedTypes } = stripPii(rawDictation || "");
     if (strippedCount > 0 && process.env.NODE_ENV === "development") {

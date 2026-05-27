@@ -14,7 +14,6 @@ import {
   Plus, Pencil, Trash2, UserPlus, ChevronDown,
   Check, X, Download, Upload,
 } from "lucide-react";
-import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
 import { useT, useModality as useModalityLabel } from "@/lib/i18n";
 import { MODALITIES } from "@/lib/types";
@@ -113,7 +112,6 @@ export default function OrgDashboard() {
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
   const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
-  const isSectionEditor = !isOrgChief && orgData?.membership.section_role === "section_editor";
   const canManageMembers = isOrgChief || isSectionChief;
   const canViewStats = isOrgChief;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Activity, FileText, Mic, ChevronDown, Calendar } from "lucide-react";
+import { FileText, Mic, ChevronDown, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useT } from "@/lib/i18n";

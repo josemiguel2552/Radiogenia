@@ -16,6 +16,7 @@ export function AnatomyLoader({ label }: { label?: string }) {
               src="/anatomy-loader.png"
               alt=""
               className="w-full h-full object-contain loader-breathe"
+              onError={() => setImgError(true)}
             />
           ) : (
             <FallbackAnatomy />

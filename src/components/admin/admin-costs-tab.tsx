@@ -68,10 +68,6 @@ function actionCost(user: UserCost, action: string): number {
   return user.breakdown[action]?.cost || 0;
 }
 
-function actionCount(user: UserCost, action: string): number {
-  return user.breakdown[action]?.count || 0;
-}
-
 function totalCalls(user: UserCost): number {
   return Object.values(user.breakdown).reduce((sum, b) => sum + b.count, 0);
 }
