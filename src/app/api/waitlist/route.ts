@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendWaitlistConfirmation } from "@/lib/email";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { dbErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {

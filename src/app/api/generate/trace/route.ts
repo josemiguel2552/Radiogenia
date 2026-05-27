@@ -7,7 +7,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {

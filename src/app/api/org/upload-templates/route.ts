@@ -9,7 +9,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 const SYSTEM_PROMPT = `You are a radiology informatics expert. Given a document containing radiology report templates, extract each template and classify it.
 

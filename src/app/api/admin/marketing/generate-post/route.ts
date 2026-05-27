@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-helpers";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 const PLATFORM_LIMITS: Record<string, number> = {
   linkedin: 3000,

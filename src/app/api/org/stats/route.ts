@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireOrgRole } from "@/lib/auth-helpers";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 

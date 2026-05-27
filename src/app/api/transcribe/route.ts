@@ -5,7 +5,7 @@ import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { logAudioCost } from "@/lib/log-ai-cost";
 import { postprocessWhisper } from "@/lib/whisper-postprocess";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {

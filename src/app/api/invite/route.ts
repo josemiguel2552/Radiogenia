@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rl = rateLimit(`invite-validate:${ip}`, RATE_LIMITS.public);
+    if (!rl.allowed) return rl.errorResponse!;
+
     const { code } = await req.json();
     if (!code) {
       return NextResponse.json({ error: "Code required" }, { status: 400 });

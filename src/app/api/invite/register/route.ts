@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendApprovalEmail } from "@/lib/email";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 const MANUAL_APPROVAL_COUNTRIES = ["España", "Portugal"];
 

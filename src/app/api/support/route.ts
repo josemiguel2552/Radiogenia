@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgMembership } from "@/lib/auth-helpers";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const rl = rateLimit(`support:${user.id}`, RATE_LIMITS.public);
+    if (!rl.allowed) return rl.errorResponse!;
 
     const { subject, body, category } = await req.json();
     if (!body) return NextResponse.json({ error: "Message body is required" }, { status: 400 });

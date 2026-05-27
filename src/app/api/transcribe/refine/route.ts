@@ -8,7 +8,7 @@ import { postprocessWhisper } from "@/lib/whisper-postprocess";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAudioCost, logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 function buildCorrectionPrompt(modality: string, studyType: string, isEs: boolean): string {
   const ctx = modality || studyType

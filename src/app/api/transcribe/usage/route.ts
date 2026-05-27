@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { incrementDictationUsage, checkDictationLimit } from "@/lib/auth-helpers";
 import { logAudioCost } from "@/lib/log-ai-cost";
-import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
