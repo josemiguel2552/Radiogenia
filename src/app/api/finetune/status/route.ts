@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
