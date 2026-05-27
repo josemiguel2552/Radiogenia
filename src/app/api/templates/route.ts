@@ -5,6 +5,8 @@ import { getDefaultPhrase } from "@/lib/normality-defaults";
 import { getOrgMembership } from "@/lib/auth-helpers";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 function extractSectionLabels(templateText: string): string[] {
   const re = /\*{2,3}([^*]+)\*{2,3}/g;
   const labels: string[] = [];

@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 function getNextPeriodDate(periodStart: string): Date {
   const start = new Date(periodStart);
   const next = new Date(start);

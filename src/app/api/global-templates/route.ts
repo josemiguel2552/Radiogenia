@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = await createClient();

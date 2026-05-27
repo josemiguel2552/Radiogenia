@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getDefaultsForModality, getAllDefaults, type NormalityLang } from "@/lib/normality-defaults";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();

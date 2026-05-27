@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import Stripe from "stripe";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;

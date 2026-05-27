@@ -5,6 +5,8 @@ import { encrypt } from "@/lib/encryption";
 import { getUserRole } from "@/lib/auth-helpers";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = await createClient();

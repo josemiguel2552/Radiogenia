@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/auth-helpers";
 import { sendApprovalEmail } from "@/lib/email";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await requireAdmin();

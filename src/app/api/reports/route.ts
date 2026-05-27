@@ -4,6 +4,8 @@ import { extractConclusionStyle } from "@/lib/style-learning";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();

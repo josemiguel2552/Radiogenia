@@ -6,6 +6,8 @@ import { testConnection } from "@/lib/ai-provider";
 import type { AIProvider } from "@/lib/types";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await requireAdmin();

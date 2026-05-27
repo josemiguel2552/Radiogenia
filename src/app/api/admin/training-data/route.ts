@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { getErrorMessage, getErrorStatus } from "@/lib/api-error";
 
+export const dynamic = "force-dynamic";
+
 const FULL_COLUMNS =
   "id, user_id, study_type, modality, contrast_option, raw_dictation, clinical_context, " +
   "findings_text, conclusion_text, " +
