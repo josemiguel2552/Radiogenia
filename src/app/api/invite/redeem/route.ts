@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendApprovalEmail } from "@/lib/email";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 const MANUAL_APPROVAL_COUNTRIES = ["España", "Portugal"];
 
@@ -128,7 +129,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, auto_approved: autoApproved, pending_approval: !autoApproved });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

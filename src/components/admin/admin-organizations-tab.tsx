@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { Organization, OrgSection, SectionRole } from "@/lib/types";
 import { useT } from "@/lib/i18n";
+import { toSlug } from "@/lib/slug";
 
 interface OrgWithMembers extends Organization {
   active_members: number;
@@ -158,7 +159,7 @@ export function AdminOrganizationsTab() {
     const body = {
       ...(editingOrg ? { id: editingOrg.id } : {}),
       name: formName.trim(),
-      slug: formSlug.trim().toLowerCase().replace(/\s+/g, "-"),
+      slug: toSlug(formSlug),
       billing_email: formEmail.trim() || null,
       max_seats: formSeats,
       is_pilot: formIsPilot,
@@ -194,7 +195,7 @@ export function AdminOrganizationsTab() {
     if (!sectionName.trim() || !selectedOrg) return;
     setSavingSection(true);
     setSectionError("");
-    const slug = sectionName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "");
+    const slug = toSlug(sectionName);
     try {
       const res = await fetch("/api/admin/organizations/sections", {
         method: "POST",

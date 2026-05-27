@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { encrypt } from "@/lib/encryption";
 import { getUserRole } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -41,8 +42,7 @@ export async function GET() {
 
     return NextResponse.json({ ...data, role });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -99,7 +99,7 @@ export async function PUT(req: NextRequest) {
 
     const { data, error } = result;
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     if (data) {
       data.api_key_encrypted = data.api_key_encrypted ? "••••••••" : "";
@@ -107,7 +107,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

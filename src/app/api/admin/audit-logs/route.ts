@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
       if (error.message?.includes("audit_logs")) {
         return NextResponse.json({ logs: [], nextCursor: null });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return dbErrorResponse(error);
     }
 
     const rows = data || [];
@@ -55,8 +56,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ logs, nextCursor });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }

@@ -13,6 +13,7 @@ import { translateSectionLabel, translateTemplate, enforceOutputLanguage, enforc
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     const { template, dictation: rawDictation, modality, studyType, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
 
     const { cleaned: dictation, strippedCount, strippedTypes } = stripPii(rawDictation || "");
-    if (strippedCount > 0) {
+    if (strippedCount > 0 && process.env.NODE_ENV === "development") {
       console.log(`[findings] PII stripped: ${strippedCount} items`, strippedTypes);
     }
 
@@ -124,7 +125,6 @@ export async function POST(req: NextRequest) {
 
     // ── Combo pipeline: GPT-4 Mini mapper + DeepSeek V3 validator ──
     if (globalConfig.findingsComboEnabled) {
-      console.log(`[findings] COMBO mode — GPT-4o-mini + DeepSeek V3, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
       const { text: comboText, comboUsage } = await runComboFindings(globalConfig, {
         template: translatedTemplate,
@@ -186,7 +186,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[findings] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}, compact=${safeConfig.compact_normals}, lang=${safeConfig.output_language}`);
 
     const { stream: rawStream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
@@ -240,7 +239,6 @@ export async function POST(req: NextRequest) {
 
     return new Response(passthrough, { headers: responseHeaders });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

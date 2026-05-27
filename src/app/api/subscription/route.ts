@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 function getNextPeriodDate(periodStart: string): Date {
   const start = new Date(periodStart);
@@ -112,8 +113,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -170,7 +170,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ ok: true, deferred: true, effectiveDate: effectiveDate.toISOString() });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

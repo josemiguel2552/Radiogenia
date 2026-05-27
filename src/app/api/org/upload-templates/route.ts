@@ -9,6 +9,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 const SYSTEM_PROMPT = `You are a radiology informatics expert. Given a document containing radiology report templates, extract each template and classify it.
 
@@ -106,7 +107,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ extracted: templates.length, saved });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

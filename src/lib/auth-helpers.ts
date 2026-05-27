@@ -37,7 +37,7 @@ export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider):
   if (taskProvider === "openai" && config.provider !== "openai" && config.whisperApiKey) {
     return config.whisperApiKey;
   }
-  if (taskProvider !== config.provider && taskProvider !== "openai") {
+  if (taskProvider !== config.provider && taskProvider !== "openai" && process.env.NODE_ENV === "development") {
     console.warn(`[resolveApiKey] No specific key for "${taskProvider}", falling back to main provider key (${config.provider})`);
   }
   return config.apiKey;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +20,12 @@ export async function GET(req: NextRequest) {
       .eq("org_id", orgId)
       .order("display_order", { ascending: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    console.log("[admin/org/sections GET]", orgId, "→", (data || []).length, "sections");
+    if (error) return dbErrorResponse(error);
     return NextResponse.json(data, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -46,16 +45,10 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.error("[admin/org/sections POST] insert error:", error.message, { org_id, name, slug });
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    console.log("[admin/org/sections POST] created:", data?.id, { org_id, name, slug });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json(data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[admin/org/sections POST] exception:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -69,10 +62,9 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "Missing section id" }, { status: 400 });
 
     const { error } = await service.from("org_sections").delete().eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

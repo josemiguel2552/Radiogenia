@@ -2,6 +2,7 @@ export const maxDuration = 120;
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse } from "@/lib/api-error";
 
 const ASPECT_MAP: Record<string, string> = {
   square: "1:1",
@@ -171,8 +172,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("[marketing/generate-image]", error);
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

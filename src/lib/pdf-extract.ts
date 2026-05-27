@@ -60,8 +60,7 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pageText = content.items.map((item: any) => item.str ?? "").join(" ");
+    const pageText = content.items.map((item: { str?: string }) => item.str ?? "").join(" ");
     pages.push(pageText);
   }
   await doc.destroy();

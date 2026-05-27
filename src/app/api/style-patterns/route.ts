@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -79,8 +80,7 @@ export async function GET() {
       total_reports: totalReports,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -99,11 +99,10 @@ export async function PATCH(req: NextRequest) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -124,7 +123,7 @@ export async function DELETE(req: NextRequest) {
         .eq("id", id)
         .eq("user_id", user.id);
 
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return dbErrorResponse(error);
     } else if (group) {
       const [modality, studyType] = group.split("|");
       const { error } = await supabase
@@ -134,14 +133,13 @@ export async function DELETE(req: NextRequest) {
         .eq("modality", modality)
         .eq("study_type", studyType);
 
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return dbErrorResponse(error);
     } else {
       return NextResponse.json({ error: "Missing id or group parameter" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

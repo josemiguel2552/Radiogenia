@@ -19,6 +19,7 @@ import { DEFAULT_TEMPLATES } from "@/lib/templates";
 import { useT, useModality as useModalityLabel } from "@/lib/i18n";
 import { MODALITIES } from "@/lib/types";
 import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
+import { toSlug } from "@/lib/slug";
 import { SectionEditor, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
 import type { TemplateField } from "@/components/shared/template-section-editor";
 
@@ -154,7 +155,7 @@ export default function OrgDashboard() {
   async function handleSaveSection() {
     if (!sectionName.trim()) return;
     setSavingSection(true);
-    const slug = sectionSlug.trim() || sectionName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "");
+    const slug = sectionSlug.trim() || toSlug(sectionName);
     await fetch("/api/org/sections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -793,7 +794,7 @@ export default function OrgDashboard() {
               <Label className="text-xs">{t("org.section_form_name")}</Label>
               <Input
                 value={sectionName}
-                onChange={(e) => { setSectionName(e.target.value); setSectionSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "")); }}
+                onChange={(e) => { setSectionName(e.target.value); setSectionSlug(toSlug(e.target.value)); }}
                 placeholder={t("org.section_name_placeholder")}
                 className="h-9"
               />

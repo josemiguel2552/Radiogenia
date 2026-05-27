@@ -8,6 +8,7 @@ import { postprocessWhisper } from "@/lib/whisper-postprocess";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAudioCost, logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 function buildCorrectionPrompt(modality: string, studyType: string, isEs: boolean): string {
   const ctx = modality || studyType
@@ -179,7 +180,6 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { getErrorMessage, getErrorStatus } from "@/lib/api-error";
 
 const FULL_COLUMNS =
   "id, user_id, study_type, modality, contrast_option, raw_dictation, clinical_context, " +
@@ -88,9 +89,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ reports: enriched, total: enriched.length });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message, reports: [], total: 0 }, { status });
+    const message = getErrorMessage(error);
+    return NextResponse.json({ error: "Internal server error", reports: [], total: 0 }, { status: getErrorStatus(message) });
   }
 }
 

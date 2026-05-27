@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 const PLATFORM_LIMITS: Record<string, number> = {
   linkedin: 3000,
@@ -86,8 +87,6 @@ REGLAS:
 
     return NextResponse.json({ post, platform, type, characters: post.length });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }

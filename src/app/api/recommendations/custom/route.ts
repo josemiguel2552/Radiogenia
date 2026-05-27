@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getOrgMembership } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -29,9 +30,18 @@ export async function GET() {
       ...(row.overrides ? { overrides: row.overrides } : {}),
     }));
 
-    // Auto-include ALL org recommendations for user's section (no import needed)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let orgRecs: any[] = [];
+    interface RecommendationItem {
+      id: string;
+      category: string;
+      modality: string;
+      title: { es: string; en: string; pt: string };
+      text: { es: string; en: string; pt: string };
+      tags: string[];
+      source: string;
+      scope: "org";
+      section_name: string;
+    }
+    let orgRecs: RecommendationItem[] = [];
     try {
       const membership = await getOrgMembership(user.id);
       if (membership) {
@@ -95,7 +105,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     return NextResponse.json({ ok: true, id: data.id });
   } catch {
@@ -120,7 +130,7 @@ export async function PUT(req: NextRequest) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     return NextResponse.json({ ok: true });
   } catch {

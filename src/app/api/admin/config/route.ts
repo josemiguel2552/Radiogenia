@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth-helpers";
 import { encrypt } from "@/lib/encryption";
 import { testConnection } from "@/lib/ai-provider";
 import type { AIProvider } from "@/lib/types";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -35,9 +36,7 @@ export async function GET() {
 
     return NextResponse.json(masked);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }
 
@@ -102,7 +101,7 @@ export async function PUT(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return dbErrorResponse(error);
     }
 
     const MASKED = [
@@ -117,9 +116,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }
 
@@ -141,8 +138,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
       .eq("org_id", orgId)
       .order("joined_at");
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     const userIds = (data || []).map((m) => m.user_id as string);
     const { data: profiles } = userIds.length > 0
@@ -40,13 +41,11 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    console.log("[admin/org/members GET]", orgId, "→", mapped.length, "members");
     return NextResponse.json(mapped, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -146,11 +145,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.error("[admin/org/members POST] upsert error:", error.message, memberPayload);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    console.log("[admin/org/members POST] created:", data?.id, { org_id, email, section_role, user_created: !existingProfile });
+    if (error) return dbErrorResponse(error);
 
     return NextResponse.json({
       ...data,
@@ -159,8 +154,7 @@ export async function POST(req: NextRequest) {
       user_name: name?.trim() || existingProfile ? undefined : name?.trim(),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -184,11 +178,10 @@ export async function PUT(req: NextRequest) {
     }
 
     const { error } = await service.from("org_members").update(update).eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -210,10 +203,9 @@ export async function PATCH(req: NextRequest) {
       password: new_password,
     });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
