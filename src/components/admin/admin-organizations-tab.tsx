@@ -1010,7 +1010,7 @@ export function AdminOrganizationsTab() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">{t("admin.org.billing_email")}</Label>
-                <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" />
+                <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" type="email" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">{t("admin.org.max_seats")}</Label>
@@ -1135,7 +1135,7 @@ export function AdminOrganizationsTab() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">{t("admin.org.billing_email")}</Label>
-              <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" />
+              <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="billing@hospital.com" className="h-9" type="email" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">{t("admin.org.max_seats")}</Label>

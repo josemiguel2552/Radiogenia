@@ -117,6 +117,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.signin_btn": "Iniciar sesión",
     "auth.no_account": "¿No tienes cuenta?",
     "auth.create_free": "Crea una gratis",
+    "auth.login_failed": "Error de inicio de sesión",
+    "auth.network_error": "Error de red. Inténtalo de nuevo.",
     "auth.sidebar_text": "Informes radiológicos asistidos por IA. Dicta, genera, entrega.",
     // Auth - Register
     "auth.create_account": "Crea tu cuenta",
@@ -329,6 +331,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.signin_btn": "Sign in",
     "auth.no_account": "No account?",
     "auth.create_free": "Create one free",
+    "auth.login_failed": "Login failed",
+    "auth.network_error": "Network error. Please try again.",
     "auth.sidebar_text": "AI-powered radiology reporting. Dictate, generate, deliver.",
     // Auth - Register
     "auth.create_account": "Create your account",
@@ -541,6 +545,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.signin_btn": "Entrar",
     "auth.no_account": "Não tem conta?",
     "auth.create_free": "Crie uma grátis",
+    "auth.login_failed": "Falha no login",
+    "auth.network_error": "Erro de rede. Tente novamente.",
     "auth.sidebar_text": "Laudos radiológicos com IA. Dite, gere, entregue.",
     // Auth - Register
     "auth.create_account": "Crie sua conta",

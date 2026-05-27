@@ -44,13 +44,13 @@ function LoginContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(data.error || t("auth.login_failed"));
         setLoading(false);
       } else {
         window.location.href = "/dashboard";
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.network_error"));
       setLoading(false);
     }
   }
