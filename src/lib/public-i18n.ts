@@ -660,6 +660,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
   },
 };
 
+export const _publicDictionary = dict;
 export const PUBLIC_LANGS: PublicLang[] = ["es", "en", "pt"];
 
 export function nextLang(current: PublicLang): PublicLang {
