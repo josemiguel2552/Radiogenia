@@ -753,16 +753,16 @@ export default function OrgDashboard() {
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {sTemplates.map((t) => (
-                                    <div key={t.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-sm transition-all">
+                                  {sTemplates.map((tpl) => (
+                                    <div key={tpl.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-sm transition-all">
                                       <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
                                         <FileText className="h-4 w-4 text-teal-500" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
-                                        <Badge className={`text-[9px] mt-0.5 ${modalityColor(t.modality)}`}>{t.modality}</Badge>
+                                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{tpl.name}</span>
+                                        <Badge className={`text-[9px] mt-0.5 ${modalityColor(tpl.modality)}`}>{tpl.modality}</Badge>
                                       </div>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)} aria-label={t("common.delete")}>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(tpl.id)} aria-label={t("common.delete")}>
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </div>

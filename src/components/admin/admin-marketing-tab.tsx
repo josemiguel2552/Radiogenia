@@ -1015,7 +1015,7 @@ export function AdminMarketingTab() {
   async function handleSaveAsset(type: "post" | "image") {
     setSaving(true);
     try {
-      await fetch("/api/admin/marketing/assets", {
+      const res = await fetch("/api/admin/marketing/assets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1027,17 +1027,20 @@ export function AdminMarketingTab() {
           metadata: type === "post" ? { postType, tone, language } : { style: imageStyle, aspect },
         }),
       });
+      if (res.ok) await loadAssets();
     } catch { /* ignore */ }
     setSaving(false);
   }
 
   async function handleDeleteAsset(id: string) {
-    await fetch("/api/admin/marketing/assets", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    setAssets((prev) => prev.filter((a) => a.id !== id));
+    try {
+      const res = await fetch("/api/admin/marketing/assets", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) setAssets((prev) => prev.filter((a) => a.id !== id));
+    } catch { /* ignore */ }
   }
 
   function downloadImage(dataUrl: string, name: string) {

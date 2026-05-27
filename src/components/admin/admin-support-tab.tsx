@@ -36,11 +36,17 @@ export function AdminSupportTab() {
   async function handleReply(ticketId: string) {
     if (!replyText.trim()) return;
     setSaving(true);
-    await fetch("/api/admin/support", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: ticketId, admin_reply: replyText.trim(), status: "resolved" }),
-    });
+    try {
+      const res = await fetch("/api/admin/support", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: ticketId, admin_reply: replyText.trim(), status: "resolved" }),
+      });
+      if (!res.ok) { setSaving(false); return; }
+    } catch {
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     setReplyingId(null);
     setReplyText("");
@@ -48,11 +54,14 @@ export function AdminSupportTab() {
   }
 
   async function handleStatusChange(ticketId: string, status: SupportTicketStatus) {
-    await fetch("/api/admin/support", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: ticketId, status }),
-    });
+    try {
+      const res = await fetch("/api/admin/support", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: ticketId, status }),
+      });
+      if (!res.ok) return;
+    } catch { return; }
     await load();
   }
 

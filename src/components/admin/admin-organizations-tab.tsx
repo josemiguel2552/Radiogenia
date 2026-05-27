@@ -50,6 +50,7 @@ export function AdminOrganizationsTab() {
   const [formSeats, setFormSeats] = useState(50);
   const [formIsPilot, setFormIsPilot] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [orgError, setOrgError] = useState("");
 
   // Selected org for management
   const [selectedOrg, setSelectedOrg] = useState<OrgWithMembers | null>(null);
@@ -140,6 +141,7 @@ export function AdminOrganizationsTab() {
     setFormEmail("");
     setFormSeats(50);
     setFormIsPilot(false);
+    setOrgError("");
     setShowOrgForm(true);
   }
 
@@ -150,12 +152,14 @@ export function AdminOrganizationsTab() {
     setFormEmail(org.billing_email || "");
     setFormSeats(org.max_seats);
     setFormIsPilot(org.is_pilot || false);
+    setOrgError("");
     setShowOrgForm(true);
   }
 
   async function handleSaveOrg() {
     if (!formName.trim() || !formSlug.trim()) return;
     setSaving(true);
+    setOrgError("");
     const body = {
       ...(editingOrg ? { id: editingOrg.id } : {}),
       name: formName.trim(),
@@ -164,28 +168,60 @@ export function AdminOrganizationsTab() {
       max_seats: formSeats,
       is_pilot: formIsPilot,
     };
-    await fetch("/api/admin/organizations", {
-      method: editingOrg ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch("/api/admin/organizations", {
+        method: editingOrg ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        setOrgError(data.error || t("admin.org.error_saving_org"));
+        setSaving(false);
+        return;
+      }
+    } catch {
+      setOrgError(t("admin.org.network_error"));
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     setShowOrgForm(false);
     await loadOrgs();
   }
 
   async function handleToggleActive(org: OrgWithMembers) {
-    await fetch("/api/admin/organizations", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: org.id, is_active: !org.is_active }),
-    });
+    setOrgError("");
+    try {
+      const res = await fetch("/api/admin/organizations", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: org.id, is_active: !org.is_active }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        setOrgError(data.error || t("admin.org.error_toggling_org"));
+      }
+    } catch {
+      setOrgError(t("admin.org.network_error"));
+    }
     await loadOrgs();
   }
 
   async function handleDeleteOrg(org: OrgWithMembers) {
     if (!confirm(t("admin.org.confirm_delete_org").replace("{name}", org.name))) return;
-    await fetch(`/api/admin/organizations?id=${org.id}`, { method: "DELETE" });
+    setOrgError("");
+    try {
+      const res = await fetch(`/api/admin/organizations?id=${org.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        setOrgError(data.error || t("admin.org.error_deleting_org"));
+        return;
+      }
+    } catch {
+      setOrgError(t("admin.org.network_error"));
+      return;
+    }
     setSelectedOrg(null);
     await loadOrgs();
   }
@@ -372,11 +408,20 @@ export function AdminOrganizationsTab() {
 
   async function handleToggleMember(m: MemberRow) {
     if (!selectedOrg) return;
-    await fetch("/api/admin/organizations/members", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: m.id, is_active: !m.is_active }),
-    });
+    setDetailError("");
+    try {
+      const res = await fetch("/api/admin/organizations/members", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: m.id, is_active: !m.is_active }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        setDetailError(data.error || t("admin.org.error_toggling_member"));
+      }
+    } catch {
+      setDetailError(t("admin.org.network_error"));
+    }
     await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
   }
 
@@ -409,7 +454,7 @@ export function AdminOrganizationsTab() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedOrg(null); setDetailTab("chart"); }}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedOrg(null); setDetailTab("chart"); }} aria-label={t("common.back")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
@@ -663,7 +708,7 @@ export function AdminOrganizationsTab() {
                                 <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{s.name}</span>
                                 <span className="text-[10px] text-gray-400">{sMembers.length} {t("admin.org.members_count")}</span>
                               </div>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 flex-shrink-0" onClick={() => handleDeleteSection(s.id)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 flex-shrink-0" onClick={() => handleDeleteSection(s.id)} aria-label={t("common.delete")}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </CardContent>
@@ -1023,6 +1068,9 @@ export function AdminOrganizationsTab() {
                   <span className="text-gray-400 ml-1">({t("pilot.is_pilot_hint")})</span>
                 </div>
               </label>
+              {orgError && (
+                <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{orgError}</p>
+              )}
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>{t("cancel")}</Button>
                 <Button size="sm" onClick={handleSaveOrg} disabled={saving || !formName.trim() || !formSlug.trim()}>
@@ -1048,6 +1096,12 @@ export function AdminOrganizationsTab() {
           {t("admin.org.new_hospital")}
         </Button>
       </div>
+
+      {orgError && (
+        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <p className="text-xs text-red-600 dark:text-red-400">{orgError}</p>
+        </div>
+      )}
 
       {orgs.length === 0 ? (
         <Card>
@@ -1092,10 +1146,10 @@ export function AdminOrganizationsTab() {
                       onCheckedChange={() => handleToggleActive(org)}
                       className="scale-75"
                     />
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditOrg(org)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditOrg(org)} aria-label={t("common.edit")}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => handleDeleteOrg(org)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => handleDeleteOrg(org)} aria-label={t("common.delete")}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -1141,6 +1195,9 @@ export function AdminOrganizationsTab() {
               <Label className="text-xs">{t("admin.org.max_seats")}</Label>
               <Input type="number" value={formSeats} onChange={(e) => setFormSeats(Number(e.target.value))} min={1} className="h-9 w-24" />
             </div>
+            {orgError && (
+              <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{orgError}</p>
+            )}
             <div className="flex gap-2 justify-end">
               <Button variant="outline" size="sm" onClick={() => setShowOrgForm(false)}>{t("cancel")}</Button>
               <Button size="sm" onClick={handleSaveOrg} disabled={saving || !formName.trim() || !formSlug.trim()}>

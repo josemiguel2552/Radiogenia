@@ -28,7 +28,7 @@ export function AdminWaitlistTab() {
 
   useEffect(() => {
     fetch("/api/admin/waitlist")
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : [])
       .then((d) => { if (Array.isArray(d)) setEntries(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -37,12 +37,12 @@ export function AdminWaitlistTab() {
   async function handleDelete(id: string) {
     setDeleting(id);
     try {
-      await fetch("/api/admin/waitlist", {
+      const res = await fetch("/api/admin/waitlist", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      setEntries((prev) => prev.filter((e) => e.id !== id));
+      if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
     } catch { /* ignore */ }
     setDeleting(null);
   }

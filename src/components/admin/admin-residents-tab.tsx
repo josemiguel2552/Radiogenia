@@ -31,12 +31,12 @@ export function AdminResidentsTab() {
   async function handleReview(id: string, status: "approved" | "rejected") {
     setProcessing(id);
     try {
-      await fetch("/api/admin/resident-verifications", {
+      const res = await fetch("/api/admin/resident-verifications", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status, admin_notes: notes[id] || "" }),
       });
-      await load();
+      if (res.ok) await load();
     } catch { /* ignore */ }
     setProcessing(null);
   }
