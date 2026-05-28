@@ -14,7 +14,7 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical,
+  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical, Sparkles,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -199,6 +199,8 @@ export default function AdminPage() {
   const [ftNEpochs, setFtNEpochs] = useState<string>("auto");
   const [ftLearningRate, setFtLearningRate] = useState<string>("auto");
   const [ftBatchSize, setFtBatchSize] = useState<string>("auto");
+  const [ftAugmenting, setFtAugmenting] = useState(false);
+  const [ftAugmentResult, setFtAugmentResult] = useState<{ originalCount: number; syntheticCount: number; totalCount: number } | null>(null);
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -541,6 +543,44 @@ export default function AdminPage() {
       setFtError(e instanceof Error ? e.message : "Failed");
     } finally {
       setFtGenerating(false);
+    }
+  }
+
+  async function handleAugmentData() {
+    setFtAugmenting(true);
+    setFtDataError(null);
+    setFtAugmentResult(null);
+    try {
+      const params = new URLSearchParams();
+      if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      const res = await fetch(`/api/admin/training-data/openai?${params}`);
+      if (!res.ok) { setFtDataError("Failed to fetch training data"); setFtAugmenting(false); return; }
+      const jsonlText = await res.text();
+      const lines = jsonlText.split("\n").filter((l) => l.trim());
+      if (lines.length === 0) { setFtDataError("No training examples to augment"); setFtAugmenting(false); return; }
+
+      const examples = lines.map((l) => JSON.parse(l));
+      const augRes = await fetch("/api/admin/training-data/augment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ examples }),
+      });
+      const augData = await augRes.json();
+      if (!augRes.ok) { setFtDataError(augData.error || "Augmentation failed"); setFtAugmenting(false); return; }
+
+      setFtAugmentResult({ originalCount: augData.originalCount, syntheticCount: augData.syntheticCount, totalCount: augData.totalCount });
+
+      const blob = new Blob([augData.jsonl], { type: "application/jsonl" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `radiogenai-finetune-augmented-${new Date().toISOString().slice(0, 10)}.jsonl`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setFtDataError(e instanceof Error ? e.message : "Augmentation failed");
+    } finally {
+      setFtAugmenting(false);
     }
   }
 
@@ -1847,6 +1887,23 @@ export default function AdminPage() {
                         <p className="text-lg font-bold text-green-700 dark:text-green-300">{ftDataPreview.total >= 10 ? "✓" : "✗"}</p>
                         <p className="text-[10px] text-green-500">{t("admin.ft_min_examples")}</p>
                       </div>
+                    </div>
+
+                    <div className="border border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.ft_augment_title")}</p>
+                      </div>
+                      <p className="text-[11px] text-gray-500">{t("admin.ft_augment_desc")}</p>
+                      <Button size="sm" className="h-7 text-xs gap-1.5 bg-purple-600 hover:bg-purple-500 text-white" onClick={handleAugmentData} disabled={ftAugmenting || !ftDataPreview.total}>
+                        {ftAugmenting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        {ftAugmenting ? t("admin.ft_augmenting") : t("admin.ft_augment_button")}
+                      </Button>
+                      {ftAugmentResult && (
+                        <p className="text-[11px] text-green-600">
+                          {t("admin.ft_augment_result").replace("{0}", String(ftAugmentResult.originalCount)).replace("{1}", String(ftAugmentResult.syntheticCount)).replace("{2}", String(ftAugmentResult.totalCount))}
+                        </p>
+                      )}
                     </div>
 
                     {ftDataPreview.preview.length > 0 && (
