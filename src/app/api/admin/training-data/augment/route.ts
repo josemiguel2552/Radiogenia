@@ -41,8 +41,9 @@ export async function POST(req: NextRequest) {
     }
 
     const globalConfig = await getGlobalAIConfig();
-    const provider = (globalConfig.provider || "openai") as AIProvider;
-    const modelName = globalConfig.modelName || "gpt-4o-mini";
+    const taskOverride = globalConfig.taskOverrides?.data_augmentation;
+    const provider = (taskOverride?.provider || globalConfig.provider || "openai") as AIProvider;
+    const modelName = taskOverride?.modelName || globalConfig.modelName || "gpt-4o-mini";
     const apiKey = resolveApiKey(globalConfig, provider);
 
     if (!apiKey) {
