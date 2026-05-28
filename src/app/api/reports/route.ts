@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractConclusionStyle } from "@/lib/style-learning";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,7 +25,7 @@ export async function GET(req: NextRequest) {
       if (from) countQuery = countQuery.gte("created_at", from);
       if (to) countQuery = countQuery.lte("created_at", to);
       const { count, error } = await countQuery;
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return dbErrorResponse(error);
       return NextResponse.json({ count: count || 0 });
     }
 
@@ -36,12 +39,11 @@ export async function GET(req: NextRequest) {
     if (to) query = query.lte("created_at", to);
 
     const { data, error } = await query;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     return NextResponse.json(data || []);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -163,7 +165,7 @@ export async function PATCH(req: NextRequest) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     // Re-run style learning with updated text
     if (findings_text || conclusion_text) {
@@ -188,8 +190,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -267,7 +268,7 @@ export async function POST(req: NextRequest) {
         .single());
     }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     let learnedPhrases = 0;
 
@@ -307,7 +308,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ...data, _learned_phrases: learnedPhrases });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

@@ -7,6 +7,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -91,7 +92,6 @@ If no repair was needed, set "repaired": false, "corrected_findings": null, "rep
 
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

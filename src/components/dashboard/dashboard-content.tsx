@@ -31,7 +31,6 @@ import {
   List,
   X,
   RotateCcw,
-  Trash2,
   HelpCircle,
   Heart,
   Target,
@@ -49,6 +48,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { RecommendationPanel } from "./recommendation-panel";
 import { SelectionHighlight } from "@/components/ui/selection-highlight";
+import { toast } from "sonner";
 import { NpsSurvey } from "./nps-survey";
 import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
@@ -1075,6 +1075,7 @@ export function DashboardContent() {
   function copyText(text: string, id: string) {
     navigator.clipboard.writeText(text);
     setCopied(id);
+    toast.success(t("toast.copied"));
     setTimeout(() => setCopied(null), 2000);
   }
 
@@ -1136,11 +1137,28 @@ export function DashboardContent() {
   }
   copyFormattedRef.current = copyFormatted;
 
+  const handleGenerateRef = useRef(handleGenerate);
+  handleGenerateRef.current = handleGenerate;
+  const startNewReportRef = useRef(startNewReport);
+  startNewReportRef.current = startNewReport;
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.shiftKey && e.code === "Space") {
         e.preventDefault();
         copyFormattedRef.current?.("findings_conclusion");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleGenerateRef.current("structured");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        startNewReportRef.current();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        e.preventDefault();
+        window.dispatchEvent(new Event("radiogenai:open-help"));
       }
       if (e.ctrlKey && e.key === "a") {
         const tag = (e.target as HTMLElement)?.tagName;
@@ -1195,6 +1213,7 @@ export function DashboardContent() {
         if (saved?.id) {
           setLastSavedReportId(saved.id);
           reportDirtyRef.current = false;
+          toast.success(t("toast.report_saved"));
           fetch("/api/audit-logs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1266,11 +1285,11 @@ export function DashboardContent() {
     } catch { /* non-critical */ }
   }
 
-  async function startNewReport() {
+  function startNewReport() {
     logCorrectionIfNeeded();
     if (findings) {
-      if (!lastSavedReportId) await saveReportQuietly();
-      else await flushCorrections();
+      if (!lastSavedReportId) saveReportQuietly().catch(() => {});
+      else flushCorrections().catch(() => {});
       window.dispatchEvent(new Event("radiogenai:report-saved"));
     }
     setDictation("");
@@ -1295,6 +1314,7 @@ export function DashboardContent() {
     stopCorrectionLoop.current();
     if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
     localStorage.removeItem("radiogenai_draft");
+    toast(t("toast.new_report"));
   }
 
   async function handleReportError() {
@@ -1321,6 +1341,7 @@ export function DashboardContent() {
       setErrorReported(true);
       setErrorDialogOpen(false);
       setErrorNote("");
+      toast.success(t("toast.report_error_sent"));
     } catch { /* ignore */ }
     setReportingError(false);
   }

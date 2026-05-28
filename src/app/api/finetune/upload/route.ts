@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -92,7 +93,6 @@ export async function POST(req: NextRequest) {
       errors: errors.slice(0, 5),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

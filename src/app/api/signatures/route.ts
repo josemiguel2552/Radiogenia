@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { dbErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 const TABLE_SQL = `create table if not exists public.signatures (
   id uuid default gen_random_uuid() primary key,
@@ -93,7 +96,7 @@ export async function GET() {
     if (isTableMissing(result.error.message)) {
       return NextResponse.json({ error: "SETUP_REQUIRED" }, { status: 503 });
     }
-    return NextResponse.json({ error: result.error.message }, { status: 500 });
+    return dbErrorResponse(result.error);
   }
   return NextResponse.json(result.data ?? []);
 }
@@ -122,7 +125,7 @@ export async function POST(req: NextRequest) {
     if (isTableMissing(error.message)) {
       return NextResponse.json({ error: "SETUP_REQUIRED" }, { status: 503 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return dbErrorResponse(error);
   }
   return NextResponse.json(data);
 }
@@ -161,7 +164,7 @@ export async function PUT(req: NextRequest) {
     if (isTableMissing(error.message)) {
       return NextResponse.json({ error: "SETUP_REQUIRED" }, { status: 503 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return dbErrorResponse(error);
   }
   return NextResponse.json(data);
 }
@@ -185,7 +188,7 @@ export async function DELETE(req: NextRequest) {
     if (isTableMissing(error.message)) {
       return NextResponse.json({ error: "SETUP_REQUIRED" }, { status: 503 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return dbErrorResponse(error);
   }
   return NextResponse.json({ ok: true });
 }

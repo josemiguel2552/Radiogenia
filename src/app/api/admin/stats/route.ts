@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -76,8 +79,6 @@ export async function GET() {
       usersPerDay,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }

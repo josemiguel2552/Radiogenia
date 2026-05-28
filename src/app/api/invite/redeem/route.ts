@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendApprovalEmail } from "@/lib/email";
+import { toErrorResponse } from "@/lib/api-error";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const MANUAL_APPROVAL_COUNTRIES = ["España", "Portugal"];
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rl = rateLimit(`invite-redeem:${ip}`, RATE_LIMITS.auth);
+    if (!rl.allowed) return rl.errorResponse!;
+
     const { code, email, firstName, lastName, country, hospital, role } = await req.json();
     if (!code || !email) return NextResponse.json({ error: "Code and email required" }, { status: 400 });
 
@@ -128,7 +134,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, auto_approved: autoApproved, pending_approval: !autoApproved });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

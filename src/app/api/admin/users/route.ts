@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { sendApprovalEmail } from "@/lib/email";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -21,7 +24,7 @@ export async function GET() {
     ]);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return dbErrorResponse(error);
     }
 
     const countMap = new Map<string, number>();
@@ -36,9 +39,7 @@ export async function GET() {
 
     return NextResponse.json({ users });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }
 
@@ -85,9 +86,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, userId });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }
 
@@ -162,7 +161,7 @@ export async function PUT(req: NextRequest) {
       .update(updates)
       .eq("id", userId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     if (approved === true) {
       try {
@@ -181,9 +180,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }
 
@@ -201,8 +198,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message === "Unauthorized" ? 401 : message === "Forbidden" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return toErrorResponse(error);
   }
 }

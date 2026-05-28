@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST() {
   try {
@@ -51,7 +52,6 @@ export async function POST() {
 
     return NextResponse.json({ message: "Seeded successfully" });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getOrgMembership } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 const CURRENT_VERSION = "1.0";
 const REQUIRED_DOCUMENTS = ["terms_of_use", "privacy_policy", "data_processing", "ai_disclaimer"] as const;
@@ -37,8 +38,7 @@ export async function GET() {
       org_name: membership.org_name,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       .from("consent_records")
       .upsert(records, { onConflict: "user_id,document_type,document_version", ignoreDuplicates: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     const allAccepted = documents.length >= REQUIRED_DOCUMENTS.length;
     if (allAccepted) {
@@ -93,7 +93,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, all_accepted: allAccepted });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

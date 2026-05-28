@@ -277,7 +277,6 @@ export async function runComboFindings(
 
   // ── Stage 1: GPT-4 Mini maps dictation → structured JSON ──
   const mapper = buildMapperPrompt(params);
-  console.log(`[combo] Stage 1 — GPT-4o-mini mapping (lang=${params.outputLanguage}, dictation=${params.dictation.length}ch)`);
 
   const mapperResult = await generateAIWithUsage({
     provider: "openai",
@@ -290,7 +289,6 @@ export async function runComboFindings(
   const mapperRaw = mapperResult.text;
 
   const t1 = Date.now();
-  console.log(`[combo] Stage 1 done in ${t1 - t0}ms`);
 
   const jsonMatch = mapperRaw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -305,11 +303,9 @@ export async function runComboFindings(
     throw new Error("Combo Stage 1 (GPT-4 Mini): invalid JSON structure.");
   }
 
-  console.log(`[combo] Stage 1 — ${parsed.sections.length} sections, ${parsed.sections.filter((s) => s.source === "dictation").length} from dictation`);
 
   // ── Stage 2: DeepSeek V3 validates/corrects ──
   const validator = buildValidatorPrompt(params.dictation, jsonMatch[0], params.outputLanguage);
-  console.log(`[combo] Stage 2 — DeepSeek V3 validating...`);
 
   const validatorAI = await generateAIWithUsage({
     provider: "deepseek",
@@ -322,7 +318,6 @@ export async function runComboFindings(
   const validatorRaw = validatorAI.text;
 
   const t2 = Date.now();
-  console.log(`[combo] Stage 2 done in ${t2 - t1}ms (total ${t2 - t0}ms)`);
 
   let validatorResult: ValidatorResult = { status: "validated", corrections: [] };
   try {
@@ -334,10 +329,8 @@ export async function runComboFindings(
       }
     }
   } catch {
-    console.warn("[combo] Stage 2: could not parse validator output, using Stage 1 result as-is");
   }
 
-  console.log(`[combo] Result — status=${validatorResult.status}, corrections=${validatorResult.corrections.length}`);
 
   // ── Apply corrections and enforce label language ──
   let finalSections = validatorResult.corrections.length > 0

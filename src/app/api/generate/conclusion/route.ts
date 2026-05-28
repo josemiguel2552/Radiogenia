@@ -10,6 +10,7 @@ import { buildConclusionPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -102,7 +103,6 @@ export async function POST(req: NextRequest) {
     }
 
     const effectiveModel = taskModel?.modelName || globalConfig.modelName;
-    console.log(`[conclusion] provider=${effectiveProvider}, model=${effectiveModel}, keyLen=${effectiveKey.length}`);
     const { stream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
       modelName: effectiveModel,
@@ -139,7 +139,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

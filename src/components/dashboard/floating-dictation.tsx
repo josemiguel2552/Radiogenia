@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Mic, MicOff, X, Minimize2, Maximize2, Send, Loader2, GripVertical, Keyboard } from "lucide-react";
+import { Mic, MicOff, X, Minimize2, Send, Loader2, GripVertical, Keyboard } from "lucide-react";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { useT } from "@/lib/i18n";

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -13,11 +16,10 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(500);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json(data || []);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unauthorized";
-    return NextResponse.json({ error: msg }, { status: 403 });
+    return toErrorResponse(e, 403);
   }
 }
 
@@ -29,10 +31,9 @@ export async function DELETE(req: NextRequest) {
 
     const supabase = createServiceClient();
     const { error } = await supabase.from("waitlist").delete().eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unauthorized";
-    return NextResponse.json({ error: msg }, { status: 403 });
+    return toErrorResponse(e, 403);
   }
 }

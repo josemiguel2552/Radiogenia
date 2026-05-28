@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       if (error.message?.includes("audit_logs")) {
         return NextResponse.json({ ok: true, skipped: true });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return dbErrorResponse(error);
     }
 
     if (action === "report_error" && report_id) {
@@ -50,7 +51,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

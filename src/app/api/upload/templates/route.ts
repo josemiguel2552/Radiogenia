@@ -7,6 +7,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
+import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -94,7 +95,6 @@ If the document contains a single template, still return it as an array with one
 
     return NextResponse.json({ templates: normalized });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

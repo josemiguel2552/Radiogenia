@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
@@ -141,9 +140,6 @@ export default function AdminPage() {
     improve_writing: { provider: "", model: "" },
   });
 
-  // Combo pipeline
-  const [findingsCombo, setFindingsCombo] = useState(false);
-
   // Fine-tuning
   const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
   const [ftModelsList, setFtModelsList] = useState<string[]>([]);
@@ -188,7 +184,6 @@ export default function AdminPage() {
   }
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditFilter, setAuditFilter] = useState<string>("all");
-  const [auditLoading, setAuditLoading] = useState(false);
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
   const [auditCursor, setAuditCursor] = useState<string | null>(null);
   const [auditLoadingMore, setAuditLoadingMore] = useState(false);
@@ -252,7 +247,6 @@ export default function AdminPage() {
         dictation_correction: { provider: d.dictation_correction_provider || "", model: d.dictation_correction_model || "" },
         improve_writing: { provider: d.improve_writing_provider || "", model: d.improve_writing_model || "" },
       });
-      setFindingsCombo(isCombo);
     }
 
     try {

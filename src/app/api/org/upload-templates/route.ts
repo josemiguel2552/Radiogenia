@@ -9,6 +9,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import mammoth from "mammoth";
 import { extractPdfText } from "@/lib/pdf-extract";
+import { toErrorResponse } from "@/lib/api-error";
 
 const SYSTEM_PROMPT = `You are a radiology informatics expert. Given a document containing radiology report templates, extract each template and classify it.
 
@@ -53,11 +54,11 @@ export async function POST(req: NextRequest) {
       const buffer = Buffer.from(await file.arrayBuffer());
       docText = await extractPdfText(buffer);
     } else {
-      return NextResponse.json({ error: "Formato no soportado. Usa .docx o .pdf" }, { status: 400 });
+      return NextResponse.json({ error: "Unsupported format. Use .docx or .pdf" }, { status: 400 });
     }
 
     if (!docText.trim()) {
-      return NextResponse.json({ error: "El documento está vacío o no se pudo leer" }, { status: 400 });
+      return NextResponse.json({ error: "Document is empty or could not be read" }, { status: 400 });
     }
 
     const globalConfig = await getGlobalAIConfig();
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     const text = aiResult.text;
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return NextResponse.json({ error: "No se pudieron extraer plantillas del documento." }, { status: 400 });
+    if (!jsonMatch) return NextResponse.json({ error: "Could not extract templates from document" }, { status: 400 });
 
     const parsed = JSON.parse(jsonMatch[0]);
     const validTechniques = ["CT", "MRI", "Ultrasound", "XRay", "Mammography", "RECIST", "Procedures"];
@@ -106,7 +107,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ extracted: templates.length, saved });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

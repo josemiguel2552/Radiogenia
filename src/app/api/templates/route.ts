@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getDefaultPhrase } from "@/lib/normality-defaults";
 import { getOrgMembership } from "@/lib/auth-helpers";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 function extractSectionLabels(templateText: string): string[] {
   const re = /\*{2,3}([^*]+)\*{2,3}/g;
@@ -118,8 +121,7 @@ export async function GET() {
 
     return NextResponse.json([...globals, ...orgTemplates, ...customs]);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -140,7 +142,7 @@ export async function POST(req: NextRequest) {
     };
 
     const { data, error } = await supabase.from("user_templates").insert(insertPayload).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     const templateText = body.structure?.template || "";
     const modality = body.modality || "";
@@ -152,8 +154,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -181,7 +182,7 @@ export async function PUT(req: NextRequest) {
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
 
     const templateText = body.structure?.template || "";
     const modality = body.modality || data?.modality || "";
@@ -193,8 +194,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -216,19 +216,18 @@ export async function DELETE(req: NextRequest) {
           { user_id: user.id, global_template_id: id },
           { onConflict: "user_id,global_template_id", ignoreDuplicates: true },
         );
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return dbErrorResponse(error);
     } else {
       const { error } = await supabase
         .from("user_templates")
         .delete()
         .eq("id", id)
         .eq("user_id", user.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return dbErrorResponse(error);
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

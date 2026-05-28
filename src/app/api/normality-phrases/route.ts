@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getDefaultsForModality, getAllDefaults, type NormalityLang } from "@/lib/normality-defaults";
+import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -64,8 +67,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(merged);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -93,11 +95,10 @@ export async function PUT(req: NextRequest) {
         { onConflict: "user_id,modality,section_label" }
       );
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }
 
@@ -122,10 +123,9 @@ export async function DELETE(req: NextRequest) {
       .eq("modality", modality)
       .eq("section_label", sectionLabel);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse(error);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error);
   }
 }

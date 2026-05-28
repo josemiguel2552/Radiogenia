@@ -14,11 +14,11 @@ import {
   Plus, Pencil, Trash2, UserPlus, ChevronDown,
   Check, X, Download, Upload,
 } from "lucide-react";
-import { Logo } from "@/components/ui/logo";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
 import { useT, useModality as useModalityLabel } from "@/lib/i18n";
 import { MODALITIES } from "@/lib/types";
 import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
+import { toSlug } from "@/lib/slug";
 import { SectionEditor, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
 import type { TemplateField } from "@/components/shared/template-section-editor";
 
@@ -112,7 +112,6 @@ export default function OrgDashboard() {
 
   const isOrgChief = orgData?.membership.is_org_chief || false;
   const isSectionChief = !isOrgChief && orgData?.membership.section_role === "section_chief";
-  const isSectionEditor = !isOrgChief && orgData?.membership.section_role === "section_editor";
   const canManageMembers = isOrgChief || isSectionChief;
   const canViewStats = isOrgChief;
 
@@ -154,7 +153,7 @@ export default function OrgDashboard() {
   async function handleSaveSection() {
     if (!sectionName.trim()) return;
     setSavingSection(true);
-    const slug = sectionSlug.trim() || sectionName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "");
+    const slug = sectionSlug.trim() || toSlug(sectionName);
     await fetch("/api/org/sections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -393,7 +392,7 @@ export default function OrgDashboard() {
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-900 dark:via-indigo-900 dark:to-gray-950">
         <div className="max-w-5xl mx-auto px-4 md:px-6">
           <div className="flex items-center gap-3 pt-4 pb-2">
-            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10" aria-label={t("common.back")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <span className="ml-auto text-[11px] text-blue-200">
@@ -575,14 +574,14 @@ export default function OrgDashboard() {
                       </Badge>
                       {!m.is_active && <Badge variant="secondary" className="text-[9px]">{t("org.inactive")}</Badge>}
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditMember(m)} aria-label={t("common.edit")}>
                           <Pencil className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost" size="icon"
                           className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
                           onClick={() => handleToggleMemberActive(m)}
-                          title={m.is_active ? t("org.deactivate") : t("org.reactivate")}
+                          aria-label={m.is_active ? t("org.deactivate") : t("org.reactivate")}
                         >
                           {m.is_active ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                         </Button>
@@ -645,7 +644,7 @@ export default function OrgDashboard() {
                           </div>
                         </div>
                         {isOrgChief && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDeleteSection(s.id); }} aria-label={t("common.delete")}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
@@ -752,16 +751,16 @@ export default function OrgDashboard() {
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {sTemplates.map((t) => (
-                                    <div key={t.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-sm transition-all">
+                                  {sTemplates.map((tpl) => (
+                                    <div key={tpl.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-sm transition-all">
                                       <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
                                         <FileText className="h-4 w-4 text-teal-500" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{t.name}</span>
-                                        <Badge className={`text-[9px] mt-0.5 ${modalityColor(t.modality)}`}>{t.modality}</Badge>
+                                        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{tpl.name}</span>
+                                        <Badge className={`text-[9px] mt-0.5 ${modalityColor(tpl.modality)}`}>{tpl.modality}</Badge>
                                       </div>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(t.id)}>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={() => handleDeleteTemplate(tpl.id)} aria-label={t("common.delete")}>
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </div>
@@ -793,7 +792,7 @@ export default function OrgDashboard() {
               <Label className="text-xs">{t("org.section_form_name")}</Label>
               <Input
                 value={sectionName}
-                onChange={(e) => { setSectionName(e.target.value); setSectionSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9áéíóúñü-]/g, "")); }}
+                onChange={(e) => { setSectionName(e.target.value); setSectionSlug(toSlug(e.target.value)); }}
                 placeholder={t("org.section_name_placeholder")}
                 className="h-9"
               />

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { CookieBanner } from "@/components/cookie-banner";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -56,10 +57,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className="antialiased">
         {children}
         <CookieBanner />
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            duration: 2500,
+            style: { fontSize: "13px", padding: "10px 16px" },
+          }}
+          expand={false}
+          richColors
+          closeButton={false}
+          offset={16}
+        />
       </body>
     </html>
   );
