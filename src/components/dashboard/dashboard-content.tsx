@@ -142,6 +142,7 @@ export function DashboardContent() {
 
   // Audit: timing + error reporting
   const generateStartRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [generationDurationMs, setGenerationDurationMs] = useState<number | null>(null);
   const [lastSavedReportId, setLastSavedReportId] = useState<string | null>(null);
   const reportDirtyRef = useRef(false);
@@ -687,6 +688,11 @@ export function DashboardContent() {
       await flushCorrections();
     }
 
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const signal = controller.signal;
+
     const templateText = selectedTemplate.structure?.template || "";
 
     generateStartRef.current = Date.now();
@@ -718,6 +724,7 @@ export function DashboardContent() {
     try {
       const res = await fetch("/api/generate/findings", {
         method: "POST",
+        signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           template: templateText,
@@ -770,10 +777,13 @@ export function DashboardContent() {
         setFindings(data.error || t("gen_error_findings"));
       }
     } catch (e) {
+      if (signal.aborted) { setLoadingFindings(false); setLoadingConcStyles({ concise: false, grouped: false }); return; }
       findingsFailed = true;
       setFindings(t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")));
     }
     setLoadingFindings(false);
+
+    if (signal.aborted) { setLoadingConcStyles({ concise: false, grouped: false }); return; }
 
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
@@ -790,6 +800,7 @@ export function DashboardContent() {
       try {
         const traceRes = await fetch("/api/generate/trace", {
           method: "POST",
+          signal,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ dictation, findings: findingsText, outputLanguage }),
         });
@@ -834,6 +845,7 @@ export function DashboardContent() {
       try {
         const res = await fetch("/api/generate/conclusion", {
           method: "POST",
+          signal,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             findingsText,
@@ -1024,6 +1036,15 @@ export function DashboardContent() {
         console.error("Failed to auto-save report:", e);
       }
     }
+  }
+
+  function stopGeneration() {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setLoadingFindings(false);
+    setLoadingConcStyles({ concise: false, grouped: false });
+    setLoadingTrace(false);
+    toast(t("toast.generation_stopped"));
   }
 
   function cleanReport(text: string): string {
@@ -1557,6 +1578,15 @@ export function DashboardContent() {
                   <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
                 </div>
               </div>
+              {isGenerating && (
+                <Button
+                  onClick={stopGeneration}
+                  variant="outline"
+                  className="w-full h-9 gap-1.5 text-xs border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
+                </Button>
+              )}
               {reportModeInfo && (
                 <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
                   {t(`dash.mode_info_${reportModeInfo}`)}
@@ -1930,6 +1960,15 @@ export function DashboardContent() {
                   <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
                 </div>
               </div>
+              {isGenerating && (
+                <Button
+                  onClick={stopGeneration}
+                  variant="outline"
+                  className="w-full h-9 gap-1.5 text-xs border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
+                </Button>
+              )}
               {reportModeInfo && (
                 <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
                   {t(`dash.mode_info_${reportModeInfo}`)}
