@@ -43,7 +43,7 @@ import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
 import { FloatingDictation } from "./floating-dictation";
 import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
-import { detectPii, type PiiMatch } from "@/lib/pii-detect";
+import { detectPii, stripPii, type PiiMatch } from "@/lib/pii-detect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { RecommendationPanel } from "./recommendation-panel";
@@ -123,7 +123,7 @@ export function DashboardContent() {
 
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
-  const [piiDismissed, setPiiDismissed] = useState(false);
+  const [piiDismissed, setPiiDismissed] = useState(false); // kept for reset logic
 
   // Pilot metrics
   const reportStartTimeRef = useRef(0);
@@ -1349,32 +1349,49 @@ export function DashboardContent() {
   const isGenerating = loadingFindings || loadingConclusion;
   const hasOutput = findings || conclusion || isGenerating;
   const setupReady = !!selectedTemplate;
-  const showPiiWarning = piiMatches.length > 0 && !piiDismissed && dictation.trim();
+  const showPiiWarning = piiMatches.length > 0 && dictation.trim();
   const canGenerate = setupReady && dictation.trim() && !isGenerating && !showPiiWarning;
 
+  function handleAutoCleanPii() {
+    const dictResult = stripPii(dictation);
+    const clinicalResult = stripPii(clinicalInfo);
+    setDictation(dictResult.cleaned);
+    setClinicalInfo(clinicalResult.cleaned);
+    toast.success(t("pii.auto_cleaned").replace("{0}", String(dictResult.strippedCount + clinicalResult.strippedCount)));
+  }
+
   const piiWarningBanner = showPiiWarning ? (
-    <div className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-2.5 space-y-1.5">
+    <div className="rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-2.5 space-y-1.5">
       <div className="flex items-start gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">{t("pii.warning_title")}</p>
-          <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">{t("pii.warning_detail")}</p>
+          <p className="text-xs font-medium text-red-800 dark:text-red-200">{t("pii.warning_title")}</p>
+          <p className="text-[11px] text-red-700 dark:text-red-300 mt-0.5">{t("pii.warning_block")}</p>
           <div className="flex flex-wrap gap-1 mt-1.5">
             {piiMatches.map((m, i) => (
-              <Badge key={i} variant="outline" className="text-[10px] border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300">
+              <Badge key={i} variant="outline" className="text-[10px] border-red-400 dark:border-red-600 text-red-700 dark:text-red-300">
                 {t(`pii.type.${m.type}`)}: {m.value}
               </Badge>
             ))}
           </div>
+          <div className="flex gap-2 mt-2">
+            <button
+              type="button"
+              onClick={handleAutoCleanPii}
+              className="px-2.5 py-1 text-[11px] font-medium bg-red-600 hover:bg-red-500 text-white rounded-md transition-colors"
+            >
+              {t("pii.auto_clean")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setDictation(""); setClinicalInfo(""); }}
+              className="px-2.5 py-1 text-[11px] font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 underline underline-offset-2"
+            >
+              {t("pii.clear_all")}
+            </button>
+          </div>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={() => setPiiDismissed(true)}
-        className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 underline underline-offset-2"
-      >
-        {t("pii.proceed")}
-      </button>
     </div>
   ) : null;
 

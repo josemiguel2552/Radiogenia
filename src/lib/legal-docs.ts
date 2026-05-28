@@ -149,10 +149,12 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           ],
         },
         {
-          title: "6. Transferencias Internacionales",
+          title: "6. Transferencias Internacionales y Procesamiento de IA",
           content: [
-            "El procesamiento de IA se realiza íntegramente en la infraestructura de Radiogen.AI. El texto de dictado anonimizado es procesado dentro de nuestra plataforma con medidas de seguridad que garantizan la protección de los datos.",
-            "Cuando las necesidades del servicio requieran transferencias internacionales de datos, estas estarán amparadas por: las Cláusulas Contractuales Tipo de la Comisión Europea (SCCs); el marco de adecuación de la UE-EE.UU. (EU-U.S. Data Privacy Framework) cuando sea aplicable.",
+            "Para la generación de informes, Radiogen.AI envía texto clínico anonimizado a proveedores externos de inteligencia artificial mediante APIs seguras. Antes de cada envío, el sistema aplica de forma obligatoria un filtro de anonimización que detecta y elimina automáticamente cualquier dato identificativo del paciente (nombres, DNI/NIE/CURP/CPF/RUT/cédula, teléfonos, emails, números de historia clínica). Este filtro no puede ser desactivado por el usuario y se ejecuta tanto en el cliente como en el servidor.",
+            "Los proveedores de IA utilizados operan bajo acuerdos de procesamiento de datos (DPA) que garantizan: política de retención cero (zero data retention) — los textos enviados no se almacenan ni se utilizan para entrenamiento de modelos de IA; cifrado TLS 1.3 en tránsito; cumplimiento con estándares de seguridad SOC 2 y, cuando aplique, HIPAA (BAA).",
+            "En consecuencia, ningún dato identificativo de pacientes es transferido internacionalmente. Los únicos datos enviados a procesamiento externo son descripciones clínicas anonimizadas (ej.: \"masa de 3 cm en lóbulo superior derecho\") que, al carecer de información identificativa, no constituyen datos personales de salud según el RGPD (Considerando 26) ni la mayoría de normativas latinoamericanas de protección de datos.",
+            "Los datos personales de los usuarios (cuenta, preferencias, historial de informes) se almacenan exclusivamente en la infraestructura de Radiogen.AI con las medidas de seguridad detalladas en la sección 7.",
           ],
         },
         {
@@ -197,8 +199,9 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "3. Procesamiento mediante IA",
           content: [
-            "El texto de dictado anonimizado se procesa mediante modelos de inteligencia artificial para las siguientes operaciones: generación de hallazgos estructurados a partir del dictado; generación de conclusiones radiológicas; corrección de errores de transcripción por voz; mejora de redacción.",
-            "Radiogen.AI no utiliza los datos de los usuarios para entrenar modelos de IA. Todos los datos procesados son tratados de forma transitoria y no se almacenan con fines de entrenamiento.",
+            "El texto de dictado anonimizado se procesa mediante proveedores externos de inteligencia artificial a través de APIs seguras, para las siguientes operaciones: generación de hallazgos estructurados a partir del dictado; generación de conclusiones radiológicas; corrección de errores de transcripción por voz; mejora de redacción.",
+            "Antes de cada envío, un filtro obligatorio de anonimización elimina automáticamente cualquier dato identificativo del paciente. Este filtro opera en doble capa (cliente y servidor) y no puede ser desactivado.",
+            "Los proveedores de IA operan bajo contratos con política de retención cero (zero data retention): los textos procesados no se almacenan ni se utilizan para entrenamiento de modelos. Radiogen.AI no utiliza los datos de los usuarios para entrenar modelos de IA.",
           ],
         },
         {
@@ -422,10 +425,12 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           ],
         },
         {
-          title: "6. International Transfers",
+          title: "6. International Transfers and AI Processing",
           content: [
-            "AI processing is performed within the Radiogen.AI infrastructure. Anonymized dictation text is processed within our platform with security measures that ensure data protection.",
-            "Where service requirements necessitate international data transfers, these are covered by: EU Standard Contractual Clauses (SCCs); the EU-U.S. Data Privacy Framework where applicable.",
+            "To generate reports, Radiogen.AI sends anonymized clinical text to external AI providers via secure APIs. Before each transmission, the system applies a mandatory anonymization filter that automatically detects and removes any patient-identifiable data (names, national IDs, phone numbers, emails, medical record numbers). This filter cannot be disabled by the user and runs on both the client and server side.",
+            "AI providers operate under Data Processing Agreements (DPAs) that guarantee: zero data retention policy — submitted texts are not stored or used for AI model training; TLS 1.3 encryption in transit; SOC 2 compliance and, where applicable, HIPAA (BAA) compliance.",
+            "Consequently, no patient-identifiable data is transferred internationally. The only data sent for external processing consists of anonymized clinical descriptions (e.g., \"3 cm mass in the right upper lobe\") which, lacking identifiable information, do not constitute personal health data under the GDPR (Recital 26) or most data protection regulations.",
+            "Users' personal data (account, preferences, report history) is stored exclusively within Radiogen.AI infrastructure with the security measures detailed in section 7.",
           ],
         },
         {
@@ -454,7 +459,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       sections: [
         { title: "1. Object and Scope", content: ["This Data Processing Agreement (DPA) establishes the conditions under which Radiogen.AI processes anonymized clinical data on behalf of the user and their organization, in compliance with Art. 28 of the GDPR."] },
         { title: "2. Data Categories Processed", content: ["Anonymized radiology dictation text (voice-to-text transcription).", "Report findings and conclusions (generated text).", "Radiologist style preferences (normal phrases, templates).", "NO patient-identifiable data is processed. The system automatically detects and removes any personal data (IDs, phone numbers, names, medical record numbers) before processing."] },
-        { title: "3. AI Processing", content: ["Anonymized dictation text is processed through AI models for: generation of structured findings from dictation; generation of radiological conclusions; voice transcription error correction; writing improvement.", "Radiogen.AI does not use user data to train AI models. All processed data is handled transiently and is not stored for training purposes."] },
+        { title: "3. AI Processing", content: ["Anonymized dictation text is processed through external AI providers via secure APIs for: generation of structured findings from dictation; generation of radiological conclusions; voice transcription error correction; writing improvement.", "Before each transmission, a mandatory anonymization filter automatically removes any patient-identifiable data. This filter operates in dual layers (client and server) and cannot be disabled.", "AI providers operate under contracts with zero data retention policy: processed texts are not stored or used for model training. Radiogen.AI does not use user data to train AI models."] },
         { title: "4. Sub-processors", content: ["Radiogen.AI uses sub-processors for service provision. The updated list of sub-processors can be consulted by the organization administrator.", "The operator will notify users of changes to sub-processors with at least 30 days' notice."] },
         { title: "5. Security Measures", content: ["Technical measures detailed in the Privacy Policy apply, including: encryption at rest and in transit, per-user isolation (RLS), automatic PII detection, immutable audit logs, rate limiting, and HTTP security headers."] },
         { title: "6. Breach Notification", content: ["In the event of a security breach affecting personal data, Radiogen.AI will notify the affected organization within a maximum of 72 hours of detection, in accordance with Art. 33 of the GDPR."] },
@@ -490,14 +495,14 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "2. Dados Coletados", content: ["Dados de conta (nome, e-mail, senha hash, função profissional), dados de uso (laudos, ditados anonimizados, preferências), dados técnicos (IP, user-agent, timestamps). NÃO são coletados dados identificáveis de pacientes."] },
       { title: "3. Base Legal", content: ["Execução do contrato (Art. 6.1.b RGPD), interesse legítimo (Art. 6.1.f), consentimento (Art. 6.1.a), obrigação legal (Art. 6.1.c)."] },
       { title: "4. Direitos do Titular", content: ["Acesso, retificação, exclusão, limitação, portabilidade, oposição e decisões automatizadas (Arts. 15-22 RGPD/LGPD). Solicitações: legal@radiogen.ai, prazo de resposta: 30 dias."] },
-      { title: "5. Transferências Internacionais", content: ["O processamento de IA é realizado na infraestrutura do Radiogen.AI. Quando necessárias, transferências internacionais de dados são amparadas por SCCs e o framework EU-EUA."] },
+      { title: "5. Transferências Internacionais e Processamento de IA", content: ["Para a geração de laudos, o Radiogen.AI envia texto clínico anonimizado a provedores externos de inteligência artificial por meio de APIs seguras. Antes de cada envio, o sistema aplica obrigatoriamente um filtro de anonimização que detecta e remove automaticamente qualquer dado identificável do paciente (nomes, CPF/RG, telefones, e-mails, números de prontuário). Este filtro não pode ser desativado pelo usuário e é executado tanto no cliente quanto no servidor.", "Os provedores de IA operam sob acordos de processamento de dados (DPA) que garantem: política de retenção zero — os textos enviados não são armazenados nem utilizados para treinamento de modelos; criptografia TLS 1.3 em trânsito; conformidade SOC 2 e, quando aplicável, HIPAA (BAA).", "Nenhum dado identificável de pacientes é transferido internacionalmente. Os dados pessoais dos usuários são armazenados exclusivamente na infraestrutura do Radiogen.AI."] },
       { title: "6. Medidas de Segurança", content: ["Criptografia AES-256-GCM em repouso, TLS 1.3 em trânsito, RLS no banco de dados, detecção automática de PII, rate limiting, headers de segurança HTTP, trilha de auditoria imutável."] },
       { title: "7. Contato", content: ["legal@radiogen.ai."] },
     ]},
     data_processing: { title: "Acordo de Tratamento de Dados", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Objeto", content: ["Este DPA estabelece as condições de processamento de dados clínicos anonimizados pelo Radiogen.AI (Art. 28 RGPD/LGPD)."] },
       { title: "2. Dados Processados", content: ["Texto de ditado radiológico anonimizado, achados e conclusões de laudos, preferências de estilo. NÃO são processados dados identificáveis de pacientes."] },
-      { title: "3. Processamento por IA", content: ["O texto anonimizado é processado por modelos de inteligência artificial para geração de achados, conclusões e correção de ditado. Os dados NÃO são usados para treinamento de modelos."] },
+      { title: "3. Processamento por IA", content: ["O texto anonimizado é processado por provedores externos de inteligência artificial por meio de APIs seguras para geração de achados, conclusões e correção de ditado. Antes de cada envio, um filtro obrigatório de anonimização remove automaticamente qualquer dado identificável do paciente. Os provedores operam sob política de retenção zero e os dados NÃO são usados para treinamento de modelos."] },
       { title: "4. Subprocessadores", content: ["O Radiogen.AI utiliza subprocessadores para a prestação do serviço. A lista atualizada pode ser consultada pelo administrador da organização."] },
       { title: "5. Notificação de Violações", content: ["Em caso de violação de segurança, o Radiogen.AI notificará a organização afetada em até 72 horas (Art. 33 RGPD)."] },
       { title: "6. Contato", content: ["legal@radiogen.ai."] },
