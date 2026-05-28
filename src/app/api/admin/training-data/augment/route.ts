@@ -16,13 +16,18 @@ interface TrainingExample {
 }
 
 const AUGMENT_SYSTEM = `You are a data augmentation engine for radiology report training data.
-Given a real training example (a user message with study info + dictation + AI conclusion, and an assistant message with the radiologist's corrected conclusion), generate a NEW synthetic example that:
+Given a real training example where:
+- The USER message contains the study type and radiologist-corrected findings
+- The ASSISTANT message contains the radiologist-corrected conclusion derived ONLY from those findings
+
+Generate a NEW synthetic example that:
 
 1. Uses a DIFFERENT study case (different anatomy, different findings) but the SAME modality
 2. Matches the SAME writing style, sentence structure, terminology level, and conclusion length as the original
-3. Has realistic radiology dictation and findings
-4. The corrected conclusion should show the same TYPE of corrections the radiologist made (e.g., if they shortened text, the synthetic should show shortening; if they changed phrasing patterns, use similar patterns)
+3. Has realistic radiology findings
+4. The conclusion MUST ONLY reference findings that appear in the findings text — no hallucinated information
 5. The system message must remain EXACTLY the same
+6. The conclusion should show the same TYPE of summarization patterns as the original (e.g., if it groups findings by region, the synthetic should too; if it uses bullet points, use them too)
 
 Output ONLY a valid JSON object with a "messages" array containing system, user, and assistant messages. No markdown, no explanation.`;
 
@@ -55,7 +60,7 @@ export async function POST(req: NextRequest) {
         batch.map(async (example, idx) => {
           try {
             const exampleJson = JSON.stringify(example, null, 2);
-            const userPrompt = `Here is a real training example:\n\n${exampleJson}\n\nGenerate ONE new synthetic training example following the rules. Output only the JSON object.`;
+            const userPrompt = `Here is a real training example:\n\n${exampleJson}\n\nGenerate ONE new synthetic training example following the rules. The conclusion MUST ONLY mention findings present in the findings text. Output only the JSON object.`;
 
             const text = await generateAI({
               provider,
