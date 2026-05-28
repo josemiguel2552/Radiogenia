@@ -1582,9 +1582,9 @@ export function DashboardContent() {
                 <button
                   type="button"
                   onClick={stopGeneration}
-                  className="flex items-center justify-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors mx-auto"
+                  className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                 >
-                  <X className="h-3 w-3" /> {t("dash.stop_generation")}
+                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
                 </button>
               )}
               {reportModeInfo && (
@@ -1964,9 +1964,9 @@ export function DashboardContent() {
                 <button
                   type="button"
                   onClick={stopGeneration}
-                  className="flex items-center justify-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors mx-auto"
+                  className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                 >
-                  <X className="h-3 w-3" /> {t("dash.stop_generation")}
+                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
                 </button>
               )}
               {reportModeInfo && (
