@@ -143,6 +143,15 @@ export function DashboardContent() {
   // Audit: timing + error reporting
   const generateStartRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  interface ReportSnapshot {
+    dictation: string; findings: string; conclusionVersions: Record<string, string>;
+    initialFindings: string; initialConclusion: string; clinicalInfo: string;
+    selectedTemplateId: string; contrastOption: string; cardiacTechniques: Record<string, boolean>;
+    traceData: TraceData | null; traceActive: boolean; lastSavedReportId: string | null;
+    generationDurationMs: number | null; errorReported: boolean;
+  }
+  const previousReportRef = useRef<ReportSnapshot | null>(null);
+  const [hasPreviousReport, setHasPreviousReport] = useState(false);
   const [generationDurationMs, setGenerationDurationMs] = useState<number | null>(null);
   const [lastSavedReportId, setLastSavedReportId] = useState<string | null>(null);
   const reportDirtyRef = useRef(false);
@@ -1309,6 +1318,12 @@ export function DashboardContent() {
   function startNewReport() {
     logCorrectionIfNeeded();
     if (findings) {
+      previousReportRef.current = {
+        dictation, findings, conclusionVersions, initialFindings, initialConclusion,
+        clinicalInfo, selectedTemplateId, contrastOption, cardiacTechniques,
+        traceData, traceActive, lastSavedReportId, generationDurationMs, errorReported,
+      };
+      setHasPreviousReport(true);
       if (!lastSavedReportId) saveReportQuietly().catch(() => {});
       else flushCorrections().catch(() => {});
       window.dispatchEvent(new Event("radiogenai:report-saved"));
@@ -1336,6 +1351,28 @@ export function DashboardContent() {
     if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
     localStorage.removeItem("radiogenai_draft");
     toast(t("toast.new_report"));
+  }
+
+  function restorePreviousReport() {
+    const snap = previousReportRef.current;
+    if (!snap) return;
+    setDictation(snap.dictation);
+    setFindings(snap.findings);
+    setConclusionVersions(snap.conclusionVersions);
+    setInitialFindings(snap.initialFindings);
+    setInitialConclusion(snap.initialConclusion);
+    setClinicalInfo(snap.clinicalInfo);
+    setSelectedTemplateId(snap.selectedTemplateId);
+    setContrastOption(snap.contrastOption);
+    setCardiacTechniques(snap.cardiacTechniques);
+    setTraceData(snap.traceData);
+    setTraceActive(snap.traceActive);
+    setLastSavedReportId(snap.lastSavedReportId);
+    setGenerationDurationMs(snap.generationDurationMs);
+    setErrorReported(snap.errorReported);
+    previousReportRef.current = null;
+    setHasPreviousReport(false);
+    toast(t("toast.report_restored"));
   }
 
   async function handleReportError() {
@@ -2123,10 +2160,18 @@ export function DashboardContent() {
                     {t("dash.report_error")}
                   </Button>
                 </div>
-                <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90">
-                  <ArrowRight className="h-3 w-3" />
-                  {t("dash.next_report")}
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  {hasPreviousReport && (
+                    <Button size="sm" variant="outline" onClick={restorePreviousReport} className="gap-1 text-[11px] h-7 md:h-6 px-2 text-muted-foreground">
+                      <RotateCcw className="h-2.5 w-2.5" />
+                      {t("dash.restore_previous")}
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90">
+                    <ArrowRight className="h-3 w-3" />
+                    {t("dash.next_report")}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
