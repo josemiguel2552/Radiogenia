@@ -1579,13 +1579,13 @@ export function DashboardContent() {
                 </div>
               </div>
               {isGenerating && (
-                <Button
+                <button
+                  type="button"
                   onClick={stopGeneration}
-                  variant="outline"
-                  className="w-full h-9 gap-1.5 text-xs border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="flex items-center justify-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors mx-auto"
                 >
-                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
-                </Button>
+                  <X className="h-3 w-3" /> {t("dash.stop_generation")}
+                </button>
               )}
               {reportModeInfo && (
                 <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
@@ -1961,13 +1961,13 @@ export function DashboardContent() {
                 </div>
               </div>
               {isGenerating && (
-                <Button
+                <button
+                  type="button"
                   onClick={stopGeneration}
-                  variant="outline"
-                  className="w-full h-9 gap-1.5 text-xs border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="flex items-center justify-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors mx-auto"
                 >
-                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
-                </Button>
+                  <X className="h-3 w-3" /> {t("dash.stop_generation")}
+                </button>
               )}
               {reportModeInfo && (
                 <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
