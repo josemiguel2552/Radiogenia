@@ -188,33 +188,17 @@ export default function AdminPage() {
   const [auditCursor, setAuditCursor] = useState<string | null>(null);
   const [auditLoadingMore, setAuditLoadingMore] = useState(false);
 
-  // Training data
-  interface TrainingRow {
-    id: string;
-    user_email: string | null;
-    user_name: string | null;
-    study_type: string;
-    modality: string;
-    raw_dictation: string;
-    clinical_context: string | null;
-    initial_findings_text: string | null;
-    initial_conclusion_text: string | null;
-    findings_text: string;
-    conclusion_text: string;
-    had_corrections: boolean;
-    provider_used: string | null;
-    model_used: string | null;
-    error_reported: boolean;
-    error_report_note: string | null;
-    created_at: string;
-  }
-  const [trainingData, setTrainingData] = useState<TrainingRow[]>([]);
-  const [trainingLoading, setTrainingLoading] = useState(false);
-  const [trainingModality, setTrainingModality] = useState<string>("all");
-  const [trainingCorrectionsOnly, setTrainingCorrectionsOnly] = useState(false);
-  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
-  const [trainingError, setTrainingError] = useState<string | null>(null);
+  // Fine-tune data generation
+  interface FtPreview { total: number; preview: { messages: { role: string; content: string }[] }[]; modalities: string[] }
+  const [ftDataPreview, setFtDataPreview] = useState<FtPreview | null>(null);
+  const [ftDataLoading, setFtDataLoading] = useState(false);
+  const [ftDataModality, setFtDataModality] = useState<string>("all");
+  const [ftDataError, setFtDataError] = useState<string | null>(null);
+  const [ftExporting, setFtExporting] = useState(false);
+  const [ftGenerating, setFtGenerating] = useState(false);
+  const [ftNEpochs, setFtNEpochs] = useState<string>("auto");
+  const [ftLearningRate, setFtLearningRate] = useState<string>("auto");
+  const [ftBatchSize, setFtBatchSize] = useState<string>("auto");
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -292,8 +276,8 @@ export default function AdminPage() {
   }, [auditCursor, auditLoadingMore]);
 
   useEffect(() => {
-    if (tab === "audit" && trainingData.length === 0 && !trainingLoading) {
-      loadTrainingData();
+    if (tab === "audit" && !ftDataPreview && !ftDataLoading) {
+      loadFtDataPreview();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
@@ -395,7 +379,7 @@ export default function AdminPage() {
       const res = await fetch("/api/finetune/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix }),
+        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix, nEpochs: ftNEpochs, learningRateMultiplier: ftLearningRate, batchSize: ftBatchSize }),
       });
       const data = await res.json();
       if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
@@ -498,43 +482,66 @@ export default function AdminPage() {
     setCreatingUser(false);
   }
 
-  async function loadTrainingData() {
-    setTrainingLoading(true);
-    setTrainingError(null);
+  async function loadFtDataPreview() {
+    setFtDataLoading(true);
+    setFtDataError(null);
     try {
-      const params = new URLSearchParams({ limit: "200" });
-      if (trainingModality !== "all") params.set("modality", trainingModality);
-      if (trainingCorrectionsOnly) params.set("corrections_only", "true");
-      const res = await fetch(`/api/admin/training-data?${params}`);
+      const params = new URLSearchParams({ preview: "true" });
+      if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      const res = await fetch(`/api/admin/training-data/openai?${params}`);
       const d = await res.json();
-      if (d.error) {
-        setTrainingError(d.error);
-      }
-      setTrainingData(d.reports || []);
+      if (!res.ok) { setFtDataError(d.error); return; }
+      setFtDataPreview(d);
     } catch (e) {
-      setTrainingError(e instanceof Error ? e.message : t("admin.failed_load_training"));
+      setFtDataError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setFtDataLoading(false);
     }
-    setTrainingLoading(false);
   }
 
-  async function handleExportJsonl() {
-    setExporting(true);
+  async function handleExportFtData() {
+    setFtExporting(true);
     try {
-      const params = new URLSearchParams({ format: "jsonl", limit: "500" });
-      if (trainingModality !== "all") params.set("modality", trainingModality);
-      if (trainingCorrectionsOnly) params.set("corrections_only", "true");
-      const res = await fetch(`/api/admin/training-data?${params}`);
+      const params = new URLSearchParams();
+      if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      const res = await fetch(`/api/admin/training-data/openai?${params}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `radiogenai-training-${new Date().toISOString().slice(0, 10)}.jsonl`;
+        a.download = `radiogenai-finetune-${new Date().toISOString().slice(0, 10)}.jsonl`;
         a.click();
         URL.revokeObjectURL(url);
       }
     } catch { /* ignore */ }
-    setExporting(false);
+    setFtExporting(false);
+  }
+
+  async function handleGenerateAndUpload() {
+    setFtGenerating(true);
+    setFtError("");
+    setFtFileId(null);
+    try {
+      const params = new URLSearchParams();
+      if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      const res = await fetch(`/api/admin/training-data/openai?${params}`);
+      if (!res.ok) { setFtError("Failed to generate training data"); return; }
+      const blob = await res.blob();
+      if (blob.size < 10) { setFtError("No correction data found to generate training examples"); return; }
+
+      const form = new FormData();
+      form.append("file", blob, `radiogenai-finetune-${new Date().toISOString().slice(0, 10)}.jsonl`);
+      const uploadRes = await fetch("/api/finetune/upload", { method: "POST", body: form });
+      const data = await uploadRes.json();
+      if (!uploadRes.ok) { setFtError(data.error || "Upload failed"); return; }
+      setFtFileId(data.fileId);
+      setFtExamples(data.validExamples);
+    } catch (e) {
+      setFtError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setFtGenerating(false);
+    }
   }
 
   const radiologists = users.filter((u) => u.role !== "admin");
@@ -1286,23 +1293,27 @@ export default function AdminPage() {
                   {t("admin.fine_tuning_desc")}
                 </p>
 
-                {/* Step 1: Upload */}
+                {/* Step 1: Generate or upload */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">{t("admin.ft_step1")}</Label>
                   <div className="flex gap-2">
-                    <label className="flex-1 flex items-center justify-center gap-2 h-9 px-3 border-2 border-dashed rounded-md cursor-pointer text-xs text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors dark:border-gray-700 dark:hover:border-purple-500">
+                    <Button size="sm" variant="outline" className="flex-1 h-9 text-xs gap-1.5" onClick={handleGenerateAndUpload} disabled={ftGenerating || ftUploading}>
+                      {ftGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+                      {t("admin.ft_generate_from_corrections")}
+                    </Button>
+                    <label className="flex items-center justify-center gap-1.5 h-9 px-3 border-2 border-dashed rounded-md cursor-pointer text-xs text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors dark:border-gray-700 dark:hover:border-purple-500">
                       <Upload className="h-3.5 w-3.5" />
-                      {ftUploading ? t("admin.ft_uploading") : ftFileId ? `${ftExamples} ${t("admin.ft_examples_ready")}` : t("admin.ft_choose_file")}
+                      {ftUploading ? t("admin.ft_uploading") : t("admin.ft_upload_file")}
                       <input type="file" accept=".jsonl,.txt,.json" className="hidden"
                         onChange={(e) => { if (e.target.files?.[0]) handleFtUpload(e.target.files[0]); }} />
                     </label>
                   </div>
-                  {ftFileId && <p className="text-[10px] text-green-600">{t("admin.ft_file_uploaded")}: {ftFileId}</p>}
+                  {ftFileId && <p className="text-[10px] text-green-600">{t("admin.ft_file_uploaded")}: {ftFileId} ({ftExamples} {t("admin.ft_examples_ready")})</p>}
                 </div>
 
                 {/* Step 2: Configure & start */}
                 {ftFileId && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label className="text-xs font-semibold">{t("admin.ft_step2")}</Label>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
@@ -1320,6 +1331,52 @@ export default function AdminPage() {
                         <input type="text" value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)}
                           className="w-full h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
                           placeholder="radiogenai" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Epochs</Label>
+                        <Select value={ftNEpochs} onValueChange={setFtNEpochs}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto ({t("admin.ft_recommended")})</SelectItem>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="3">3</SelectItem>
+                            <SelectItem value="4">4</SelectItem>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Learning rate</Label>
+                        <Select value={ftLearningRate} onValueChange={setFtLearningRate}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto ({t("admin.ft_recommended")})</SelectItem>
+                            <SelectItem value="0.1">0.1x</SelectItem>
+                            <SelectItem value="0.5">0.5x</SelectItem>
+                            <SelectItem value="1">1x</SelectItem>
+                            <SelectItem value="1.8">1.8x ({t("admin.ft_default")})</SelectItem>
+                            <SelectItem value="2">2x</SelectItem>
+                            <SelectItem value="5">5x</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-gray-400">Batch size</Label>
+                        <Select value={ftBatchSize} onValueChange={setFtBatchSize}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto ({t("admin.ft_recommended")})</SelectItem>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="4">4</SelectItem>
+                            <SelectItem value="8">8</SelectItem>
+                            <SelectItem value="16">16</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <Button size="sm" onClick={handleFtStart} disabled={ftStarting}
@@ -1735,14 +1792,14 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* Training Data */}
+            {/* Fine-tune Data Generator */}
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
-                <Database className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.training_data")}</h2>
-                <Badge variant="secondary" className="text-xs">{trainingData.length} {t("admin.reports")}</Badge>
+                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.ft_data_title")}</h2>
+                {ftDataPreview && <Badge variant="secondary" className="text-xs">{ftDataPreview.total} {t("admin.ft_examples_count")}</Badge>}
                 <div className="ml-auto flex flex-wrap gap-1.5 items-center">
-                  <Select value={trainingModality} onValueChange={(v) => setTrainingModality(v)}>
+                  <Select value={ftDataModality} onValueChange={(v) => setFtDataModality(v)}>
                     <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("admin.all_modalities")}</SelectItem>
@@ -1753,114 +1810,71 @@ export default function AdminPage() {
                       <SelectItem value="Mammography">Mammography</SelectItem>
                     </SelectContent>
                   </Select>
-                  <label className="flex items-center gap-1 text-xs text-gray-500">
-                    <input
-                      type="checkbox"
-                      checked={trainingCorrectionsOnly}
-                      onChange={(e) => setTrainingCorrectionsOnly(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    {t("admin.corrections_only")}
-                  </label>
-                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadTrainingData} disabled={trainingLoading}>
-                    {trainingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadFtDataPreview} disabled={ftDataLoading}>
+                    {ftDataLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                     {t("admin.load")}
                   </Button>
-                  <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportJsonl} disabled={exporting || trainingData.length === 0}>
-                    {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                    {t("admin.export_jsonl")}
+                  <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportFtData} disabled={ftExporting || !ftDataPreview?.total}>
+                    {ftExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                    {t("admin.ft_download_jsonl")}
                   </Button>
                 </div>
               </div>
-              <CardContent className="pt-0">
-                {trainingError && (
-                  <div className="mb-3 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                    <span className="font-medium">{t("admin.error_loading_training")}:</span> {trainingError}
+              <CardContent className="pt-0 space-y-3">
+                <p className="text-xs text-gray-500">{t("admin.ft_data_desc")}</p>
+                {ftDataError && (
+                  <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                    {ftDataError}
                   </div>
                 )}
-                {trainingLoading ? (
-                  <div className="text-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400 mb-2" />
-                    <p className="text-xs text-gray-400">{t("admin.loading_training_data")}</p>
+                {ftDataLoading ? (
+                  <div className="text-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-gray-400 mb-2" />
+                    <p className="text-xs text-gray-400">{t("admin.loading")}...</p>
                   </div>
-                ) : trainingData.length === 0 && !trainingError ? (
-                  <div className="text-center py-8 text-gray-400 text-xs">
-                    <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    {t("admin.no_training_data")}
-                  </div>
-                ) : trainingData.length === 0 ? null : (
-                  <div className="space-y-2">
-                    {trainingData.map((r) => {
-                      const isExpanded = expandedReportId === r.id;
-                      const findingsChanged = r.initial_findings_text && r.initial_findings_text !== r.findings_text;
-                      const conclusionChanged = r.initial_conclusion_text && r.initial_conclusion_text !== r.conclusion_text;
-                      return (
-                        <div key={r.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-                          <button
-                            type="button"
-                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
-                            onClick={() => setExpandedReportId(isExpanded ? null : r.id)}
-                          >
-                            <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
-                            <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-                              <Badge variant="secondary" className="text-[10px]">{r.modality}</Badge>
-                              <span className="text-xs font-medium text-gray-900 dark:text-white truncate">{r.study_type}</span>
-                              {r.had_corrections && <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.corrected")}</Badge>}
-                              {r.error_reported && <Badge variant="destructive" className="text-[10px] gap-0.5"><Flag className="h-2 w-2" />{t("admin.error")}</Badge>}
-                            </div>
-                            <span className="text-[10px] text-gray-400 shrink-0">
-                              {r.user_name || r.user_email || "—"} · {new Date(r.created_at).toLocaleDateString()}
-                            </span>
-                          </button>
+                ) : ftDataPreview ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{ftDataPreview.total}</p>
+                        <p className="text-[10px] text-purple-500">{t("admin.ft_training_examples")}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                        <p className="text-lg font-bold text-gray-700 dark:text-gray-300">{ftDataPreview.modalities.length}</p>
+                        <p className="text-[10px] text-gray-500">{t("admin.ft_modalities")}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+                        <p className="text-lg font-bold text-green-700 dark:text-green-300">{ftDataPreview.total >= 10 ? "✓" : "✗"}</p>
+                        <p className="text-[10px] text-green-500">{t("admin.ft_min_examples")}</p>
+                      </div>
+                    </div>
 
-                          {isExpanded && (
-                            <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-3 bg-gray-50/50 dark:bg-gray-900/30">
-                              {r.error_report_note && (
-                                <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                                  <span className="font-medium">{t("admin.error_report")}:</span> {r.error_report_note}
-                                </div>
-                              )}
-
+                    {ftDataPreview.preview.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{t("admin.ft_preview")}</p>
+                        {ftDataPreview.preview.slice(0, 3).map((ex, i) => {
+                          const userMsg = ex.messages.find((m) => m.role === "user");
+                          const assistantMsg = ex.messages.find((m) => m.role === "assistant");
+                          return (
+                            <div key={i} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 space-y-2">
                               <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.input_dictation_context")}</p>
-                                {r.clinical_context && (
-                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-20 overflow-y-auto mb-1.5 text-gray-500">{r.clinical_context}</pre>
-                                )}
-                                <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">{r.raw_dictation || "—"}</pre>
+                                <p className="text-[10px] font-semibold text-blue-500 mb-0.5">{t("admin.ft_input")}</p>
+                                <pre className="text-[11px] bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 whitespace-pre-wrap max-h-24 overflow-y-auto">{userMsg?.content?.slice(0, 500) || "—"}</pre>
                               </div>
-
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                                <div>
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">
-                                    {t("admin.ai_generated")} {findingsChanged && <span className="text-amber-500 normal-case">({t("admin.modified_by_rad")})</span>}
-                                  </p>
-                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
-{r.initial_findings_text || r.findings_text || "—"}
-{"\n\n---\n\n"}
-{r.initial_conclusion_text || r.conclusion_text || "—"}
-                                  </pre>
-                                </div>
-                                <div>
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">
-                                    {t("admin.final_report")} {(findingsChanged || conclusionChanged) && <span className="text-amber-500 normal-case">({t("admin.corrected")})</span>}
-                                  </p>
-                                  <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
-{r.findings_text || "—"}
-{"\n\n---\n\n"}
-{r.conclusion_text || "—"}
-                                  </pre>
-                                </div>
-                              </div>
-
-                              <div className="flex gap-3 text-[10px] text-gray-400">
-                                {r.provider_used && <span>{t("admin.provider")}: {r.provider_used}</span>}
-                                {r.model_used && <span>{t("admin.model")}: {r.model_used}</span>}
+                              <div>
+                                <p className="text-[10px] font-semibold text-green-600 mb-0.5">{t("admin.ft_expected_output")}</p>
+                                <pre className="text-[11px] bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 whitespace-pre-wrap max-h-24 overflow-y-auto">{assistantMsg?.content?.slice(0, 500) || "—"}</pre>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-400 text-xs">
+                    <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    {t("admin.ft_no_data")}
                   </div>
                 )}
               </CardContent>

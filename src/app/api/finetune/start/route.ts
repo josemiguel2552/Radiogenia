@@ -12,14 +12,20 @@ export async function POST(req: NextRequest) {
     }
     const apiKey = globalConfig.apiKey;
 
-    const { fileId, baseModel, suffix } = await req.json();
+    const { fileId, baseModel, suffix, nEpochs, learningRateMultiplier, batchSize } = await req.json();
     if (!fileId) return NextResponse.json({ error: "Missing fileId" }, { status: 400 });
+
+    const hyperparameters: Record<string, unknown> = {};
+    if (nEpochs && nEpochs !== "auto") hyperparameters.n_epochs = Number(nEpochs);
+    if (learningRateMultiplier && learningRateMultiplier !== "auto") hyperparameters.learning_rate_multiplier = Number(learningRateMultiplier);
+    if (batchSize && batchSize !== "auto") hyperparameters.batch_size = Number(batchSize);
 
     const body: Record<string, unknown> = {
       training_file: fileId,
       model: baseModel || "gpt-4o-mini-2024-07-18",
     };
     if (suffix) body.suffix = suffix;
+    if (Object.keys(hyperparameters).length > 0) body.hyperparameters = hyperparameters;
 
     const res = await fetch("https://api.openai.com/v1/fine_tuning/jobs", {
       method: "POST",
@@ -42,6 +48,7 @@ export async function POST(req: NextRequest) {
       status: job.status,
       model: job.model,
       createdAt: job.created_at,
+      hyperparameters: job.hyperparameters || null,
     });
   } catch (error) {
     return toErrorResponse(error);
