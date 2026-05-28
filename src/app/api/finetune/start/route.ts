@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, getGlobalAIConfig } from "@/lib/auth-helpers";
+import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
@@ -7,10 +7,10 @@ export async function POST(req: NextRequest) {
     await requireAdmin();
 
     const globalConfig = await getGlobalAIConfig();
-    if (globalConfig.provider !== "openai") {
-      return NextResponse.json({ error: "Fine-tuning requires OpenAI as the global provider." }, { status: 400 });
+    const apiKey = resolveApiKey(globalConfig, "openai");
+    if (!apiKey) {
+      return NextResponse.json({ error: "No OpenAI API key configured. Add one in AI Config → Provider API Keys." }, { status: 400 });
     }
-    const apiKey = globalConfig.apiKey;
 
     const { fileId, baseModel, suffix, nEpochs, learningRateMultiplier, batchSize } = await req.json();
     if (!fileId) return NextResponse.json({ error: "Missing fileId" }, { status: 400 });
