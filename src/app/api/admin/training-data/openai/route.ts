@@ -50,8 +50,8 @@ async function fromReportsTable(
       "findings_text, conclusion_text, " +
       "initial_findings_text, initial_conclusion_text"
     )
-    .eq("had_corrections", true)
-    .not("initial_conclusion_text", "is", null)
+    .not("conclusion_text", "is", null)
+    .not("findings_text", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -64,9 +64,9 @@ async function fromReportsTable(
 
   const examples: TrainingExample[] = rows
     .filter((r) => {
-      const correctedFindings = r.findings_text?.trim();
-      const correctedConclusion = r.conclusion_text?.trim();
-      return correctedFindings && correctedConclusion;
+      const findings = r.findings_text?.trim();
+      const conclusion = r.conclusion_text?.trim();
+      return findings && conclusion;
     })
     .map((r) => {
       const correctedFindings = reconcileFindings(r.findings_text!, r.conclusion_text!);
