@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectPii, hasPii } from "../pii-detect";
+import { detectPii, hasPii, stripPii } from "../pii-detect";
 
 describe("detectPii", () => {
   describe("DNI detection", () => {
@@ -174,6 +174,127 @@ describe("detectPii", () => {
 
     it("ignores typical radiology dictation", () => {
       const text = "Hígado de ecoestructura homogénea, tamaño normal de 15 cm. Vía biliar no dilatada. Vesícula biliar de paredes finas sin litiasis. Bazo homogéneo de 11 cm. Riñones de tamaño y morfología normal, con buena diferenciación córtico-medular. No se observa líquido libre intraperitoneal.";
+      const matches = detectPii(text);
+      expect(matches).toHaveLength(0);
+    });
+  });
+
+  describe("RFC detection (Mexico)", () => {
+    it("detects personal RFC (13 chars)", () => {
+      const matches = detectPii("RFC del paciente: GARC850101AB1");
+      expect(matches.some((m) => m.type === "rfc")).toBe(true);
+    });
+
+    it("detects company RFC (12 chars)", () => {
+      const matches = detectPii("RFC: GAR850101AB1 del hospital.");
+      expect(matches.some((m) => m.type === "rfc")).toBe(true);
+    });
+
+    it("detects RFC with Ñ", () => {
+      const matches = detectPii("RFC: ÑUÑE900215HG3 registrado.");
+      expect(matches.some((m) => m.type === "rfc")).toBe(true);
+    });
+
+    it("ignores invalid RFC (bad month)", () => {
+      const matches = detectPii("Código GARC851501AB1 no válido.");
+      expect(matches.filter((m) => m.type === "rfc")).toHaveLength(0);
+    });
+
+    it("ignores short codes that aren't RFC", () => {
+      const matches = detectPii("Protocolo ABC123 del estudio.");
+      expect(matches.filter((m) => m.type === "rfc")).toHaveLength(0);
+    });
+  });
+
+  // ── Mexico-specific integration tests ──
+  describe("Mexico PII leak rate", () => {
+    it("detects CURP embedded in clinical text", () => {
+      const text = "Paciente masculino de 38 años, CURP GARC850101HDFRRL09, acude por dolor abdominal.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "curp")).toBe(true);
+    });
+
+    it("detects CURP without label", () => {
+      const text = "Datos: LOPM920315MDFRZR07, femenino, 31 años.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "curp")).toBe(true);
+    });
+
+    it("detects RFC embedded in clinical text", () => {
+      const text = "Facturar a RFC GARC850101AB1, paciente Juan García.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "rfc")).toBe(true);
+    });
+
+    it("detects Mexican phone numbers (+52)", () => {
+      const text = "Contacto del paciente: +52 55 1234 5678.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "phone")).toBe(true);
+    });
+
+    it("detects Mexican 10-digit phone without country code", () => {
+      const text = "Tel: +52 33 9876 5432 para resultados.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "phone")).toBe(true);
+    });
+
+    it("detects common Mexican names", () => {
+      const text = "Se presenta Guadalupe Hernández Martínez para TC de abdomen.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects names with 'de' connector common in Mexico", () => {
+      const text = "Paciente María de los Ángeles Rodríguez acude a estudio.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects NHC/expediente in Mexican hospital context", () => {
+      const text = "NHC: 12345678 del Hospital General.";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "nhc")).toBe(true);
+    });
+
+    it("detects email in referral notes", () => {
+      const text = "Enviar resultados a dr.garcia@hospital.com.mx";
+      const matches = detectPii(text);
+      expect(matches.some((m) => m.type === "email")).toBe(true);
+    });
+
+    it("strips all PII from a realistic Mexican radiology dictation", () => {
+      const text = [
+        "Paciente Guadalupe Hernández Martínez, CURP HERG900215MDFRRL05,",
+        "RFC HERG900215AB1, NHC: 45678901.",
+        "Tel: +52 55 4321 8765, email: guadalupe.hdz@gmail.com.",
+        "TC de abdomen simple y contrastada.",
+        "Hígado de tamaño normal, sin lesiones focales.",
+        "Bazo homogéneo de 10 cm. Riñones normales.",
+        "No se observa líquido libre.",
+      ].join(" ");
+
+      const result = stripPii(text);
+      expect(result.strippedCount).toBeGreaterThanOrEqual(5);
+      expect(result.cleaned).not.toContain("Guadalupe");
+      expect(result.cleaned).not.toContain("HERG900215");
+      expect(result.cleaned).not.toContain("45678901");
+      expect(result.cleaned).not.toContain("guadalupe.hdz");
+      // Medical content should be preserved
+      expect(result.cleaned).toContain("Hígado de tamaño normal");
+      expect(result.cleaned).toContain("Bazo homogéneo");
+      expect(result.cleaned).toContain("Riñones normales");
+    });
+
+    it("does not false-positive on Mexican radiology report without PII", () => {
+      const text = [
+        "TC de tórax simple.",
+        "Campos pulmonares sin evidencia de consolidación ni derrame.",
+        "Mediastino sin adenopatías de tamaño significativo.",
+        "Silueta cardíaca de tamaño normal. Índice cardiotorácico 0.45.",
+        "Estructuras óseas sin lesiones líticas ni blásticas.",
+        "Conclusión: Estudio sin hallazgos patológicos significativos.",
+      ].join(" ");
+
       const matches = detectPii(text);
       expect(matches).toHaveLength(0);
     });

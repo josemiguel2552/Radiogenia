@@ -457,7 +457,7 @@ function PricingCard({ plan, planKey, t, lang }: {
           ) : (
             <>
               <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
-              <span className="text-sm text-gray-400">{t("pricing.per_month")}</span>
+              <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
             </>
           )}
         </div>

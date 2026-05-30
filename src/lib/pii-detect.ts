@@ -1,5 +1,5 @@
 export interface PiiMatch {
-  type: "dni" | "nie" | "phone" | "email" | "ssn" | "name" | "curp" | "cpf" | "rut" | "cedula" | "nhc";
+  type: "dni" | "nie" | "phone" | "email" | "ssn" | "name" | "curp" | "rfc" | "cpf" | "rut" | "cedula" | "nhc";
   value: string;
   index: number;
 }
@@ -113,6 +113,28 @@ function detectCurp(text: string): PiiMatch[] {
     if (mm < 1 || mm > 12 || dd < 1 || dd > 31) continue;
 
     results.push({ type: "curp", value: fullMatch, index: m.index });
+  }
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Mexican RFC: 4 letters (company) or 3+1 letters (person) + 6 digits + 3 check chars
+// Person: GARC850101AB1 (13 chars), Company: GAR850101AB1 (12 chars)
+// ---------------------------------------------------------------------------
+function detectRfc(text: string): PiiMatch[] {
+  const re = /(?<![A-Za-z0-9])([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})(?![A-Za-z0-9])/gi;
+  const results: PiiMatch[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const fullMatch = m[0].toUpperCase();
+    if (fullMatch.length !== 12 && fullMatch.length !== 13) continue;
+
+    const dateStart = fullMatch.length === 13 ? 4 : 3;
+    const mm = parseInt(fullMatch.slice(dateStart + 2, dateStart + 4), 10);
+    const dd = parseInt(fullMatch.slice(dateStart + 4, dateStart + 6), 10);
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) continue;
+
+    results.push({ type: "rfc", value: m[0], index: m.index });
   }
   return results;
 }
@@ -619,6 +641,7 @@ export function detectPii(text: string): PiiMatch[] {
     ...detectDni(text),
     ...detectNie(text),
     ...detectCurp(text),
+    ...detectRfc(text),
     ...detectCpf(text),
     ...detectRut(text),
     ...detectCedula(text),
@@ -650,6 +673,7 @@ const PII_PLACEHOLDER: Record<PiiMatch["type"], string> = {
   ssn: "[NSS]",
   name: "[NOMBRE]",
   curp: "[CURP]",
+  rfc: "[RFC]",
   cpf: "[CPF]",
   rut: "[RUT]",
   cedula: "[CÉDULA]",

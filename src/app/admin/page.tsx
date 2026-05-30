@@ -1535,7 +1535,7 @@ export default function AdminPage() {
                           <span className="text-2xl font-bold text-gray-900 dark:text-white">{t("admin.free")}</span>
                         ) : (
                           <>
-                            <span className="text-2xl font-bold text-gray-900 dark:text-white">&euro;{plan.price}</span>
+                            <span className="text-2xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
                             <span className="text-xs text-gray-500">/{t("admin.month")}</span>
                           </>
                         )}
