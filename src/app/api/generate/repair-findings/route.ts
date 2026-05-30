@@ -5,6 +5,7 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
+import { logPiiStrip } from "@/lib/pii-log";
 import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
@@ -17,7 +18,8 @@ export async function POST(req: NextRequest) {
     if (!rl.allowed) return rl.errorResponse!;
 
     const body = await req.json();
-    const { cleaned: findings } = stripPii(body.findings || "");
+    const { cleaned: findings, strippedCount, strippedTypes } = stripPii(body.findings || "");
+    logPiiStrip(user.id, "repair_findings", strippedCount, strippedTypes);
     const { omissions, hallucinations, outputLanguage } = body;
     if (!findings) {
       return NextResponse.json({ error: "Missing findings" }, { status: 400 });

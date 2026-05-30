@@ -9,6 +9,7 @@ import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
+import { logPiiStrip } from "@/lib/pii-log";
 import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
 
@@ -27,8 +28,11 @@ export async function POST(req: NextRequest) {
     ]);
     const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
 
-    const { cleaned: findingsText } = stripPii(rawFindings || "");
-    const { cleaned: clinicalInfo } = stripPii(rawClinical || "");
+    const { cleaned: findingsText, strippedCount: sc1, strippedTypes: st1 } = stripPii(rawFindings || "");
+    const { cleaned: clinicalInfo, strippedCount: sc2, strippedTypes: st2 } = stripPii(rawClinical || "");
+    const mergedTypes: Record<string, number> = { ...st1 };
+    for (const [k, v] of Object.entries(st2)) mergedTypes[k] = (mergedTypes[k] || 0) + v;
+    logPiiStrip(user.id, "conclusion", sc1 + sc2, mergedTypes);
 
     const service = createServiceClient();
 

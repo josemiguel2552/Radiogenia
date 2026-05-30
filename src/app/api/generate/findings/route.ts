@@ -12,6 +12,7 @@ import { getDefaultsForModality, type NormalityLang } from "@/lib/normality-defa
 import { translateSectionLabel, translateTemplate, enforceOutputLanguage, enforcePeriodSeparation } from "@/lib/section-translate";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
+import { logPiiStrip } from "@/lib/pii-log";
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
 
@@ -43,9 +44,7 @@ export async function POST(req: NextRequest) {
     const { template, dictation: rawDictation, modality, paraphraseOverride, compactNormals: compactOverride, reportMode, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
 
     const { cleaned: dictation, strippedCount, strippedTypes } = stripPii(rawDictation || "");
-    if (strippedCount > 0 && process.env.NODE_ENV === "development") {
-      console.log(`[findings] PII stripped: ${strippedCount} items`, strippedTypes);
-    }
+    logPiiStrip(user.id, "findings", strippedCount, strippedTypes);
 
     const service = createServiceClient();
 

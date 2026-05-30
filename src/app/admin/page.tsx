@@ -14,7 +14,7 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical, Sparkles,
+  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical, Sparkles, ShieldAlert,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -189,6 +189,11 @@ export default function AdminPage() {
   const [auditCursor, setAuditCursor] = useState<string | null>(null);
   const [auditLoadingMore, setAuditLoadingMore] = useState(false);
 
+  // PII monitoring
+  interface PiiStatsData { totalEvents: number; totalStripped: number; byType: Record<string, number>; byEndpoint: Record<string, number>; last7days: Record<string, number> }
+  const [piiStats, setPiiStats] = useState<PiiStatsData | null>(null);
+  const [piiStatsLoading, setPiiStatsLoading] = useState(false);
+
   // Fine-tune data generation
   interface FtPreview { total: number; preview: { messages: { role: string; content: string }[] }[]; modalities: string[] }
   const [ftDataPreview, setFtDataPreview] = useState<FtPreview | null>(null);
@@ -280,8 +285,16 @@ export default function AdminPage() {
   }, [auditCursor, auditLoadingMore]);
 
   useEffect(() => {
-    if (tab === "audit" && !ftDataPreview && !ftDataLoading) {
-      loadFtDataPreview();
+    if (tab === "audit") {
+      if (!ftDataPreview && !ftDataLoading) loadFtDataPreview();
+      if (!piiStats && !piiStatsLoading) {
+        setPiiStatsLoading(true);
+        fetch("/api/admin/pii-stats")
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => { if (d) setPiiStats(d); })
+          .catch(() => {})
+          .finally(() => setPiiStatsLoading(false));
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
@@ -1611,6 +1624,60 @@ export default function AdminPage() {
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (
           <div className="space-y-4">
+            {/* PII Monitor */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <ShieldAlert className="h-4 w-4 text-orange-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.pii_monitor")}</h2>
+                {piiStats && <Badge variant="secondary" className="text-xs">{piiStats.totalEvents} {t("admin.pii_events")}</Badge>}
+              </div>
+              <CardContent className="pt-0">
+                {piiStatsLoading ? (
+                  <div className="text-center py-4"><Loader2 className="h-4 w-4 animate-spin mx-auto text-gray-400" /></div>
+                ) : piiStats && piiStats.totalEvents > 0 ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-center">
+                        <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{piiStats.totalStripped}</p>
+                        <p className="text-[10px] text-orange-500">{t("admin.pii_total_stripped")}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{piiStats.totalEvents}</p>
+                        <p className="text-[10px] text-blue-500">{t("admin.pii_requests_with_pii")}</p>
+                      </div>
+                      {Object.entries(piiStats.byType).sort(([, a], [, b]) => b - a).slice(0, 2).map(([type, count]) => (
+                        <div key={type} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-center">
+                          <p className="text-xl font-bold text-gray-700 dark:text-gray-300">{count}</p>
+                          <p className="text-[10px] text-gray-500">{type.toUpperCase()}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {Object.keys(piiStats.byType).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(piiStats.byType).sort(([, a], [, b]) => b - a).map(([type, count]) => (
+                          <Badge key={type} variant="outline" className="text-[10px] gap-1">
+                            {type.toUpperCase()} <span className="font-bold">{count}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    {Object.keys(piiStats.byEndpoint).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-[10px] text-gray-400 self-center">{t("admin.pii_by_endpoint")}:</span>
+                        {Object.entries(piiStats.byEndpoint).sort(([, a], [, b]) => b - a).map(([ep, count]) => (
+                          <Badge key={ep} variant="secondary" className="text-[10px] gap-1">
+                            {ep} <span className="font-bold">{count}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 py-3">{t("admin.pii_no_events")}</p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <ClipboardList className="h-4 w-4 text-blue-500" />
