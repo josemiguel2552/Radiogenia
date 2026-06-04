@@ -106,7 +106,7 @@ If the resulting report has more sections than dictated findings, you are doing 
 
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
 - EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
-- NEVER force a finding into an incorrect anatomical section. The section must ANATOMICALLY match the finding (e.g., "Trachea and bronchi" is NOT thyroid; thyroid nodules go to "Additional findings" if no thyroid section exists).
+- NEVER force a finding into an incorrect anatomical section. The section must ANATOMICALLY match the finding (e.g., "Trachea and bronchi" is NOT thyroid; thyroid nodules go to "Additional findings" if no thyroid section exists). Pulmonary embolism findings ("no PE", "no pulmonary embolism") go in PULMONARY ARTERIES, HEART or MEDIASTINUM — NEVER in "Trachea and bronchi" or "Lung".
 - NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
 
@@ -147,7 +147,7 @@ Do NOT write normality sections. The report ONLY contains what the radiologist d
 
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
 - EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
-- NEVER force a finding into an incorrect anatomical section. The section must ANATOMICALLY match the finding (e.g., "Trachea and bronchi" is NOT thyroid; thyroid nodules go to "Additional findings" if no thyroid section exists).
+- NEVER force a finding into an incorrect anatomical section. The section must ANATOMICALLY match the finding (e.g., "Trachea and bronchi" is NOT thyroid; thyroid nodules go to "Additional findings" if no thyroid section exists). Pulmonary embolism findings ("no PE", "no pulmonary embolism") go in PULMONARY ARTERIES, HEART or MEDIASTINUM — NEVER in "Trachea and bronchi" or "Lung".
 - NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
 
@@ -201,6 +201,7 @@ REGLAS OBLIGATORIAS:
    - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos". Cada hallazgo DEBE ir en la sección que corresponde ANATÓMICAMENTE. Si la estructura anatómica del hallazgo NO es la estructura de la sección, NO lo pongas ahí.
    - EJEMPLOS de hallazgos que VAN a "Otros hallazgos": nódulos tiroideos en un template de tórax sin sección de tiroides, hallazgos en partes blandas en un template óseo, adenopatías en un template que no las incluye, hallazgos tiroideos en una sección de tráquea, hallazgos mamarios en un template torácico, etc.
    - La sección debe corresponderse ANATÓMICAMENTE con el hallazgo. "Tráquea y bronquios" NO es tiroides. "Pulmón" NO es pleura si hay sección de pleura. "Hígado" NO es vesícula si hay sección de vesícula.
+   - COLOCACIÓN VASCULAR CORRECTA: hallazgos de tromboembolismo pulmonar (TEP), embolismo pulmonar, o ausencia de los mismos ("sin evidencia de TEP", "no pulmonary embolism") van en la sección de ARTERIAS PULMONARES, CORAZÓN, MEDIASTINO o VASOS — NUNCA en "Tráquea y bronquios" ni en "Pulmón". El TEP es un hallazgo VASCULAR, no de vía aérea ni de parénquima pulmonar.
    - Si TODOS los hallazgos encajan en secciones existentes, NO añadas esta sección.
 
 FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
@@ -253,6 +254,7 @@ REGRAS OBRIGATÓRIAS:
    - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados". Cada achado DEVE ir na seção que corresponde ANATOMICAMENTE. Se a estrutura anatômica do achado NÃO é a estrutura da seção, NÃO o coloque lá.
    - EXEMPLOS de achados que VÃO para "Outros achados": nódulos tireoidianos em um template de tórax sem seção de tireoide, achados em partes moles em um template ósseo, linfonodomegalias em um template que não as inclui, achados tireoidianos em uma seção de traqueia, achados mamários em um template torácico, etc.
    - A seção deve corresponder ANATOMICAMENTE ao achado. "Traqueia e brônquios" NÃO é tireoide. "Pulmão" NÃO é pleura se houver seção de pleura. "Fígado" NÃO é vesícula se houver seção de vesícula.
+   - COLOCAÇÃO VASCULAR CORRETA: achados de tromboembolismo pulmonar (TEP), embolia pulmonar, ou ausência dos mesmos ("sem evidência de TEP", "no pulmonary embolism") vão na seção de ARTÉRIAS PULMONARES, CORAÇÃO, MEDIASTINO ou VASOS — NUNCA em "Traqueia e brônquios" nem em "Pulmão". O TEP é um achado VASCULAR, não de via aérea nem de parênquima pulmonar.
    - Se TODOS os achados se encaixam em seções existentes, NÃO adicione esta seção.
 
 FORMATO DE SAÍDA — ESTRITO, SEM EXCEÇÕES:
@@ -304,6 +306,7 @@ MANDATORY RULES:
    - NEVER force a finding into an incorrect anatomical section just to avoid creating "Additional findings". Each finding MUST go in the section that corresponds ANATOMICALLY. If the anatomical structure of the finding is NOT the structure of the section, do NOT place it there.
    - EXAMPLES of findings that GO to "Additional findings": thyroid nodules in a chest template without a thyroid section, soft tissue findings in a bone template, lymphadenopathy in a template that doesn't include it, thyroid findings in a "trachea and bronchi" section, breast findings in a thoracic template, etc.
    - The section must ANATOMICALLY match the finding. "Trachea and bronchi" is NOT thyroid. "Lung" is NOT pleura if there is a pleura section. "Liver" is NOT gallbladder if there is a gallbladder section.
+   - CORRECT VASCULAR PLACEMENT: findings about pulmonary thromboembolism (PE), pulmonary embolism, or their absence ("no CT evidence of acute pulmonary embolism", "no central pulmonary embolism") go in the PULMONARY ARTERIES, HEART, MEDIASTINUM or VESSELS section — NEVER in "Trachea and bronchi" or "Lung". PE is a VASCULAR finding, not an airway or lung parenchyma finding.
    - If ALL findings fit existing sections, do NOT add this section.
 
 OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
@@ -1086,6 +1089,7 @@ RULES (no exceptions):
    - NEVER force a finding into an incorrect anatomical section just to avoid creating "Additional findings". Each finding MUST go in the section that corresponds ANATOMICALLY. If the anatomical structure of the finding is NOT the structure of the section, do NOT place it there.
    - EXAMPLES of findings that GO to "Additional findings": thyroid nodules in a chest template without a thyroid section, soft tissue findings in a bone template, lymphadenopathy in a template that doesn't include it, thyroid findings in a "trachea and bronchi" section, breast findings in a thoracic template, etc.
    - The section must ANATOMICALLY match the finding. "Trachea and bronchi" is NOT thyroid. "Lung" is NOT pleura if there is a pleura section. "Liver" is NOT gallbladder if there is a gallbladder section.
+   - CORRECT VASCULAR PLACEMENT: findings about pulmonary thromboembolism (PE), pulmonary embolism, or their absence ("no CT evidence of acute pulmonary embolism", "no central pulmonary embolism") go in the PULMONARY ARTERIES, HEART, MEDIASTINUM or VESSELS section — NEVER in "Trachea and bronchi" or "Lung". PE is a VASCULAR finding, not an airway or lung parenchyma finding.
    - If ALL findings fit existing sections, do NOT add this section.
 
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE:
@@ -1187,7 +1191,7 @@ PASO 2 — ANTI-ALUCINACIÓN: Revisa cada frase de tu informe que describe un ha
 
 PASO 3 — DATOS EXACTOS: Verifica que cada medida (mm, cm), número, lateralidad (derecha/izquierda), y ubicación anatómica coincide EXACTAMENTE con el dictado. No redondees, no cambies lateralidad, no muevas hallazgos entre secciones incorrectas.
 
-PASO 4 — SECCIÓN ANATÓMICA CORRECTA: Para CADA hallazgo dictado colocado en una sección, verifica que la estructura anatómica del hallazgo CORRESPONDE a la sección del template. Ej: nódulos tiroideos NO van en "Tráquea y bronquios"; hallazgos pleurales NO van en "Pulmón" si existe sección de pleura. Si un hallazgo está en una sección incorrecta, MUÉVELO a la sección correcta o a "Otros hallazgos:".
+PASO 4 — SECCIÓN ANATÓMICA CORRECTA: Para CADA hallazgo dictado colocado en una sección, verifica que la estructura anatómica del hallazgo CORRESPONDE a la sección del template. Ej: nódulos tiroideos NO van en "Tráquea y bronquios"; hallazgos pleurales NO van en "Pulmón" si existe sección de pleura; TEP o ausencia de TEP NO van en "Tráquea y bronquios" ni en "Pulmón" — van en arterias pulmonares, corazón, mediastino o vasos. Si un hallazgo está en una sección incorrecta, MUÉVELO a la sección correcta o a "Otros hallazgos:".
 
 Si detectas un error en cualquier paso, CORRÍGELO antes de responder.`,
     en: `
@@ -1200,7 +1204,7 @@ STEP 2 — ANTI-HALLUCINATION: Review every sentence in your report that describ
 
 STEP 3 — EXACT DATA: Verify that every measurement (mm, cm), number, laterality (right/left), and anatomical location matches EXACTLY with the dictation. Do not round, do not swap laterality, do not move findings to incorrect sections.
 
-STEP 4 — CORRECT ANATOMICAL SECTION: For EACH dictated finding placed in a section, verify that the anatomical structure of the finding MATCHES the template section. E.g.: thyroid nodules do NOT go in "Trachea and bronchi"; pleural findings do NOT go in "Lung" if a pleura section exists. If a finding is in an incorrect section, MOVE it to the correct section or to "Additional findings:".
+STEP 4 — CORRECT ANATOMICAL SECTION: For EACH dictated finding placed in a section, verify that the anatomical structure of the finding MATCHES the template section. E.g.: thyroid nodules do NOT go in "Trachea and bronchi"; pleural findings do NOT go in "Lung" if a pleura section exists; PE or absence of PE does NOT go in "Trachea and bronchi" or "Lung" — it goes in pulmonary arteries, heart, mediastinum or vessels. If a finding is in an incorrect section, MOVE it to the correct section or to "Additional findings:".
 
 If you detect an error in any step, CORRECT it before responding.`,
     pt: `
@@ -1213,7 +1217,7 @@ PASSO 2 — ANTI-ALUCINAÇÃO: Revise cada frase do seu laudo que descreve um ac
 
 PASSO 3 — DADOS EXATOS: Verifique que cada medida (mm, cm), número, lateralidade (direita/esquerda) e localização anatômica coincide EXATAMENTE com o ditado. Não arredonde, não troque lateralidade, não mova achados para seções incorretas.
 
-PASSO 4 — SEÇÃO ANATÔMICA CORRETA: Para CADA achado ditado colocado em uma seção, verifique que a estrutura anatômica do achado CORRESPONDE à seção do template. Ex: nódulos tireoidianos NÃO vão em "Traqueia e brônquios"; achados pleurais NÃO vão em "Pulmão" se houver seção de pleura. Se um achado está em uma seção incorreta, MOVA-O para a seção correta ou para "Outros achados:".
+PASSO 4 — SEÇÃO ANATÔMICA CORRETA: Para CADA achado ditado colocado em uma seção, verifique que a estrutura anatômica do achado CORRESPONDE à seção do template. Ex: nódulos tireoidianos NÃO vão em "Traqueia e brônquios"; achados pleurais NÃO vão em "Pulmão" se houver seção de pleura; TEP ou ausência de TEP NÃO vão em "Traqueia e brônquios" nem em "Pulmão" — vão em artérias pulmonares, coração, mediastino ou vasos. Se um achado está em uma seção incorreta, MOVA-O para a seção correta ou para "Outros achados:".
 
 Se detectar um erro em qualquer passo, CORRIJA antes de responder.`,
   };
