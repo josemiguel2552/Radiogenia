@@ -52,6 +52,7 @@ import { toast } from "sonner";
 import { NpsSurvey } from "./nps-survey";
 import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -59,6 +60,11 @@ export function DashboardContent() {
   const sec = useSection();
   const tplName = useTemplateName();
   const modName = useModality();
+  const { prefs: uiPrefs } = useUIPrefs();
+  const layoutMode = uiPrefs.layout || "classic";
+  const densityMode = uiPrefs.density || "normal";
+  const isCompactLayout = layoutMode === "compact";
+  const isSideBySide = layoutMode === "side-by-side";
 
   // Templates state
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
@@ -1455,9 +1461,10 @@ export function DashboardContent() {
 
   const rPct = subReportsLimit > 0 ? Math.min(100, Math.round((subReportsUsed / subReportsLimit) * 100)) : 0;
   const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
+  const effectiveSetupCollapsed = isCompactLayout || setupCollapsed;
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className={`density-gap flex flex-col ${densityMode === "compact" ? "gap-2" : densityMode === "spacious" ? "gap-5" : "gap-3 md:gap-4"}`}>
       {/* ── Usage bar ── */}
       <div className="rounded-lg border bg-white dark:bg-gray-900 px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
@@ -1483,11 +1490,10 @@ export function DashboardContent() {
       </div>
 
       {/* ── Input: study setup (left) + dictation (right) ── */}
-      {setupCollapsed ? (
-        <div className="space-y-3">
+      {effectiveSetupCollapsed ? (
           <div
             className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
-            onClick={() => setSetupCollapsed(false)}
+            onClick={() => { if (!isCompactLayout) setSetupCollapsed(false); }}
           >
             <Stethoscope className="h-3.5 w-3.5 text-brand" />
             <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 truncate flex-1 min-w-0">
@@ -1506,145 +1512,9 @@ export function DashboardContent() {
             </div>
             <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
           </div>
-
-          <Card>
-            <CardContent className="p-3 space-y-2.5">
-              {/* Language selector */}
-              <div className="flex items-center gap-1">
-                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
-                    {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
-                      <button
-                        key={l.value}
-                        type="button"
-                        onClick={() => changeDictLang(l.value)}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                          resolvedDictLang === l.value
-                            ? "bg-brand text-white"
-                            : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        }`}
-                      >
-                        {l.value.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="relative">
-                    <Textarea
-                      ref={dictTextareaRef}
-                      placeholder={t("dash.dictation_placeholder")}
-                      value={dictation}
-                      onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
-                      onSelect={(e) => {
-                        const ta = e.currentTarget;
-                        if (ta.selectionStart !== ta.selectionEnd) {
-                          setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
-                        } else {
-                          setDictSelRange(null);
-                        }
-                      }}
-                      className="min-h-[140px] md:min-h-[180px] text-sm pr-14"
-                    />
-                    <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
-                    <Button
-                      variant={isRecording ? "destructive" : "secondary"}
-                      size="icon"
-                      className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
-                      style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
-                      onClick={toggleRecording}
-                    >
-                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    </Button>
-                    {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
-                      <div className="absolute top-1 right-1">
-                        <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
-                      </div>
-                    )}
-                    {(isRecording || isTranscribing || isCorrecting || isRefining) && (
-                      <div className="absolute bottom-2 right-2">
-                        <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                          {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  {dictSelRange && dictSelRange.start !== dictSelRange.end && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Texto seleccionado — al dictar se reemplazará
-                      </p>
-                      <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
-                    </div>
-                  )}
-                  {interimText && isRecording && (
-                    <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-                      <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
-                      <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
-                    </div>
-                  )}
-                  {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
-              {piiWarningBanner}
-              <div className="grid grid-cols-3 gap-1.5">
-                <div className="relative">
-                  <Button
-                    onClick={() => handleGenerate("structured")}
-                    disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
-                  >
-                    {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
-                  </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-indigo-300/60 hover:bg-indigo-300 transition-colors" />
-                </div>
-                <div className="relative">
-                  <Button
-                    onClick={() => handleGenerate("compact")}
-                    disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
-                  >
-                    {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
-                  </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
-                </div>
-                <div className="relative">
-                  <Button
-                    onClick={() => handleGenerate("dictation_only")}
-                    disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
-                  >
-                    {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
-                  </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
-                </div>
-              </div>
-              {isGenerating && (
-                <button
-                  type="button"
-                  onClick={stopGeneration}
-                  className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                >
-                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
-                </button>
-              )}
-              {reportModeInfo && (
-                <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
-                  {t(`dash.mode_info_${reportModeInfo}`)}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setLightParaphrase(!lightParaphrase)}
-                className={`flex items-center gap-1.5 text-[11px] transition-colors ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
-              >
-                <Wand2 className="h-3 w-3" />
-                {t("dash.light_paraphrase")}
-              </button>
-            </CardContent>
-          </Card>
-        </div>
       ) : (
-        <div className="space-y-3">
-          {/* Study setup — horizontal strip */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="density-card-p">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
@@ -1888,82 +1758,86 @@ export function DashboardContent() {
             </CardContent>
           </Card>
 
-          {/* Dictation + Generate */}
+      )}
+
+      {/* ── Dictation + Output (side-by-side grid on wide screens when output exists) ── */}
+      <div className={isSideBySide && hasOutput ? "grid grid-cols-1 md:grid-cols-2 density-gap" : ""}>
+        <div>
           <Card>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="density-card-p space-y-3">
               {/* Language selector */}
               <div className="flex items-center gap-1">
                 <Mic className="h-3 w-3 text-gray-400 shrink-0" />
-                    {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
-                      <button
-                        key={l.value}
-                        type="button"
-                        onClick={() => changeDictLang(l.value)}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                          resolvedDictLang === l.value
-                            ? "bg-brand text-white"
-                            : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        }`}
-                      >
-                        {l.value.toUpperCase()}
-                      </button>
-                    ))}
+                {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                  <button
+                    key={l.value}
+                    type="button"
+                    onClick={() => changeDictLang(l.value)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                      resolvedDictLang === l.value
+                        ? "bg-brand text-white"
+                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {l.value.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <div className="relative">
+                <Textarea
+                  ref={dictTextareaRef}
+                  placeholder={t("dash.dictation_placeholder")}
+                  value={dictation}
+                  onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
+                  onSelect={(e) => {
+                    const ta = e.currentTarget;
+                    if (ta.selectionStart !== ta.selectionEnd) {
+                      setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
+                    } else {
+                      setDictSelRange(null);
+                    }
+                  }}
+                  className="density-textarea text-sm pr-14 resize-none"
+                />
+                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
+                <Button
+                  variant={isRecording ? "destructive" : "secondary"}
+                  size="icon"
+                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
+                  style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
+                  onClick={toggleRecording}
+                >
+                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
+                  <div className="absolute top-1 right-1">
+                    <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
                   </div>
-                  <div className="relative">
-                    <Textarea
-                      ref={dictTextareaRef}
-                      placeholder={t("dash.dictation_placeholder")}
-                      value={dictation}
-                      onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
-                      onSelect={(e) => {
-                        const ta = e.currentTarget;
-                        if (ta.selectionStart !== ta.selectionEnd) {
-                          setDictSelRange({ start: ta.selectionStart, end: ta.selectionEnd });
-                        } else {
-                          setDictSelRange(null);
-                        }
-                      }}
-                      className="min-h-[140px] md:min-h-[180px] text-sm pr-14 resize-none"
-                    />
-                    <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
-                    <Button
-                      variant={isRecording ? "destructive" : "secondary"}
-                      size="icon"
-                      className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
-                      style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
-                      onClick={toggleRecording}
-                    >
-                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    </Button>
-                    {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
-                      <div className="absolute top-1 right-1">
-                        <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
-                      </div>
-                    )}
-                    {(isRecording || isTranscribing || isCorrecting || isRefining) && (
-                      <div className="absolute bottom-2 right-2">
-                        <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
-                          {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
-                        </Badge>
-                      </div>
-                    )}
+                )}
+                {(isRecording || isTranscribing || isCorrecting || isRefining) && (
+                  <div className="absolute bottom-2 right-2">
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                      {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
+                    </Badge>
                   </div>
-                  {dictSelRange && dictSelRange.start !== dictSelRange.end && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Texto seleccionado — al dictar se reemplazará
-                      </p>
-                      <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
-                    </div>
-                  )}
-                  {interimText && isRecording && (
-                    <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-                      <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
-                      <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
-                    </div>
-                  )}
-                  {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+                )}
+              </div>
+              {dictSelRange && dictSelRange.start !== dictSelRange.end && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Texto seleccionado — al dictar se reemplazará
+                  </p>
+                  <button onClick={() => setDictSelRange(null)} className="ml-auto text-amber-400 hover:text-amber-600"><X className="h-3 w-3" /></button>
+                </div>
+              )}
+              {interimText && isRecording && (
+                <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                  <Loader2 className="h-3 w-3 animate-spin text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-600 dark:text-blue-300 italic">{interimText}</p>
+                </div>
+              )}
+              {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="relative">
@@ -2019,164 +1893,164 @@ export function DashboardContent() {
                 <Wand2 className="h-3 w-3" />
                 {t("dash.light_paraphrase")}
               </button>
-              {!setupReady && (
+              {!effectiveSetupCollapsed && !setupReady && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
                   {t("dash.select_template_first")}
                 </p>
               )}
             </CardContent>
           </Card>
+
+          {/* ── Template watermark ── */}
+          {!hasOutput && selectedTemplate && templateFieldLabels.length > 0 && (
+            <Card className="mt-3">
+              <CardContent className="px-4 py-3">
+                <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                  {t("dash.template_fields")}
+                </p>
+                <ul className="space-y-0.5">
+                  {templateFieldLabels.map((label) => (
+                    <li key={label} className="text-xs text-gray-300 dark:text-gray-600">
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      )}
 
-      {/* ── Template watermark ── */}
-      {!hasOutput && selectedTemplate && templateFieldLabels.length > 0 && (
-        <Card>
-          <CardContent className="px-4 py-3">
-            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-              {t("dash.template_fields")}
-            </p>
-            <ul className="space-y-0.5">
-              {templateFieldLabels.map((label) => (
-                <li key={label} className="text-xs text-gray-300 dark:text-gray-600">
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+        {/* ── Output ── */}
+        {hasOutput && (
+          <div className="space-y-3">
+            {isGenerating && !findings && !conclusion && (
+              <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
+            )}
 
-      {/* ── Output ── */}
-      {hasOutput && (
-        <div className="space-y-3">
-          {isGenerating && !findings && !conclusion && (
-            <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
-          )}
-
-          {loadingTrace && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-              <LoadingDots size="sm" className="text-blue-500" />
-              <span className="text-xs text-blue-700 dark:text-blue-300">{t("dash.verifying")}</span>
-            </div>
-          )}
-
-          {repairMessage && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-              <span className="text-xs text-amber-700 dark:text-amber-300">{repairMessage}</span>
-            </div>
-          )}
-
-          {traceData && (
-            <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
-          )}
-
-          <OutputCard
-            title={t("dash.findings")}
-            icon={<FileText className="h-3.5 w-3.5 text-brand" />}
-            loading={loadingFindings}
-            value={findings}
-            onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
-            onEdit={() => { setTraceData(null); setRepairMessage(null); }}
-            minHeight={140}
-            traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
-            traceLocked={loadingTrace}
-            isDark={isDark}
-          />
-
-          <OutputCard
-            title={t("dash.conclusion")}
-            icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
-            loading={loadingConcStyles[conclusionStyle] ?? false}
-            value={conclusion}
-            onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
-            minHeight={70}
-            headerExtra={
-              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
-                {(["concise", "grouped"] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      setConclusionStyle(s);
-                      fetch("/api/model-config", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ conclusion_style: s }),
-                      }).catch(() => {});
-                    }}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                      conclusionStyle === s
-                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                        : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
-                        : conclusionVersions[s] ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                    }`}
-                  >
-                    {loadingConcStyles[s] && s !== conclusionStyle ? <LoadingDots size="xs" className="inline-flex mr-0.5" /> : null}
-                    {t(`dash.conclusion_${s}`)}
-                  </button>
-                ))}
+            {loadingTrace && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <LoadingDots size="sm" className="text-blue-500" />
+                <span className="text-xs text-blue-700 dark:text-blue-300">{t("dash.verifying")}</span>
               </div>
-            }
-          />
+            )}
 
-          <RecommendationPanel
-            conclusionText={conclusion}
-            modality={selectedModality}
-            section={selectedSection}
-            outputLanguage={outputLanguage as "es" | "en" | "pt"}
-            visible={!!conclusion}
-            onSelectionChange={setSelectedRecTexts}
-          />
+            {repairMessage && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                <span className="text-xs text-amber-700 dark:text-amber-300">{repairMessage}</span>
+              </div>
+            )}
 
-          {/* Action bar */}
-          <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
-            <CardContent className="p-2 md:p-2.5">
-              <div className="flex flex-wrap items-center gap-1.5 justify-between">
-                <div className="flex flex-wrap gap-1">
-                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
-                    {copied === "f" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                    {t("dash.findings")}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-8 md:h-7">
-                    {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                    {t("dash.plus_conclusion")}
-                    <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] text-gray-400 font-mono leading-none">⇧ Space</kbd>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
-                    {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                    {t("dash.full_report")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setErrorDialogOpen(true); setErrorNote(""); }}
-                    disabled={!findings || errorReported}
-                    className="gap-1 text-xs h-8 md:h-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    {errorReported ? <Check className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
-                    {t("dash.report_error")}
-                  </Button>
+            {traceData && (
+              <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
+            )}
+
+            <OutputCard
+              title={t("dash.findings")}
+              icon={<FileText className="h-3.5 w-3.5 text-brand" />}
+              loading={loadingFindings}
+              value={findings}
+              onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
+              onEdit={() => { setTraceData(null); setRepairMessage(null); }}
+              minHeight={140}
+              traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
+              traceLocked={loadingTrace}
+              isDark={isDark}
+            />
+
+            <OutputCard
+              title={t("dash.conclusion")}
+              icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
+              loading={loadingConcStyles[conclusionStyle] ?? false}
+              value={conclusion}
+              onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
+              minHeight={70}
+              headerExtra={
+                <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
+                  {(["concise", "grouped"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setConclusionStyle(s);
+                        fetch("/api/model-config", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ conclusion_style: s }),
+                        }).catch(() => {});
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        conclusionStyle === s
+                          ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                          : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
+                          : conclusionVersions[s] ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      {loadingConcStyles[s] && s !== conclusionStyle ? <LoadingDots size="xs" className="inline-flex mr-0.5" /> : null}
+                      {t(`dash.conclusion_${s}`)}
+                    </button>
+                  ))}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {hasPreviousReport && (
-                    <Button size="sm" variant="outline" onClick={restorePreviousReport} className="gap-1 text-[11px] h-7 md:h-6 px-2 text-muted-foreground">
-                      <RotateCcw className="h-2.5 w-2.5" />
-                      {t("dash.restore_previous")}
+              }
+            />
+
+            <RecommendationPanel
+              conclusionText={conclusion}
+              modality={selectedModality}
+              section={selectedSection}
+              outputLanguage={outputLanguage as "es" | "en" | "pt"}
+              visible={!!conclusion}
+              onSelectionChange={setSelectedRecTexts}
+            />
+
+            {/* Action bar */}
+            <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+              <CardContent className="p-2 md:p-2.5">
+                <div className="flex flex-wrap items-center gap-1.5 justify-between">
+                  <div className="flex flex-wrap gap-1">
+                    <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
+                      {copied === "f" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                      {t("dash.findings")}
                     </Button>
-                  )}
-                  <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90">
-                    <ArrowRight className="h-3 w-3" />
-                    {t("dash.next_report")}
-                  </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-8 md:h-7">
+                      {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                      {t("dash.plus_conclusion")}
+                      <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] text-gray-400 font-mono leading-none">⇧ Space</kbd>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
+                      {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                      {t("dash.full_report")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setErrorDialogOpen(true); setErrorNote(""); }}
+                      disabled={!findings || errorReported}
+                      className="gap-1 text-xs h-8 md:h-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      {errorReported ? <Check className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
+                      {t("dash.report_error")}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {hasPreviousReport && (
+                      <Button size="sm" variant="outline" onClick={restorePreviousReport} className="gap-1 text-[11px] h-7 md:h-6 px-2 text-muted-foreground">
+                        <RotateCcw className="h-2.5 w-2.5" />
+                        {t("dash.restore_previous")}
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={startNewReport} disabled={!findings} className="gap-1 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90">
+                      <ArrowRight className="h-3 w-3" />
+                      {t("dash.next_report")}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
 
       <FloatingDictation
         language={resolvedDictLang}

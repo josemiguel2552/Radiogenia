@@ -4,7 +4,7 @@ import { translateTemplateName } from "../i18n";
 describe("translateTemplateName", () => {
   describe("static dictionary (predefined templates)", () => {
     it("translates Spanish template names to English", () => {
-      expect(translateTemplateName("TC de cráneo", "en")).toBe("Head CT");
+      expect(translateTemplateName("TC de cráneo", "en")).toBe("Head CT scan");
       expect(translateTemplateName("RM cerebral", "en")).toBe("Brain MRI");
       expect(translateTemplateName("Ecografía de abdomen", "en")).toBe("Abdominal ultrasound");
     });
@@ -21,19 +21,19 @@ describe("translateTemplateName", () => {
 
   describe("reverse lookup (English → Spanish)", () => {
     it("translates known English template names to Spanish", () => {
-      expect(translateTemplateName("Head CT", "es")).toBe("TC de cráneo");
+      expect(translateTemplateName("Head CT scan", "es")).toBe("TC de cráneo");
       expect(translateTemplateName("Brain MRI", "es")).toBe("RM cerebral");
       expect(translateTemplateName("Abdominal ultrasound", "es")).toBe("Ecografía de abdomen");
     });
 
     it("translates English template names to Portuguese", () => {
-      expect(translateTemplateName("Head CT", "pt")).toBe("TC de crânio");
-      expect(translateTemplateName("Chest CT", "pt")).toBe("TC de tórax");
+      expect(translateTemplateName("Head CT scan", "pt")).toBe("TC de crânio");
+      expect(translateTemplateName("Chest CT scan", "pt")).toBe("TC de tórax");
     });
 
     it("is case-insensitive", () => {
-      expect(translateTemplateName("head ct", "es")).toBe("TC de cráneo");
-      expect(translateTemplateName("HEAD CT", "es")).toBe("TC de cráneo");
+      expect(translateTemplateName("head ct scan", "es")).toBe("TC de cráneo");
+      expect(translateTemplateName("HEAD CT SCAN", "es")).toBe("TC de cráneo");
       expect(translateTemplateName("BRAIN MRI", "es")).toBe("RM cerebral");
     });
   });

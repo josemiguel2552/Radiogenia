@@ -89,6 +89,27 @@
   .focus-ring-brand:focus-visible { --tw-ring-color: hsl(var(--primary)); }
 }
 
+/* ── Density modes ── */
+:root[data-density="compact"] {
+  --density-card-p: 0.5rem;
+  --density-gap: 0.5rem;
+  --density-textarea-min: 100px;
+}
+:root[data-density="normal"], :root:not([data-density]) {
+  --density-card-p: 1rem;
+  --density-gap: 0.75rem;
+  --density-textarea-min: 140px;
+}
+:root[data-density="spacious"] {
+  --density-card-p: 1.5rem;
+  --density-gap: 1.25rem;
+  --density-textarea-min: 200px;
+}
+
+.density-gap { gap: var(--density-gap); }
+.density-card-p { padding: var(--density-card-p); }
+.density-textarea { min-height: var(--density-textarea-min); }
+
 /* Recording animation */
 @keyframes pulse-ring {
   0% { transform: scale(1); opacity: 1; }

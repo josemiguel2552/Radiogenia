@@ -1,13 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage } from "@/lib/ui-prefs";
+import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, hslToHex, type PanelSide, type FontFamily, type UILanguage, type LayoutMode, type DensityMode } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
+import { Columns2, LayoutList, Minimize2, Minus, Equal, Maximize2 } from "lucide-react";
 
 export function AppearanceTab() {
   const { prefs, update } = useUIPrefs();
   const t = useT();
+  const [pickerColor, setPickerColor] = useState(() =>
+    prefs.colorPreset === "Custom" && prefs.customColor
+      ? prefs.customColor
+      : hslToHex(COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || COLOR_PRESETS[0].primary)
+  );
 
   return (
     <div className="space-y-6">
@@ -38,12 +45,79 @@ export function AppearanceTab() {
         </p>
       </div>
 
+      {/* Layout mode */}
+      <div>
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.layout")}
+        </Label>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { v: "classic", icon: LayoutList, desc: t("app.layout_classic_desc") },
+            { v: "side-by-side", icon: Columns2, desc: t("app.layout_sidebyside_desc") },
+            { v: "compact", icon: Minimize2, desc: t("app.layout_compact_desc") },
+          ] as { v: LayoutMode; icon: typeof LayoutList; desc: string }[]).map(({ v, icon: Icon, desc }) => {
+            const active = prefs.layout === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => update({ layout: v })}
+                className={`flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg border transition-all text-center ${
+                  active
+                    ? "border-transparent shadow-sm bg-brand-soft"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
+                style={active ? { color: "hsl(var(--primary))" } : undefined}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-[10px] font-medium">{t(`app.layout_${v.replace("-", "")}`)}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-gray-400 mt-2">
+          {t(`app.layout_${prefs.layout.replace("-", "")}_desc`)}
+        </p>
+      </div>
+
+      {/* Density */}
+      <div>
+        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
+          {t("app.density")}
+        </Label>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { v: "compact", icon: Minus },
+            { v: "normal", icon: Equal },
+            { v: "spacious", icon: Maximize2 },
+          ] as { v: DensityMode; icon: typeof Minus }[]).map(({ v, icon: Icon }) => {
+            const active = prefs.density === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => update({ density: v })}
+                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg border transition-all ${
+                  active
+                    ? "border-transparent shadow-sm bg-brand-soft"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
+                style={active ? { color: "hsl(var(--primary))" } : undefined}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="text-[10px] font-medium">{t(`app.density_${v}`)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Accent colour */}
       <div>
         <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
           {t("app.accent")}
         </Label>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="grid grid-cols-7 gap-2">
           {COLOR_PRESETS.map((p) => {
             const active = prefs.colorPreset === p.name;
             return (
@@ -51,7 +125,7 @@ export function AppearanceTab() {
                 key={p.name}
                 type="button"
                 title={p.name}
-                onClick={() => update({ colorPreset: p.name })}
+                onClick={() => update({ colorPreset: p.name, customColor: "" })}
                 className={`h-8 w-full rounded-lg transition-all ${
                   active ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-gray-900 scale-110" : "hover:scale-105"
                 }`}
@@ -59,9 +133,39 @@ export function AppearanceTab() {
               />
             );
           })}
+          {/* Custom color swatch */}
+          <button
+            type="button"
+            title={t("app.custom_color")}
+            onClick={() => update({ colorPreset: "Custom", customColor: pickerColor })}
+            className={`h-8 w-full rounded-lg transition-all relative overflow-hidden ${
+              prefs.colorPreset === "Custom" ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-gray-900 scale-110" : "hover:scale-105"
+            }`}
+            style={{
+              background: prefs.colorPreset === "Custom" && prefs.customColor
+                ? prefs.customColor
+                : `conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)`,
+            }}
+          />
         </div>
+        {prefs.colorPreset === "Custom" && (
+          <div className="flex items-center gap-2 mt-3">
+            <input
+              type="color"
+              value={pickerColor}
+              onChange={(e) => {
+                setPickerColor(e.target.value);
+                update({ colorPreset: "Custom", customColor: e.target.value });
+              }}
+              className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-gray-700"
+            />
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              {pickerColor.toUpperCase()}
+            </span>
+          </div>
+        )}
         <p className="text-[10px] text-gray-400 mt-2">
-          {t("app.current")}: {prefs.colorPreset}
+          {t("app.current")}: {prefs.colorPreset === "Custom" ? t("app.custom_color") : prefs.colorPreset}
         </p>
       </div>
 
@@ -140,7 +244,10 @@ export function AppearanceTab() {
       {/* Reset */}
       <button
         type="button"
-        onClick={() => update({ colorPreset: "Blue", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es" })}
+        onClick={() => {
+          update({ colorPreset: "Blue", customColor: "", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es", layout: "classic", density: "normal" });
+          setPickerColor("#3b82f6");
+        }}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >
         {t("app.reset_defaults")}

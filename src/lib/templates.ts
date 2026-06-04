@@ -1231,7 +1231,23 @@ export const DEFAULT_TEMPLATES: Template[] = [
     fld("Other findings"),
   ].join("\n")),
 
-  t(96, "Cistografía", "Procedures", "Abdomen and pelvis", [
+  t(96, "AngioTC de aorta completa", "CT", "Thorax", [
+    fld("Ascending aorta"),
+    fld("Aortic arch and supra-aortic trunks"),
+    fld("Descending thoracic aorta"),
+    fld("Abdominal aorta"),
+    fld("Celiac trunk and mesenteric arteries"),
+    fld("Renal arteries"),
+    fld("Iliac arteries"),
+    fld("Heart and pericardium"),
+    fld("Lung parenchyma"),
+    fld("Pleura"),
+    fld("Intraabdominal organs"),
+    fld("Bone structures"),
+    fld("Other findings"),
+  ].join("\n")),
+
+  t(97, "Cistografía", "Procedures", "Abdomen and pelvis", [
     fld("Bladder morphology"),
     fld("Bladder wall"),
     fld("Vesicoureteral reflux"),
