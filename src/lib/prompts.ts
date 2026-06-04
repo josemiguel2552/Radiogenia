@@ -1320,6 +1320,13 @@ Si los hallazgos están en otro idioma, traduce al ${l}.
 
 ${STYLE_BLOCK_ES[style]}
 
+REGLA ABSOLUTA — DATOS CLÍNICOS ≠ HALLAZGOS:
+Los "Datos clínicos / pregunta clínica" son CONTEXTO proporcionado por el médico solicitante. Sirven ÚNICAMENTE para entender qué buscar y priorizar en los hallazgos. NUNCA deben aparecer en la conclusión como si fueran hallazgos descritos por el radiólogo.
+- Si los datos clínicos dicen "paciente con antecedente de cáncer de mama", NO puedes escribir en la conclusión "antecedente de neoplasia mamaria" ni "en paciente oncológica" — eso es información clínica, NO un hallazgo radiológico.
+- Si los datos clínicos dicen "dolor abdominal y fiebre", NO puedes mencionar dolor ni fiebre en la conclusión — no son hallazgos de imagen.
+- La conclusión SOLO puede contener información que el radiólogo DESCRIBIÓ en los hallazgos. Ni una palabra más.
+- NUNCA uses los datos clínicos para emitir diagnósticos o correlaciones que el radiólogo no haya hecho explícitamente en los hallazgos. Si los hallazgos dicen "consolidación en LID" y los datos clínicos dicen "fiebre", NO puedes concluir "neumonía" — solo puedes decir "consolidación en LID".
+
 REGLAS DE CONTENIDO:
 
 1. MÁXIMO ${maxPoints} PUNTOS. Nunca más. Si todo cabe en 1 o 2, mejor.
@@ -1394,7 +1401,8 @@ PROHIBIDO:
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Inferencias causales ("secundario a...", "probablemente relacionado con...", "en contexto de...").
 - Pronósticos ("hallazgo preocupante", "buen pronóstico", "evolución desfavorable").
-- Añadir información no presente en los hallazgos.
+- Añadir información no presente en los hallazgos. Los datos clínicos NO son hallazgos — no los menciones, parafrasees ni incorpores a la conclusión de ninguna forma.
+- Emitir diagnósticos que el radiólogo NO escribió en los hallazgos, aunque los datos clínicos lo sugieran. Si los hallazgos no dicen "fractura", no puedes concluir "fractura" aunque los datos clínicos digan "traumatismo".
 - Muletillas ("se observa", "se identifica", "se evidencia", "cabe destacar").
 
 EXCEPCIÓN: Usa terminología diagnóstica SOLO si está explícitamente en los hallazgos dictados por el radiólogo (ej: si los hallazgos dicen "fractura", puedes decir "fractura"; si dicen "nódulo", no digas "tumor").
@@ -1420,6 +1428,13 @@ OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
 If findings are in another language, translate to ${l}.
 
 ${styleBlock}
+
+ABSOLUTE RULE — CLINICAL DATA ≠ FINDINGS:
+"Clinical data / clinical question" is CONTEXT provided by the referring physician. It serves ONLY to understand what to look for and prioritize in the findings. It must NEVER appear in the conclusion as if it were a finding described by the radiologist.
+- If clinical data says "patient with history of breast cancer", you CANNOT write "history of breast neoplasm" or "in oncologic patient" in the conclusion — that is clinical information, NOT a radiological finding.
+- If clinical data says "abdominal pain and fever", you CANNOT mention pain or fever in the conclusion — they are not imaging findings.
+- The conclusion may ONLY contain information that the radiologist DESCRIBED in the findings. Not a single word more.
+- NEVER use clinical data to issue diagnoses or correlations that the radiologist did not explicitly make in the findings. If findings say "RLL consolidation" and clinical data says "fever", you CANNOT conclude "pneumonia" — you can only say "RLL consolidation".
 
 CONTENT RULES:
 
@@ -1495,7 +1510,8 @@ FORBIDDEN:
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Causal inferences ("secondary to...", "likely related to...", "in the context of...").
 - Issuing prognoses ("concerning finding", "good prognosis", "unfavorable evolution").
-- Adding information not present in the findings.
+- Adding information not present in the findings. Clinical data is NOT findings — do not mention, paraphrase, or incorporate it into the conclusion in any form.
+- Issuing diagnoses that the radiologist did NOT write in the findings, even if clinical data suggests them. If findings do not say "fracture", you cannot conclude "fracture" even if clinical data says "trauma".
 - Filler phrases ("noted", "identified", "visualized", "presence of").
 
 EXCEPTION: Use diagnostic terminology ONLY if it is explicitly stated in the radiologist's dictated findings (e.g., if findings say "fracture", you may say "fracture"; if findings say "nodule", do not say "tumor").
