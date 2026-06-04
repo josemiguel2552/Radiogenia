@@ -2,6 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUIPrefs, SKINS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage, type LayoutMode } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 import { Columns2, LayoutList, Minimize2 } from "lucide-react";
@@ -128,26 +129,18 @@ export function AppearanceTab() {
         <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
           {t("app.font_family")}
         </Label>
-        <div className="grid grid-cols-2 gap-2">
-          {FONT_FAMILIES.map((f) => {
-            const active = prefs.fontFamily === f.value;
-            return (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => update({ fontFamily: f.value as FontFamily })}
-                className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${
-                  active
-                    ? "border-transparent shadow-sm font-medium bg-brand-soft"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                }`}
-                style={active ? { color: "hsl(var(--primary))" } : undefined}
-              >
+        <Select value={prefs.fontFamily} onValueChange={(v) => update({ fontFamily: v as FontFamily })}>
+          <SelectTrigger className="h-9 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FONT_FAMILIES.map((f) => (
+              <SelectItem key={f.value} value={f.value}>
                 <span style={{ fontFamily: f.stack }}>{f.label}</span>
-              </button>
-            );
-          })}
-        </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Font size */}

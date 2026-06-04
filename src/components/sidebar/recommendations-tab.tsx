@@ -510,7 +510,8 @@ export function RecommendationsTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9 text-xs"
-            autoComplete="off"
+            autoComplete="new-password"
+            name="rec-search-nonce"
           />
         </div>
         <Button

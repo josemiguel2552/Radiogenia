@@ -26,6 +26,7 @@ import {
   Calculator,
   ClipboardList,
   User as UserIcon,
+  ChevronDown,
 } from "lucide-react";
 import { TemplatesTab } from "@/components/sidebar/templates-tab";
 import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
@@ -39,6 +40,23 @@ import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
 type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations" | "account";
+
+function CollapsibleSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+      >
+        {title}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+      </button>
+      {open && <div className="px-1">{children}</div>}
+    </div>
+  );
+}
 
 const PANEL_MIN = 240;
 const PANEL_MAX = 600;
@@ -176,19 +194,16 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   /* ── Sidebar config panel (merged Appearance + AI Config) ── */
   const sidebarContent = (
     <ScrollArea className="flex-1">
-      <div className="p-4 space-y-6">
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
-            <Settings className="h-3.5 w-3.5" />
-            {t("nav.config")}
-          </h3>
+      <div className="p-4 space-y-1">
+        <CollapsibleSection title={t("settings.visual")} defaultOpen>
+          <AppearanceTab />
+        </CollapsibleSection>
+        <CollapsibleSection title={t("settings.functional")} defaultOpen>
           <ModelConfigTab />
-        </div>
-        <Separator />
-        <AppearanceTab />
+        </CollapsibleSection>
         {orgInfo?.isMember && (
           <>
-            <Separator />
+            <Separator className="my-2" />
             <PasswordSection />
           </>
         )}

@@ -34,6 +34,7 @@ import {
   HelpCircle,
   Heart,
   Target,
+  Search,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -70,6 +71,7 @@ export function DashboardContent() {
   const [selectedModality, setSelectedModality] = useState<string>("");
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [templateSearch, setTemplateSearch] = useState("");
   const [contrastOption, setContrastOption] = useState<string>("default");
   const [cardiacTechniques, setCardiacTechniques] = useState<Record<string, boolean>>({});
   const [recistBaseline, setRecistBaseline] = useState(true);
@@ -637,6 +639,16 @@ export function DashboardContent() {
   });
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+
+  const compactSearchTemplates = useMemo(() => {
+    if (!templateSearch.trim()) return templates.slice(0, 30);
+    const q = templateSearch.toLowerCase();
+    return templates.filter((t) =>
+      tplName(t.name).toLowerCase().includes(q) ||
+      (t.modality || "").toLowerCase().includes(q) ||
+      (t.structure?.section || "").toLowerCase().includes(q)
+    ).slice(0, 30);
+  }, [templates, templateSearch, tplName]);
 
   const isCardiacMri = useMemo(() => {
     if (!selectedTemplate) return false;
@@ -1460,7 +1472,7 @@ export function DashboardContent() {
 
   const rPct = subReportsLimit > 0 ? Math.min(100, Math.round((subReportsUsed / subReportsLimit) * 100)) : 0;
   const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
-  const effectiveSetupCollapsed = isCompactLayout || isSideBySide || setupCollapsed;
+  const effectiveSetupCollapsed = isCompactLayout || (!isSideBySide && setupCollapsed);
 
   return (
     <div className={`flex flex-col ${isCompactLayout ? "gap-2" : "gap-3 md:gap-4"}`}>
@@ -1488,8 +1500,72 @@ export function DashboardContent() {
         </div>
       </div>
 
-      {/* ── Input: study setup (left) + dictation (right) ── */}
-      {effectiveSetupCollapsed ? (
+      {/* ── Compact: template search + clinical data row ── */}
+      {isCompactLayout && (
+        <Card>
+          <CardContent className="p-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                <Input
+                  placeholder={t("dash.search_template")}
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="pl-8 h-9 text-xs"
+                  autoComplete="off"
+                />
+                {templateSearch.trim() && compactSearchTemplates.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-md border bg-white dark:bg-gray-900 shadow-lg">
+                    {compactSearchTemplates.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => { setSelectedTemplateId(tpl.id); setSelectedModality(tpl.modality); setTemplateSearch(""); }}
+                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedTemplateId === tpl.id ? "bg-brand-soft text-brand font-medium" : ""}`}
+                      >
+                        <span className="font-medium">{tplName(tpl.name)}</span>
+                        <span className="ml-1.5 text-gray-400">{tpl.modality}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedTemplate && !templateSearch.trim() && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <Badge variant="secondary" className="text-[10px] h-5">{modName(selectedTemplate.modality)}</Badge>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{tplName(selectedTemplate.name)}</span>
+                    <button type="button" onClick={() => { setSelectedTemplateId(""); setSelectedModality(""); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setClinicalOpen(!clinicalOpen)}
+                  className="flex items-center gap-1.5 w-full h-9 px-3 rounded-md border text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {t("dash.clinical_context")}
+                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+                  <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
+                </button>
+                {clinicalOpen && (
+                  <Textarea
+                    placeholder={t("dash.clinical_placeholder")}
+                    value={clinicalInfo}
+                    onChange={(e) => setClinicalInfo(e.target.value)}
+                    className="mt-1.5 min-h-[56px] text-xs resize-none"
+                  />
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Setup + Dictation (grid in SBS, stacked otherwise) ── */}
+      <div className={isSideBySide ? "grid grid-cols-1 md:grid-cols-[minmax(280px,1fr)_2fr] gap-3 md:gap-4" : ""}>
+      {!isCompactLayout && (effectiveSetupCollapsed ? (
           <div
             className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
             onClick={() => setSetupCollapsed(false)}
@@ -1756,12 +1832,10 @@ export function DashboardContent() {
               </div>
             </CardContent>
           </Card>
+      ))}
 
-      )}
-
-      {/* ── Dictation + Output ── */}
-      <div className={isSideBySide ? "grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4" : ""}>
-        <div>
+      {/* ── Dictation ── */}
+      <div>
           <Card>
             <CardContent className={`space-y-3 ${isCompactLayout ? "p-2.5" : "p-4"}`}>
               {/* Language selector */}
@@ -1917,10 +1991,11 @@ export function DashboardContent() {
               </CardContent>
             </Card>
           )}
-        </div>
+      </div>
+      </div>
 
-        {/* ── Output ── */}
-        {hasOutput && (
+      {/* ── Output ── */}
+      {hasOutput && (
           <div className="space-y-3">
             {isGenerating && !findings && !conclusion && (
               <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
@@ -1944,8 +2019,8 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
-            {/* Compact: findings + conclusion side by side; others: stacked */}
-            <div className={isCompactLayout ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
+            {/* SBS / Compact: findings + conclusion side by side */}
+            <div className={(isSideBySide || isCompactLayout) ? "grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3" : ""}>
             <OutputCard
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
@@ -2052,7 +2127,6 @@ export function DashboardContent() {
             </Card>
           </div>
         )}
-      </div>
 
       <FloatingDictation
         language={resolvedDictLang}

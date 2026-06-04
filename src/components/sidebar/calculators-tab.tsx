@@ -220,11 +220,14 @@ function AdrenalWashout() {
   }
 
   const result = interpret();
-  const copyText = [
-    apw !== null ? `APW: ${apw.toFixed(1)}%` : "",
-    rpw !== null ? `RPW: ${rpw.toFixed(1)}%` : "",
-    result ? result.text : "",
-  ].filter(Boolean).join(". ");
+  const copyText = (() => {
+    const parts: string[] = [];
+    if (apw !== null) parts.push(`APW ${apw.toFixed(1)}%`);
+    if (rpw !== null) parts.push(`RPW ${rpw.toFixed(1)}%`);
+    const values = parts.length > 0 ? `${t("calc.copy_adrenal")} ${parts.join(", ")}.` : "";
+    if (result) return values ? `${values} ${result.text}.` : result.text;
+    return values;
+  })();
 
   return (
     <div className="space-y-3">
@@ -291,11 +294,16 @@ function ThyroidVolume() {
     return { text: t("calc.thyroid_normal"), color: "green" as const };
   };
 
-  const copyParts: string[] = [];
-  if (rightVol !== null) copyParts.push(`${t("calc.right_lobe")}: ${rightVol.toFixed(1)} mL`);
-  if (leftVol !== null) copyParts.push(`${t("calc.left_lobe")}: ${leftVol.toFixed(1)} mL`);
-  if (total !== null) copyParts.push(`${t("calc.total_volume")}: ${total.toFixed(1)} mL`);
-  if (!isNaN(isthN) && isthmus) copyParts.push(`${t("calc.isthmus")}: ${isthN} mm`);
+  const copyText = (() => {
+    const parts: string[] = [];
+    if (rightVol !== null) parts.push(`${t("calc.copy_thyroid_right")} ${rightVol.toFixed(1)} mL`);
+    if (leftVol !== null) parts.push(`${t("calc.copy_thyroid_left")} ${leftVol.toFixed(1)} mL`);
+    if (total !== null) parts.push(`${t("calc.copy_thyroid_total")} ${total.toFixed(1)} mL`);
+    if (!isNaN(isthN) && isthmus) parts.push(`${t("calc.copy_thyroid_isthmus")} ${isthN} mm`);
+    if (parts.length === 0) return "";
+    const interp = total !== null ? ` ${interpret(total).text}.` : "";
+    return `${t("calc.copy_thyroid")} ${parts.join(", ")}.${interp}`;
+  })();
 
   return (
     <div className="space-y-3">
@@ -330,7 +338,7 @@ function ThyroidVolume() {
           color={interpret(total).color}
         />
       )}
-      {copyParts.length > 0 && <CopyButton text={copyParts.join(". ")} />}
+      {copyText && <CopyButton text={copyText} />}
     </div>
   );
 }
@@ -352,9 +360,15 @@ function ProstateVolume() {
     : null;
   const density = vol && psa && !isNaN(psaN) && vol > 0 ? psaN / vol : null;
 
-  const copyParts: string[] = [];
-  if (vol !== null) copyParts.push(`${t("calc.prostate_volume")}: ${vol.toFixed(1)} mL`);
-  if (density !== null) copyParts.push(`PSA density: ${density.toFixed(3)} ng/mL/cc`);
+  const copyText = (() => {
+    const parts: string[] = [];
+    if (vol !== null) parts.push(t("calc.copy_prostate").replace("{vol}", vol.toFixed(1)));
+    if (density !== null) {
+      parts.push(t("calc.copy_psa_density").replace("{density}", density.toFixed(3)));
+      parts.push(density >= 0.15 ? t("calc.psa_elevated") : t("calc.psa_normal"));
+    }
+    return parts.join(" ");
+  })();
 
   return (
     <div className="space-y-3">
@@ -384,7 +398,7 @@ function ProstateVolume() {
           color={density >= 0.15 ? "yellow" : "green"}
         />
       )}
-      {copyParts.length > 0 && <CopyButton text={copyParts.join(". ")} />}
+      {copyText && <CopyButton text={copyText} />}
     </div>
   );
 }
@@ -488,7 +502,11 @@ function TiradsCalc() {
   const result = allSelected ? getTiradsLevel(totalPts) : null;
 
   const copyText = result
-    ? `ACR TI-RADS: ${result.level} (${result.label}, ${totalPts} pts). ${getTiradsRec(result.level, t)}`
+    ? t("calc.copy_tirads")
+        .replace("{level}", result.level)
+        .replace("{label}", result.label)
+        .replace("{pts}", String(totalPts))
+        .replace("{rec}", getTiradsRec(result.level, t))
     : "";
 
   return (
@@ -573,7 +591,11 @@ function PiradsCalc() {
     5: t("calc.pirads_5"),
   };
 
-  const copyText = score ? `PI-RADS ${score}: ${piradsLabels[score]}` : "";
+  const copyText = score
+    ? t("calc.copy_pirads")
+        .replace("{score}", String(score))
+        .replace("{interpretation}", piradsLabels[score])
+    : "";
 
   return (
     <div className="space-y-3">
@@ -667,7 +689,11 @@ function BosniakCalc() {
   }
 
   const result = classify();
-  const copyText = result ? `Bosniak ${result.cls}: ${result.risk}` : "";
+  const copyText = result
+    ? t("calc.copy_bosniak")
+        .replace("{cls}", result.cls)
+        .replace("{risk}", result.risk)
+    : "";
 
   return (
     <div className="space-y-3">
@@ -779,7 +805,9 @@ function AspectsCalc() {
       ? { text: t("calc.aspects_moderate"), color: "yellow" as const }
       : { text: t("calc.aspects_high"), color: "green" as const };
 
-  const copyText = `ASPECTS: ${score}/10. ${interpret.text}`;
+  const copyText = t("calc.copy_aspects")
+    .replace("{score}", String(score))
+    .replace("{interpretation}", interpret.text);
 
   return (
     <div className="space-y-3">
