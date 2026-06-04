@@ -62,6 +62,13 @@
   .brand-radio[data-state="checked"] { border-color: hsl(var(--primary)); }
   .focus-brand:focus { outline-color: hsl(var(--primary)); }
   .focus-ring-brand:focus-visible { --tw-ring-color: hsl(var(--primary)); }
+  .bg-skin-bg { background-color: hsl(var(--background)); }
+  .bg-skin-card { background-color: hsl(var(--card)); }
+  .text-skin-fg { color: hsl(var(--foreground)); }
+  .text-skin-card-fg { color: hsl(var(--card-foreground)); }
+  .bg-skin-muted { background-color: hsl(var(--muted)); }
+  .bg-skin-secondary { background-color: hsl(var(--secondary)); }
+  .border-skin { border-color: hsl(var(--border)); }
 }
 
 /* Recording animation */

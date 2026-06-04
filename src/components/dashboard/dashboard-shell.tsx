@@ -44,16 +44,16 @@ type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations" 
 function CollapsibleSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        className="flex items-center justify-between w-full px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 bg-gray-50/80 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
         {title}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
       </button>
-      {open && <div className="px-1">{children}</div>}
+      {open && <div className="px-2 py-2">{children}</div>}
     </div>
   );
 }
@@ -187,14 +187,14 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       className="w-1.5 shrink-0 cursor-col-resize group relative bg-brand-soft-hover transition-colors hidden md:block"
       title={t("nav.drag_resize")}
     >
-      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700 transition-colors" />
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-[hsl(var(--border))] transition-colors" />
     </div>
   );
 
   /* ── Sidebar config panel (merged Appearance + AI Config) ── */
   const sidebarContent = (
     <ScrollArea className="flex-1">
-      <div className="p-4 space-y-1">
+      <div className="p-3 space-y-3">
         <CollapsibleSection title={t("settings.visual")} defaultOpen>
           <AppearanceTab />
         </CollapsibleSection>
@@ -215,7 +215,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const showSidebar = panelOpen && activeView === "dashboard";
   const desktopSidebarPanel = showSidebar && (
     <aside
-      className="hidden md:flex shrink-0 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col overflow-y-auto overflow-x-hidden"
+      className="hidden md:flex shrink-0 border-[hsl(var(--border))] bg-[hsl(var(--card))] flex-col overflow-y-auto overflow-x-hidden"
       style={{
         width: panelWidth,
         [panelSide === "right" ? "borderLeftWidth" : "borderRightWidth"]: "1px",
@@ -232,8 +232,8 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => setMobileDrawerOpen(false)}
       />
-      <aside className="absolute inset-y-0 right-0 w-[85vw] max-w-[380px] bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+      <aside className="absolute inset-y-0 right-0 w-[85vw] max-w-[380px] bg-[hsl(var(--card))] shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--border))]">
           <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("nav.config")}</span>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileDrawerOpen(false)}>
             <X className="h-4 w-4" />
@@ -278,7 +278,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   );
 
   return (
-    <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-[hsl(var(--background))]">
       {/* Desktop left rail */}
       <aside className="hidden md:flex w-14 bg-gray-900 dark:bg-black flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
         <Logo size="sm" variant="icon" />
@@ -399,7 +399,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0">
         {/* Header with top tabs */}
-        <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+        <header className="sticky top-0 z-10 bg-[hsl(var(--card)/0.8)] backdrop-blur border-b border-[hsl(var(--border))]">
           <div className="max-w-6xl mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <Logo size="sm" variant="icon" className="md:hidden" />
@@ -423,7 +423,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                   onClick={() => setActiveView(tab.key)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     activeView === tab.key
-                      ? "bg-white dark:bg-gray-900 text-brand shadow-sm"
+                      ? "bg-[hsl(var(--card))] text-brand shadow-sm"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
@@ -458,7 +458,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       {panelSide === "right" && desktopSidebarPanel}
 
       {/* ── Mobile bottom navigation ── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[hsl(var(--card)/0.95)] backdrop-blur border-t border-[hsl(var(--border))] safe-area-bottom">
         <div className="flex items-center h-14 px-1 overflow-x-auto scrollbar-hide">
           <button
             className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}

@@ -193,7 +193,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
       className="fixed z-[9999] select-none"
       style={{ left: Math.min(position.x, window.innerWidth - 320), top: Math.max(8, position.y - 340) }}
     >
-      <div className="w-[300px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="w-[300px] bg-[hsl(var(--card))] rounded-2xl shadow-2xl border border-[hsl(var(--border))] overflow-hidden">
         {/* Header */}
         <div
           className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 cursor-move"

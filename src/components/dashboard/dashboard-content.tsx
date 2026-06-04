@@ -1477,7 +1477,7 @@ export function DashboardContent() {
   return (
     <div className={`flex flex-col ${isCompactLayout ? "gap-2" : "gap-3 md:gap-4"}`}>
       {/* ── Usage bar ── */}
-      <div className="rounded-lg border bg-white dark:bg-gray-900 px-3 py-2.5 flex flex-col gap-1.5">
+      <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
             {t("stats.plan")}: <span className="text-gray-700 dark:text-gray-200 capitalize">{subPlan}</span>
@@ -1515,7 +1515,7 @@ export function DashboardContent() {
                   autoComplete="off"
                 />
                 {templateSearch.trim() && compactSearchTemplates.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-md border bg-white dark:bg-gray-900 shadow-lg">
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-md border bg-[hsl(var(--card))] shadow-lg">
                     {compactSearchTemplates.map((tpl) => (
                       <button
                         key={tpl.id}
@@ -1564,10 +1564,10 @@ export function DashboardContent() {
       )}
 
       {/* ── Setup + Dictation (grid in SBS, stacked otherwise) ── */}
-      <div className={isSideBySide ? "grid grid-cols-1 md:grid-cols-[minmax(280px,1fr)_2fr] gap-3 md:gap-4" : ""}>
+      <div className={isSideBySide ? "grid grid-cols-1 md:grid-cols-[minmax(300px,2fr)_3fr] gap-3 md:gap-4" : ""}>
       {!isCompactLayout && (effectiveSetupCollapsed ? (
           <div
-            className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-[hsl(var(--muted)/0.8)] cursor-pointer hover:bg-[hsl(var(--muted))] transition-colors"
             onClick={() => setSetupCollapsed(false)}
           >
             <Stethoscope className="h-3.5 w-3.5 text-brand" />
@@ -1599,13 +1599,15 @@ export function DashboardContent() {
                   <button type="button" onClick={() => setShowTemplateHelp(!showTemplateHelp)} className={`p-1 rounded-full transition-colors ${showTemplateHelp ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" : "text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"}`}>
                     <HelpCircle className="h-4 w-4" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setSetupCollapsed(true)}
-                    className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
-                  >
-                    <ChevronDown className="h-3.5 w-3.5 rotate-90" />
-                  </button>
+                  {!isSideBySide && (
+                    <button
+                      type="button"
+                      onClick={() => setSetupCollapsed(true)}
+                      className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5 rotate-90" />
+                    </button>
+                  )}
                 </div>
               </div>
               {showTemplateHelp && (
@@ -1634,7 +1636,7 @@ export function DashboardContent() {
               </div>
 
               {/* Row 2: Region + Template + Contrast — responsive grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+              <div className={`grid gap-3 mb-3 ${isSideBySide ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-3"}`}>
                 <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
                   <SelectContent>
@@ -1702,7 +1704,7 @@ export function DashboardContent() {
                       onClick={() => setContrastOption(opt.v)}
                       className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
                         contrastOption === opt.v
-                          ? "bg-white dark:bg-gray-900 text-brand shadow-sm font-medium"
+                          ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
                           : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
@@ -1733,7 +1735,7 @@ export function DashboardContent() {
                         className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
                           cardiacTechniques[tech.key]
                             ? "bg-red-100 dark:bg-red-900/40 border-red-400 dark:border-red-700 text-red-700 dark:text-red-300"
-                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         }`}
                       >
                         {tech.label}
@@ -1779,7 +1781,7 @@ export function DashboardContent() {
                         className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
                           recistBaseline === opt.key
                             ? "bg-indigo-100 dark:bg-indigo-900/40 border-indigo-400 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300"
-                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         }`}
                       >
                         {opt.label}
@@ -1795,7 +1797,7 @@ export function DashboardContent() {
                         value={recistPriorReport}
                         onChange={(e) => setRecistPriorReport(e.target.value)}
                         placeholder={t("dash.recist_prior_placeholder")}
-                        className="w-full rounded-md border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-900 px-2.5 py-2 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-y min-h-[60px] max-h-[200px]"
+                        className="w-full rounded-md border border-indigo-200 dark:border-indigo-800 bg-[hsl(var(--card))] px-2.5 py-2 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-y min-h-[60px] max-h-[200px]"
                         rows={3}
                       />
                     </div>
@@ -2057,7 +2059,7 @@ export function DashboardContent() {
                       }}
                       className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
                         conclusionStyle === s
-                          ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                          ? "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] shadow-sm"
                           : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
                           : conclusionVersions[s] ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                           : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
@@ -2082,7 +2084,7 @@ export function DashboardContent() {
             />
 
             {/* Action bar */}
-            <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+            <Card className="sticky bottom-16 md:bottom-3 shadow-lg border-brand-soft bg-[hsl(var(--card)/0.95)] backdrop-blur">
               <CardContent className="p-2 md:p-2.5">
                 <div className="flex flex-wrap items-center gap-1.5 justify-between">
                   <div className="flex flex-wrap gap-1">

@@ -255,7 +255,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
           className={`px-2 py-1 text-[11px] rounded-md border transition-colors max-w-[200px] truncate ${
             isSelected
               ? "bg-brand text-white border-brand"
-              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-brand/50"
+              : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-600 dark:text-gray-300 hover:border-brand/50"
           }`}
         >
           {title}
@@ -270,7 +270,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   }
 
   return (
-    <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-950">
+    <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden bg-[hsl(var(--card))]">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -353,7 +353,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                 placeholder={t("mrec.custom_text_ph")}
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
-                className="w-full h-16 text-xs p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 resize-none"
+                className="w-full h-16 text-xs p-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] resize-none"
               />
               <div className="flex gap-1">
                 <Button size="sm" className="h-6 text-[10px]" onClick={addCustomRec}>{t("save")}</Button>

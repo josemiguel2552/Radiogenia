@@ -68,7 +68,7 @@ export function NpsSurvey({ open, onClose }: { open: boolean; onClose: () => voi
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder={t("pilot.survey_feedback")}
-              className="w-full h-20 text-xs p-2.5 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 resize-none"
+              className="w-full h-20 text-xs p-2.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] resize-none"
             />
 
             <div className="flex justify-end gap-2 mt-2">

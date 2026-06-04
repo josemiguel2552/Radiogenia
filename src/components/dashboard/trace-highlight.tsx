@@ -200,7 +200,7 @@ export function HighlightedText({
   const parts = useMemo(() => buildParts(text, highlights), [text, highlights]);
 
   return (
-    <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-[80px]">
+    <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] min-h-[80px]">
       {renderParts(parts, isDark)}
     </div>
   );
