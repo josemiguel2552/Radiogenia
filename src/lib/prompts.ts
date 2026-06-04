@@ -1259,6 +1259,9 @@ export function buildConclusionPrompt(params: {
   const hasClinical = params.clinicalInfo.trim().length > 0;
   const style = params.conclusionStyle || "concise";
 
+  const findingsLen = params.findingsText.length;
+  const maxPoints = findingsLen > 5000 ? 6 : findingsLen > 3000 ? 5 : 4;
+
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
 - Cada punto es UNA SOLA FRASE breve, directa y accionable.
@@ -1316,16 +1319,23 @@ ${STYLE_BLOCK_ES[style]}
 
 REGLAS DE CONTENIDO:
 
-1. MÁXIMO 4 PUNTOS. Nunca más. Si todo cabe en 1 o 2, mejor.
+1. MÁXIMO ${maxPoints} PUNTOS. Nunca más. Si todo cabe en 1 o 2, mejor.
+   - Cada punto debe abordar UN SOLO tema clínico o proceso patológico. NUNCA mezcles hallazgos no relacionados en el mismo punto para ahorrar espacio.
+   - Cada punto debe ser BREVE: máximo 2-3 frases. Si un punto crece demasiado, estás mezclando cosas o añadiendo detalles que pertenecen a hallazgos, no a la conclusión.
 
-2. JERARQUÍA CLÍNICA ESTRICTA — piensa como un radiólogo experto:
+2. TRIAJE PARA INFORMES COMPLEJOS — la conclusión NO es un resumen de todo:
+   - Si los hallazgos son muy extensos, SELECCIONA solo los más relevantes clínicamente. Para eso están los hallazgos detallados.
+   - Es MEJOR una conclusión de ${maxPoints} puntos enfocados que intente incluir absolutamente todo, produciendo párrafos largos e incoherentes.
+   - DESCARTA sin miedo: hallazgos degenerativos crónicos estables, hallazgos incidentales menores, normalidades de órganos, y cualquier hallazgo que no cambie el manejo clínico inmediato.
+
+3. JERARQUÍA CLÍNICA ESTRICTA — piensa como un radiólogo experto:
    - PRIMERO: lo que responde a la pregunta clínica o lo que el clínico NECESITA saber de forma urgente (hallazgos agudos, hallazgos que cambian el manejo inmediato).
    - SEGUNDO: otros hallazgos patológicos clínicamente significativos que impacten en el manejo a corto/medio plazo.
    - TERCERO (si aplica): hallazgos incidentales que requieran seguimiento o acción, pero SOLO si son clínicamente relevantes.
    - NUNCA: órganos normales, variantes anatómicas irrelevantes, hallazgos incidentales triviales (quistes simples renales/hepáticos pequeños, pequeños osteofitos degenerativos, etc.) SALVO que sean la razón del estudio.
    - Si un hallazgo no cambia nada para el clínico, no lo incluyas.
 
-3. AGRUPACIÓN POR PROCESO PATOLÓGICO:
+4. AGRUPACIÓN POR PROCESO PATOLÓGICO:
    Agrupa hallazgos que forman parte del MISMO proceso patológico o que se relacionan entre sí en un solo punto. El clínico necesita entender la historia completa de cada problema, no una lista fragmentada.
    - Ej: lesión focal hepática + adenopatías regionales + alteración de marcadores → un solo punto que describe el conjunto.
    - Ej: derrame pleural + atelectasia compresiva adyacente → un solo punto.
@@ -1333,7 +1343,7 @@ REGLAS DE CONTENIDO:
    - Hallazgos que NO se relacionan entre sí van en PUNTOS SEPARADOS.
    - Hallazgos que muestren MEJORÍA pueden agruparse separados de los que muestren EMPEORAMIENTO.
 
-4. ${hasClinical ? `PREGUNTA CLÍNICA PROPORCIONADA — RESUÉLVELA:
+5. ${hasClinical ? `PREGUNTA CLÍNICA PROPORCIONADA — RESUÉLVELA:
    - El PRIMER punto DEBE responder directamente a la pregunta clínica. El clínico lee la conclusión antes que los hallazgos — dale la respuesta de inmediato.
    - Si hay hallazgos que respondan: descríbelos con datos clave (tamaño, localización, cambios respecto a previo).
    - Si NO hay hallazgos que respondan: frase corta negativa directa (ej: "Sin evidencia de TEP en el territorio valorado.").
@@ -1348,17 +1358,17 @@ REGLAS DE CONTENIDO:
      d) Hallazgos CRÓNICOS/DEGENERATIVOS → solo si pueden requerir acción o si no hay nada más relevante.
    - NUNCA listes hallazgos como una simple enumeración plana. Prioriza y organiza.`}
 
-5. HALLAZGOS NEGATIVOS:
+6. HALLAZGOS NEGATIVOS:
    - Incluye un negativo pertinente SOLO si responde a la pregunta clínica (explícita o deducida).
    - Ej: pregunta "descartar TEP" → "Sin evidencia de TEP" es relevante y va en el primer punto.
    - NUNCA listes normalidad como relleno.
 
-6. COMPARACIONES CON PREVIOS:
+7. COMPARACIONES CON PREVIOS:
    - Si se mencionan cambios respecto a estudios previos, inclúyelos DENTRO del punto del hallazgo correspondiente.
    - Califica la evolución con precisión: aumento/disminución de tamaño (con medidas), aparición/desaparición, estabilidad.
    - Los cambios evolutivos son información de alto valor clínico — no los omitas.
 
-7. COMPRENSIÓN DE LOS HALLAZGOS:
+8. COMPRENSIÓN DE LOS HALLAZGOS:
    - Lee y COMPRENDE cada hallazgo individualmente. No copies frases textuales de los hallazgos — sintetiza.
    - Si los hallazgos describen un nódulo pulmonar de 8 mm en LID con densidad de partes blandas, tu conclusión dice exactamente eso de forma sintética, NO lo ignores ni lo simplifiques a "nódulo pulmonar" sin datos.
    - CADA dato clínico relevante (tamaño, localización, densidad/señal, lateralidad, número, cambios) DEBE reflejarse en la conclusión. No pierdas información al sintetizar.
@@ -1389,7 +1399,7 @@ EXCEPCIÓN: Usa terminología diagnóstica SOLO si está explícitamente en los 
 Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
 FORMATO:
-- Puntos numerados (1. 2. 3. 4.). Texto plano. Máximo 4.
+- Puntos numerados. Texto plano. Máximo ${maxPoints}.
 - NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".`;
   } else {
@@ -1407,16 +1417,23 @@ ${styleBlock}
 
 CONTENT RULES:
 
-1. MAXIMUM 4 POINTS. Never more. If 1 or 2 suffice, better.
+1. MAXIMUM ${maxPoints} POINTS. Never more. If 1 or 2 suffice, better.
+   - Each point must address ONE SINGLE clinical topic or pathological process. NEVER mix unrelated findings in the same point to save space.
+   - Each point must be BRIEF: maximum 2-3 sentences. If a point grows too long, you are mixing topics or adding detail that belongs in the findings, not the conclusion.
 
-2. STRICT CLINICAL HIERARCHY — think like an expert radiologist:
+2. TRIAGE FOR COMPLEX REPORTS — the conclusion is NOT a summary of everything:
+   - If findings are very extensive, SELECT only the most clinically relevant ones. That is what the detailed findings section is for.
+   - A conclusion with ${maxPoints} focused points is BETTER than one that tries to include absolutely everything, producing long incoherent paragraphs.
+   - DISCARD without hesitation: stable chronic degenerative findings, minor incidental findings, normal organs, and any finding that does not change immediate clinical management.
+
+3. STRICT CLINICAL HIERARCHY — think like an expert radiologist:
    - FIRST: what answers the clinical question or what the clinician NEEDS to know urgently (acute findings, findings that change immediate management).
    - SECOND: other clinically significant pathological findings that impact short/medium-term management.
    - THIRD (if applicable): incidental findings requiring follow-up or action, but ONLY if clinically relevant.
    - NEVER: normal organs, irrelevant anatomical variants, trivial incidental findings (small simple renal/hepatic cysts, small degenerative osteophytes, etc.) UNLESS they are the reason for the study.
    - If a finding changes nothing for the clinician, do not include it.
 
-3. GROUPING BY PATHOLOGICAL PROCESS:
+4. GROUPING BY PATHOLOGICAL PROCESS:
    Group findings that are part of the SAME pathological process or that relate to each other into a single point. The clinician needs to understand the complete picture of each problem, not a fragmented list.
    - E.g.: focal hepatic lesion + regional lymphadenopathy + marker abnormalities → one single point describing the whole picture.
    - E.g.: pleural effusion + adjacent compressive atelectasis → one single point.
@@ -1424,7 +1441,7 @@ CONTENT RULES:
    - Findings that are NOT related go in SEPARATE POINTS.
    - Findings showing IMPROVEMENT may be grouped separately from those showing WORSENING.
 
-4. ${hasClinical ? `CLINICAL QUESTION PROVIDED — ANSWER IT:
+5. ${hasClinical ? `CLINICAL QUESTION PROVIDED — ANSWER IT:
    - The FIRST point MUST directly answer the clinical question. The clinician reads the conclusion before the findings — give them the answer immediately.
    - If findings answer it: describe them with key data (size, location, changes compared to prior).
    - If NO findings answer it: short direct negative phrase (e.g., "No evidence of PE in the evaluated territory.").
@@ -1439,17 +1456,17 @@ CONTENT RULES:
      d) CHRONIC/DEGENERATIVE findings → only if they may require action or if nothing more relevant exists.
    - NEVER list findings as a flat enumeration. Prioritize and organize.`}
 
-5. NEGATIVE FINDINGS:
+6. NEGATIVE FINDINGS:
    - Include a pertinent negative ONLY if it answers the clinical question (explicit or deduced).
    - E.g.: question "rule out PE" → "No evidence of PE" is relevant and goes in the first point.
    - NEVER list normality as filler.
 
-6. COMPARISON WITH PRIOR STUDIES:
+7. COMPARISON WITH PRIOR STUDIES:
    - If changes compared to prior studies are mentioned, include them WITHIN the corresponding finding's point.
    - Qualify evolution precisely: size increase/decrease (with measurements), appearance/disappearance, stability.
    - Evolutionary changes are high-value clinical information — do not omit them.
 
-7. COMPREHENSION OF FINDINGS:
+8. COMPREHENSION OF FINDINGS:
    - Read and UNDERSTAND each finding individually. Do not copy verbatim phrases from the findings — synthesize.
    - If findings describe an 8 mm pulmonary nodule in the RLL with soft tissue density, your conclusion says exactly that in synthesized form. Do NOT ignore it or simplify to "pulmonary nodule" without data.
    - EVERY relevant clinical datum (size, location, density/signal, laterality, count, changes) MUST be reflected in the conclusion. Do not lose information while synthesizing.
@@ -1480,7 +1497,7 @@ EXCEPTION: Use diagnostic terminology ONLY if it is explicitly stated in the rad
 If no relevant findings: "${hasClinical ? "No significant findings regarding the clinical question." : "Examination within normal limits."}"
 
 FORMAT:
-- Numbered points (1. 2. 3. 4.). Plain text. Maximum 4.
+- Numbered points. Plain text. Maximum ${maxPoints}.
 - Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".`;
   }
