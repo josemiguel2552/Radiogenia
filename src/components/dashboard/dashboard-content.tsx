@@ -1460,7 +1460,7 @@ export function DashboardContent() {
 
   const rPct = subReportsLimit > 0 ? Math.min(100, Math.round((subReportsUsed / subReportsLimit) * 100)) : 0;
   const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
-  const effectiveSetupCollapsed = isCompactLayout || setupCollapsed;
+  const effectiveSetupCollapsed = isCompactLayout || isSideBySide || setupCollapsed;
 
   return (
     <div className={`flex flex-col ${isCompactLayout ? "gap-2" : "gap-3 md:gap-4"}`}>
@@ -1492,7 +1492,7 @@ export function DashboardContent() {
       {effectiveSetupCollapsed ? (
           <div
             className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-gray-50/80 dark:bg-gray-800/80 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
-            onClick={() => { if (!isCompactLayout) setSetupCollapsed(false); }}
+            onClick={() => setSetupCollapsed(false)}
           >
             <Stethoscope className="h-3.5 w-3.5 text-brand" />
             <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 truncate flex-1 min-w-0">
@@ -1759,8 +1759,8 @@ export function DashboardContent() {
 
       )}
 
-      {/* ── Dictation + Output (side-by-side grid on wide screens when output exists) ── */}
-      <div className={isSideBySide && hasOutput ? "grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4" : ""}>
+      {/* ── Dictation + Output ── */}
+      <div className={isSideBySide ? "grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4" : ""}>
         <div>
           <Card>
             <CardContent className={`space-y-3 ${isCompactLayout ? "p-2.5" : "p-4"}`}>
@@ -1944,6 +1944,8 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
+            {/* Compact: findings + conclusion side by side; others: stacked */}
+            <div className={isCompactLayout ? "grid grid-cols-1 md:grid-cols-2 gap-2" : ""}>
             <OutputCard
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
@@ -1951,7 +1953,7 @@ export function DashboardContent() {
               value={findings}
               onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
-              minHeight={140}
+              minHeight={isCompactLayout ? 100 : 140}
               traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
               traceLocked={loadingTrace}
               isDark={isDark}
@@ -1993,6 +1995,7 @@ export function DashboardContent() {
                 </div>
               }
             />
+            </div>
 
             <RecommendationPanel
               conclusionText={conclusion}
