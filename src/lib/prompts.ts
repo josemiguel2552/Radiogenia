@@ -1269,11 +1269,12 @@ export function buildConclusionPrompt(params: {
 - Usa paréntesis para medidas y datos: "Aumento de la lesión hepática del segmento VII (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
 - Tono: directo, escueto, descriptivo.`,
     grouped: `ESTILO — INTEGRADO:
-- Cada punto es un párrafo breve con frases completas y bien redactadas.
-- Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
+- Cada punto es UNA o DOS frases completas y bien redactadas, NUNCA más.
+- Incluye datos descriptivos integrados en la frase: tamaño, localización, densidad/señal, evolución.
 - SOLO conecta hallazgos dentro de un punto si son parte del MISMO PROCESO PATOLÓGICO (ej: lesión primaria + sus adenopatías, derrame + atelectasia compresiva).
 - Si dos hallazgos no comparten fisiopatología, van en PUNTOS SEPARADOS aunque ambos sean importantes.
 - NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
+- NUNCA desgloses datos en sub-listas ni uses ":" para enumerar dentro de un punto.
 - Tono: integrador pero riguroso, sintético, descriptivo.`,
   };
 
@@ -1284,11 +1285,12 @@ export function buildConclusionPrompt(params: {
 - Use parentheses for measurements and data: "Interval increase of segment VII hepatic lesion (2→3.5 cm) with new retroperitoneal lymph node (15 mm)."
 - Tone: direct, succinct, descriptive.`,
     grouped: `STYLE — INTEGRATED:
-- Each point is a brief paragraph with complete, well-written sentences.
-- Include descriptive data: size, location, density/signal, evolution.
+- Each point is ONE or TWO complete, well-written sentences, NEVER more.
+- Include descriptive data integrated into the sentence: size, location, density/signal, evolution.
 - ONLY connect findings within a point if they are part of the SAME PATHOLOGICAL PROCESS (e.g., primary lesion + its lymphadenopathy, effusion + compressive atelectasis).
 - If two findings do not share pathophysiology, they go in SEPARATE POINTS even if both are important.
 - Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
+- NEVER break data into sub-lists or use ":" to enumerate within a point.
 - Tone: integrative but rigorous, synthetic, descriptive.`,
   };
 
@@ -1299,11 +1301,12 @@ export function buildConclusionPrompt(params: {
 - Use parênteses para medidas e dados: "Aumento da lesão hepática do segmento VII (2→3,5 cm) com nova linfonodomegalia retroperitoneal (15 mm)."
 - Tom: direto, sucinto, descritivo.`,
     grouped: `ESTILO — INTEGRADO:
-- Cada ponto é um parágrafo breve com frases completas e bem redigidas.
-- Inclua dados descritivos: tamanho, localização, densidade/sinal, evolução.
+- Cada ponto é UMA ou DUAS frases completas e bem redigidas, NUNCA mais.
+- Inclua dados descritivos integrados na frase: tamanho, localização, densidade/sinal, evolução.
 - SOMENTE conecte achados dentro de um ponto se fizerem parte do MESMO PROCESSO PATOLÓGICO (ex: lesão primária + suas linfonodomegalias, derrame + atelectasia compressiva).
 - Se dois achados não compartilham fisiopatologia, vão em PONTOS SEPARADOS mesmo que ambos sejam importantes.
 - NÃO force conectores entre achados independentes. Cada ponto é uma unidade clínica coerente.
+- NUNCA desmembre dados em sub-listas nem use ":" para enumerar dentro de um ponto.
 - Tom: integrador mas rigoroso, sintético, descritivo.`,
   };
 
@@ -1400,6 +1403,9 @@ Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos e
 
 FORMATO:
 - Puntos numerados. Texto plano. Máximo ${maxPoints}.
+- Cada punto es UNA FRASE o como máximo DOS frases corridas. NUNCA tres o más.
+- PROHIBIDO crear sub-puntos, sub-listas o enumeraciones dentro de un punto. Nada de ":" seguido de lista, ni "a)", "b)", ni viñetas internas, ni punto y coma para separar ítems en serie.
+- Si un hallazgo tiene varios datos, intégralos en una sola frase fluida usando paréntesis y comas, NO los desgloses en sub-ítems.
 - NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".`;
   } else {
@@ -1498,6 +1504,9 @@ If no relevant findings: "${hasClinical ? "No significant findings regarding the
 
 FORMAT:
 - Numbered points. Plain text. Maximum ${maxPoints}.
+- Each point is ONE sentence or at most TWO flowing sentences. NEVER three or more.
+- FORBIDDEN to create sub-points, sub-lists or enumerations inside a point. No ":" followed by a list, no "a)", "b)", no internal bullets, no semicolons separating items in series.
+- If a finding has multiple data, integrate them into a single flowing sentence using parentheses and commas, do NOT break them into sub-items.
 - Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".`;
   }
