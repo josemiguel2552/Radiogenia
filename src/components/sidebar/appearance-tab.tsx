@@ -1,20 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useUIPrefs, COLOR_PRESETS, FONT_FAMILIES, hslToHex, type PanelSide, type FontFamily, type UILanguage, type LayoutMode, type DensityMode } from "@/lib/ui-prefs";
+import { useUIPrefs, SKINS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage, type LayoutMode } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
-import { Columns2, LayoutList, Minimize2, Minus, Equal, Maximize2 } from "lucide-react";
+import { Columns2, LayoutList, Minimize2 } from "lucide-react";
 
 export function AppearanceTab() {
-  const { prefs, update } = useUIPrefs();
+  const { prefs, update, skin: activeSkin } = useUIPrefs();
   const t = useT();
-  const [pickerColor, setPickerColor] = useState(() =>
-    prefs.colorPreset === "Custom" && prefs.customColor
-      ? prefs.customColor
-      : hslToHex(COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || COLOR_PRESETS[0].primary)
-  );
 
   return (
     <div className="space-y-6">
@@ -34,7 +28,7 @@ export function AppearanceTab() {
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
-              style={prefs.uiLanguage === lang.v ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
+              style={prefs.uiLanguage === lang.v ? { color: `hsl(${activeSkin.vars.primary})` } : undefined}
             >
               {lang.l}
             </button>
@@ -80,93 +74,53 @@ export function AppearanceTab() {
         </p>
       </div>
 
-      {/* Density */}
+      {/* Skin selector */}
       <div>
         <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.density")}
+          {t("app.skin")}
         </Label>
         <div className="grid grid-cols-3 gap-2">
-          {([
-            { v: "compact", icon: Minus },
-            { v: "normal", icon: Equal },
-            { v: "spacious", icon: Maximize2 },
-          ] as { v: DensityMode; icon: typeof Minus }[]).map(({ v, icon: Icon }) => {
-            const active = prefs.density === v;
+          {SKINS.map((skin) => {
+            const active = prefs.skin === skin.id;
             return (
               <button
-                key={v}
+                key={skin.id}
                 type="button"
-                onClick={() => update({ density: v })}
-                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg border transition-all ${
+                onClick={() => update({ skin: skin.id })}
+                className={`relative rounded-lg border-2 transition-all overflow-hidden ${
                   active
-                    ? "border-transparent shadow-sm bg-brand-soft"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                    ? "border-current shadow-md scale-[1.03]"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:scale-[1.02]"
                 }`}
-                style={active ? { color: "hsl(var(--primary))" } : undefined}
+                style={active ? { borderColor: skin.preview.primary } : undefined}
               >
-                <Icon className="h-3.5 w-3.5" />
-                <span className="text-[10px] font-medium">{t(`app.density_${v}`)}</span>
+                <div className="p-1.5" style={{ backgroundColor: skin.preview.bg }}>
+                  <div
+                    className="rounded-md p-1.5 mb-1"
+                    style={{ backgroundColor: skin.preview.card, border: `1px solid ${skin.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}` }}
+                  >
+                    <div className="h-1 w-8 rounded-full mb-1" style={{ backgroundColor: skin.preview.primary }} />
+                    <div className="h-1 w-full rounded-full" style={{ backgroundColor: skin.preview.fg, opacity: 0.15 }} />
+                    <div className="h-1 w-3/4 rounded-full mt-0.5" style={{ backgroundColor: skin.preview.fg, opacity: 0.1 }} />
+                  </div>
+                  <div className="flex gap-0.5">
+                    <div className="h-3 flex-1 rounded" style={{ backgroundColor: skin.preview.primary }} />
+                    <div
+                      className="h-3 flex-1 rounded"
+                      style={{ backgroundColor: skin.preview.card, border: `1px solid ${skin.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}` }}
+                    />
+                  </div>
+                </div>
+                <div
+                  className="text-[9px] font-medium py-1 text-center"
+                  style={{ backgroundColor: skin.preview.bg, color: skin.preview.fg }}
+                >
+                  {t(`app.skin_${skin.id}`)}
+                </div>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* Accent colour */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.accent")}
-        </Label>
-        <div className="grid grid-cols-7 gap-2">
-          {COLOR_PRESETS.map((p) => {
-            const active = prefs.colorPreset === p.name;
-            return (
-              <button
-                key={p.name}
-                type="button"
-                title={p.name}
-                onClick={() => update({ colorPreset: p.name, customColor: "" })}
-                className={`h-8 w-full rounded-lg transition-all ${
-                  active ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-gray-900 scale-110" : "hover:scale-105"
-                }`}
-                style={{ background: `hsl(${p.primary})` }}
-              />
-            );
-          })}
-          {/* Custom color swatch */}
-          <button
-            type="button"
-            title={t("app.custom_color")}
-            onClick={() => update({ colorPreset: "Custom", customColor: pickerColor })}
-            className={`h-8 w-full rounded-lg transition-all relative overflow-hidden ${
-              prefs.colorPreset === "Custom" ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-gray-900 scale-110" : "hover:scale-105"
-            }`}
-            style={{
-              background: prefs.colorPreset === "Custom" && prefs.customColor
-                ? prefs.customColor
-                : `conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)`,
-            }}
-          />
-        </div>
-        {prefs.colorPreset === "Custom" && (
-          <div className="flex items-center gap-2 mt-3">
-            <input
-              type="color"
-              value={pickerColor}
-              onChange={(e) => {
-                setPickerColor(e.target.value);
-                update({ colorPreset: "Custom", customColor: e.target.value });
-              }}
-              className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-gray-700"
-            />
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-              {pickerColor.toUpperCase()}
-            </span>
-          </div>
-        )}
-        <p className="text-[10px] text-gray-400 mt-2">
-          {t("app.current")}: {prefs.colorPreset === "Custom" ? t("app.custom_color") : prefs.colorPreset}
-        </p>
       </div>
 
       {/* Font family */}
@@ -230,7 +184,7 @@ export function AppearanceTab() {
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
-              style={prefs.panelSide === s ? { color: `hsl(${COLOR_PRESETS.find((c) => c.name === prefs.colorPreset)?.primary || ""})` } : undefined}
+              style={prefs.panelSide === s ? { color: `hsl(${activeSkin.vars.primary})` } : undefined}
             >
               {t(`app.${s}`)}
             </button>
@@ -245,8 +199,7 @@ export function AppearanceTab() {
       <button
         type="button"
         onClick={() => {
-          update({ colorPreset: "Blue", customColor: "", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es", layout: "classic", density: "normal" });
-          setPickerColor("#3b82f6");
+          update({ skin: "clasico", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es", layout: "classic" });
         }}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >

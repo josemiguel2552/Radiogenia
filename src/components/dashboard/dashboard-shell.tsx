@@ -52,7 +52,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const [darkMode, setDarkMode] = useState(false);
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
   const dragging = useRef(false);
-  const { prefs, preset } = useUIPrefs();
+  const { prefs } = useUIPrefs();
   const t = useT();
 
   // Org membership (lightweight check)
@@ -80,6 +80,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     if (saved !== null) setPanelOpen(saved === "1");
     const savedWidth = localStorage.getItem("radiogenai_panel_width");
     if (savedWidth) setPanelWidth(Math.max(PANEL_MIN, Math.min(PANEL_MAX, Number(savedWidth))));
+
+    const handleDarkChanged = (e: Event) => {
+      const isDark = (e as CustomEvent).detail as boolean;
+      setDarkMode(isDark);
+    };
+    window.addEventListener("radiogenai:dark-changed", handleDarkChanged);
+    return () => window.removeEventListener("radiogenai:dark-changed", handleDarkChanged);
   }, []);
 
   useEffect(() => {
@@ -359,7 +366,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
         <Separator className="bg-gray-800 w-8" />
 
         <div
-          className={`h-8 w-8 rounded-full bg-gradient-to-br ${preset.gradient[0]} ${preset.gradient[1]} flex items-center justify-center text-white text-[10px] font-semibold ring-2 ring-gray-800`}
+          className="h-8 w-8 rounded-full bg-brand flex items-center justify-center text-white text-[10px] font-semibold ring-2 ring-gray-800"
           title={userName}
         >
           {initials}

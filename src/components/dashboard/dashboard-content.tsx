@@ -62,7 +62,6 @@ export function DashboardContent() {
   const modName = useModality();
   const { prefs: uiPrefs } = useUIPrefs();
   const layoutMode = uiPrefs.layout || "classic";
-  const densityMode = uiPrefs.density || "normal";
   const isCompactLayout = layoutMode === "compact";
   const isSideBySide = layoutMode === "side-by-side";
 
@@ -1464,7 +1463,7 @@ export function DashboardContent() {
   const effectiveSetupCollapsed = isCompactLayout || setupCollapsed;
 
   return (
-    <div className={`density-gap flex flex-col ${densityMode === "compact" ? "gap-2" : densityMode === "spacious" ? "gap-5" : "gap-3 md:gap-4"}`}>
+    <div className={`flex flex-col ${isCompactLayout ? "gap-2" : "gap-3 md:gap-4"}`}>
       {/* ── Usage bar ── */}
       <div className="rounded-lg border bg-white dark:bg-gray-900 px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
@@ -1514,7 +1513,7 @@ export function DashboardContent() {
           </div>
       ) : (
           <Card>
-            <CardContent className="density-card-p">
+            <CardContent className={isCompactLayout ? "p-2.5" : "p-4"}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
@@ -1761,10 +1760,10 @@ export function DashboardContent() {
       )}
 
       {/* ── Dictation + Output (side-by-side grid on wide screens when output exists) ── */}
-      <div className={isSideBySide && hasOutput ? "grid grid-cols-1 md:grid-cols-2 density-gap" : ""}>
+      <div className={isSideBySide && hasOutput ? "grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4" : ""}>
         <div>
           <Card>
-            <CardContent className="density-card-p space-y-3">
+            <CardContent className={`space-y-3 ${isCompactLayout ? "p-2.5" : "p-4"}`}>
               {/* Language selector */}
               <div className="flex items-center gap-1">
                 <Mic className="h-3 w-3 text-gray-400 shrink-0" />
@@ -1797,7 +1796,7 @@ export function DashboardContent() {
                       setDictSelRange(null);
                     }
                   }}
-                  className="density-textarea text-sm pr-14 resize-none"
+                  className={`text-sm pr-14 resize-none ${isCompactLayout ? "min-h-[80px]" : "min-h-[140px]"}`}
                 />
                 <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
                 <Button

@@ -4,18 +4,14 @@
 
 @layer base {
   :root {
-    --preset-primary: 221.2 83.2% 53.3%;
-    --preset-primary-dark: 217.2 91.2% 65%;
-    --preset-primary-fg: 210 40% 98%;
-
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: var(--preset-primary);
-    --primary-foreground: var(--preset-primary-fg);
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -26,31 +22,9 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: var(--preset-primary);
+    --ring: 221 83% 53%;
     --radius: 0.5rem;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: var(--preset-primary-dark);
-    --primary-foreground: var(--preset-primary-fg);
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: var(--preset-primary-dark);
   }
 }
 
@@ -88,27 +62,6 @@
   .focus-brand:focus { outline-color: hsl(var(--primary)); }
   .focus-ring-brand:focus-visible { --tw-ring-color: hsl(var(--primary)); }
 }
-
-/* ── Density modes ── */
-:root[data-density="compact"] {
-  --density-card-p: 0.5rem;
-  --density-gap: 0.5rem;
-  --density-textarea-min: 100px;
-}
-:root[data-density="normal"], :root:not([data-density]) {
-  --density-card-p: 1rem;
-  --density-gap: 0.75rem;
-  --density-textarea-min: 140px;
-}
-:root[data-density="spacious"] {
-  --density-card-p: 1.5rem;
-  --density-gap: 1.25rem;
-  --density-textarea-min: 200px;
-}
-
-.density-gap { gap: var(--density-gap); }
-.density-card-p { padding: var(--density-card-p); }
-.density-textarea { min-height: var(--density-textarea-min); }
 
 /* Recording animation */
 @keyframes pulse-ring {

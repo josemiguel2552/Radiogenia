@@ -2,134 +2,199 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
-/* ── Colour presets ─────────────────────────────────────────────── */
+/* ── Skin system ───────────────────────────────────────────────── */
 
-export interface ColorPreset {
-  name: string;
-  primary: string;        // HSL values for light mode  "221 83% 53%"
-  primaryDark: string;    // HSL values for dark mode (higher lightness)
-  primaryFg: string;
+export interface SkinVars {
+  background: string;
+  foreground: string;
+  card: string;
+  "card-foreground": string;
+  popover: string;
+  "popover-foreground": string;
+  primary: string;
+  "primary-foreground": string;
+  secondary: string;
+  "secondary-foreground": string;
+  muted: string;
+  "muted-foreground": string;
   accent: string;
-  gradient: [string, string];
+  "accent-foreground": string;
+  destructive: string;
+  "destructive-foreground": string;
+  border: string;
+  input: string;
+  ring: string;
 }
 
-export const COLOR_PRESETS: ColorPreset[] = [
+export interface Skin {
+  id: string;
+  isDark: boolean;
+  preview: { bg: string; primary: string; card: string; fg: string };
+  vars: SkinVars;
+}
+
+export const SKINS: Skin[] = [
   {
-    name: "Blue",
-    primary: "221 83% 53%",
-    primaryDark: "217 91% 65%",
-    primaryFg: "210 40% 98%",
-    accent: "221 83% 53%",
-    gradient: ["from-blue-500", "to-blue-700"],
+    id: "clasico",
+    isDark: false,
+    preview: { bg: "#ffffff", primary: "#3b82f6", card: "#ffffff", fg: "#0f172a" },
+    vars: {
+      background: "0 0% 100%",
+      foreground: "222.2 84% 4.9%",
+      card: "0 0% 100%",
+      "card-foreground": "222.2 84% 4.9%",
+      popover: "0 0% 100%",
+      "popover-foreground": "222.2 84% 4.9%",
+      primary: "221 83% 53%",
+      "primary-foreground": "210 40% 98%",
+      secondary: "210 40% 96.1%",
+      "secondary-foreground": "222.2 47.4% 11.2%",
+      muted: "210 40% 96.1%",
+      "muted-foreground": "215.4 16.3% 46.9%",
+      accent: "210 40% 96.1%",
+      "accent-foreground": "222.2 47.4% 11.2%",
+      destructive: "0 84.2% 60.2%",
+      "destructive-foreground": "210 40% 98%",
+      border: "214.3 31.8% 91.4%",
+      input: "214.3 31.8% 91.4%",
+      ring: "221 83% 53%",
+    },
   },
   {
-    name: "Teal",
-    primary: "173 80% 40%",
-    primaryDark: "173 80% 55%",
-    primaryFg: "210 40% 98%",
-    accent: "173 80% 40%",
-    gradient: ["from-teal-500", "to-teal-700"],
+    id: "medianoche",
+    isDark: true,
+    preview: { bg: "#0f172a", primary: "#60a5fa", card: "#1e293b", fg: "#f1f5f9" },
+    vars: {
+      background: "222.2 84% 4.9%",
+      foreground: "210 40% 98%",
+      card: "217 33% 10%",
+      "card-foreground": "210 40% 98%",
+      popover: "217 33% 10%",
+      "popover-foreground": "210 40% 98%",
+      primary: "217 91% 65%",
+      "primary-foreground": "222 84% 4.9%",
+      secondary: "217.2 32.6% 17.5%",
+      "secondary-foreground": "210 40% 98%",
+      muted: "217.2 32.6% 17.5%",
+      "muted-foreground": "215 20.2% 65.1%",
+      accent: "217.2 32.6% 17.5%",
+      "accent-foreground": "210 40% 98%",
+      destructive: "0 62.8% 30.6%",
+      "destructive-foreground": "210 40% 98%",
+      border: "217.2 32.6% 17.5%",
+      input: "217.2 32.6% 17.5%",
+      ring: "217 91% 65%",
+    },
   },
   {
-    name: "Violet",
-    primary: "262 83% 58%",
-    primaryDark: "262 83% 70%",
-    primaryFg: "210 40% 98%",
-    accent: "262 83% 58%",
-    gradient: ["from-violet-500", "to-violet-700"],
+    id: "bosque",
+    isDark: false,
+    preview: { bg: "#f0faf4", primary: "#10b981", card: "#ffffff", fg: "#14332a" },
+    vars: {
+      background: "145 30% 97%",
+      foreground: "160 40% 10%",
+      card: "0 0% 100%",
+      "card-foreground": "160 40% 10%",
+      popover: "0 0% 100%",
+      "popover-foreground": "160 40% 10%",
+      primary: "160 84% 39%",
+      "primary-foreground": "0 0% 100%",
+      secondary: "150 25% 93%",
+      "secondary-foreground": "160 30% 15%",
+      muted: "150 25% 93%",
+      "muted-foreground": "150 12% 45%",
+      accent: "150 25% 93%",
+      "accent-foreground": "160 30% 15%",
+      destructive: "0 84% 60%",
+      "destructive-foreground": "0 0% 100%",
+      border: "150 20% 88%",
+      input: "150 20% 88%",
+      ring: "160 84% 39%",
+    },
   },
   {
-    name: "Rose",
-    primary: "347 77% 50%",
-    primaryDark: "347 77% 63%",
-    primaryFg: "210 40% 98%",
-    accent: "347 77% 50%",
-    gradient: ["from-rose-500", "to-rose-700"],
+    id: "obsidiana",
+    isDark: true,
+    preview: { bg: "#1a1625", primary: "#a78bfa", card: "#231f33", fg: "#ede9fe" },
+    vars: {
+      background: "260 25% 8%",
+      foreground: "260 50% 95%",
+      card: "260 20% 12%",
+      "card-foreground": "260 50% 95%",
+      popover: "260 20% 12%",
+      "popover-foreground": "260 50% 95%",
+      primary: "262 83% 68%",
+      "primary-foreground": "260 25% 8%",
+      secondary: "260 15% 18%",
+      "secondary-foreground": "260 30% 90%",
+      muted: "260 15% 18%",
+      "muted-foreground": "260 15% 60%",
+      accent: "260 15% 18%",
+      "accent-foreground": "260 30% 90%",
+      destructive: "0 62% 45%",
+      "destructive-foreground": "0 0% 100%",
+      border: "260 15% 20%",
+      input: "260 15% 20%",
+      ring: "262 83% 68%",
+    },
   },
   {
-    name: "Amber",
-    primary: "38 92% 50%",
-    primaryDark: "38 92% 60%",
-    primaryFg: "20 14% 10%",
-    accent: "38 92% 50%",
-    gradient: ["from-amber-500", "to-amber-700"],
+    id: "arena",
+    isDark: false,
+    preview: { bg: "#faf6f0", primary: "#d97706", card: "#fefcf8", fg: "#2d1f0e" },
+    vars: {
+      background: "36 40% 96%",
+      foreground: "30 40% 10%",
+      card: "36 50% 99%",
+      "card-foreground": "30 40% 10%",
+      popover: "36 50% 99%",
+      "popover-foreground": "30 40% 10%",
+      primary: "38 92% 50%",
+      "primary-foreground": "30 40% 10%",
+      secondary: "36 30% 91%",
+      "secondary-foreground": "30 25% 15%",
+      muted: "36 30% 91%",
+      "muted-foreground": "30 15% 45%",
+      accent: "36 30% 91%",
+      "accent-foreground": "30 25% 15%",
+      destructive: "0 84% 60%",
+      "destructive-foreground": "0 0% 100%",
+      border: "36 25% 85%",
+      input: "36 25% 85%",
+      ring: "38 92% 50%",
+    },
   },
   {
-    name: "Emerald",
-    primary: "160 84% 39%",
-    primaryDark: "160 84% 55%",
-    primaryFg: "210 40% 98%",
-    accent: "160 84% 39%",
-    gradient: ["from-emerald-500", "to-emerald-700"],
+    id: "coral",
+    isDark: true,
+    preview: { bg: "#1c1517", primary: "#f43f5e", card: "#261e21", fg: "#fce7f3" },
+    vars: {
+      background: "350 15% 9%",
+      foreground: "350 60% 95%",
+      card: "350 12% 13%",
+      "card-foreground": "350 60% 95%",
+      popover: "350 12% 13%",
+      "popover-foreground": "350 60% 95%",
+      primary: "347 77% 60%",
+      "primary-foreground": "0 0% 100%",
+      secondary: "350 10% 18%",
+      "secondary-foreground": "350 30% 90%",
+      muted: "350 10% 18%",
+      "muted-foreground": "350 15% 60%",
+      accent: "350 10% 18%",
+      "accent-foreground": "350 30% 90%",
+      destructive: "0 62% 45%",
+      "destructive-foreground": "0 0% 100%",
+      border: "350 10% 20%",
+      input: "350 10% 20%",
+      ring: "347 77% 60%",
+    },
   },
 ];
-
-/* ── Custom color helpers ──────────────────────────────────────── */
-
-function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  if (max === min) return { h: 0, s: 0, l: Math.round(l * 100) };
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h = 0;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  else if (max === g) h = ((b - r) / d + 2) / 6;
-  else h = ((r - g) / d + 4) / 6;
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-}
-
-function hslString(h: number, s: number, l: number): string {
-  return `${h} ${s}% ${l}%`;
-}
-
-export function customHexToPreset(hex: string): { primary: string; primaryDark: string; primaryFg: string } {
-  const { h, s, l } = hexToHsl(hex);
-  const darkL = Math.min(l + 15, 80);
-  const fgL = l > 55 ? 10 : 98;
-  return {
-    primary: hslString(h, s, l),
-    primaryDark: hslString(h, Math.min(s + 5, 100), darkL),
-    primaryFg: `210 ${l > 55 ? 14 : 40}% ${fgL}%`,
-  };
-}
-
-export function hslToHex(hslStr: string): string {
-  const parts = hslStr.match(/[\d.]+/g);
-  if (!parts || parts.length < 3) return "#3b82f6";
-  const h = parseFloat(parts[0]) / 360;
-  const s = parseFloat(parts[1]) / 100;
-  const l = parseFloat(parts[2]) / 100;
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-  let r, g, b;
-  if (s === 0) { r = g = b = l; } else {
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-  const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
 
 /* ── Layout mode ───────────────────────────────────────────────── */
 
 export type LayoutMode = "classic" | "side-by-side" | "compact";
-
-/* ── Density ───────────────────────────────────────────────────── */
-
-export type DensityMode = "compact" | "normal" | "spacious";
 
 /* ── Panel side ─────────────────────────────────────────────────── */
 
@@ -151,25 +216,21 @@ export const FONT_FAMILIES: { value: FontFamily; label: string; stack: string }[
 export type UILanguage = "es" | "en" | "pt";
 
 export interface UIPreferences {
-  colorPreset: string;
-  customColor: string;
+  skin: string;
   panelSide: PanelSide;
   fontSize: number;
   fontFamily: FontFamily;
   uiLanguage: UILanguage;
   layout: LayoutMode;
-  density: DensityMode;
 }
 
 const DEFAULTS: UIPreferences = {
-  colorPreset: "Blue",
-  customColor: "",
+  skin: "clasico",
   panelSide: "right",
   fontSize: 14,
   fontFamily: "inter",
   uiLanguage: "es",
   layout: "classic",
-  density: "normal",
 };
 
 const STORAGE_KEY = "radiogenai_ui_prefs";
@@ -178,18 +239,15 @@ const STORAGE_KEY = "radiogenai_ui_prefs";
 
 function applyPreferences(prefs: UIPreferences) {
   const root = document.documentElement;
+  const skin = SKINS.find((s) => s.id === prefs.skin) || SKINS[0];
 
-  if (prefs.colorPreset === "Custom" && prefs.customColor) {
-    const custom = customHexToPreset(prefs.customColor);
-    root.style.setProperty("--preset-primary", custom.primary);
-    root.style.setProperty("--preset-primary-dark", custom.primaryDark);
-    root.style.setProperty("--preset-primary-fg", custom.primaryFg);
-  } else {
-    const preset = COLOR_PRESETS.find((p) => p.name === prefs.colorPreset) || COLOR_PRESETS[0];
-    root.style.setProperty("--preset-primary", preset.primary);
-    root.style.setProperty("--preset-primary-dark", preset.primaryDark);
-    root.style.setProperty("--preset-primary-fg", preset.primaryFg);
+  for (const [key, value] of Object.entries(skin.vars)) {
+    root.style.setProperty(`--${key}`, value);
   }
+
+  root.classList.toggle("dark", skin.isDark);
+  localStorage.setItem("radiogenai_dark", skin.isDark ? "1" : "0");
+  window.dispatchEvent(new CustomEvent("radiogenai:dark-changed", { detail: skin.isDark }));
 
   root.style.setProperty("--ui-font-size", `${prefs.fontSize}px`);
   root.style.fontSize = `${prefs.fontSize}px`;
@@ -197,7 +255,6 @@ function applyPreferences(prefs: UIPreferences) {
   const font = FONT_FAMILIES.find((f) => f.value === prefs.fontFamily) || FONT_FAMILIES[0];
   root.style.setProperty("--font-body", font.stack);
 
-  root.dataset.density = prefs.density;
   root.dataset.layout = prefs.layout;
 }
 
@@ -206,13 +263,13 @@ function applyPreferences(prefs: UIPreferences) {
 interface UIPrefsCtx {
   prefs: UIPreferences;
   update: (patch: Partial<UIPreferences>) => void;
-  preset: ColorPreset;
+  skin: Skin;
 }
 
 const Ctx = createContext<UIPrefsCtx>({
   prefs: DEFAULTS,
   update: () => {},
-  preset: COLOR_PRESETS[0],
+  skin: SKINS[0],
 });
 
 export function useUIPrefs() {
@@ -223,12 +280,15 @@ export function UIPrefsProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<UIPreferences>(DEFAULTS);
   const [hydrated, setHydrated] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Partial<UIPreferences>;
+        // Migrate old prefs that had colorPreset/density instead of skin
+        if (!saved.skin && "colorPreset" in saved) {
+          saved.skin = "clasico";
+        }
         const merged = { ...DEFAULTS, ...saved };
         setPrefs(merged);
         applyPreferences(merged);
@@ -246,12 +306,12 @@ export function UIPrefsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const preset = COLOR_PRESETS.find((p) => p.name === prefs.colorPreset) || COLOR_PRESETS[0];
+  const skin = SKINS.find((s) => s.id === prefs.skin) || SKINS[0];
 
-  if (!hydrated) return null; // avoid flash
+  if (!hydrated) return null;
 
   return (
-    <Ctx.Provider value={{ prefs, update, preset }}>
+    <Ctx.Provider value={{ prefs, update, skin }}>
       {children}
     </Ctx.Provider>
   );
