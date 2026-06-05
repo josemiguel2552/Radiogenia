@@ -348,7 +348,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   `;
 
   const logoY = h - fs(40);
-  const logoSmall = `<g transform="translate(${px},${logoY - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
+  const logoSmall = `<g transform="translate(${px},${logoY - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
 
   let content = "";
 
@@ -695,7 +695,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
         `;
       }).join("")}
       <text x="${px}" y="${botSafe - fs(8)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="rgba(255,255,255,0.45)">+ 48 fichas de referencia: Fleischner, LI-RADS, O-RADS, Lung-RADS, BI-RADS y más</text>
-      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+      <g transform="translate(${px},${h - fs(40) - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
   } else if (contentType === "guides-all") {
     const guides = [
       { src: "Fleischner 2017", topic: "Nódulos pulmonares solitarios" },
@@ -749,7 +749,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
         `;
       }).join("")}
       <text x="${px}" y="${botSafe - fs(4)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(17)}" fill="rgba(255,255,255,0.4)">Cada recomendación incluye fuente, nivel de evidencia y texto copiable</text>
-      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#9333ea"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#f0abfc">.ai</tspan></text>`;
+      <g transform="translate(${px},${h - fs(40) - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#9333ea"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#f0abfc">.ai</tspan></text>`;
   } else if (contentType === "carousel-tirads") {
     const y0 = centerBlock(fs(400));
     content = `
@@ -838,7 +838,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <line x1="${px}" y1="${y0 + fs(280)}" x2="${px + fs(60)}" y2="${y0 + fs(280)}" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round"/>
       <text x="${px}" y="${y0 + fs(315)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="rgba(255,255,255,0.45)">La estructuración automática reduce omisiones y ambigüedades.</text>
       <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="rgba(255,255,255,0.3)">Fuente: Khorasani et al., JACR 2019</text>
-      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+      <g transform="translate(${px},${h - fs(40) - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
   } else if (contentType === "dyk-time") {
     const y0 = centerBlock(fs(330));
     content = `
@@ -960,7 +960,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${w - px - fs(16)}" y="${y0 + fs(320)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(22)}" fill="#c4b5fd" text-anchor="end">desde 30 €/mes</text>
       <text x="${w / 2}" y="${y0 + fs(380)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(24)}" fill="#c4b5fd" text-anchor="middle">6 semanas de tu vida recuperadas cada año.</text>
       <text x="${w / 2}" y="${y0 + fs(405)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="rgba(255,255,255,0.4)" text-anchor="middle">*Estimación basada en reducción media del 87% de tiempo de redacción.</text>
-      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+      <g transform="translate(${px},${h - fs(40) - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
   } else if (contentType === "spotlight-voice") {
     const y0 = centerBlock(fs(340));
     content = `
@@ -1032,7 +1032,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${px}" y="${y0 + fs(288)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="rgba(255,255,255,0.55)">compartidas y recomendaciones del hospital.</text>
       <text x="${px}" y="${y0 + fs(326)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(20)}" fill="#ffffff">Jefe de servicio · Jefe de sección · Radiólogo</text>
       <text x="${px}" y="${y0 + fs(358)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="#c4b5fd">→ Cada rol ve lo que necesita. Nada más.</text>
-      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+      <g transform="translate(${px},${h - fs(40) - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
   } else if (contentType === "normality-learn") {
     const y0 = centerBlock(fs(400));
     const bx = px + fs(20);
