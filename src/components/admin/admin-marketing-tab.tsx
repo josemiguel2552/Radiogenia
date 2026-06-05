@@ -234,6 +234,25 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "pub-spot-teams", label: "Spotlight — Equipos", category: "Pub. Spotlights", width: 1080, height: 1080, bg: "purple", logoVariant: "full", description: "IG/FB — Colaboración equipos", tagline: "spotlight-teams" },
   // ═══ IA aprende frases ═══
   { id: "pub-normality-learn-sq", label: "IA aprende tus frases", category: "Pub. Templates", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Aprendizaje visual", tagline: "normality-learn" },
+  // ═══ Guías clínicas — resumen visual ═══
+  { id: "pub-guide-fleischner-sq", label: "Fleischner 2017", category: "Pub. Guías Clínicas", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Nódulos pulmonares", tagline: "guide-fleischner" },
+  { id: "pub-guide-fleischner-ln", label: "Fleischner 2017 (landscape)", category: "Pub. Guías Clínicas", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Nódulos pulmonares", tagline: "guide-fleischner" },
+  { id: "pub-guide-adrenal-sq", label: "Adrenal ACR 2017", category: "Pub. Guías Clínicas", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Incidentaloma adrenal", tagline: "guide-adrenal" },
+  { id: "pub-guide-bosniak-sq", label: "Bosniak 2019", category: "Pub. Guías Clínicas", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Quistes renales", tagline: "guide-bosniak" },
+  { id: "pub-guide-lirads-sq", label: "LI-RADS v2018", category: "Pub. Guías Clínicas", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Lesiones hepáticas", tagline: "guide-lirads" },
+  { id: "pub-guide-aorta-sq", label: "Aorta SVS 2018", category: "Pub. Guías Clínicas", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Aneurisma aórtico", tagline: "guide-aorta" },
+  { id: "pub-guide-birads-sq", label: "BI-RADS 5ª ed.", category: "Pub. Guías Clínicas", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Lesiones mamarias", tagline: "guide-birads" },
+  { id: "pub-guide-birads-ln", label: "BI-RADS 5ª ed. (landscape)", category: "Pub. Guías Clínicas", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Lesiones mamarias", tagline: "guide-birads" },
+  // ═══ Casos clínicos con calculadora ═══
+  { id: "pub-case-tirads-sq", label: "Caso TI-RADS", category: "Pub. Casos Clínicos", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Nódulo tiroideo", tagline: "case-tirads" },
+  { id: "pub-case-tirads-ln", label: "Caso TI-RADS (landscape)", category: "Pub. Casos Clínicos", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Nódulo tiroideo", tagline: "case-tirads" },
+  { id: "pub-case-pirads-sq", label: "Caso PI-RADS", category: "Pub. Casos Clínicos", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Lesión prostática", tagline: "case-pirads" },
+  { id: "pub-case-bosniak-sq", label: "Caso Bosniak", category: "Pub. Casos Clínicos", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Quiste renal complejo", tagline: "case-bosniak" },
+  { id: "pub-case-aspects-sq", label: "Caso ASPECTS", category: "Pub. Casos Clínicos", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Ictus ACM", tagline: "case-aspects" },
+  { id: "pub-case-washout-sq", label: "Caso Washout Adrenal", category: "Pub. Casos Clínicos", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Adenoma adrenal", tagline: "case-washout" },
+  { id: "pub-case-washout-ln", label: "Caso Washout (landscape)", category: "Pub. Casos Clínicos", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Adenoma adrenal", tagline: "case-washout" },
+  { id: "pub-case-tnm-sq", label: "Caso TNM Pulmón", category: "Pub. Casos Clínicos", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Estadificación pulmonar", tagline: "case-tnm" },
+  { id: "pub-case-tnm-ln", label: "Caso TNM Pulmón (landscape)", category: "Pub. Casos Clínicos", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Estadificación pulmonar", tagline: "case-tnm" },
 ];
 
 function buildLogoSvg(
@@ -1055,6 +1074,368 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${bx + fs(12)}" y="${y0 + fs(366)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${mainColor}">"Campos pulmonares sin opacidades de ocupación alveolar." ✓</text>
       <text x="${w / 2}" y="${y0 + fs(400)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(17)}" fill="${subColor}" text-anchor="middle">Tu vocabulario, tu estilo, tu nivel de detalle — automáticamente.</text>`;
 
+  } else if (contentType === "guide-fleischner") {
+    const y0 = centerBlock(fs(460));
+    const rows = [
+      { size: "< 6 mm", low: "Sin seguimiento", high: "TC opcional 12 m", risk: 0.1 },
+      { size: "6–8 mm", low: "TC 6-12 m", high: "TC 6-12 m y 18-24 m", risk: 0.4 },
+      { size: "> 8 mm", low: "TC 3 m, PET-CT o biopsia", high: "TC 3 m, PET-CT o biopsia", risk: 0.8 },
+    ];
+    const rowH3 = fs(52);
+    const colW = (w - px * 2) / 3;
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(280)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 GUÍA CLÍNICA — FLEISCHNER 2017</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Nódulos pulmonares</text>
+      <text x="${px}" y="${y0 + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">sólidos incidentales</text>
+      <rect x="${px}" y="${y0 + fs(145)}" width="${w - px * 2}" height="${fs(36)}" rx="${fs(6)}" fill="${ta}0.12)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(170)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">TAMAÑO</text>
+      <text x="${px + colW + fs(12)}" y="${y0 + fs(170)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">BAJO RIESGO</text>
+      <text x="${px + colW * 2 + fs(12)}" y="${y0 + fs(170)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">ALTO RIESGO</text>
+      ${rows.map((r, i) => {
+        const ry = y0 + fs(190) + i * (rowH3 + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH3}" rx="${fs(8)}" fill="${ta}0.05)" stroke="${ta}0.08)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH3}" rx="${fs(3)}" fill="${accentColor}" opacity="${0.3 + r.risk * 0.7}"/>
+          <text x="${px + fs(18)}" y="${ry + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}">${r.size}</text>
+          <text x="${px + colW + fs(12)}" y="${ry + fs(22)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}">${escSvg(r.low)}</text>
+          <text x="${px + colW * 2 + fs(12)}" y="${ry + fs(22)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}">${escSvg(r.high)}</text>
+          <rect x="${px + fs(18)}" y="${ry + fs(34)}" width="${fs(40 + r.risk * 80)}" height="${fs(6)}" rx="${fs(3)}" fill="${accentColor}" opacity="0.3"/>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(380)}" x2="${px + fs(60)}" y2="${y0 + fs(380)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(410)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Sube tus guías a Radiogen.ai y consúltalas</text>
+      <text x="${px}" y="${y0 + fs(434)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">mientras informas, sin salir de la pantalla.</text>
+      <text x="${px}" y="${y0 + fs(460)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: MacMahon et al., Radiology 2017 · Radiogen.ai no emite recomendaciones clínicas</text>`;
+  } else if (contentType === "guide-adrenal") {
+    const y0 = centerBlock(fs(440));
+    const boxes = [
+      { label: "< 1 cm", action: "Sin seguimiento", color: "rgba(34,197,94,0.2)", border: "rgba(34,197,94,0.35)", text: isDark ? "#86efac" : "#16a34a" },
+      { label: "1–4 cm", action: "Washout CT o\nRM chemical shift", color: `${ta}0.1)`, border: `${ta}0.2)`, text: accentColor },
+      { label: "> 4 cm", action: "Evaluación quirúrgica\n+ analítica hormonal", color: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.2)", text: isDark ? "#fca5a5" : "#dc2626" },
+    ];
+    const boxW = (w - px * 2 - fs(30)) / 3;
+    const boxH = fs(130);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(320)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 GUÍA CLÍNICA — ACR 2017</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Incidentaloma adrenal</text>
+      <text x="${px}" y="${y0 + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">¿Qué hacer según tamaño?</text>
+      ${boxes.map((b, i) => {
+        const bx = px + i * (boxW + fs(15));
+        const by = y0 + fs(148);
+        const lines = b.action.split("\\n");
+        return `
+          <rect x="${bx}" y="${by}" width="${boxW}" height="${boxH}" rx="${fs(12)}" fill="${b.color}" stroke="${b.border}" stroke-width="1"/>
+          <text x="${bx + boxW / 2}" y="${by + fs(36)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(28)}" fill="${b.text}" text-anchor="middle">${b.label}</text>
+          <line x1="${bx + fs(20)}" y1="${by + fs(52)}" x2="${bx + boxW - fs(20)}" y2="${by + fs(52)}" stroke="${b.border}" stroke-width="1"/>
+          <text x="${bx + boxW / 2}" y="${by + fs(78)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}" text-anchor="middle">${escSvg(lines[0])}</text>
+          ${lines[1] ? `<text x="${bx + boxW / 2}" y="${by + fs(98)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}" text-anchor="middle">${escSvg(lines[1])}</text>` : ""}
+        `;
+      }).join("")}
+      ${boxes.map((_, i) => i < 2 ? `<text x="${px + (i + 1) * (boxW + fs(15)) - fs(15)}" y="${y0 + fs(148) + boxH / 2 + fs(6)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(20)}" fill="${ta}0.3)" text-anchor="middle">→</text>` : "").join("")}
+      <rect x="${px}" y="${y0 + fs(300)}" width="${w - px * 2}" height="${fs(60)}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.1)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(324)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(15)}" fill="${accentColor}">💡 Clave: densidad &lt; 10 UH sin contraste = adenoma benigno</text>
+      <text x="${px + fs(16)}" y="${y0 + fs(348)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">Washout absoluto ≥ 60% o relativo ≥ 40% confirma adenoma</text>
+      <line x1="${px}" y1="${y0 + fs(380)}" x2="${px + fs(60)}" y2="${y0 + fs(380)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(410)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Tus documentos de referencia, accesibles mientras informas</text>
+      <text x="${px}" y="${y0 + fs(440)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: Mayo-Smith et al., JACR 2017 · La decisión clínica es siempre del radiólogo</text>`;
+  } else if (contentType === "guide-bosniak") {
+    const y0 = centerBlock(fs(460));
+    const cats = [
+      { cat: "I", desc: "Quiste simple", risk: "< 1%", bar: 0.02, c: "rgba(34,197,94," },
+      { cat: "II", desc: "Mínima complejidad", risk: "< 1%", bar: 0.04, c: "rgba(34,197,94," },
+      { cat: "IIF", desc: "Requiere seguimiento", risk: "5–10%", bar: 0.1, c: `${ta.slice(0, -1)},` },
+      { cat: "III", desc: "Indeterminado", risk: "40–60%", bar: 0.5, c: "rgba(251,191,36," },
+      { cat: "IV", desc: "Componente sólido", risk: "> 90%", bar: 0.95, c: "rgba(239,68,68," },
+    ];
+    const rowH4 = fs(44);
+    const barMax = w - px * 2 - fs(320);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(280)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 CLASIFICACIÓN — BOSNIAK 2019</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Quistes renales</text>
+      <text x="${px}" y="${y0 + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">Riesgo de malignidad</text>
+      ${cats.map((r, i) => {
+        const ry = y0 + fs(148) + i * (rowH4 + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH4}" rx="${fs(8)}" fill="${ta}0.04)" stroke="${ta}0.08)" stroke-width="1"/>
+          <rect x="${px + fs(4)}" y="${ry + fs(4)}" width="${fs(44)}" height="${rowH4 - fs(8)}" rx="${fs(6)}" fill="${r.c}0.2)"/>
+          <text x="${px + fs(26)}" y="${ry + fs(28)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(18)}" fill="${r.c}0.8)" text-anchor="middle">${r.cat}</text>
+          <text x="${px + fs(60)}" y="${ry + fs(28)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(15)}" fill="${subColor}">${escSvg(r.desc)}</text>
+          <rect x="${w - px - barMax - fs(80)}" y="${ry + fs(14)}" width="${barMax}" height="${fs(14)}" rx="${fs(4)}" fill="${ta}0.06)"/>
+          <rect x="${w - px - barMax - fs(80)}" y="${ry + fs(14)}" width="${barMax * r.bar}" height="${fs(14)}" rx="${fs(4)}" fill="${r.c}0.5)"/>
+          <text x="${w - px - fs(10)}" y="${ry + fs(28)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${r.c}0.7)" text-anchor="end">${r.risk}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(410)}" x2="${px + fs(60)}" y2="${y0 + fs(410)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(436)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Calculadora Bosniak disponible en Radiogen.ai</text>
+      <text x="${px}" y="${y0 + fs(460)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: Silverman et al., Radiology 2019 · El radiólogo decide la recomendación final</text>`;
+  } else if (contentType === "guide-lirads") {
+    const y0 = centerBlock(fs(460));
+    const cats2 = [
+      { cat: "LR-1", desc: "Definitivamente benigno", next: "—", c: "rgba(34,197,94," },
+      { cat: "LR-2", desc: "Probablemente benigno", next: "Opcional", c: "rgba(34,197,94," },
+      { cat: "LR-3", desc: "Probabilidad intermedia", next: "3-6 meses", c: "rgba(251,191,36," },
+      { cat: "LR-4", desc: "Probablemente CHC", next: "Multidisciplinar", c: "rgba(249,115,22," },
+      { cat: "LR-5", desc: "Definitivamente CHC", next: "Tratamiento", c: "rgba(239,68,68," },
+    ];
+    const rowH5 = fs(48);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(280)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 GUÍA CLÍNICA — LI-RADS v2018</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Lesiones hepáticas</text>
+      <text x="${px}" y="${y0 + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">en paciente de riesgo</text>
+      ${cats2.map((r, i) => {
+        const ry = y0 + fs(148) + i * (rowH5 + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH5}" rx="${fs(8)}" fill="${ta}0.04)" stroke="${ta}0.08)" stroke-width="1"/>
+          <rect x="${px + fs(4)}" y="${ry + fs(4)}" width="${fs(72)}" height="${rowH5 - fs(8)}" rx="${fs(6)}" fill="${r.c}0.15)"/>
+          <text x="${px + fs(40)}" y="${ry + fs(30)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(15)}" fill="${r.c}0.8)" text-anchor="middle">${r.cat}</text>
+          <text x="${px + fs(88)}" y="${ry + fs(22)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(16)}" fill="${mainColor}">${escSvg(r.desc)}</text>
+          <text x="${px + fs(88)}" y="${ry + fs(40)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">Siguiente paso: ${r.next}</text>
+        `;
+      }).join("")}
+      <rect x="${px}" y="${y0 + fs(426)}" width="${w - px * 2}" height="${fs(1)}" fill="${ta}0.1)"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">Criterios principales: Lavado arterial, cápsula, crecimiento en umbral</text>
+      <text x="${px}" y="${y0 + fs(468)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: ACR CT/MRI LI-RADS v2018 · Consulta de referencia, no diagnóstico automático</text>`;
+  } else if (contentType === "guide-aorta") {
+    const y0 = centerBlock(fs(440));
+    const ranges = [
+      { range: "< 3 cm", label: "Normal", interval: "—", c: "rgba(34,197,94,", pct: 0.3 },
+      { range: "3–4 cm", label: "Ectasia", interval: "Eco anual", c: "rgba(34,197,94,", pct: 0.4 },
+      { range: "4–5 cm", label: "Aneurisma", interval: "Eco / TC 6 m", c: "rgba(251,191,36,", pct: 0.55 },
+      { range: "5–5.5 cm", label: "Aneurisma grande", interval: "TC / Eco 3 m", c: "rgba(249,115,22,", pct: 0.7 },
+      { range: "> 5.5 cm", label: "Indicación quirúrgica", interval: "Derivar cirugía", c: "rgba(239,68,68,", pct: 1.0 },
+    ];
+    const rowH6 = fs(42);
+    const barMax2 = fs(200);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(280)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 GUÍA CLÍNICA — SVS 2018</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Aneurisma aórtico</text>
+      <text x="${px}" y="${y0 + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">abdominal: seguimiento</text>
+      ${ranges.map((r, i) => {
+        const ry = y0 + fs(148) + i * (rowH6 + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH6}" rx="${fs(8)}" fill="${ta}0.04)" stroke="${ta}0.08)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH6}" rx="${fs(3)}" fill="${r.c}0.6)"/>
+          <text x="${px + fs(18)}" y="${ry + fs(27)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(17)}" fill="${mainColor}">${r.range}</text>
+          <text x="${px + fs(140)}" y="${ry + fs(27)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}">${escSvg(r.label)}</text>
+          <rect x="${w - px - barMax2 - fs(10)}" y="${ry + fs(13)}" width="${barMax2}" height="${fs(14)}" rx="${fs(4)}" fill="${ta}0.06)"/>
+          <rect x="${w - px - barMax2 - fs(10)}" y="${ry + fs(13)}" width="${barMax2 * r.pct}" height="${fs(14)}" rx="${fs(4)}" fill="${r.c}0.4)"/>
+        `;
+      }).join("")}
+      <text x="${w - px}" y="${y0 + fs(148) - fs(8)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(12)}" fill="${accentColor}" text-anchor="end">Urgencia →</text>
+      <line x1="${px}" y1="${y0 + fs(400)}" x2="${px + fs(60)}" y2="${y0 + fs(400)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(426)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Tus guías clínicas al alcance mientras redactas el informe</text>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: Chaikof et al., SVS Guidelines 2018 · La decisión clínica es siempre del radiólogo</text>`;
+  } else if (contentType === "guide-birads") {
+    const y0 = centerBlock(fs(460));
+    const cats3 = [
+      { cat: "0", desc: "Evaluación adicional", action: "Eco / Magnificación", c: "rgba(156,163,175," },
+      { cat: "1", desc: "Negativo", action: "Screening habitual", c: "rgba(34,197,94," },
+      { cat: "2", desc: "Hallazgo benigno", action: "Screening habitual", c: "rgba(34,197,94," },
+      { cat: "3", desc: "Probablemente benigno", action: "Control 6 meses", c: "rgba(251,191,36," },
+      { cat: "4", desc: "Sospechoso", action: "Biopsia", c: "rgba(249,115,22," },
+      { cat: "5", desc: "Altamente sospechoso", action: "Biopsia urgente", c: "rgba(239,68,68," },
+      { cat: "6", desc: "Malignidad confirmada", action: "Tratamiento", c: "rgba(185,28,28," },
+    ];
+    const rowH7 = fs(36);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(260)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 CLASIFICACIÓN — BI-RADS 5ª ed.</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Lesiones mamarias</text>
+      <text x="${px}" y="${y0 + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">Categorías y manejo</text>
+      ${cats3.map((r, i) => {
+        const ry = y0 + fs(140) + i * (rowH7 + fs(4));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH7}" rx="${fs(6)}" fill="${ta}0.04)" stroke="${ta}0.06)" stroke-width="1"/>
+          <rect x="${px + fs(4)}" y="${ry + fs(4)}" width="${fs(36)}" height="${rowH7 - fs(8)}" rx="${fs(4)}" fill="${r.c}0.2)"/>
+          <text x="${px + fs(22)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(15)}" fill="${r.c}0.8)" text-anchor="middle">${r.cat}</text>
+          <text x="${px + fs(52)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${mainColor}">${escSvg(r.desc)}</text>
+          <text x="${w - px - fs(10)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(13)}" fill="${subColor}" text-anchor="end">${escSvg(r.action)}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(430)}" x2="${px + fs(60)}" y2="${y0 + fs(430)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(456)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Referencia rápida al lado de tu informe</text>
+      <text x="${px}" y="${y0 + fs(472)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: ACR BI-RADS Atlas, 5th ed. · Radiogen.ai muestra la guía que tú subas; no emite diagnósticos</text>`;
+  } else if (contentType === "case-tirads") {
+    const y0 = centerBlock(fs(460));
+    const params = [
+      { feat: "Composición", val: "Sólido", pts: "+2" },
+      { feat: "Ecogenicidad", val: "Hipoecoico", pts: "+2" },
+      { feat: "Forma", val: "Más alto que ancho", pts: "+3" },
+      { feat: "Márgenes", val: "Lisos", pts: "0" },
+      { feat: "Focos ecogénicos", val: "Microcalcificaciones", pts: "+3" },
+    ];
+    const rowH8 = fs(40);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(320)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧮 CASO CLÍNICO — ACR TI-RADS</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}">Nódulo tiroideo de 15 mm</text>
+      <text x="${px}" y="${y0 + fs(106)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Mujer, 52 años — Ecografía tiroidea</text>
+      ${params.map((p, i) => {
+        const ry = y0 + fs(130) + i * (rowH8 + fs(4));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH8}" rx="${fs(8)}" fill="${ta}0.05)" stroke="${ta}0.08)" stroke-width="1"/>
+          <text x="${px + fs(14)}" y="${ry + fs(26)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(15)}" fill="${subColor}">${p.feat}</text>
+          <text x="${w / 2}" y="${ry + fs(26)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(15)}" fill="${mainColor}" text-anchor="middle">${escSvg(p.val)}</text>
+          <text x="${w - px - fs(14)}" y="${ry + fs(26)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(16)}" fill="${accentColor}" text-anchor="end">${p.pts}</text>
+        `;
+      }).join("")}
+      <rect x="${px}" y="${y0 + fs(354)}" width="${w - px * 2}" height="${fs(56)}" rx="${fs(12)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(388)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(24)}" fill="${accentColor}">Total: 10 pts → TR5 — Altamente sospechoso</text>
+      <text x="${px}" y="${y0 + fs(430)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Puntúa en segundos con la calculadora de Radiogen.ai</text>
+      <text x="${px}" y="${y0 + fs(460)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Caso ilustrativo · El radiólogo introduce los datos y decide la conducta</text>`;
+  } else if (contentType === "case-pirads") {
+    const y0 = centerBlock(fs(440));
+    const steps2 = [
+      { step: "Zona", val: "Periférica" },
+      { step: "DWI", val: "Restricción marcada — Score 5" },
+      { step: "T2W", val: "Hipointensa focal — Score 4" },
+      { step: "DCE", val: "Realce precoz positivo (+)" },
+    ];
+    const sH = fs(44);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(320)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧮 CASO CLÍNICO — PI-RADS v2.1</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}">Lesión prostática en RM</text>
+      <text x="${px}" y="${y0 + fs(106)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Varón, 67 años — PSA 8.2 ng/mL — RM multiparamétrica</text>
+      ${steps2.map((s, i) => {
+        const sy = y0 + fs(134) + i * (sH + fs(4));
+        return `
+          <rect x="${px}" y="${sy}" width="${w - px * 2}" height="${sH}" rx="${fs(8)}" fill="${ta}0.05)" stroke="${ta}0.08)" stroke-width="1"/>
+          <rect x="${px + fs(8)}" y="${sy + fs(8)}" width="${fs(32)}" height="${sH - fs(16)}" rx="${fs(6)}" fill="${ta}0.15)"/>
+          <text x="${px + fs(24)}" y="${sy + fs(28)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${i + 1}</text>
+          <text x="${px + fs(54)}" y="${sy + fs(20)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}">${s.step}</text>
+          <text x="${px + fs(54)}" y="${sy + fs(38)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(15)}" fill="${mainColor}">${escSvg(s.val)}</text>
+        `;
+      }).join("")}
+      <text x="${w / 2}" y="${y0 + fs(336)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}" text-anchor="middle">Zona periférica: secuencia dominante = DWI (score 5)</text>
+      <rect x="${px}" y="${y0 + fs(354)}" width="${w - px * 2}" height="${fs(56)}" rx="${fs(12)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(388)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(24)}" fill="${accentColor}">Resultado: PI-RADS 5 — Muy alta probabilidad</text>
+      <text x="${px}" y="${y0 + fs(426)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">El radiólogo puntúa, la calculadora agiliza el cálculo</text>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Caso ilustrativo · Radiogen.ai no emite diagnósticos; el resultado lo valida el profesional</text>`;
+  } else if (contentType === "case-bosniak") {
+    const y0 = centerBlock(fs(430));
+    const feats = [
+      { feat: "Paredes", val: "Engrosamiento irregular (> 3 mm)" },
+      { feat: "Septos", val: "Múltiples, gruesos, con realce" },
+      { feat: "Calcificación", val: "Gruesa e irregular" },
+      { feat: "Contenido", val: "Densidad heterogénea" },
+      { feat: "Realce", val: "Componente sólido con realce" },
+    ];
+    const fH = fs(38);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(340)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧮 CASO CLÍNICO — BOSNIAK 2019</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}">Lesión quística renal 4 cm</text>
+      <text x="${px}" y="${y0 + fs(106)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Mujer, 61 años — TC abdomen con contraste</text>
+      ${feats.map((f, i) => {
+        const fy = y0 + fs(130) + i * (fH + fs(4));
+        return `
+          <rect x="${px}" y="${fy}" width="${w - px * 2}" height="${fH}" rx="${fs(6)}" fill="${ta}0.05)" stroke="${ta}0.08)" stroke-width="1"/>
+          <circle cx="${px + fs(16)}" cy="${fy + fH / 2}" r="${fs(4)}" fill="rgba(239,68,68,0.5)"/>
+          <text x="${px + fs(30)}" y="${fy + fs(16)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">${f.feat}</text>
+          <text x="${px + fs(30)}" y="${fy + fs(32)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}">${escSvg(f.val)}</text>
+        `;
+      }).join("")}
+      <rect x="${px}" y="${y0 + fs(350)}" width="${w - px * 2}" height="${fs(56)}" rx="${fs(12)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(384)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(24)}" fill="${accentColor}">Resultado: Bosniak IV — Riesgo > 90%</text>
+      <text x="${px}" y="${y0 + fs(418)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">El radiólogo evalúa y la calculadora estructura el análisis</text>
+      <text x="${px}" y="${y0 + fs(440)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Caso ilustrativo · Radiogen.ai asiste en el cálculo; la conducta clínica la decide el profesional</text>`;
+  } else if (contentType === "case-aspects") {
+    const y0 = centerBlock(fs(460));
+    const regions2 = [
+      { name: "C — Caudado", ok: false },
+      { name: "L — Lenticular", ok: false },
+      { name: "IC — Cápsula interna", ok: true },
+      { name: "I — Ínsula", ok: false },
+      { name: "M1 — Corteza anterior", ok: true },
+      { name: "M2 — Corteza lateral", ok: true },
+      { name: "M3 — Corteza posterior", ok: true },
+      { name: "M4 — Anterior superior", ok: true },
+      { name: "M5 — Lateral superior", ok: true },
+      { name: "M6 — Posterior superior", ok: true },
+    ];
+    const rH = fs(32);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(320)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧮 CASO CLÍNICO — ASPECTS</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}">Ictus ACM derecha</text>
+      <text x="${px}" y="${y0 + fs(106)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Varón, 72 años — TC urgente sin contraste — 3h evolución</text>
+      ${regions2.map((r, i) => {
+        const ry = y0 + fs(124) + i * (rH + fs(2));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rH}" rx="${fs(4)}" fill="${r.ok ? ta + '0.03)' : 'rgba(239,68,68,0.06)'}" stroke="${r.ok ? ta + '0.06)' : 'rgba(239,68,68,0.12)'}" stroke-width="1"/>
+          <text x="${px + fs(10)}" y="${ry + fs(21)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(13)}" fill="${r.ok ? subColor : (isDark ? '#fca5a5' : '#dc2626')}">${r.ok ? '✓' : '✗'}</text>
+          <text x="${px + fs(28)}" y="${ry + fs(21)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${r.ok ? subColor : mainColor}">${escSvg(r.name)}</text>
+          <text x="${w - px - fs(10)}" y="${ry + fs(21)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${r.ok ? accentColor : (isDark ? '#fca5a5' : '#dc2626')}" text-anchor="end">${r.ok ? '1 pt' : '0 pt'}</text>
+        `;
+      }).join("")}
+      <rect x="${px}" y="${y0 + fs(470) - fs(56)}" width="${w - px * 2}" height="${fs(50)}" rx="${fs(10)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(470) - fs(24)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(22)}" fill="${accentColor}">ASPECTS = 7/10</text>
+      <text x="${px}" y="${y0 + fs(460)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Caso ilustrativo · El radiólogo marca las regiones; Radiogen.ai suma la puntuación</text>`;
+  } else if (contentType === "case-washout") {
+    const y0 = centerBlock(fs(440));
+    const measurements = [
+      { phase: "Sin contraste", hu: "8 UH", note: "Densidad basal del nódulo" },
+      { phase: "Fase portal (60s)", hu: "82 UH", note: "Realce significativo tras contraste" },
+      { phase: "Fase tardía (15 min)", hu: "32 UH", note: "Lavado del contraste" },
+    ];
+    const mH = fs(52);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(360)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧮 CASO CLÍNICO — WASHOUT ADRENAL</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}">Nódulo adrenal de 22 mm</text>
+      <text x="${px}" y="${y0 + fs(106)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Varón, 58 años — TC trifásico adrenal</text>
+      ${measurements.map((m, i) => {
+        const my = y0 + fs(130) + i * (mH + fs(6));
+        return `
+          <rect x="${px}" y="${my}" width="${w - px * 2}" height="${mH}" rx="${fs(10)}" fill="${ta}0.05)" stroke="${ta}0.1)" stroke-width="1"/>
+          <rect x="${px + fs(8)}" y="${my + fs(8)}" width="${fs(36)}" height="${mH - fs(16)}" rx="${fs(6)}" fill="${ta}0.15)"/>
+          <text x="${px + fs(26)}" y="${my + fs(32)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${i + 1}</text>
+          <text x="${px + fs(56)}" y="${my + fs(24)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(16)}" fill="${mainColor}">${m.phase}: <tspan font-weight="800" fill="${accentColor}">${m.hu}</tspan></text>
+          <text x="${px + fs(56)}" y="${my + fs(44)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">${escSvg(m.note)}</text>
+        `;
+      }).join("")}
+      <rect x="${px}" y="${y0 + fs(310)}" width="${w - px * 2}" height="${fs(64)}" rx="${fs(10)}" fill="${ta}0.08)" stroke="${ta}0.15)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(336)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(15)}" fill="${subColor}">APW = (82 − 32) / (82 − 8) × 100 = <tspan font-weight="800" fill="${accentColor}">67.6%</tspan></text>
+      <text x="${px + fs(16)}" y="${y0 + fs(360)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(15)}" fill="${subColor}">RPW = (82 − 32) / 82 × 100 = <tspan font-weight="800" fill="${accentColor}">61.0%</tspan></text>
+      <rect x="${px}" y="${y0 + fs(390)}" width="${w - px * 2}" height="${fs(56)}" rx="${fs(12)}" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.15)" stroke-width="1"/>
+      <text x="${w / 2}" y="${y0 + fs(424)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(20)}" fill="${isDark ? '#86efac' : '#16a34a'}" text-anchor="middle">✓ APW ≥ 60% → Compatible con adenoma</text>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Caso ilustrativo · Tú introduces las UH, la calculadora hace la fórmula</text>`;
+  } else if (contentType === "case-tnm") {
+    const y0 = centerBlock(fs(460));
+    const tnmRows = [
+      { label: "Tumor", detail: "3.2 cm, invade pleura visceral", result: "T2a", c: "rgba(251,191,36," },
+      { label: "Ganglios", detail: "Sin adenopatías patológicas", result: "N0", c: "rgba(34,197,94," },
+      { label: "Metástasis", detail: "Sin lesiones a distancia", result: "M0", c: "rgba(34,197,94," },
+    ];
+    const tnmH = fs(64);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(320)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧮 CASO CLÍNICO — TNM PULMÓN 9ª ed.</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}">Masa pulmonar en LSD</text>
+      <text x="${px}" y="${y0 + fs(106)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Varón, 68 años — TC tórax con contraste — Fumador</text>
+      ${tnmRows.map((r, i) => {
+        const ry = y0 + fs(130) + i * (tnmH + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${tnmH}" rx="${fs(10)}" fill="${ta}0.05)" stroke="${ta}0.1)" stroke-width="1"/>
+          <text x="${px + fs(14)}" y="${ry + fs(26)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(16)}" fill="${accentColor}">${r.label}</text>
+          <text x="${px + fs(14)}" y="${ry + fs(50)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(15)}" fill="${subColor}">${escSvg(r.detail)}</text>
+          <rect x="${w - px - fs(80)}" y="${ry + fs(14)}" width="${fs(66)}" height="${tnmH - fs(28)}" rx="${fs(8)}" fill="${r.c}0.15)" stroke="${r.c}0.25)" stroke-width="1"/>
+          <text x="${w - px - fs(47)}" y="${ry + fs(42)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(20)}" fill="${r.c}0.8)" text-anchor="middle">${r.result}</text>
+        `;
+      }).join("")}
+      <rect x="${px}" y="${y0 + fs(350)}" width="${w - px * 2}" height="${fs(56)}" rx="${fs(12)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(368)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">T2a N0 M0 →</text>
+      <text x="${px + fs(16)}" y="${y0 + fs(394)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(24)}" fill="${accentColor}">Estadio IB — Supervivencia a 5 años: 68%</text>
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${subColor}">Tú describes los hallazgos, la calculadora clasifica el estadio</text>
+      <text x="${px}" y="${y0 + fs(468)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${ta}0.3)">Fuente: IASLC TNM 9th Ed. 2024 · Caso ilustrativo; la estadificación definitiva es responsabilidad del clínico</text>`;
+
   } else {
     content = `<text x="${w/2}" y="${h/2}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(32)}" fill="${mainColor}" text-anchor="middle">Radiogen.ai</text>`;
   }
@@ -1067,7 +1448,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   </svg>`;
 }
 
-const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all","carousel-tirads","carousel-incidental","infographic-process","time-comparison","dyk-errors","dyk-time","dyk-incidental","testimonial-metrics","before-after-report","bodymap","roi-pricing","spotlight-voice","spotlight-multilang","spotlight-darkmode","spotlight-export","spotlight-teams","normality-learn"]);
+const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all","carousel-tirads","carousel-incidental","infographic-process","time-comparison","dyk-errors","dyk-time","dyk-incidental","testimonial-metrics","before-after-report","bodymap","roi-pricing","spotlight-voice","spotlight-multilang","spotlight-darkmode","spotlight-export","spotlight-teams","normality-learn","guide-fleischner","guide-adrenal","guide-bosniak","guide-lirads","guide-aorta","guide-birads","case-tirads","case-pirads","case-bosniak","case-aspects","case-washout","case-tnm"]);
 
 function buildAssetSvg(asset: BrandAsset): string {
   if (asset.tagline && PUB_TYPES.has(asset.tagline)) {
