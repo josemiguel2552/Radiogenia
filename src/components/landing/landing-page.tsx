@@ -136,7 +136,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a1a] text-white overflow-x-clip">
       {/* Safeguard: reveal everything if JS is disabled */}
       <noscript>
         <style>{`[data-reveal]{opacity:1!important;transform:none!important;filter:none!important;}`}</style>
