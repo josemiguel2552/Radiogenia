@@ -1435,7 +1435,7 @@ PROHIBIDO:
 - NUNCA caractericen ni clasifiquen lesiones a partir de valores de densidad, señal o realce. Si el radiólogo dicta "lesión adrenal de 18 mm con densidad de 20 UH", la conclusión dice exactamente eso, NO "adenoma", NO "compatible con adenoma". El radiólogo informa datos; el clínico interpreta.
 - Asumir naturaleza de lesiones: "lesión maligna", "tumor", "metástasis", "recidiva", "diseminación", "adenoma", "lipoma", "quiste complicado". En su lugar: "lesión", "nódulo", "masa", "imagen nodular", "captación patológica".
 - Inferir progresión o respuesta terapéutica: "progresión tumoral", "respuesta parcial", "enfermedad estable". En su lugar: "aumento de tamaño de la lesión", "disminución de tamaño", "sin cambios significativos respecto al previo".
-- Recomendar acciones clínicas ("se recomienda biopsia", "completar con RM").
+- Recomendar acciones clínicas, seguimiento o correlación de NINGÚN tipo: "se recomienda biopsia", "completar con RM", "correlacionar clínicamente", "se sugiere seguimiento", "control en X meses", "valorar", "considerar". La conclusión NUNCA debe incluir recomendaciones — solo describe hallazgos.
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Inferencias causales ("secundario a...", "probablemente relacionado con...", "en contexto de...").
 - Pronósticos ("hallazgo preocupante", "buen pronóstico", "evolución desfavorable").
@@ -1449,7 +1449,9 @@ Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos e
 FORMATO:
 - Puntos numerados. Texto plano. Máximo ${maxPoints}.
 - NO uses asteriscos, almohadillas ni markdown.
-- NO incluyas el encabezado "CONCLUSIÓN".`;
+- NO incluyas el encabezado "CONCLUSIÓN".
+- Cada punto empieza DIRECTAMENTE con la descripción del hallazgo. PROHIBIDO anteponer títulos, categorías o encabezados antes de describir el hallazgo (NO: "Hallazgos pulmonares: ...", NO: "Hígado: ...", NO: "Cardiovascular: ..."). Escribe el hallazgo directamente sin preámbulo.
+- CERO recomendaciones. La conclusión SOLO enumera hallazgos. Nunca incluyas seguimiento, correlación, biopsia ni acciones.`;
   } else {
     const styleBlock = lang === "pt" ? STYLE_BLOCK_PT[style] : STYLE_BLOCK_EN[style];
     const roleIntro = lang === "pt"
@@ -1533,7 +1535,7 @@ FORBIDDEN:
 - NEVER characterize or classify lesions based on density, signal, or enhancement values. If the radiologist dictates "18 mm adrenal lesion with density of 20 HU", the conclusion says exactly that, NOT "adenoma", NOT "consistent with adenoma". The radiologist reports data; the clinician interprets.
 - Assuming lesion nature: "malignant lesion", "tumor", "metastasis", "recurrence", "spread", "adenoma", "lipoma", "complicated cyst". Instead: "lesion", "nodule", "mass", "nodular image", "pathological enhancement".
 - Inferring progression or therapeutic response: "tumor progression", "partial response", "stable disease". Instead: "interval increase in lesion size", "interval decrease in size", "no significant change compared to prior".
-- Recommending clinical actions ("biopsy recommended", "further evaluation with MRI").
+- Recommending clinical actions, follow-up, or correlation of ANY kind: "biopsy recommended", "further evaluation with MRI", "clinical correlation recommended", "follow-up suggested", "control in X months", "consider", "recommend". The conclusion must NEVER include recommendations — it only describes findings.
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Causal inferences ("secondary to...", "likely related to...", "in the context of...").
 - Issuing prognoses ("concerning finding", "good prognosis", "unfavorable evolution").
@@ -1547,7 +1549,9 @@ If no relevant findings: "${hasClinical ? "No significant findings regarding the
 FORMAT:
 - Numbered points. Plain text. Maximum ${maxPoints}.
 - Do NOT use asterisks, hashes or markdown.
-- Do NOT include the heading "CONCLUSION".`;
+- Do NOT include the heading "CONCLUSION".
+- Each point starts DIRECTLY with the finding description. FORBIDDEN to prepend titles, categories, or headings before describing the finding (NOT: "Pulmonary findings: ...", NOT: "Liver: ...", NOT: "Cardiovascular: ..."). Write the finding directly without preamble.
+- ZERO recommendations. The conclusion ONLY lists findings. Never include follow-up, correlation, biopsy, or actions.`;
   }
 
   if (params.preferredConclusionPhrases && params.preferredConclusionPhrases.length > 0) {
