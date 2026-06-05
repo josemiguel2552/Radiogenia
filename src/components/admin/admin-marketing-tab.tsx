@@ -154,6 +154,30 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "pub-cta-square", label: "CTA / Prueba gratis", category: "Publicaciones", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Llamada a la acción", tagline: "cta" },
   { id: "pub-cta-story", label: "CTA / Prueba gratis (story)", category: "Publicaciones", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "IG/TikTok — Llamada a la acción", tagline: "cta" },
   { id: "pub-cta-x", label: "CTA / Prueba gratis (X)", category: "Publicaciones", width: 1600, height: 900, bg: "gradient", logoVariant: "full", description: "X/Twitter — Llamada a la acción", tagline: "cta" },
+  // ═══ Publicaciones — Templates ═══
+  { id: "pub-tpl-overview-sq", label: "Templates — Overview", category: "Pub. Templates", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Resumen plantillas", tagline: "tpl-overview" },
+  { id: "pub-tpl-overview-ln", label: "Templates — Overview (landscape)", category: "Pub. Templates", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "LinkedIn — Resumen plantillas", tagline: "tpl-overview" },
+  { id: "pub-tpl-custom-sq", label: "Templates — Personalización", category: "Pub. Templates", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Plantillas personalizables", tagline: "tpl-custom" },
+  { id: "pub-tpl-custom-ln", label: "Templates — Personalización (landscape)", category: "Pub. Templates", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Plantillas personalizables", tagline: "tpl-custom" },
+  { id: "pub-tpl-regions-sq", label: "Templates — Por región", category: "Pub. Templates", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Plantillas por región anatómica", tagline: "tpl-regions" },
+  { id: "pub-tpl-regions-st", label: "Templates — Por región (story)", category: "Pub. Templates", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "IG/TikTok — Regiones anatómicas", tagline: "tpl-regions" },
+  { id: "pub-tpl-normality-sq", label: "Templates — Frases normalidad", category: "Pub. Templates", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Aprendizaje de frases", tagline: "tpl-normality" },
+  // ═══ Publicaciones — Recomendaciones ═══
+  { id: "pub-rec-overview-sq", label: "Recomendaciones — Overview", category: "Pub. Recomendaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Sistema de recomendaciones", tagline: "rec-overview" },
+  { id: "pub-rec-overview-ln", label: "Recomendaciones — Overview (landscape)", category: "Pub. Recomendaciones", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Sistema de recomendaciones", tagline: "rec-overview" },
+  { id: "pub-rec-evidence-sq", label: "Recomendaciones — Basadas en evidencia", category: "Pub. Recomendaciones", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Guías basadas en evidencia", tagline: "rec-evidence" },
+  { id: "pub-rec-evidence-ln", label: "Recomendaciones — Basadas en evidencia (landscape)", category: "Pub. Recomendaciones", width: 1200, height: 630, bg: "white", logoVariant: "full", description: "LinkedIn — Guías basadas en evidencia", tagline: "rec-evidence" },
+  { id: "pub-rec-hospital-sq", label: "Recomendaciones — Hospital", category: "Pub. Recomendaciones", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Protocolos hospitalarios", tagline: "rec-hospital" },
+  { id: "pub-rec-hospital-st", label: "Recomendaciones — Hospital (story)", category: "Pub. Recomendaciones", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "IG/TikTok — Protocolos hospital", tagline: "rec-hospital" },
+  // ═══ Publicaciones — Calculadoras ═══
+  { id: "pub-calc-overview-sq", label: "Calculadoras — Overview", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Calculadoras integradas", tagline: "calc-overview" },
+  { id: "pub-calc-overview-ln", label: "Calculadoras — Overview (landscape)", category: "Pub. Calculadoras", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "LinkedIn — Calculadoras integradas", tagline: "calc-overview" },
+  { id: "pub-calc-tirads-sq", label: "Calculadoras — TI-RADS", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Calculadora TI-RADS", tagline: "calc-tirads" },
+  { id: "pub-calc-tirads-ln", label: "Calculadoras — TI-RADS (landscape)", category: "Pub. Calculadoras", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Calculadora TI-RADS", tagline: "calc-tirads" },
+  { id: "pub-calc-pirads-sq", label: "Calculadoras — PI-RADS", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Calculadora PI-RADS", tagline: "calc-pirads" },
+  { id: "pub-calc-bosniak-sq", label: "Calculadoras — Bosniak", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Clasificación Bosniak", tagline: "calc-bosniak" },
+  { id: "pub-calc-copy-sq", label: "Calculadoras — Copy al informe", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Copiar resultado al informe", tagline: "calc-copy" },
+  { id: "pub-calc-copy-st", label: "Calculadoras — Copy al informe (story)", category: "Pub. Calculadoras", width: 1080, height: 1920, bg: "dark", logoVariant: "full", description: "IG/TikTok — Copiar resultado", tagline: "calc-copy" },
 ];
 
 function buildLogoSvg(
@@ -344,6 +368,163 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${w / 2}" y="${ctaY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}" text-anchor="middle">Sin tarjeta de crédito. Sin instalación.</text>
       <rect x="${w / 2 - fs(140)}" y="${ctaY + fs(210)}" width="${fs(280)}" height="${fs(56)}" rx="${fs(28)}" fill="${brandTeal}"/>
       <text x="${w / 2}" y="${ctaY + fs(245)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(22)}" fill="white" text-anchor="middle">Crear cuenta gratis</text>`;
+  } else if (contentType === "tpl-overview") {
+    const tY = h > w ? fs(200) : fs(120);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(180)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(95)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">TEMPLATES</text>
+      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">+190 plantillas</text>
+      <text x="${fs(60)}" y="${tY + fs(56)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${accentColor}">listas para dictar</text>
+      <text x="${fs(60)}" y="${tY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">TC, RM, Ecografía, Rx, Mamografía, Intervencionismo</text>
+      <text x="${fs(60)}" y="${tY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y RECIST 1.1. Cada plantilla con secciones anatómicas</text>
+      <text x="${fs(60)}" y="${tY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">predefinidas, campos de hallazgos y conclusión automática.</text>
+      <text x="${fs(60)}" y="${tY + fs(270)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Tórax · Abdomen · Cabeza y cuello · Columna</text>
+      <text x="${fs(60)}" y="${tY + fs(304)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Extremidades superiores e inferiores</text>`;
+  } else if (contentType === "tpl-custom") {
+    const tY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(260)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">PERSONALIZACIÓN</text>
+      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Tus plantillas,</text>
+      <text x="${fs(60)}" y="${tY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">tu estilo</text>
+      <text x="${fs(60)}" y="${tY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Crea plantillas personalizadas con tus propias</text>
+      <text x="${fs(60)}" y="${tY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">secciones anatómicas. Añade, elimina o renombra</text>
+      <text x="${fs(60)}" y="${tY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">campos según tu flujo de trabajo.</text>
+      <text x="${fs(60)}" y="${tY + fs(268)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Tu hospital también puede compartir plantillas</text>
+      <text x="${fs(60)}" y="${tY + fs(306)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">estandarizadas para todo el departamento.</text>`;
+  } else if (contentType === "tpl-regions") {
+    const tY = h > w ? fs(200) : fs(110);
+    const regions = [
+      { icon: "🧠", name: "Cabeza y cuello", count: "32" },
+      { icon: "🫁", name: "Tórax", count: "45" },
+      { icon: "🫄", name: "Abdomen y pelvis", count: "52" },
+      { icon: "🦴", name: "Columna", count: "18" },
+      { icon: "💪", name: "Extremidades sup.", count: "22" },
+      { icon: "🦵", name: "Extremidades inf.", count: "21" },
+    ];
+    const rowH = h > w ? fs(75) : fs(58);
+    content = `
+      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${mainColor}">Una plantilla para</text>
+      <text x="${fs(60)}" y="${tY + fs(50)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${accentColor}">cada estudio</text>
+      ${regions.map((r, i) => `
+        <rect x="${fs(60)}" y="${tY + fs(100) + i * rowH}" width="${w - fs(120)}" height="${rowH - fs(8)}" rx="${fs(10)}" fill="${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'}"/>
+        <text x="${fs(80)}" y="${tY + fs(100) + i * rowH + rowH * 0.6}" font-family="system-ui,sans-serif" font-size="${fs(20)}">${r.icon}</text>
+        <text x="${fs(120)}" y="${tY + fs(100) + i * rowH + rowH * 0.6}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(20)}" fill="${mainColor}">${escSvg(r.name)}</text>
+        <text x="${w - fs(100)}" y="${tY + fs(100) + i * rowH + rowH * 0.6}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${accentColor}" text-anchor="end">${r.count}</text>
+      `).join("")}`;
+  } else if (contentType === "tpl-normality") {
+    const tY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(280)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">ESTILO INTELIGENTE</text>
+      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">La IA aprende</text>
+      <text x="${fs(60)}" y="${tY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">cómo redactas</text>
+      <text x="${fs(60)}" y="${tY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada vez que corriges un informe, el sistema</text>
+      <text x="${fs(60)}" y="${tY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">memoriza tus frases de normalidad preferidas.</text>
+      <text x="${fs(60)}" y="${tY + fs(232)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">En el siguiente informe, las aplica automáticamente.</text>
+      <text x="${fs(60)}" y="${tY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Tu estilo, tu vocabulario, tu nivel de detalle.</text>
+      <text x="${fs(60)}" y="${tY + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${accentColor}">→ Cuanto más usas Radiogen.ai, mejor te conoce.</text>`;
+  } else if (contentType === "rec-overview") {
+    const rY = h > w ? fs(200) : fs(120);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(280)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(80)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">RECOMENDACIONES</text>
+      <text x="${fs(60)}" y="${rY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Nunca olvides una</text>
+      <text x="${fs(60)}" y="${rY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">recomendación</text>
+      <text x="${fs(60)}" y="${rY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Biblioteca de recomendaciones basadas en evidencia</text>
+      <text x="${fs(60)}" y="${rY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">para cada hallazgo incidental. Filtradas por</text>
+      <text x="${fs(60)}" y="${rY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">modalidad, región anatómica y categoría.</text>
+      <text x="${fs(60)}" y="${rY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Nódulo pulmonar → seguimiento Fleischner.</text>
+      <text x="${fs(60)}" y="${rY + fs(308)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Lesión adrenal → protocolo washout.</text>
+      <text x="${fs(60)}" y="${rY + fs(346)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Quiste ovárico → guía ACR.</text>`;
+  } else if (contentType === "rec-evidence") {
+    const rY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(340)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">BASADAS EN EVIDENCIA</text>
+      <text x="${fs(60)}" y="${rY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Guías ACR, Fleischner</text>
+      <text x="${fs(60)}" y="${rY + fs(52)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">y sociedades de referencia</text>
+      <text x="${fs(60)}" y="${rY + fs(128)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada recomendación incluye la fuente y el nivel</text>
+      <text x="${fs(60)}" y="${rY + fs(166)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">de evidencia. Actualizadas según las últimas guías.</text>
+      <text x="${fs(60)}" y="${rY + fs(230)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cubre hallazgos incidentales en TC, RM y ecografía:</text>
+      <text x="${fs(60)}" y="${rY + fs(268)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">• Nódulos pulmonares, tiroideos, adrenales y hepáticos</text>
+      <text x="${fs(60)}" y="${rY + fs(302)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">• Quistes renales, ováricos y pancreáticos</text>
+      <text x="${fs(60)}" y="${rY + fs(336)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">• Dilataciones vasculares y aneurismas</text>`;
+  } else if (contentType === "rec-hospital") {
+    const rY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(320)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">HOSPITAL / EQUIPO</text>
+      <text x="${fs(60)}" y="${rY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Protocolos de tu</text>
+      <text x="${fs(60)}" y="${rY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">departamento</text>
+      <text x="${fs(60)}" y="${rY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">El jefe de sección puede crear recomendaciones</text>
+      <text x="${fs(60)}" y="${rY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">específicas del hospital que aparecen automáticamente</text>
+      <text x="${fs(60)}" y="${rY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">a todos los radiólogos de la sección.</text>
+      <text x="${fs(60)}" y="${rY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Estandariza criterios de seguimiento y asegura</text>
+      <text x="${fs(60)}" y="${rY + fs(308)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">que ningún hallazgo incidental quede sin manejo.</text>`;
+  } else if (contentType === "calc-overview") {
+    const cY = h > w ? fs(200) : fs(120);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(260)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">CALCULADORAS</text>
+      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">7 calculadoras</text>
+      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">integradas en tu informe</text>
+      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Clasifica hallazgos sin salir de la aplicación.</text>
+      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Calcula y copia el resultado al informe con un clic.</text>
+      <text x="${fs(60)}" y="${cY + fs(232)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">TI-RADS · PI-RADS · Bosniak · ASPECTS</text>
+      <text x="${fs(60)}" y="${cY + fs(268)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Volumen prostático · Densidad PSA · Adrenal</text>
+      <text x="${fs(60)}" y="${cY + fs(330)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada calculadora genera texto listo para pegar</text>
+      <text x="${fs(60)}" y="${cY + fs(368)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">en los hallazgos o la conclusión del informe.</text>`;
+  } else if (contentType === "calc-tirads") {
+    const cY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(160)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">TI-RADS</text>
+      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Clasificación tiroidea</text>
+      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">ACR TI-RADS</text>
+      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Selecciona composición, ecogenicidad, forma,</text>
+      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">márgenes y focos ecogénicos. El sistema calcula</text>
+      <text x="${fs(60)}" y="${cY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">los puntos y determina la categoría TI-RADS (1-5).</text>
+      <text x="${fs(60)}" y="${cY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Genera texto descriptivo listo para copiar:</text>
+      <rect x="${fs(60)}" y="${cY + fs(295)}" width="${w - fs(120)}" height="${fs(80)}" rx="${fs(10)}" fill="${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'}"/>
+      <text x="${fs(80)}" y="${cY + fs(330)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(18)}" fill="${subColor}">"Nódulo tiroideo ACR TI-RADS 4 (6 pts).</text>
+      <text x="${fs(80)}" y="${cY + fs(358)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(18)}" fill="${subColor}">Se recomienda PAAF si ≥ 15 mm."</text>`;
+  } else if (contentType === "calc-pirads") {
+    const cY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(160)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">PI-RADS</text>
+      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Evaluación prostática</text>
+      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">PI-RADS v2.1</text>
+      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Clasifica lesiones prostáticas según zona (periférica</text>
+      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">o transicional), señal en T2, restricción en difusión</text>
+      <text x="${fs(60)}" y="${cY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y realce dinámico. Incluye volumen prostático</text>
+      <text x="${fs(60)}" y="${cY + fs(244)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y densidad de PSA en la misma herramienta.</text>
+      <text x="${fs(60)}" y="${cY + fs(310)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${accentColor}">→ PI-RADS 1 a 5 con texto copiable al informe.</text>`;
+  } else if (contentType === "calc-bosniak") {
+    const cY = h > w ? fs(220) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(180)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
+      <text x="${fs(80)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">BOSNIAK</text>
+      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Clasificación de</text>
+      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">quistes renales</text>
+      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Clasifica lesiones quísticas renales según Bosniak</text>
+      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">2019 (I, II, IIF, III, IV). Evalúa tabiques, paredes,</text>
+      <text x="${fs(60)}" y="${cY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">realce y componente sólido. El resultado se copia</text>
+      <text x="${fs(60)}" y="${cY + fs(244)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">directamente a tus hallazgos como texto descriptivo.</text>
+      <text x="${fs(60)}" y="${cY + fs(310)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Sin tablas, sin apps externas. Todo integrado.</text>`;
+  } else if (contentType === "calc-copy") {
+    const cY = h > w ? fs(250) : fs(140);
+    content = `
+      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(280)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">UN CLIC</text>
+      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Calcula.</text>
+      <text x="${fs(60)}" y="${cY + fs(58)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Copia.</text>
+      <text x="${fs(60)}" y="${cY + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${accentColor}">Pega en tu informe.</text>
+      <text x="${fs(60)}" y="${cY + fs(195)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada calculadora genera un párrafo listo para pegar</text>
+      <text x="${fs(60)}" y="${cY + fs(233)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">en tus hallazgos. Sin escribir ni reformatear.</text>
+      <text x="${fs(60)}" y="${cY + fs(295)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Ejemplo: "Volumen prostático de 45 cc (4.2 × 3.8</text>
+      <text x="${fs(60)}" y="${cY + fs(333)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">× 3.5 cm). Densidad de PSA: 0.18 ng/ml/cc."</text>`;
   } else {
     content = `<text x="${w/2}" y="${h/2}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(32)}" fill="${mainColor}" text-anchor="middle">Radiogen.ai</text>`;
   }
@@ -356,10 +537,10 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   </svg>`;
 }
 
-const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta"]);
+const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy"]);
 
 function buildAssetSvg(asset: BrandAsset): string {
-  if (asset.category === "Publicaciones" && asset.tagline && PUB_TYPES.has(asset.tagline)) {
+  if (asset.tagline && PUB_TYPES.has(asset.tagline)) {
     return buildPublicationSvg(asset.width, asset.height, asset.bg, asset.tagline);
   }
   return buildLogoSvg(asset.width, asset.height, asset.logoVariant, asset.bg, asset.tagline && !PUB_TYPES.has(asset.tagline) ? { tagline: asset.tagline } : undefined);
@@ -390,7 +571,7 @@ function getPreviewDataUrl(asset: BrandAsset): string {
   const previewW = 200;
   const previewH = Math.round((asset.height / asset.width) * previewW);
   let svg: string;
-  if (asset.category === "Publicaciones" && asset.tagline && PUB_TYPES.has(asset.tagline)) {
+  if (asset.tagline && PUB_TYPES.has(asset.tagline)) {
     svg = buildPublicationSvg(previewW, previewH, asset.bg, asset.tagline);
   } else {
     svg = buildLogoSvg(previewW, previewH, asset.logoVariant, asset.bg, asset.tagline && !PUB_TYPES.has(asset.tagline) ? { tagline: asset.tagline } : undefined);
