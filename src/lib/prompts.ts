@@ -1317,12 +1317,11 @@ export function buildConclusionPrompt(params: {
 - Usa paréntesis para medidas y datos: "Aumento de la lesión hepática del segmento VII (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
 - Tono: directo, escueto, descriptivo.`,
     grouped: `ESTILO — INTEGRADO:
-- Cada punto es UNA o DOS frases completas y bien redactadas, NUNCA más.
-- Incluye datos descriptivos integrados en la frase: tamaño, localización, densidad/señal, evolución.
+- Cada punto es un párrafo breve con frases completas y bien redactadas.
+- Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
 - SOLO conecta hallazgos dentro de un punto si son parte del MISMO PROCESO PATOLÓGICO (ej: lesión primaria + sus adenopatías, derrame + atelectasia compresiva).
 - Si dos hallazgos no comparten fisiopatología, van en PUNTOS SEPARADOS aunque ambos sean importantes.
 - NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
-- NUNCA desgloses datos en sub-listas ni uses ":" para enumerar dentro de un punto.
 - Tono: integrador pero riguroso, sintético, descriptivo.`,
   };
 
@@ -1333,12 +1332,11 @@ export function buildConclusionPrompt(params: {
 - Use parentheses for measurements and data: "Interval increase of segment VII hepatic lesion (2→3.5 cm) with new retroperitoneal lymph node (15 mm)."
 - Tone: direct, succinct, descriptive.`,
     grouped: `STYLE — INTEGRATED:
-- Each point is ONE or TWO complete, well-written sentences, NEVER more.
-- Include descriptive data integrated into the sentence: size, location, density/signal, evolution.
+- Each point is a brief paragraph with complete, well-written sentences.
+- Include descriptive data: size, location, density/signal, evolution.
 - ONLY connect findings within a point if they are part of the SAME PATHOLOGICAL PROCESS (e.g., primary lesion + its lymphadenopathy, effusion + compressive atelectasis).
 - If two findings do not share pathophysiology, they go in SEPARATE POINTS even if both are important.
 - Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
-- NEVER break data into sub-lists or use ":" to enumerate within a point.
 - Tone: integrative but rigorous, synthetic, descriptive.`,
   };
 
@@ -1349,12 +1347,11 @@ export function buildConclusionPrompt(params: {
 - Use parênteses para medidas e dados: "Aumento da lesão hepática do segmento VII (2→3,5 cm) com nova linfonodomegalia retroperitoneal (15 mm)."
 - Tom: direto, sucinto, descritivo.`,
     grouped: `ESTILO — INTEGRADO:
-- Cada ponto é UMA ou DUAS frases completas e bem redigidas, NUNCA mais.
-- Inclua dados descritivos integrados na frase: tamanho, localização, densidade/sinal, evolução.
+- Cada ponto é um parágrafo breve com frases completas e bem redigidas.
+- Inclua dados descritivos: tamanho, localização, densidade/sinal, evolução.
 - SOMENTE conecte achados dentro de um ponto se fizerem parte do MESMO PROCESSO PATOLÓGICO (ex: lesão primária + suas linfonodomegalias, derrame + atelectasia compressiva).
 - Se dois achados não compartilham fisiopatologia, vão em PONTOS SEPARADOS mesmo que ambos sejam importantes.
 - NÃO force conectores entre achados independentes. Cada ponto é uma unidade clínica coerente.
-- NUNCA desmembre dados em sub-listas nem use ":" para enumerar dentro de um ponto.
 - Tom: integrador mas rigoroso, sintético, descritivo.`,
   };
 
@@ -1367,13 +1364,6 @@ IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
 Si los hallazgos están en otro idioma, traduce al ${l}.
 
 ${STYLE_BLOCK_ES[style]}
-
-REGLA ABSOLUTA — DATOS CLÍNICOS ≠ HALLAZGOS:
-Los "Datos clínicos / pregunta clínica" son CONTEXTO proporcionado por el médico solicitante. Sirven ÚNICAMENTE para entender qué buscar y priorizar en los hallazgos. NUNCA deben aparecer en la conclusión como si fueran hallazgos descritos por el radiólogo.
-- Si los datos clínicos dicen "paciente con antecedente de cáncer de mama", NO puedes escribir en la conclusión "antecedente de neoplasia mamaria" ni "en paciente oncológica" — eso es información clínica, NO un hallazgo radiológico.
-- Si los datos clínicos dicen "dolor abdominal y fiebre", NO puedes mencionar dolor ni fiebre en la conclusión — no son hallazgos de imagen.
-- La conclusión SOLO puede contener información que el radiólogo DESCRIBIÓ en los hallazgos. Ni una palabra más.
-- NUNCA uses los datos clínicos para emitir diagnósticos o correlaciones que el radiólogo no haya hecho explícitamente en los hallazgos. Si los hallazgos dicen "consolidación en LID" y los datos clínicos dicen "fiebre", NO puedes concluir "neumonía" — solo puedes decir "consolidación en LID".
 
 REGLAS DE CONTENIDO:
 
@@ -1449,8 +1439,7 @@ PROHIBIDO:
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Inferencias causales ("secundario a...", "probablemente relacionado con...", "en contexto de...").
 - Pronósticos ("hallazgo preocupante", "buen pronóstico", "evolución desfavorable").
-- Añadir información no presente en los hallazgos. Los datos clínicos NO son hallazgos — no los menciones, parafrasees ni incorpores a la conclusión de ninguna forma.
-- Emitir diagnósticos que el radiólogo NO escribió en los hallazgos, aunque los datos clínicos lo sugieran. Si los hallazgos no dicen "fractura", no puedes concluir "fractura" aunque los datos clínicos digan "traumatismo".
+- Añadir información no presente en los hallazgos.
 - Muletillas ("se observa", "se identifica", "se evidencia", "cabe destacar").
 
 EXCEPCIÓN: Usa terminología diagnóstica SOLO si está explícitamente en los hallazgos dictados por el radiólogo (ej: si los hallazgos dicen "fractura", puedes decir "fractura"; si dicen "nódulo", no digas "tumor").
@@ -1459,9 +1448,6 @@ Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos e
 
 FORMATO:
 - Puntos numerados. Texto plano. Máximo ${maxPoints}.
-- Cada punto es UNA FRASE o como máximo DOS frases corridas. NUNCA tres o más.
-- PROHIBIDO crear sub-puntos, sub-listas o enumeraciones dentro de un punto. Nada de ":" seguido de lista, ni "a)", "b)", ni viñetas internas, ni punto y coma para separar ítems en serie.
-- Si un hallazgo tiene varios datos, intégralos en una sola frase fluida usando paréntesis y comas, NO los desgloses en sub-ítems.
 - NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".`;
   } else {
@@ -1476,13 +1462,6 @@ OUTPUT LANGUAGE: ${l}. The ENTIRE conclusion must be written in ${l}.
 If findings are in another language, translate to ${l}.
 
 ${styleBlock}
-
-ABSOLUTE RULE — CLINICAL DATA ≠ FINDINGS:
-"Clinical data / clinical question" is CONTEXT provided by the referring physician. It serves ONLY to understand what to look for and prioritize in the findings. It must NEVER appear in the conclusion as if it were a finding described by the radiologist.
-- If clinical data says "patient with history of breast cancer", you CANNOT write "history of breast neoplasm" or "in oncologic patient" in the conclusion — that is clinical information, NOT a radiological finding.
-- If clinical data says "abdominal pain and fever", you CANNOT mention pain or fever in the conclusion — they are not imaging findings.
-- The conclusion may ONLY contain information that the radiologist DESCRIBED in the findings. Not a single word more.
-- NEVER use clinical data to issue diagnoses or correlations that the radiologist did not explicitly make in the findings. If findings say "RLL consolidation" and clinical data says "fever", you CANNOT conclude "pneumonia" — you can only say "RLL consolidation".
 
 CONTENT RULES:
 
@@ -1558,8 +1537,7 @@ FORBIDDEN:
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Causal inferences ("secondary to...", "likely related to...", "in the context of...").
 - Issuing prognoses ("concerning finding", "good prognosis", "unfavorable evolution").
-- Adding information not present in the findings. Clinical data is NOT findings — do not mention, paraphrase, or incorporate it into the conclusion in any form.
-- Issuing diagnoses that the radiologist did NOT write in the findings, even if clinical data suggests them. If findings do not say "fracture", you cannot conclude "fracture" even if clinical data says "trauma".
+- Adding information not present in the findings.
 - Filler phrases ("noted", "identified", "visualized", "presence of").
 
 EXCEPTION: Use diagnostic terminology ONLY if it is explicitly stated in the radiologist's dictated findings (e.g., if findings say "fracture", you may say "fracture"; if findings say "nodule", do not say "tumor").
@@ -1568,9 +1546,6 @@ If no relevant findings: "${hasClinical ? "No significant findings regarding the
 
 FORMAT:
 - Numbered points. Plain text. Maximum ${maxPoints}.
-- Each point is ONE sentence or at most TWO flowing sentences. NEVER three or more.
-- FORBIDDEN to create sub-points, sub-lists or enumerations inside a point. No ":" followed by a list, no "a)", "b)", no internal bullets, no semicolons separating items in series.
-- If a finding has multiple data, integrate them into a single flowing sentence using parentheses and commas, do NOT break them into sub-items.
 - Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".`;
   }
