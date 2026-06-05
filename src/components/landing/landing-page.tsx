@@ -545,7 +545,7 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
     <section
       ref={containerRef}
       className="relative"
-      style={{ height: reduce ? "auto" : "350vh" }}
+      style={{ height: reduce ? "auto" : "220vh" }}
     >
       <div
         className={`${
@@ -959,7 +959,7 @@ function StatsBar({ lang }: { lang: PublicLang }) {
       ];
 
   return (
-    <section className="relative py-20 px-6">
+    <section className="relative py-12 px-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-0 md:divide-x md:divide-white/10">
           {stats.map((s, i) => (
