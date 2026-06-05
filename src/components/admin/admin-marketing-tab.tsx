@@ -178,6 +178,11 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "pub-calc-bosniak-sq", label: "Calculadoras — Bosniak", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Clasificación Bosniak", tagline: "calc-bosniak" },
   { id: "pub-calc-copy-sq", label: "Calculadoras — Copy al informe", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Copiar resultado al informe", tagline: "calc-copy" },
   { id: "pub-calc-copy-st", label: "Calculadoras — Copy al informe (story)", category: "Pub. Calculadoras", width: 1080, height: 1920, bg: "dark", logoVariant: "full", description: "IG/TikTok — Copiar resultado", tagline: "calc-copy" },
+  // ═══ Grids completos (purple theme) ═══
+  { id: "pub-calc-all-sq", label: "Todas las calculadoras", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Grid completo calculadoras", tagline: "calc-all" },
+  { id: "pub-calc-all-ln", label: "Todas las calculadoras (landscape)", category: "Pub. Calculadoras", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo calculadoras", tagline: "calc-all" },
+  { id: "pub-guides-all-sq", label: "Todas las guías clínicas", category: "Pub. Recomendaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Grid completo guías", tagline: "guides-all" },
+  { id: "pub-guides-all-ln", label: "Todas las guías clínicas (landscape)", category: "Pub. Recomendaciones", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo guías", tagline: "guides-all" },
 ];
 
 function buildLogoSvg(
@@ -574,6 +579,116 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <rect x="${px}" y="${y0 + fs(258)}" width="${w - px * 2}" height="${fs(50)}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.1)" stroke-width="1"/>
       <text x="${px + fs(16)}" y="${y0 + fs(290)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(16)}" fill="${subColor}">"Vol. prostático: 45 cc (4.2×3.8×3.5 cm). Densidad PSA: 0.18 ng/ml/cc."</text>
       <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Texto profesional, listo en segundos.</text>`;
+  } else if (contentType === "calc-all") {
+    const calcs = [
+      { icon: "🦋", name: "ACR TI-RADS", desc: "Nódulos tiroideos" },
+      { icon: "♂", name: "PI-RADS v2.1", desc: "Lesiones prostáticas" },
+      { icon: "💧", name: "Bosniak 2019", desc: "Quistes renales" },
+      { icon: "🧠", name: "ASPECTS", desc: "Ictus isquémico" },
+      { icon: "⚗️", name: "Adrenal Washout", desc: "Adenoma vs metástasis" },
+      { icon: "📐", name: "Vol. prostático", desc: "Volumen + densidad PSA" },
+      { icon: "🫁", name: "Lung TNM 9th", desc: "Estadificación pulmonar" },
+      { icon: "🗣️", name: "Laryngeal TNM", desc: "Estadificación laríngea" },
+      { icon: "⏱️", name: "Doubling Time", desc: "Tiempo duplicación nódulo" },
+      { icon: "❤️", name: "T1/T2 Mapping", desc: "Valores cardíacos RM" },
+      { icon: "💪", name: "Shoulder Track", desc: "Inestabilidad glenohumeral" },
+      { icon: "🔬", name: "Renal Multiphase", desc: "Lesión renal TC multifásica" },
+      { icon: "📊", name: "Resistive Index", desc: "Ecografía renal Doppler" },
+      { icon: "🌡️", name: "Thyroid Volume", desc: "Volumen tiroideo ecográfico" },
+      { icon: "🧪", name: "CT Perfusion", desc: "Análisis perfusión cerebral" },
+    ];
+    const cols = 3;
+    const rows = Math.ceil(calcs.length / cols);
+    const gapX = fs(10);
+    const gapY = fs(10);
+    const gridW = w - px * 2;
+    const cellW = (gridW - (cols - 1) * gapX) / cols;
+    const titleH = fs(130);
+    const footerH = fs(60);
+    const gridH = safeH - titleH - footerH;
+    const cellH = (gridH - (rows - 1) * gapY) / rows;
+    const y0 = topSafe;
+    const vt = "rgba(167,139,250,";
+    content = `
+      <defs><linearGradient id="p-bg" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#581c87"/></linearGradient></defs>
+      <rect width="${w}" height="${h}" fill="url(#p-bg)"/>
+      <circle cx="${w * 0.9}" cy="${h * 0.06}" r="${fs(200)}" fill="${vt}0.06)"/>
+      <circle cx="${w * 0.04}" cy="${h * 0.95}" r="${fs(150)}" fill="${vt}0.05)"/>
+      <circle cx="${w * 0.5}" cy="${h * 0.5}" r="${fs(380)}" fill="${vt}0.015)"/>
+      <rect x="${w - fs(5)}" y="${h * 0.3}" width="${fs(5)}" height="${h * 0.1}" rx="${fs(2.5)}" fill="${vt}0.12)"/>
+      <rect x="0" y="${h * 0.55}" width="${fs(5)}" height="${h * 0.08}" rx="${fs(2.5)}" fill="${vt}0.08)"/>
+      <rect x="${px}" y="${y0}" width="${fs(240)}" height="${fs(32)}" rx="${fs(16)}" fill="${vt}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#c4b5fd">🔢 CALCULADORAS</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="#ffffff">Todas las calculadoras</text>
+      <text x="${px}" y="${y0 + fs(118)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="#c4b5fd">en tu informe</text>
+      ${calcs.map((c, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const cx = px + col * (cellW + gapX);
+        const cy2 = y0 + titleH + row * (cellH + gapY);
+        return `
+          <rect x="${cx}" y="${cy2}" width="${cellW}" height="${cellH}" rx="${fs(10)}" fill="${vt}0.07)" stroke="${vt}0.16)" stroke-width="1"/>
+          <text x="${cx + fs(12)}" y="${cy2 + cellH * 0.38}" font-family="system-ui,sans-serif" font-size="${fs(18)}">${c.icon}</text>
+          <text x="${cx + fs(36)}" y="${cy2 + cellH * 0.38}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(15)}" fill="#ffffff">${escSvg(c.name)}</text>
+          <text x="${cx + fs(12)}" y="${cy2 + cellH * 0.72}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="rgba(255,255,255,0.5)">${escSvg(c.desc)}</text>
+        `;
+      }).join("")}
+      <text x="${px}" y="${botSafe - fs(8)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="rgba(255,255,255,0.45)">+ 48 fichas de referencia: Fleischner, LI-RADS, O-RADS, Lung-RADS, BI-RADS y más</text>
+      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+  } else if (contentType === "guides-all") {
+    const guides = [
+      { src: "Fleischner 2017", topic: "Nódulos pulmonares solitarios" },
+      { src: "BTS 2015", topic: "Nódulos pulmonares — volumetría" },
+      { src: "ACR TI-RADS 2017", topic: "Nódulos tiroideos incidentales" },
+      { src: "ACR Incidental 2017", topic: "Hallazgos hepáticos y adrenales" },
+      { src: "LI-RADS v2018", topic: "Observaciones hepáticas en riesgo" },
+      { src: "Bosniak 2019", topic: "Quistes renales complejos" },
+      { src: "ACR/AGA 2015", topic: "Quistes pancreáticos incidentales" },
+      { src: "ACR/SRU 2019", topic: "Hallazgos ováricos incidentales" },
+      { src: "ESGAR/EAES 2017", topic: "Pólipos vesiculares" },
+      { src: "EANO 2016", topic: "Meningiomas incidentales" },
+      { src: "AHA/ASA 2015", topic: "Aneurismas cerebrales" },
+      { src: "SVS 2018", topic: "Aneurismas aórticos" },
+      { src: "ACR Appropriateness", topic: "Lesiones óseas y fracturas" },
+      { src: "ACR Adrenal 2017", topic: "Nódulos adrenales incidentales" },
+    ];
+    const cols = 2;
+    const rows = Math.ceil(guides.length / cols);
+    const gapX = fs(10);
+    const gapY = fs(8);
+    const gridW = w - px * 2;
+    const cellW = (gridW - (cols - 1) * gapX) / cols;
+    const titleH = fs(130);
+    const footerH = fs(40);
+    const gridH = safeH - titleH - footerH;
+    const cellH = (gridH - (rows - 1) * gapY) / rows;
+    const y0 = topSafe;
+    const vt = "rgba(167,139,250,";
+    content = `
+      <defs><linearGradient id="p-bg2" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="45%" stop-color="#3b0764"/><stop offset="100%" stop-color="#701a75"/></linearGradient></defs>
+      <rect width="${w}" height="${h}" fill="url(#p-bg2)"/>
+      <circle cx="${w * 0.88}" cy="${h * 0.07}" r="${fs(210)}" fill="rgba(232,121,249,0.05)"/>
+      <circle cx="${w * 0.06}" cy="${h * 0.94}" r="${fs(140)}" fill="${vt}0.05)"/>
+      <circle cx="${w * 0.45}" cy="${h * 0.48}" r="${fs(360)}" fill="rgba(232,121,249,0.012)"/>
+      <rect x="${w - fs(5)}" y="${h * 0.22}" width="${fs(5)}" height="${h * 0.12}" rx="${fs(2.5)}" fill="rgba(232,121,249,0.12)"/>
+      <rect x="0" y="${h * 0.62}" width="${fs(5)}" height="${h * 0.09}" rx="${fs(2.5)}" fill="${vt}0.1)"/>
+      <rect x="${px}" y="${y0}" width="${fs(310)}" height="${fs(32)}" rx="${fs(16)}" fill="rgba(232,121,249,0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#f0abfc">📚 GUÍAS CLÍNICAS</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="#ffffff">14 guías basadas</text>
+      <text x="${px}" y="${y0 + fs(118)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="#f0abfc">en evidencia integradas</text>
+      ${guides.map((g, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const gx = px + col * (cellW + gapX);
+        const gy = y0 + titleH + row * (cellH + gapY);
+        return `
+          <rect x="${gx}" y="${gy}" width="${cellW}" height="${cellH}" rx="${fs(10)}" fill="rgba(232,121,249,0.06)" stroke="rgba(232,121,249,0.14)" stroke-width="1"/>
+          <text x="${gx + fs(12)}" y="${gy + cellH * 0.42}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(15)}" fill="#ffffff">${escSvg(g.src)}</text>
+          <text x="${gx + fs(12)}" y="${gy + cellH * 0.76}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="rgba(255,255,255,0.5)">${escSvg(g.topic)}</text>
+        `;
+      }).join("")}
+      <text x="${px}" y="${botSafe - fs(4)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(17)}" fill="rgba(255,255,255,0.4)">Cada recomendación incluye fuente, nivel de evidencia y texto copiable</text>
+      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#9333ea"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#f0abfc">.ai</tspan></text>`;
   } else {
     content = `<text x="${w/2}" y="${h/2}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(32)}" fill="${mainColor}" text-anchor="middle">Radiogen.ai</text>`;
   }
@@ -586,7 +701,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   </svg>`;
 }
 
-const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy"]);
+const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all"]);
 
 function buildAssetSvg(asset: BrandAsset): string {
   if (asset.tagline && PUB_TYPES.has(asset.tagline)) {
