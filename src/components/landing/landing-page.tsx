@@ -505,25 +505,25 @@ const DEMO_TEXTS: Record<PublicLang, string[]> = {
 const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
   es: [
     { title: "Dicta tu informe", desc: "Habla naturalmente y observa cómo tu voz se transcribe en tiempo real" },
-    { title: "Estructura automática", desc: "El texto se organiza en secciones: técnica, hallazgos y conclusión" },
-    { title: "Consulta tus guías", desc: "Accede a las guías clínicas que has subido, al lado de tu informe" },
-    { title: "Informe listo", desc: "Revisa, ajusta y exporta en el formato de tu hospital" },
+    { title: "La IA procesa", desc: "El dictado se envía a la inteligencia artificial que analiza y estructura el contenido" },
+    { title: "Informe generado", desc: "El informe final aparece con secciones organizadas y tus guías clínicas accesibles" },
+    { title: "Listo para exportar", desc: "Revisa, ajusta y exporta en el formato de tu hospital" },
   ],
   en: [
     { title: "Dictate your report", desc: "Speak naturally and watch your voice transcribed in real time" },
-    { title: "Auto-structured", desc: "Text is organized into sections: technique, findings, and conclusion" },
-    { title: "Check your guides", desc: "Access the clinical guides you uploaded, right next to your report" },
-    { title: "Report ready", desc: "Review, adjust, and export in your hospital's format" },
+    { title: "AI processes", desc: "The dictation is sent to AI which analyzes and structures the content" },
+    { title: "Report generated", desc: "The final report appears with organized sections and your clinical guides accessible" },
+    { title: "Ready to export", desc: "Review, adjust, and export in your hospital's format" },
   ],
   pt: [
     { title: "Dite seu laudo", desc: "Fale naturalmente e veja sua voz transcrita em tempo real" },
-    { title: "Estrutura automática", desc: "O texto se organiza em seções: técnica, achados e conclusão" },
-    { title: "Consulte seus guias", desc: "Acesse os guias clínicos que você enviou, ao lado do seu laudo" },
-    { title: "Laudo pronto", desc: "Revise, ajuste e exporte no formato do seu hospital" },
+    { title: "A IA processa", desc: "O ditado é enviado à inteligência artificial que analisa e estrutura o conteúdo" },
+    { title: "Laudo gerado", desc: "O laudo final aparece com seções organizadas e seus guias clínicos acessíveis" },
+    { title: "Pronto para exportar", desc: "Revise, ajuste e exporte no formato do seu hospital" },
   ],
 };
 
-const DEMO_ICONS = [Mic, FileText, BookOpen, Download];
+const DEMO_ICONS = [Mic, Brain, FileText, Download];
 
 function ScrollDemo({ lang }: { lang: PublicLang }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -634,9 +634,9 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
                 {/* App mockup body */}
                 <div className="relative min-h-[340px] md:min-h-[380px]">
                   <DemoStep0 active={activeStep === 0} progress={stepProgress} text={dictText} />
-                  <DemoStep1 active={activeStep === 1} progress={stepProgress} lang={lang} />
-                  <DemoStep2 active={activeStep === 2} progress={stepProgress} lang={lang} />
-                  <DemoStep3 active={activeStep === 3} progress={stepProgress} lang={lang} />
+                  <DemoStepAI active={activeStep === 1} progress={stepProgress} lang={lang} dictText={dictText} />
+                  <DemoStepReport active={activeStep === 2} progress={stepProgress} lang={lang} />
+                  <DemoStepDone active={activeStep === 3} progress={stepProgress} lang={lang} />
                 </div>
               </div>
             </div>
@@ -698,114 +698,166 @@ function DemoStep0({ active, progress, text }: { active: boolean; progress: numb
   );
 }
 
-function DemoStep1({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
-  const sections = lang === "es"
-    ? [
-        { label: "TÉCNICA", text: "Radiografía PA y lateral de tórax" },
-        { label: "HALLAZGOS", text: "Pulmones bien ventilados sin opacidades. Silueta cardiomediastínica normal." },
-        { label: "CONCLUSIÓN", text: "Estudio de tórax sin hallazgos patológicos significativos." },
-      ]
+function DemoStepAI({ active, progress, lang, dictText }: { active: boolean; progress: number; lang: PublicLang; dictText: string }) {
+  const phases = lang === "es"
+    ? ["Analizando contexto clínico...", "Estructurando hallazgos...", "Generando conclusión..."]
     : lang === "pt"
-    ? [
-        { label: "TÉCNICA", text: "Radiografia PA e perfil de tórax" },
-        { label: "ACHADOS", text: "Pulmões bem aerados sem opacidades. Silhueta cardiomediastinal normal." },
-        { label: "CONCLUSÃO", text: "Estudo de tórax sem achados patológicos significativos." },
-      ]
-    : [
-        { label: "TECHNIQUE", text: "PA and lateral chest radiograph" },
-        { label: "FINDINGS", text: "Well-aerated lungs without opacities. Normal cardiomediastinal silhouette." },
-        { label: "CONCLUSION", text: "Chest study without significant pathologic findings." },
-      ];
+    ? ["Analisando contexto clínico...", "Estruturando achados...", "Gerando conclusão..."]
+    : ["Analyzing clinical context...", "Structuring findings...", "Generating conclusion..."];
+
+  const activePhase = active ? Math.min(Math.floor(progress * 3.5), 2) : 2;
+  const barPct = active ? Math.min(progress * 130, 100) : 100;
 
   return (
-    <div className={`absolute inset-0 p-6 flex flex-col justify-center gap-3 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
-      {sections.map((s, i) => {
-        const show = !active || progress > i * 0.25;
-        return (
+    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-4 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      {/* Fading dictated text snippet */}
+      <p className="text-[11px] text-gray-500/60 text-center max-w-xs truncate font-mono">
+        {dictText.slice(0, 70)}...
+      </p>
+
+      {/* Animated arrow down */}
+      <div className="flex flex-col items-center gap-0.5 text-purple-400/40">
+        <div className="w-px h-4 bg-gradient-to-b from-transparent to-purple-400/40" />
+        <ChevronRight className="h-3 w-3 rotate-90" />
+      </div>
+
+      {/* Brain icon with orbiting particles */}
+      <div className="relative w-20 h-20">
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/15 to-purple-500/15 border border-purple-500/25 flex items-center justify-center">
+          <Brain className="h-9 w-9 text-purple-400" />
+        </div>
+        <div className="absolute inset-0 rounded-full border border-purple-500/10 animate-ping" style={{ animationDuration: "2s" }} />
+        {/* Orbit ring 1 */}
+        <div className="absolute -inset-3 animate-spin" style={{ animationDuration: "3s" }}>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-blue-400/70 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
+        </div>
+        {/* Orbit ring 2 */}
+        <div className="absolute -inset-5 animate-spin" style={{ animationDuration: "5s", animationDirection: "reverse" }}>
+          <div className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-purple-400/70 shadow-[0_0_8px_rgba(192,132,252,0.5)]" />
+        </div>
+        {/* Orbit ring 3 */}
+        <div className="absolute -inset-4 animate-spin" style={{ animationDuration: "4s" }}>
+          <div className="absolute top-1/2 right-0 w-1.5 h-1.5 rounded-full bg-pink-400/50" />
+        </div>
+      </div>
+
+      {/* Processing phases */}
+      <div className="space-y-1.5 w-56">
+        {phases.map((phase, i) => {
+          const done = i < activePhase;
+          const current = i === activePhase;
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-2 text-xs transition-all duration-300 ${
+                done ? "text-purple-300/70" : current ? "text-purple-300" : "text-gray-600"
+              }`}
+            >
+              <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-[8px] font-bold transition-all duration-300 ${
+                done
+                  ? "bg-purple-500/30 text-purple-200"
+                  : current
+                  ? "bg-purple-500/20 border border-purple-400/40 text-purple-300"
+                  : "bg-white/5 text-gray-600"
+              }`}>
+                {done ? "✓" : current ? "◎" : "○"}
+              </div>
+              {phase}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-56">
+        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
           <div
-            key={i}
-            className="transition-all duration-600"
-            style={{
-              opacity: show ? 1 : 0,
-              transform: show ? "translateY(0)" : "translateY(12px)",
-              transitionDelay: `${i * 80}ms`,
-            }}
-          >
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="h-px flex-1 max-w-6 bg-purple-500/30" />
-              <span className="text-[10px] font-bold tracking-widest text-purple-400">{s.label}</span>
-            </div>
-            <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
-              <p className="text-sm text-gray-300 leading-relaxed">{s.text}</p>
-            </div>
-          </div>
-        );
-      })}
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-300"
+            style={{ width: `${barPct}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
-function DemoStep2({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
-  const showGuide = !active || progress > 0.2;
-  const guideTitle = lang === "es" ? "Guía Fleischner 2017" : lang === "pt" ? "Guia Fleischner 2017" : "Fleischner 2017 Guide";
-  const rows = [
-    { size: "< 6 mm", risk: lang === "es" ? "Sin seguimiento" : lang === "pt" ? "Sem seguimento" : "No follow-up" },
-    { size: "6–8 mm", risk: lang === "es" ? "TC 6-12 m" : lang === "pt" ? "TC 6-12 m" : "CT 6-12 mo" },
-    { size: "> 8 mm", risk: lang === "es" ? "TC 3 m / PET-CT" : lang === "pt" ? "TC 3 m / PET-CT" : "CT 3 mo / PET-CT" },
-  ];
+function DemoStepReport({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const sections = lang === "es"
+    ? [
+        { label: "TÉCNICA", text: "Radiografía PA y lateral de tórax." },
+        { label: "HALLAZGOS", text: "Pulmones bien ventilados sin opacidades de ocupación alveolar. Silueta cardiomediastínica normal. Senos costofrénicos libres." },
+        { label: "CONCLUSIÓN", text: "Estudio de tórax sin hallazgos patológicos significativos." },
+      ]
+    : lang === "pt"
+    ? [
+        { label: "TÉCNICA", text: "Radiografia PA e perfil de tórax." },
+        { label: "ACHADOS", text: "Pulmões bem aerados sem opacidades. Silhueta cardiomediastinal normal. Seios costofrênicos livres." },
+        { label: "CONCLUSÃO", text: "Estudo de tórax sem achados patológicos significativos." },
+      ]
+    : [
+        { label: "TECHNIQUE", text: "PA and lateral chest radiograph." },
+        { label: "FINDINGS", text: "Well-aerated lungs without alveolar opacities. Normal cardiomediastinal silhouette. Clear costophrenic angles." },
+        { label: "CONCLUSION", text: "Chest study without significant pathologic findings." },
+      ];
+
+  const guideTitle = lang === "es" ? "Guía Fleischner 2017" : lang === "pt" ? "Guia Fleischner 2017" : "Fleischner Guide 2017";
+  const showGuide = !active || progress > 0.55;
 
   return (
-    <div className={`absolute inset-0 p-4 md:p-6 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+    <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
       <div className="flex gap-3 h-full">
-        {/* Report side */}
-        <div className="flex-1 flex flex-col justify-center gap-2">
-          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
-            <span className="text-[10px] font-bold tracking-widest text-purple-400 block mb-1.5">
-              {lang === "es" ? "HALLAZGOS" : lang === "pt" ? "ACHADOS" : "FINDINGS"}
-            </span>
-            <p className="text-xs text-gray-300 leading-relaxed">
-              {lang === "es"
-                ? "Nódulo pulmonar sólido de 7 mm en lóbulo inferior derecho..."
-                : lang === "pt"
-                ? "Nódulo pulmonar sólido de 7 mm no lobo inferior direito..."
-                : "7 mm solid pulmonary nodule in right lower lobe..."}
-              <span className="inline-flex items-center ml-1.5 px-1.5 py-0.5 rounded bg-purple-500/20 text-[10px] text-purple-300 font-semibold">
-                → {guideTitle}
-              </span>
-            </p>
-          </div>
+        {/* Report sections */}
+        <div className="flex-1 flex flex-col justify-center gap-2.5">
+          {sections.map((s, i) => {
+            const show = !active || progress > i * 0.15;
+            return (
+              <div
+                key={i}
+                className="transition-all"
+                style={{
+                  opacity: show ? 1 : 0,
+                  transform: show ? "translateY(0)" : "translateY(14px)",
+                  transitionDuration: "500ms",
+                  transitionDelay: `${i * 100}ms`,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-px flex-1 max-w-5 bg-purple-500/30" />
+                  <span className="text-[9px] font-bold tracking-widest text-purple-400">{s.label}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+                  <p className="text-xs text-gray-300 leading-relaxed">{s.text}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Guide panel sliding in */}
+        {/* Clinical guide panel sliding in */}
         <div
-          className="w-44 md:w-52 flex flex-col justify-center transition-all duration-600"
+          className="w-36 md:w-44 flex flex-col justify-center transition-all"
           style={{
             opacity: showGuide ? 1 : 0,
-            transform: showGuide ? "translateX(0)" : "translateX(24px)",
+            transform: showGuide ? "translateX(0)" : "translateX(20px)",
+            transitionDuration: "600ms",
           }}
         >
-          <div className="rounded-xl bg-gradient-to-b from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-3 space-y-2">
-            <div className="flex items-center gap-1.5 mb-2">
-              <BookOpen className="h-3.5 w-3.5 text-purple-400" />
-              <span className="text-[10px] font-bold text-purple-300 truncate">{guideTitle}</span>
+          <div className="rounded-xl bg-gradient-to-b from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-2.5 space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <BookOpen className="h-3 w-3 text-purple-400" />
+              <span className="text-[9px] font-bold text-purple-300 truncate">{guideTitle}</span>
             </div>
-            {rows.map((r, i) => {
-              const showRow = !active || progress > 0.35 + i * 0.12;
-              return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-1.5 px-2 rounded bg-white/[0.04] transition-all duration-400"
-                  style={{
-                    opacity: showRow ? 1 : 0,
-                    transform: showRow ? "translateY(0)" : "translateY(8px)",
-                  }}
-                >
-                  <span className="text-[11px] font-bold text-white">{r.size}</span>
-                  <span className="text-[10px] text-gray-400">{r.risk}</span>
-                </div>
-              );
-            })}
-            <p className="text-[8px] text-gray-600 pt-1">MacMahon et al. 2017</p>
+            {[
+              { size: "< 6 mm", action: lang === "es" ? "Sin seguimiento" : "No follow-up" },
+              { size: "6–8 mm", action: lang === "es" ? "TC 6-12 m" : "CT 6-12 mo" },
+              { size: "> 8 mm", action: lang === "es" ? "PET-CT / biopsia" : "PET-CT / biopsy" },
+            ].map((r, i) => (
+              <div key={i} className="flex items-center justify-between py-1 px-1.5 rounded bg-white/[0.04]">
+                <span className="text-[10px] font-bold text-white">{r.size}</span>
+                <span className="text-[9px] text-gray-400">{r.action}</span>
+              </div>
+            ))}
+            <p className="text-[7px] text-gray-600 pt-0.5">MacMahon et al. 2017</p>
           </div>
         </div>
       </div>
@@ -813,14 +865,14 @@ function DemoStep2({ active, progress, lang }: { active: boolean; progress: numb
   );
 }
 
-function DemoStep3({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
-  const showCheck = !active || progress > 0.3;
-  const showExport = !active || progress > 0.6;
+function DemoStepDone({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const showCheck = !active || progress > 0.2;
+  const showExport = !active || progress > 0.5;
   return (
     <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
       <div
-        className="transition-all duration-600"
-        style={{ opacity: showCheck ? 1 : 0, transform: showCheck ? "scale(1)" : "scale(0.5)" }}
+        className="transition-all"
+        style={{ opacity: showCheck ? 1 : 0, transform: showCheck ? "scale(1)" : "scale(0.5)", transitionDuration: "600ms" }}
       >
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/20 flex items-center justify-center">
           {showCheck && (
