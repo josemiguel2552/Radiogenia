@@ -135,6 +135,25 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "icon-180", label: "Apple Touch Icon", category: "Iconos", width: 180, height: 180, bg: "gradient", logoVariant: "icon", description: "iOS home 180×180" },
   { id: "favicon", label: "Favicon", category: "Iconos", width: 32, height: 32, bg: "gradient", logoVariant: "icon", description: "Favicon 32×32" },
   { id: "whatsapp-icon", label: "WhatsApp Business", category: "Iconos", width: 640, height: 640, bg: "gradient", logoVariant: "icon", description: "WhatsApp Business perfil" },
+  // ═══ Publicaciones elaboradas ═══
+  { id: "pub-feature-square", label: "Feature Highlight", category: "Publicaciones", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Destaca una función", tagline: "feature" },
+  { id: "pub-feature-landscape", label: "Feature Highlight (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "LinkedIn/FB — Destaca una función", tagline: "feature" },
+  { id: "pub-stats-square", label: "Stats / Métricas", category: "Publicaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Métricas de impacto", tagline: "stats" },
+  { id: "pub-stats-landscape", label: "Stats / Métricas (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn/X — Métricas de impacto", tagline: "stats" },
+  { id: "pub-quote-square", label: "Testimonial", category: "Publicaciones", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Cita de usuario", tagline: "quote" },
+  { id: "pub-quote-landscape", label: "Testimonial (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "white", logoVariant: "full", description: "LinkedIn — Cita de usuario", tagline: "quote" },
+  { id: "pub-tip-square", label: "Tip educativo", category: "Publicaciones", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Consejo radiológico", tagline: "tip" },
+  { id: "pub-tip-story", label: "Tip educativo (story)", category: "Publicaciones", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "IG/TikTok Story — Consejo", tagline: "tip" },
+  { id: "pub-launch-square", label: "Anuncio / Launch", category: "Publicaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Nueva función o lanzamiento", tagline: "launch" },
+  { id: "pub-launch-landscape", label: "Anuncio / Launch (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn/X — Lanzamiento", tagline: "launch" },
+  { id: "pub-launch-story", label: "Anuncio / Launch (story)", category: "Publicaciones", width: 1080, height: 1920, bg: "dark", logoVariant: "full", description: "IG/TikTok Story — Lanzamiento", tagline: "launch" },
+  { id: "pub-comparison-square", label: "Antes / Después", category: "Publicaciones", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Comparativa", tagline: "comparison" },
+  { id: "pub-comparison-landscape", label: "Antes / Después (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "white", logoVariant: "full", description: "LinkedIn — Comparativa", tagline: "comparison" },
+  { id: "pub-workflow-square", label: "Workflow / Proceso", category: "Publicaciones", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Flujo de trabajo", tagline: "workflow" },
+  { id: "pub-workflow-landscape", label: "Workflow / Proceso (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "LinkedIn — Flujo de trabajo", tagline: "workflow" },
+  { id: "pub-cta-square", label: "CTA / Prueba gratis", category: "Publicaciones", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Llamada a la acción", tagline: "cta" },
+  { id: "pub-cta-story", label: "CTA / Prueba gratis (story)", category: "Publicaciones", width: 1080, height: 1920, bg: "gradient", logoVariant: "full", description: "IG/TikTok — Llamada a la acción", tagline: "cta" },
+  { id: "pub-cta-x", label: "CTA / Prueba gratis (X)", category: "Publicaciones", width: 1600, height: 900, bg: "gradient", logoVariant: "full", description: "X/Twitter — Llamada a la acción", tagline: "cta" },
 ];
 
 function buildLogoSvg(
@@ -203,8 +222,151 @@ function escSvg(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "white" | "transparent", contentType: string): string {
+  const isDark = bg === "gradient" || bg === "dark";
+  const mainColor = isDark ? "#ffffff" : "#111827";
+  const subColor = isDark ? "rgba(255,255,255,0.6)" : "#6b7280";
+  const accentColor = "#5EEAD4";
+  const brandTeal = "#0F766E";
+  const brandNavy = "#1E3A5F";
+  const scale = w / 1080;
+  const fs = (n: number) => Math.round(n * scale);
+
+  let bgSvg = "";
+  if (bg === "gradient") {
+    bgSvg = `<defs><linearGradient id="bg-g" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="60%" stop-color="#0F766E"/><stop offset="100%" stop-color="#134e4a"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-g)"/>`;
+  } else if (bg === "dark") {
+    bgSvg = `<rect width="${w}" height="${h}" fill="#0f172a"/>`;
+  } else if (bg === "white") {
+    bgSvg = `<rect width="${w}" height="${h}" fill="#ffffff"/>`;
+  }
+
+  const decorCircles = `<circle cx="${w * 0.85}" cy="${h * 0.15}" r="${fs(180)}" fill="${isDark ? 'rgba(94,234,212,0.06)' : 'rgba(15,118,110,0.04)'}"/><circle cx="${w * 0.1}" cy="${h * 0.85}" r="${fs(120)}" fill="${isDark ? 'rgba(94,234,212,0.04)' : 'rgba(15,118,110,0.03)'}"/>`;
+
+  const logoSmall = `<g transform="translate(${fs(60)},${h - fs(80)}) scale(${scale * 0.7})"><rect width="24" height="24" rx="5" fill="${brandTeal}"/><path d="M7 6h5a3.5 3.5 0 0 1 0 7h-2l3.5 4.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${fs(60) + fs(28)}" y="${h - fs(58)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
+
+  let content = "";
+
+  if (contentType === "feature") {
+    const isVert = h > w;
+    const titleY = isVert ? fs(280) : fs(180);
+    content = `
+      <rect x="${fs(60)}" y="${fs(60)}" width="${fs(56)}" height="${fs(56)}" rx="${fs(14)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <path transform="translate(${fs(74)},${fs(74)}) scale(${scale * 0.9})" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="${accentColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <text x="${fs(60)}" y="${titleY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${mainColor}" letter-spacing="-0.02em">Dictado por voz con IA</text>
+      <text x="${fs(60)}" y="${titleY + fs(50)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${accentColor}" letter-spacing="-0.02em">→ Informe estructurado</text>
+      <text x="${fs(60)}" y="${titleY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">Dicta tus hallazgos en cualquier idioma.</text>
+      <text x="${fs(60)}" y="${titleY + fs(170)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">La IA estructura, traduce y genera la conclusión.</text>
+      <rect x="${fs(60)}" y="${titleY + fs(220)}" width="${fs(220)}" height="${fs(48)}" rx="${fs(24)}" fill="${brandTeal}"/>
+      <text x="${fs(110)}" y="${titleY + fs(252)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="white">Prueba gratis →</text>`;
+  } else if (contentType === "stats") {
+    const colW = (w - fs(180)) / 3;
+    const startY = h > w ? fs(300) : fs(160);
+    const stats = [
+      { num: "90%", label: "Reducción en tiempo\nde redacción" },
+      { num: "40+", label: "Plantillas\nespecializadas" },
+      { num: "3", label: "Idiomas\nsoportados" },
+    ];
+    content = stats.map((s, i) => `
+      <text x="${fs(60) + i * colW}" y="${startY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(72)}" fill="${accentColor}">${s.num}</text>
+      <text x="${fs(60) + i * colW}" y="${startY + fs(50)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">${escSvg(s.label.split('\n')[0])}</text>
+      <text x="${fs(60) + i * colW}" y="${startY + fs(76)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">${escSvg(s.label.split('\n')[1] || '')}</text>
+    `).join("") + `
+      <text x="${fs(60)}" y="${startY - fs(100)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(36)}" fill="${mainColor}">Informes radiológicos</text>
+      <text x="${fs(60)}" y="${startY - fs(55)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(36)}" fill="${mainColor}">en menos tiempo</text>`;
+  } else if (contentType === "quote") {
+    const qY = h > w ? fs(300) : fs(160);
+    content = `
+      <text x="${fs(60)}" y="${qY}" font-family="Georgia,serif" font-size="${fs(96)}" fill="${brandTeal}" opacity="0.3">"</text>
+      <text x="${fs(60)}" y="${qY + fs(70)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">Pasé de 15 minutos por informe</text>
+      <text x="${fs(60)}" y="${qY + fs(115)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">a menos de 3. Me cambió la vida</text>
+      <text x="${fs(60)}" y="${qY + fs(160)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">profesional.</text>
+      <line x1="${fs(60)}" y1="${qY + fs(200)}" x2="${fs(160)}" y2="${qY + fs(200)}" stroke="${brandTeal}" stroke-width="3"/>
+      <text x="${fs(60)}" y="${qY + fs(240)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${mainColor}">Dr. María López</text>
+      <text x="${fs(60)}" y="${qY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — Hospital Universitario</text>`;
+  } else if (contentType === "tip") {
+    const tipY = h > w ? fs(250) : fs(130);
+    content = `
+      <rect x="${fs(60)}" y="${fs(60)}" width="${fs(140)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
+      <text x="${fs(90)}" y="${fs(84)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">💡 TIP</text>
+      <text x="${fs(60)}" y="${tipY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">¿Sabías que puedes</text>
+      <text x="${fs(60)}" y="${tipY + fs(56)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">personalizar frases</text>
+      <text x="${fs(60)}" y="${tipY + fs(112)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">de normalidad?</text>
+      <text x="${fs(60)}" y="${tipY + fs(190)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">La IA aprende tu estilo de redacción</text>
+      <text x="${fs(60)}" y="${tipY + fs(225)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y lo aplica automáticamente en cada informe.</text>`;
+  } else if (contentType === "launch") {
+    const lY = h > w ? fs(320) : fs(160);
+    content = `
+      <rect x="${fs(60)}" y="${fs(60)}" width="${fs(100)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
+      <text x="${fs(78)}" y="${fs(84)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">NUEVO</text>
+      <text x="${fs(60)}" y="${lY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(56)}" fill="${mainColor}">Plantillas RECIST 1.1</text>
+      <text x="${fs(60)}" y="${lY + fs(68)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(56)}" fill="${accentColor}">ya disponibles</text>
+      <text x="${fs(60)}" y="${lY + fs(145)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">Seguimiento oncológico automatizado con</text>
+      <text x="${fs(60)}" y="${lY + fs(182)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">mediciones diana, respuesta tumoral y tablas.</text>
+      <rect x="${fs(60)}" y="${lY + fs(230)}" width="${fs(250)}" height="${fs(52)}" rx="${fs(26)}" fill="${brandTeal}"/>
+      <text x="${fs(115)}" y="${lY + fs(264)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="white">Descúbrelo ahora →</text>`;
+  } else if (contentType === "comparison") {
+    const cY = h > w ? fs(200) : fs(100);
+    const colMid = w / 2;
+    content = `
+      <line x1="${colMid}" y1="${cY}" x2="${colMid}" y2="${h - fs(100)}" stroke="${isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}" stroke-width="2" stroke-dasharray="8 4"/>
+      <rect x="${fs(60)}" y="${cY}" width="${fs(140)}" height="${fs(36)}" rx="${fs(18)}" fill="#ef4444" opacity="0.15"/>
+      <text x="${fs(85)}" y="${cY + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="#ef4444">ANTES</text>
+      <rect x="${colMid + fs(20)}" y="${cY}" width="${fs(140)}" height="${fs(36)}" rx="${fs(18)}" fill="${brandTeal}" opacity="0.15"/>
+      <text x="${colMid + fs(40)}" y="${cY + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${brandTeal}">DESPUÉS</text>
+      <text x="${fs(60)}" y="${cY + fs(90)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(24)}" fill="${mainColor}">15 min / informe</text>
+      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Redacción manual</text>
+      <text x="${fs(60)}" y="${cY + fs(165)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Copy-paste de plantillas</text>
+      <text x="${fs(60)}" y="${cY + fs(200)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Conclusiones repetitivas</text>
+      <text x="${colMid + fs(20)}" y="${cY + fs(90)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(24)}" fill="${accentColor}">2 min / informe</text>
+      <text x="${colMid + fs(20)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Dictado por voz + IA</text>
+      <text x="${colMid + fs(20)}" y="${cY + fs(165)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Estructura automática</text>
+      <text x="${colMid + fs(20)}" y="${cY + fs(200)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Conclusiones inteligentes</text>`;
+  } else if (contentType === "workflow") {
+    const wY = h > w ? fs(220) : fs(120);
+    const steps = ["🎙️ Dicta", "🤖 IA estructura", "✏️ Revisa", "📋 Firma"];
+    const stepW = (w - fs(120)) / 4;
+    content = `
+      <text x="${fs(60)}" y="${wY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">De la voz al informe</text>
+      <text x="${fs(60)}" y="${wY + fs(52)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">en 4 pasos</text>
+      ${steps.map((s, i) => `
+        <rect x="${fs(60) + i * stepW}" y="${wY + fs(120)}" width="${stepW - fs(15)}" height="${fs(120)}" rx="${fs(12)}" fill="${isDark ? 'rgba(94,234,212,0.08)' : 'rgba(15,118,110,0.05)'}" stroke="${isDark ? 'rgba(94,234,212,0.2)' : 'rgba(15,118,110,0.15)'}" stroke-width="1"/>
+        <text x="${fs(60) + i * stepW + (stepW - fs(15)) / 2}" y="${wY + fs(175)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(16)}" fill="${mainColor}" text-anchor="middle">${escSvg(s)}</text>
+        <text x="${fs(60) + i * stepW + (stepW - fs(15)) / 2}" y="${wY + fs(210)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}" text-anchor="middle">Paso ${i + 1}</text>
+      `).join("")}
+      <text x="${fs(60)}" y="${wY + fs(310)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Sin instalar nada. Funciona en tu navegador.</text>`;
+  } else if (contentType === "cta") {
+    const ctaY = h > w ? fs(340) : fs(180);
+    content = `
+      <text x="${w / 2}" y="${ctaY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${mainColor}" text-anchor="middle">Empieza hoy.</text>
+      <text x="${w / 2}" y="${ctaY + fs(60)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${accentColor}" text-anchor="middle">Gratis.</text>
+      <text x="${w / 2}" y="${ctaY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}" text-anchor="middle">Informes radiológicos con IA en menos de 2 minutos.</text>
+      <text x="${w / 2}" y="${ctaY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}" text-anchor="middle">Sin tarjeta de crédito. Sin instalación.</text>
+      <rect x="${w / 2 - fs(140)}" y="${ctaY + fs(210)}" width="${fs(280)}" height="${fs(56)}" rx="${fs(28)}" fill="${brandTeal}"/>
+      <text x="${w / 2}" y="${ctaY + fs(245)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(22)}" fill="white" text-anchor="middle">Crear cuenta gratis</text>`;
+  } else {
+    content = `<text x="${w/2}" y="${h/2}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(32)}" fill="${mainColor}" text-anchor="middle">Radiogen.ai</text>`;
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    ${bgSvg}
+    ${decorCircles}
+    ${content}
+    ${logoSmall}
+  </svg>`;
+}
+
+const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta"]);
+
+function buildAssetSvg(asset: BrandAsset): string {
+  if (asset.category === "Publicaciones" && asset.tagline && PUB_TYPES.has(asset.tagline)) {
+    return buildPublicationSvg(asset.width, asset.height, asset.bg, asset.tagline);
+  }
+  return buildLogoSvg(asset.width, asset.height, asset.logoVariant, asset.bg, asset.tagline && !PUB_TYPES.has(asset.tagline) ? { tagline: asset.tagline } : undefined);
+}
+
 function renderAndDownload(asset: BrandAsset) {
-  const svg = buildLogoSvg(asset.width, asset.height, asset.logoVariant, asset.bg, asset.tagline ? { tagline: asset.tagline } : undefined);
+  const svg = buildAssetSvg(asset);
   const blob = new Blob([svg], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
   const img = new Image();
@@ -227,7 +389,12 @@ function renderAndDownload(asset: BrandAsset) {
 function getPreviewDataUrl(asset: BrandAsset): string {
   const previewW = 200;
   const previewH = Math.round((asset.height / asset.width) * previewW);
-  const svg = buildLogoSvg(previewW, previewH, asset.logoVariant, asset.bg, asset.tagline ? { tagline: asset.tagline } : undefined);
+  let svg: string;
+  if (asset.category === "Publicaciones" && asset.tagline && PUB_TYPES.has(asset.tagline)) {
+    svg = buildPublicationSvg(previewW, previewH, asset.bg, asset.tagline);
+  } else {
+    svg = buildLogoSvg(previewW, previewH, asset.logoVariant, asset.bg, asset.tagline && !PUB_TYPES.has(asset.tagline) ? { tagline: asset.tagline } : undefined);
+  }
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
