@@ -545,14 +545,14 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
     <section
       ref={containerRef}
       className="relative"
-      style={{ height: reduce ? "auto" : "220vh" }}
+      style={{ height: reduce ? "auto" : "200vh" }}
     >
       <div
         className={`${
-          reduce ? "relative" : "sticky top-0 h-screen"
-        } flex items-center justify-center overflow-hidden`}
+          reduce ? "relative" : "sticky top-[12vh]"
+        } overflow-hidden py-6`}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a1a] via-indigo-950/20 to-[#0a0a1a]" />
+        <div className="absolute inset-0 -inset-y-[12vh] bg-gradient-to-b from-[#0a0a1a] via-indigo-950/20 to-[#0a0a1a] -z-10" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
           <div className="grid lg:grid-cols-[340px_1fr] gap-10 items-center">
