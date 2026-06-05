@@ -249,12 +249,18 @@ function escSvg(s: string): string {
 function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "white" | "transparent", contentType: string): string {
   const isDark = bg === "gradient" || bg === "dark";
   const mainColor = isDark ? "#ffffff" : "#111827";
-  const subColor = isDark ? "rgba(255,255,255,0.6)" : "#6b7280";
+  const subColor = isDark ? "rgba(255,255,255,0.55)" : "#6b7280";
   const accentColor = "#5EEAD4";
   const brandTeal = "#0F766E";
   const brandNavy = "#1E3A5F";
   const scale = w / 1080;
   const fs = (n: number) => Math.round(n * scale);
+  const px = fs(60);
+
+  const topSafe = fs(110);
+  const botSafe = h - fs(75);
+  const safeH = botSafe - topSafe;
+  const centerBlock = (blockH: number) => topSafe + Math.max(0, Math.round((safeH - blockH) / 2));
 
   let bgSvg = "";
   if (bg === "gradient") {
@@ -265,135 +271,167 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
     bgSvg = `<rect width="${w}" height="${h}" fill="#ffffff"/>`;
   }
 
-  const decorCircles = `<circle cx="${w * 0.85}" cy="${h * 0.15}" r="${fs(180)}" fill="${isDark ? 'rgba(94,234,212,0.06)' : 'rgba(15,118,110,0.04)'}"/><circle cx="${w * 0.1}" cy="${h * 0.85}" r="${fs(120)}" fill="${isDark ? 'rgba(94,234,212,0.04)' : 'rgba(15,118,110,0.03)'}"/>`;
+  const ta = isDark ? "rgba(94,234,212," : "rgba(15,118,110,";
+  const decor = `
+    <circle cx="${w * 0.87}" cy="${h * 0.08}" r="${fs(220)}" fill="${ta}0.05)"/>
+    <circle cx="${w * 0.05}" cy="${h * 0.93}" r="${fs(160)}" fill="${ta}0.04)"/>
+    <circle cx="${w * 0.5}" cy="${h * 0.52}" r="${fs(360)}" fill="${ta}0.015)"/>
+    <rect x="${w - fs(5)}" y="${h * 0.25}" width="${fs(5)}" height="${h * 0.12}" rx="${fs(2.5)}" fill="${ta}0.1)"/>
+    <rect x="0" y="${h * 0.6}" width="${fs(5)}" height="${h * 0.1}" rx="${fs(2.5)}" fill="${ta}0.08)"/>
+    <line x1="${px}" y1="${botSafe + fs(8)}" x2="${w * 0.28}" y2="${botSafe + fs(8)}" stroke="${ta}0.12)" stroke-width="1"/>
+  `;
 
-  const logoSmall = `<g transform="translate(${fs(60)},${h - fs(80)}) scale(${scale * 0.7})"><rect width="24" height="24" rx="5" fill="${brandTeal}"/><path d="M7 6h5a3.5 3.5 0 0 1 0 7h-2l3.5 4.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${fs(60) + fs(28)}" y="${h - fs(58)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
+  const logoY = h - fs(40);
+  const logoSmall = `<g transform="translate(${px},${logoY - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
 
   let content = "";
 
   if (contentType === "feature") {
-    const isVert = h > w;
-    const titleY = isVert ? fs(280) : fs(180);
+    const y0 = centerBlock(fs(320));
     content = `
-      <rect x="${fs(60)}" y="${fs(60)}" width="${fs(56)}" height="${fs(56)}" rx="${fs(14)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <path transform="translate(${fs(74)},${fs(74)}) scale(${scale * 0.9})" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="${accentColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <text x="${fs(60)}" y="${titleY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${mainColor}" letter-spacing="-0.02em">Dictado por voz con IA</text>
-      <text x="${fs(60)}" y="${titleY + fs(50)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${accentColor}" letter-spacing="-0.02em">→ Informe estructurado</text>
-      <text x="${fs(60)}" y="${titleY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">Dicta tus hallazgos en cualquier idioma.</text>
-      <text x="${fs(60)}" y="${titleY + fs(170)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">La IA estructura, traduce y genera la conclusión.</text>
-      <rect x="${fs(60)}" y="${titleY + fs(220)}" width="${fs(220)}" height="${fs(48)}" rx="${fs(24)}" fill="${brandTeal}"/>
-      <text x="${fs(110)}" y="${titleY + fs(252)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="white">Prueba gratis →</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(56)}" height="${fs(56)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <path transform="translate(${px + fs(14)},${y0 + fs(14)}) scale(${scale * 0.9})" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="${accentColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <text x="${px}" y="${y0 + fs(96)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(48)}" fill="${mainColor}" letter-spacing="-0.02em">Dicta. La IA estructura.</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(48)}" fill="${accentColor}" letter-spacing="-0.02em">Tú revisas y firmas.</text>
+      <line x1="${px}" y1="${y0 + fs(172)}" x2="${px + fs(60)}" y2="${y0 + fs(172)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(210)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Dictado por voz en cualquier idioma → informe estructurado</text>
+      <text x="${px}" y="${y0 + fs(244)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">con hallazgos por sección, mediciones y conclusión automática.</text>
+      <rect x="${px}" y="${y0 + fs(275)}" width="${fs(230)}" height="${fs(46)}" rx="${fs(23)}" fill="${brandTeal}"/>
+      <text x="${px + fs(48)}" y="${y0 + fs(305)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="white">Probar gratis →</text>`;
   } else if (contentType === "stats") {
-    const colW = (w - fs(180)) / 3;
-    const startY = h > w ? fs(300) : fs(160);
+    const y0 = centerBlock(fs(270));
+    const colW = (w - px * 2 - fs(40)) / 3;
     const stats = [
-      { num: "90%", label: "Reducción en tiempo\nde redacción" },
-      { num: "40+", label: "Plantillas\nespecializadas" },
+      { num: "90%", label: "Menos tiempo\nde redacción" },
+      { num: "190+", label: "Plantillas\nespecializadas" },
       { num: "3", label: "Idiomas\nsoportados" },
     ];
-    content = stats.map((s, i) => `
-      <text x="${fs(60) + i * colW}" y="${startY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(72)}" fill="${accentColor}">${s.num}</text>
-      <text x="${fs(60) + i * colW}" y="${startY + fs(50)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">${escSvg(s.label.split('\n')[0])}</text>
-      <text x="${fs(60) + i * colW}" y="${startY + fs(76)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">${escSvg(s.label.split('\n')[1] || '')}</text>
-    `).join("") + `
-      <text x="${fs(60)}" y="${startY - fs(100)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(36)}" fill="${mainColor}">Informes radiológicos</text>
-      <text x="${fs(60)}" y="${startY - fs(55)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(36)}" fill="${mainColor}">en menos tiempo</text>`;
+    content = `
+      <text x="${px}" y="${y0}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${mainColor}">Informes radiológicos</text>
+      <text x="${px}" y="${y0 + fs(48)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${accentColor}">más rápidos que nunca</text>
+      <line x1="${px}" y1="${y0 + fs(74)}" x2="${px + fs(80)}" y2="${y0 + fs(74)}" stroke="${accentColor}" stroke-width="3" stroke-linecap="round"/>
+      ${stats.map((s, i) => `
+        <text x="${px + i * colW}" y="${y0 + fs(135)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(62)}" fill="${accentColor}">${s.num}</text>
+        <text x="${px + i * colW}" y="${y0 + fs(176)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(19)}" fill="${subColor}">${escSvg(s.label.split('\n')[0])}</text>
+        <text x="${px + i * colW}" y="${y0 + fs(200)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(19)}" fill="${subColor}">${escSvg(s.label.split('\n')[1] || '')}</text>
+      `).join("")}
+      <text x="${px}" y="${y0 + fs(258)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Usado por radiólogos en hospitales de España, Latinoamérica y EE.UU.</text>`;
   } else if (contentType === "quote") {
-    const qY = h > w ? fs(300) : fs(160);
+    const y0 = centerBlock(fs(290));
     content = `
-      <text x="${fs(60)}" y="${qY}" font-family="Georgia,serif" font-size="${fs(96)}" fill="${brandTeal}" opacity="0.3">"</text>
-      <text x="${fs(60)}" y="${qY + fs(70)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">Pasé de 15 minutos por informe</text>
-      <text x="${fs(60)}" y="${qY + fs(115)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">a menos de 3. Me cambió la vida</text>
-      <text x="${fs(60)}" y="${qY + fs(160)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">profesional.</text>
-      <line x1="${fs(60)}" y1="${qY + fs(200)}" x2="${fs(160)}" y2="${qY + fs(200)}" stroke="${brandTeal}" stroke-width="3"/>
-      <text x="${fs(60)}" y="${qY + fs(240)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${mainColor}">Dr. María López</text>
-      <text x="${fs(60)}" y="${qY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — Hospital Universitario</text>`;
+      <text x="${px}" y="${y0 + fs(10)}" font-family="Georgia,serif" font-size="${fs(100)}" fill="${brandTeal}" opacity="0.25">"</text>
+      <text x="${px}" y="${y0 + fs(80)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">Pasé de 15 minutos por informe</text>
+      <text x="${px}" y="${y0 + fs(122)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">a menos de 3. La IA estructura mis</text>
+      <text x="${px}" y="${y0 + fs(164)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">hallazgos y yo solo reviso y firmo.</text>
+      <line x1="${px}" y1="${y0 + fs(196)}" x2="${px + fs(90)}" y2="${y0 + fs(196)}" stroke="${brandTeal}" stroke-width="3" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(230)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${mainColor}">Dra. María López</text>
+      <text x="${px}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — Hospital Universitario</text>
+      <text x="${px}" y="${y0 + fs(288)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(15)}" fill="${ta}0.35)">*Testimonio representativo basado en métricas de uso.</text>`;
   } else if (contentType === "tip") {
-    const tipY = h > w ? fs(250) : fs(130);
+    const y0 = centerBlock(fs(290));
     content = `
-      <rect x="${fs(60)}" y="${fs(60)}" width="${fs(140)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(90)}" y="${fs(84)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">💡 TIP</text>
-      <text x="${fs(60)}" y="${tipY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">¿Sabías que puedes</text>
-      <text x="${fs(60)}" y="${tipY + fs(56)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">personalizar frases</text>
-      <text x="${fs(60)}" y="${tipY + fs(112)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">de normalidad?</text>
-      <text x="${fs(60)}" y="${tipY + fs(190)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">La IA aprende tu estilo de redacción</text>
-      <text x="${fs(60)}" y="${tipY + fs(225)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y lo aplica automáticamente en cada informe.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(120)}" height="${fs(34)}" rx="${fs(17)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(23)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}">💡 TIP</text>
+      <text x="${px}" y="${y0 + fs(78)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">¿Sabías que la IA</text>
+      <text x="${px}" y="${y0 + fs(128)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">aprende tus frases</text>
+      <text x="${px}" y="${y0 + fs(178)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">de normalidad?</text>
+      <line x1="${px}" y1="${y0 + fs(202)}" x2="${px + fs(60)}" y2="${y0 + fs(202)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(240)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(23)}" fill="${subColor}">Cada vez que corriges un informe, el sistema memoriza</text>
+      <text x="${px}" y="${y0 + fs(272)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(23)}" fill="${subColor}">tu estilo. En el siguiente estudio, lo aplica solo.</text>`;
   } else if (contentType === "launch") {
-    const lY = h > w ? fs(320) : fs(160);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(60)}" width="${fs(100)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
-      <text x="${fs(78)}" y="${fs(84)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">NUEVO</text>
-      <text x="${fs(60)}" y="${lY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(56)}" fill="${mainColor}">Plantillas RECIST 1.1</text>
-      <text x="${fs(60)}" y="${lY + fs(68)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(56)}" fill="${accentColor}">ya disponibles</text>
-      <text x="${fs(60)}" y="${lY + fs(145)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">Seguimiento oncológico automatizado con</text>
-      <text x="${fs(60)}" y="${lY + fs(182)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}">mediciones diana, respuesta tumoral y tablas.</text>
-      <rect x="${fs(60)}" y="${lY + fs(230)}" width="${fs(250)}" height="${fs(52)}" rx="${fs(26)}" fill="${brandTeal}"/>
-      <text x="${fs(115)}" y="${lY + fs(264)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="white">Descúbrelo ahora →</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(105)}" height="${fs(34)}" rx="${fs(17)}" fill="${accentColor}"/>
+      <text x="${px + fs(18)}" y="${y0 + fs(23)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">NUEVO</text>
+      <text x="${px}" y="${y0 + fs(82)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(50)}" fill="${mainColor}">Plantillas RECIST 1.1</text>
+      <text x="${px}" y="${y0 + fs(138)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(50)}" fill="${accentColor}">ya disponibles</text>
+      <line x1="${px}" y1="${y0 + fs(162)}" x2="${px + fs(60)}" y2="${y0 + fs(162)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(200)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Seguimiento oncológico automatizado: mediciones diana,</text>
+      <text x="${px}" y="${y0 + fs(234)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">respuesta tumoral según criterios RECIST y tablas evolutivas.</text>
+      <rect x="${px}" y="${y0 + fs(275)}" width="${fs(260)}" height="${fs(48)}" rx="${fs(24)}" fill="${brandTeal}"/>
+      <text x="${px + fs(48)}" y="${y0 + fs(306)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(19)}" fill="white">Descúbrelo ahora →</text>`;
   } else if (contentType === "comparison") {
-    const cY = h > w ? fs(200) : fs(100);
+    const y0 = centerBlock(fs(280));
     const colMid = w / 2;
     content = `
-      <line x1="${colMid}" y1="${cY}" x2="${colMid}" y2="${h - fs(100)}" stroke="${isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}" stroke-width="2" stroke-dasharray="8 4"/>
-      <rect x="${fs(60)}" y="${cY}" width="${fs(140)}" height="${fs(36)}" rx="${fs(18)}" fill="#ef4444" opacity="0.15"/>
-      <text x="${fs(85)}" y="${cY + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="#ef4444">ANTES</text>
-      <rect x="${colMid + fs(20)}" y="${cY}" width="${fs(140)}" height="${fs(36)}" rx="${fs(18)}" fill="${brandTeal}" opacity="0.15"/>
-      <text x="${colMid + fs(40)}" y="${cY + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${brandTeal}">DESPUÉS</text>
-      <text x="${fs(60)}" y="${cY + fs(90)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(24)}" fill="${mainColor}">15 min / informe</text>
-      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Redacción manual</text>
-      <text x="${fs(60)}" y="${cY + fs(165)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Copy-paste de plantillas</text>
-      <text x="${fs(60)}" y="${cY + fs(200)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Conclusiones repetitivas</text>
-      <text x="${colMid + fs(20)}" y="${cY + fs(90)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(24)}" fill="${accentColor}">2 min / informe</text>
-      <text x="${colMid + fs(20)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Dictado por voz + IA</text>
-      <text x="${colMid + fs(20)}" y="${cY + fs(165)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Estructura automática</text>
-      <text x="${colMid + fs(20)}" y="${cY + fs(200)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Conclusiones inteligentes</text>`;
+      <line x1="${colMid}" y1="${y0}" x2="${colMid}" y2="${y0 + fs(240)}" stroke="${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}" stroke-width="2" stroke-dasharray="6 4"/>
+      <rect x="${px}" y="${y0}" width="${fs(110)}" height="${fs(32)}" rx="${fs(16)}" fill="rgba(239,68,68,0.12)"/>
+      <text x="${px + fs(20)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ef4444">ANTES</text>
+      <rect x="${colMid + fs(20)}" y="${y0}" width="${fs(150)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${colMid + fs(34)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${brandTeal}">CON RADIOGEN</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(28)}" fill="${isDark ? '#f87171' : '#dc2626'}">15 min / informe</text>
+      <text x="${px}" y="${y0 + fs(108)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Redacción manual</text>
+      <text x="${px}" y="${y0 + fs(138)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Copy-paste de plantillas</text>
+      <text x="${px}" y="${y0 + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Conclusiones repetitivas</text>
+      <text x="${px}" y="${y0 + fs(198)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Sin recomendaciones</text>
+      <text x="${colMid + fs(20)}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(28)}" fill="${accentColor}">2 min / informe</text>
+      <text x="${colMid + fs(20)}" y="${y0 + fs(108)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Dictado por voz + IA</text>
+      <text x="${colMid + fs(20)}" y="${y0 + fs(138)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Estructura automática</text>
+      <text x="${colMid + fs(20)}" y="${y0 + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Conclusiones inteligentes</text>
+      <text x="${colMid + fs(20)}" y="${y0 + fs(198)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Recomendaciones integradas</text>
+      <text x="${w / 2}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(17)}" fill="${ta}0.35)" text-anchor="middle">Basado en métricas reales de uso de Radiogen.ai</text>`;
   } else if (contentType === "workflow") {
-    const wY = h > w ? fs(220) : fs(120);
-    const steps = ["🎙️ Dicta", "🤖 IA estructura", "✏️ Revisa", "📋 Firma"];
-    const stepW = (w - fs(120)) / 4;
+    const y0 = centerBlock(fs(290));
+    const steps = [
+      { emoji: "🎙️", label: "Dicta", desc: "En tu idioma" },
+      { emoji: "🤖", label: "IA estructura", desc: "Hallazgos + conclusión" },
+      { emoji: "✏️", label: "Revisa", desc: "Ajusta a tu gusto" },
+      { emoji: "📋", label: "Firma", desc: "Informe listo" },
+    ];
+    const stepW = (w - px * 2 - fs(30)) / 4;
+    const boxH = fs(100);
     content = `
-      <text x="${fs(60)}" y="${wY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">De la voz al informe</text>
-      <text x="${fs(60)}" y="${wY + fs(52)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">en 4 pasos</text>
-      ${steps.map((s, i) => `
-        <rect x="${fs(60) + i * stepW}" y="${wY + fs(120)}" width="${stepW - fs(15)}" height="${fs(120)}" rx="${fs(12)}" fill="${isDark ? 'rgba(94,234,212,0.08)' : 'rgba(15,118,110,0.05)'}" stroke="${isDark ? 'rgba(94,234,212,0.2)' : 'rgba(15,118,110,0.15)'}" stroke-width="1"/>
-        <text x="${fs(60) + i * stepW + (stepW - fs(15)) / 2}" y="${wY + fs(175)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(16)}" fill="${mainColor}" text-anchor="middle">${escSvg(s)}</text>
-        <text x="${fs(60) + i * stepW + (stepW - fs(15)) / 2}" y="${wY + fs(210)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}" text-anchor="middle">Paso ${i + 1}</text>
-      `).join("")}
-      <text x="${fs(60)}" y="${wY + fs(310)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Sin instalar nada. Funciona en tu navegador.</text>`;
+      <text x="${px}" y="${y0}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">De la voz al informe</text>
+      <text x="${px}" y="${y0 + fs(50)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">en 4 pasos</text>
+      <line x1="${px}" y1="${y0 + fs(74)}" x2="${px + fs(60)}" y2="${y0 + fs(74)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      ${steps.map((s, i) => {
+        const sx = px + i * stepW;
+        const sy = y0 + fs(100);
+        return `
+          <rect x="${sx}" y="${sy}" width="${stepW - fs(10)}" height="${boxH}" rx="${fs(12)}" fill="${ta}0.07)" stroke="${ta}0.18)" stroke-width="1"/>
+          <text x="${sx + (stepW - fs(10)) / 2}" y="${sy + fs(32)}" font-family="system-ui,sans-serif" font-size="${fs(24)}" text-anchor="middle">${s.emoji}</text>
+          <text x="${sx + (stepW - fs(10)) / 2}" y="${sy + fs(58)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(15)}" fill="${mainColor}" text-anchor="middle">${escSvg(s.label)}</text>
+          <text x="${sx + (stepW - fs(10)) / 2}" y="${sy + fs(78)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}" text-anchor="middle">${escSvg(s.desc)}</text>
+        `;
+      }).join("")}
+      <text x="${px}" y="${y0 + fs(248)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Sin instalar nada. 100% en tu navegador. Desde cualquier dispositivo.</text>`;
   } else if (contentType === "cta") {
-    const ctaY = h > w ? fs(340) : fs(180);
+    const y0 = centerBlock(fs(280));
     content = `
-      <text x="${w / 2}" y="${ctaY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${mainColor}" text-anchor="middle">Empieza hoy.</text>
-      <text x="${w / 2}" y="${ctaY + fs(60)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${accentColor}" text-anchor="middle">Gratis.</text>
-      <text x="${w / 2}" y="${ctaY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}" text-anchor="middle">Informes radiológicos con IA en menos de 2 minutos.</text>
-      <text x="${w / 2}" y="${ctaY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(26)}" fill="${subColor}" text-anchor="middle">Sin tarjeta de crédito. Sin instalación.</text>
-      <rect x="${w / 2 - fs(140)}" y="${ctaY + fs(210)}" width="${fs(280)}" height="${fs(56)}" rx="${fs(28)}" fill="${brandTeal}"/>
-      <text x="${w / 2}" y="${ctaY + fs(245)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(22)}" fill="white" text-anchor="middle">Crear cuenta gratis</text>`;
+      <text x="${w / 2}" y="${y0}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(54)}" fill="${mainColor}" text-anchor="middle">Empieza hoy.</text>
+      <text x="${w / 2}" y="${y0 + fs(62)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(54)}" fill="${accentColor}" text-anchor="middle">Es gratis.</text>
+      <line x1="${w / 2 - fs(40)}" y1="${y0 + fs(88)}" x2="${w / 2 + fs(40)}" y2="${y0 + fs(88)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${w / 2}" y="${y0 + fs(128)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}" text-anchor="middle">Informes radiológicos estructurados con IA en menos de 2 minutos.</text>
+      <text x="${w / 2}" y="${y0 + fs(162)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}" text-anchor="middle">Sin tarjeta de crédito. Sin instalación. Sin compromiso.</text>
+      <rect x="${w / 2 - fs(150)}" y="${y0 + fs(200)}" width="${fs(300)}" height="${fs(52)}" rx="${fs(26)}" fill="${brandTeal}"/>
+      <text x="${w / 2}" y="${y0 + fs(233)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(20)}" fill="white" text-anchor="middle">Crear cuenta gratis →</text>`;
   } else if (contentType === "tpl-overview") {
-    const tY = h > w ? fs(200) : fs(120);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(180)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(95)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">TEMPLATES</text>
-      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">+190 plantillas</text>
-      <text x="${fs(60)}" y="${tY + fs(56)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${accentColor}">listas para dictar</text>
-      <text x="${fs(60)}" y="${tY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">TC, RM, Ecografía, Rx, Mamografía, Intervencionismo</text>
-      <text x="${fs(60)}" y="${tY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y RECIST 1.1. Cada plantilla con secciones anatómicas</text>
-      <text x="${fs(60)}" y="${tY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">predefinidas, campos de hallazgos y conclusión automática.</text>
-      <text x="${fs(60)}" y="${tY + fs(270)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Tórax · Abdomen · Cabeza y cuello · Columna</text>
-      <text x="${fs(60)}" y="${tY + fs(304)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Extremidades superiores e inferiores</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(175)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 PLANTILLAS</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">+190 plantillas listas</text>
+      <text x="${px}" y="${y0 + fs(128)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${accentColor}">para dictar y firmar</text>
+      <line x1="${px}" y1="${y0 + fs(152)}" x2="${px + fs(60)}" y2="${y0 + fs(152)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(190)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">TC · RM · Ecografía · Rx · Mamografía · Intervencionismo · RECIST 1.1</text>
+      <text x="${px}" y="${y0 + fs(222)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Cada plantilla incluye secciones anatómicas predefinidas,</text>
+      <text x="${px}" y="${y0 + fs(252)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">campos de hallazgos y generación automática de conclusión.</text>
+      <rect x="${px}" y="${y0 + fs(282)}" width="${w - px * 2}" height="${fs(48)}" rx="${fs(10)}" fill="${ta}0.06)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(312)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="${mainColor}">Tórax · Abdomen · Cabeza y cuello · Columna · Extremidades</text>`;
   } else if (contentType === "tpl-custom") {
-    const tY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(260)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">PERSONALIZACIÓN</text>
-      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Tus plantillas,</text>
-      <text x="${fs(60)}" y="${tY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">tu estilo</text>
-      <text x="${fs(60)}" y="${tY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Crea plantillas personalizadas con tus propias</text>
-      <text x="${fs(60)}" y="${tY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">secciones anatómicas. Añade, elimina o renombra</text>
-      <text x="${fs(60)}" y="${tY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">campos según tu flujo de trabajo.</text>
-      <text x="${fs(60)}" y="${tY + fs(268)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Tu hospital también puede compartir plantillas</text>
-      <text x="${fs(60)}" y="${tY + fs(306)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">estandarizadas para todo el departamento.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(250)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">✏️ PERSONALIZACIÓN</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Tu plantilla, tu estilo,</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">tus secciones</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(186)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Crea plantillas con tus propias secciones anatómicas.</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Añade, elimina o renombra campos según tu flujo de trabajo.</text>
+      <text x="${px}" y="${y0 + fs(256)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Para equipos: el jefe de sección comparte plantillas</text>
+      <text x="${px}" y="${y0 + fs(286)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">estandarizadas con todo el departamento.</text>
+      <text x="${px}" y="${y0 + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Cada radiólogo adapta sin perder el estándar.</text>`;
   } else if (contentType === "tpl-regions") {
-    const tY = h > w ? fs(200) : fs(110);
     const regions = [
       { icon: "🧠", name: "Cabeza y cuello", count: "32" },
       { icon: "🫁", name: "Tórax", count: "45" },
@@ -402,136 +440,147 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       { icon: "💪", name: "Extremidades sup.", count: "22" },
       { icon: "🦵", name: "Extremidades inf.", count: "21" },
     ];
-    const rowH = h > w ? fs(75) : fs(58);
+    const rowH = fs(48);
+    const listH = regions.length * rowH;
+    const y0 = centerBlock(fs(90) + listH);
     content = `
-      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${mainColor}">Una plantilla para</text>
-      <text x="${fs(60)}" y="${tY + fs(50)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${accentColor}">cada estudio</text>
+      <text x="${px}" y="${y0}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">Plantillas por región</text>
+      <text x="${px}" y="${y0 + fs(44)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">anatómica</text>
+      <line x1="${px}" y1="${y0 + fs(66)}" x2="${px + fs(60)}" y2="${y0 + fs(66)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
       ${regions.map((r, i) => `
-        <rect x="${fs(60)}" y="${tY + fs(100) + i * rowH}" width="${w - fs(120)}" height="${rowH - fs(8)}" rx="${fs(10)}" fill="${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'}"/>
-        <text x="${fs(80)}" y="${tY + fs(100) + i * rowH + rowH * 0.6}" font-family="system-ui,sans-serif" font-size="${fs(20)}">${r.icon}</text>
-        <text x="${fs(120)}" y="${tY + fs(100) + i * rowH + rowH * 0.6}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(20)}" fill="${mainColor}">${escSvg(r.name)}</text>
-        <text x="${w - fs(100)}" y="${tY + fs(100) + i * rowH + rowH * 0.6}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${accentColor}" text-anchor="end">${r.count}</text>
+        <rect x="${px}" y="${y0 + fs(84) + i * rowH}" width="${w - px * 2}" height="${rowH - fs(5)}" rx="${fs(8)}" fill="${ta}0.05)" stroke="${ta}0.08)" stroke-width="1"/>
+        <text x="${px + fs(14)}" y="${y0 + fs(84) + i * rowH + rowH * 0.62}" font-family="system-ui,sans-serif" font-size="${fs(18)}">${r.icon}</text>
+        <text x="${px + fs(46)}" y="${y0 + fs(84) + i * rowH + rowH * 0.62}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="${mainColor}">${escSvg(r.name)}</text>
+        <text x="${w - px - fs(14)}" y="${y0 + fs(84) + i * rowH + rowH * 0.62}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(15)}" fill="${accentColor}" text-anchor="end">${r.count} plantillas</text>
       `).join("")}`;
   } else if (contentType === "tpl-normality") {
-    const tY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(280)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">ESTILO INTELIGENTE</text>
-      <text x="${fs(60)}" y="${tY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">La IA aprende</text>
-      <text x="${fs(60)}" y="${tY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">cómo redactas</text>
-      <text x="${fs(60)}" y="${tY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada vez que corriges un informe, el sistema</text>
-      <text x="${fs(60)}" y="${tY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">memoriza tus frases de normalidad preferidas.</text>
-      <text x="${fs(60)}" y="${tY + fs(232)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">En el siguiente informe, las aplica automáticamente.</text>
-      <text x="${fs(60)}" y="${tY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Tu estilo, tu vocabulario, tu nivel de detalle.</text>
-      <text x="${fs(60)}" y="${tY + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${accentColor}">→ Cuanto más usas Radiogen.ai, mejor te conoce.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(265)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧠 APRENDIZAJE ADAPTATIVO</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">La IA aprende cómo</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">redactas tú</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(188)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Cada vez que corriges un informe, el sistema memoriza</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">tus frases de normalidad, tu vocabulario y tu nivel de detalle.</text>
+      <text x="${px}" y="${y0 + fs(256)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">En el siguiente estudio, las aplica automáticamente.</text>
+      <text x="${px}" y="${y0 + fs(286)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Tu estilo personal en cada informe, sin esfuerzo.</text>
+      <text x="${px}" y="${y0 + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Cuanto más usas Radiogen.ai, mejor te conoce.</text>`;
   } else if (contentType === "rec-overview") {
-    const rY = h > w ? fs(200) : fs(120);
+    const y0 = centerBlock(fs(360));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(280)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(80)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">RECOMENDACIONES</text>
-      <text x="${fs(60)}" y="${rY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Nunca olvides una</text>
-      <text x="${fs(60)}" y="${rY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">recomendación</text>
-      <text x="${fs(60)}" y="${rY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Biblioteca de recomendaciones basadas en evidencia</text>
-      <text x="${fs(60)}" y="${rY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">para cada hallazgo incidental. Filtradas por</text>
-      <text x="${fs(60)}" y="${rY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">modalidad, región anatómica y categoría.</text>
-      <text x="${fs(60)}" y="${rY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Nódulo pulmonar → seguimiento Fleischner.</text>
-      <text x="${fs(60)}" y="${rY + fs(308)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Lesión adrenal → protocolo washout.</text>
-      <text x="${fs(60)}" y="${rY + fs(346)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Quiste ovárico → guía ACR.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(260)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🔔 RECOMENDACIONES</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Ningún hallazgo</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">sin seguimiento</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(188)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Biblioteca de recomendaciones basadas en evidencia</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">para cada hallazgo incidental. Filtradas por modalidad,</text>
+      <text x="${px}" y="${y0 + fs(248)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">región anatómica y categoría clínica.</text>
+      <rect x="${px}" y="${y0 + fs(278)}" width="${w - px * 2}" height="${fs(74)}" rx="${fs(10)}" fill="${ta}0.06)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(306)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="${mainColor}">• Nódulo pulmonar → seguimiento Fleischner</text>
+      <text x="${px + fs(16)}" y="${y0 + fs(332)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="${mainColor}">• Lesión adrenal → washout  •  Quiste ovárico → guía ACR</text>`;
   } else if (contentType === "rec-evidence") {
-    const rY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(360));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(340)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">BASADAS EN EVIDENCIA</text>
-      <text x="${fs(60)}" y="${rY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Guías ACR, Fleischner</text>
-      <text x="${fs(60)}" y="${rY + fs(52)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">y sociedades de referencia</text>
-      <text x="${fs(60)}" y="${rY + fs(128)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada recomendación incluye la fuente y el nivel</text>
-      <text x="${fs(60)}" y="${rY + fs(166)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">de evidencia. Actualizadas según las últimas guías.</text>
-      <text x="${fs(60)}" y="${rY + fs(230)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cubre hallazgos incidentales en TC, RM y ecografía:</text>
-      <text x="${fs(60)}" y="${rY + fs(268)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">• Nódulos pulmonares, tiroideos, adrenales y hepáticos</text>
-      <text x="${fs(60)}" y="${rY + fs(302)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">• Quistes renales, ováricos y pancreáticos</text>
-      <text x="${fs(60)}" y="${rY + fs(336)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">• Dilataciones vasculares y aneurismas</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(310)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📚 BASADAS EN EVIDENCIA</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Guías ACR, Fleischner</text>
+      <text x="${px}" y="${y0 + fs(124)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">y sociedades de referencia</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(186)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Cada recomendación incluye la fuente y el nivel de evidencia.</text>
+      <text x="${px}" y="${y0 + fs(216)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Actualizadas según las últimas guías publicadas.</text>
+      <rect x="${px}" y="${y0 + fs(246)}" width="${w - px * 2}" height="${fs(100)}" rx="${fs(10)}" fill="${ta}0.06)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(274)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="${mainColor}">• Nódulos pulmonares, tiroideos, adrenales y hepáticos</text>
+      <text x="${px + fs(16)}" y="${y0 + fs(300)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="${mainColor}">• Quistes renales, ováricos y pancreáticos</text>
+      <text x="${px + fs(16)}" y="${y0 + fs(326)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="${mainColor}">• Dilataciones vasculares y aneurismas incidentales</text>`;
   } else if (contentType === "rec-hospital") {
-    const rY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(320)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">HOSPITAL / EQUIPO</text>
-      <text x="${fs(60)}" y="${rY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Protocolos de tu</text>
-      <text x="${fs(60)}" y="${rY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">departamento</text>
-      <text x="${fs(60)}" y="${rY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">El jefe de sección puede crear recomendaciones</text>
-      <text x="${fs(60)}" y="${rY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">específicas del hospital que aparecen automáticamente</text>
-      <text x="${fs(60)}" y="${rY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">a todos los radiólogos de la sección.</text>
-      <text x="${fs(60)}" y="${rY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Estandariza criterios de seguimiento y asegura</text>
-      <text x="${fs(60)}" y="${rY + fs(308)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">que ningún hallazgo incidental quede sin manejo.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(280)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🏥 PROTOCOLOS DE EQUIPO</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Estandariza tu</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">departamento</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(188)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">El jefe de sección crea recomendaciones del hospital</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">que aparecen automáticamente a todo el equipo.</text>
+      <text x="${px}" y="${y0 + fs(256)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Criterios de seguimiento unificados. Ningún hallazgo</text>
+      <text x="${px}" y="${y0 + fs(286)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">incidental queda sin protocolo de manejo.</text>
+      <text x="${px}" y="${y0 + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Seguridad clínica + consistencia entre radiólogos.</text>`;
   } else if (contentType === "calc-overview") {
-    const cY = h > w ? fs(200) : fs(120);
+    const y0 = centerBlock(fs(370));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(260)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">CALCULADORAS</text>
-      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">7 calculadoras</text>
-      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">integradas en tu informe</text>
-      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Clasifica hallazgos sin salir de la aplicación.</text>
-      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Calcula y copia el resultado al informe con un clic.</text>
-      <text x="${fs(60)}" y="${cY + fs(232)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">TI-RADS · PI-RADS · Bosniak · ASPECTS</text>
-      <text x="${fs(60)}" y="${cY + fs(268)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Volumen prostático · Densidad PSA · Adrenal</text>
-      <text x="${fs(60)}" y="${cY + fs(330)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada calculadora genera texto listo para pegar</text>
-      <text x="${fs(60)}" y="${cY + fs(368)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">en los hallazgos o la conclusión del informe.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(240)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🔢 CALCULADORAS</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">7 calculadoras dentro</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">de tu informe</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(188)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Clasifica hallazgos sin salir de la app. Calcula, copia</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">el resultado y pégalo en el informe con un solo clic.</text>
+      <rect x="${px}" y="${y0 + fs(248)}" width="${w - px * 2}" height="${fs(52)}" rx="${fs(10)}" fill="${ta}0.06)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(281)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(17)}" fill="${mainColor}">TI-RADS · PI-RADS · Bosniak · ASPECTS · Vol. prostático · PSA · Adrenal</text>
+      <text x="${px}" y="${y0 + fs(330)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Cada calculadora genera texto descriptivo listo para pegar</text>
+      <text x="${px}" y="${y0 + fs(360)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">en los hallazgos o la conclusión. Sin apps externas.</text>`;
   } else if (contentType === "calc-tirads") {
-    const cY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(360));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(160)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">TI-RADS</text>
-      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Clasificación tiroidea</text>
-      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">ACR TI-RADS</text>
-      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Selecciona composición, ecogenicidad, forma,</text>
-      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">márgenes y focos ecogénicos. El sistema calcula</text>
-      <text x="${fs(60)}" y="${cY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">los puntos y determina la categoría TI-RADS (1-5).</text>
-      <text x="${fs(60)}" y="${cY + fs(270)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Genera texto descriptivo listo para copiar:</text>
-      <rect x="${fs(60)}" y="${cY + fs(295)}" width="${w - fs(120)}" height="${fs(80)}" rx="${fs(10)}" fill="${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'}"/>
-      <text x="${fs(80)}" y="${cY + fs(330)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(18)}" fill="${subColor}">"Nódulo tiroideo ACR TI-RADS 4 (6 pts).</text>
-      <text x="${fs(80)}" y="${cY + fs(358)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(18)}" fill="${subColor}">Se recomienda PAAF si ≥ 15 mm."</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(155)}" height="${fs(32)}" rx="${fs(16)}" fill="${accentColor}"/>
+      <text x="${px + fs(18)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${brandNavy}">ACR TI-RADS</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Clasificación tiroidea</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">automatizada</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(186)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Selecciona composición, ecogenicidad, forma, márgenes</text>
+      <text x="${px}" y="${y0 + fs(216)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">y focos ecogénicos. El sistema calcula puntos y categoría.</text>
+      <rect x="${px}" y="${y0 + fs(246)}" width="${w - px * 2}" height="${fs(72)}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.1)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(274)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(17)}" fill="${subColor}">"Nódulo tiroideo ACR TI-RADS 4 (6 pts).</text>
+      <text x="${px + fs(16)}" y="${y0 + fs(300)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(17)}" fill="${subColor}">Se recomienda PAAF si ≥ 15 mm."</text>
+      <text x="${px}" y="${y0 + fs(350)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Texto copiable al informe en un clic.</text>`;
   } else if (contentType === "calc-pirads") {
-    const cY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(160)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">PI-RADS</text>
-      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Evaluación prostática</text>
-      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">PI-RADS v2.1</text>
-      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Clasifica lesiones prostáticas según zona (periférica</text>
-      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">o transicional), señal en T2, restricción en difusión</text>
-      <text x="${fs(60)}" y="${cY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y realce dinámico. Incluye volumen prostático</text>
-      <text x="${fs(60)}" y="${cY + fs(244)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">y densidad de PSA en la misma herramienta.</text>
-      <text x="${fs(60)}" y="${cY + fs(310)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${accentColor}">→ PI-RADS 1 a 5 con texto copiable al informe.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(165)}" height="${fs(32)}" rx="${fs(16)}" fill="${accentColor}"/>
+      <text x="${px + fs(18)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${brandNavy}">PI-RADS v2.1</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Evaluación prostática</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">estandarizada</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(186)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Zona periférica o transicional, señal T2, difusión y realce.</text>
+      <text x="${px}" y="${y0 + fs(216)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Incluye volumen prostático y densidad de PSA integrados.</text>
+      <text x="${px}" y="${y0 + fs(254)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Resultado: PI-RADS 1 a 5 con texto descriptivo listo</text>
+      <text x="${px}" y="${y0 + fs(284)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">para copiar directamente a hallazgos o conclusión.</text>
+      <text x="${px}" y="${y0 + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Todo en una herramienta, sin salir del informe.</text>`;
   } else if (contentType === "calc-bosniak") {
-    const cY = h > w ? fs(220) : fs(130);
+    const y0 = centerBlock(fs(340));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(180)}" height="${fs(36)}" rx="${fs(18)}" fill="${accentColor}"/>
-      <text x="${fs(80)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${brandNavy}">BOSNIAK</text>
-      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Clasificación de</text>
-      <text x="${fs(60)}" y="${cY + fs(54)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">quistes renales</text>
-      <text x="${fs(60)}" y="${cY + fs(130)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Clasifica lesiones quísticas renales según Bosniak</text>
-      <text x="${fs(60)}" y="${cY + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">2019 (I, II, IIF, III, IV). Evalúa tabiques, paredes,</text>
-      <text x="${fs(60)}" y="${cY + fs(206)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">realce y componente sólido. El resultado se copia</text>
-      <text x="${fs(60)}" y="${cY + fs(244)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">directamente a tus hallazgos como texto descriptivo.</text>
-      <text x="${fs(60)}" y="${cY + fs(310)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">Sin tablas, sin apps externas. Todo integrado.</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(185)}" height="${fs(32)}" rx="${fs(16)}" fill="${accentColor}"/>
+      <text x="${px + fs(18)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${brandNavy}">BOSNIAK 2019</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Quistes renales</text>
+      <text x="${px}" y="${y0 + fs(126)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">clasificados al instante</text>
+      <line x1="${px}" y1="${y0 + fs(150)}" x2="${px + fs(60)}" y2="${y0 + fs(150)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(186)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Evalúa tabiques, paredes, realce y componente sólido</text>
+      <text x="${px}" y="${y0 + fs(216)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">según Bosniak 2019 (I, II, IIF, III, IV).</text>
+      <text x="${px}" y="${y0 + fs(254)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">El resultado se copia directamente a tus hallazgos</text>
+      <text x="${px}" y="${y0 + fs(284)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(22)}" fill="${mainColor}">como texto descriptivo. Sin tablas ni apps externas.</text>
+      <text x="${px}" y="${y0 + fs(330)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Clasificación + texto descriptivo en un clic.</text>`;
   } else if (contentType === "calc-copy") {
-    const cY = h > w ? fs(250) : fs(140);
+    const y0 = centerBlock(fs(350));
     content = `
-      <rect x="${fs(60)}" y="${fs(55)}" width="${fs(280)}" height="${fs(36)}" rx="${fs(18)}" fill="${isDark ? 'rgba(94,234,212,0.15)' : 'rgba(15,118,110,0.1)'}"/>
-      <text x="${fs(85)}" y="${fs(79)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}">UN CLIC</text>
-      <text x="${fs(60)}" y="${cY}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Calcula.</text>
-      <text x="${fs(60)}" y="${cY + fs(58)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Copia.</text>
-      <text x="${fs(60)}" y="${cY + fs(116)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${accentColor}">Pega en tu informe.</text>
-      <text x="${fs(60)}" y="${cY + fs(195)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Cada calculadora genera un párrafo listo para pegar</text>
-      <text x="${fs(60)}" y="${cY + fs(233)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">en tus hallazgos. Sin escribir ni reformatear.</text>
-      <text x="${fs(60)}" y="${cY + fs(295)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">Ejemplo: "Volumen prostático de 45 cc (4.2 × 3.8</text>
-      <text x="${fs(60)}" y="${cY + fs(333)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(24)}" fill="${subColor}">× 3.5 cm). Densidad de PSA: 0.18 ng/ml/cc."</text>`;
+      <rect x="${px}" y="${y0}" width="${fs(200)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📋 UN CLIC</text>
+      <text x="${px}" y="${y0 + fs(80)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(48)}" fill="${mainColor}">Calcula. Copia.</text>
+      <text x="${px}" y="${y0 + fs(134)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(48)}" fill="${accentColor}">Pega en tu informe.</text>
+      <line x1="${px}" y1="${y0 + fs(160)}" x2="${px + fs(60)}" y2="${y0 + fs(160)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(198)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Cada calculadora genera un párrafo listo para pegar</text>
+      <text x="${px}" y="${y0 + fs(228)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">en tus hallazgos. Sin escribir ni reformatear nada.</text>
+      <rect x="${px}" y="${y0 + fs(258)}" width="${w - px * 2}" height="${fs(50)}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.1)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(290)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(16)}" fill="${subColor}">"Vol. prostático: 45 cc (4.2×3.8×3.5 cm). Densidad PSA: 0.18 ng/ml/cc."</text>
+      <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Texto profesional, listo en segundos.</text>`;
   } else {
     content = `<text x="${w/2}" y="${h/2}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(32)}" fill="${mainColor}" text-anchor="middle">Radiogen.ai</text>`;
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     ${bgSvg}
-    ${decorCircles}
+    ${decor}
     ${content}
     ${logoSmall}
   </svg>`;
