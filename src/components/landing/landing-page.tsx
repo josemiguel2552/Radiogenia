@@ -545,7 +545,7 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
     <section
       ref={containerRef}
       className="relative"
-      style={{ height: reduce ? "auto" : "200vh" }}
+      style={{ height: reduce ? "auto" : "160vh" }}
     >
       <div
         className={`${
