@@ -1546,7 +1546,7 @@ export function DashboardContent() {
                   className="flex items-center gap-1.5 w-full h-9 px-3 rounded-md border text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   {t("dash.clinical_context")}
-                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
                   <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
                 </button>
                 {clinicalOpen && (
@@ -1583,7 +1583,7 @@ export function DashboardContent() {
                   {contrastOption === "con_contraste" ? "C+" : "C−"}
                 </Badge>
               )}
-              {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0" />}
+              {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500 flex-shrink-0" />}
             </div>
             <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
           </div>
@@ -1676,7 +1676,7 @@ export function DashboardContent() {
                           )}
                           {Array.from(sectionGroups.entries()).map(([secName, tpls]) => (
                             <SelectGroup key={secName}>
-                              <SelectLabel className="text-[10px] text-teal-600 dark:text-teal-400 uppercase tracking-wider">{secName}</SelectLabel>
+                              <SelectLabel className="text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-wider">{secName}</SelectLabel>
                               {tpls.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
                             </SelectGroup>
                           ))}
@@ -1820,7 +1820,7 @@ export function DashboardContent() {
                   className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 >
                   {t("dash.clinical_context")}
-                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
                   <ChevronDown className={`h-3 w-3 transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
                 </button>
                 {clinicalOpen && (
@@ -1891,7 +1891,7 @@ export function DashboardContent() {
                 )}
                 {(isRecording || isTranscribing || isCorrecting || isRefining) && (
                   <div className="absolute bottom-2 right-2">
-                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-emerald-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
+                    <Badge className={`text-[10px] ${isRecording ? "bg-red-500 text-white animate-pulse" : isRefining ? "bg-violet-500 text-white animate-pulse gap-1" : isCorrecting ? "bg-purple-500 text-white animate-pulse gap-1" : "bg-blue-500 text-white animate-pulse gap-1"}`}>
                       {isRecording ? "REC" : isRefining ? <><Loader2 className="h-2.5 w-2.5 animate-spin" /> Refining</> : isCorrecting ? <><Wand2 className="h-2.5 w-2.5" /> Correcting</> : <><Loader2 className="h-2.5 w-2.5 animate-spin" /> STT</>}
                     </Badge>
                   </div>
@@ -1929,11 +1929,11 @@ export function DashboardContent() {
                   <Button
                     onClick={() => handleGenerate("compact")}
                     disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white"
                   >
                     {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
                   </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-violet-300/60 hover:bg-violet-300 transition-colors" />
                 </div>
                 <div className="relative">
                   <Button
@@ -2061,7 +2061,7 @@ export function DashboardContent() {
                         conclusionStyle === s
                           ? "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] shadow-sm"
                           : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
-                          : conclusionVersions[s] ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                          : conclusionVersions[s] ? "text-green-600 dark:text-violet-400 hover:text-green-700 dark:hover:text-green-300"
                           : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       }`}
                     >
@@ -2323,7 +2323,7 @@ function OutputCard({
             <button
               type="button"
               onClick={() => { setEditing(false); onEdit?.(); }}
-              className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 dark:text-green-400 font-medium transition-colors"
+              className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 dark:text-violet-400 font-medium transition-colors"
             >
               <CheckCheck className="h-3 w-3" />
               OK

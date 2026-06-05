@@ -615,7 +615,7 @@ export function AdminOrganizationsTab() {
                                     <button key={r.id} onClick={() => openEditMember(r)}
                                       className="group w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer"
                                     >
-                                      <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${r.staff_type === "resident" ? "bg-emerald-500" : "bg-gray-400"}`}>
+                                      <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${r.staff_type === "resident" ? "bg-violet-500" : "bg-gray-400"}`}>
                                         {(r.user_name || r.user_email || "?")[0].toUpperCase()}
                                       </div>
                                       <div className="flex-1 text-left min-w-0">
@@ -760,7 +760,7 @@ export function AdminOrganizationsTab() {
                                 {roleLabel(m.section_role, m.is_org_chief)}
                               </Badge>
                               {m.staff_type === "resident" && (
-                                <Badge variant="outline" className="text-[9px] flex-shrink-0 border-emerald-400/50 text-emerald-600 dark:text-emerald-400">
+                                <Badge variant="outline" className="text-[9px] flex-shrink-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
                                   {t("admin.org.staff_resident")}
                                 </Badge>
                               )}
@@ -779,7 +779,7 @@ export function AdminOrganizationsTab() {
                                 </Button>
                                 <Button
                                   variant="ghost" size="icon"
-                                  className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
+                                  className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-violet-500 hover:text-green-600"}`}
                                   onClick={() => handleToggleMember(m)}
                                   title={m.is_active ? t("admin.org.deactivate") : t("admin.org.reactivate")}
                                 >
@@ -838,8 +838,8 @@ export function AdminOrganizationsTab() {
               <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                   <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">{t("admin.org.account_created_success")}</p>
-                  <p className="text-xs text-green-600 dark:text-green-400 font-mono select-all">{memberSuccess}</p>
-                  <p className="text-[10px] text-green-500 mt-2">{t("admin.org.copy_credentials_hint")}</p>
+                  <p className="text-xs text-green-600 dark:text-violet-400 font-mono select-all">{memberSuccess}</p>
+                  <p className="text-[10px] text-violet-500 mt-2">{t("admin.org.copy_credentials_hint")}</p>
                 </div>
                 <Button size="sm" className="w-full" onClick={() => { setShowMemberForm(false); setMemberSuccess(""); }}>{t("close")}</Button>
               </div>
@@ -1006,7 +1006,7 @@ export function AdminOrganizationsTab() {
                     <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                       <p className="text-xs text-green-700 dark:text-green-300">{resetSuccess}</p>
                       <p className="text-xs font-mono mt-1 select-all text-green-600">{newPassword}</p>
-                      <p className="text-[10px] text-green-500 mt-1">{t("admin.org.share_new_password_hint")}</p>
+                      <p className="text-[10px] text-violet-500 mt-1">{t("admin.org.share_new_password_hint")}</p>
                     </div>
                     <Button size="sm" className="w-full" onClick={() => setShowPasswordReset(false)}>{t("close")}</Button>
                   </div>

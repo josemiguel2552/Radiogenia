@@ -284,7 +284,7 @@ export function ModelConfigTab() {
         <AccordionItem value="normality">
           <AccordionTrigger className="text-sm font-semibold">
             <span className="flex items-center gap-2">
-              <Brain className="h-3.5 w-3.5 text-emerald-500" />
+              <Brain className="h-3.5 w-3.5 text-violet-500" />
               {t("cfg.normality")}
             </span>
           </AccordionTrigger>
@@ -314,7 +314,7 @@ export function ModelConfigTab() {
               <PenLine className="h-3.5 w-3.5 text-blue-500" />
               {t("sig.title")}
               {signatures.some((s) => s.is_active) && (
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
               )}
             </span>
           </AccordionTrigger>
@@ -344,7 +344,7 @@ export function ModelConfigTab() {
                     key={sig.id}
                     className={`p-2 rounded-lg border transition-colors ${
                       sig.is_active
-                        ? "border-green-500/40 bg-green-50 dark:bg-green-900/10"
+                        ? "border-violet-500/40 bg-green-50 dark:bg-green-900/10"
                         : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                     }`}
                   >
@@ -354,8 +354,8 @@ export function ModelConfigTab() {
                         onClick={() => handleToggleSigActive(sig)}
                         className={`h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                           sig.is_active
-                            ? "border-green-500 bg-green-500"
-                            : "border-gray-300 dark:border-gray-600 hover:border-green-400"
+                            ? "border-violet-500 bg-violet-500"
+                            : "border-gray-300 dark:border-gray-600 hover:border-violet-400"
                         }`}
                         title={sig.is_active ? t("sig.active") : t("sig.set_active")}
                       >
@@ -563,7 +563,7 @@ function NormalityPhraseRow({ row, saving, onSave, onReset, translateLabel }: {
   }
 
   return (
-    <div className={`flex items-start gap-2 p-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-emerald-500" : ""}`}>
+    <div className={`flex items-start gap-2 p-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-violet-500" : ""}`}>
       <div className="flex-1 min-w-0">
         <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{translateLabel(row.section_label)}</span>
         <span className="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{row.phrase}</span>

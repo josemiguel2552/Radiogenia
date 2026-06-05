@@ -134,7 +134,7 @@ function FallbackAnatomy() {
       <ellipse cx="75" cy="198" rx="8" ry="12" className="fill-orange-300/25 dark:fill-orange-400/15" />
       <ellipse cx="125" cy="198" rx="8" ry="12" className="fill-orange-300/25 dark:fill-orange-400/15" />
       <path d="M85 210 C80 220 82 240 90 245 C95 248 100 240 105 245 C110 248 115 240 112 230 C110 220 105 215 100 210 C95 208 88 208 85 210Z"
-        className="fill-green-300/20 dark:fill-green-400/12" />
+        className="fill-green-300/20 dark:fill-violet-400/12" />
       <path d="M100 55 L100 85 L100 120 L100 170 L100 220 L100 270 L95 340 M100 270 L105 340"
         className="stroke-red-400/30 dark:stroke-red-400/20" strokeWidth="1" fill="none" />
       <path d="M100 95 L75 100 L50 130 M100 95 L125 100 L150 130"

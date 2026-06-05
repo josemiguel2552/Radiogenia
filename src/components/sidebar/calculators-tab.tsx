@@ -102,7 +102,7 @@ function CopyButton({ text }: { text: string }) {
         setTimeout(() => setCopied(false), 1500);
       }}
     >
-      {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+      {copied ? <Check className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
       {copied ? t("calc.copied") : t("calc.copy")}
     </Button>
   );
@@ -1416,7 +1416,7 @@ function CheatSheet({ title, source, children }: { title: string; source: string
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
       >
-        <BookOpenCheck className="h-3.5 w-3.5 text-teal-500 shrink-0" />
+        <BookOpenCheck className="h-3.5 w-3.5 text-violet-500 shrink-0" />
         <span className="text-xs font-medium text-gray-800 dark:text-gray-200 flex-1">{title}</span>
         {open ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
       </button>

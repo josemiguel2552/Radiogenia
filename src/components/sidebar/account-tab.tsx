@@ -276,14 +276,14 @@ export function AccountTab() {
                 {/* Dictation */}
                 <div className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
                   <div className="flex items-center gap-2 mb-2">
-                    <Mic className="h-4 w-4 text-teal-500" />
+                    <Mic className="h-4 w-4 text-violet-500" />
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("account.dictation_usage")}</span>
                   </div>
                   <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-2xl font-bold text-gray-900 dark:text-white">{sub.dictation.usedMinutes}</span>
                     <span className="text-sm text-gray-400">/ {sub.dictation.limitMinutes} min</span>
                   </div>
-                  <UsageBar used={sub.dictation.usedMinutes} total={sub.dictation.limitMinutes} color="bg-teal-500" />
+                  <UsageBar used={sub.dictation.usedMinutes} total={sub.dictation.limitMinutes} color="bg-violet-500" />
                 </div>
               </div>
 
@@ -479,8 +479,8 @@ export function AccountTab() {
       <Card>
         <CardContent className="p-5 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
-              <Gift className="h-5 w-5 text-teal-500" />
+            <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+              <Gift className="h-5 w-5 text-violet-500" />
             </div>
             <div>
               <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.invitations")}</span>
@@ -508,7 +508,7 @@ export function AccountTab() {
                     setTimeout(() => setCopied(false), 2000);
                   }}
                 >
-                  {copied ? <CheckCheck className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? <CheckCheck className="h-3.5 w-3.5 text-violet-500" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? t("account.copied") : t("account.copy_link")}
                 </Button>
               </div>

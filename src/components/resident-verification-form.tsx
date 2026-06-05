@@ -87,7 +87,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
-              <p className="text-sm font-medium text-green-700 dark:text-green-400">
+              <p className="text-sm font-medium text-green-700 dark:text-violet-400">
                 {t("rv.status_approved")}
               </p>
               <p className="text-xs text-gray-500">

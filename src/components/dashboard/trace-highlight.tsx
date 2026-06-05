@@ -230,7 +230,7 @@ export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boole
         </span>
         <div className="flex items-center gap-2">
           {allGood && (
-            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-violet-400 font-medium">
               <Check className="h-3 w-3" />
               {t("trace.all_verified")}
             </span>

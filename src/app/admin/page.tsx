@@ -673,7 +673,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label={t("admin.total_users")} value={stats?.totalUsers ?? radiologists.length} />
               <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label={t("admin.total_reports")} value={stats?.totalReports ?? totalReports} />
-              <StatCard icon={<TrendingUp className="h-5 w-5 text-green-500" />} label={t("admin.reports_this_month")} value={stats?.reportsThisMonth ?? 0} />
+              <StatCard icon={<TrendingUp className="h-5 w-5 text-violet-500" />} label={t("admin.reports_this_month")} value={stats?.reportsThisMonth ?? 0} />
               <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label={t("admin.dictation_min")} value={`${stats?.totalDictationMinutes ?? 0} min`} />
               <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label={t("admin.mrr")} value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
             </div>
@@ -874,7 +874,7 @@ export default function AdminPage() {
                               <div className="inline-flex items-center gap-2">
                                 <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full ${usagePct > 80 ? "bg-red-500" : usagePct > 50 ? "bg-amber-500" : "bg-green-500"}`}
+                                    className={`h-full rounded-full ${usagePct > 80 ? "bg-red-500" : usagePct > 50 ? "bg-amber-500" : "bg-violet-500"}`}
                                     style={{ width: `${Math.min(usagePct, 100)}%` }}
                                   />
                                 </div>
@@ -1217,7 +1217,7 @@ export default function AdminPage() {
                                     placeholder={isSaved ? `••••••••  (${t("admin.saved")})` : t("admin.api_key")}
                                   />
                                   {k.value && !isSaved && (
-                                    <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                    <Check className="h-3.5 w-3.5 text-violet-500 flex-shrink-0" />
                                   )}
                                   {isSaved && (
                                     <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.saved")}</Badge>
@@ -1955,7 +1955,7 @@ export default function AdminPage() {
                       </div>
                       <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
                         <p className="text-lg font-bold text-green-700 dark:text-green-300">{ftDataPreview.total >= 10 ? "✓" : "✗"}</p>
-                        <p className="text-[10px] text-green-500">{t("admin.ft_min_examples")}</p>
+                        <p className="text-[10px] text-violet-500">{t("admin.ft_min_examples")}</p>
                       </div>
                     </div>
 

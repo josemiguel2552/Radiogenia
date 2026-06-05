@@ -61,8 +61,8 @@ export default function WaitlistPage() {
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
             <div className="flex justify-center">
-              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-green-400" />
+              <div className="h-12 w-12 rounded-full bg-violet-500/10 flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-violet-400" />
               </div>
             </div>
             <h1 className="text-xl font-bold text-white">{t("waitlist.success_title")}</h1>
@@ -214,7 +214,7 @@ export default function WaitlistPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
+              className="w-full h-11 bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] hover:from-[#5b21b6] hover:to-[#6d28d9] font-semibold shadow-lg shadow-violet-500/20"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("waitlist.submit")}

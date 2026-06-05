@@ -9,11 +9,11 @@ import { useT } from "@/lib/i18n";
 const STORAGE_KEY = "radiogenai_onboarding_done";
 
 const STEPS = [
-  { icon: Stethoscope, titleKey: "help.step1_title", descKey: "help.step1_desc", color: "text-teal-500" },
+  { icon: Stethoscope, titleKey: "help.step1_title", descKey: "help.step1_desc", color: "text-violet-500" },
   { icon: Mic, titleKey: "help.step2_title", descKey: "help.step2_desc", color: "text-blue-500" },
   { icon: Sparkles, titleKey: "help.step3_title", descKey: "help.step3_desc", color: "text-purple-500" },
   { icon: PenLine, titleKey: "help.step4_title", descKey: "help.step4_desc", color: "text-amber-500" },
-  { icon: Save, titleKey: "help.step5_title", descKey: "help.step5_desc", color: "text-emerald-500" },
+  { icon: Save, titleKey: "help.step5_title", descKey: "help.step5_desc", color: "text-violet-500" },
 ];
 
 export function OnboardingDialog() {

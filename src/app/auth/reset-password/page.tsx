@@ -74,8 +74,8 @@ export default function ResetPasswordPage() {
 
         {success ? (
           <div className="text-center space-y-4">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-              <Check className="h-6 w-6 text-green-400" />
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <Check className="h-6 w-6 text-violet-400" />
             </div>
             <h1 className="text-2xl font-bold text-white">{t("auth.password_updated")}</h1>
             <p className="text-sm text-gray-400">{t("auth.redirecting")}</p>
@@ -123,7 +123,7 @@ export default function ResetPasswordPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
+                className="w-full h-11 bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] hover:from-[#5b21b6] hover:to-[#6d28d9] font-semibold shadow-lg shadow-violet-500/20"
                 disabled={loading}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("auth.update_btn")}

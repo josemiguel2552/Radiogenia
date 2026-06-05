@@ -14,7 +14,7 @@ function buildPrompt(prompt: string, style: string) {
   const styleGuide = style === "minimal"
     ? "Clean minimal design with lots of white space. Modern sans-serif typography."
     : style === "gradient"
-    ? "Modern gradient background using teal (#0F766E) to navy (#1E3A5F). Sleek and futuristic feel."
+    ? "Modern gradient background using teal (#7c3aed) to navy (#1e1b4b). Sleek and futuristic feel."
     : style === "medical"
     ? "Professional medical/healthcare aesthetic. Clean, trustworthy, modern. Subtle radiology imagery."
     : "Modern tech startup aesthetic. Bold, clean, professional.";

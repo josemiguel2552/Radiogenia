@@ -203,7 +203,7 @@ export function AdminPilotTab() {
     URL.revokeObjectURL(url);
   }, [userBreakdown, selectedOrgId]);
 
-  const guideStyles = `@page{size:A4;margin:14mm 15mm;}*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1f2937;font-size:11px;line-height:1.5;}.page{page-break-after:always;}.page:last-child{page-break-after:auto;}.hdr{background:linear-gradient(135deg,#1E3A5F,#0F766E);color:#fff;padding:16px 22px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}.hdr h1{font-size:18px;font-weight:700;}.hdr .sub{font-size:10px;opacity:.85;margin-top:2px;}.hdr .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;}h2{font-size:12.5px;font-weight:700;color:#1E3A5F;border-bottom:2px solid #0F766E;padding-bottom:3px;margin:12px 0 7px;}h3{font-size:11px;font-weight:600;color:#374151;margin:7px 0 3px;}p{font-size:10.5px;line-height:1.5;margin-bottom:5px;}.step{display:flex;gap:9px;margin-bottom:7px;}.sn{background:#0F766E;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}.sc{flex:1;}.sc strong{font-size:10.5px;}.sc p{font-size:10px;margin-top:1px;}.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 11px;margin:7px 0;font-size:10px;}.tip strong{color:#166534;}.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}.cd{border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;}.cd h3{margin:0 0 3px;font-size:10px;color:#1E3A5F;}.cd p{font-size:9.5px;margin:0;}ul{padding-left:14px;margin:3px 0 7px;}li{font-size:10px;margin-bottom:2px;}.ft{text-align:center;font-size:9px;color:#9ca3af;margin-top:14px;padding-top:7px;border-top:1px solid #e5e7eb;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}@media screen{body{max-width:210mm;margin:0 auto;padding:10mm;background:#f3f4f6;}.page{background:#fff;padding:15mm;margin-bottom:10mm;box-shadow:0 1px 3px rgba(0,0,0,.1);border-radius:4px;}}`;
+  const guideStyles = `@page{size:A4;margin:14mm 15mm;}*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1f2937;font-size:11px;line-height:1.5;}.page{page-break-after:always;}.page:last-child{page-break-after:auto;}.hdr{background:linear-gradient(135deg,#1e1b4b,#7c3aed);color:#fff;padding:16px 22px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}.hdr h1{font-size:18px;font-weight:700;}.hdr .sub{font-size:10px;opacity:.85;margin-top:2px;}.hdr .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;}h2{font-size:12.5px;font-weight:700;color:#1e1b4b;border-bottom:2px solid #7c3aed;padding-bottom:3px;margin:12px 0 7px;}h3{font-size:11px;font-weight:600;color:#374151;margin:7px 0 3px;}p{font-size:10.5px;line-height:1.5;margin-bottom:5px;}.step{display:flex;gap:9px;margin-bottom:7px;}.sn{background:#7c3aed;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}.sc{flex:1;}.sc strong{font-size:10.5px;}.sc p{font-size:10px;margin-top:1px;}.tip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 11px;margin:7px 0;font-size:10px;}.tip strong{color:#166534;}.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}.cd{border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;}.cd h3{margin:0 0 3px;font-size:10px;color:#1e1b4b;}.cd p{font-size:9.5px;margin:0;}ul{padding-left:14px;margin:3px 0 7px;}li{font-size:10px;margin-bottom:2px;}.ft{text-align:center;font-size:9px;color:#9ca3af;margin-top:14px;padding-top:7px;border-top:1px solid #e5e7eb;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}@media screen{body{max-width:210mm;margin:0 auto;padding:10mm;background:#f3f4f6;}.page{background:#fff;padding:15mm;margin-bottom:10mm;box-shadow:0 1px 3px rgba(0,0,0,.1);border-radius:4px;}}`;
 
   const downloadRadiologistGuide = useCallback(() => {
     const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Radiogenia — Guía de inicio rápido</title><style>${guideStyles}</style></head><body>
@@ -795,7 +795,7 @@ export function AdminPilotTab() {
                         {u.section && <p className="text-[10px] text-gray-400">{u.section}</p>}
                       </td>
                       <td className="px-3 py-2">
-                        <Badge variant="outline" className={`text-[9px] ${u.staff === "resident" ? "border-emerald-400/50 text-emerald-600" : "border-gray-300 text-gray-500"}`}>
+                        <Badge variant="outline" className={`text-[9px] ${u.staff === "resident" ? "border-violet-400/50 text-violet-600" : "border-gray-300 text-gray-500"}`}>
                           {u.staff === "resident" ? t("admin.org.staff_resident") : t("admin.org.staff_attending")}
                         </Badge>
                       </td>
@@ -877,7 +877,7 @@ export function AdminPilotTab() {
                               {hasChanges ? (
                                 <Badge variant="outline" className="text-[9px] border-amber-400/50 text-amber-600">{editPct}% {t("pilot.edit_rate").toLowerCase()}</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[9px] border-emerald-400/50 text-emerald-600">{t("pilot.no_changes")}</Badge>
+                                <Badge variant="outline" className="text-[9px] border-violet-400/50 text-violet-600">{t("pilot.no_changes")}</Badge>
                               )}
                               {m.recommendations_text && (
                                 <Badge variant="outline" className="text-[9px] border-blue-400/50 text-blue-600">{t("pilot.recommendations")}</Badge>
@@ -900,7 +900,7 @@ export function AdminPilotTab() {
                                 <p className="text-[10px] font-semibold mb-1" style={{ color: findingsChanged ? "#d97706" : "#059669" }}>
                                   {t("pilot.final_findings")} {findingsChanged ? "✎" : "✓"}
                                 </p>
-                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto ${findingsChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-emerald-50 dark:bg-emerald-950/20 text-gray-700 dark:text-gray-300"}`}>
+                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto ${findingsChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-violet-50 dark:bg-violet-950/20 text-gray-700 dark:text-gray-300"}`}>
                                   {m.final_findings_text || m.ai_findings_text || "—"}
                                 </div>
                               </div>
@@ -917,7 +917,7 @@ export function AdminPilotTab() {
                                 <p className="text-[10px] font-semibold mb-1" style={{ color: conclusionChanged ? "#d97706" : "#059669" }}>
                                   {t("pilot.final_conclusion")} {conclusionChanged ? "✎" : "✓"}
                                 </p>
-                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto ${conclusionChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-emerald-50 dark:bg-emerald-950/20 text-gray-700 dark:text-gray-300"}`}>
+                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto ${conclusionChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-violet-50 dark:bg-violet-950/20 text-gray-700 dark:text-gray-300"}`}>
                                   {m.final_conclusion_text || m.ai_conclusion_text || "—"}
                                 </div>
                               </div>

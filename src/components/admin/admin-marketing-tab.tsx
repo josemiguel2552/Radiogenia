@@ -206,6 +206,34 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "pub-calc-all-ln", label: "Todas las calculadoras (landscape)", category: "Pub. Calculadoras", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo calculadoras", tagline: "calc-all" },
   { id: "pub-guides-all-sq", label: "Todas las guías clínicas", category: "Pub. Recomendaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Grid completo guías", tagline: "guides-all" },
   { id: "pub-guides-all-ln", label: "Todas las guías clínicas (landscape)", category: "Pub. Recomendaciones", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo guías", tagline: "guides-all" },
+  // ═══ Carruseles (portada) ═══
+  { id: "pub-carousel-tirads", label: "Carrusel — TI-RADS", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG — Portada carrusel TI-RADS", tagline: "carousel-tirads" },
+  { id: "pub-carousel-incidental", label: "Carrusel — Incidentales", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Portada carrusel incidentales", tagline: "carousel-incidental" },
+  // ═══ Infografías ═══
+  { id: "pub-infographic-sq", label: "Infografía proceso", category: "Pub. Infografías", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Blueprint del proceso", tagline: "infographic-process" },
+  { id: "pub-infographic-ln", label: "Infografía proceso (landscape)", category: "Pub. Infografías", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "LinkedIn — Blueprint del proceso", tagline: "infographic-process" },
+  { id: "pub-timecomp-sq", label: "Comparativa de tiempo", category: "Pub. Infografías", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Barras de tiempo", tagline: "time-comparison" },
+  // ═══ ¿Sabías que? ═══
+  { id: "pub-dyk-errors", label: "¿Sabías que? — Errores", category: "Pub. Sabías que", width: 1080, height: 1080, bg: "purple", logoVariant: "full", description: "IG/FB — Stat errores informes", tagline: "dyk-errors" },
+  { id: "pub-dyk-time", label: "¿Sabías que? — Tiempo", category: "Pub. Sabías que", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Stat tiempo redacción", tagline: "dyk-time" },
+  { id: "pub-dyk-incidental", label: "¿Sabías que? — Incidentales", category: "Pub. Sabías que", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Stat incidentales", tagline: "dyk-incidental" },
+  // ═══ Testimonial + métrica ═══
+  { id: "pub-testimetric-sq", label: "Testimonial + métrica", category: "Publicaciones", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Cita + número", tagline: "testimonial-metrics" },
+  { id: "pub-testimetric-ln", label: "Testimonial + métrica (landscape)", category: "Publicaciones", width: 1200, height: 630, bg: "white", logoVariant: "full", description: "LinkedIn — Cita + número", tagline: "testimonial-metrics" },
+  // ═══ Antes / Después informe ═══
+  { id: "pub-beforeafter-sq", label: "Antes / Después informe", category: "Publicaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Informe desestructurado vs estructurado", tagline: "before-after-report" },
+  // ═══ Body map ═══
+  { id: "pub-bodymap-sq", label: "Mapa corporal plantillas", category: "Pub. Templates", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Regiones anatómicas visual", tagline: "bodymap" },
+  // ═══ ROI ═══
+  { id: "pub-roi-sq", label: "ROI / Valor hora", category: "Publicaciones", width: 1080, height: 1080, bg: "purple", logoVariant: "full", description: "IG/FB — Cálculo ROI visual", tagline: "roi-pricing" },
+  // ═══ Feature spotlights ═══
+  { id: "pub-spot-voice", label: "Spotlight — Dictado voz", category: "Pub. Spotlights", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Dictado por voz", tagline: "spotlight-voice" },
+  { id: "pub-spot-multilang", label: "Spotlight — Multiidioma", category: "Pub. Spotlights", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — 3 idiomas", tagline: "spotlight-multilang" },
+  { id: "pub-spot-darkmode", label: "Spotlight — Modo oscuro", category: "Pub. Spotlights", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Dark mode", tagline: "spotlight-darkmode" },
+  { id: "pub-spot-export", label: "Spotlight — Exportar PDF", category: "Pub. Spotlights", width: 1080, height: 1080, bg: "white", logoVariant: "full", description: "IG/FB — Export PDF", tagline: "spotlight-export" },
+  { id: "pub-spot-teams", label: "Spotlight — Equipos", category: "Pub. Spotlights", width: 1080, height: 1080, bg: "purple", logoVariant: "full", description: "IG/FB — Colaboración equipos", tagline: "spotlight-teams" },
+  // ═══ IA aprende frases ═══
+  { id: "pub-normality-learn-sq", label: "IA aprende tus frases", category: "Pub. Templates", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Aprendizaje visual", tagline: "normality-learn" },
 ];
 
 function buildLogoSvg(
@@ -227,13 +255,13 @@ function buildLogoSvg(
   const isPurple = bg === "purple";
   const textDark = bg === "white" || bg === "transparent";
   const mainColor = textDark ? "#111827" : "#ffffff";
-  const accentColor = isPurple ? "#c4b5fd" : textDark ? "#0d9488" : "#5EEAD4";
+  const accentColor = isPurple ? "#c4b5fd" : textDark ? "#7c3aed" : "#c4b5fd";
   const subColor = textDark ? "#6b7280" : "rgba(255,255,255,0.6)";
-  const dotColor = isPurple ? "#c4b5fd" : "#5EEAD4";
+  const dotColor = "#c4b5fd";
 
   let bgRect = "";
   if (bg === "gradient") {
-    bgRect = `<defs><linearGradient id="bg-grad" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-grad)"/>`;
+    bgRect = `<defs><linearGradient id="bg-grad" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#4c1d95"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-grad)"/>`;
   } else if (bg === "purple") {
     bgRect = `<defs><linearGradient id="bg-grad" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-grad)"/>`;
   } else if (bg === "dark") {
@@ -244,7 +272,7 @@ function buildLogoSvg(
 
   const iconGradStops = isPurple
     ? `<stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/>`
-    : `<stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/>`;
+    : `<stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#7c3aed"/>`;
 
   const iconSvg = `<g transform="translate(${iconX},${iconY}) scale(${scale})">
     <rect width="32" height="32" rx="7" fill="url(#icon-grad)"/>
@@ -286,9 +314,9 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   const isDark = bg === "gradient" || bg === "dark" || bg === "purple";
   const mainColor = isDark ? "#ffffff" : "#111827";
   const subColor = isDark ? "rgba(255,255,255,0.55)" : "#6b7280";
-  const accentColor = "#5EEAD4";
-  const brandTeal = "#0F766E";
-  const brandNavy = "#1E3A5F";
+  const accentColor = "#c4b5fd";
+  const brandTeal = "#7c3aed";
+  const brandNavy = "#1e1b4b";
   const scale = w / 1080;
   const fs = (n: number) => Math.round(n * scale);
   const px = fs(60);
@@ -300,7 +328,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
 
   let bgSvg = "";
   if (bg === "gradient") {
-    bgSvg = `<defs><linearGradient id="bg-g" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="60%" stop-color="#0F766E"/><stop offset="100%" stop-color="#134e4a"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-g)"/>`;
+    bgSvg = `<defs><linearGradient id="bg-g" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="60%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-g)"/>`;
   } else if (bg === "purple") {
     bgSvg = `<defs><linearGradient id="bg-g" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-g)"/>`;
   } else if (bg === "dark") {
@@ -309,7 +337,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
     bgSvg = `<rect width="${w}" height="${h}" fill="#ffffff"/>`;
   }
 
-  const ta = isDark ? "rgba(94,234,212," : "rgba(15,118,110,";
+  const ta = isDark ? "rgba(196,181,253," : "rgba(124,58,237,";
   const decor = `
     <circle cx="${w * 0.87}" cy="${h * 0.08}" r="${fs(220)}" fill="${ta}0.05)"/>
     <circle cx="${w * 0.05}" cy="${h * 0.93}" r="${fs(160)}" fill="${ta}0.04)"/>
@@ -722,6 +750,311 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       }).join("")}
       <text x="${px}" y="${botSafe - fs(4)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(17)}" fill="rgba(255,255,255,0.4)">Cada recomendación incluye fuente, nivel de evidencia y texto copiable</text>
       <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#9333ea"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#f0abfc">.ai</tspan></text>`;
+  } else if (contentType === "carousel-tirads") {
+    const y0 = centerBlock(fs(400));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(200)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📚 CARRUSEL EDUCATIVO</text>
+      <text x="${px}" y="${y0 + fs(90)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${mainColor}">ACR TI-RADS</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">Clasifica un nódulo</text>
+      <text x="${px}" y="${y0 + fs(198)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">tiroideo en 60 segundos</text>
+      <line x1="${px}" y1="${y0 + fs(224)}" x2="${px + fs(60)}" y2="${y0 + fs(224)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(268)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Composición · Ecogenicidad · Forma · Márgenes · Focos</text>
+      <text x="${px}" y="${y0 + fs(300)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Aprende a puntuar y clasificar paso a paso.</text>
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0 + fs(360)}" r="${fs(5)}" fill="${i === 0 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <text x="${w/2}" y="${y0 + fs(400)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="${accentColor}" text-anchor="middle">Desliza →</text>`;
+  } else if (contentType === "carousel-incidental") {
+    const y0 = centerBlock(fs(400));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(200)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">📚 CARRUSEL EDUCATIVO</text>
+      <text x="${px}" y="${y0 + fs(90)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(52)}" fill="${mainColor}">5 incidentales</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">que no puedes</text>
+      <text x="${px}" y="${y0 + fs(198)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${accentColor}">ignorar en un TC</text>
+      <line x1="${px}" y1="${y0 + fs(224)}" x2="${px + fs(60)}" y2="${y0 + fs(224)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(268)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Nódulo pulmonar · Adrenal · Renal · Hepático · Tiroideo</text>
+      <text x="${px}" y="${y0 + fs(300)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Qué guía seguir en cada caso. Con Radiogen.ai lo tienes integrado.</text>
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0 + fs(360)}" r="${fs(5)}" fill="${i === 0 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <text x="${w/2}" y="${y0 + fs(400)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="${accentColor}" text-anchor="middle">Desliza →</text>`;
+  } else if (contentType === "infographic-process") {
+    const y0 = centerBlock(fs(420));
+    const steps = [
+      { num: "01", title: "Dicta tus hallazgos", desc: "En español, inglés o portugués.\nPor voz o texto libre." },
+      { num: "02", title: "La IA estructura", desc: "Separa por secciones anatómicas.\nAplica tu estilo y frases." },
+      { num: "03", title: "Revisa y ajusta", desc: "Edita lo que quieras.\nEl sistema aprende tus cambios." },
+      { num: "04", title: "Conclusión + firma", desc: "Conclusión generada automáticamente.\nExporta PDF o copia." },
+    ];
+    const stepH = fs(78);
+    const gap = fs(12);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(160)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">⚙️ CÓMO FUNCIONA</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${mainColor}">De la voz al informe</text>
+      <text x="${px}" y="${y0 + fs(120)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${accentColor}">firmado en 4 pasos</text>
+      ${steps.map((s, i) => {
+        const sy = y0 + fs(155) + i * (stepH + gap);
+        const lines = s.desc.split("\\n");
+        return `
+          <rect x="${px}" y="${sy}" width="${w - px * 2}" height="${stepH}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px + fs(12)}" y="${sy + fs(14)}" width="${fs(48)}" height="${fs(48)}" rx="${fs(24)}" fill="${ta}0.15)"/>
+          <text x="${px + fs(36)}" y="${sy + fs(46)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(18)}" fill="${accentColor}" text-anchor="middle">${s.num}</text>
+          <text x="${px + fs(76)}" y="${sy + fs(32)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}">${escSvg(s.title)}</text>
+          <text x="${px + fs(76)}" y="${sy + fs(54)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">${escSvg(lines[0])} ${escSvg(lines[1] || "")}</text>
+          ${i < 3 ? `<line x1="${px + fs(36)}" y1="${sy + stepH}" x2="${px + fs(36)}" y2="${sy + stepH + gap}" stroke="${ta}0.2)" stroke-width="2" stroke-dasharray="4 3"/>` : ""}
+        `;
+      }).join("")}`;
+  } else if (contentType === "time-comparison") {
+    const y0 = centerBlock(fs(380));
+    const barW = w - px * 2;
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(200)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">⏱️ COMPARATIVA</text>
+      <text x="${px}" y="${y0 + fs(76)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Tiempo por informe</text>
+      <text x="${px}" y="${y0 + fs(130)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Redacción manual</text>
+      <rect x="${px}" y="${y0 + fs(145)}" width="${barW}" height="${fs(44)}" rx="${fs(8)}" fill="rgba(239,68,68,0.12)"/>
+      <rect x="${px}" y="${y0 + fs(145)}" width="${barW * 0.88}" height="${fs(44)}" rx="${fs(8)}" fill="rgba(239,68,68,0.35)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(174)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(20)}" fill="${isDark ? '#fca5a5' : '#dc2626'}">15 minutos</text>
+      <text x="${px}" y="${y0 + fs(224)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${subColor}">Con Radiogen.ai</text>
+      <rect x="${px}" y="${y0 + fs(239)}" width="${barW}" height="${fs(44)}" rx="${fs(8)}" fill="${ta}0.08)"/>
+      <rect x="${px}" y="${y0 + fs(239)}" width="${barW * 0.13}" height="${fs(44)}" rx="${fs(8)}" fill="${ta}0.5)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(268)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(20)}" fill="${accentColor}">2 minutos</text>
+      <line x1="${px}" y1="${y0 + fs(310)}" x2="${px + fs(60)}" y2="${y0 + fs(310)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${w / 2}" y="${y0 + fs(350)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(56)}" fill="${accentColor}" text-anchor="middle">87% menos</text>
+      <text x="${w / 2}" y="${y0 + fs(380)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}" text-anchor="middle">tiempo dedicado a redactar cada informe</text>`;
+  } else if (contentType === "dyk-errors") {
+    const y0 = centerBlock(fs(340));
+    const vt = "rgba(167,139,250,";
+    content = `
+      <defs><linearGradient id="p-dyk1" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#581c87"/></linearGradient></defs>
+      <rect width="${w}" height="${h}" fill="url(#p-dyk1)"/>
+      <circle cx="${w * 0.88}" cy="${h * 0.08}" r="${fs(200)}" fill="${vt}0.06)"/>
+      <circle cx="${w * 0.5}" cy="${h * 0.55}" r="${fs(350)}" fill="${vt}0.02)"/>
+      <rect x="${px}" y="${y0}" width="${fs(180)}" height="${fs(32)}" rx="${fs(16)}" fill="${vt}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#c4b5fd">❓ ¿SABÍAS QUE?</text>
+      <text x="${px}" y="${y0 + fs(120)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(100)}" fill="#c4b5fd">~30%</text>
+      <text x="${px}" y="${y0 + fs(178)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="#ffffff">de los informes radiológicos</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="#ffffff">contienen errores</text>
+      <text x="${px}" y="${y0 + fs(256)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="#c4b5fd">de comunicación</text>
+      <line x1="${px}" y1="${y0 + fs(280)}" x2="${px + fs(60)}" y2="${y0 + fs(280)}" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(315)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="rgba(255,255,255,0.45)">La estructuración automática reduce omisiones y ambigüedades.</text>
+      <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="rgba(255,255,255,0.3)">Fuente: Khorasani et al., JACR 2019</text>
+      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+  } else if (contentType === "dyk-time") {
+    const y0 = centerBlock(fs(330));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(180)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">❓ ¿SABÍAS QUE?</text>
+      <text x="${px}" y="${y0 + fs(120)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(100)}" fill="${accentColor}">4.2h</text>
+      <text x="${px}" y="${y0 + fs(178)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="${mainColor}">al día dedicadas a redactar</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="${accentColor}">informes radiológicos</text>
+      <line x1="${px}" y1="${y0 + fs(248)}" x2="${px + fs(60)}" y2="${y0 + fs(248)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(286)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Con Radiogen.ai reduces ese tiempo un 87%.</text>
+      <text x="${px}" y="${y0 + fs(316)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Más tiempo para leer imágenes, menos para teclear.</text>
+      <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${ta}0.35)">Fuente: Schemmel et al., Current Problems in Diagnostic Radiology 2016</text>`;
+  } else if (contentType === "dyk-incidental") {
+    const y0 = centerBlock(fs(330));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(180)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">❓ ¿SABÍAS QUE?</text>
+      <text x="${px}" y="${y0 + fs(120)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(100)}" fill="${accentColor}">35%</text>
+      <text x="${px}" y="${y0 + fs(178)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="${mainColor}">de hallazgos incidentales</text>
+      <text x="${px}" y="${y0 + fs(218)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(30)}" fill="${accentColor}">no reciben seguimiento</text>
+      <line x1="${px}" y1="${y0 + fs(248)}" x2="${px + fs(60)}" y2="${y0 + fs(248)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(286)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Con recomendaciones basadas en evidencia integradas,</text>
+      <text x="${px}" y="${y0 + fs(316)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">ningún hallazgo incidental queda sin protocolo de manejo.</text>
+      <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${ta}0.35)">Fuente: Defined Health / RSNA Reports</text>`;
+  } else if (contentType === "testimonial-metrics") {
+    const y0 = centerBlock(fs(360));
+    const tc = isDark ? brandTeal : brandTeal;
+    content = `
+      <text x="${w / 2}" y="${y0 + fs(20)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(120)}" fill="${tc}" text-anchor="middle" opacity="0.15">45→70</text>
+      <text x="${w / 2}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(22)}" fill="${tc}" text-anchor="middle">informes / día</text>
+      <line x1="${w/2 - fs(40)}" y1="${y0 + fs(100)}" x2="${w/2 + fs(40)}" y2="${y0 + fs(100)}" stroke="${tc}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px + fs(20)}" y="${y0 + fs(150)}" font-family="Georgia,serif" font-size="${fs(80)}" fill="${tc}" opacity="0.2">"</text>
+      <text x="${px + fs(20)}" y="${y0 + fs(200)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(26)}" fill="${mainColor}">Antes hacía 45 informes al día y terminaba</text>
+      <text x="${px + fs(20)}" y="${y0 + fs(238)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(26)}" fill="${mainColor}">agotado. Ahora hago 70 en menos tiempo</text>
+      <text x="${px + fs(20)}" y="${y0 + fs(276)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(26)}" fill="${mainColor}">y la calidad ha mejorado.</text>
+      <line x1="${px + fs(20)}" y1="${y0 + fs(306)}" x2="${px + fs(100)}" y2="${y0 + fs(306)}" stroke="${tc}" stroke-width="3" stroke-linecap="round"/>
+      <text x="${px + fs(20)}" y="${y0 + fs(336)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">Dr. Carlos Ruiz</text>
+      <text x="${px + fs(20)}" y="${y0 + fs(362)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${subColor}">Radiólogo — Hospital Regional  •  *Métricas representativas</text>`;
+  } else if (contentType === "before-after-report") {
+    const y0 = centerBlock(fs(420));
+    const colMid = w / 2;
+    const panelW = (w - px * 2 - fs(16)) / 2;
+    const panelH = fs(320);
+    content = `
+      <text x="${w / 2}" y="${y0}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(36)}" fill="${mainColor}" text-anchor="middle">Tu dictado → Informe estructurado</text>
+      <line x1="${w/2 - fs(40)}" y1="${y0 + fs(20)}" x2="${w/2 + fs(40)}" y2="${y0 + fs(20)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <rect x="${px}" y="${y0 + fs(45)}" width="${panelW}" height="${panelH}" rx="${fs(12)}" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.15)" stroke-width="1"/>
+      <text x="${px + fs(14)}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${isDark ? '#fca5a5' : '#dc2626'}">DICTADO LIBRE</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(108)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">Hígado normal, bazo normal,</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(128)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">riñones sin alteraciones. Hay</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">un nódulo en adrenal derecha</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(168)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">de unos 18mm denso. Páncreas</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(188)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">ok. Aorta con placa calcificada</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(208)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">sin estenosis. Vesícula sin</text>
+      <text x="${px + fs(14)}" y="${y0 + fs(228)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(13)}" fill="${subColor}">litiasis. No líquido libre...</text>
+      <rect x="${colMid + fs(8)}" y="${y0 + fs(45)}" width="${panelW}" height="${panelH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.15)" stroke-width="1"/>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}">INFORME ESTRUCTURADO</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(104)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">HÍGADO</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(120)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">Sin lesiones focales. Tamaño normal.</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(144)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">GLÁNDULAS ADRENALES</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(160)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">Nódulo adrenal derecho de 18 mm</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(176)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">con densidad de partes blandas.</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(200)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">AORTA Y GRANDES VASOS</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(216)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">Placas calcificadas sin estenosis.</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(240)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">CONCLUSIÓN</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(256)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">1. Nódulo adrenal derecho de 18 mm</text>
+      <text x="${colMid + fs(22)}" y="${y0 + fs(272)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(12)}" fill="${subColor}">con densidad de partes blandas.</text>
+      <text x="${w / 2}" y="${y0 + fs(408)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="${subColor}" text-anchor="middle">De texto libre a informe profesional en segundos</text>`;
+  } else if (contentType === "bodymap") {
+    const y0 = centerBlock(fs(420));
+    const regions = [
+      { y: 0, icon: "🧠", name: "Cabeza y cuello", n: "32", w2: 0.45 },
+      { y: 1, icon: "🫁", name: "Tórax", n: "45", w2: 0.55 },
+      { y: 2, icon: "❤️", name: "Cardíaco", n: "12", w2: 0.35 },
+      { y: 3, icon: "🫄", name: "Abdomen y pelvis", n: "52", w2: 0.65 },
+      { y: 4, icon: "🦴", name: "Columna", n: "18", w2: 0.40 },
+      { y: 5, icon: "💪", name: "Extremidad superior", n: "22", w2: 0.48 },
+      { y: 6, icon: "🦵", name: "Extremidad inferior", n: "21", w2: 0.45 },
+    ];
+    const barH = fs(38);
+    const gap2 = fs(8);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(280)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🗺️ COBERTURA ANATÓMICA</text>
+      <text x="${px}" y="${y0 + fs(72)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${mainColor}">+190 plantillas</text>
+      <text x="${px}" y="${y0 + fs(114)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(40)}" fill="${accentColor}">por región corporal</text>
+      ${regions.map((r) => {
+        const ry = y0 + fs(145) + r.y * (barH + gap2);
+        const barFull = w - px * 2 - fs(120);
+        return `
+          <text x="${px}" y="${ry + barH * 0.65}" font-family="system-ui,sans-serif" font-size="${fs(16)}">${r.icon}</text>
+          <text x="${px + fs(26)}" y="${ry + barH * 0.65}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${mainColor}">${escSvg(r.name)}</text>
+          <rect x="${px + fs(120)}" y="${ry + fs(6)}" width="${barFull}" height="${barH - fs(12)}" rx="${fs(6)}" fill="${ta}0.06)"/>
+          <rect x="${px + fs(120)}" y="${ry + fs(6)}" width="${barFull * r.w2}" height="${barH - fs(12)}" rx="${fs(6)}" fill="${ta}0.25)"/>
+          <text x="${px + fs(120) + barFull * r.w2 + fs(8)}" y="${ry + barH * 0.65}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}">${r.n}</text>
+        `;
+      }).join("")}`;
+  } else if (contentType === "roi-pricing") {
+    const y0 = centerBlock(fs(400));
+    const vt = "rgba(167,139,250,";
+    content = `
+      <defs><linearGradient id="p-roi" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#581c87"/></linearGradient></defs>
+      <rect width="${w}" height="${h}" fill="url(#p-roi)"/>
+      <circle cx="${w * 0.88}" cy="${h * 0.08}" r="${fs(200)}" fill="${vt}0.06)"/>
+      <circle cx="${w * 0.5}" cy="${h * 0.55}" r="${fs(350)}" fill="${vt}0.02)"/>
+      <rect x="${px}" y="${y0}" width="${fs(120)}" height="${fs(32)}" rx="${fs(16)}" fill="${vt}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#c4b5fd">💰 ROI</text>
+      <text x="${px}" y="${y0 + fs(78)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="#ffffff">¿Cuánto vale</text>
+      <text x="${px}" y="${y0 + fs(122)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="#c4b5fd">1 hora extra al día?</text>
+      <line x1="${px}" y1="${y0 + fs(148)}" x2="${px + fs(60)}" y2="${y0 + fs(148)}" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round"/>
+      <rect x="${px}" y="${y0 + fs(170)}" width="${w - px * 2}" height="${fs(48)}" rx="${fs(10)}" fill="${vt}0.08)" stroke="${vt}0.15)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(200)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="rgba(255,255,255,0.7)">1 hora/día × 22 días × 12 meses =</text>
+      <text x="${w - px - fs(16)}" y="${y0 + fs(200)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(22)}" fill="#c4b5fd" text-anchor="end">264 horas/año</text>
+      <rect x="${px}" y="${y0 + fs(230)}" width="${w - px * 2}" height="${fs(48)}" rx="${fs(10)}" fill="${vt}0.08)" stroke="${vt}0.15)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="rgba(255,255,255,0.7)">264 horas = 33 jornadas laborales =</text>
+      <text x="${w - px - fs(16)}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(22)}" fill="#c4b5fd" text-anchor="end">6.6 semanas</text>
+      <rect x="${px}" y="${y0 + fs(290)}" width="${w - px * 2}" height="${fs(48)}" rx="${fs(10)}" fill="${vt}0.12)" stroke="${vt}0.2)" stroke-width="1"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(320)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(18)}" fill="rgba(255,255,255,0.7)">Coste Radiogen.ai:</text>
+      <text x="${w - px - fs(16)}" y="${y0 + fs(320)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(22)}" fill="#c4b5fd" text-anchor="end">desde 30 €/mes</text>
+      <text x="${w / 2}" y="${y0 + fs(380)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(24)}" fill="#c4b5fd" text-anchor="middle">6 semanas de tu vida recuperadas cada año.</text>
+      <text x="${w / 2}" y="${y0 + fs(405)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="rgba(255,255,255,0.4)" text-anchor="middle">*Estimación basada en reducción media del 87% de tiempo de redacción.</text>
+      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+  } else if (contentType === "spotlight-voice") {
+    const y0 = centerBlock(fs(340));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(100)}" height="${fs(100)}" rx="${fs(24)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(50)}" y="${y0 + fs(65)}" font-family="system-ui,sans-serif" font-size="${fs(48)}" text-anchor="middle">🎙️</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Dictado por voz</text>
+      <text x="${px}" y="${y0 + fs(196)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">en tu idioma</text>
+      <line x1="${px}" y1="${y0 + fs(220)}" x2="${px + fs(60)}" y2="${y0 + fs(220)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(258)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Dicta en español, inglés o portugués. La IA transcribe,</text>
+      <text x="${px}" y="${y0 + fs(290)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">estructura y traduce automáticamente al idioma del informe.</text>
+      <text x="${px}" y="${y0 + fs(334)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${accentColor}">→ Funciona con el micrófono de tu navegador.</text>`;
+  } else if (contentType === "spotlight-multilang") {
+    const y0 = centerBlock(fs(360));
+    const langs = [
+      { flag: "🇪🇸", name: "Español", ex: "Nódulo pulmonar de 8 mm en LID..." },
+      { flag: "🇬🇧", name: "English", ex: "8 mm pulmonary nodule in the RLL..." },
+      { flag: "🇧🇷", name: "Português", ex: "Nódulo pulmonar de 8 mm no LID..." },
+    ];
+    const rowH2 = fs(70);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(100)}" height="${fs(100)}" rx="${fs(24)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(50)}" y="${y0 + fs(65)}" font-family="system-ui,sans-serif" font-size="${fs(48)}" text-anchor="middle">🌍</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">3 idiomas</text>
+      <text x="${px}" y="${y0 + fs(196)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">un mismo informe</text>
+      <line x1="${px}" y1="${y0 + fs(220)}" x2="${px + fs(60)}" y2="${y0 + fs(220)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      ${langs.map((l2, i) => {
+        const ry = y0 + fs(245) + i * rowH2;
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH2 - fs(6)}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.1)" stroke-width="1"/>
+          <text x="${px + fs(14)}" y="${ry + fs(28)}" font-family="system-ui,sans-serif" font-size="${fs(22)}">${l2.flag}</text>
+          <text x="${px + fs(44)}" y="${ry + fs(28)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(17)}" fill="${mainColor}">${l2.name}</text>
+          <text x="${px + fs(14)}" y="${ry + fs(52)}" font-family="system-ui,sans-serif" font-style="italic" font-size="${fs(13)}" fill="${subColor}">${escSvg(l2.ex)}</text>
+        `;
+      }).join("")}`;
+  } else if (contentType === "spotlight-darkmode") {
+    const y0 = centerBlock(fs(320));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(100)}" height="${fs(100)}" rx="${fs(24)}" fill="${ta}0.12)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${px + fs(50)}" y="${y0 + fs(65)}" font-family="system-ui,sans-serif" font-size="${fs(48)}" text-anchor="middle">🌙</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Modo oscuro</text>
+      <text x="${px}" y="${y0 + fs(196)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${accentColor}">para tu jornada</text>
+      <line x1="${px}" y1="${y0 + fs(220)}" x2="${px + fs(60)}" y2="${y0 + fs(220)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(258)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Interfaz diseñada para jornadas largas delante de la pantalla.</text>
+      <text x="${px}" y="${y0 + fs(290)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Menos fatiga visual, mejor contraste, más concentración.</text>`;
+  } else if (contentType === "spotlight-export") {
+    const y0 = centerBlock(fs(320));
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(100)}" height="${fs(100)}" rx="${fs(24)}" fill="${isDark ? ta + '0.12)' : 'rgba(15,118,110,0.08)' }" stroke="${isDark ? ta + '0.2)' : 'rgba(15,118,110,0.15)' }" stroke-width="1"/>
+      <text x="${px + fs(50)}" y="${y0 + fs(65)}" font-family="system-ui,sans-serif" font-size="${fs(48)}" text-anchor="middle">📄</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${mainColor}">Exporta en PDF</text>
+      <text x="${px}" y="${y0 + fs(196)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="${isDark ? accentColor : brandTeal}">o copia al portapapeles</text>
+      <line x1="${px}" y1="${y0 + fs(220)}" x2="${px + fs(60)}" y2="${y0 + fs(220)}" stroke="${isDark ? accentColor : brandTeal}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(258)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Informe completo con cabecera del hospital, datos del paciente,</text>
+      <text x="${px}" y="${y0 + fs(290)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">hallazgos y conclusión. Listo para pegar en tu RIS/PACS.</text>`;
+  } else if (contentType === "spotlight-teams") {
+    const y0 = centerBlock(fs(360));
+    const vt = "rgba(167,139,250,";
+    content = `
+      <defs><linearGradient id="p-teams" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#581c87"/></linearGradient></defs>
+      <rect width="${w}" height="${h}" fill="url(#p-teams)"/>
+      <circle cx="${w * 0.88}" cy="${h * 0.08}" r="${fs(200)}" fill="${vt}0.06)"/>
+      <circle cx="${w * 0.5}" cy="${h * 0.55}" r="${fs(350)}" fill="${vt}0.02)"/>
+      <rect x="${px}" y="${y0}" width="${fs(100)}" height="${fs(100)}" rx="${fs(24)}" fill="${vt}0.12)" stroke="${vt}0.2)" stroke-width="1"/>
+      <text x="${px + fs(50)}" y="${y0 + fs(65)}" font-family="system-ui,sans-serif" font-size="${fs(48)}" text-anchor="middle">👥</text>
+      <text x="${px}" y="${y0 + fs(148)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="#ffffff">Para equipos</text>
+      <text x="${px}" y="${y0 + fs(196)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(44)}" fill="#c4b5fd">y departamentos</text>
+      <line x1="${px}" y1="${y0 + fs(220)}" x2="${px + fs(60)}" y2="${y0 + fs(220)}" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(258)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="rgba(255,255,255,0.55)">Organiza tu servicio: secciones, roles, plantillas</text>
+      <text x="${px}" y="${y0 + fs(288)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="rgba(255,255,255,0.55)">compartidas y recomendaciones del hospital.</text>
+      <text x="${px}" y="${y0 + fs(326)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(20)}" fill="#ffffff">Jefe de servicio · Jefe de sección · Radiólogo</text>
+      <text x="${px}" y="${y0 + fs(358)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="#c4b5fd">→ Cada rol ve lo que necesita. Nada más.</text>
+      <g transform="translate(${px},${h - fs(40) - fs(8)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="#7c3aed"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${h - fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="#ffffff"><tspan>Radiogen</tspan><tspan fill="#c4b5fd">.ai</tspan></text>`;
+  } else if (contentType === "normality-learn") {
+    const y0 = centerBlock(fs(400));
+    const bx = px + fs(20);
+    const bubW = w - px * 2 - fs(40);
+    content = `
+      <rect x="${px}" y="${y0}" width="${fs(250)}" height="${fs(32)}" rx="${fs(16)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(16)}" y="${y0 + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${accentColor}">🧠 APRENDIZAJE EN TIEMPO REAL</text>
+      <text x="${px}" y="${y0 + fs(74)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${mainColor}">La IA aprende de cada</text>
+      <text x="${px}" y="${y0 + fs(114)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(38)}" fill="${accentColor}">corrección que haces</text>
+      <rect x="${bx}" y="${y0 + fs(148)}" width="${bubW}" height="${fs(52)}" rx="${fs(10)}" fill="${ta}0.06)" stroke="${ta}0.1)" stroke-width="1"/>
+      <text x="${bx + fs(12)}" y="${y0 + fs(168)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(12)}" fill="${accentColor}">IA genera:</text>
+      <text x="${bx + fs(12)}" y="${y0 + fs(188)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">"Parénquima pulmonar sin consolidaciones ni nódulos."</text>
+      <text x="${bx + fs(20)}" y="${y0 + fs(220)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(16)}" fill="${isDark ? '#f87171' : '#dc2626'}">✏️ Tú corriges →</text>
+      <rect x="${bx}" y="${y0 + fs(236)}" width="${bubW}" height="${fs(52)}" rx="${fs(10)}" fill="${isDark ? 'rgba(248,113,113,0.08)' : 'rgba(220,38,38,0.06)'}" stroke="${isDark ? 'rgba(248,113,113,0.15)' : 'rgba(220,38,38,0.1)'}" stroke-width="1"/>
+      <text x="${bx + fs(12)}" y="${y0 + fs(256)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(12)}" fill="${isDark ? '#fca5a5' : '#dc2626'}">Tu versión:</text>
+      <text x="${bx + fs(12)}" y="${y0 + fs(276)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">"Campos pulmonares sin opacidades de ocupación alveolar."</text>
+      <text x="${bx + fs(20)}" y="${y0 + fs(310)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(16)}" fill="${accentColor}">🧠 IA memoriza →</text>
+      <rect x="${bx}" y="${y0 + fs(326)}" width="${bubW}" height="${fs(52)}" rx="${fs(10)}" fill="${ta}0.1)" stroke="${ta}0.2)" stroke-width="1"/>
+      <text x="${bx + fs(12)}" y="${y0 + fs(346)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(12)}" fill="${accentColor}">Próximo informe:</text>
+      <text x="${bx + fs(12)}" y="${y0 + fs(366)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${mainColor}">"Campos pulmonares sin opacidades de ocupación alveolar." ✓</text>
+      <text x="${w / 2}" y="${y0 + fs(400)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(17)}" fill="${subColor}" text-anchor="middle">Tu vocabulario, tu estilo, tu nivel de detalle — automáticamente.</text>`;
+
   } else {
     content = `<text x="${w/2}" y="${h/2}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(32)}" fill="${mainColor}" text-anchor="middle">Radiogen.ai</text>`;
   }
@@ -734,7 +1067,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   </svg>`;
 }
 
-const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all"]);
+const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all","carousel-tirads","carousel-incidental","infographic-process","time-comparison","dyk-errors","dyk-time","dyk-incidental","testimonial-metrics","before-after-report","bodymap","roi-pricing","spotlight-voice","spotlight-multilang","spotlight-darkmode","spotlight-export","spotlight-teams","normality-learn"]);
 
 function buildAssetSvg(asset: BrandAsset): string {
   if (asset.tagline && PUB_TYPES.has(asset.tagline)) {
@@ -777,9 +1110,9 @@ function getPreviewDataUrl(asset: BrandAsset): string {
 }
 
 const BRAND_COLORS = [
-  { name: "Azul marino", hex: "#1E3A5F", usage: "Fondo principal, headers" },
-  { name: "Teal", hex: "#0F766E", usage: "Acento primario, CTAs" },
-  { name: "Teal claro", hex: "#5EEAD4", usage: "Acento '.ai', highlights" },
+  { name: "Indigo oscuro", hex: "#1e1b4b", usage: "Fondo principal, headers" },
+  { name: "Violeta", hex: "#7c3aed", usage: "Acento primario, CTAs" },
+  { name: "Violeta claro", hex: "#c4b5fd", usage: "Acento '.ai', highlights" },
   { name: "Slate oscuro", hex: "#0f172a", usage: "Fondos dark mode" },
   { name: "Blanco", hex: "#FFFFFF", usage: "Texto sobre oscuro, fondos claros" },
   { name: "Gris 400", hex: "#9ca3af", usage: "Texto secundario" },
@@ -803,8 +1136,8 @@ function CopyBlock({ label, text, copied, onCopy }: { label: string; text: strin
     <div className="flex items-start gap-2 p-2.5 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
       <Badge variant="secondary" className="text-[9px] shrink-0 mt-0.5">{label}</Badge>
       <p className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 min-w-0 whitespace-pre-wrap">{text}</p>
-      <button onClick={() => onCopy(label, text)} className="shrink-0 text-gray-400 hover:text-teal-500 transition-colors mt-0.5">
-        {copied === label ? <CheckCheck className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+      <button onClick={() => onCopy(label, text)} className="shrink-0 text-gray-400 hover:text-violet-500 transition-colors mt-0.5">
+        {copied === label ? <CheckCheck className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
       </button>
     </div>
   );
@@ -847,7 +1180,7 @@ function BrandKitSection() {
             onClick={() => setBrandTab(t.key)}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
               brandTab === t.key
-                ? "bg-teal-600 text-white"
+                ? "bg-violet-600 text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
           >
@@ -862,7 +1195,7 @@ function BrandKitSection() {
           <SectionTitle>Paleta de colores</SectionTitle>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {BRAND_COLORS.map((c) => (
-              <button key={c.hex} onClick={() => copyColor(c.hex)} className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-teal-400 transition-colors text-left">
+              <button key={c.hex} onClick={() => copyColor(c.hex)} className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-violet-400 transition-colors text-left">
                 <div className="h-12 w-full" style={{ backgroundColor: c.hex }} />
                 <div className="p-1.5">
                   <p className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{c.name}</p>
@@ -875,7 +1208,7 @@ function BrandKitSection() {
           <SectionTitle>Tipografía</SectionTitle>
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-              <p className="text-lg font-extrabold text-gray-900 dark:text-white" style={{ fontFamily: "system-ui,-apple-system,sans-serif" }}>Radiogen<span className="text-teal-400">.ai</span></p>
+              <p className="text-lg font-extrabold text-gray-900 dark:text-white" style={{ fontFamily: "system-ui,-apple-system,sans-serif" }}>Radiogen<span className="text-violet-400">.ai</span></p>
               <p className="text-[10px] text-gray-400 mt-1">Font: system-ui / Inter · Weight: 800</p>
             </div>
             <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -909,9 +1242,9 @@ function BrandKitSection() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
               {[
                 { trait: "Experto", desc: "Conocemos la radiología desde dentro. Hablamos con propiedad clínica.", color: "border-blue-400 bg-blue-50 dark:bg-blue-950/20" },
-                { trait: "Innovador", desc: "Lideramos la adopción de IA en imagen médica. Sin miedo a lo nuevo.", color: "border-teal-400 bg-teal-50 dark:bg-teal-950/20" },
+                { trait: "Innovador", desc: "Lideramos la adopción de IA en imagen médica. Sin miedo a lo nuevo.", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/20" },
                 { trait: "Cercano", desc: "Hablamos de tú. Sin jerga corporativa. El radiólogo es nuestro compañero.", color: "border-amber-400 bg-amber-50 dark:bg-amber-950/20" },
-                { trait: "Seguro", desc: "RGPD, trazabilidad, auditoría. La confianza clínica no se negocia.", color: "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20" },
+                { trait: "Seguro", desc: "RGPD, trazabilidad, auditoría. La confianza clínica no se negocia.", color: "border-violet-400 bg-violet-50 dark:bg-violet-950/20" },
               ].map((t) => (
                 <div key={t.trait} className={`rounded-lg border p-3 ${t.color}`}>
                   <p className="text-xs font-bold text-gray-900 dark:text-white">{t.trait}</p>
@@ -920,7 +1253,7 @@ function BrandKitSection() {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg border border-green-200 dark:border-green-900/50 bg-green-50/50 dark:bg-green-950/20">
+              <div className="p-3 rounded-lg border border-violet-200 dark:border-violet-900/50 bg-violet-50/50 dark:bg-violet-950/20">
                 <p className="text-[10px] font-bold text-green-700 dark:text-green-400 mb-1.5">✓ SÍ DECIR</p>
                 <ul className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5">
                   <li>• "Reduce tu tiempo de informe un 60%"</li>
@@ -996,7 +1329,7 @@ function BrandKitSection() {
               ].map((p, i) => (
                 <div key={i} className="grid grid-cols-2 gap-2 text-[11px]">
                   <div className="p-2 rounded-md bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300">✗ {p.pain}</div>
-                  <div className="p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 text-green-800 dark:text-green-300">✓ {p.sol}</div>
+                  <div className="p-2 rounded-md bg-violet-50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 text-violet-800 dark:text-violet-300">✓ {p.sol}</div>
                 </div>
               ))}
             </div>
@@ -1027,8 +1360,8 @@ function BrandKitSection() {
                 { num: "RGPD", desc: "Cumplimiento total, datos en UE" },
                 { num: "24h", desc: "Despliegue hospitalario" },
               ].map((s) => (
-                <button key={s.num} onClick={() => cp(s.num, `${s.num} — ${s.desc}`)} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center hover:border-teal-400 transition-colors">
-                  <p className="text-xl font-bold text-teal-600 dark:text-teal-400">{s.num}</p>
+                <button key={s.num} onClick={() => cp(s.num, `${s.num} — ${s.desc}`)} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center hover:border-violet-400 transition-colors">
+                  <p className="text-xl font-bold text-violet-600 dark:text-violet-400">{s.num}</p>
                   <p className="text-[10px] text-gray-500 mt-0.5">{s.desc}</p>
                 </button>
               ))}
@@ -1177,11 +1510,11 @@ Radiogen.ai` },
             <Card key={email.label}><CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-teal-500" />
+                  <Mail className="h-4 w-4 text-violet-500" />
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-white">{email.label}</h3>
                 </div>
                 <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={() => cp(`email-${email.label}`, `Asunto: ${email.subject}\n\n${email.body}`)}>
-                  {copiedColor === `email-${email.label}` ? <CheckCheck className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                  {copiedColor === `email-${email.label}` ? <CheckCheck className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
                   Copiar todo
                 </Button>
               </div>
@@ -1220,9 +1553,9 @@ Radiogen.ai` },
             <div className="grid grid-cols-5 gap-1.5 text-[10px]">
               {[
                 { day: "LUN", type: "Educativo", desc: "Artículo o dato sobre IA en radiología", color: "bg-blue-50 dark:bg-blue-950/20" },
-                { day: "MAR", type: "Producto", desc: "Tip de uso, funcionalidad destacada", color: "bg-teal-50 dark:bg-teal-950/20" },
+                { day: "MAR", type: "Producto", desc: "Tip de uso, funcionalidad destacada", color: "bg-violet-50 dark:bg-violet-950/20" },
                 { day: "MIÉ", type: "Industria", desc: "Noticia del sector, tendencias", color: "bg-amber-50 dark:bg-amber-950/20" },
-                { day: "JUE", type: "Social proof", desc: "Testimonial, caso de uso, métrica", color: "bg-emerald-50 dark:bg-emerald-950/20" },
+                { day: "JUE", type: "Social proof", desc: "Testimonial, caso de uso, métrica", color: "bg-violet-50 dark:bg-violet-950/20" },
                 { day: "VIE", type: "Casual", desc: "Behind the scenes, humor, equipo", color: "bg-purple-50 dark:bg-purple-950/20" },
               ].map((d) => (
                 <div key={d.day} className={`rounded-lg p-2 ${d.color}`}>
@@ -1271,7 +1604,7 @@ Radiogen.ai` },
             <SectionTitle>Keywords principales</SectionTitle>
             <div className="flex flex-wrap gap-1.5">
               {["informes radiológicos con IA", "software radiología", "dictado radiólogo", "informe radiológico automático", "plantillas radiología", "IA radiología", "transcripción médica IA", "conclusión radiológica automática", "herramienta radiólogo", "radiology report AI", "PACS reporting", "AI radiology software"].map((kw) => (
-                <button key={kw} onClick={() => cp(`kw-${kw}`, kw)} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors">
+                <button key={kw} onClick={() => cp(`kw-${kw}`, kw)} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors">
                   {copiedColor === `kw-${kw}` ? "✓" : ""} {kw}
                 </button>
               ))}
@@ -1366,7 +1699,7 @@ La plataforma es cloud-native, zero-install, compatible con cualquier RIS/PACS v
                 { label: "Tecnología", value: "Next.js, Supabase, GPT-4, Whisper AI, Cloud EU" },
                 { label: "Cumplimiento", value: "RGPD, datos UE, sin datos paciente en IA" },
               ].map((d) => (
-                <button key={d.label} onClick={() => cp(`press-${d.label}`, `${d.label}: ${d.value}`)} className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-left hover:border-teal-400 transition-colors">
+                <button key={d.label} onClick={() => cp(`press-${d.label}`, `${d.label}: ${d.value}`)} className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-left hover:border-violet-400 transition-colors">
                   <p className="text-[10px] text-gray-500">{d.label}</p>
                   <p className="text-[11px] font-medium text-gray-900 dark:text-white mt-0.5">{d.value}</p>
                 </button>
@@ -1410,7 +1743,7 @@ radiogen.ai`} copied={copiedColor} onCopy={cp} />
         <Card><CardContent className="p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4 text-teal-500" />
+              <ImageIcon className="h-4 w-4 text-violet-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Assets descargables</h3>
               <Badge variant="secondary" className="text-[10px]">{BRAND_ASSETS.length} assets</Badge>
             </div>
@@ -1424,7 +1757,7 @@ radiogen.ai`} copied={copiedColor} onCopy={cp} />
               <SectionTitle>{cat}</SectionTitle>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {BRAND_ASSETS.filter(a => a.category === cat).map(asset => (
-                  <div key={asset.id} className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-teal-400 dark:hover:border-teal-600 transition-colors">
+                  <div key={asset.id} className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-violet-400 dark:hover:border-violet-600 transition-colors">
                     <div className="relative flex items-center justify-center overflow-hidden" style={{
                       height: asset.width === asset.height ? 120 : asset.height > asset.width ? 160 : 80,
                       background: asset.bg === "transparent" ? "repeating-conic-gradient(#d1d5db 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" : "#f3f4f6",
@@ -1614,7 +1947,7 @@ export function AdminMarketingTab() {
             <KeyRound className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-semibold text-gray-900 dark:text-white">API Keys</span>
             {keys.openaiKey && keys.imageApiKey ? (
-              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">Configuradas</Badge>
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-violet-300 text-[10px]">Configuradas</Badge>
             ) : (
               <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">
                 {!keys.openaiKey && !keys.imageApiKey ? "Sin configurar" : "Incompleta"}
@@ -1754,7 +2087,7 @@ export function AdminMarketingTab() {
         <Card>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-teal-500" />
+              <Sparkles className="h-4 w-4 text-violet-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Generador de Posts</h3>
             </div>
 
@@ -1834,7 +2167,7 @@ export function AdminMarketingTab() {
             <Button
               onClick={handleGeneratePost}
               disabled={postLoading}
-              className="w-full bg-gradient-to-r from-teal-600 to-blue-600 text-white"
+              className="w-full bg-gradient-to-r from-violet-600 to-blue-600 text-white"
             >
               {postLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
               Generar post
@@ -1865,7 +2198,7 @@ export function AdminMarketingTab() {
                       setTimeout(() => setCopied(false), 2000);
                     }}
                   >
-                    {copied ? <CheckCheck className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? <CheckCheck className="h-3.5 w-3.5 text-violet-500" /> : <Copy className="h-3.5 w-3.5" />}
                     {copied ? "Copiado" : "Copiar"}
                   </Button>
                   <Button
@@ -2038,7 +2371,7 @@ export function AdminMarketingTab() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Badge className={`text-[10px] shrink-0 ${asset.type === "post" ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"}`}>
+                        <Badge className={`text-[10px] shrink-0 ${asset.type === "post" ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"}`}>
                           {asset.type === "post" ? "Post" : "Imagen"}
                         </Badge>
                         {asset.platform && (

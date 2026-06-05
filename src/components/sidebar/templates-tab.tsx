@@ -350,7 +350,7 @@ export function TemplatesTab() {
             onClick={switchToHospitalTab}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               tplSubTab === "hospital"
-                ? "bg-white dark:bg-gray-900 text-teal-700 dark:text-teal-400 shadow-sm"
+                ? "bg-white dark:bg-gray-900 text-violet-700 dark:text-violet-400 shadow-sm"
                 : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
           >
@@ -415,7 +415,7 @@ export function TemplatesTab() {
         <div className="space-y-3">
           {catalogLoading ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+              <Loader2 className="h-5 w-5 animate-spin text-violet-600" />
             </div>
           ) : catalog.length === 0 ? (
             <div className="text-center py-10 px-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
@@ -458,11 +458,11 @@ export function TemplatesTab() {
                 {Array.from(groupedCat.entries()).map(([secName, items]) => (
                   <div key={secName} className="space-y-1">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                      <div className="h-px flex-1 bg-violet-200 dark:bg-violet-900" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
                         {secName}
                       </span>
-                      <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                      <div className="h-px flex-1 bg-violet-200 dark:bg-violet-900" />
                     </div>
 
                     <div className="space-y-1">
@@ -471,7 +471,7 @@ export function TemplatesTab() {
                           key={item.id}
                           className={`flex items-center justify-between gap-2 p-2 rounded-md border transition-all ${
                             item.imported
-                              ? "border-teal-300 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10"
+                              ? "border-violet-300 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10"
                               : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50"
                           }`}
                         >
@@ -488,8 +488,8 @@ export function TemplatesTab() {
                             variant={item.imported ? "default" : "outline"}
                             className={`h-7 px-3 text-[11px] shrink-0 ${
                               item.imported
-                                ? "bg-teal-600 hover:bg-teal-700 text-white"
-                                : "text-teal-600 border-teal-300 hover:bg-teal-50 dark:border-teal-800 dark:hover:bg-teal-900/20"
+                                ? "bg-violet-600 hover:bg-violet-700 text-white"
+                                : "text-violet-600 border-violet-300 hover:bg-violet-50 dark:border-violet-800 dark:hover:bg-violet-900/20"
                             }`}
                             disabled={toggling.has(item.id)}
                             onClick={() => toggleImport(item)}
@@ -635,7 +635,7 @@ export function TemplatesTab() {
                               {modName(tpl.modality)}
                             </Badge>
                             {tpl.is_org ? (
-                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-teal-300 text-teal-600 dark:border-teal-700 dark:text-teal-400">
+                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-violet-300 text-violet-600 dark:border-violet-700 dark:text-violet-400">
                                 {tpl.section_name || "Hospital"}
                               </Badge>
                             ) : tpl.is_global ? (
@@ -817,7 +817,7 @@ export function TemplatesTab() {
         <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-teal-600" />
+              <Building2 className="h-4 w-4 text-violet-600" />
               Plantillas de sección
             </DialogTitle>
           </DialogHeader>
@@ -835,7 +835,7 @@ export function TemplatesTab() {
           <ScrollArea className="flex-1 min-h-0 max-h-[60vh]">
             {catalogLoading ? (
               <div className="flex justify-center py-10">
-                <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+                <Loader2 className="h-5 w-5 animate-spin text-violet-600" />
               </div>
             ) : catalog.length === 0 ? (
               <div className="text-center py-10 text-gray-400 text-xs">
@@ -876,11 +876,11 @@ export function TemplatesTab() {
                   {Array.from(grouped.entries()).map(([secName, items]) => (
                     <div key={secName}>
                       <div className="flex items-center gap-2 mb-1.5">
-                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                        <div className="h-px flex-1 bg-violet-200 dark:bg-violet-900" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
                           {secName}
                         </span>
-                        <div className="h-px flex-1 bg-teal-200 dark:bg-teal-900" />
+                        <div className="h-px flex-1 bg-violet-200 dark:bg-violet-900" />
                       </div>
 
                       <div className="space-y-1">
@@ -889,7 +889,7 @@ export function TemplatesTab() {
                             key={item.id}
                             className={`flex items-center justify-between gap-2 p-2 rounded-md border transition-all ${
                               item.imported
-                                ? "border-teal-300 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/10"
+                                ? "border-violet-300 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10"
                                 : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50"
                             }`}
                           >
@@ -906,8 +906,8 @@ export function TemplatesTab() {
                               variant={item.imported ? "default" : "outline"}
                               className={`h-7 px-3 text-[11px] shrink-0 ${
                                 item.imported
-                                  ? "bg-teal-600 hover:bg-teal-700 text-white"
-                                  : "text-teal-600 border-teal-300 hover:bg-teal-50 dark:border-teal-800 dark:hover:bg-teal-900/20"
+                                  ? "bg-violet-600 hover:bg-violet-700 text-white"
+                                  : "text-violet-600 border-violet-300 hover:bg-violet-50 dark:border-violet-800 dark:hover:bg-violet-900/20"
                               }`}
                               disabled={toggling.has(item.id)}
                               onClick={() => toggleImport(item)}

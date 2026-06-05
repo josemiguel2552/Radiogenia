@@ -159,7 +159,7 @@ export async function sendApprovalEmail(to: string, name: string | null, lang: E
           </table>
         </td></tr>
         <tr><td style="padding:0 32px 32px;text-align:center;">
-          <a href="${loginUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#0f766e,#1e3a5f);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">
+          <a href="${loginUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#7c3aed,#1e1b4b);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">
             ${t.btn}
           </a>
         </td></tr>`,
@@ -286,7 +286,7 @@ export async function sendPaymentFailedEmail(to: string, name: string | null, la
           </p>
         </td></tr>
         <tr><td style="padding:0 32px 32px;text-align:center;">
-          <a href="${portalUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#0f766e,#1e3a5f);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">
+          <a href="${portalUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#7c3aed,#1e1b4b);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">
             ${t.btn}
           </a>
         </td></tr>`,
@@ -352,7 +352,7 @@ export async function sendPlanChangeEmail(to: string, name: string | null, newPl
           </p>
         </td></tr>
         <tr><td style="padding:0 32px 32px;text-align:center;">
-          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#0f766e,#1e3a5f);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">
+          <a href="${APP_URL}/dashboard" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#7c3aed,#1e1b4b);color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">
             ${t.btn}
           </a>
         </td></tr>`,

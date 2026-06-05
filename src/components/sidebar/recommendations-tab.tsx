@@ -609,7 +609,7 @@ export function RecommendationsTab() {
                               {t("mrec.modified")}
                             </Badge>
                           ) : rec.scope === "org" ? (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-teal-400/50 text-teal-600 dark:text-teal-400">
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
                               {(rec as ManualRecommendation & { section_name?: string }).section_name || "Hospital"}
                             </Badge>
                           ) : (
@@ -758,7 +758,7 @@ export function RecommendationsTab() {
                           <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{modLabel(rec.modality)}</Badge>
                           <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{catLabel(rec.category)}</Badge>
                           {rec.section_name && (
-                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-teal-400/50 text-teal-600 dark:text-teal-400">{rec.section_name}</Badge>
+                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-violet-400/50 text-violet-600 dark:text-violet-400">{rec.section_name}</Badge>
                           )}
                         </div>
                       </div>
@@ -792,7 +792,7 @@ export function RecommendationsTab() {
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-xs font-medium text-gray-900 dark:text-white truncate">{rec.title[lang] || rec.title.es}</span>
                       {(rec as ManualRecommendation & { section_name?: string }).section_name && (
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 border-teal-400/50 text-teal-600 dark:text-teal-400">
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
                           {(rec as ManualRecommendation & { section_name?: string }).section_name}
                         </Badge>
                       )}

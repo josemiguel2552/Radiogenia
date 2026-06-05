@@ -49,7 +49,7 @@ export default function NotApprovedPage() {
           </Button>
           <Button
             onClick={() => router.push("/waitlist")}
-            className="bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F]"
+            className="bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] hover:from-[#5b21b6] hover:to-[#6d28d9]"
           >
             {t("auth.join_waitlist")}
           </Button>

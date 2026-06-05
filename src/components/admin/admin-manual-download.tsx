@@ -9,16 +9,16 @@ const LOGO_SVG = `<svg width="40" height="40" viewBox="0 0 32 32" fill="none" xm
   <rect width="32" height="32" rx="7" fill="url(#lg)"/>
   <path d="M10 8h7a5 5 0 0 1 0 10h-3l5 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
-  <circle cx="24" cy="24" r="2.2" fill="#5EEAD4"/>
+  <circle cx="24" cy="24" r="2.2" fill="#c4b5fd"/>
   <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/>
+    <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#7c3aed"/>
   </linearGradient></defs>
 </svg>`;
 
 const C = {
-  navy: "#1E3A5F",
-  teal: "#0F766E",
-  lteal: "#5EEAD4",
+  navy: "#1e1b4b",
+  teal: "#7c3aed",
+  lteal: "#c4b5fd",
   dark: "#0f172a",
   bg: "#f8fafc",
   bdr: "#e2e8f0",
@@ -49,7 +49,7 @@ function getManualHTML(editorB64: string, toolsB64: string): string {
 
 <!-- ═══ HEADER ═══ -->
 <div style="background:linear-gradient(135deg,${C.dark} 0%,${C.navy} 50%,${C.teal} 100%);border-radius:10px;padding:16px 20px;margin:0 0 12px;position:relative;overflow:hidden;">
-  <div style="position:absolute;top:-15px;right:-15px;width:80px;height:80px;border-radius:50%;background:rgba(94,234,212,0.08);"></div>
+  <div style="position:absolute;top:-15px;right:-15px;width:80px;height:80px;border-radius:50%;background:rgba(196,181,253,0.08);"></div>
   <div style="display:flex;align-items:center;gap:10px;">
     ${LOGO_SVG}
     <div>
@@ -77,15 +77,15 @@ ${sectionTitle("2")}Flujo de trabajo</span></div>
 <div style="background:linear-gradient(135deg,${C.dark},${C.navy});border-radius:8px;padding:10px 14px;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
   <span style="background:${C.teal};color:white;padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">1. Modalidad</span>
   <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
-  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">2. Dictar</span>
+  <span style="background:rgba(196,181,253,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">2. Dictar</span>
   <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
-  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">3. Hallazgos IA</span>
+  <span style="background:rgba(196,181,253,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">3. Hallazgos IA</span>
   <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
-  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">4. Revisar</span>
+  <span style="background:rgba(196,181,253,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">4. Revisar</span>
   <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
-  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">5. Conclusión IA</span>
+  <span style="background:rgba(196,181,253,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">5. Conclusión IA</span>
   <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
-  <span style="background:rgba(94,234,212,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">6. Recomendaciones</span>
+  <span style="background:rgba(196,181,253,0.15);color:${C.lteal};padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">6. Recomendaciones</span>
   <span style="color:${C.lteal};font-size:10px;">&rarr;</span>
   <span style="background:${C.teal};color:white;padding:3px 8px;border-radius:12px;font-size:8px;font-weight:600;">7. RIS/PACS</span>
 </div>
@@ -332,7 +332,7 @@ export function AdminManualDownload() {
 
   return (
     <div className="flex items-center gap-4 p-5">
-      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E3A5F] to-[#0F766E] flex items-center justify-center shrink-0">
+      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1e1b4b] to-[#7c3aed] flex items-center justify-center shrink-0">
         <FileText className="h-5 w-5 text-white" />
       </div>
       <div className="flex-1 min-w-0">

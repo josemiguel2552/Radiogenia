@@ -63,7 +63,7 @@ export default function SupportPage() {
     switch (s) {
       case "open": return <AlertCircle className="h-3.5 w-3.5 text-red-500" />;
       case "in_progress": return <Clock className="h-3.5 w-3.5 text-amber-500" />;
-      case "resolved": return <CheckCircle className="h-3.5 w-3.5 text-green-500" />;
+      case "resolved": return <CheckCircle className="h-3.5 w-3.5 text-violet-500" />;
       default: return <MessageSquare className="h-3.5 w-3.5 text-gray-400" />;
     }
   };

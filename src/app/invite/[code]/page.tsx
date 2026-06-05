@@ -142,8 +142,8 @@ export default function InvitePage() {
           <div className="flex justify-center"><Logo size="md" forceDark /></div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
             <div className="flex justify-center">
-              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-green-400" />
+              <div className="h-12 w-12 rounded-full bg-violet-500/10 flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-violet-400" />
               </div>
             </div>
             <h1 className="text-xl font-bold text-white">{t("invite.success_title")}</h1>
@@ -152,7 +152,7 @@ export default function InvitePage() {
             </p>
           </div>
           {autoApproved ? (
-            <Link href="/auth/login" className="inline-block px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0F766E] to-[#1E3A5F] text-white text-sm font-semibold hover:from-[#14917F] hover:to-[#254A75] shadow-lg shadow-teal-500/20">
+            <Link href="/auth/login" className="inline-block px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#1e1b4b] text-white text-sm font-semibold hover:from-[#6d28d9] hover:to-[#5b21b6] shadow-lg shadow-violet-500/20">
               {t("invite.signin_link")}
             </Link>
           ) : (
@@ -169,8 +169,8 @@ export default function InvitePage() {
     <div className="min-h-screen flex bg-[#0a0a1a]">
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-600/20 to-blue-600/20" />
-        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-teal-600/10 rounded-full blur-[100px] animate-float-slow" />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-600/20 to-blue-600/20" />
+        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[100px] animate-float-slow" />
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-float-slower" />
         <div className="relative z-10 max-w-sm text-center px-8 space-y-6">
           <div className="flex items-center justify-center mb-4">
@@ -178,8 +178,8 @@ export default function InvitePage() {
           </div>
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.05] border border-white/10">
-              <div className="h-9 w-9 rounded-lg bg-teal-500/20 flex items-center justify-center shrink-0">
-                <Gift className="h-4 w-4 text-teal-400" />
+              <div className="h-9 w-9 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+                <Gift className="h-4 w-4 text-violet-400" />
               </div>
               <p className="text-sm text-gray-300 text-left">{t("invite.starter_free")}</p>
             </div>
@@ -222,7 +222,7 @@ export default function InvitePage() {
 
           {/* Mobile perks */}
           <div className="lg:hidden flex items-center gap-4 text-xs text-gray-400">
-            <span className="flex items-center gap-1"><Gift className="h-3.5 w-3.5 text-teal-400" /> Starter 30d</span>
+            <span className="flex items-center gap-1"><Gift className="h-3.5 w-3.5 text-violet-400" /> Starter 30d</span>
             <span className="flex items-center gap-1"><FileText className="h-3.5 w-3.5 text-blue-400" /> 150 reports</span>
             <span className="flex items-center gap-1"><CreditCard className="h-3.5 w-3.5 text-purple-400" /> {t("invite.no_card")}</span>
           </div>
@@ -238,7 +238,7 @@ export default function InvitePage() {
                   onChange={(e) => setFirstName(e.target.value)}
                   required
                   autoComplete="given-name"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-violet-500"
                 />
               </div>
               <div className="space-y-2">
@@ -250,7 +250,7 @@ export default function InvitePage() {
                   onChange={(e) => setLastName(e.target.value)}
                   required
                   autoComplete="family-name"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-violet-500"
                 />
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function InvitePage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-violet-500"
               />
             </div>
 
@@ -280,7 +280,7 @@ export default function InvitePage() {
                 required
                 minLength={6}
                 autoComplete="new-password"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-violet-500"
               />
             </div>
 
@@ -291,7 +291,7 @@ export default function InvitePage() {
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 required
-                className="w-full h-11 rounded-md bg-white/5 border border-white/10 text-white px-3 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                className="w-full h-11 rounded-md bg-white/5 border border-white/10 text-white px-3 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
               >
                 <option value="" disabled className="bg-[#0a0a1a] text-gray-500">{t("waitlist.country_placeholder")}</option>
                 {COUNTRIES.map((c) => (
@@ -308,7 +308,7 @@ export default function InvitePage() {
                 value={hospital}
                 onChange={(e) => setHospital(e.target.value)}
                 required
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-teal-500"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-violet-500"
               />
             </div>
 
@@ -322,7 +322,7 @@ export default function InvitePage() {
                     onClick={() => setRole(r)}
                     className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
                       role === r
-                        ? "border-teal-500/50 bg-teal-500/10 text-teal-400"
+                        ? "border-violet-500/50 bg-violet-500/10 text-violet-400"
                         : "border-white/10 bg-white/[0.02] text-gray-400 hover:bg-white/5 hover:text-gray-300"
                     }`}
                   >
@@ -338,11 +338,11 @@ export default function InvitePage() {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-teal-500 focus:ring-teal-500"
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-violet-500 focus:ring-violet-500"
                 />
                 <span className="text-xs text-gray-400 leading-relaxed">
                   {t("auth.accept_terms").split(/Términos de Uso|Terms of Use|Termos de Uso/)[0]}
-                  <Link href="/legal" target="_blank" className="text-teal-400 hover:text-teal-300 underline">
+                  <Link href="/legal" target="_blank" className="text-violet-400 hover:text-violet-300 underline">
                     {lang === "es" ? "Términos de Uso, Política de Privacidad y Descargo de Responsabilidad" : lang === "pt" ? "Termos de Uso, Política de Privacidade e Termo de Responsabilidade" : "Terms of Use, Privacy Policy and Liability Disclaimer"}
                   </Link>.
                 </span>
@@ -356,7 +356,7 @@ export default function InvitePage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-[#0F766E] to-[#1E3A5F] hover:from-[#14917F] hover:to-[#254A75] font-semibold shadow-lg shadow-teal-500/20"
+              className="w-full h-11 bg-gradient-to-r from-[#7c3aed] to-[#1e1b4b] hover:from-[#6d28d9] hover:to-[#5b21b6] font-semibold shadow-lg shadow-violet-500/20"
               disabled={submitting || !acceptedTerms}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("invite.submit")}

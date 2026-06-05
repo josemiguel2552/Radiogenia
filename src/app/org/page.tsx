@@ -346,7 +346,7 @@ export default function OrgDashboard() {
     const m = mod?.toLowerCase() || "";
     if (m.includes("ct") || m.includes("tc")) return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
     if (m.includes("mr") || m.includes("rm")) return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300";
-    if (m.includes("us") || m.includes("eco") || m.includes("ultra")) return "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300";
+    if (m.includes("us") || m.includes("eco") || m.includes("ultra")) return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300";
     if (m.includes("rx") || m.includes("xray") || m.includes("ray")) return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
     if (m.includes("mamo") || m.includes("mamm")) return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300";
     return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
@@ -579,7 +579,7 @@ export default function OrgDashboard() {
                         </Button>
                         <Button
                           variant="ghost" size="icon"
-                          className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-green-500 hover:text-green-600"}`}
+                          className={`h-7 w-7 ${m.is_active ? "text-amber-500 hover:text-amber-600" : "text-violet-500 hover:text-green-600"}`}
                           onClick={() => handleToggleMemberActive(m)}
                           aria-label={m.is_active ? t("org.deactivate") : t("org.reactivate")}
                         >
@@ -640,7 +640,7 @@ export default function OrgDashboard() {
                             {canManageMembers && (
                               <span className="text-[11px] text-gray-500 flex items-center gap-1"><Users className="h-3 w-3 text-blue-400" /> {sMembers.length}</span>
                             )}
-                            <span className="text-[11px] text-gray-500 flex items-center gap-1"><FileText className="h-3 w-3 text-teal-400" /> {sTemplates.length}</span>
+                            <span className="text-[11px] text-gray-500 flex items-center gap-1"><FileText className="h-3 w-3 text-violet-400" /> {sTemplates.length}</span>
                           </div>
                         </div>
                         {isOrgChief && (
@@ -667,9 +667,9 @@ export default function OrgDashboard() {
                             </button>
                           )}
                           <button onClick={() => setSectionSubTab({ ...sectionSubTab, [s.id]: "templates" })}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "templates" ? "border-teal-500 text-teal-600 dark:text-teal-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2 ${sub === "templates" ? "border-violet-500 text-violet-600 dark:text-violet-400" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
                             <FileText className="h-3.5 w-3.5" /> {t("org.templates")}
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "templates" ? "bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sTemplates.length}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${sub === "templates" ? "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>{sTemplates.length}</span>
                           </button>
                         </div>
 
@@ -711,7 +711,7 @@ export default function OrgDashboard() {
                                 <p className="text-xs text-gray-500">{sTemplates.length} {sTemplates.length !== 1 ? t("org.shared_template_other") : t("org.shared_template_one")}</p>
                                 <div className="flex gap-2 flex-wrap">
                                   <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => openCreateTemplate(s.id)}>
-                                    <Plus className="h-3.5 w-3.5 text-teal-500" /> {t("org.create_template")}
+                                    <Plus className="h-3.5 w-3.5 text-violet-500" /> {t("org.create_template")}
                                   </Button>
                                   <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                     {uploadingTpls === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 text-violet-500" />}
@@ -735,7 +735,7 @@ export default function OrgDashboard() {
                                   <p className="text-[10px] text-gray-400 max-w-xs mx-auto mb-3">{t("org.no_templates_desc")}</p>
                                   <div className="flex gap-2 justify-center flex-wrap">
                                     <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => openCreateTemplate(s.id)}>
-                                      <Plus className="h-3 w-3 text-teal-500" /> {t("org.create_template")}
+                                      <Plus className="h-3 w-3 text-violet-500" /> {t("org.create_template")}
                                     </Button>
                                     <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                                       {uploadingTpls === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 text-violet-500" />}
@@ -752,9 +752,9 @@ export default function OrgDashboard() {
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                   {sTemplates.map((tpl) => (
-                                    <div key={tpl.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-sm transition-all">
-                                      <div className="h-9 w-9 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
-                                        <FileText className="h-4 w-4 text-teal-500" />
+                                    <div key={tpl.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-violet-200 dark:hover:border-violet-800 hover:shadow-sm transition-all">
+                                      <div className="h-9 w-9 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+                                        <FileText className="h-4 w-4 text-violet-500" />
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 block truncate">{tpl.name}</span>

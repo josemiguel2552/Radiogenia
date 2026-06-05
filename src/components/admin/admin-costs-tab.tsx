@@ -45,7 +45,7 @@ function fmt(n: number): string {
 }
 
 function costColor(cost: number): string {
-  if (cost <= 0.01) return "text-green-600 dark:text-green-400";
+  if (cost <= 0.01) return "text-green-600 dark:text-violet-400";
   if (cost <= 0.1) return "text-amber-600 dark:text-amber-400";
   return "text-red-600 dark:text-red-400";
 }
@@ -189,7 +189,7 @@ export function AdminCostsTab() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard
-          icon={<DollarSign className="h-4 w-4 text-green-500" />}
+          icon={<DollarSign className="h-4 w-4 text-violet-500" />}
           label={t("admin.costs.total_month")}
           value={fmt(data.totalCost)}
           valueClass={costColor(data.totalCost)}

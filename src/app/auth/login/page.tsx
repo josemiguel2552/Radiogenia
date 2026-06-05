@@ -171,7 +171,7 @@ function LoginContent() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-[#1E3A5F] to-[#0F766E] hover:from-[#254A75] hover:to-[#14917F] font-semibold shadow-lg shadow-teal-500/20"
+              className="w-full h-11 bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] hover:from-[#5b21b6] hover:to-[#6d28d9] font-semibold shadow-lg shadow-violet-500/20"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("auth.signin_btn")}

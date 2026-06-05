@@ -149,15 +149,15 @@ export function LandingPage() {
 
           <div className="mt-16 flex items-center justify-center gap-8 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-green-500" />
+              <Check className="h-3.5 w-3.5 text-violet-500" />
               {t("hero.badge_no_card")}
             </span>
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-green-500" />
+              <Check className="h-3.5 w-3.5 text-violet-500" />
               {t("hero.badge_hipaa")}
             </span>
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-green-500" />
+              <Check className="h-3.5 w-3.5 text-violet-500" />
               {t("hero.badge_encrypt")}
             </span>
           </div>
@@ -293,28 +293,28 @@ export function LandingPage() {
 
       {/* ─── Security & Compliance ─── */}
       <section id="security" className="relative py-32 px-6">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {lang === "es" ? (
                 <>
                   Seguridad y privacidad{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-violet-400">
                     de nivel hospitalario
                   </span>
                 </>
               ) : lang === "pt" ? (
                 <>
                   Segurança e privacidade{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-violet-400">
                     de nível hospitalar
                   </span>
                 </>
               ) : (
                 <>
                   Hospital-grade{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-violet-400">
                     security & privacy
                   </span>
                 </>
@@ -327,9 +327,9 @@ export function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
             {SECURITY_ITEMS.map((item) => (
-              <div key={item.key} className="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/20 transition-all duration-300 hover:bg-white/[0.04]">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/10 mb-4">
-                  <item.icon className="h-5 w-5 text-emerald-400" />
+              <div key={item.key} className="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/20 transition-all duration-300 hover:bg-white/[0.04]">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/20 border border-violet-500/10 mb-4">
+                  <item.icon className="h-5 w-5 text-violet-400" />
                 </div>
                 <h3 className="text-base font-semibold mb-2">{t(`security.${item.key}.title`)}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">{t(`security.${item.key}.desc`)}</p>
@@ -340,7 +340,7 @@ export function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
             {(["soc2", "gdpr", "hipaa_badge", "hsts"] as const).map((badge) => (
               <span key={badge} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                <ShieldCheck className="h-3.5 w-3.5 text-violet-500" />
                 {t(`security.badge_${badge}`)}
               </span>
             ))}
@@ -430,7 +430,7 @@ function PricingCard({ plan, planKey, t, lang }: {
         isHighlight
           ? "bg-gradient-to-b from-blue-500/10 to-purple-500/10 border-2 border-blue-500/30 shadow-xl shadow-blue-500/10 scale-[1.02]"
           : planKey === "resident"
-          ? "bg-gradient-to-b from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 shadow-lg shadow-green-500/10"
+          ? "bg-gradient-to-b from-violet-500/10 to-violet-500/10 border-2 border-violet-500/30 shadow-lg shadow-violet-500/10"
           : "bg-white/[0.02] border border-white/5 hover:border-white/10"
       }`}
     >
@@ -443,7 +443,7 @@ function PricingCard({ plan, planKey, t, lang }: {
       )}
       {planKey === "resident" && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-green-500 to-emerald-600 rounded-full">
+          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-violet-500 to-violet-600 rounded-full">
             {lang === "es" ? "Residentes" : lang === "pt" ? "Residentes" : "Residents"}
           </span>
         </div>
@@ -478,7 +478,7 @@ function PricingCard({ plan, planKey, t, lang }: {
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
             : planKey === "resident"
-            ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 shadow-lg shadow-green-500/20"
+            ? "bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 shadow-lg shadow-violet-500/20"
             : "bg-white/5 hover:bg-white/10 border border-white/10"
         }`}
       >

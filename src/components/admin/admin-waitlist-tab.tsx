@@ -100,8 +100,8 @@ export function AdminWaitlistTab() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-              <Stethoscope className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+            <div className="h-9 w-9 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+              <Stethoscope className="h-4 w-4 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{attendingCount}</p>
@@ -169,7 +169,7 @@ export function AdminWaitlistTab() {
                       <td className="py-2 px-2 text-gray-600 dark:text-gray-300">{e.country}</td>
                       <td className="py-2 px-2 text-gray-600 dark:text-gray-300 max-w-[200px] truncate">{e.hospital}</td>
                       <td className="py-2 px-2">
-                        <Badge variant="secondary" className={`text-[10px] ${e.role === "resident" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300"}`}>
+                        <Badge variant="secondary" className={`text-[10px] ${e.role === "resident" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"}`}>
                           {e.role === "resident" ? t("admin.waitlist.role_resident") : t("admin.waitlist.role_attending")}
                         </Badge>
                       </td>

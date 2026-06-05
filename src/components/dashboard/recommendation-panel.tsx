@@ -384,7 +384,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                     className="h-6 text-[10px] gap-1"
                     onClick={copySelected}
                   >
-                    {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                    {copied ? <Check className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
                     {copied ? t("copied") : t("mrec.copy_selected")}
                   </Button>
                   <Button

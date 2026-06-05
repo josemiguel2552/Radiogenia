@@ -38,11 +38,11 @@ export function Logo({ size = "md", variant = "full", forceDark = false, classNa
         fill="none"
       />
       <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round" />
-      <circle cx="24" cy="24" r="2.2" fill="#5EEAD4" />
+      <circle cx="24" cy="24" r="2.2" fill="#c4b5fd" />
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1E3A5F" />
-          <stop offset="100%" stopColor="#0F766E" />
+          <stop offset="0%" stopColor="#1e1b4b" />
+          <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
       </defs>
     </svg>
@@ -51,7 +51,7 @@ export function Logo({ size = "md", variant = "full", forceDark = false, classNa
   if (variant === "icon") return <span className={className}>{icon}</span>;
 
   const textColor = forceDark ? "text-white" : "text-gray-900 dark:text-white";
-  const accentColor = forceDark ? "text-teal-400" : "text-teal-600 dark:text-teal-400";
+  const accentColor = forceDark ? "text-violet-400" : "text-violet-600 dark:text-violet-400";
 
   return (
     <span className={`inline-flex items-center ${s.gap} ${className}`}>
