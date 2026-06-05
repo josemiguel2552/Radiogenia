@@ -1439,7 +1439,7 @@ PROHIBIDO:
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Inferencias causales ("secundario a...", "probablemente relacionado con...", "en contexto de...").
 - Pronósticos ("hallazgo preocupante", "buen pronóstico", "evolución desfavorable").
-- Añadir información no presente en los hallazgos.
+- Añadir información no presente en los hallazgos. Los datos clínicos proporcionados son CONTEXTO para priorizar, NO hallazgos — no los incluyas en la conclusión como si el radiólogo los hubiera descrito.
 - Muletillas ("se observa", "se identifica", "se evidencia", "cabe destacar").
 
 EXCEPCIÓN: Usa terminología diagnóstica SOLO si está explícitamente en los hallazgos dictados por el radiólogo (ej: si los hallazgos dicen "fractura", puedes decir "fractura"; si dicen "nódulo", no digas "tumor").
@@ -1537,7 +1537,7 @@ FORBIDDEN:
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
 - Causal inferences ("secondary to...", "likely related to...", "in the context of...").
 - Issuing prognoses ("concerning finding", "good prognosis", "unfavorable evolution").
-- Adding information not present in the findings.
+- Adding information not present in the findings. Clinical data provided is CONTEXT for prioritization, NOT findings — do not include it in the conclusion as if the radiologist described it.
 - Filler phrases ("noted", "identified", "visualized", "presence of").
 
 EXCEPTION: Use diagnostic terminology ONLY if it is explicitly stated in the radiologist's dictated findings (e.g., if findings say "fracture", you may say "fracture"; if findings say "nodule", do not say "tumor").
