@@ -24,6 +24,40 @@ function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   }, [ref]);
 }
 
+// Reveals any [data-reveal] element as it scrolls into view (fade up + sharpen).
+function useScrollReveal() {
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduce || !("IntersectionObserver" in window)) {
+      els.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+}
+
+// Helper to build a reveal delay style without repeating the cast everywhere.
+function revealDelay(ms: number): React.CSSProperties {
+  return { "--reveal-delay": `${ms}ms` } as React.CSSProperties;
+}
+
 const FEATURE_KEYS = [
   { icon: Mic, key: "voice", color: "from-blue-500 to-indigo-600" },
   { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
@@ -46,18 +80,40 @@ const PLAN_ORDER: SubscriptionPlan[] = ["free", "resident", "starter", "professi
 
 export function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const { lang, setLang, t } = usePublicLang();
   useMouseGlow(heroRef);
+  useScrollReveal();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = max > 0 ? window.scrollY / max : 0;
+      progressRef.current?.style.setProperty("--scroll", `${ratio}`);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
+      {/* Safeguard: reveal everything if JS is disabled */}
+      <noscript>
+        <style>{`[data-reveal]{opacity:1!important;transform:none!important;filter:none!important;}`}</style>
+      </noscript>
+
+      {/* ─── Scroll progress bar ─── */}
+      <div className="fixed top-0 inset-x-0 z-[60] h-0.5 bg-transparent pointer-events-none">
+        <div
+          ref={progressRef}
+          className="scroll-progress h-full w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_12px_rgba(168,85,247,0.6)]"
+          style={{ "--scroll": "0" } as React.CSSProperties}
+        />
+      </div>
+
       {/* ─── Navbar ─── */}
       <nav
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
@@ -114,23 +170,23 @@ export function LandingPage() {
         />
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-sm text-gray-300 backdrop-blur-sm">
+          <div data-reveal style={revealDelay(0)} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-sm text-gray-300 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
             {lang === "es" ? "Informes radiológicos con IA" : lang === "pt" ? "Laudos radiológicos com IA" : "AI-powered radiology reporting"}
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
+          <h1 data-reveal style={revealDelay(100)} className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
             {lang === "es" ? "Informes radiológicos " : lang === "pt" ? "Laudos radiológicos " : "Radiology reports "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               {lang === "es" ? "en segundos" : lang === "pt" ? "em segundos" : "in seconds"}
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p data-reveal style={revealDelay(200)} className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
             {t("hero.subtitle")}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div data-reveal style={revealDelay(300)} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/waitlist"
               className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
@@ -147,7 +203,7 @@ export function LandingPage() {
             </a>
           </div>
 
-          <div className="mt-16 flex items-center justify-center gap-8 text-xs text-gray-500">
+          <div data-reveal style={revealDelay(400)} className="mt-16 flex items-center justify-center gap-8 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-violet-500" />
               {t("hero.badge_no_card")}
@@ -173,7 +229,7 @@ export function LandingPage() {
       {/* ─── Features ─── */}
       <section id="features" className="relative py-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+          <div data-reveal className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {lang === "es" ? (
                 <>
@@ -204,13 +260,14 @@ export function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURE_KEYS.map((f) => (
+            {FEATURE_KEYS.map((f, i) => (
               <FeatureCard
                 key={f.key}
                 icon={f.icon}
                 title={t(`feat.${f.key}.title`)}
                 desc={t(`feat.${f.key}.desc`)}
                 color={f.color}
+                index={i}
               />
             ))}
           </div>
@@ -221,12 +278,12 @@ export function LandingPage() {
       <section className="relative py-24 px-6">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/20 to-transparent" />
         <div className="relative max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+          <h2 data-reveal className="text-3xl md:text-4xl font-bold text-center mb-16">
             {t("how.title")}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {(["step1", "step2", "step3"] as const).map((step, i) => (
-              <div key={step} className="text-center">
+              <div key={step} data-reveal style={revealDelay(i * 120)} className="text-center">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/5 mb-4">
                   <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
                     {String(i + 1).padStart(2, "0")}
@@ -243,7 +300,7 @@ export function LandingPage() {
       {/* ─── Pricing ─── */}
       <section id="pricing" className="relative py-32 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
+          <div data-reveal className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {lang === "es" ? (
                 <>
@@ -275,10 +332,10 @@ export function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-4 gap-5 items-start">
-            {PLAN_ORDER.map((key) => {
+            {PLAN_ORDER.map((key, i) => {
               const plan = PLANS[key];
               return (
-                <PricingCard key={key} plan={plan} planKey={key} t={t} lang={lang} />
+                <PricingCard key={key} plan={plan} planKey={key} t={t} lang={lang} index={i} />
               );
             })}
           </div>
@@ -295,7 +352,7 @@ export function LandingPage() {
       <section id="security" className="relative py-32 px-6">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent" />
         <div className="relative max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+          <div data-reveal className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {lang === "es" ? (
                 <>
@@ -326,18 +383,20 @@ export function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
-            {SECURITY_ITEMS.map((item) => (
-              <div key={item.key} className="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/20 transition-all duration-300 hover:bg-white/[0.04]">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/20 border border-violet-500/10 mb-4">
-                  <item.icon className="h-5 w-5 text-violet-400" />
+            {SECURITY_ITEMS.map((item, i) => (
+              <div key={item.key} data-reveal style={revealDelay((i % 3) * 100)}>
+                <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/20 transition-all duration-300 hover:bg-white/[0.04]">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/20 border border-violet-500/10 mb-4">
+                    <item.icon className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <h3 className="text-base font-semibold mb-2">{t(`security.${item.key}.title`)}</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed">{t(`security.${item.key}.desc`)}</p>
                 </div>
-                <h3 className="text-base font-semibold mb-2">{t(`security.${item.key}.title`)}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{t(`security.${item.key}.desc`)}</p>
               </div>
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
+          <div data-reveal style={revealDelay(150)} className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
             {(["soc2", "gdpr", "hipaa_badge", "hsts"] as const).map((badge) => (
               <span key={badge} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
                 <ShieldCheck className="h-3.5 w-3.5 text-violet-500" />
@@ -351,7 +410,7 @@ export function LandingPage() {
       {/* ─── CTA ─── */}
       <section className="relative py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="p-12 rounded-3xl bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-white/5 backdrop-blur-sm">
+          <div data-reveal className="p-12 rounded-3xl bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-white/5 backdrop-blur-sm">
             <h2 className="text-3xl font-bold mb-4">{t("cta.title")}</h2>
             <p className="text-gray-400 mb-8 max-w-lg mx-auto">
               {t("cta.subtitle")}
@@ -399,34 +458,39 @@ function LangToggle({ lang, setLang }: { lang: PublicLang; setLang: (l: PublicLa
   );
 }
 
-function FeatureCard({ icon: Icon, title, desc, color }: {
+function FeatureCard({ icon: Icon, title, desc, color, index = 0 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   desc: string;
   color: string;
+  index?: number;
 }) {
   return (
-    <div className="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 hover:bg-white/[0.04]">
-      <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${color} mb-4 shadow-lg`}>
-        <Icon className="h-5 w-5 text-white" />
+    <div data-reveal style={revealDelay((index % 3) * 100)}>
+      <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 hover:bg-white/[0.04]">
+        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${color} mb-4 shadow-lg`}>
+          <Icon className="h-5 w-5 text-white" />
+        </div>
+        <h3 className="text-base font-semibold mb-2">{title}</h3>
+        <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
       </div>
-      <h3 className="text-base font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
     </div>
   );
 }
 
-function PricingCard({ plan, planKey, t, lang }: {
+function PricingCard({ plan, planKey, t, lang, index = 0 }: {
   plan: typeof PLANS["free"];
   planKey: string;
   t: (key: string, vars?: Record<string, string | number>) => string;
   lang: PublicLang;
+  index?: number;
 }) {
   const isHighlight = plan.highlight;
 
   return (
+    <div data-reveal style={revealDelay(index * 90)} className="h-full">
     <div
-      className={`relative p-6 rounded-2xl transition-all duration-300 ${
+      className={`relative h-full p-6 rounded-2xl transition-all duration-300 ${
         isHighlight
           ? "bg-gradient-to-b from-blue-500/10 to-purple-500/10 border-2 border-blue-500/30 shadow-xl shadow-blue-500/10 scale-[1.02]"
           : planKey === "resident"
@@ -488,6 +552,7 @@ function PricingCard({ plan, planKey, t, lang }: {
           ? lang === "es" ? "Verificar y suscribirse" : lang === "pt" ? "Verificar e assinar" : "Verify & subscribe"
           : `${t("pricing.subscribe_cta")} — ${CURRENCY}${plan.price}${t("pricing.per_month")}`}
       </Link>
+    </div>
     </div>
   );
 }
