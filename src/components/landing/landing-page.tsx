@@ -6,10 +6,13 @@ import {
   Mic, FileText, Brain, Sparkles, Layout, Shield,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Server, Fingerprint,
+  BookOpen, Download,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
+
+/* ─── Hooks ─── */
 
 function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -24,7 +27,6 @@ function useMouseGlow(ref: React.RefObject<HTMLElement | null>) {
   }, [ref]);
 }
 
-// Reveals any [data-reveal] element as it scrolls into view (fade up + sharpen).
 function useScrollReveal() {
   useEffect(() => {
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
@@ -53,7 +55,42 @@ function useScrollReveal() {
   }, []);
 }
 
-// Helper to build a reveal delay style without repeating the cast everywhere.
+function useScrollProgress(ref: React.RefObject<HTMLElement | null>) {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const total = el.offsetHeight - window.innerHeight;
+      if (total <= 0) { setProgress(0); return; }
+      setProgress(Math.max(0, Math.min(1, -rect.top / total)));
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => window.removeEventListener("scroll", update);
+  }, [ref]);
+  return progress;
+}
+
+function useCountUp(target: number, active: boolean, duration = 1500) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const start = performance.now();
+    let raf: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(target * ease));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [active, target, duration]);
+  return val;
+}
+
 function revealDelay(ms: number): React.CSSProperties {
   return { "--reveal-delay": `${ms}ms` } as React.CSSProperties;
 }
@@ -177,7 +214,7 @@ export function LandingPage() {
 
           <h1 data-reveal style={revealDelay(100)} className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
             {lang === "es" ? "Informes radiológicos " : lang === "pt" ? "Laudos radiológicos " : "Radiology reports "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 hero-shimmer" style={{ backgroundImage: "linear-gradient(90deg, #60a5fa, #c084fc, #f472b6, #60a5fa)" }}>
               {lang === "es" ? "en segundos" : lang === "pt" ? "em segundos" : "in seconds"}
             </span>
           </h1>
@@ -225,6 +262,12 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── Scroll-driven interactive demo ─── */}
+      <ScrollDemo lang={lang} />
+
+      {/* ─── Stats counter bar ─── */}
+      <StatsBar lang={lang} />
 
       {/* ─── Features ─── */}
       <section id="features" className="relative py-32 px-6">
@@ -442,6 +485,437 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ─── Scroll-driven interactive demo ─── */
+
+const DEMO_TEXTS: Record<PublicLang, string[]> = {
+  es: [
+    "Pulmones bien ventilados sin opacidades de ocupación alveolar. Silueta cardiomediastínica dentro de límites normales. Senos costofrénicos libres. No se observan lesiones óseas...",
+  ],
+  en: [
+    "Well-aerated lungs without alveolar opacities. Cardiomediastinal silhouette within normal limits. Clear costophrenic angles. No osseous lesions identified...",
+  ],
+  pt: [
+    "Pulmões bem aerados sem opacidades de preenchimento alveolar. Silhueta cardiomediastinal dentro dos limites normais. Seios costofrênicos livres...",
+  ],
+};
+
+const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
+  es: [
+    { title: "Dicta tu informe", desc: "Habla naturalmente y observa cómo tu voz se transcribe en tiempo real" },
+    { title: "Estructura automática", desc: "El texto se organiza en secciones: técnica, hallazgos y conclusión" },
+    { title: "Consulta tus guías", desc: "Accede a las guías clínicas que has subido, al lado de tu informe" },
+    { title: "Informe listo", desc: "Revisa, ajusta y exporta en el formato de tu hospital" },
+  ],
+  en: [
+    { title: "Dictate your report", desc: "Speak naturally and watch your voice transcribed in real time" },
+    { title: "Auto-structured", desc: "Text is organized into sections: technique, findings, and conclusion" },
+    { title: "Check your guides", desc: "Access the clinical guides you uploaded, right next to your report" },
+    { title: "Report ready", desc: "Review, adjust, and export in your hospital's format" },
+  ],
+  pt: [
+    { title: "Dite seu laudo", desc: "Fale naturalmente e veja sua voz transcrita em tempo real" },
+    { title: "Estrutura automática", desc: "O texto se organiza em seções: técnica, achados e conclusão" },
+    { title: "Consulte seus guias", desc: "Acesse os guias clínicos que você enviou, ao lado do seu laudo" },
+    { title: "Laudo pronto", desc: "Revise, ajuste e exporte no formato do seu hospital" },
+  ],
+};
+
+const DEMO_ICONS = [Mic, FileText, BookOpen, Download];
+
+function ScrollDemo({ lang }: { lang: PublicLang }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const progress = useScrollProgress(containerRef);
+
+  const totalSteps = 4;
+  const stepFloat = progress * totalSteps;
+  const activeStep = Math.min(Math.floor(stepFloat), totalSteps - 1);
+  const stepProgress = stepFloat - activeStep;
+
+  const steps = DEMO_STEPS_DATA[lang];
+  const dictText = DEMO_TEXTS[lang][0];
+
+  const reduce =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  return (
+    <section
+      ref={containerRef}
+      className="relative"
+      style={{ height: reduce ? "auto" : "350vh" }}
+    >
+      <div
+        className={`${
+          reduce ? "relative" : "sticky top-0 h-screen"
+        } flex items-center justify-center overflow-hidden`}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a1a] via-indigo-950/20 to-[#0a0a1a]" />
+
+        <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
+          <div className="grid lg:grid-cols-[340px_1fr] gap-10 items-center">
+            {/* Left: step info */}
+            <div className="hidden lg:block space-y-8">
+              {steps.map((s, i) => {
+                const Icon = DEMO_ICONS[i];
+                const isActive = i === activeStep;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-4 transition-all duration-500 ${
+                      isActive ? "opacity-100 translate-x-0" : "opacity-25 -translate-x-2"
+                    }`}
+                  >
+                    <div
+                      className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
+                        isActive
+                          ? "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-purple-500/30"
+                          : "bg-white/5 border border-white/10"
+                      }`}
+                    >
+                      <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-500"}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-purple-400">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className={`text-sm font-semibold transition-colors duration-300 ${isActive ? "text-white" : "text-gray-500"}`}>
+                          {s.title}
+                        </span>
+                      </div>
+                      <p className={`text-xs leading-relaxed transition-colors duration-300 ${isActive ? "text-gray-400" : "text-gray-600"}`}>
+                        {s.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* progress dots */}
+              <div className="flex items-center gap-2 pt-2">
+                {steps.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      i === activeStep
+                        ? "w-8 bg-gradient-to-r from-blue-500 to-purple-500"
+                        : i < activeStep
+                        ? "w-1.5 bg-purple-500/50"
+                        : "w-1.5 bg-white/10"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Right: demo screen */}
+            <div className="demo-screen rounded-2xl p-1 relative">
+              {/* Glow ring behind */}
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-blue-500/20 via-transparent to-purple-500/20 blur-sm -z-10" />
+
+              <div className="rounded-xl bg-[#0c0c20] overflow-hidden">
+                {/* Title bar */}
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border-b border-white/5">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+                  </div>
+                  <div className="flex-1 flex justify-center">
+                    <div className="px-3 py-0.5 rounded bg-white/5 text-[10px] text-gray-500 font-mono">
+                      radiogen.ai/dashboard
+                    </div>
+                  </div>
+                </div>
+
+                {/* App mockup body */}
+                <div className="relative min-h-[340px] md:min-h-[380px]">
+                  <DemoStep0 active={activeStep === 0} progress={stepProgress} text={dictText} />
+                  <DemoStep1 active={activeStep === 1} progress={stepProgress} lang={lang} />
+                  <DemoStep2 active={activeStep === 2} progress={stepProgress} lang={lang} />
+                  <DemoStep3 active={activeStep === 3} progress={stepProgress} lang={lang} />
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile step indicator (below screen) */}
+            <div className="lg:hidden flex flex-col items-center gap-3 mt-4">
+              <div className="flex items-center gap-2">
+                {steps.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      i === activeStep
+                        ? "w-8 bg-gradient-to-r from-blue-500 to-purple-500"
+                        : "w-1.5 bg-white/10"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-sm font-semibold text-white">{steps[activeStep]?.title}</p>
+              <p className="text-xs text-gray-400 text-center max-w-xs">{steps[activeStep]?.desc}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Demo step visuals ─── */
+
+function DemoStep0({ active, progress, text }: { active: boolean; progress: number; text: string }) {
+  const chars = Math.floor(text.length * (active ? Math.min(progress * 1.5, 1) : 1));
+  return (
+    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center relative">
+        <Mic className="h-6 w-6 text-blue-400" />
+        <div className="absolute inset-0 rounded-full border-2 border-blue-400/40 animate-ping" />
+      </div>
+
+      <div className="flex items-end justify-center gap-[3px] h-10 w-48">
+        {Array.from({ length: 28 }).map((_, i) => (
+          <div
+            key={i}
+            className="waveform-bar w-[5px] rounded-full bg-gradient-to-t from-blue-500/80 to-purple-400/80"
+            style={{ "--bar-delay": `${i * 0.06}s`, minHeight: "3px" } as React.CSSProperties}
+          />
+        ))}
+      </div>
+
+      <div className="max-w-sm text-center">
+        <p className="text-sm text-gray-300 font-mono leading-relaxed">
+          {active ? text.slice(0, chars) : text}
+          {active && chars < text.length && (
+            <span className="inline-block w-0.5 h-4 bg-blue-400 ml-0.5 align-text-bottom animate-pulse" />
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DemoStep1({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const sections = lang === "es"
+    ? [
+        { label: "TÉCNICA", text: "Radiografía PA y lateral de tórax" },
+        { label: "HALLAZGOS", text: "Pulmones bien ventilados sin opacidades. Silueta cardiomediastínica normal." },
+        { label: "CONCLUSIÓN", text: "Estudio de tórax sin hallazgos patológicos significativos." },
+      ]
+    : lang === "pt"
+    ? [
+        { label: "TÉCNICA", text: "Radiografia PA e perfil de tórax" },
+        { label: "ACHADOS", text: "Pulmões bem aerados sem opacidades. Silhueta cardiomediastinal normal." },
+        { label: "CONCLUSÃO", text: "Estudo de tórax sem achados patológicos significativos." },
+      ]
+    : [
+        { label: "TECHNIQUE", text: "PA and lateral chest radiograph" },
+        { label: "FINDINGS", text: "Well-aerated lungs without opacities. Normal cardiomediastinal silhouette." },
+        { label: "CONCLUSION", text: "Chest study without significant pathologic findings." },
+      ];
+
+  return (
+    <div className={`absolute inset-0 p-6 flex flex-col justify-center gap-3 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      {sections.map((s, i) => {
+        const show = !active || progress > i * 0.25;
+        return (
+          <div
+            key={i}
+            className="transition-all duration-600"
+            style={{
+              opacity: show ? 1 : 0,
+              transform: show ? "translateY(0)" : "translateY(12px)",
+              transitionDelay: `${i * 80}ms`,
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="h-px flex-1 max-w-6 bg-purple-500/30" />
+              <span className="text-[10px] font-bold tracking-widest text-purple-400">{s.label}</span>
+            </div>
+            <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
+              <p className="text-sm text-gray-300 leading-relaxed">{s.text}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DemoStep2({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const showGuide = !active || progress > 0.2;
+  const guideTitle = lang === "es" ? "Guía Fleischner 2017" : lang === "pt" ? "Guia Fleischner 2017" : "Fleischner 2017 Guide";
+  const rows = [
+    { size: "< 6 mm", risk: lang === "es" ? "Sin seguimiento" : lang === "pt" ? "Sem seguimento" : "No follow-up" },
+    { size: "6–8 mm", risk: lang === "es" ? "TC 6-12 m" : lang === "pt" ? "TC 6-12 m" : "CT 6-12 mo" },
+    { size: "> 8 mm", risk: lang === "es" ? "TC 3 m / PET-CT" : lang === "pt" ? "TC 3 m / PET-CT" : "CT 3 mo / PET-CT" },
+  ];
+
+  return (
+    <div className={`absolute inset-0 p-4 md:p-6 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      <div className="flex gap-3 h-full">
+        {/* Report side */}
+        <div className="flex-1 flex flex-col justify-center gap-2">
+          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
+            <span className="text-[10px] font-bold tracking-widest text-purple-400 block mb-1.5">
+              {lang === "es" ? "HALLAZGOS" : lang === "pt" ? "ACHADOS" : "FINDINGS"}
+            </span>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              {lang === "es"
+                ? "Nódulo pulmonar sólido de 7 mm en lóbulo inferior derecho..."
+                : lang === "pt"
+                ? "Nódulo pulmonar sólido de 7 mm no lobo inferior direito..."
+                : "7 mm solid pulmonary nodule in right lower lobe..."}
+              <span className="inline-flex items-center ml-1.5 px-1.5 py-0.5 rounded bg-purple-500/20 text-[10px] text-purple-300 font-semibold">
+                → {guideTitle}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Guide panel sliding in */}
+        <div
+          className="w-44 md:w-52 flex flex-col justify-center transition-all duration-600"
+          style={{
+            opacity: showGuide ? 1 : 0,
+            transform: showGuide ? "translateX(0)" : "translateX(24px)",
+          }}
+        >
+          <div className="rounded-xl bg-gradient-to-b from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-3 space-y-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <BookOpen className="h-3.5 w-3.5 text-purple-400" />
+              <span className="text-[10px] font-bold text-purple-300 truncate">{guideTitle}</span>
+            </div>
+            {rows.map((r, i) => {
+              const showRow = !active || progress > 0.35 + i * 0.12;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-1.5 px-2 rounded bg-white/[0.04] transition-all duration-400"
+                  style={{
+                    opacity: showRow ? 1 : 0,
+                    transform: showRow ? "translateY(0)" : "translateY(8px)",
+                  }}
+                >
+                  <span className="text-[11px] font-bold text-white">{r.size}</span>
+                  <span className="text-[10px] text-gray-400">{r.risk}</span>
+                </div>
+              );
+            })}
+            <p className="text-[8px] text-gray-600 pt-1">MacMahon et al. 2017</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DemoStep3({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const showCheck = !active || progress > 0.3;
+  const showExport = !active || progress > 0.6;
+  return (
+    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      <div
+        className="transition-all duration-600"
+        style={{ opacity: showCheck ? 1 : 0, transform: showCheck ? "scale(1)" : "scale(0.5)" }}
+      >
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/20 flex items-center justify-center">
+          {showCheck && (
+            <svg className="checkmark-anim h-8 w-8" viewBox="0 0 24 24" fill="none">
+              <path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
+      </div>
+
+      <p className="text-lg font-semibold text-white">
+        {lang === "es" ? "Informe completado" : lang === "pt" ? "Laudo concluído" : "Report completed"}
+      </p>
+
+      <div
+        className="flex items-center gap-3 transition-all duration-500"
+        style={{ opacity: showExport ? 1 : 0, transform: showExport ? "translateY(0)" : "translateY(12px)" }}
+      >
+        <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-xs font-semibold flex items-center gap-2 shadow-lg shadow-purple-500/20">
+          <Download className="h-3.5 w-3.5" />
+          {lang === "es" ? "Exportar PDF" : lang === "pt" ? "Exportar PDF" : "Export PDF"}
+        </div>
+        <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 font-medium">
+          {lang === "es" ? "Copiar texto" : lang === "pt" ? "Copiar texto" : "Copy text"}
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500 max-w-xs text-center">
+        {lang === "es"
+          ? "De la voz al informe final en menos de 30 segundos"
+          : lang === "pt"
+          ? "Da voz ao laudo final em menos de 30 segundos"
+          : "From voice to final report in under 30 seconds"}
+      </p>
+    </div>
+  );
+}
+
+/* ─── Animated stats bar ─── */
+
+function AnimatedStat({ value, suffix, label }: { value: number; suffix: string; label: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const count = useCountUp(value, visible);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.5 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="text-center px-6">
+      <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400" style={{ animation: visible ? "counter-glow 2s ease-in-out" : "none" }}>
+        {count}{suffix}
+      </div>
+      <p className="text-sm text-gray-400 mt-1">{label}</p>
+    </div>
+  );
+}
+
+function StatsBar({ lang }: { lang: PublicLang }) {
+  const stats = lang === "es"
+    ? [
+        { value: 104, suffix: "+", label: "Plantillas especializadas" },
+        { value: 10, suffix: "x", label: "Más rápido que escribir" },
+        { value: 3, suffix: "", label: "Idiomas soportados" },
+      ]
+    : lang === "pt"
+    ? [
+        { value: 104, suffix: "+", label: "Modelos especializados" },
+        { value: 10, suffix: "x", label: "Mais rápido que digitar" },
+        { value: 3, suffix: "", label: "Idiomas suportados" },
+      ]
+    : [
+        { value: 104, suffix: "+", label: "Specialized templates" },
+        { value: 10, suffix: "x", label: "Faster than typing" },
+        { value: 3, suffix: "", label: "Languages supported" },
+      ];
+
+  return (
+    <section className="relative py-20 px-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-0 md:divide-x md:divide-white/10">
+          {stats.map((s, i) => (
+            <AnimatedStat key={i} {...s} />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

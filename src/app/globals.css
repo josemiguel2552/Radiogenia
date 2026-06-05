@@ -137,6 +137,51 @@
   transition: transform 0.1s linear;
 }
 
+/* ── Scroll-driven demo: waveform, shimmer, demo screen ── */
+@keyframes waveform {
+  0%, 100% { height: 16%; }
+  25% { height: 80%; }
+  50% { height: 40%; }
+  75% { height: 95%; }
+}
+.waveform-bar {
+  animation: waveform 1.2s ease-in-out infinite;
+  animation-delay: var(--bar-delay, 0s);
+}
+
+@keyframes hero-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.hero-shimmer {
+  background-size: 200% auto;
+  animation: hero-shimmer 4s linear infinite;
+}
+
+.demo-screen {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 60px rgba(124, 58, 237, 0.1),
+    0 0 120px rgba(99, 102, 241, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+@keyframes checkmark-draw {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+.checkmark-anim path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: checkmark-draw 0.5s ease-out forwards;
+}
+
+@keyframes counter-glow {
+  0%, 100% { text-shadow: 0 0 20px rgba(124, 58, 237, 0); }
+  50% { text-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+}
+
 /* Hide scrollbar but allow scrolling */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
