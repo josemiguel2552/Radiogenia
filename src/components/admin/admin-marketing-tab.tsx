@@ -80,7 +80,7 @@ interface BrandAsset {
   category: string;
   width: number;
   height: number;
-  bg: "gradient" | "dark" | "white" | "transparent";
+  bg: "gradient" | "dark" | "white" | "transparent" | "purple";
   logoVariant: "full" | "icon";
   description: string;
   tagline?: string;
@@ -178,6 +178,29 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "pub-calc-bosniak-sq", label: "Calculadoras — Bosniak", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Clasificación Bosniak", tagline: "calc-bosniak" },
   { id: "pub-calc-copy-sq", label: "Calculadoras — Copy al informe", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Copiar resultado al informe", tagline: "calc-copy" },
   { id: "pub-calc-copy-st", label: "Calculadoras — Copy al informe (story)", category: "Pub. Calculadoras", width: 1080, height: 1920, bg: "dark", logoVariant: "full", description: "IG/TikTok — Copiar resultado", tagline: "calc-copy" },
+  // ═══ Variantes moradas ═══
+  // Profile — purple
+  { id: "profile-purple", label: "Perfil (morado)", category: "Perfil", width: 400, height: 400, bg: "purple", logoVariant: "icon", description: "Perfil con gradiente morado" },
+  { id: "profile-purple-tiktok", label: "Perfil TikTok (morado)", category: "Perfil", width: 200, height: 200, bg: "purple", logoVariant: "icon", description: "TikTok 200×200 morado" },
+  // Logo — purple
+  { id: "logo-purple-h", label: "Logo completo (morado)", category: "Logo", width: 1200, height: 400, bg: "purple", logoVariant: "full", description: "Logo horizontal gradiente morado" },
+  { id: "logo-tagline-purple", label: "Logo + tagline (morado)", category: "Logo", width: 1200, height: 400, bg: "purple", logoVariant: "full", description: "Con eslogan — morado", tagline: TAGLINE_ES },
+  { id: "logo-tagline-purple-en", label: "Logo + tagline EN (morado)", category: "Logo", width: 1200, height: 400, bg: "purple", logoVariant: "full", description: "English tagline — morado", tagline: TAGLINE_EN },
+  // Banners — purple
+  { id: "banner-x-purple", label: "Banner X (morado)", category: "Banners Redes", width: 1500, height: 500, bg: "purple", logoVariant: "full", description: "1500×500px morado", tagline: TAGLINE_ES },
+  { id: "banner-fb-purple", label: "Banner Facebook (morado)", category: "Banners Redes", width: 820, height: 312, bg: "purple", logoVariant: "full", description: "820×312px morado", tagline: TAGLINE_ES },
+  { id: "banner-linkedin-purple", label: "Banner LinkedIn (morado)", category: "Banners Redes", width: 1584, height: 396, bg: "purple", logoVariant: "full", description: "1584×396px morado", tagline: TAGLINE_ES },
+  { id: "banner-yt-purple", label: "Banner YouTube (morado)", category: "Banners Redes", width: 2560, height: 1440, bg: "purple", logoVariant: "full", description: "2560×1440px morado", tagline: TAGLINE_ES },
+  { id: "banner-tiktok-purple", label: "Banner TikTok (morado)", category: "Banners Redes", width: 1150, height: 150, bg: "purple", logoVariant: "full", description: "TikTok 1150×150 morado" },
+  // Presentation — purple
+  { id: "slide-cover-purple", label: "Slide portada (morado)", category: "Presentación", width: 1920, height: 1080, bg: "purple", logoVariant: "full", description: "16:9 portada — morado", tagline: TAGLINE_ES },
+  { id: "slide-header-purple", label: "Slide cabecera (morado)", category: "Presentación", width: 1920, height: 200, bg: "purple", logoVariant: "full", description: "Strip superior — morado" },
+  // Icons — purple
+  { id: "icon-512-purple", label: "App Icon 512 (morado)", category: "Iconos", width: 512, height: 512, bg: "purple", logoVariant: "icon", description: "PWA / App Store 512×512 morado" },
+  { id: "icon-192-purple", label: "App Icon 192 (morado)", category: "Iconos", width: 192, height: 192, bg: "purple", logoVariant: "icon", description: "PWA 192×192 morado" },
+  { id: "icon-180-purple", label: "Apple Touch Icon (morado)", category: "Iconos", width: 180, height: 180, bg: "purple", logoVariant: "icon", description: "iOS home 180×180 morado" },
+  { id: "favicon-purple", label: "Favicon (morado)", category: "Iconos", width: 32, height: 32, bg: "purple", logoVariant: "icon", description: "Favicon 32×32 morado" },
+  { id: "whatsapp-icon-purple", label: "WhatsApp Business (morado)", category: "Iconos", width: 640, height: 640, bg: "purple", logoVariant: "icon", description: "WhatsApp perfil morado" },
   // ═══ Grids completos (purple theme) ═══
   { id: "pub-calc-all-sq", label: "Todas las calculadoras", category: "Pub. Calculadoras", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Grid completo calculadoras", tagline: "calc-all" },
   { id: "pub-calc-all-ln", label: "Todas las calculadoras (landscape)", category: "Pub. Calculadoras", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo calculadoras", tagline: "calc-all" },
@@ -188,7 +211,7 @@ const BRAND_ASSETS: BrandAsset[] = [
 function buildLogoSvg(
   w: number, h: number,
   variant: "full" | "icon",
-  bg: "gradient" | "dark" | "white" | "transparent",
+  bg: "gradient" | "dark" | "white" | "transparent" | "purple",
   opts?: { tagline?: string; subtextSize?: number },
 ): string {
   const pad = w * 0.05;
@@ -201,25 +224,33 @@ function buildLogoSvg(
     : (h - iconSize) / 2;
   const scale = iconSize / 32;
 
+  const isPurple = bg === "purple";
   const textDark = bg === "white" || bg === "transparent";
   const mainColor = textDark ? "#111827" : "#ffffff";
-  const accentColor = textDark ? "#0d9488" : "#5EEAD4";
+  const accentColor = isPurple ? "#c4b5fd" : textDark ? "#0d9488" : "#5EEAD4";
   const subColor = textDark ? "#6b7280" : "rgba(255,255,255,0.6)";
+  const dotColor = isPurple ? "#c4b5fd" : "#5EEAD4";
 
   let bgRect = "";
   if (bg === "gradient") {
     bgRect = `<defs><linearGradient id="bg-grad" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-grad)"/>`;
+  } else if (bg === "purple") {
+    bgRect = `<defs><linearGradient id="bg-grad" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-grad)"/>`;
   } else if (bg === "dark") {
     bgRect = `<rect width="${w}" height="${h}" fill="#0f172a"/>`;
   } else if (bg === "white") {
     bgRect = `<rect width="${w}" height="${h}" fill="#ffffff"/>`;
   }
 
+  const iconGradStops = isPurple
+    ? `<stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/>`
+    : `<stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/>`;
+
   const iconSvg = `<g transform="translate(${iconX},${iconY}) scale(${scale})">
     <rect width="32" height="32" rx="7" fill="url(#icon-grad)"/>
     <path d="M10 8h7a5 5 0 0 1 0 10h-3l5 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="24" cy="24" r="2.2" fill="#5EEAD4"/>
+    <circle cx="24" cy="24" r="2.2" fill="${dotColor}"/>
   </g>`;
 
   let textSvg = "";
@@ -240,7 +271,7 @@ function buildLogoSvg(
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    <defs><linearGradient id="icon-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="100%" stop-color="#0F766E"/></linearGradient></defs>
+    <defs><linearGradient id="icon-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">${iconGradStops}</linearGradient></defs>
     ${bgRect}
     ${iconSvg}
     ${textSvg}
@@ -251,8 +282,8 @@ function escSvg(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "white" | "transparent", contentType: string): string {
-  const isDark = bg === "gradient" || bg === "dark";
+function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "white" | "transparent" | "purple", contentType: string): string {
+  const isDark = bg === "gradient" || bg === "dark" || bg === "purple";
   const mainColor = isDark ? "#ffffff" : "#111827";
   const subColor = isDark ? "rgba(255,255,255,0.55)" : "#6b7280";
   const accentColor = "#5EEAD4";
@@ -270,6 +301,8 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   let bgSvg = "";
   if (bg === "gradient") {
     bgSvg = `<defs><linearGradient id="bg-g" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1E3A5F"/><stop offset="60%" stop-color="#0F766E"/><stop offset="100%" stop-color="#134e4a"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-g)"/>`;
+  } else if (bg === "purple") {
+    bgSvg = `<defs><linearGradient id="bg-g" x1="0" y1="0" x2="${w}" y2="${h}" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="50%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#bg-g)"/>`;
   } else if (bg === "dark") {
     bgSvg = `<rect width="${w}" height="${h}" fill="#0f172a"/>`;
   } else if (bg === "white") {
