@@ -268,9 +268,6 @@ function buildLogoSvg(
     ? Math.min(w, h) * 0.6
     : Math.min(h * 0.5, w * 0.1);
   const iconX = variant === "icon" ? (w - iconSize) / 2 : pad;
-  const iconY = opts?.tagline
-    ? h * 0.5 - iconSize * 0.65
-    : (h - iconSize) / 2;
   const scale = iconSize / 32;
 
   const isPurple = bg === "purple";
@@ -295,13 +292,7 @@ function buildLogoSvg(
     ? `<stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#7c3aed"/>`
     : `<stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#7c3aed"/>`;
 
-  const iconSvg = `<g transform="translate(${iconX},${iconY}) scale(${scale})">
-    <rect width="32" height="32" rx="7" fill="url(#icon-grad)"/>
-    <path d="M10 8h7a5 5 0 0 1 0 10h-3l5 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="24" cy="24" r="2.2" fill="${dotColor}"/>
-  </g>`;
-
+  let iconY: number;
   let textSvg = "";
   if (variant === "full") {
     const textX = iconX + iconSize + iconSize * 0.35;
@@ -310,6 +301,8 @@ function buildLogoSvg(
     const textY = opts?.tagline
       ? h * 0.5 - fontSize * 0.15
       : h / 2 + fontSize * 0.35;
+    const textCapCenter = textY - fontSize * 0.35;
+    iconY = textCapCenter - iconSize / 2;
     textSvg = `<text x="${textX}" y="${textY}" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="${fontSize}" letter-spacing="-0.02em">
       <tspan fill="${mainColor}">Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan>
     </text>`;
@@ -317,7 +310,16 @@ function buildLogoSvg(
       const subSize = opts.subtextSize || fontSize * 0.28;
       textSvg += `<text x="${textX}" y="${textY + subSize * 1.6}" font-family="system-ui,-apple-system,sans-serif" font-weight="500" font-size="${subSize}" fill="${subColor}" letter-spacing="0.02em">${escSvg(opts.tagline)}</text>`;
     }
+  } else {
+    iconY = (h - iconSize) / 2;
   }
+
+  const iconSvg = `<g transform="translate(${iconX},${iconY}) scale(${scale})">
+    <rect width="32" height="32" rx="7" fill="url(#icon-grad)"/>
+    <path d="M10 8h7a5 5 0 0 1 0 10h-3l5 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <line x1="10" y1="13" x2="17" y2="13" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="2.2" fill="${dotColor}"/>
+  </g>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     <defs><linearGradient id="icon-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">${iconGradStops}</linearGradient></defs>
@@ -368,9 +370,19 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
     <line x1="${w * 0.72}" y1="${botSafe + fs(8)}" x2="${w - px}" y2="${botSafe + fs(8)}" stroke="${ta}0.12)" stroke-width="1"/>
   `;
 
-  const logoY = h - fs(32);
+  const logoY = h - fs(28);
   const logoX = w - px;
-  const logoSmall = `<rect x="${logoX - fs(105)}" y="${logoY - fs(18)}" width="${fs(115)}" height="${fs(26)}" rx="${fs(6)}" fill="${isDark ? 'rgba(15,23,42,0.45)' : 'rgba(255,255,255,0.55)'}"/><g transform="translate(${logoX - fs(100)},${logoY - fs(14)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${logoX - fs(84)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
+  const logoSmall = `<g transform="translate(${logoX - fs(100)},${logoY - fs(14)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${logoX - fs(84)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
+
+  const scrimRgb = bg === "white" ? "#ffffff" : "#0f172a";
+  const scrimBar = bg === "transparent" ? "" : `
+    <defs><linearGradient id="scrim" x1="0" y1="${h - fs(90)}" x2="0" y2="${h}" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="${scrimRgb}" stop-opacity="0"/>
+      <stop offset="45%" stop-color="${scrimRgb}" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="${scrimRgb}" stop-opacity="0.95"/>
+    </linearGradient></defs>
+    <rect x="0" y="${h - fs(90)}" width="${w}" height="${fs(90)}" fill="url(#scrim)"/>
+  `;
 
   let content = "";
 
@@ -413,7 +425,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${px}" y="${y0 + fs(164)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">hallazgos y yo solo reviso y firmo.</text>
       <line x1="${px}" y1="${y0 + fs(196)}" x2="${px + fs(90)}" y2="${y0 + fs(196)}" stroke="${brandTeal}" stroke-width="3" stroke-linecap="round"/>
       <text x="${px}" y="${y0 + fs(230)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${mainColor}">Dra. María López</text>
-      <text x="${px}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — Hospital Universitario</text>
+      <text x="${px}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — España</text>
       <text x="${px}" y="${y0 + fs(288)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(15)}" fill="${ta}0.35)">*Testimonio representativo basado en métricas de uso.</text>`;
   } else if (contentType === "tip") {
     const y0 = centerBlock(fs(290));
@@ -898,7 +910,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${px + fs(20)}" y="${y0 + fs(276)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(26)}" fill="${mainColor}">y la calidad ha mejorado.</text>
       <line x1="${px + fs(20)}" y1="${y0 + fs(306)}" x2="${px + fs(100)}" y2="${y0 + fs(306)}" stroke="${tc}" stroke-width="3" stroke-linecap="round"/>
       <text x="${px + fs(20)}" y="${y0 + fs(336)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">Dr. Carlos Ruiz</text>
-      <text x="${px + fs(20)}" y="${y0 + fs(362)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${subColor}">Radiólogo — Hospital Regional  •  *Métricas representativas</text>`;
+      <text x="${px + fs(20)}" y="${y0 + fs(362)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${subColor}">Radiólogo — España  •  *Métricas representativas</text>`;
   } else if (contentType === "before-after-report") {
     const y0 = centerBlock(fs(420));
     const colMid = w / 2;
@@ -1487,6 +1499,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
     ${bgSvg}
     ${decor}
     ${content}
+    ${scrimBar}
     ${logoSmall}
   </svg>`;
 }
