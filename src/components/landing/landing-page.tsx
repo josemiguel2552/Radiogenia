@@ -214,7 +214,7 @@ export function LandingPage() {
 
           <h1 data-reveal style={revealDelay(100)} className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
             {lang === "es" ? "Informes radiológicos " : lang === "pt" ? "Laudos radiológicos " : "Radiology reports "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 hero-shimmer" style={{ backgroundImage: "linear-gradient(90deg, #60a5fa, #c084fc, #f472b6, #60a5fa)" }}>
+            <span className="text-transparent bg-clip-text hero-shimmer" style={{ backgroundImage: "linear-gradient(90deg, #60a5fa, #c084fc, #f472b6, #60a5fa)" }}>
               {lang === "es" ? "en segundos" : lang === "pt" ? "em segundos" : "in seconds"}
             </span>
           </h1>
@@ -848,9 +848,9 @@ function DemoStepReport({ active, progress, lang }: { active: boolean; progress:
               <span className="text-[9px] font-bold text-purple-300 truncate">{guideTitle}</span>
             </div>
             {[
-              { size: "< 6 mm", action: lang === "es" ? "Sin seguimiento" : "No follow-up" },
-              { size: "6–8 mm", action: lang === "es" ? "TC 6-12 m" : "CT 6-12 mo" },
-              { size: "> 8 mm", action: lang === "es" ? "PET-CT / biopsia" : "PET-CT / biopsy" },
+              { size: "< 6 mm", action: lang === "es" ? "Sin seguimiento" : lang === "pt" ? "Sem seguimento" : "No follow-up" },
+              { size: "6–8 mm", action: lang === "es" ? "TC 6-12 m" : lang === "pt" ? "TC 6-12 m" : "CT 6-12 mo" },
+              { size: "> 8 mm", action: lang === "es" ? "PET-CT / biopsia" : lang === "pt" ? "PET-CT / biópsia" : "PET-CT / biopsy" },
             ].map((r, i) => (
               <div key={i} className="flex items-center justify-between py-1 px-1.5 rounded bg-white/[0.04]">
                 <span className="text-[10px] font-bold text-white">{r.size}</span>
@@ -931,7 +931,7 @@ function AnimatedStat({ value, suffix, label }: { value: number; suffix: string;
 
   return (
     <div ref={ref} className="text-center px-6">
-      <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400" style={{ animation: visible ? "counter-glow 2s ease-in-out" : "none" }}>
+      <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400" style={{ filter: visible ? "drop-shadow(0 0 20px rgba(124,58,237,0.3))" : "none", transition: "filter 1s ease-out" }}>
         {count}{suffix}
       </div>
       <p className="text-sm text-gray-400 mt-1">{label}</p>
