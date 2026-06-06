@@ -1559,7 +1559,7 @@ function LiradsSheet() {
 function OradsSheet() {
   const t = useT();
   return (
-    <CheatSheet title="O-RADS" source="ACR O-RADS MRI 2020">
+    <CheatSheet title="O-RADS" source="ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)">
       <SheetTable
         headers={[t("calc.score"), t("calc.risk_level"), t("calc.recommendation")]}
         rows={[
@@ -1579,7 +1579,7 @@ function OradsSheet() {
 function LungRadsSheet() {
   const t = useT();
   return (
-    <CheatSheet title="Lung-RADS v2022" source="ACR Lung-RADS v2022 (Kazerooni et al., Radiology 2024)">
+    <CheatSheet title="Lung-RADS v2022" source="ACR Lung-RADS v2022 (Christensen JD et al., JACR 2024)">
       <SheetTable
         headers={[t("calc.category"), t("calc.finding"), t("calc.recommendation")]}
         rows={[
@@ -1705,7 +1705,7 @@ function AorticAneurysmSheet() {
       <SheetTable
         headers={[t("calc.location"), t("calc.diameter_surgical"), t("calc.special")]}
         rows={[
-          [t("calc.aorta_root"), "> 5.5 cm", "Marfan > 5.0 cm; Loeys-Dietz > 4.2 cm"],
+          [t("calc.aorta_root"), "> 5.5 cm", "Marfan > 5.0 cm; Loeys-Dietz 4.0–4.5 cm"],
           [t("calc.asc_aorta"), "> 5.5 cm", "BAV > 5.0–5.5 cm"],
           [t("calc.aortic_arch"), "> 5.5 cm", "—"],
           [t("calc.desc_thoracic"), "> 5.5–6.0 cm", "TEVAR > 5.5 cm"],
@@ -2509,7 +2509,7 @@ function DVTPESheet() {
 function DiverticulitisSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.divert_title")} source="Modified Hinchey classification (Wasvary et al., Dis Colon Rectum 1999); WSES guidelines 2020">
+    <CheatSheet title={t("calc.divert_title")} source="Modified Hinchey classification (Wasvary et al., Am Surg 1999); WSES guidelines 2020">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Modified Hinchey</p>
       <SheetTable
         headers={[t("calc.grade"), t("calc.description")]}

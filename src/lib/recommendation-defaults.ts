@@ -358,12 +358,12 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
     modality: "Ultrasound",
     title: { es: "Quiste ovárico simple <5cm", en: "Simple ovarian cyst <5cm", pt: "Cisto ovariano simples <5cm" },
     text: {
-      es: "Quiste ovárico simple <5 cm en paciente premenopáusica. Probablemente funcional. Se recomienda ecografía de control en 8-12 semanas (ACR/SRU 2019).",
-      en: "Simple ovarian cyst <5 cm in premenopausal patient. Likely functional. Follow-up ultrasound at 8-12 weeks recommended (ACR/SRU 2019).",
-      pt: "Cisto ovariano simples <5 cm em paciente pré-menopausa. Provavelmente funcional. Ecografia de controle em 8-12 semanas recomendada (ACR/SRU 2019).",
+      es: "Quiste ovárico simple <5 cm en paciente premenopáusica. Hallazgo fisiológico (O-RADS 1). No requiere seguimiento (ACR 2020).",
+      en: "Simple ovarian cyst <5 cm in premenopausal patient. Physiologic finding (O-RADS 1). No follow-up required (ACR 2020).",
+      pt: "Cisto ovariano simples <5 cm em paciente pré-menopausa. Achado fisiológico (O-RADS 1). Não requer seguimento (ACR 2020).",
     },
-    tags: ["ovario", "ovarian", "quiste", "cyst", "funcional", "functional", "premenopáusica"],
-    source: "ACR/SRU Incidental Ovarian Findings 2019",
+    tags: ["ovario", "ovarian", "quiste", "cyst", "funcional", "functional", "premenopáusica", "fisiológico"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
     scope: "system",
   },
   {
@@ -516,6 +516,576 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
     },
     tags: ["fractura", "fracture", "compresión", "compression", "vertebral", "patológica", "pathologic", "tumor"],
     source: "ACR Appropriateness Criteria",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // THORAX — Lung-RADS v2022
+  // ═══════════════════════════════════════════
+  {
+    id: "lungrads_3",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Lung-RADS 3: seguimiento", en: "Lung-RADS 3: follow-up", pt: "Lung-RADS 3: seguimento" },
+    text: {
+      es: "Nódulo pulmonar Lung-RADS categoría 3 (probablemente benigno). Se recomienda TC de baja dosis de control en 6 meses (ACR Lung-RADS v2022).",
+      en: "Lung-RADS category 3 pulmonary nodule (probably benign). Low-dose follow-up CT at 6 months recommended (ACR Lung-RADS v2022).",
+      pt: "Nódulo pulmonar Lung-RADS categoria 3 (provavelmente benigno). TC de baixa dose de controle em 6 meses recomendada (ACR Lung-RADS v2022).",
+    },
+    tags: ["Lung-RADS", "nódulo", "nodule", "screening", "pulmón", "lung"],
+    source: "ACR Lung-RADS v2022 (Christensen JD et al., JACR 2024)",
+    scope: "system",
+  },
+  {
+    id: "lungrads_4a",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Lung-RADS 4A: sospechoso", en: "Lung-RADS 4A: suspicious", pt: "Lung-RADS 4A: suspeito" },
+    text: {
+      es: "Nódulo pulmonar Lung-RADS categoría 4A (sospechoso). Se recomienda TC de control en 3 meses o PET/TC (ACR Lung-RADS v2022).",
+      en: "Lung-RADS category 4A pulmonary nodule (suspicious). Follow-up CT at 3 months or PET/CT recommended (ACR Lung-RADS v2022).",
+      pt: "Nódulo pulmonar Lung-RADS categoria 4A (suspeito). TC de controle em 3 meses ou PET/TC recomendada (ACR Lung-RADS v2022).",
+    },
+    tags: ["Lung-RADS", "nódulo", "nodule", "sospechoso", "suspicious", "PET"],
+    source: "ACR Lung-RADS v2022 (Christensen JD et al., JACR 2024)",
+    scope: "system",
+  },
+  {
+    id: "lungrads_4b",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Lung-RADS 4B/4X: muy sospechoso", en: "Lung-RADS 4B/4X: very suspicious", pt: "Lung-RADS 4B/4X: muito suspeito" },
+    text: {
+      es: "Nódulo pulmonar Lung-RADS categoría 4B/4X (muy sospechoso). Se recomienda toma de muestra tisular, PET/TC o TC de control a corto plazo (ACR Lung-RADS v2022).",
+      en: "Lung-RADS category 4B/4X pulmonary nodule (very suspicious). Tissue sampling, PET/CT, or short-term follow-up CT recommended (ACR Lung-RADS v2022).",
+      pt: "Nódulo pulmonar Lung-RADS categoria 4B/4X (muito suspeito). Biópsia, PET/TC ou TC de controle a curto prazo recomendada (ACR Lung-RADS v2022).",
+    },
+    tags: ["Lung-RADS", "nódulo", "nodule", "sospechoso", "suspicious", "biopsia", "biopsy", "PET"],
+    source: "ACR Lung-RADS v2022 (Christensen JD et al., JACR 2024)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // THORAX — BI-RADS
+  // ═══════════════════════════════════════════
+  {
+    id: "birads_3",
+    category: "Thorax",
+    modality: "Mammography",
+    title: { es: "BI-RADS 3: seguimiento", en: "BI-RADS 3: follow-up", pt: "BI-RADS 3: seguimento" },
+    text: {
+      es: "Hallazgo mamográfico BI-RADS 3 (probablemente benigno). Se recomienda mamografía de control a los 6 meses (ACR BI-RADS 5ª ed.).",
+      en: "BI-RADS 3 mammographic finding (probably benign). Follow-up mammography at 6 months recommended (ACR BI-RADS 5th ed.).",
+      pt: "Achado mamográfico BI-RADS 3 (provavelmente benigno). Mamografia de controle em 6 meses recomendada (ACR BI-RADS 5ª ed.).",
+    },
+    tags: ["BI-RADS", "mama", "breast", "mamografía", "mammography", "benigno", "benign"],
+    source: "ACR BI-RADS 5th Edition (2013)",
+    scope: "system",
+  },
+  {
+    id: "birads_4",
+    category: "Thorax",
+    modality: "Mammography",
+    title: { es: "BI-RADS 4: biopsia", en: "BI-RADS 4: biopsy", pt: "BI-RADS 4: biópsia" },
+    text: {
+      es: "Hallazgo mamográfico BI-RADS 4 (sospechoso). Se recomienda biopsia tisular para diagnóstico histológico (ACR BI-RADS 5ª ed.).",
+      en: "BI-RADS 4 mammographic finding (suspicious). Tissue biopsy for histologic diagnosis recommended (ACR BI-RADS 5th ed.).",
+      pt: "Achado mamográfico BI-RADS 4 (suspeito). Biópsia tecidual para diagnóstico histológico recomendada (ACR BI-RADS 5ª ed.).",
+    },
+    tags: ["BI-RADS", "mama", "breast", "sospechoso", "suspicious", "biopsia", "biopsy"],
+    source: "ACR BI-RADS 5th Edition (2013)",
+    scope: "system",
+  },
+  {
+    id: "birads_5",
+    category: "Thorax",
+    modality: "Mammography",
+    title: { es: "BI-RADS 5: biopsia", en: "BI-RADS 5: biopsy", pt: "BI-RADS 5: biópsia" },
+    text: {
+      es: "Hallazgo mamográfico BI-RADS 5 (altamente sugestivo de malignidad). Se recomienda biopsia tisular y manejo oncológico (ACR BI-RADS 5ª ed.).",
+      en: "BI-RADS 5 mammographic finding (highly suggestive of malignancy). Tissue biopsy and oncologic management recommended (ACR BI-RADS 5th ed.).",
+      pt: "Achado mamográfico BI-RADS 5 (altamente sugestivo de malignidade). Biópsia tecidual e manejo oncológico recomendados (ACR BI-RADS 5ª ed.).",
+    },
+    tags: ["BI-RADS", "mama", "breast", "maligno", "malignant", "biopsia", "biopsy"],
+    source: "ACR BI-RADS 5th Edition (2013)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // THORAX — Breast screening & implants
+  // ═══════════════════════════════════════════
+  {
+    id: "breast_highrisk_screen",
+    category: "Thorax",
+    modality: "Mammography",
+    title: { es: "Mama alto riesgo: RM anual", en: "Breast high risk: annual MRI", pt: "Mama alto risco: RM anual" },
+    text: {
+      es: "Paciente con riesgo elevado de cáncer de mama (≥20% riesgo vital). Se recomienda mamografía anual complementada con RM mamaria anual (ACR 2023).",
+      en: "Patient at high risk for breast cancer (≥20% lifetime risk). Annual mammography supplemented with annual breast MRI recommended (ACR 2023).",
+      pt: "Paciente com risco elevado de câncer de mama (≥20% risco vitalício). Mamografia anual complementada com RM mamária anual recomendada (ACR 2023).",
+    },
+    tags: ["mama", "breast", "alto riesgo", "high risk", "screening", "RM", "MRI", "BRCA"],
+    source: "ACR Breast Cancer Screening Recommendations 2023",
+    scope: "system",
+  },
+  {
+    id: "breast_implant_intracap",
+    category: "Thorax",
+    modality: "MRI",
+    title: { es: "Rotura intracapsular implante", en: "Intracapsular implant rupture", pt: "Rotura intracapsular implante" },
+    text: {
+      es: "Rotura intracapsular de implante mamario. Se recomienda seguimiento con RM mamaria periódica; valorar consulta con cirugía plástica (FDA 2020).",
+      en: "Intracapsular breast implant rupture. Periodic breast MRI follow-up recommended; consider plastic surgery consultation (FDA 2020).",
+      pt: "Rotura intracapsular de implante mamário. Seguimento com RM mamária periódica recomendado; avaliar consulta com cirurgia plástica (FDA 2020).",
+    },
+    tags: ["implante", "implant", "mama", "breast", "rotura", "rupture", "intracapsular", "silicona", "silicone"],
+    source: "FDA Breast Implant Guidelines 2020",
+    scope: "system",
+  },
+  {
+    id: "breast_implant_extracap",
+    category: "Thorax",
+    modality: "MRI",
+    title: { es: "Rotura extracapsular implante", en: "Extracapsular implant rupture", pt: "Rotura extracapsular implante" },
+    text: {
+      es: "Rotura extracapsular de implante mamario con silicona libre. Se recomienda valoración quirúrgica para explantación (FDA 2020).",
+      en: "Extracapsular breast implant rupture with free silicone. Surgical evaluation for explantation recommended (FDA 2020).",
+      pt: "Rotura extracapsular de implante mamário com silicone livre. Avaliação cirúrgica para explantação recomendada (FDA 2020).",
+    },
+    tags: ["implante", "implant", "mama", "breast", "rotura", "rupture", "extracapsular", "silicona", "silicone", "cirugía"],
+    source: "FDA Breast Implant Guidelines 2020",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // ABDOMEN — LI-RADS (additional categories)
+  // ═══════════════════════════════════════════
+  {
+    id: "lirads_4",
+    category: "Abdomen and pelvis",
+    modality: "CT",
+    title: { es: "LI-RADS 4: probable CHC", en: "LI-RADS 4: probable HCC", pt: "LI-RADS 4: provável CHC" },
+    text: {
+      es: "Observación hepática LI-RADS 4 (probable CHC). Se recomienda discusión multidisciplinaria; considerar biopsia o tratamiento según contexto clínico (ACR LI-RADS v2018).",
+      en: "LI-RADS 4 hepatic observation (probable HCC). Multidisciplinary discussion recommended; consider biopsy or treatment based on clinical context (ACR LI-RADS v2018).",
+      pt: "Observação hepática LI-RADS 4 (provável CHC). Discussão multidisciplinar recomendada; considerar biópsia ou tratamento conforme contexto clínico (ACR LI-RADS v2018).",
+    },
+    tags: ["LI-RADS", "hepático", "hepatic", "CHC", "HCC", "hepatocarcinoma", "cirrosis", "cirrhosis"],
+    source: "ACR LI-RADS v2018",
+    scope: "system",
+  },
+  {
+    id: "lirads_5",
+    category: "Abdomen and pelvis",
+    modality: "CT",
+    title: { es: "LI-RADS 5: CHC definitivo", en: "LI-RADS 5: definite HCC", pt: "LI-RADS 5: CHC definitivo" },
+    text: {
+      es: "Observación hepática LI-RADS 5 (CHC definitivo). Se recomienda manejo multidisciplinario; no requiere confirmación histológica para tratamiento (ACR LI-RADS v2018).",
+      en: "LI-RADS 5 hepatic observation (definite HCC). Multidisciplinary management recommended; histologic confirmation not required for treatment (ACR LI-RADS v2018).",
+      pt: "Observação hepática LI-RADS 5 (CHC definitivo). Manejo multidisciplinar recomendado; confirmação histológica não necessária para tratamento (ACR LI-RADS v2018).",
+    },
+    tags: ["LI-RADS", "hepático", "hepatic", "CHC", "HCC", "hepatocarcinoma", "cirrosis", "cirrhosis", "tratamiento"],
+    source: "ACR LI-RADS v2018",
+    scope: "system",
+  },
+  {
+    id: "lirads_m",
+    category: "Abdomen and pelvis",
+    modality: "CT",
+    title: { es: "LI-RADS M: maligno no CHC", en: "LI-RADS M: malignant non-HCC", pt: "LI-RADS M: maligno não CHC" },
+    text: {
+      es: "Observación hepática LI-RADS M (probablemente maligno, no específico de CHC). Se recomienda biopsia para diagnóstico histológico (ACR LI-RADS v2018).",
+      en: "LI-RADS M hepatic observation (probably malignant, not HCC-specific). Biopsy for histologic diagnosis recommended (ACR LI-RADS v2018).",
+      pt: "Observação hepática LI-RADS M (provavelmente maligno, não específico de CHC). Biópsia para diagnóstico histológico recomendada (ACR LI-RADS v2018).",
+    },
+    tags: ["LI-RADS", "hepático", "hepatic", "maligno", "malignant", "biopsia", "biopsy", "colangiocarcinoma"],
+    source: "ACR LI-RADS v2018",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // ABDOMEN — Pancreatic cyst (fill size gaps)
+  // ═══════════════════════════════════════════
+  {
+    id: "pancreas_cyst_15to25",
+    category: "Abdomen and pelvis",
+    modality: "all",
+    title: { es: "Quiste pancreático 1.5-2.5cm", en: "Pancreatic cyst 1.5-2.5cm", pt: "Cisto pancreático 1.5-2.5cm" },
+    text: {
+      es: "Lesión quística pancreática de 1.5-2.5 cm sin características preocupantes. Se recomienda RM/CPRM de control anual durante 2 años, luego espaciar si estable (ACR IF 2017).",
+      en: "Pancreatic cystic lesion 1.5-2.5 cm without worrisome features. Annual MRI/MRCP for 2 years recommended, then lengthen interval if stable (ACR IF 2017).",
+      pt: "Lesão cística pancreática de 1.5-2.5 cm sem características preocupantes. RM/CPRM de controle anual por 2 anos recomendada, depois espaçar se estável (ACR IF 2017).",
+    },
+    tags: ["páncreas", "pancreas", "quiste", "cyst", "IPMN", "mucinoso", "CPRM", "MRCP"],
+    source: "ACR Incidental Findings 2017",
+    scope: "system",
+  },
+  {
+    id: "pancreas_cyst_25to3",
+    category: "Abdomen and pelvis",
+    modality: "all",
+    title: { es: "Quiste pancreático 2.5-3cm", en: "Pancreatic cyst 2.5-3cm", pt: "Cisto pancreático 2.5-3cm" },
+    text: {
+      es: "Lesión quística pancreática de 2.5-3 cm. Se recomienda RM/CPRM de control en 6 meses; considerar ecoendoscopia si crecimiento o cambio morfológico (ACR IF 2017).",
+      en: "Pancreatic cystic lesion 2.5-3 cm. Follow-up MRI/MRCP in 6 months recommended; consider EUS if growth or morphologic change (ACR IF 2017).",
+      pt: "Lesão cística pancreática de 2.5-3 cm. RM/CPRM de controle em 6 meses recomendada; considerar ecoendoscopia se crescimento ou mudança morfológica (ACR IF 2017).",
+    },
+    tags: ["páncreas", "pancreas", "quiste", "cyst", "IPMN", "mucinoso", "EUS"],
+    source: "ACR Incidental Findings 2017",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // ABDOMEN — Ovarian (expanded by size/status)
+  // ═══════════════════════════════════════════
+  {
+    id: "ovarian_premenop_5to7",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Quiste ovárico 5-7cm premenop.", en: "Ovarian cyst 5-7cm premenop.", pt: "Cisto ovariano 5-7cm pré-menop." },
+    text: {
+      es: "Quiste ovárico simple de 5-7 cm en paciente premenopáusica. Se recomienda ecografía de control en 8-12 semanas para confirmar resolución (ACR 2020).",
+      en: "Simple ovarian cyst 5-7 cm in premenopausal patient. Follow-up ultrasound at 8-12 weeks to confirm resolution recommended (ACR 2020).",
+      pt: "Cisto ovariano simples de 5-7 cm em paciente pré-menopausa. Ecografia de controle em 8-12 semanas para confirmar resolução recomendada (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "quiste", "cyst", "premenopáusica", "premenopausal"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+  {
+    id: "ovarian_premenop_gt7",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Quiste ovárico >7cm premenop.", en: "Ovarian cyst >7cm premenop.", pt: "Cisto ovariano >7cm pré-menop." },
+    text: {
+      es: "Quiste ovárico simple >7 cm en paciente premenopáusica. Se recomienda RM pélvica para mejor caracterización (ACR 2020).",
+      en: "Simple ovarian cyst >7 cm in premenopausal patient. Pelvic MRI for further characterization recommended (ACR 2020).",
+      pt: "Cisto ovariano simples >7 cm em paciente pré-menopausa. RM pélvica para melhor caracterização recomendada (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "quiste", "cyst", "premenopáusica", "premenopausal", "RM", "MRI"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+  {
+    id: "ovarian_hemorrhagic",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Quiste ovárico hemorrágico", en: "Hemorrhagic ovarian cyst", pt: "Cisto ovariano hemorrágico" },
+    text: {
+      es: "Quiste ovárico hemorrágico típico en paciente premenopáusica. Se recomienda ecografía de control en 6-12 semanas para confirmar resolución (ACR 2020).",
+      en: "Typical hemorrhagic ovarian cyst in premenopausal patient. Follow-up ultrasound at 6-12 weeks to confirm resolution recommended (ACR 2020).",
+      pt: "Cisto ovariano hemorrágico típico em paciente pré-menopausa. Ecografia de controle em 6-12 semanas para confirmar resolução recomendada (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "quiste", "cyst", "hemorrágico", "hemorrhagic", "funcional"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+  {
+    id: "ovarian_postmenop_lt3",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Quiste ovárico <3cm postmenop.", en: "Ovarian cyst <3cm postmenop.", pt: "Cisto ovariano <3cm pós-menop." },
+    text: {
+      es: "Quiste ovárico simple <3 cm en paciente postmenopáusica. Probablemente benigno. Se recomienda ecografía de control anual (ACR 2020).",
+      en: "Simple ovarian cyst <3 cm in postmenopausal patient. Likely benign. Annual follow-up ultrasound recommended (ACR 2020).",
+      pt: "Cisto ovariano simples <3 cm em paciente pós-menopausa. Provavelmente benigno. Ecografia de controle anual recomendada (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "quiste", "cyst", "postmenopáusica", "postmenopausal"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+  {
+    id: "ovarian_postmenop_3to7",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Quiste ovárico 3-7cm postmenop.", en: "Ovarian cyst 3-7cm postmenop.", pt: "Cisto ovariano 3-7cm pós-menop." },
+    text: {
+      es: "Quiste ovárico simple de 3-7 cm en paciente postmenopáusica. Se recomienda ecografía de control en 6-12 semanas, luego seguimiento anual si estable (ACR 2020).",
+      en: "Simple ovarian cyst 3-7 cm in postmenopausal patient. Follow-up ultrasound at 6-12 weeks, then annual follow-up if stable, recommended (ACR 2020).",
+      pt: "Cisto ovariano simples de 3-7 cm em paciente pós-menopausa. Ecografia de controle em 6-12 semanas, depois seguimento anual se estável, recomendado (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "quiste", "cyst", "postmenopáusica", "postmenopausal"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+  {
+    id: "ovarian_postmenop_gt7",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Quiste ovárico >7cm postmenop.", en: "Ovarian cyst >7cm postmenop.", pt: "Cisto ovariano >7cm pós-menop." },
+    text: {
+      es: "Quiste ovárico >7 cm en paciente postmenopáusica. Se recomienda RM pélvica y valoración ginecológica (ACR 2020).",
+      en: "Ovarian cyst >7 cm in postmenopausal patient. Pelvic MRI and gynecologic evaluation recommended (ACR 2020).",
+      pt: "Cisto ovariano >7 cm em paciente pós-menopausa. RM pélvica e avaliação ginecológica recomendadas (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "quiste", "cyst", "postmenopáusica", "postmenopausal", "RM", "MRI"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+  {
+    id: "ovarian_complex",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Masa anexial compleja", en: "Complex adnexal mass", pt: "Massa anexial complexa" },
+    text: {
+      es: "Masa anexial con componente sólido o características complejas. Se recomienda RM pélvica con protocolo O-RADS y valoración ginecológica (ACR 2020).",
+      en: "Adnexal mass with solid component or complex features. Pelvic MRI with O-RADS protocol and gynecologic evaluation recommended (ACR 2020).",
+      pt: "Massa anexial com componente sólido ou características complexas. RM pélvica com protocolo O-RADS e avaliação ginecológica recomendadas (ACR 2020).",
+    },
+    tags: ["ovario", "ovarian", "anexial", "adnexal", "masa", "mass", "sólido", "solid", "complejo", "complex"],
+    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // ABDOMEN — O-RADS MRI
+  // ═══════════════════════════════════════════
+  {
+    id: "orads_3",
+    category: "Abdomen and pelvis",
+    modality: "MRI",
+    title: { es: "O-RADS MRI 3: intermedio", en: "O-RADS MRI 3: intermediate", pt: "O-RADS MRI 3: intermediário" },
+    text: {
+      es: "Masa anexial O-RADS MRI 3 (riesgo intermedio de malignidad). Se recomienda seguimiento con RM en 6-12 semanas o valoración ginecológica (ACR O-RADS MRI 2022).",
+      en: "O-RADS MRI 3 adnexal mass (intermediate malignancy risk). Follow-up MRI in 6-12 weeks or gynecologic evaluation recommended (ACR O-RADS MRI 2022).",
+      pt: "Massa anexial O-RADS MRI 3 (risco intermediário de malignidade). Seguimento com RM em 6-12 semanas ou avaliação ginecológica recomendado (ACR O-RADS MRI 2022).",
+    },
+    tags: ["O-RADS", "ovario", "ovarian", "anexial", "adnexal", "RM", "MRI"],
+    source: "ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)",
+    scope: "system",
+  },
+  {
+    id: "orads_4",
+    category: "Abdomen and pelvis",
+    modality: "MRI",
+    title: { es: "O-RADS MRI 4: alto riesgo", en: "O-RADS MRI 4: high risk", pt: "O-RADS MRI 4: alto risco" },
+    text: {
+      es: "Masa anexial O-RADS MRI 4 (alto riesgo de malignidad). Se recomienda valoración quirúrgica con ginecología oncológica (ACR O-RADS MRI 2022).",
+      en: "O-RADS MRI 4 adnexal mass (high malignancy risk). Surgical evaluation with gynecologic oncology recommended (ACR O-RADS MRI 2022).",
+      pt: "Massa anexial O-RADS MRI 4 (alto risco de malignidade). Avaliação cirúrgica com ginecologia oncológica recomendada (ACR O-RADS MRI 2022).",
+    },
+    tags: ["O-RADS", "ovario", "ovarian", "anexial", "adnexal", "maligno", "cirugía"],
+    source: "ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)",
+    scope: "system",
+  },
+  {
+    id: "orads_5",
+    category: "Abdomen and pelvis",
+    modality: "MRI",
+    title: { es: "O-RADS MRI 5: muy alto riesgo", en: "O-RADS MRI 5: very high risk", pt: "O-RADS MRI 5: risco muito alto" },
+    text: {
+      es: "Masa anexial O-RADS MRI 5 (muy alto riesgo de malignidad). Se recomienda derivación urgente a ginecología oncológica para valoración quirúrgica (ACR O-RADS MRI 2022).",
+      en: "O-RADS MRI 5 adnexal mass (very high malignancy risk). Urgent referral to gynecologic oncology for surgical evaluation recommended (ACR O-RADS MRI 2022).",
+      pt: "Massa anexial O-RADS MRI 5 (risco muito alto de malignidade). Encaminhamento urgente para ginecologia oncológica para avaliação cirúrgica recomendado (ACR O-RADS MRI 2022).",
+    },
+    tags: ["O-RADS", "ovario", "ovarian", "anexial", "adnexal", "maligno", "malignant", "cirugía", "urgente"],
+    source: "ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // ABDOMEN — Diverticulitis (Hinchey)
+  // ═══════════════════════════════════════════
+  {
+    id: "diverticulitis_abscess",
+    category: "Abdomen and pelvis",
+    modality: "CT",
+    title: { es: "Diverticulitis con absceso", en: "Diverticulitis with abscess", pt: "Diverticulite com abscesso" },
+    text: {
+      es: "Diverticulitis aguda complicada con absceso (Hinchey Ib/II). Se recomienda drenaje percutáneo guiado por imagen si absceso >3 cm, antibioterapia intravenosa y consulta quirúrgica (WSES 2020).",
+      en: "Complicated acute diverticulitis with abscess (Hinchey Ib/II). Image-guided percutaneous drainage if abscess >3 cm, IV antibiotics, and surgical consultation recommended (WSES 2020).",
+      pt: "Diverticulite aguda complicada com abscesso (Hinchey Ib/II). Drenagem percutânea guiada por imagem se abscesso >3 cm, antibioticoterapia intravenosa e consulta cirúrgica recomendados (WSES 2020).",
+    },
+    tags: ["diverticulitis", "diverticulite", "absceso", "abscess", "Hinchey", "drenaje", "drainage"],
+    source: "WSES Guidelines 2020; Modified Hinchey (Wasvary et al., Am Surg 1999)",
+    scope: "system",
+  },
+  {
+    id: "diverticulitis_peritonitis",
+    category: "Abdomen and pelvis",
+    modality: "CT",
+    title: { es: "Diverticulitis con peritonitis", en: "Diverticulitis with peritonitis", pt: "Diverticulite com peritonite" },
+    text: {
+      es: "Diverticulitis aguda complicada con peritonitis (Hinchey III/IV). Se recomienda consulta quirúrgica urgente (WSES 2020).",
+      en: "Complicated acute diverticulitis with peritonitis (Hinchey III/IV). Urgent surgical consultation recommended (WSES 2020).",
+      pt: "Diverticulite aguda complicada com peritonite (Hinchey III/IV). Consulta cirúrgica urgente recomendada (WSES 2020).",
+    },
+    tags: ["diverticulitis", "diverticulite", "peritonitis", "peritonite", "Hinchey", "cirugía", "surgery", "urgente"],
+    source: "WSES Guidelines 2020; Modified Hinchey (Wasvary et al., Am Surg 1999)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // ABDOMEN — Hydronephrosis
+  // ═══════════════════════════════════════════
+  {
+    id: "hydronephrosis_sfu34",
+    category: "Abdomen and pelvis",
+    modality: "Ultrasound",
+    title: { es: "Hidronefrosis SFU 3-4", en: "Hydronephrosis SFU 3-4", pt: "Hidronefrose SFU 3-4" },
+    text: {
+      es: "Hidronefrosis grado 3-4 (SFU). Se recomienda valoración urológica y gammagrafía renal (MAG3/DTPA) para evaluar función diferencial (SFU/Nguyen et al., 2014).",
+      en: "Grade 3-4 hydronephrosis (SFU). Urologic evaluation and renal scintigraphy (MAG3/DTPA) to assess differential function recommended (SFU/Nguyen et al., 2014).",
+      pt: "Hidronefrose grau 3-4 (SFU). Avaliação urológica e cintilografia renal (MAG3/DTPA) para avaliar função diferencial recomendadas (SFU/Nguyen et al., 2014).",
+    },
+    tags: ["hidronefrosis", "hydronephrosis", "SFU", "renal", "riñón", "kidney", "obstructiva", "obstructive", "urología"],
+    source: "SFU Grading System; Nguyen et al., J Pediatr Urol 2014",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // NEURO — Cerebral aneurysm (expanded)
+  // ═══════════════════════════════════════════
+  {
+    id: "aneurysm_3to7_anterior",
+    category: "Head and neck",
+    modality: "all",
+    title: { es: "Aneurisma 3-7mm anterior", en: "Aneurysm 3-7mm anterior", pt: "Aneurisma 3-7mm anterior" },
+    text: {
+      es: "Aneurisma intracraneal de 3-7 mm en circulación anterior. Se recomienda seguimiento con angio-RM o angio-TC en 6-12 meses; considerar tratamiento si factores de riesgo (AHA/ASA 2015).",
+      en: "Intracranial aneurysm 3-7 mm in anterior circulation. Follow-up MRA or CTA in 6-12 months recommended; consider treatment if risk factors present (AHA/ASA 2015).",
+      pt: "Aneurisma intracraniano de 3-7 mm em circulação anterior. Seguimento com angio-RM ou angio-TC em 6-12 meses recomendado; considerar tratamento se fatores de risco (AHA/ASA 2015).",
+    },
+    tags: ["aneurisma", "aneurysm", "intracraneal", "intracranial", "cerebral", "anterior", "ACI", "ACM"],
+    source: "AHA/ASA Guidelines 2015 (Thompson et al., Stroke 2015)",
+    scope: "system",
+  },
+  {
+    id: "aneurysm_3to7_posterior",
+    category: "Head and neck",
+    modality: "all",
+    title: { es: "Aneurisma 3-7mm posterior", en: "Aneurysm 3-7mm posterior", pt: "Aneurisma 3-7mm posterior" },
+    text: {
+      es: "Aneurisma intracraneal de 3-7 mm en circulación posterior. Mayor riesgo de ruptura. Se recomienda valoración neuroquirúrgica/neurointervencionista (AHA/ASA 2015; ISUIA 2003).",
+      en: "Intracranial aneurysm 3-7 mm in posterior circulation. Higher rupture risk. Neurosurgical/neurointerventional evaluation recommended (AHA/ASA 2015; ISUIA 2003).",
+      pt: "Aneurisma intracraniano de 3-7 mm em circulação posterior. Maior risco de ruptura. Avaliação neurocirúrgica/neurointervencionista recomendada (AHA/ASA 2015; ISUIA 2003).",
+    },
+    tags: ["aneurisma", "aneurysm", "intracraneal", "intracranial", "posterior", "basilar", "vertebral"],
+    source: "AHA/ASA Guidelines 2015; ISUIA (Lancet 2003)",
+    scope: "system",
+  },
+  {
+    id: "aneurysm_7to12",
+    category: "Head and neck",
+    modality: "all",
+    title: { es: "Aneurisma 7-12mm", en: "Aneurysm 7-12mm", pt: "Aneurisma 7-12mm" },
+    text: {
+      es: "Aneurisma intracraneal de 7-12 mm. Riesgo significativo de ruptura. Se recomienda valoración neuroquirúrgica/neurointervencionista para considerar tratamiento (AHA/ASA 2015).",
+      en: "Intracranial aneurysm 7-12 mm. Significant rupture risk. Neurosurgical/neurointerventional evaluation to consider treatment recommended (AHA/ASA 2015).",
+      pt: "Aneurisma intracraniano de 7-12 mm. Risco significativo de ruptura. Avaliação neurocirúrgica/neurointervencionista para considerar tratamento recomendada (AHA/ASA 2015).",
+    },
+    tags: ["aneurisma", "aneurysm", "intracraneal", "intracranial", "cerebral", "neurocirugía"],
+    source: "AHA/ASA Guidelines 2015 (Thompson et al., Stroke 2015)",
+    scope: "system",
+  },
+  {
+    id: "aneurysm_ge13",
+    category: "Head and neck",
+    modality: "all",
+    title: { es: "Aneurisma ≥13mm", en: "Aneurysm ≥13mm", pt: "Aneurisma ≥13mm" },
+    text: {
+      es: "Aneurisma intracraneal ≥13 mm. Alto riesgo de ruptura. Se recomienda valoración neuroquirúrgica/neurointervencionista para tratamiento (clipaje o embolización) (AHA/ASA 2015).",
+      en: "Intracranial aneurysm ≥13 mm. High rupture risk. Neurosurgical/neurointerventional evaluation for treatment (clipping or coiling) recommended (AHA/ASA 2015).",
+      pt: "Aneurisma intracraniano ≥13 mm. Alto risco de ruptura. Avaliação neurocirúrgica/neurointervencionista para tratamento (clipagem ou embolização) recomendada (AHA/ASA 2015).",
+    },
+    tags: ["aneurisma", "aneurysm", "intracraneal", "intracranial", "neurocirugía", "clipaje", "embolización"],
+    source: "AHA/ASA Guidelines 2015 (Thompson et al., Stroke 2015)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // NEURO — Carotid stenosis
+  // ═══════════════════════════════════════════
+  {
+    id: "carotid_50to69",
+    category: "Head and neck",
+    modality: "Ultrasound",
+    title: { es: "Estenosis carotídea 50-69%", en: "Carotid stenosis 50-69%", pt: "Estenose carotídea 50-69%" },
+    text: {
+      es: "Estenosis carotídea del 50-69% (NASCET). En pacientes sintomáticos, valorar endarterectomía carotídea (CEA). En asintomáticos, tratamiento médico óptimo y seguimiento ecográfico (AHA/ASA 2021).",
+      en: "Carotid stenosis 50-69% (NASCET). In symptomatic patients, carotid endarterectomy (CEA) should be considered. In asymptomatic patients, optimal medical therapy and ultrasound follow-up recommended (AHA/ASA 2021).",
+      pt: "Estenose carotídea de 50-69% (NASCET). Em pacientes sintomáticos, considerar endarterectomia carotídea (CEA). Em assintomáticos, terapia médica otimizada e seguimento ecográfico recomendados (AHA/ASA 2021).",
+    },
+    tags: ["carótida", "carotid", "estenosis", "stenosis", "NASCET", "endarterectomía", "CEA", "placa", "plaque"],
+    source: "AHA/ASA Guidelines 2021; NASCET (NEJM 1991)",
+    scope: "system",
+  },
+  {
+    id: "carotid_ge70",
+    category: "Head and neck",
+    modality: "Ultrasound",
+    title: { es: "Estenosis carotídea ≥70%", en: "Carotid stenosis ≥70%", pt: "Estenose carotídea ≥70%" },
+    text: {
+      es: "Estenosis carotídea ≥70% (NASCET). Se recomienda valoración para revascularización (endarterectomía o stent carotídeo), especialmente en pacientes sintomáticos (AHA/ASA 2021).",
+      en: "Carotid stenosis ≥70% (NASCET). Evaluation for revascularization (endarterectomy or carotid stenting) recommended, especially in symptomatic patients (AHA/ASA 2021).",
+      pt: "Estenose carotídea ≥70% (NASCET). Avaliação para revascularização (endarterectomia ou stent carotídeo) recomendada, especialmente em pacientes sintomáticos (AHA/ASA 2021).",
+    },
+    tags: ["carótida", "carotid", "estenosis", "stenosis", "NASCET", "endarterectomía", "CEA", "stent", "revascularización"],
+    source: "AHA/ASA Guidelines 2021; NASCET (NEJM 1991)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // THORAX — Thoracic aorta
+  // ═══════════════════════════════════════════
+  {
+    id: "thoracic_aorta_ascending",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Aorta ascendente ≥5.5cm", en: "Ascending aorta ≥5.5cm", pt: "Aorta ascendente ≥5.5cm" },
+    text: {
+      es: "Dilatación de la aorta ascendente ≥5.5 cm. Se recomienda valoración de cirugía cardiovascular para reparación electiva. En Marfan ≥5.0 cm; en Loeys-Dietz 4.0-4.5 cm (ACC/AHA 2022).",
+      en: "Ascending aortic dilatation ≥5.5 cm. Cardiovascular surgery evaluation for elective repair recommended. In Marfan ≥5.0 cm; in Loeys-Dietz 4.0-4.5 cm (ACC/AHA 2022).",
+      pt: "Dilatação da aorta ascendente ≥5.5 cm. Avaliação de cirurgia cardiovascular para reparo eletivo recomendada. Em Marfan ≥5.0 cm; em Loeys-Dietz 4.0-4.5 cm (ACC/AHA 2022).",
+    },
+    tags: ["aorta", "ascendente", "ascending", "aneurisma", "aneurysm", "torácica", "thoracic", "Marfan", "cirugía"],
+    source: "ACC/AHA Aortic Disease Guidelines 2022 (Isselbacher et al.)",
+    scope: "system",
+  },
+  {
+    id: "thoracic_aorta_descending",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Aorta descendente ≥5.5-6cm", en: "Descending aorta ≥5.5-6cm", pt: "Aorta descendente ≥5.5-6cm" },
+    text: {
+      es: "Dilatación de la aorta torácica descendente ≥5.5-6.0 cm. Se recomienda valoración para reparación endovascular (TEVAR) o quirúrgica (ACC/AHA 2022).",
+      en: "Descending thoracic aortic dilatation ≥5.5-6.0 cm. Evaluation for endovascular (TEVAR) or surgical repair recommended (ACC/AHA 2022).",
+      pt: "Dilatação da aorta torácica descendente ≥5.5-6.0 cm. Avaliação para reparo endovascular (TEVAR) ou cirúrgico recomendada (ACC/AHA 2022).",
+    },
+    tags: ["aorta", "descendente", "descending", "aneurisma", "aneurysm", "torácica", "thoracic", "TEVAR"],
+    source: "ACC/AHA Aortic Disease Guidelines 2022 (Isselbacher et al.)",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
+  // THORAX — Aortic dissection
+  // ═══════════════════════════════════════════
+  {
+    id: "dissection_stanford_a",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Disección aórtica Stanford A", en: "Stanford A aortic dissection", pt: "Dissecção aórtica Stanford A" },
+    text: {
+      es: "Disección aórtica Stanford tipo A (afecta aorta ascendente). Emergencia quirúrgica. Se recomienda consulta urgente con cirugía cardiovascular (ACC/AHA 2022).",
+      en: "Stanford type A aortic dissection (involves ascending aorta). Surgical emergency. Urgent cardiovascular surgery consultation recommended (ACC/AHA 2022).",
+      pt: "Dissecção aórtica Stanford tipo A (envolve aorta ascendente). Emergência cirúrgica. Consulta urgente com cirurgia cardiovascular recomendada (ACC/AHA 2022).",
+    },
+    tags: ["disección", "dissection", "aorta", "Stanford", "tipo A", "type A", "emergencia", "emergency", "cirugía"],
+    source: "ACC/AHA Aortic Disease Guidelines 2022 (Isselbacher et al.)",
+    scope: "system",
+  },
+  {
+    id: "dissection_stanford_b",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Disección aórtica Stanford B", en: "Stanford B aortic dissection", pt: "Dissecção aórtica Stanford B" },
+    text: {
+      es: "Disección aórtica Stanford tipo B (no afecta aorta ascendente). Se recomienda manejo médico intensivo (control de presión arterial y frecuencia cardíaca) en UCI. Considerar TEVAR si complicada (ACC/AHA 2022).",
+      en: "Stanford type B aortic dissection (does not involve ascending aorta). Intensive medical management (blood pressure and heart rate control) in ICU recommended. Consider TEVAR if complicated (ACC/AHA 2022).",
+      pt: "Dissecção aórtica Stanford tipo B (não envolve aorta ascendente). Manejo médico intensivo (controle de pressão arterial e frequência cardíaca) em UTI recomendado. Considerar TEVAR se complicada (ACC/AHA 2022).",
+    },
+    tags: ["disección", "dissection", "aorta", "Stanford", "tipo B", "type B", "TEVAR", "UCI", "ICU"],
+    source: "ACC/AHA Aortic Disease Guidelines 2022 (Isselbacher et al.)",
     scope: "system",
   },
 ];
