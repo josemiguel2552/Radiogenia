@@ -11,7 +11,9 @@ import {
   MessageSquareText, ImageIcon, FolderOpen, Sparkles,
   KeyRound, Eye, EyeOff, ChevronDown, ChevronUp,
   Palette, Mail, Target, Hash, Newspaper, Globe,
+  PackageCheck,
 } from "lucide-react";
+import JSZip from "jszip";
 
 type SubTab = "posts" | "images" | "brand" | "library";
 type PostType = "testimonial" | "tip" | "promo" | "educational" | "announcement";
@@ -1518,6 +1520,26 @@ function renderAndDownload(asset: BrandAsset) {
   img.src = url;
 }
 
+function renderAssetToBlob(asset: BrandAsset): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const svg = buildAssetSvg(asset);
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = asset.width;
+      canvas.height = asset.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, asset.width, asset.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img load failed")); };
+    img.src = url;
+  });
+}
+
 function getPreviewDataUrl(asset: BrandAsset): string {
   const previewW = 200;
   const previewH = Math.round((asset.height / asset.width) * previewW);
@@ -1572,11 +1594,45 @@ function BrandKitSection() {
   const categories = Array.from(new Set(BRAND_ASSETS.map(a => a.category)));
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [brandTab, setBrandTab] = useState<BrandTab>("identidad");
+  const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null);
 
   const handleDownloadAll = () => {
     BRAND_ASSETS.forEach((asset, i) => {
       setTimeout(() => renderAndDownload(asset), i * 300);
     });
+  };
+
+  const handleDownloadZip = async () => {
+    const zip = new JSZip();
+    const total = BRAND_ASSETS.length;
+    setZipProgress({ current: 0, total });
+
+    const BATCH_SIZE = 6;
+    for (let i = 0; i < total; i += BATCH_SIZE) {
+      const batch = BRAND_ASSETS.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (asset) => {
+          const blob = await renderAssetToBlob(asset);
+          const folder = asset.category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+          const filename = `radiogenai-${asset.id}-${asset.width}x${asset.height}.png`;
+          zip.file(`${folder}/${filename}`, blob);
+        }),
+      );
+      const done = Math.min(i + BATCH_SIZE, total);
+      setZipProgress({ current: done, total });
+      if (results.some((r) => r.status === "rejected")) {
+        console.warn("Some assets failed to render", results.filter((r) => r.status === "rejected"));
+      }
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "radiogenai-brand-kit.zip";
+    a.click();
+    URL.revokeObjectURL(url);
+    setZipProgress(null);
   };
 
   const copyColor = (hex: string) => {
@@ -2201,6 +2257,27 @@ radiogen.ai`} copied={copiedColor} onCopy={cp} />
           ))}
         </CardContent></Card>
       )}
+
+      {/* ═══ DOWNLOAD ALL — sticky bottom bar ═══ */}
+      <div className="sticky bottom-0 z-10 pt-3 pb-1 -mx-1 px-1 bg-gradient-to-t from-white via-white dark:from-gray-950 dark:via-gray-950">
+        <Button
+          className="w-full h-11 gap-2 bg-gradient-to-r from-indigo-950 to-violet-600 hover:from-indigo-900 hover:to-violet-500 text-white font-semibold shadow-lg shadow-violet-500/20"
+          onClick={handleDownloadZip}
+          disabled={!!zipProgress}
+        >
+          {zipProgress ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generando ZIP… {zipProgress.current}/{zipProgress.total}
+            </>
+          ) : (
+            <>
+              <PackageCheck className="h-4 w-4" />
+              Descargar Brand Kit completo (.zip) — {BRAND_ASSETS.length} assets
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
