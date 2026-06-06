@@ -22,9 +22,16 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const [body, globalConfig] = await Promise.all([
+    const service = createServiceClient();
+
+    const [body, globalConfig, { data: config }] = await Promise.all([
       req.json(),
       getGlobalAIConfig(),
+      service
+        .from("user_model_config")
+        .select("output_language, style_learning_enabled, conclusion_style")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
     const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig } = body;
 
@@ -33,14 +40,6 @@ export async function POST(req: NextRequest) {
     const mergedTypes: Record<string, number> = { ...st1 };
     for (const [k, v] of Object.entries(st2)) mergedTypes[k] = (mergedTypes[k] || 0) + v;
     logPiiStrip(user.id, "conclusion", sc1 + sc2, mergedTypes);
-
-    const service = createServiceClient();
-
-    const { data: config } = await service
-      .from("user_model_config")
-      .select("output_language, style_learning_enabled, conclusion_style")
-      .eq("user_id", user.id)
-      .maybeSingle();
 
     const outputLanguage = reqLang || config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
@@ -107,6 +106,8 @@ export async function POST(req: NextRequest) {
     }
 
     const effectiveModel = taskModel?.modelName || globalConfig.modelName;
+    const findingsLen = findingsText.length;
+    const maxTokens = findingsLen > 5000 ? 1024 : findingsLen > 2000 ? 768 : 512;
     const { stream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
       modelName: effectiveModel,
@@ -114,6 +115,7 @@ export async function POST(req: NextRequest) {
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userPrompt,
+      maxTokens,
     });
 
     const reader = stream.getReader();
