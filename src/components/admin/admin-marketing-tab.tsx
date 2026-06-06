@@ -435,7 +435,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${px}" y="${y0 + fs(164)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(30)}" fill="${mainColor}">hallazgos y yo solo reviso y firmo.</text>
       <line x1="${px}" y1="${y0 + fs(196)}" x2="${px + fs(90)}" y2="${y0 + fs(196)}" stroke="${brandTeal}" stroke-width="3" stroke-linecap="round"/>
       <text x="${px}" y="${y0 + fs(230)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(22)}" fill="${mainColor}">Dra. María López</text>
-      <text x="${px}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — España</text>
+      <text x="${px}" y="${y0 + fs(260)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Radióloga — México</text>
       <text x="${px}" y="${y0 + fs(288)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(15)}" fill="${ta}0.35)">*Testimonio representativo basado en métricas de uso.</text>`;
   } else if (contentType === "tip") {
     const y0 = centerBlock(fs(290));
@@ -1199,7 +1199,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${px + fs(20)}" y="${y0 + fs(276)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(26)}" fill="${mainColor}">y la calidad ha mejorado.</text>
       <line x1="${px + fs(20)}" y1="${y0 + fs(306)}" x2="${px + fs(100)}" y2="${y0 + fs(306)}" stroke="${tc}" stroke-width="3" stroke-linecap="round"/>
       <text x="${px + fs(20)}" y="${y0 + fs(336)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">Dr. Carlos Ruiz</text>
-      <text x="${px + fs(20)}" y="${y0 + fs(362)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${subColor}">Radiólogo — España  •  *Métricas representativas</text>`;
+      <text x="${px + fs(20)}" y="${y0 + fs(362)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${subColor}">Radiólogo — México  •  *Métricas representativas</text>`;
   } else if (contentType === "before-after-report") {
     const y0 = centerBlock(fs(420));
     const colMid = w / 2;
