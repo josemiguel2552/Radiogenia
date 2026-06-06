@@ -177,6 +177,101 @@
   animation: checkmark-draw 0.5s ease-out forwards;
 }
 
+/* ── Animated gradient border for cards ── */
+@keyframes border-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-border-card {
+  position: relative;
+  padding: 1px;
+  border-radius: 1rem;
+}
+.gradient-border-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  transition: opacity 0.4s ease;
+}
+.gradient-border-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #7c3aed, #3b82f6, #ec4899, #7c3aed, #3b82f6);
+  background-size: 300% 300%;
+  animation: border-gradient-shift 4s ease infinite;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.gradient-border-card:hover::before { opacity: 0; }
+.gradient-border-card:hover::after { opacity: 1; }
+.gradient-border-card:hover {
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.12), 0 0 60px rgba(59, 130, 246, 0.06);
+}
+.gradient-border-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: calc(1rem - 1px);
+  background: #0c0c1f;
+  height: 100%;
+}
+
+/* ── 3D tilt ── */
+.tilt-card {
+  transition: transform 0.2s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* ── Section divider traveling pulse ── */
+@keyframes divider-pulse {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(500%); }
+}
+
+/* ── Security badge scan line ── */
+@keyframes scan-line {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(400%); }
+}
+.badge-scan {
+  position: relative;
+  overflow: hidden;
+}
+.badge-scan::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.25), transparent);
+  animation: scan-line 4s ease-in-out infinite;
+  animation-delay: var(--scan-delay, 0s);
+  pointer-events: none;
+}
+
+/* ── CTA animated mesh gradient ── */
+@keyframes mesh-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+.cta-mesh {
+  background: linear-gradient(-45deg, rgba(59,130,246,0.12), rgba(124,58,237,0.18), rgba(236,72,153,0.1), rgba(99,102,241,0.12));
+  background-size: 400% 400%;
+  animation: mesh-gradient 10s ease infinite;
+}
+
+/* ── CTA sparkle float ── */
+@keyframes sparkle-float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.5); opacity: 0.7; }
+}
 
 /* Hide scrollbar but allow scrolling */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

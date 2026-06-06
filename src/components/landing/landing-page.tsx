@@ -95,6 +95,123 @@ function revealDelay(ms: number): React.CSSProperties {
   return { "--reveal-delay": `${ms}ms` } as React.CSSProperties;
 }
 
+/* ─── Particle canvas for hero ─── */
+function ParticleCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    let w = canvas.offsetWidth;
+    let h = canvas.offsetHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    const count = 45;
+    const maxDist = 140;
+    const particles = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.5 + 0.5,
+    }));
+
+    let raf: number;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(139,92,246,0.35)";
+        ctx.fill();
+      }
+      for (let i = 0; i < count; i++) {
+        for (let j = i + 1; j < count; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < maxDist) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(139,92,246,${0.12 * (1 - d / maxDist)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+
+    const onResize = () => {
+      w = canvas.offsetWidth;
+      h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+      for (const p of particles) {
+        p.x = Math.min(p.x, w);
+        p.y = Math.min(p.y, h);
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.5 }} />;
+}
+
+/* ─── Animated section divider ─── */
+function SectionDivider() {
+  return (
+    <div className="relative py-2">
+      <div className="relative h-px mx-auto max-w-3xl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+        <div
+          className="absolute top-0 h-full w-1/5 bg-gradient-to-r from-transparent via-purple-400/60 to-transparent"
+          style={{ animation: "divider-pulse 4s ease-in-out infinite" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─── CTA sparkle positions (deterministic for SSR) ─── */
+const CTA_SPARKLES = Array.from({ length: 20 }, (_, i) => ({
+  left: ((i * 37 + 13) % 97) + 1,
+  top: ((i * 53 + 7) % 93) + 3,
+  dur: 8 + (i % 5) * 3,
+  delay: (i % 7) * 0.8,
+  size: i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1,
+}));
+
+/* ─── 3D tilt handlers ─── */
+function handleTilt(e: React.MouseEvent<HTMLDivElement>) {
+  if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) return;
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  el.style.transform = `perspective(800px) rotateX(${(y - 0.5) * -8}deg) rotateY(${(x - 0.5) * 8}deg) scale3d(1.03,1.03,1.03)`;
+}
+function handleTiltReset(e: React.MouseEvent<HTMLDivElement>) {
+  e.currentTarget.style.transform = "";
+}
+
 const FEATURE_KEYS = [
   { icon: Mic, key: "voice", color: "from-blue-500 to-indigo-600" },
   { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
@@ -206,6 +323,8 @@ export function LandingPage() {
           }}
         />
 
+        <ParticleCanvas />
+
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <div data-reveal style={revealDelay(0)} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-sm text-gray-300 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
@@ -269,6 +388,8 @@ export function LandingPage() {
       {/* ─── Stats counter bar ─── */}
       <StatsBar lang={lang} />
 
+      <SectionDivider />
+
       {/* ─── Features ─── */}
       <section id="features" className="relative py-32 px-6">
         <div className="max-w-6xl mx-auto">
@@ -317,6 +438,8 @@ export function LandingPage() {
         </div>
       </section>
 
+      <SectionDivider />
+
       {/* ─── How it works ─── */}
       <section className="relative py-24 px-6">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/20 to-transparent" />
@@ -339,6 +462,8 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      <SectionDivider />
 
       {/* ─── Pricing ─── */}
       <section id="pricing" className="relative py-32 px-6">
@@ -428,7 +553,7 @@ export function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
             {SECURITY_ITEMS.map((item, i) => (
               <div key={item.key} data-reveal style={revealDelay((i % 3) * 100)}>
-                <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/20 transition-all duration-300 hover:bg-white/[0.04]">
+                <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/30 transition-all duration-500 hover:bg-white/[0.04] hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]">
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/20 border border-violet-500/10 mb-4">
                     <item.icon className="h-5 w-5 text-violet-400" />
                   </div>
@@ -440,8 +565,12 @@ export function LandingPage() {
           </div>
 
           <div data-reveal style={revealDelay(150)} className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-            {(["soc2", "gdpr", "hipaa_badge", "hsts"] as const).map((badge) => (
-              <span key={badge} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
+            {(["soc2", "gdpr", "hipaa_badge", "hsts"] as const).map((badge, i) => (
+              <span
+                key={badge}
+                className="badge-scan flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5"
+                style={{ "--scan-delay": `${i * 0.7}s` } as React.CSSProperties}
+              >
                 <ShieldCheck className="h-3.5 w-3.5 text-violet-500" />
                 {t(`security.badge_${badge}`)}
               </span>
@@ -451,20 +580,37 @@ export function LandingPage() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="relative py-24 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <div data-reveal className="p-12 rounded-3xl bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-white/5 backdrop-blur-sm">
-            <h2 className="text-3xl font-bold mb-4">{t("cta.title")}</h2>
-            <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-              {t("cta.subtitle")}
-            </p>
-            <Link
-              href="/waitlist"
-              className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40"
-            >
-              {t("cta.button")}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+      <section className="relative py-24 px-6 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/[0.08] rounded-full blur-[120px] pointer-events-none" />
+        <div className="max-w-3xl mx-auto text-center relative">
+          <div data-reveal className="relative p-12 rounded-3xl cta-mesh border border-white/10 backdrop-blur-sm overflow-hidden">
+            {CTA_SPARKLES.map((s, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-purple-400/40"
+                style={{
+                  left: `${s.left}%`,
+                  top: `${s.top}%`,
+                  width: s.size,
+                  height: s.size,
+                  animation: `sparkle-float ${s.dur}s ease-in-out infinite`,
+                  animationDelay: `${s.delay}s`,
+                }}
+              />
+            ))}
+            <div className="relative z-10">
+              <h2 className="text-3xl font-bold mb-4">{t("cta.title")}</h2>
+              <p className="text-gray-400 mb-8 max-w-lg mx-auto">
+                {t("cta.subtitle")}
+              </p>
+              <Link
+                href="/waitlist"
+                className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
+              >
+                {t("cta.button")}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -993,12 +1139,18 @@ function FeatureCard({ icon: Icon, title, desc, color, index = 0 }: {
 }) {
   return (
     <div data-reveal style={revealDelay((index % 3) * 100)}>
-      <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 hover:bg-white/[0.04]">
-        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${color} mb-4 shadow-lg`}>
-          <Icon className="h-5 w-5 text-white" />
+      <div
+        className="gradient-border-card tilt-card h-full"
+        onMouseMove={handleTilt}
+        onMouseLeave={handleTiltReset}
+      >
+        <div className="gradient-border-inner p-6">
+          <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${color} mb-4 shadow-lg`}>
+            <Icon className="h-5 w-5 text-white" />
+          </div>
+          <h3 className="text-base font-semibold mb-2">{title}</h3>
+          <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
         </div>
-        <h3 className="text-base font-semibold mb-2">{title}</h3>
-        <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
       </div>
     </div>
   );
