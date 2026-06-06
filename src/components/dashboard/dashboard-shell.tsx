@@ -399,7 +399,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0">
         {/* Header with top tabs */}
-        <header className="sticky top-0 z-10 bg-[hsl(var(--card)/0.8)] backdrop-blur border-b border-[hsl(var(--border))]">
+        <header className="sticky top-0 z-10 bg-[hsl(var(--card)/0.85)] backdrop-blur-xl border-b border-[hsl(var(--border))]">
           <div className="max-w-6xl mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <Logo size="sm" variant="icon" className="md:hidden" />
@@ -458,7 +458,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
       {panelSide === "right" && desktopSidebarPanel}
 
       {/* ── Mobile bottom navigation ── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[hsl(var(--card)/0.95)] backdrop-blur border-t border-[hsl(var(--border))] safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[hsl(var(--card)/0.95)] backdrop-blur-xl border-t border-[hsl(var(--border))] safe-area-bottom">
         <div className="flex items-center h-14 px-1 overflow-x-auto scrollbar-hide">
           <button
             className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === "dashboard" ? "text-brand" : "text-gray-500"}`}
