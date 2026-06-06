@@ -343,7 +343,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   const px = fs(60);
 
   const topSafe = fs(110);
-  const botSafe = h - fs(75);
+  const botSafe = h - fs(110);
   const safeH = botSafe - topSafe;
   const centerBlock = (blockH: number) => topSafe + Math.max(0, Math.round((safeH - blockH) / 2));
 
@@ -365,11 +365,12 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
     <circle cx="${w * 0.5}" cy="${h * 0.52}" r="${fs(360)}" fill="${ta}0.015)"/>
     <rect x="${w - fs(5)}" y="${h * 0.25}" width="${fs(5)}" height="${h * 0.12}" rx="${fs(2.5)}" fill="${ta}0.1)"/>
     <rect x="0" y="${h * 0.6}" width="${fs(5)}" height="${h * 0.1}" rx="${fs(2.5)}" fill="${ta}0.08)"/>
-    <line x1="${px}" y1="${botSafe + fs(8)}" x2="${w * 0.28}" y2="${botSafe + fs(8)}" stroke="${ta}0.12)" stroke-width="1"/>
+    <line x1="${w * 0.72}" y1="${botSafe + fs(8)}" x2="${w - px}" y2="${botSafe + fs(8)}" stroke="${ta}0.12)" stroke-width="1"/>
   `;
 
-  const logoY = h - fs(40);
-  const logoSmall = `<g transform="translate(${px},${logoY - fs(10)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${px + fs(16)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
+  const logoY = h - fs(32);
+  const logoX = w - px;
+  const logoSmall = `<rect x="${logoX - fs(105)}" y="${logoY - fs(18)}" width="${fs(115)}" height="${fs(26)}" rx="${fs(6)}" fill="${isDark ? 'rgba(15,23,42,0.45)' : 'rgba(255,255,255,0.55)'}"/><g transform="translate(${logoX - fs(100)},${logoY - fs(14)}) scale(${scale * 0.5})"><rect width="20" height="20" rx="4" fill="${brandTeal}"/><path d="M6 5h4.5a2.8 2.8 0 0 1 0 5.6h-1.8l2.8 3.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g><text x="${logoX - fs(84)}" y="${logoY}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(13)}" fill="${mainColor}"><tspan>Radiogen</tspan><tspan fill="${accentColor}">.ai</tspan></text>`;
 
   let content = "";
 
