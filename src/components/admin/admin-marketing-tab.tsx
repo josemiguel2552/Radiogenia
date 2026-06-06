@@ -208,9 +208,19 @@ const BRAND_ASSETS: BrandAsset[] = [
   { id: "pub-calc-all-ln", label: "Todas las calculadoras (landscape)", category: "Pub. Calculadoras", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo calculadoras", tagline: "calc-all" },
   { id: "pub-guides-all-sq", label: "Todas las guías clínicas", category: "Pub. Recomendaciones", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG/FB — Grid completo guías", tagline: "guides-all" },
   { id: "pub-guides-all-ln", label: "Todas las guías clínicas (landscape)", category: "Pub. Recomendaciones", width: 1200, height: 630, bg: "dark", logoVariant: "full", description: "LinkedIn — Grid completo guías", tagline: "guides-all" },
-  // ═══ Carruseles (portada) ═══
+  // ═══ Carruseles (portada + slides) ═══
   { id: "pub-carousel-tirads", label: "Carrusel — TI-RADS", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG — Portada carrusel TI-RADS", tagline: "carousel-tirads" },
+  { id: "pub-carousel-tirads-s1", label: "TI-RADS — Composición", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — TI-RADS slide 1: Composición", tagline: "carousel-tirads-s1" },
+  { id: "pub-carousel-tirads-s2", label: "TI-RADS — Ecogenicidad", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — TI-RADS slide 2: Ecogenicidad", tagline: "carousel-tirads-s2" },
+  { id: "pub-carousel-tirads-s3", label: "TI-RADS — Forma", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — TI-RADS slide 3: Forma", tagline: "carousel-tirads-s3" },
+  { id: "pub-carousel-tirads-s4", label: "TI-RADS — Márgenes", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — TI-RADS slide 4: Márgenes", tagline: "carousel-tirads-s4" },
+  { id: "pub-carousel-tirads-s5", label: "TI-RADS — Focos ecogénicos", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — TI-RADS slide 5: Focos ecogénicos", tagline: "carousel-tirads-s5" },
   { id: "pub-carousel-incidental", label: "Carrusel — Incidentales", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Portada carrusel incidentales", tagline: "carousel-incidental" },
+  { id: "pub-carousel-incidental-s1", label: "Incidental — Nódulo pulmonar", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Incidental slide 1: Nódulo pulmonar", tagline: "carousel-incidental-s1" },
+  { id: "pub-carousel-incidental-s2", label: "Incidental — Adrenal", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Incidental slide 2: Adrenal", tagline: "carousel-incidental-s2" },
+  { id: "pub-carousel-incidental-s3", label: "Incidental — Renal", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Incidental slide 3: Renal", tagline: "carousel-incidental-s3" },
+  { id: "pub-carousel-incidental-s4", label: "Incidental — Hepático", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Incidental slide 4: Hepático", tagline: "carousel-incidental-s4" },
+  { id: "pub-carousel-incidental-s5", label: "Incidental — Tiroideo", category: "Pub. Carruseles", width: 1080, height: 1080, bg: "dark", logoVariant: "full", description: "IG — Incidental slide 5: Tiroideo", tagline: "carousel-incidental-s5" },
   // ═══ Infografías ═══
   { id: "pub-infographic-sq", label: "Infografía proceso", category: "Pub. Infografías", width: 1080, height: 1080, bg: "gradient", logoVariant: "full", description: "IG/FB — Blueprint del proceso", tagline: "infographic-process" },
   { id: "pub-infographic-ln", label: "Infografía proceso (landscape)", category: "Pub. Infografías", width: 1200, height: 630, bg: "gradient", logoVariant: "full", description: "LinkedIn — Blueprint del proceso", tagline: "infographic-process" },
@@ -810,6 +820,285 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
       <text x="${px}" y="${y0 + fs(300)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(22)}" fill="${subColor}">Qué guía seguir en cada caso. Con Radiogen.ai lo tienes integrado.</text>
       ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0 + fs(360)}" r="${fs(5)}" fill="${i === 0 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
       <text x="${w/2}" y="${y0 + fs(400)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(18)}" fill="${accentColor}" text-anchor="middle">Desliza →</text>`;
+
+  // ═══ TI-RADS carousel slides ═══
+  } else if (contentType === "carousel-tirads-s1") {
+    const y0 = centerBlock(fs(460));
+    const opts = [
+      { label: "Quístico o casi quístico", pts: "0 pts", opacity: 0.3 },
+      { label: "Espongiforme", pts: "0 pts", opacity: 0.3 },
+      { label: "Mixto quístico-sólido", pts: "1 pt", opacity: 0.5 },
+      { label: "Sólido o casi sólido", pts: "2 pts", opacity: 0.8 },
+    ];
+    const rowH = fs(52);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 1 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(130)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">TI-RADS · SLIDE 1/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Composición</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">¿Qué proporción del nódulo es sólida vs. quística?</text>
+      ${opts.map((o, i) => {
+        const ry = y0 + fs(165) + i * (rowH + fs(8));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${o.opacity}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(32)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">${o.label}</text>
+          <rect x="${w - px - fs(70)}" y="${ry + fs(14)}" width="${fs(58)}" height="${fs(26)}" rx="${fs(13)}" fill="${accentColor}" opacity="${o.opacity * 0.3}"/>
+          <text x="${w - px - fs(41)}" y="${ry + fs(33)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${o.pts}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR TI-RADS 2017 · Tessler FN et al., JACR 2017</text>`;
+  } else if (contentType === "carousel-tirads-s2") {
+    const y0 = centerBlock(fs(460));
+    const opts = [
+      { label: "Anecoico", pts: "0 pts", opacity: 0.3 },
+      { label: "Hiperecoico / isoecoico", pts: "1 pt", opacity: 0.5 },
+      { label: "Hipoecoico", pts: "2 pts", opacity: 0.7 },
+      { label: "Muy hipoecoico", pts: "3 pts", opacity: 1.0 },
+    ];
+    const rowH = fs(52);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 2 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(130)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">TI-RADS · SLIDE 2/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Ecogenicidad</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Brillo del nódulo respecto al tejido tiroideo normal.</text>
+      ${opts.map((o, i) => {
+        const ry = y0 + fs(165) + i * (rowH + fs(8));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${o.opacity}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(32)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">${o.label}</text>
+          <rect x="${w - px - fs(70)}" y="${ry + fs(14)}" width="${fs(58)}" height="${fs(26)}" rx="${fs(13)}" fill="${accentColor}" opacity="${o.opacity * 0.3}"/>
+          <text x="${w - px - fs(41)}" y="${ry + fs(33)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${o.pts}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR TI-RADS 2017 · Tessler FN et al., JACR 2017</text>`;
+  } else if (contentType === "carousel-tirads-s3") {
+    const y0 = centerBlock(fs(380));
+    const opts = [
+      { label: "Más ancho que alto", pts: "0 pts", desc: "Eje AP ≤ eje transverso", opacity: 0.3 },
+      { label: "Más alto que ancho", pts: "3 pts", desc: "Eje AP > eje transverso", opacity: 1.0 },
+    ];
+    const rowH = fs(72);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 3 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(130)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">TI-RADS · SLIDE 3/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Forma</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Orientación del nódulo en corte transversal.</text>
+      ${opts.map((o, i) => {
+        const ry = y0 + fs(165) + i * (rowH + fs(10));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${o.opacity}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(30)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">${o.label}</text>
+          <text x="${px + fs(24)}" y="${ry + fs(54)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${subColor}">${o.desc}</text>
+          <rect x="${w - px - fs(70)}" y="${ry + fs(22)}" width="${fs(58)}" height="${fs(26)}" rx="${fs(13)}" fill="${accentColor}" opacity="${o.opacity * 0.3}"/>
+          <text x="${w - px - fs(41)}" y="${ry + fs(41)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${o.pts}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(340)}" x2="${px + fs(60)}" y2="${y0 + fs(340)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(368)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR TI-RADS 2017 · Tessler FN et al., JACR 2017</text>`;
+  } else if (contentType === "carousel-tirads-s4") {
+    const y0 = centerBlock(fs(460));
+    const opts = [
+      { label: "Lisos", pts: "0 pts", opacity: 0.3 },
+      { label: "Mal definidos", pts: "0 pts", opacity: 0.3 },
+      { label: "Lobulados / irregulares", pts: "2 pts", opacity: 0.7 },
+      { label: "Extensión extratiroidea", pts: "3 pts", opacity: 1.0 },
+    ];
+    const rowH = fs(52);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 4 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(130)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">TI-RADS · SLIDE 4/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Márgenes</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Contorno del nódulo e interfaz con el parénquima.</text>
+      ${opts.map((o, i) => {
+        const ry = y0 + fs(165) + i * (rowH + fs(8));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${o.opacity}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(32)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">${o.label}</text>
+          <rect x="${w - px - fs(70)}" y="${ry + fs(14)}" width="${fs(58)}" height="${fs(26)}" rx="${fs(13)}" fill="${accentColor}" opacity="${o.opacity * 0.3}"/>
+          <text x="${w - px - fs(41)}" y="${ry + fs(33)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${o.pts}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR TI-RADS 2017 · Tessler FN et al., JACR 2017</text>`;
+  } else if (contentType === "carousel-tirads-s5") {
+    const y0 = centerBlock(fs(460));
+    const opts = [
+      { label: "Ninguno o artefacto cola de cometa", pts: "0 pts", opacity: 0.3 },
+      { label: "Macrocalcificaciones", pts: "1 pt", opacity: 0.5 },
+      { label: "Calcificación periférica (cáscara)", pts: "2 pts", opacity: 0.7 },
+      { label: "Focos ecogénicos puntiformes", pts: "3 pts", opacity: 1.0 },
+    ];
+    const rowH = fs(52);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 5 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(130)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">TI-RADS · SLIDE 5/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(46)}" fill="${mainColor}">Focos ecogénicos</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(20)}" fill="${subColor}">Calcificaciones y puntos brillantes dentro del nódulo.</text>
+      ${opts.map((o, i) => {
+        const ry = y0 + fs(165) + i * (rowH + fs(8));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${o.opacity}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(32)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(20)}" fill="${mainColor}">${o.label}</text>
+          <rect x="${w - px - fs(70)}" y="${ry + fs(14)}" width="${fs(58)}" height="${fs(26)}" rx="${fs(13)}" fill="${accentColor}" opacity="${o.opacity * 0.3}"/>
+          <text x="${w - px - fs(41)}" y="${ry + fs(33)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(14)}" fill="${accentColor}" text-anchor="middle">${o.pts}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR TI-RADS 2017 · Tessler FN et al., JACR 2017</text>`;
+
+  // ═══ Incidentals carousel slides ═══
+  } else if (contentType === "carousel-incidental-s1") {
+    const y0 = centerBlock(fs(460));
+    const rows = [
+      { size: "&lt; 6 mm", action: "Sin seguimiento", risk: 0.15 },
+      { size: "6–8 mm (bajo riesgo)", action: "TC 6-12 meses", risk: 0.4 },
+      { size: "6–8 mm (alto riesgo)", action: "TC 6-12 m → 18-24 m", risk: 0.6 },
+      { size: "&gt; 8 mm", action: "TC 3 m, PET-CT o biopsia", risk: 1.0 },
+    ];
+    const rowH = fs(52);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 1 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(170)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">INCIDENTALES · SLIDE 1/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Nódulo pulmonar</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Fleischner 2017 — Nódulos sólidos incidentales en adultos ≥35 años</text>
+      ${rows.map((r, i) => {
+        const ry = y0 + fs(160) + i * (rowH + fs(8));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${0.2 + r.risk * 0.8}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(22)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}">${r.size}</text>
+          <text x="${px + fs(24)}" y="${ry + fs(42)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(15)}" fill="${subColor}">${r.action}</text>
+          <rect x="${w - px - fs(50)}" y="${ry + fs(16)}" width="${fs(30 + r.risk * 60)}" height="${fs(8)}" rx="${fs(4)}" fill="${accentColor}" opacity="${0.3 + r.risk * 0.5}"/>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">Fleischner Society 2017 · MacMahon et al., Radiology</text>`;
+  } else if (contentType === "carousel-incidental-s2") {
+    const y0 = centerBlock(fs(460));
+    const boxes = [
+      { label: "&lt; 1 cm", action: "Sin seguimiento", color: "rgba(34,197,94,", icon: "✓" },
+      { label: "1–4 cm", action: "Washout CT o RM", color: `${ta.slice(0,-1)},`, icon: "?" },
+      { label: "&gt; 4 cm", action: "Cirugía + analítica", color: "rgba(239,68,68,", icon: "!" },
+    ];
+    const boxW = (w - px * 2 - fs(24)) / 3;
+    const boxH = fs(140);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 2 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(170)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">INCIDENTALES · SLIDE 2/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Adrenal</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">ACR Incidental 2017 — Manejo del incidentaloma adrenal</text>
+      ${boxes.map((b, i) => {
+        const bx = px + i * (boxW + fs(12));
+        const by = y0 + fs(160);
+        return `
+          <rect x="${bx}" y="${by}" width="${boxW}" height="${boxH}" rx="${fs(14)}" fill="${b.color}0.08)" stroke="${b.color}0.2)" stroke-width="1.5"/>
+          <rect x="${bx + boxW / 2 - fs(22)}" y="${by + fs(14)}" width="${fs(44)}" height="${fs(44)}" rx="${fs(22)}" fill="${b.color}0.15)"/>
+          <text x="${bx + boxW / 2}" y="${by + fs(44)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(20)}" fill="${b.color}0.7)" text-anchor="middle">${b.icon}</text>
+          <text x="${bx + boxW / 2}" y="${by + fs(84)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(24)}" fill="${b.color}0.8)" text-anchor="middle">${b.label}</text>
+          <line x1="${bx + fs(14)}" y1="${by + fs(98)}" x2="${bx + boxW - fs(14)}" y2="${by + fs(98)}" stroke="${b.color}0.15)" stroke-width="1"/>
+          <text x="${bx + boxW / 2}" y="${by + fs(120)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(13)}" fill="${subColor}" text-anchor="middle">${escSvg(b.action)}</text>
+        `;
+      }).join("")}
+      <text x="${px}" y="${y0 + fs(340)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Densidad &lt; 10 UH = adenoma benigno (no requiere seguimiento)</text>
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR Incidental Findings 2017 · Mayo-Smith et al.</text>`;
+  } else if (contentType === "carousel-incidental-s3") {
+    const y0 = centerBlock(fs(460));
+    const rows = [
+      { label: "Quiste simple", action: "Sin seguimiento", desc: "Contenido homogéneo, paredes finas", risk: 0.1 },
+      { label: "Bosniak I-II", action: "Benigno, no seguimiento", desc: "Septos finos, calcificación mínima", risk: 0.2 },
+      { label: "Bosniak IIF", action: "Seguimiento TC/RM", desc: "Septos mínimamente engrosados", risk: 0.5 },
+      { label: "Bosniak III-IV", action: "Cirugía / biopsia", desc: "Realce, componente sólido", risk: 1.0 },
+    ];
+    const rowH = fs(58);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 3 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(170)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">INCIDENTALES · SLIDE 3/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Renal</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">Bosniak 2019 — Clasificación de masas renales quísticas</text>
+      ${rows.map((r, i) => {
+        const ry = y0 + fs(160) + i * (rowH + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${0.2 + r.risk * 0.8}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}">${r.label}</text>
+          <text x="${px + fs(24)}" y="${ry + fs(46)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">${r.desc}</text>
+          <text x="${w - px - fs(14)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}" text-anchor="end">${r.action}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">Bosniak Classification 2019 · Silverman et al., Radiology</text>`;
+  } else if (contentType === "carousel-incidental-s4") {
+    const y0 = centerBlock(fs(460));
+    const rows = [
+      { label: "Quiste simple", action: "Sin seguimiento", desc: "Anecoico, paredes imperceptibles", risk: 0.1 },
+      { label: "Hemangioma típico", action: "Sin seguimiento", desc: "Realce nodular periférico, llenado centrípeto", risk: 0.15 },
+      { label: "Esteatosis focal", action: "Sin seguimiento", desc: "Pérdida de señal en OP, sin efecto masa", risk: 0.1 },
+      { label: "Lesión indeterminada", action: "RM con contraste", desc: "No cumple criterios de benigno", risk: 0.8 },
+    ];
+    const rowH = fs(58);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 4 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(170)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">INCIDENTALES · SLIDE 4/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Hepático</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">ACR Incidental 2017 — Hallazgos hepáticos incidentales</text>
+      ${rows.map((r, i) => {
+        const ry = y0 + fs(160) + i * (rowH + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${0.2 + r.risk * 0.8}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(18)}" fill="${mainColor}">${r.label}</text>
+          <text x="${px + fs(24)}" y="${ry + fs(46)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(14)}" fill="${subColor}">${r.desc}</text>
+          <text x="${w - px - fs(14)}" y="${ry + fs(24)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(14)}" fill="${accentColor}" text-anchor="end">${r.action}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(420)}" x2="${px + fs(60)}" y2="${y0 + fs(420)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(448)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR Incidental Findings 2017 · Gore et al.</text>`;
+  } else if (contentType === "carousel-incidental-s5") {
+    const y0 = centerBlock(fs(460));
+    const rows = [
+      { label: "TR1 — Benigno", pts: "0 pts", action: "Sin FNA", opacity: 0.2 },
+      { label: "TR2 — No sospechoso", pts: "2 pts", action: "Sin FNA", opacity: 0.3 },
+      { label: "TR3 — Levem. sospechoso", pts: "3 pts", action: "FNA si ≥ 2.5 cm", opacity: 0.5 },
+      { label: "TR4 — Moderadamente sosp.", pts: "4-6 pts", action: "FNA si ≥ 1.5 cm", opacity: 0.7 },
+      { label: "TR5 — Altamente sospechoso", pts: "≥ 7 pts", action: "FNA si ≥ 1 cm", opacity: 1.0 },
+    ];
+    const rowH = fs(46);
+    content = `
+      ${[0,1,2,3,4,5].map((d, i) => `<circle cx="${w/2 - fs(50) + i * fs(20)}" cy="${y0}" r="${fs(5)}" fill="${i === 5 ? accentColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)')}"/>`).join("")}
+      <rect x="${px}" y="${y0 + fs(20)}" width="${fs(170)}" height="${fs(28)}" rx="${fs(14)}" fill="${ta}0.15)"/>
+      <text x="${px + fs(12)}" y="${y0 + fs(40)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}">INCIDENTALES · SLIDE 5/5</text>
+      <text x="${px}" y="${y0 + fs(95)}" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs(42)}" fill="${mainColor}">Tiroideo</text>
+      <text x="${px}" y="${y0 + fs(132)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(18)}" fill="${subColor}">ACR TI-RADS 2017 — Clasificación y umbral de FNA</text>
+      ${rows.map((r, i) => {
+        const ry = y0 + fs(160) + i * (rowH + fs(6));
+        return `
+          <rect x="${px}" y="${ry}" width="${w - px * 2}" height="${rowH}" rx="${fs(12)}" fill="${ta}0.06)" stroke="${ta}0.12)" stroke-width="1"/>
+          <rect x="${px}" y="${ry}" width="${fs(6)}" height="${rowH}" rx="${fs(3)}" fill="${accentColor}" opacity="${r.opacity}"/>
+          <text x="${px + fs(24)}" y="${ry + fs(30)}" font-family="system-ui,sans-serif" font-weight="600" font-size="${fs(17)}" fill="${mainColor}">${r.label}</text>
+          <rect x="${w - px - fs(180)}" y="${ry + fs(12)}" width="${fs(52)}" height="${fs(22)}" rx="${fs(11)}" fill="${accentColor}" opacity="${r.opacity * 0.25}"/>
+          <text x="${w - px - fs(154)}" y="${ry + fs(29)}" font-family="system-ui,sans-serif" font-weight="700" font-size="${fs(12)}" fill="${accentColor}" text-anchor="middle">${r.pts}</text>
+          <text x="${w - px - fs(14)}" y="${ry + fs(30)}" font-family="system-ui,sans-serif" font-weight="500" font-size="${fs(14)}" fill="${subColor}" text-anchor="end">${r.action}</text>
+        `;
+      }).join("")}
+      <line x1="${px}" y1="${y0 + fs(430)}" x2="${px + fs(60)}" y2="${y0 + fs(430)}" stroke="${accentColor}" stroke-width="2" stroke-linecap="round"/>
+      <text x="${px}" y="${y0 + fs(455)}" font-family="system-ui,sans-serif" font-weight="400" font-size="${fs(16)}" fill="${ta}0.4)">ACR TI-RADS 2017 · Tessler FN et al., JACR 2017</text>`;
+
   } else if (contentType === "infographic-process") {
     const y0 = centerBlock(fs(420));
     const steps = [
@@ -1504,7 +1793,7 @@ function buildPublicationSvg(w: number, h: number, bg: "gradient" | "dark" | "wh
   </svg>`;
 }
 
-const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all","carousel-tirads","carousel-incidental","infographic-process","time-comparison","dyk-errors","dyk-time","dyk-incidental","testimonial-metrics","before-after-report","bodymap","roi-pricing","spotlight-voice","spotlight-multilang","spotlight-darkmode","spotlight-export","spotlight-teams","normality-learn","guide-fleischner","guide-adrenal","guide-bosniak","guide-lirads","guide-aorta","guide-birads","case-tirads","case-pirads","case-bosniak","case-aspects","case-washout","case-tnm"]);
+const PUB_TYPES = new Set(["feature","stats","quote","tip","launch","comparison","workflow","cta","tpl-overview","tpl-custom","tpl-regions","tpl-normality","rec-overview","rec-evidence","rec-hospital","calc-overview","calc-tirads","calc-pirads","calc-bosniak","calc-copy","calc-all","guides-all","carousel-tirads","carousel-tirads-s1","carousel-tirads-s2","carousel-tirads-s3","carousel-tirads-s4","carousel-tirads-s5","carousel-incidental","carousel-incidental-s1","carousel-incidental-s2","carousel-incidental-s3","carousel-incidental-s4","carousel-incidental-s5","infographic-process","time-comparison","dyk-errors","dyk-time","dyk-incidental","testimonial-metrics","before-after-report","bodymap","roi-pricing","spotlight-voice","spotlight-multilang","spotlight-darkmode","spotlight-export","spotlight-teams","normality-learn","guide-fleischner","guide-adrenal","guide-bosniak","guide-lirads","guide-aorta","guide-birads","case-tirads","case-pirads","case-bosniak","case-aspects","case-washout","case-tnm"]);
 
 function buildAssetSvg(asset: BrandAsset): string {
   if (asset.tagline && PUB_TYPES.has(asset.tagline)) {
