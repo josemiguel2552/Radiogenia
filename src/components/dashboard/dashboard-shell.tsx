@@ -15,8 +15,6 @@ import {
   PanelRightClose,
   PanelLeftOpen,
   PanelLeftClose,
-  Moon,
-  Sun,
   FileText,
   Settings,
   Shield,
@@ -67,7 +65,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const [panelOpen, setPanelOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
-  const [darkMode, setDarkMode] = useState(false);
   const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT);
   const dragging = useRef(false);
   const { prefs } = useUIPrefs();
@@ -89,22 +86,10 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   }, []);
 
   useEffect(() => {
-    const dark = localStorage.getItem("radiogenai_dark") === "1";
-    if (dark) {
-      document.documentElement.classList.add("dark");
-      setDarkMode(true);
-    }
     const saved = localStorage.getItem("radiogenai_panel");
     if (saved !== null) setPanelOpen(saved === "1");
     const savedWidth = localStorage.getItem("radiogenai_panel_width");
     if (savedWidth) setPanelWidth(Math.max(PANEL_MIN, Math.min(PANEL_MAX, Number(savedWidth))));
-
-    const handleDarkChanged = (e: Event) => {
-      const isDark = (e as CustomEvent).detail as boolean;
-      setDarkMode(isDark);
-    };
-    window.addEventListener("radiogenai:dark-changed", handleDarkChanged);
-    return () => window.removeEventListener("radiogenai:dark-changed", handleDarkChanged);
   }, []);
 
   useEffect(() => {
@@ -152,13 +137,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     await supabase.auth.signOut();
     router.push("/auth/login");
     router.refresh();
-  }
-
-  function toggleDark() {
-    const next = !darkMode;
-    setDarkMode(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("radiogenai_dark", next ? "1" : "0");
   }
 
   function togglePanel() {
@@ -366,10 +344,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
 
         <HelpDialog />
 
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={toggleDark} title={t("nav.toggle_theme")}>
-          {darkMode ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-        </Button>
-
         {activeView === "dashboard" && (
           <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" onClick={togglePanel}
             title={panelOpen ? t("nav.hide_panel") : t("nav.show_panel")}
@@ -440,9 +414,6 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                   {t("nav.config")}
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={toggleDark} className="h-8 w-8 md:hidden text-gray-500">
-                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
               <Button variant="outline" size="sm" onClick={() => setMobileDrawerOpen(true)} className="gap-1.5 text-xs md:hidden h-8">
                 <Settings className="h-3.5 w-3.5" />
               </Button>
