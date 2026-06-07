@@ -1383,6 +1383,9 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "app.skin_obsidiana": "Obsidiana",
     "app.skin_arena": "Arena",
     "app.skin_coral": "Coral",
+    "app.skin_acero": "Acero",
+    "app.skin_cerezo": "Cerezo",
+    "app.skin_oceano": "Océano",
     // Settings sections
     "settings.visual": "Interfaz visual",
     "settings.functional": "Configuración del informe",
@@ -3355,6 +3358,9 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "app.skin_obsidiana": "Obsidian",
     "app.skin_arena": "Sand",
     "app.skin_coral": "Coral",
+    "app.skin_acero": "Steel",
+    "app.skin_cerezo": "Cherry",
+    "app.skin_oceano": "Ocean",
     // Settings sections
     "settings.visual": "Visual interface",
     "settings.functional": "Report configuration",
@@ -5334,6 +5340,9 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "app.skin_obsidiana": "Obsidiana",
     "app.skin_arena": "Areia",
     "app.skin_coral": "Coral",
+    "app.skin_acero": "Aço",
+    "app.skin_cerezo": "Cereja",
+    "app.skin_oceano": "Oceano",
     // Settings sections
     "settings.visual": "Interface visual",
     "settings.functional": "Configuração do relatório",
