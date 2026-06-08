@@ -2452,6 +2452,66 @@ function AorticDissectionSheet() {
   );
 }
 
+function WholeAortaCTASheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.whole_aorta_title")} source="ACC/AHA 2022 (Isselbacher et al.) / ESC 2024 / Rogers et al., JCCT 2016">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.aorta_normal_diameters")}</p>
+      <SheetTable
+        headers={[t("calc.segment"), t("calc.male_cm"), t("calc.female_cm"), t("calc.aneurysm_threshold")]}
+        rows={[
+          [t("calc.aorta_root_sov"), "3.4–3.7", "3.0–3.3", "> 4.5 cm"],
+          [t("calc.stj"), "2.9–3.2", "2.6–2.9", "—"],
+          [t("calc.mid_ascending"), "3.0–3.5", "2.7–3.2", "> 4.5 cm"],
+          [t("calc.aortic_arch_seg"), "2.5–3.0", "2.3–2.7", "> 4.0 cm"],
+          [t("calc.aortic_isthmus"), "2.0–2.5", "1.8–2.3", "—"],
+          [t("calc.mid_descending"), "2.3–2.8", "2.1–2.5", "> 4.0 cm"],
+          [t("calc.suprarenal_seg"), "2.0–2.5", "1.8–2.2", "> 3.5 cm"],
+          [t("calc.infrarenal_seg"), "1.7–2.1", "1.5–1.8", "> 3.0 cm"],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.aorta_measure_landmarks")}</p>
+      <SheetTable
+        headers={[t("calc.level"), t("calc.landmark")]}
+        rows={[
+          [t("calc.aorta_root_sov"), t("calc.lm_sov")],
+          [t("calc.stj"), t("calc.lm_stj")],
+          [t("calc.mid_ascending"), t("calc.lm_asc")],
+          [t("calc.proximal_arch"), t("calc.lm_prox_arch")],
+          [t("calc.mid_arch"), t("calc.lm_mid_arch")],
+          [t("calc.aortic_isthmus"), t("calc.lm_isthmus")],
+          [t("calc.mid_descending"), t("calc.lm_desc")],
+          [t("calc.suprarenal_seg"), t("calc.lm_suprarenal")],
+          [t("calc.infrarenal_seg"), t("calc.lm_infrarenal")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.arch_variants")}</p>
+      <SheetTable
+        headers={[t("calc.variant"), t("calc.prevalence"), t("calc.description")]}
+        rows={[
+          [t("calc.arch_normal"), "~70%", t("calc.arch_normal_desc")],
+          [t("calc.arch_bovine"), "~20–27%", t("calc.arch_bovine_desc")],
+          [t("calc.arch_aberrant_rsa"), "~1–2%", t("calc.arch_aberrant_rsa_desc")],
+          [t("calc.arch_lva_from_arch"), "~5%", t("calc.arch_lva_from_arch_desc")],
+          [t("calc.arch_right_sided"), "~0.1%", t("calc.arch_right_sided_desc")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.aorta_checklist")}</p>
+      <SheetTable
+        headers={[t("calc.segment"), t("calc.key_findings")]}
+        rows={[
+          [t("calc.root_ascending"), t("calc.check_root_asc")],
+          [t("calc.arch_branches"), t("calc.check_arch")],
+          [t("calc.desc_thoracic_seg"), t("calc.check_desc")],
+          [t("calc.abdominal_visceral"), t("calc.check_abd")],
+          [t("calc.iliac_seg"), t("calc.check_iliac")],
+          [t("calc.wall_periaortic"), t("calc.check_wall")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 function CarotidStenosisSheet() {
   const t = useT();
   return (
@@ -4231,6 +4291,7 @@ export function CalculatorsTab() {
     {
       key: "vascular", label: t("calc.section_vascular"), icon: "❤️",
       sheets: [
+        { id: "whole_aorta", component: <WholeAortaCTASheet />, label: t("calc.whole_aorta_title") },
         { id: "aorta", component: <AorticAneurysmSheet />, label: t("calc.aorta_title") },
         { id: "dissection", component: <AorticDissectionSheet />, label: t("calc.dissection_title") },
         { id: "carotid", component: <CarotidStenosisSheet />, label: t("calc.carotid_title") },
