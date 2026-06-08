@@ -3144,253 +3144,331 @@ function TransfontanellarUSSheet() {
    Anatomy Quick References
    ══════════════════════════════════════════════ */
 
-/* ── Thigh axial MRI diagram ── */
+/* ── Thigh axial MRI diagram (mid-thigh, based on Radiopaedia/Netter) ── */
 function ThighAxial() {
   return (
-    <svg viewBox="0 0 420 440" className="w-full max-w-[420px] mx-auto">
-      {/* Skin outline */}
-      <ellipse cx="210" cy="210" rx="155" ry="170" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="4,3" className="dark:stroke-gray-600" />
-      {/* Subcutaneous fat */}
-      <ellipse cx="210" cy="210" rx="148" ry="163" fill="#fef9c3" opacity="0.15" className="dark:fill-yellow-900/10" />
-      {/* Fascia lata outline */}
-      <ellipse cx="210" cy="210" rx="138" ry="153" fill="none" stroke="#94a3b8" strokeWidth="0.8" strokeDasharray="2,2" className="dark:stroke-gray-600" />
+    <svg viewBox="0 0 520 540" className="w-full max-w-[480px] mx-auto">
+      {/* ── Skin & subcutaneous fat ── */}
+      <ellipse cx="260" cy="255" rx="195" ry="210" fill="#fdf4e8" stroke="#c9a87c" strokeWidth="2" className="dark:fill-[#2a2420] dark:stroke-[#7a6550]" />
+      <ellipse cx="260" cy="255" rx="183" ry="198" fill="#fef6ee" stroke="none" className="dark:fill-[#252018]" />
 
-      {/* ── FEMUR ── */}
-      <circle cx="210" cy="195" r="24" fill="#e2e8f0" stroke="#64748b" strokeWidth="2.5" className="dark:fill-gray-600 dark:stroke-gray-400" />
-      <circle cx="210" cy="195" r="10" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" className="dark:fill-gray-500 dark:stroke-gray-400" />
-      <text x="210" y="199" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" style={{ fontSize: "8px" }} fontWeight="600">Fémur</text>
+      {/* ── Fascia lata ── */}
+      <ellipse cx="260" cy="255" rx="175" ry="190" fill="none" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,2" className="dark:stroke-gray-600" />
 
-      {/* ── ANTERIOR: Recto femoral ── */}
-      <ellipse cx="210" cy="108" rx="30" ry="24" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1.5" opacity="0.7" className="dark:fill-blue-800/50 dark:stroke-blue-400" />
-      <text x="210" y="112" textAnchor="middle" fill="#1d4ed8" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-blue-300">Recto fem.</text>
+      {/* ── FEMUR (slightly posterior of center) ── */}
+      <circle cx="260" cy="240" r="26" fill="#d4d8e0" stroke="#5a6270" strokeWidth="3" className="dark:fill-gray-600 dark:stroke-gray-400" />
+      <circle cx="260" cy="240" r="11" fill="#b8bcc6" stroke="#7a8090" strokeWidth="1.2" className="dark:fill-gray-500 dark:stroke-gray-400" />
+      <text x="260" y="244" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" style={{ fontSize: "8px" }} fontWeight="700">Fémur</text>
 
-      {/* ── ANTERIOR: Vasto intermedio ── */}
-      <path d="M185,135 Q210,120 235,135 Q238,160 235,170 Q210,175 185,170 Q182,160 185,135 Z" fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.2" opacity="0.6" className="dark:fill-blue-900/40 dark:stroke-blue-400" />
-      <text x="210" y="155" textAnchor="middle" fill="#2563eb" style={{ fontSize: "7px" }} className="dark:fill-blue-300">V. intermedio</text>
+      {/* ── ANTERIOR COMPARTMENT ── */}
+      {/* Recto femoral — oval, most superficial, centered anterior to femur */}
+      <path d="M228,100 Q244,82 276,82 Q296,82 312,100 Q318,118 312,132 Q296,146 276,146 Q248,146 232,136 Q222,122 228,100 Z"
+        fill="#93c5fd" stroke="#2563eb" strokeWidth="1.5" opacity="0.75" className="dark:fill-blue-800/50 dark:stroke-blue-400" />
+      <text x="270" y="118" textAnchor="middle" fill="#1d4ed8" fontWeight="700" style={{ fontSize: "8.5px" }} className="dark:fill-blue-300">Recto femoral</text>
 
-      {/* ── ANTERIOR: Vasto lateral ── */}
-      <path d="M248,105 Q280,120 290,160 Q285,200 270,210 Q248,195 240,170 Q238,135 248,105 Z" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1.3" opacity="0.6" className="dark:fill-blue-800/40 dark:stroke-blue-400" />
-      <text x="268" y="148" textAnchor="middle" fill="#1d4ed8" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">Vasto</text>
-      <text x="268" y="160" textAnchor="middle" fill="#1d4ed8" style={{ fontSize: "7px" }} className="dark:fill-blue-300">lateral</text>
+      {/* Vasto intermedio — flat crescent directly over femur, deep to rectus */}
+      <path d="M214,148 Q236,140 260,138 Q284,140 306,148 Q316,168 312,188 Q290,200 260,202 Q230,200 208,188 Q204,168 214,148 Z"
+        fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.2" opacity="0.65" className="dark:fill-blue-900/40 dark:stroke-blue-400" />
+      <text x="260" y="174" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">V. intermedio</text>
 
-      {/* ── ANTERIOR: Vasto medial ── */}
-      <path d="M172,105 Q140,120 130,160 Q135,200 150,210 Q172,195 180,170 Q182,135 172,105 Z" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1.3" opacity="0.6" className="dark:fill-blue-800/40 dark:stroke-blue-400" />
-      <text x="152" y="148" textAnchor="middle" fill="#1d4ed8" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">Vasto</text>
-      <text x="152" y="160" textAnchor="middle" fill="#1d4ed8" style={{ fontSize: "7px" }} className="dark:fill-blue-300">medial</text>
+      {/* Vasto lateral — large crescent wrapping anterolateral side of femur */}
+      <path d="M316,108 Q352,130 370,170 Q378,210 372,252 Q362,282 340,296 Q320,288 310,264 Q302,238 304,212 Q308,180 310,152 Q312,128 316,108 Z"
+        fill="#93c5fd" stroke="#3b82f6" strokeWidth="1.4" opacity="0.65" className="dark:fill-blue-800/45 dark:stroke-blue-400" />
+      <text x="348" y="195" textAnchor="middle" fill="#1d4ed8" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-blue-300">Vasto</text>
+      <text x="348" y="208" textAnchor="middle" fill="#1d4ed8" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">lateral</text>
 
-      {/* ── ANTERIOR: Sartorio ── */}
-      <path d="M118,95 Q108,100 104,112 Q106,122 116,125 Q126,122 128,112 Q126,100 118,95 Z" fill="#60a5fa" stroke="#2563eb" strokeWidth="1.3" opacity="0.8" className="dark:fill-blue-700/50 dark:stroke-blue-300" />
-      <line x1="104" y1="108" x2="44" y2="88" stroke="#2563eb" strokeWidth="0.8" className="dark:stroke-blue-400" />
-      <text x="42" y="86" textAnchor="end" fill="#1d4ed8" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-blue-300">Sartorio</text>
+      {/* Vasto medial — crescent wrapping anteromedial side of femur */}
+      <path d="M204,108 Q168,130 150,170 Q142,210 148,252 Q158,282 180,296 Q200,288 210,264 Q218,238 216,212 Q212,180 210,152 Q208,128 204,108 Z"
+        fill="#93c5fd" stroke="#3b82f6" strokeWidth="1.4" opacity="0.65" className="dark:fill-blue-800/45 dark:stroke-blue-400" />
+      <text x="172" y="195" textAnchor="middle" fill="#1d4ed8" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-blue-300">Vasto</text>
+      <text x="172" y="208" textAnchor="middle" fill="#1d4ed8" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">medial</text>
 
-      {/* ── MEDIAL: Aductor largo ── */}
-      <path d="M120,220 Q108,230 100,260 Q105,285 118,290 Q138,285 145,260 Q142,230 130,220 Z" fill="#86efac" stroke="#22c55e" strokeWidth="1.3" opacity="0.7" className="dark:fill-green-800/50 dark:stroke-green-400" />
-      <text x="122" y="256" textAnchor="middle" fill="#15803d" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-green-300">Ad.</text>
-      <text x="122" y="268" textAnchor="middle" fill="#15803d" style={{ fontSize: "7px" }} className="dark:fill-green-300">largo</text>
+      {/* Sartorio — small oval, anteromedial superficial */}
+      <ellipse cx="148" cy="118" rx="16" ry="14" fill="#60a5fa" stroke="#1d4ed8" strokeWidth="1.4" opacity="0.85" className="dark:fill-blue-700/60 dark:stroke-blue-300" />
+      <text x="148" y="122" textAnchor="middle" fill="#1e3a5f" fontWeight="700" style={{ fontSize: "7px" }} className="dark:fill-blue-200">Sart.</text>
 
-      {/* ── MEDIAL: Aductor corto ── */}
-      <path d="M138,218 Q130,220 128,235 Q132,248 142,250 Q152,248 155,235 Q152,220 145,218 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1" opacity="0.6" className="dark:fill-green-900/40 dark:stroke-green-400" />
-      <text x="142" y="238" textAnchor="middle" fill="#15803d" style={{ fontSize: "6.5px" }} className="dark:fill-green-300">Ad. corto</text>
+      {/* ── Lateral intermuscular septum ── */}
+      <line x1="300" y1="264" x2="378" y2="280" stroke="#64748b" strokeWidth="1.2" strokeDasharray="4,2" className="dark:stroke-gray-500" />
+      <text x="392" y="276" fill="#64748b" style={{ fontSize: "5.5px" }} className="dark:fill-gray-400">Septo lat.</text>
 
-      {/* ── MEDIAL: Aductor magno ── */}
-      <path d="M155,240 Q148,258 152,290 Q165,318 190,325 Q210,318 220,295 Q215,260 205,240 Q180,230 155,240 Z" fill="#bbf7d0" stroke="#22c55e" strokeWidth="1.3" opacity="0.6" className="dark:fill-green-900/35 dark:stroke-green-400" />
-      <text x="185" y="288" textAnchor="middle" fill="#15803d" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-green-300">Ad. magno</text>
+      {/* ── Medial intermuscular septum ── */}
+      <line x1="190" y1="296" x2="122" y2="310" stroke="#64748b" strokeWidth="1.2" strokeDasharray="4,2" className="dark:stroke-gray-500" />
 
-      {/* ── MEDIAL: Grácil ── */}
-      <path d="M90,250 Q82,258 80,272 Q84,286 94,290 Q104,286 106,272 Q104,258 96,250 Z" fill="#34d399" stroke="#059669" strokeWidth="1.2" opacity="0.8" className="dark:fill-emerald-800/50 dark:stroke-emerald-400" />
-      <line x1="82" y1="270" x2="30" y2="278" stroke="#059669" strokeWidth="0.8" className="dark:stroke-emerald-400" />
-      <text x="28" y="276" textAnchor="end" fill="#059669" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-emerald-300">Grácil</text>
+      {/* ── TFL / Cintilla iliotibial — thin strip on the lateral superficial surface ── */}
+      <path d="M388,155 Q398,175 402,210 Q400,250 392,270 Q384,260 382,210 Q384,175 388,155 Z"
+        fill="#c4b5fd" stroke="#7c3aed" strokeWidth="1.3" opacity="0.75" className="dark:fill-violet-800/50 dark:stroke-violet-400" />
+      <line x1="402" y1="212" x2="470" y2="198" stroke="#7c3aed" strokeWidth="0.8" className="dark:stroke-violet-400" />
+      <text x="472" y="194" fill="#6d28d9" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-violet-300">Cintilla IT</text>
 
-      {/* ── POSTERIOR: Semimembranoso ── */}
-      <path d="M155,330 Q145,340 142,360 Q148,378 162,382 Q178,378 182,360 Q178,340 168,330 Z" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.3" opacity="0.7" className="dark:fill-red-900/50 dark:stroke-red-400" />
-      <text x="162" y="356" textAnchor="middle" fill="#b91c1c" fontWeight="600" style={{ fontSize: "6.5px" }} className="dark:fill-red-300">Semi-</text>
-      <text x="162" y="367" textAnchor="middle" fill="#b91c1c" style={{ fontSize: "6.5px" }} className="dark:fill-red-300">membranoso</text>
+      {/* ── MEDIAL COMPARTMENT ── */}
+      {/* Aductor largo — triangular, most anterior of adductors */}
+      <path d="M145,300 Q128,314 118,340 Q118,364 132,376 Q150,380 162,370 Q170,352 168,330 Q164,310 154,300 Z"
+        fill="#86efac" stroke="#22c55e" strokeWidth="1.4" opacity="0.7" className="dark:fill-green-800/50 dark:stroke-green-400" />
+      <text x="142" y="340" textAnchor="middle" fill="#15803d" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-green-300">Ad.</text>
+      <text x="142" y="352" textAnchor="middle" fill="#15803d" style={{ fontSize: "7px" }} className="dark:fill-green-300">largo</text>
 
-      {/* ── POSTERIOR: Semitendinoso ── */}
-      <path d="M122,315 Q112,325 110,345 Q114,360 125,364 Q136,360 138,345 Q136,325 128,315 Z" fill="#f87171" stroke="#dc2626" strokeWidth="1.2" opacity="0.7" className="dark:fill-red-800/50 dark:stroke-red-400" />
-      <line x1="112" y1="340" x2="34" y2="348" stroke="#dc2626" strokeWidth="0.8" className="dark:stroke-red-400" />
-      <text x="32" y="346" textAnchor="end" fill="#dc2626" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">Semitendinoso</text>
+      {/* Aductor corto — smaller, deep to longus */}
+      <path d="M170,290 Q160,298 158,316 Q162,332 174,336 Q186,332 188,316 Q186,298 178,290 Z"
+        fill="#4ade80" stroke="#16a34a" strokeWidth="1.1" opacity="0.65" className="dark:fill-green-900/40 dark:stroke-green-400" />
+      <text x="174" y="318" textAnchor="middle" fill="#15803d" fontWeight="600" style={{ fontSize: "6.5px" }} className="dark:fill-green-300">Ad. corto</text>
 
-      {/* ── POSTERIOR: Bíceps femoral (cabeza larga) ── */}
-      <path d="M252,310 Q240,320 238,345 Q242,370 258,378 Q275,370 280,345 Q278,320 268,310 Z" fill="#fecdd3" stroke="#e11d48" strokeWidth="1.3" opacity="0.7" className="dark:fill-rose-900/50 dark:stroke-rose-400" />
-      <text x="258" y="346" textAnchor="middle" fill="#be123c" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-rose-300">Bíceps</text>
-      <text x="258" y="358" textAnchor="middle" fill="#be123c" style={{ fontSize: "6.5px" }} className="dark:fill-rose-300">fem. (CL)</text>
+      {/* Aductor magno — large, deepest, wraps from medial toward posterior */}
+      <path d="M192,288 Q176,308 172,340 Q180,378 204,398 Q232,408 260,400 Q282,388 288,364 Q286,336 272,310 Q256,292 232,284 Q210,284 192,288 Z"
+        fill="#bbf7d0" stroke="#22c55e" strokeWidth="1.4" opacity="0.55" className="dark:fill-green-900/35 dark:stroke-green-400" />
+      <text x="234" y="358" textAnchor="middle" fill="#15803d" fontWeight="700" style={{ fontSize: "8.5px" }} className="dark:fill-green-300">Aductor magno</text>
 
-      {/* ── POSTERIOR: Bíceps femoral (cabeza corta) ── */}
-      <path d="M276,290 Q268,298 266,315 Q270,328 280,330 Q290,328 292,315 Q290,298 282,290 Z" fill="#fda4af" stroke="#e11d48" strokeWidth="1" opacity="0.6" className="dark:fill-rose-800/40 dark:stroke-rose-400" />
-      <line x1="292" y1="310" x2="370" y2="310" stroke="#e11d48" strokeWidth="0.8" className="dark:stroke-rose-400" />
-      <text x="372" y="306" fill="#be123c" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-rose-300">Bíceps fem.</text>
-      <text x="372" y="316" fill="#be123c" style={{ fontSize: "6.5px" }} className="dark:fill-rose-300">(cabeza corta)</text>
+      {/* Grácil — thin strip, most medial and superficial */}
+      <path d="M105,320 Q96,330 94,348 Q98,366 108,372 Q120,368 122,348 Q120,330 112,320 Z"
+        fill="#34d399" stroke="#059669" strokeWidth="1.3" opacity="0.8" className="dark:fill-emerald-800/50 dark:stroke-emerald-400" />
+      <line x1="96" y1="346" x2="36" y2="352" stroke="#059669" strokeWidth="0.8" className="dark:stroke-emerald-400" />
+      <text x="34" y="350" textAnchor="end" fill="#059669" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-emerald-300">Grácil</text>
 
-      {/* ── LATERAL: TFL / cintilla iliotibial ── */}
-      <path d="M298,100 Q310,115 314,140 Q310,165 298,175 Q290,165 288,140 Q290,115 298,100 Z" fill="#c4b5fd" stroke="#7c3aed" strokeWidth="1.3" opacity="0.7" className="dark:fill-violet-800/50 dark:stroke-violet-400" />
-      <line x1="314" y1="138" x2="372" y2="128" stroke="#7c3aed" strokeWidth="0.8" className="dark:stroke-violet-400" />
-      <text x="374" y="124" fill="#6d28d9" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-violet-300">TFL</text>
-      <text x="374" y="134" fill="#6d28d9" style={{ fontSize: "6.5px" }} className="dark:fill-violet-300">cintilla IT</text>
+      {/* ── POSTERIOR COMPARTMENT ── */}
+      {/* Semimembranoso — large oval, posteromedial */}
+      <path d="M168,392 Q156,404 152,424 Q158,444 174,450 Q194,446 200,426 Q198,404 186,392 Z"
+        fill="#fca5a5" stroke="#ef4444" strokeWidth="1.4" opacity="0.7" className="dark:fill-red-900/50 dark:stroke-red-400" />
+      <text x="176" y="420" textAnchor="middle" fill="#b91c1c" fontWeight="600" style={{ fontSize: "6.5px" }} className="dark:fill-red-300">Semimem-</text>
+      <text x="176" y="432" textAnchor="middle" fill="#b91c1c" style={{ fontSize: "6.5px" }} className="dark:fill-red-300">branoso</text>
 
-      {/* ── Neurovascular bundle (triangle of Scarpa) ── */}
-      <circle cx="140" cy="175" r="5.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.2" />
-      <circle cx="152" cy="182" r="5" fill="#3b82f6" stroke="#1d4ed8" strokeWidth="1.2" />
-      <circle cx="128" cy="182" r="3.5" fill="#fbbf24" stroke="#b45309" strokeWidth="1" />
-      <line x1="130" y1="172" x2="34" y2="152" stroke="#b91c1c" strokeWidth="0.8" />
-      <text x="32" y="144" textAnchor="end" fill="#ef4444" fontWeight="700" style={{ fontSize: "7.5px" }}>A. femoral</text>
-      <text x="32" y="155" textAnchor="end" fill="#3b82f6" fontWeight="700" style={{ fontSize: "7.5px" }}>V. femoral</text>
-      <text x="32" y="166" textAnchor="end" fill="#eab308" fontWeight="700" style={{ fontSize: "7.5px" }}>N. femoral</text>
+      {/* Semitendinoso — smaller oval, medial to semimembranoso */}
+      <path d="M132,378 Q120,390 116,408 Q120,424 132,430 Q146,426 150,408 Q148,390 140,378 Z"
+        fill="#f87171" stroke="#dc2626" strokeWidth="1.3" opacity="0.75" className="dark:fill-red-800/50 dark:stroke-red-400" />
+      <line x1="118" y1="405" x2="36" y2="415" stroke="#dc2626" strokeWidth="0.8" className="dark:stroke-red-400" />
+      <text x="34" y="412" textAnchor="end" fill="#dc2626" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">Semitendinoso</text>
 
-      {/* ── N. ciático ── */}
-      <circle cx="230" cy="325" r="5" fill="#facc15" stroke="#a16207" strokeWidth="1.5" />
-      <line x1="236" y1="325" x2="372" y2="340" stroke="#a16207" strokeWidth="0.8" className="dark:stroke-yellow-500" />
-      <text x="374" y="338" fill="#ca8a04" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-yellow-300">N. ciático</text>
+      {/* Bíceps femoral cabeza larga — posterolateral */}
+      <path d="M310,374 Q296,386 290,410 Q296,436 314,444 Q336,438 344,416 Q342,392 328,378 Z"
+        fill="#fecdd3" stroke="#e11d48" strokeWidth="1.4" opacity="0.7" className="dark:fill-rose-900/50 dark:stroke-rose-400" />
+      <text x="316" y="412" textAnchor="middle" fill="#be123c" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-rose-300">Bíceps</text>
+      <text x="316" y="424" textAnchor="middle" fill="#be123c" style={{ fontSize: "6.5px" }} className="dark:fill-rose-300">fem. (CL)</text>
 
-      {/* ── V. safena magna ── */}
-      <circle cx="92" cy="215" r="3" fill="#818cf8" stroke="#4f46e5" strokeWidth="1" />
-      <line x1="89" y1="215" x2="34" y2="215" stroke="#4f46e5" strokeWidth="0.6" />
-      <text x="32" y="218" textAnchor="end" fill="#6366f1" style={{ fontSize: "6.5px" }}>V. safena magna</text>
+      {/* Bíceps femoral cabeza corta — lateral, adjacent to cabeza larga */}
+      <path d="M336,340 Q326,350 322,372 Q328,386 340,388 Q354,384 358,368 Q356,350 346,340 Z"
+        fill="#fda4af" stroke="#e11d48" strokeWidth="1.1" opacity="0.65" className="dark:fill-rose-800/40 dark:stroke-rose-400" />
+      <line x1="358" y1="362" x2="472" y2="356" stroke="#e11d48" strokeWidth="0.8" className="dark:stroke-rose-400" />
+      <text x="474" y="352" fill="#be123c" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-rose-300">Bíceps fem.</text>
+      <text x="474" y="362" fill="#be123c" style={{ fontSize: "6.5px" }} className="dark:fill-rose-300">(cabeza corta)</text>
 
-      {/* Septum intermuscular lateral */}
-      <line x1="240" y1="210" x2="295" y2="175" stroke="#94a3b8" strokeWidth="0.8" strokeDasharray="3,2" className="dark:stroke-gray-500" />
-      {/* Septum intermuscular medial */}
-      <line x1="155" y1="215" x2="100" y2="250" stroke="#94a3b8" strokeWidth="0.8" strokeDasharray="3,2" className="dark:stroke-gray-500" />
+      {/* ── NEUROVASCULAR ── */}
+      {/* Femoral vessels — anteromedial, in adductor canal */}
+      <circle cx="168" cy="222" r="6" fill="#ef4444" stroke="#991b1b" strokeWidth="1.3" />
+      <text x="168" y="224" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "5px" }}>A</text>
+      <circle cx="182" cy="230" r="5.5" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1.2" />
+      <text x="182" y="232" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "5px" }}>V</text>
+      <line x1="160" y1="216" x2="42" y2="188" stroke="#991b1b" strokeWidth="0.8" />
+      <text x="40" y="180" textAnchor="end" fill="#ef4444" fontWeight="700" style={{ fontSize: "7.5px" }}>A. femoral</text>
+      <text x="40" y="191" textAnchor="end" fill="#3b82f6" fontWeight="700" style={{ fontSize: "7.5px" }}>V. femoral</text>
 
-      {/* Orientation markers */}
-      <text x="210" y="52" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">ANTERIOR</text>
-      <text x="210" y="420" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">POSTERIOR</text>
-      <text x="18" y="210" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">MED</text>
-      <text x="400" y="210" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">LAT</text>
+      {/* V. femoral profunda */}
+      <circle cx="198" cy="266" r="4" fill="#60a5fa" stroke="#1d4ed8" strokeWidth="1" opacity="0.7" />
+      <text x="198" y="268" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "3.5px" }}>VP</text>
 
-      {/* Legend */}
-      <rect x="60" y="428" width="10" height="10" rx="2" fill="#3b82f6" opacity="0.6" />
-      <text x="74" y="437" fill="#3b82f6" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-blue-400">Anterior</text>
-      <rect x="130" y="428" width="10" height="10" rx="2" fill="#22c55e" opacity="0.6" />
-      <text x="144" y="437" fill="#22c55e" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-green-400">Medial</text>
-      <rect x="196" y="428" width="10" height="10" rx="2" fill="#ef4444" opacity="0.6" />
-      <text x="210" y="437" fill="#ef4444" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-red-400">Posterior</text>
-      <rect x="274" y="428" width="10" height="10" rx="2" fill="#7c3aed" opacity="0.6" />
-      <text x="288" y="437" fill="#7c3aed" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-violet-400">Lateral</text>
+      {/* N. ciático — posterior, between adductor magnus and hamstrings */}
+      <circle cx="280" cy="380" r="6" fill="#facc15" stroke="#92400e" strokeWidth="1.5" />
+      <line x1="288" y1="376" x2="472" y2="382" stroke="#a16207" strokeWidth="0.8" className="dark:stroke-yellow-500" />
+      <text x="474" y="380" fill="#ca8a04" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-yellow-300">N. ciático</text>
+
+      {/* V. safena magna — subcutaneous, medial */}
+      <circle cx="102" cy="276" r="3.5" fill="#818cf8" stroke="#4f46e5" strokeWidth="1" />
+      <line x1="98" y1="276" x2="36" y2="276" stroke="#4f46e5" strokeWidth="0.6" />
+      <text x="34" y="280" textAnchor="end" fill="#6366f1" style={{ fontSize: "6.5px" }}>V. safena magna</text>
+
+      {/* ── Orientation ── */}
+      <text x="260" y="52" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">ANTERIOR</text>
+      <text x="260" y="490" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">POSTERIOR</text>
+      <text x="24" y="260" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">MED</text>
+      <text x="496" y="260" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">LAT</text>
+
+      {/* ── Legend ── */}
+      <g transform="translate(70,504)">
+        {[
+          { c: "#3b82f6", l: "Anterior" },
+          { c: "#22c55e", l: "Medial" },
+          { c: "#ef4444", l: "Posterior" },
+          { c: "#7c3aed", l: "Lateral (IT)" },
+        ].map((item, i) => (
+          <g key={`tlg${i}`} transform={`translate(${i * 100},0)`}>
+            <rect x="0" y="0" width="10" height="10" rx="2" fill={item.c} opacity="0.6" />
+            <text x="14" y="9" fill={item.c} fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-current">{item.l}</text>
+          </g>
+        ))}
+      </g>
+
+      {/* Level label */}
+      <text x="260" y="528" textAnchor="middle" fill="#9ca3af" style={{ fontSize: "7px" }} className="dark:fill-gray-500">Corte axial — tercio medio del muslo</text>
     </svg>
   );
 }
 
-/* ── Leg (below knee) axial MRI diagram ── */
+/* ── Leg (below knee) axial MRI diagram (mid-calf, based on Radiopaedia) ── */
 function LegAxial() {
   return (
-    <svg viewBox="0 0 420 440" className="w-full max-w-[420px] mx-auto">
-      {/* Skin outline */}
-      <ellipse cx="210" cy="210" rx="150" ry="160" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="4,3" className="dark:stroke-gray-600" />
-      <ellipse cx="210" cy="210" rx="142" ry="152" fill="#fef9c3" opacity="0.1" className="dark:fill-yellow-900/10" />
+    <svg viewBox="0 0 520 540" className="w-full max-w-[480px] mx-auto">
+      {/* ── Skin & subcutaneous fat ── */}
+      <path d="M260,60 C370,60 430,120 440,200 Q445,280 420,350 Q390,420 260,440 Q130,420 100,350 Q75,280 80,200 C90,120 150,60 260,60 Z"
+        fill="#fdf4e8" stroke="#c9a87c" strokeWidth="2" className="dark:fill-[#2a2420] dark:stroke-[#7a6550]" />
+      <path d="M260,70 C362,70 420,126 428,200 Q432,274 410,342 Q382,410 260,428 Q138,410 110,342 Q88,274 92,200 C100,126 158,70 260,70 Z"
+        fill="#fef6ee" stroke="none" className="dark:fill-[#252018]" />
 
-      {/* ── TIBIA ── */}
-      <path d="M145,155 Q155,130 195,125 Q220,128 230,148 Q228,178 215,195 Q190,205 160,200 Q142,185 145,155 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="2.5" className="dark:fill-gray-600 dark:stroke-gray-400" />
-      <text x="188" y="168" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" style={{ fontSize: "9px" }} fontWeight="600">Tibia</text>
+      {/* ── Crural fascia ── */}
+      <path d="M260,78 C356,78 412,130 420,198 Q424,268 404,334 Q378,400 260,416 Q142,400 116,334 Q96,268 100,198 C108,130 164,78 260,78 Z"
+        fill="none" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,2" className="dark:stroke-gray-600" />
 
-      {/* ── FIBULA ── */}
-      <ellipse cx="310" cy="178" rx="16" ry="20" fill="#e2e8f0" stroke="#64748b" strokeWidth="2.5" className="dark:fill-gray-600 dark:stroke-gray-400" />
-      <text x="310" y="182" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" style={{ fontSize: "7.5px" }} fontWeight="600">Fíbula</text>
+      {/* ── TIBIA (anteromedial, triangular cross-section) ── */}
+      <path d="M175,140 Q195,115 235,110 Q262,115 272,140 Q268,178 250,198 Q220,210 186,204 Q168,190 170,162 Z"
+        fill="#d4d8e0" stroke="#5a6270" strokeWidth="3" className="dark:fill-gray-600 dark:stroke-gray-400" />
+      <text x="220" y="165" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" style={{ fontSize: "10px" }} fontWeight="700">Tibia</text>
+      {/* Tibial crest (anterior subcutaneous border) */}
+      <path d="M200,112 Q218,108 236,112" fill="none" stroke="#475569" strokeWidth="2" className="dark:stroke-gray-400" />
 
-      {/* Interosseous membrane */}
-      <line x1="232" y1="168" x2="294" y2="175" stroke="#94a3b8" strokeWidth="1.2" strokeDasharray="3,2" className="dark:stroke-gray-500" />
-      <text x="262" y="163" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "6.5px" }}>Membr. interósea</text>
+      {/* ── FIBULA (posterolateral, small round) ── */}
+      <ellipse cx="368" cy="200" rx="16" ry="20" fill="#d4d8e0" stroke="#5a6270" strokeWidth="2.5" className="dark:fill-gray-600 dark:stroke-gray-400" />
+      <text x="368" y="204" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" style={{ fontSize: "8px" }} fontWeight="700">Fíb.</text>
 
-      {/* ── ANTERIOR: Tibial anterior ── */}
-      <path d="M200,95 Q215,85 235,90 Q260,105 265,135 Q258,158 240,162 Q225,158 215,145 Q200,120 200,95 Z" fill="#93c5fd" stroke="#3b82f6" strokeWidth="1.5" opacity="0.7" className="dark:fill-blue-800/50 dark:stroke-blue-400" />
-      <text x="235" y="120" textAnchor="middle" fill="#1d4ed8" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-blue-300">Tibial</text>
-      <text x="235" y="132" textAnchor="middle" fill="#1d4ed8" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">anterior</text>
+      {/* ── Interosseous membrane ── */}
+      <line x1="274" y1="172" x2="352" y2="194" stroke="#64748b" strokeWidth="1.5" strokeDasharray="4,2" className="dark:stroke-gray-500" />
+      <text x="312" y="178" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "6px" }} transform="rotate(8,312,178)">Membr. interósea</text>
 
-      {/* ── ANTERIOR: EHL ── */}
-      <path d="M248,100 Q258,95 268,100 Q280,115 282,140 Q278,155 268,158 Q258,155 252,140 Q248,115 248,100 Z" fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.2" opacity="0.6" className="dark:fill-blue-900/40 dark:stroke-blue-400" />
-      <text x="265" y="128" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-blue-300">EHL</text>
+      {/* ── ANTERIOR COMPARTMENT ── */}
+      {/* Tibial anterior — largest, medial, directly lateral to tibia */}
+      <path d="M244,90 Q262,82 284,88 Q310,104 318,142 Q316,172 300,186 Q280,192 264,186 Q254,176 250,156 Q244,126 244,90 Z"
+        fill="#93c5fd" stroke="#2563eb" strokeWidth="1.5" opacity="0.75" className="dark:fill-blue-800/50 dark:stroke-blue-400" />
+      <text x="282" y="132" textAnchor="middle" fill="#1d4ed8" fontWeight="700" style={{ fontSize: "8.5px" }} className="dark:fill-blue-300">Tibial</text>
+      <text x="282" y="145" textAnchor="middle" fill="#1d4ed8" style={{ fontSize: "8px" }} className="dark:fill-blue-300">anterior</text>
 
-      {/* ── ANTERIOR: EDL ── */}
-      <path d="M275,100 Q285,96 295,102 Q305,120 305,145 Q300,162 290,165 Q280,160 275,145 Q272,120 275,100 Z" fill="#dbeafe" stroke="#3b82f6" strokeWidth="1.1" opacity="0.6" className="dark:fill-blue-900/35 dark:stroke-blue-400" />
-      <text x="290" y="132" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-blue-300">EDL</text>
+      {/* EHL — between tibialis anterior and EDL */}
+      <path d="M300,98 Q314,92 326,100 Q340,118 342,150 Q338,174 326,180 Q314,176 308,158 Q302,130 300,98 Z"
+        fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.2" opacity="0.65" className="dark:fill-blue-900/40 dark:stroke-blue-400" />
+      <text x="322" y="142" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">EHL</text>
 
-      {/* ── LATERAL: Peroneo largo ── */}
-      <path d="M320,140 Q338,148 345,180 Q342,220 332,240 Q318,245 310,230 Q305,200 308,170 Q312,148 320,140 Z" fill="#c4b5fd" stroke="#7c3aed" strokeWidth="1.3" opacity="0.7" className="dark:fill-violet-800/50 dark:stroke-violet-400" />
-      <text x="330" y="188" textAnchor="middle" fill="#6d28d9" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-violet-300">Peroneo</text>
-      <text x="330" y="200" textAnchor="middle" fill="#6d28d9" style={{ fontSize: "7px" }} className="dark:fill-violet-300">largo</text>
+      {/* EDL — most lateral in anterior compartment */}
+      <path d="M332,102 Q344,96 356,104 Q368,122 370,156 Q366,180 354,186 Q342,182 336,162 Q330,132 332,102 Z"
+        fill="#dbeafe" stroke="#3b82f6" strokeWidth="1.1" opacity="0.6" className="dark:fill-blue-900/35 dark:stroke-blue-400" />
+      <text x="352" y="146" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-300">EDL</text>
 
-      {/* ── LATERAL: Peroneo corto ── */}
-      <path d="M302,200 Q296,210 296,235 Q300,252 310,255 Q320,252 322,235 Q320,210 314,200 Z" fill="#a78bfa" stroke="#7c3aed" strokeWidth="1.2" opacity="0.6" className="dark:fill-violet-900/45 dark:stroke-violet-400" />
-      <line x1="322" y1="228" x2="382" y2="228" stroke="#7c3aed" strokeWidth="0.8" className="dark:stroke-violet-400" />
-      <text x="384" y="224" fill="#6d28d9" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-violet-300">Peroneo</text>
-      <text x="384" y="234" fill="#6d28d9" style={{ fontSize: "7px" }} className="dark:fill-violet-300">corto</text>
+      {/* ── LATERAL COMPARTMENT ── */}
+      {/* Peroneo largo — superficial, lateral to fibula */}
+      <path d="M378,160 Q400,170 410,208 Q408,254 396,278 Q380,288 368,274 Q358,248 360,218 Q364,180 378,160 Z"
+        fill="#c4b5fd" stroke="#7c3aed" strokeWidth="1.4" opacity="0.7" className="dark:fill-violet-800/50 dark:stroke-violet-400" />
+      <text x="390" y="218" textAnchor="middle" fill="#6d28d9" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-violet-300">Peroneo</text>
+      <text x="390" y="231" textAnchor="middle" fill="#6d28d9" style={{ fontSize: "7px" }} className="dark:fill-violet-300">largo</text>
 
-      {/* ── DEEP POSTERIOR: Tibial posterior ── */}
-      <path d="M168,210 Q158,220 155,245 Q160,270 175,278 Q192,270 195,245 Q190,220 180,210 Z" fill="#fdba74" stroke="#f97316" strokeWidth="1.3" opacity="0.7" className="dark:fill-orange-800/50 dark:stroke-orange-400" />
-      <text x="175" y="244" textAnchor="middle" fill="#c2410c" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-orange-300">Tibial</text>
-      <text x="175" y="256" textAnchor="middle" fill="#c2410c" style={{ fontSize: "7px" }} className="dark:fill-orange-300">post.</text>
+      {/* Peroneo corto — deep, posterior to fibula */}
+      <path d="M358,230 Q350,244 350,268 Q354,290 366,296 Q380,292 384,268 Q382,244 374,230 Z"
+        fill="#a78bfa" stroke="#7c3aed" strokeWidth="1.2" opacity="0.65" className="dark:fill-violet-900/45 dark:stroke-violet-400" />
+      <line x1="384" y1="264" x2="478" y2="258" stroke="#7c3aed" strokeWidth="0.8" className="dark:stroke-violet-400" />
+      <text x="480" y="254" fill="#6d28d9" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-violet-300">Peroneo</text>
+      <text x="480" y="265" fill="#6d28d9" style={{ fontSize: "7px" }} className="dark:fill-violet-300">corto</text>
 
-      {/* ── DEEP POSTERIOR: FDL ── */}
-      <path d="M148,215 Q138,225 135,248 Q140,268 150,272 Q160,268 162,248 Q158,225 152,215 Z" fill="#fed7aa" stroke="#ea580c" strokeWidth="1.2" opacity="0.65" className="dark:fill-orange-900/40 dark:stroke-orange-400" />
-      <line x1="135" y1="245" x2="42" y2="252" stroke="#ea580c" strokeWidth="0.8" className="dark:stroke-orange-400" />
-      <text x="40" y="250" textAnchor="end" fill="#ea580c" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-orange-300">FDL</text>
+      {/* ── Anterior crural septum (between anterior & lateral) ── */}
+      <line x1="368" y1="180" x2="386" y2="164" stroke="#64748b" strokeWidth="0.8" strokeDasharray="3,2" className="dark:stroke-gray-500" />
 
-      {/* ── DEEP POSTERIOR: FHL ── */}
-      <path d="M200,218 Q210,225 225,240 Q240,268 235,288 Q225,295 210,288 Q195,268 192,240 Q192,225 200,218 Z" fill="#fde68a" stroke="#d97706" strokeWidth="1.2" opacity="0.6" className="dark:fill-amber-900/40 dark:stroke-amber-400" />
-      <text x="220" y="264" textAnchor="middle" fill="#b45309" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-amber-300">FHL</text>
+      {/* ── DEEP POSTERIOR COMPARTMENT ── */}
+      {/* Tibial posterior — deepest, adjacent to interosseous membrane, between tibia and fibula */}
+      <path d="M224,216 Q240,208 268,210 Q304,218 326,236 Q336,260 328,282 Q310,296 284,298 Q256,296 236,282 Q220,262 218,240 Q218,224 224,216 Z"
+        fill="#fdba74" stroke="#ea580c" strokeWidth="1.4" opacity="0.65" className="dark:fill-orange-800/50 dark:stroke-orange-400" />
+      <text x="276" y="258" textAnchor="middle" fill="#c2410c" fontWeight="700" style={{ fontSize: "8.5px" }} className="dark:fill-orange-300">Tibial posterior</text>
 
-      {/* ── SUPERFICIAL POSTERIOR: Gastrocnemio medial ── */}
-      <path d="M115,288 Q100,305 98,335 Q105,360 130,368 Q155,365 165,345 Q168,320 158,298 Q140,285 115,288 Z" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.3" opacity="0.7" className="dark:fill-red-900/50 dark:stroke-red-400" />
-      <text x="132" y="330" textAnchor="middle" fill="#b91c1c" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">Gastro.</text>
-      <text x="132" y="342" textAnchor="middle" fill="#b91c1c" style={{ fontSize: "7px" }} className="dark:fill-red-300">medial</text>
+      {/* FDL — medial, adjacent to posterior tibia */}
+      <path d="M178,216 Q168,230 164,258 Q170,286 184,296 Q200,292 206,264 Q204,234 194,218 Z"
+        fill="#fed7aa" stroke="#ea580c" strokeWidth="1.2" opacity="0.65" className="dark:fill-orange-900/40 dark:stroke-orange-400" />
+      <text x="186" y="260" textAnchor="middle" fill="#c2410c" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-orange-300">FDL</text>
 
-      {/* ── SUPERFICIAL POSTERIOR: Gastrocnemio lateral ── */}
-      <path d="M250,288 Q270,298 280,320 Q278,348 262,360 Q240,365 225,352 Q215,330 218,305 Q228,288 250,288 Z" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.3" opacity="0.7" className="dark:fill-red-900/50 dark:stroke-red-400" />
-      <text x="250" y="326" textAnchor="middle" fill="#b91c1c" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">Gastro.</text>
-      <text x="250" y="338" textAnchor="middle" fill="#b91c1c" style={{ fontSize: "7px" }} className="dark:fill-red-300">lateral</text>
+      {/* FHL — lateral, adjacent to posterior fibula */}
+      <path d="M320,260 Q330,270 342,290 Q350,318 344,340 Q332,350 316,340 Q302,320 296,296 Q298,272 312,260 Z"
+        fill="#fde68a" stroke="#d97706" strokeWidth="1.2" opacity="0.6" className="dark:fill-amber-900/40 dark:stroke-amber-400" />
+      <text x="324" y="306" textAnchor="middle" fill="#b45309" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-amber-300">FHL</text>
 
-      {/* ── SUPERFICIAL POSTERIOR: Sóleo ── */}
-      <path d="M165,348 Q175,355 195,358 Q215,355 225,348 Q220,370 210,378 Q195,382 180,378 Q170,370 165,348 Z" fill="#f87171" stroke="#dc2626" strokeWidth="1.1" opacity="0.6" className="dark:fill-red-800/40 dark:stroke-red-400" />
-      <text x="195" y="368" textAnchor="middle" fill="#b91c1c" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">Sóleo</text>
+      {/* ── Transverse intermuscular septum (separates deep from superficial posterior) ── */}
+      <line x1="148" y1="310" x2="340" y2="340" stroke="#64748b" strokeWidth="0.8" strokeDasharray="4,2" className="dark:stroke-gray-500" />
+      <text x="244" y="320" textAnchor="middle" fill="#64748b" style={{ fontSize: "5px" }} className="dark:fill-gray-500">Septo transverso</text>
 
-      {/* ── Neurovascular: A/V tibial anterior ── */}
-      <circle cx="252" cy="108" r="3.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.2" />
-      <circle cx="260" cy="108" r="3" fill="#3b82f6" stroke="#1d4ed8" strokeWidth="1" />
-      <line x1="264" y1="106" x2="382" y2="86" stroke="#b91c1c" strokeWidth="0.8" />
-      <text x="384" y="82" fill="#ef4444" fontWeight="700" style={{ fontSize: "7.5px" }}>A. tibial ant.</text>
-      <text x="384" y="92" fill="#3b82f6" fontWeight="600" style={{ fontSize: "7px" }}>V. tibial ant.</text>
+      {/* ── SUPERFICIAL POSTERIOR COMPARTMENT ── */}
+      {/* Gastrocnemio medial — large, posteromedial bulk */}
+      <path d="M130,316 Q112,336 108,370 Q114,404 142,416 Q172,418 194,402 Q206,378 202,348 Q194,324 170,314 Q148,312 130,316 Z"
+        fill="#fca5a5" stroke="#ef4444" strokeWidth="1.4" opacity="0.7" className="dark:fill-red-900/50 dark:stroke-red-400" />
+      <text x="156" y="366" textAnchor="middle" fill="#b91c1c" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-red-300">Gastrocnemio</text>
+      <text x="156" y="380" textAnchor="middle" fill="#b91c1c" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">medial</text>
 
-      {/* ── Neurovascular: A/V tibial posterior ── */}
-      <circle cx="165" cy="280" r="3.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.2" />
-      <circle cx="158" cy="286" r="3" fill="#3b82f6" stroke="#1d4ed8" strokeWidth="1" />
-      <line x1="155" y1="290" x2="42" y2="310" stroke="#b91c1c" strokeWidth="0.8" />
-      <text x="40" y="306" textAnchor="end" fill="#ef4444" fontWeight="700" style={{ fontSize: "7.5px" }}>A/V tibial post.</text>
+      {/* Gastrocnemio lateral — large, posterolateral bulk */}
+      <path d="M302,326 Q322,334 338,356 Q342,386 328,406 Q308,418 282,414 Q260,404 252,382 Q248,354 258,336 Q276,322 302,326 Z"
+        fill="#fca5a5" stroke="#ef4444" strokeWidth="1.4" opacity="0.7" className="dark:fill-red-900/50 dark:stroke-red-400" />
+      <text x="298" y="370" textAnchor="middle" fill="#b91c1c" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-red-300">Gastrocnemio</text>
+      <text x="298" y="384" textAnchor="middle" fill="#b91c1c" style={{ fontSize: "7.5px" }} className="dark:fill-red-300">lateral</text>
 
-      {/* ── Neurovascular: A. peronea ── */}
-      <circle cx="280" cy="268" r="3" fill="#ef4444" stroke="#b91c1c" strokeWidth="1" />
-      <line x1="284" y1="268" x2="382" y2="262" stroke="#b91c1c" strokeWidth="0.7" />
-      <text x="384" y="266" fill="#ef4444" style={{ fontSize: "7px" }}>A. peronea</text>
+      {/* Sóleo — large, flat, deep to gastrocnemius, spanning both sides */}
+      <path d="M190,296 Q218,290 260,288 Q302,290 330,298 Q340,316 338,340 Q318,354 260,358 Q202,354 182,340 Q178,316 190,296 Z"
+        fill="#f87171" stroke="#dc2626" strokeWidth="1.2" opacity="0.6" className="dark:fill-red-800/40 dark:stroke-red-400" />
+      <text x="260" y="330" textAnchor="middle" fill="#b91c1c" fontWeight="700" style={{ fontSize: "9px" }} className="dark:fill-red-300">Sóleo</text>
 
-      {/* ── N. peroneo profundo ── */}
-      <circle cx="245" cy="100" r="3" fill="#facc15" stroke="#a16207" strokeWidth="1.2" />
-      <line x1="245" y1="96" x2="340" y2="68" stroke="#a16207" strokeWidth="0.7" />
-      <text x="342" y="66" fill="#ca8a04" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-yellow-300">N. peroneo prof.</text>
+      {/* Plantar tendon (tiny) */}
+      <circle cx="240" cy="346" r="2" fill="#fecaca" stroke="#ef4444" strokeWidth="0.8" opacity="0.7" />
+      <text x="240" y="358" textAnchor="middle" fill="#ef4444" style={{ fontSize: "4.5px" }}>Plant.</text>
 
-      {/* ── N. tibial ── */}
-      <circle cx="172" cy="290" r="3" fill="#facc15" stroke="#a16207" strokeWidth="1.2" />
-      <line x1="168" y1="294" x2="42" y2="330" stroke="#a16207" strokeWidth="0.7" />
-      <text x="40" y="328" textAnchor="end" fill="#ca8a04" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-yellow-300">N. tibial</text>
+      {/* ── NEUROVASCULAR ── */}
+      {/* A/V tibial anterior — between tibialis anterior and EHL on interosseous membrane */}
+      <circle cx="302" cy="100" r="4" fill="#ef4444" stroke="#991b1b" strokeWidth="1.3" />
+      <text x="302" y="102" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>A</text>
+      <circle cx="312" cy="100" r="3.5" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1" />
+      <text x="312" y="102" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4px" }}>V</text>
+      <line x1="316" y1="96" x2="478" y2="82" stroke="#991b1b" strokeWidth="0.8" />
+      <text x="480" y="78" fill="#ef4444" fontWeight="700" style={{ fontSize: "7.5px" }}>A/V tibial ant.</text>
 
-      {/* ── V. safena magna ── */}
-      <circle cx="130" cy="195" r="2.5" fill="#818cf8" stroke="#4f46e5" strokeWidth="1" />
-      <line x1="127" y1="195" x2="42" y2="195" stroke="#4f46e5" strokeWidth="0.6" />
-      <text x="40" y="198" textAnchor="end" fill="#6366f1" style={{ fontSize: "6.5px" }}>V. safena</text>
+      {/* N. peroneo profundo */}
+      <circle cx="294" cy="92" r="3" fill="#facc15" stroke="#92400e" strokeWidth="1.2" />
+      <line x1="294" y1="88" x2="440" y2="68" stroke="#a16207" strokeWidth="0.7" />
+      <text x="442" y="66" fill="#ca8a04" fontWeight="700" style={{ fontSize: "7px" }} className="dark:fill-yellow-300">N. peroneo prof.</text>
 
-      {/* Orientation markers */}
-      <text x="210" y="52" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">ANTERIOR</text>
-      <text x="210" y="415" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">POSTERIOR</text>
-      <text x="18" y="210" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">MED</text>
-      <text x="400" y="210" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "9px" }} fontWeight="600">LAT</text>
+      {/* A/V tibial posterior — between FDL and tibialis posterior */}
+      <circle cx="206" cy="282" r="4" fill="#ef4444" stroke="#991b1b" strokeWidth="1.3" />
+      <text x="206" y="284" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>A</text>
+      <circle cx="196" cy="288" r="3.5" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1" />
+      <text x="196" y="290" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4px" }}>V</text>
+      <line x1="192" y1="292" x2="42" y2="330" stroke="#991b1b" strokeWidth="0.8" />
+      <text x="40" y="326" textAnchor="end" fill="#ef4444" fontWeight="700" style={{ fontSize: "7.5px" }}>A/V tibial post.</text>
 
-      {/* Legend */}
-      <rect x="36" y="428" width="10" height="10" rx="2" fill="#3b82f6" opacity="0.6" />
-      <text x="50" y="437" fill="#3b82f6" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-blue-400">Anterior</text>
-      <rect x="112" y="428" width="10" height="10" rx="2" fill="#7c3aed" opacity="0.6" />
-      <text x="126" y="437" fill="#7c3aed" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-violet-400">Lateral</text>
-      <rect x="180" y="428" width="10" height="10" rx="2" fill="#f97316" opacity="0.6" />
-      <text x="194" y="437" fill="#f97316" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-orange-400">Post. prof.</text>
-      <rect x="264" y="428" width="10" height="10" rx="2" fill="#ef4444" opacity="0.6" />
-      <text x="278" y="437" fill="#ef4444" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-red-400">Post. superf.</text>
+      {/* N. tibial */}
+      <circle cx="216" cy="294" r="3" fill="#facc15" stroke="#92400e" strokeWidth="1.2" />
+      <line x1="212" y1="298" x2="42" y2="348" stroke="#a16207" strokeWidth="0.7" />
+      <text x="40" y="346" textAnchor="end" fill="#ca8a04" fontWeight="700" style={{ fontSize: "7px" }} className="dark:fill-yellow-300">N. tibial</text>
+
+      {/* A. peronea — between tibialis posterior and FHL */}
+      <circle cx="330" cy="284" r="3.5" fill="#ef4444" stroke="#991b1b" strokeWidth="1" />
+      <line x1="334" y1="282" x2="478" y2="282" stroke="#991b1b" strokeWidth="0.7" />
+      <text x="480" y="286" fill="#ef4444" style={{ fontSize: "7px" }}>A. peronea</text>
+
+      {/* V. safena magna — subcutaneous, posteromedial */}
+      <circle cx="142" cy="228" r="3.5" fill="#818cf8" stroke="#4f46e5" strokeWidth="1" />
+      <line x1="138" y1="228" x2="42" y2="228" stroke="#4f46e5" strokeWidth="0.6" />
+      <text x="40" y="232" textAnchor="end" fill="#6366f1" style={{ fontSize: "6.5px" }}>V. safena magna</text>
+
+      {/* V. safena menor — subcutaneous, posterior midline */}
+      <circle cx="260" cy="420" r="3" fill="#818cf8" stroke="#4f46e5" strokeWidth="1" />
+      <text x="260" y="434" textAnchor="middle" fill="#6366f1" style={{ fontSize: "6px" }}>V. safena menor</text>
+
+      {/* ── Orientation ── */}
+      <text x="260" y="50" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">ANTERIOR</text>
+      <text x="260" y="478" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">POSTERIOR</text>
+      <text x="30" y="260" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">MED</text>
+      <text x="490" y="260" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" style={{ fontSize: "10px" }} fontWeight="600">LAT</text>
+
+      {/* ── Legend ── */}
+      <g transform="translate(50,494)">
+        {[
+          { c: "#3b82f6", l: "Anterior" },
+          { c: "#7c3aed", l: "Lateral" },
+          { c: "#f97316", l: "Post. profundo" },
+          { c: "#ef4444", l: "Post. superficial" },
+        ].map((item, i) => (
+          <g key={`llg${i}`} transform={`translate(${i * 112},0)`}>
+            <rect x="0" y="0" width="10" height="10" rx="2" fill={item.c} opacity="0.6" />
+            <text x="14" y="9" fill={item.c} fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-current">{item.l}</text>
+          </g>
+        ))}
+      </g>
+
+      {/* Level label */}
+      <text x="260" y="524" textAnchor="middle" fill="#9ca3af" style={{ fontSize: "7px" }} className="dark:fill-gray-500">Corte axial — tercio medio de la pierna</text>
     </svg>
   );
 }
@@ -3424,232 +3502,261 @@ function MRIThighLegSheet() {
   );
 }
 
-/* ── Neck axial anatomy diagram ── */
+/* ── Neck axial anatomy diagram (suprahyoid, oropharynx C2-C3, based on Radiopaedia/Harnsberger) ── */
 function NeckAxial() {
   return (
-    <svg viewBox="0 0 500 520" className="w-full max-w-[460px] mx-auto">
-      <defs>
-        <marker id="nk-arrow" markerWidth="5" markerHeight="4" refX="5" refY="2" orient="auto"><path d="M0,0 L5,2 L0,4" fill="#6b7280" /></marker>
-      </defs>
-
+    <svg viewBox="0 0 540 560" className="w-full max-w-[500px] mx-auto">
       {/* ── Skin outline ── */}
-      <path d="M250,52 C340,52 420,100 430,180 C440,260 420,340 390,380 Q350,420 250,430 Q150,420 110,380 C80,340 60,260 70,180 C80,100 160,52 250,52 Z"
-        fill="#fef2e8" stroke="#c4a882" strokeWidth="2.5" className="dark:fill-[#2a2420] dark:stroke-[#8a7560]" />
-      {/* Subcutaneous fat */}
-      <path d="M250,62 C332,62 406,106 416,182 C424,252 408,332 380,370 Q344,408 250,418 Q156,408 120,370 C92,332 76,252 84,182 C94,106 168,62 250,62 Z"
-        fill="#fde9d4" stroke="none" className="dark:fill-[#302820]" />
+      <path d="M270,52 C370,52 450,108 458,198 Q462,280 445,356 Q420,420 270,438 Q120,420 95,356 Q78,280 82,198 C90,108 170,52 270,52 Z"
+        fill="#fdf4e8" stroke="#c9a87c" strokeWidth="2" className="dark:fill-[#2a2420] dark:stroke-[#7a6550]" />
+      <path d="M270,62 C362,62 440,114 447,198 Q450,274 435,346 Q412,408 270,424 Q128,408 105,346 Q90,274 93,198 C100,114 178,62 270,62 Z"
+        fill="#fef6ee" stroke="none" className="dark:fill-[#252018]" />
 
-      {/* ── Mandible (suprahyoid level) ── */}
-      <path d="M148,80 C148,80 136,90 122,120 Q112,148 108,172 L114,172 Q118,148 128,122 C138,96 150,86 150,86 Z"
-        fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.5" className="dark:fill-gray-600 dark:stroke-gray-500" />
-      <path d="M352,80 C352,80 364,90 378,120 Q388,148 392,172 L386,172 Q382,148 372,122 C362,96 350,86 350,86 Z"
-        fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.5" className="dark:fill-gray-600 dark:stroke-gray-500" />
-      <path d="M148,80 Q200,65 250,62 Q300,65 352,80" fill="none" stroke="#94a3b8" strokeWidth="2" className="dark:stroke-gray-500" />
-      <text x="250" y="76" textAnchor="middle" fill="#64748b" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-gray-400">Mandíbula</text>
+      {/* ── Investing fascia (SLDCF) ── */}
+      <path d="M270,68 C358,68 434,118 441,198 Q444,270 430,340 Q408,404 270,418 Q132,404 110,340 Q96,270 99,198 C106,118 182,68 270,68 Z"
+        fill="none" stroke="#9ca3af" strokeWidth="0.8" strokeDasharray="4,3" opacity="0.4" className="dark:stroke-gray-600" />
 
-      {/* ── Masticator space (bilateral) ── */}
-      {/* Right masticator */}
-      <path d="M108,105 C100,100 88,108 82,130 Q78,152 82,168 Q90,180 110,176 C118,170 124,148 126,130 Q128,112 108,105 Z"
-        fill="#e9d5ff" stroke="#7c3aed" strokeWidth="1.3" opacity="0.65" className="dark:fill-violet-900/40 dark:stroke-violet-400" />
-      {/* Masseter */}
-      <path d="M90,118 Q84,130 84,148 Q84,162 92,170 L100,168 Q94,158 94,142 Q94,126 98,116 Z"
-        fill="#d8b4fe" stroke="#7c3aed" strokeWidth="0.8" opacity="0.5" className="dark:fill-violet-800/40 dark:stroke-violet-400" />
-      <text x="82" y="144" textAnchor="middle" fill="#7c3aed" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-violet-400">Mas</text>
-      {/* Medial pterygoid */}
-      <path d="M114,112 Q108,124 106,140 Q106,154 110,164 L118,160 Q116,148 116,136 Q118,122 120,114 Z"
-        fill="#c084fc" stroke="#7c3aed" strokeWidth="0.8" opacity="0.5" className="dark:fill-violet-700/30 dark:stroke-violet-400" />
-      <text x="110" y="140" textAnchor="middle" fill="#7c3aed" fontWeight="500" style={{ fontSize: "5px" }} className="dark:fill-violet-300">Pt</text>
-      {/* Left masticator */}
-      <path d="M392,105 C400,100 412,108 418,130 Q422,152 418,168 Q410,180 390,176 C382,170 376,148 374,130 Q372,112 392,105 Z"
-        fill="#e9d5ff" stroke="#7c3aed" strokeWidth="1.3" opacity="0.65" className="dark:fill-violet-900/40 dark:stroke-violet-400" />
-      <path d="M410,118 Q416,130 416,148 Q416,162 408,170 L400,168 Q406,158 406,142 Q406,126 402,116 Z"
-        fill="#d8b4fe" stroke="#7c3aed" strokeWidth="0.8" opacity="0.5" className="dark:fill-violet-800/40 dark:stroke-violet-400" />
-      <path d="M386,112 Q392,124 394,140 Q394,154 390,164 L382,160 Q384,148 384,136 Q382,122 380,114 Z"
-        fill="#c084fc" stroke="#7c3aed" strokeWidth="0.8" opacity="0.5" className="dark:fill-violet-700/30 dark:stroke-violet-400" />
+      {/* ── Mandible (U-shape at suprahyoid, with rami) ── */}
+      {/* Body (anterior arch) */}
+      <path d="M168,76 Q220,62 270,58 Q320,62 372,76 L368,84 Q320,70 270,66 Q220,70 172,84 Z"
+        fill="#d4d8e0" stroke="#5a6270" strokeWidth="2" className="dark:fill-gray-600 dark:stroke-gray-400" />
+      <text x="270" y="78" textAnchor="middle" fill="#475569" fontWeight="700" style={{ fontSize: "7.5px" }} className="dark:fill-gray-400">Mandíbula</text>
+      {/* Right ramus */}
+      <path d="M136,90 Q128,104 118,132 Q110,164 108,192 L116,194 Q118,166 126,136 Q134,110 142,94 Z"
+        fill="#d4d8e0" stroke="#5a6270" strokeWidth="1.8" className="dark:fill-gray-600 dark:stroke-gray-400" />
+      <text x="118" y="142" textAnchor="middle" fill="#475569" fontWeight="600" style={{ fontSize: "5.5px" }} transform="rotate(-16,118,142)" className="dark:fill-gray-400">Rama</text>
+      {/* Left ramus */}
+      <path d="M404,90 Q412,104 422,132 Q430,164 432,192 L424,194 Q422,166 414,136 Q406,110 398,94 Z"
+        fill="#d4d8e0" stroke="#5a6270" strokeWidth="1.8" className="dark:fill-gray-600 dark:stroke-gray-400" />
+
+      {/* ── MASTICATOR SPACE (bilateral) — sandwich: masseter | ramus | medial pterygoid ── */}
+      {/* Right — Masseter (lateral to ramus) */}
+      <path d="M100,100 Q92,112 86,140 Q84,168 88,190 Q96,200 108,196 Q114,188 116,166 Q116,138 112,112 Q108,100 100,100 Z"
+        fill="#d8b4fe" stroke="#7c3aed" strokeWidth="1.3" opacity="0.7" className="dark:fill-violet-800/45 dark:stroke-violet-400" />
+      <text x="96" y="148" textAnchor="middle" fill="#7c3aed" fontWeight="600" style={{ fontSize: "6px" }} className="dark:fill-violet-300">Mas.</text>
+      {/* Right — Medial pterygoid (medial to ramus) */}
+      <path d="M138,98 Q130,110 126,136 Q126,164 130,186 Q136,194 148,190 Q152,180 152,160 Q152,132 148,110 Q144,98 138,98 Z"
+        fill="#c084fc" stroke="#7c3aed" strokeWidth="1.2" opacity="0.6" className="dark:fill-violet-700/35 dark:stroke-violet-400" />
+      <text x="138" y="148" textAnchor="middle" fill="#6d28d9" fontWeight="600" style={{ fontSize: "5.5px" }} className="dark:fill-violet-300">Pt.m.</text>
+      {/* Left — Masseter */}
+      <path d="M440,100 Q448,112 454,140 Q456,168 452,190 Q444,200 432,196 Q426,188 424,166 Q424,138 428,112 Q432,100 440,100 Z"
+        fill="#d8b4fe" stroke="#7c3aed" strokeWidth="1.3" opacity="0.7" className="dark:fill-violet-800/45 dark:stroke-violet-400" />
+      <text x="444" y="148" textAnchor="middle" fill="#7c3aed" fontWeight="600" style={{ fontSize: "6px" }} className="dark:fill-violet-300">Mas.</text>
+      {/* Left — Medial pterygoid */}
+      <path d="M402,98 Q410,110 414,136 Q414,164 410,186 Q404,194 392,190 Q388,180 388,160 Q388,132 392,110 Q396,98 402,98 Z"
+        fill="#c084fc" stroke="#7c3aed" strokeWidth="1.2" opacity="0.6" className="dark:fill-violet-700/35 dark:stroke-violet-400" />
+      <text x="402" y="148" textAnchor="middle" fill="#6d28d9" fontWeight="600" style={{ fontSize: "5.5px" }} className="dark:fill-violet-300">Pt.m.</text>
       {/* Label */}
-      <line x1="78" y1="126" x2="28" y2="100" stroke="#7c3aed" strokeWidth="0.7" className="dark:stroke-violet-400" />
-      <text x="26" y="96" textAnchor="end" fill="#7c3aed" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-violet-400">Masticador</text>
-      <text x="26" y="106" textAnchor="end" fill="#7c3aed" style={{ fontSize: "6px" }} className="dark:fill-violet-300">Masetero · Pterigoideo</text>
+      <line x1="86" y1="140" x2="26" y2="118" stroke="#7c3aed" strokeWidth="0.7" className="dark:stroke-violet-400" />
+      <text x="24" y="112" textAnchor="end" fill="#7c3aed" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-violet-400">Masticador</text>
+      <text x="24" y="123" textAnchor="end" fill="#7c3aed" style={{ fontSize: "6px" }} className="dark:fill-violet-300">Masetero · Rama · Pterigoideo med.</text>
 
-      {/* ── Parotid space (bilateral) ── */}
-      <path d="M78,180 C68,178 58,190 56,210 Q54,228 60,242 C68,254 88,258 100,248 Q110,238 108,218 Q108,198 100,186 C96,180 86,178 78,180 Z"
-        fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.3" opacity="0.6" className="dark:fill-amber-900/40 dark:stroke-amber-400" />
-      <text x="80" y="218" textAnchor="middle" fill="#d97706" fontWeight="500" style={{ fontSize: "6px" }} className="dark:fill-amber-400">Parótida</text>
-      <path d="M422,180 C432,178 442,190 444,210 Q446,228 440,242 C432,254 412,258 400,248 Q390,238 392,218 Q392,198 400,186 C404,180 414,178 422,180 Z"
-        fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.3" opacity="0.6" className="dark:fill-amber-900/40 dark:stroke-amber-400" />
-      <text x="420" y="218" textAnchor="middle" fill="#d97706" fontWeight="500" style={{ fontSize: "6px" }} className="dark:fill-amber-400">Parótida</text>
-      {/* Label */}
-      <line x1="56" y1="218" x2="18" y2="230" stroke="#d97706" strokeWidth="0.7" className="dark:stroke-amber-400" />
-      <text x="16" y="228" textAnchor="end" fill="#d97706" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-amber-400">Parotídeo</text>
-
-      {/* ── Pharyngeal mucosal space ── */}
-      <path d="M195,102 Q250,88 305,102 Q318,130 318,155 Q318,175 305,195 Q250,212 195,195 Q182,175 182,155 Q182,130 195,102 Z"
+      {/* ── PHARYNGEAL MUCOSAL SPACE — horseshoe around airway ── */}
+      {/* Constrictor ring (outer boundary) */}
+      <path d="M210,96 Q240,84 270,82 Q300,84 330,96 Q348,118 348,150 Q348,182 330,204 Q300,222 270,224 Q240,222 210,204 Q192,182 192,150 Q192,118 210,96 Z"
         fill="#dbeafe" stroke="#3b82f6" strokeWidth="1.5" opacity="0.45" className="dark:fill-blue-900/30 dark:stroke-blue-400" />
-      {/* Airway lumen */}
-      <ellipse cx="250" cy="148" rx="28" ry="24" fill="#0f172a" stroke="#475569" strokeWidth="1.5" opacity="0.18" className="dark:fill-white/10 dark:stroke-gray-500" />
-      <text x="250" y="152" textAnchor="middle" fill="#475569" fontWeight="700" style={{ fontSize: "8px" }} className="dark:fill-gray-400">Vía aérea</text>
-      {/* Mucosa ring around airway */}
-      <ellipse cx="250" cy="148" rx="38" ry="34" fill="none" stroke="#3b82f6" strokeWidth="0.8" strokeDasharray="3,2" opacity="0.5" className="dark:stroke-blue-400" />
+      {/* Pharyngeal constrictor muscles (dashed inner boundary) */}
+      <path d="M224,106 Q248,96 270,94 Q292,96 316,106 Q330,124 330,150 Q330,176 316,194 Q292,208 270,210 Q248,208 224,194 Q210,176 210,150 Q210,124 224,106 Z"
+        fill="none" stroke="#3b82f6" strokeWidth="0.8" strokeDasharray="3,2" opacity="0.4" className="dark:stroke-blue-400" />
+      {/* Airway lumen (oropharynx) */}
+      <ellipse cx="270" cy="150" rx="30" ry="26" fill="#0f172a" stroke="#475569" strokeWidth="1.5" opacity="0.18" className="dark:fill-white/10 dark:stroke-gray-500" />
+      <text x="270" y="154" textAnchor="middle" fill="#475569" fontWeight="700" style={{ fontSize: "9px" }} className="dark:fill-gray-400">Vía aérea</text>
+      {/* Tonsils (palatine) */}
+      <ellipse cx="218" cy="150" rx="8" ry="12" fill="#93c5fd" stroke="#3b82f6" strokeWidth="0.8" opacity="0.5" className="dark:fill-blue-800/40 dark:stroke-blue-400" />
+      <text x="218" y="153" textAnchor="middle" fill="#2563eb" style={{ fontSize: "4.5px" }} className="dark:fill-blue-300">T</text>
+      <ellipse cx="322" cy="150" rx="8" ry="12" fill="#93c5fd" stroke="#3b82f6" strokeWidth="0.8" opacity="0.5" className="dark:fill-blue-800/40 dark:stroke-blue-400" />
+      <text x="322" y="153" textAnchor="middle" fill="#2563eb" style={{ fontSize: "4.5px" }} className="dark:fill-blue-300">T</text>
+      {/* Pharyngeal raphe (posterior midline) */}
+      <line x1="270" y1="176" x2="270" y2="210" stroke="#3b82f6" strokeWidth="0.8" strokeDasharray="2,2" opacity="0.4" className="dark:stroke-blue-300" />
       {/* Labels */}
-      <text x="250" y="106" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-400">Esp. mucoso faríngeo</text>
-      <text x="250" y="200" textAnchor="middle" fill="#2563eb" style={{ fontSize: "6px" }} className="dark:fill-blue-300">Mucosa · Submucosa · Constrictores</text>
+      <text x="270" y="98" textAnchor="middle" fill="#2563eb" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-blue-400">Esp. mucoso faríngeo</text>
+      <text x="270" y="218" textAnchor="middle" fill="#2563eb" style={{ fontSize: "5.5px" }} className="dark:fill-blue-300">Constrictores · Mucosa · Amígdalas (T)</text>
 
-      {/* ── Parapharyngeal space (bilateral) — fat-filled wedge ── */}
-      <path d="M170,118 C162,130 156,150 156,170 Q158,188 168,196 L180,190 C176,178 176,158 178,138 Q178,126 180,118 Z"
-        fill="#dcfce7" stroke="#22c55e" strokeWidth="1.3" opacity="0.6" className="dark:fill-green-900/40 dark:stroke-green-400" />
-      <path d="M330,118 C338,130 344,150 344,170 Q342,188 332,196 L320,190 C324,178 324,158 322,138 Q322,126 320,118 Z"
-        fill="#dcfce7" stroke="#22c55e" strokeWidth="1.3" opacity="0.6" className="dark:fill-green-900/40 dark:stroke-green-400" />
-      {/* Fat stippling */}
-      {[{x:166,y:140},{x:168,y:158},{x:166,y:174},{x:334,y:140},{x:332,y:158},{x:334,y:174}].map((p,i) => (
-        <circle key={`ppf${i}`} cx={p.x} cy={p.y} r="1.5" fill="#22c55e" opacity="0.25" className="dark:fill-green-400" />
+      {/* ── PARAPHARYNGEAL SPACE (bilateral) — triangular fat wedge ── */}
+      {/* Right PPS — triangle: medial=PMS, anterolat=masticator, posterolat=parotid/carotid */}
+      <path d="M190,112 Q180,130 172,158 Q168,186 174,208 L188,204 Q184,182 186,156 Q190,130 196,114 Z"
+        fill="#dcfce7" stroke="#22c55e" strokeWidth="1.4" opacity="0.65" className="dark:fill-green-900/40 dark:stroke-green-400" />
+      {/* Left PPS */}
+      <path d="M350,112 Q360,130 368,158 Q372,186 366,208 L352,204 Q356,182 354,156 Q350,130 344,114 Z"
+        fill="#dcfce7" stroke="#22c55e" strokeWidth="1.4" opacity="0.65" className="dark:fill-green-900/40 dark:stroke-green-400" />
+      {/* Fat stippling (bright on T1) */}
+      {[{x:182,y:132},{x:180,y:156},{x:178,y:178},{x:182,y:196},{x:358,y:132},{x:360,y:156},{x:362,y:178},{x:358,y:196}].map((p,i) => (
+        <circle key={`ppf${i}`} cx={p.x} cy={p.y} r="1.8" fill="#22c55e" opacity="0.22" className="dark:fill-green-400" />
       ))}
       {/* Label */}
-      <line x1="156" y1="164" x2="28" y2="155" stroke="#16a34a" strokeWidth="0.7" className="dark:stroke-green-400" />
-      <text x="26" y="150" textAnchor="end" fill="#16a34a" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-green-400">Parafaríngeo</text>
-      <text x="26" y="160" textAnchor="end" fill="#16a34a" style={{ fontSize: "6px" }} className="dark:fill-green-300">(grasa — clave diagnóstica)</text>
+      <line x1="172" y1="168" x2="28" y2="164" stroke="#16a34a" strokeWidth="0.7" className="dark:stroke-green-400" />
+      <text x="26" y="158" textAnchor="end" fill="#16a34a" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-green-400">Parafaríngeo</text>
+      <text x="26" y="169" textAnchor="end" fill="#16a34a" style={{ fontSize: "6px" }} className="dark:fill-green-300">Grasa (hiperintenso en T1)</text>
+      <text x="26" y="179" textAnchor="end" fill="#16a34a" style={{ fontSize: "5.5px" }} className="dark:fill-green-300">Desplazamiento = clave Dx</text>
 
-      {/* ── Carotid space (bilateral) ── */}
-      <path d="M128,210 C118,204 110,212 108,228 Q106,244 112,258 C120,268 136,268 144,258 Q150,246 148,230 Q146,216 138,210 Z"
-        fill="#fecaca" stroke="#ef4444" strokeWidth="1.3" opacity="0.55" className="dark:fill-red-900/40 dark:stroke-red-400" />
-      {/* ICA */}
-      <circle cx="128" cy="228" r="5" fill="#ef4444" stroke="#dc2626" strokeWidth="1" opacity="0.7" />
-      <text x="128" y="230" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>A</text>
-      {/* IJV */}
-      <ellipse cx="136" cy="242" rx="6" ry="5" fill="#3b82f6" stroke="#2563eb" strokeWidth="1" opacity="0.7" />
-      <text x="136" y="244" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>V</text>
+      {/* ── PAROTID SPACE (bilateral) — posterior to ramus, posterolateral ── */}
+      {/* Right parotid */}
+      <path d="M86,200 Q74,208 66,230 Q62,256 68,276 Q78,292 100,296 Q120,290 128,270 Q132,248 128,226 Q124,210 114,200 Q100,196 86,200 Z"
+        fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.4" opacity="0.6" className="dark:fill-amber-900/40 dark:stroke-amber-400" />
+      {/* Deep lobe extending medially toward PPS */}
+      <path d="M128,236 Q136,230 144,234 Q148,242 144,252 Q136,256 128,250 Q124,244 128,236 Z"
+        fill="#fef3c7" stroke="#f59e0b" strokeWidth="0.8" opacity="0.4" className="dark:fill-amber-900/30 dark:stroke-amber-400" />
+      <text x="96" y="248" textAnchor="middle" fill="#d97706" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-amber-400">Parótida</text>
+      <text x="96" y="260" textAnchor="middle" fill="#d97706" style={{ fontSize: "5px" }} className="dark:fill-amber-300">sup.+prof.</text>
+      {/* Retromandibular vein inside parotid */}
+      <circle cx="112" cy="232" r="3" fill="#60a5fa" stroke="#2563eb" strokeWidth="0.8" opacity="0.6" />
+      <text x="112" y="234" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "3px" }}>v</text>
+      {/* Left parotid */}
+      <path d="M454,200 Q466,208 474,230 Q478,256 472,276 Q462,292 440,296 Q420,290 412,270 Q408,248 412,226 Q416,210 426,200 Q440,196 454,200 Z"
+        fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.4" opacity="0.6" className="dark:fill-amber-900/40 dark:stroke-amber-400" />
+      <path d="M412,236 Q404,230 396,234 Q392,242 396,252 Q404,256 412,250 Q416,244 412,236 Z"
+        fill="#fef3c7" stroke="#f59e0b" strokeWidth="0.8" opacity="0.4" className="dark:fill-amber-900/30 dark:stroke-amber-400" />
+      <text x="444" y="248" textAnchor="middle" fill="#d97706" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-amber-400">Parótida</text>
+      {/* Label */}
+      <line x1="64" y1="258" x2="24" y2="272" stroke="#d97706" strokeWidth="0.7" className="dark:stroke-amber-400" />
+      <text x="22" y="270" textAnchor="end" fill="#d97706" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-amber-400">Parotídeo</text>
+      <text x="22" y="281" textAnchor="end" fill="#d97706" style={{ fontSize: "5.5px" }} className="dark:fill-amber-300">Parótida · ACE · VII · V. retromand.</text>
+
+      {/* ── CAROTID SPACE (bilateral) — posterior to PPS, medial to parotid ── */}
       {/* Right carotid */}
-      <path d="M372,210 C382,204 390,212 392,228 Q394,244 388,258 C380,268 364,268 356,258 Q350,246 352,230 Q354,216 362,210 Z"
-        fill="#fecaca" stroke="#ef4444" strokeWidth="1.3" opacity="0.55" className="dark:fill-red-900/40 dark:stroke-red-400" />
-      <circle cx="372" cy="228" r="5" fill="#ef4444" stroke="#dc2626" strokeWidth="1" opacity="0.7" />
-      <text x="372" y="230" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>A</text>
-      <ellipse cx="364" cy="242" rx="6" ry="5" fill="#3b82f6" stroke="#2563eb" strokeWidth="1" opacity="0.7" />
-      <text x="364" y="244" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>V</text>
+      <path d="M142,222 Q130,230 124,252 Q122,274 130,290 Q140,302 158,300 Q170,292 174,272 Q176,252 170,234 Q162,222 150,218 Z"
+        fill="#fecaca" stroke="#ef4444" strokeWidth="1.4" opacity="0.55" className="dark:fill-red-900/40 dark:stroke-red-400" />
+      {/* ICA (anteromedial) */}
+      <circle cx="148" cy="254" r="5.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.2" />
+      <text x="148" y="256" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>ACI</text>
+      {/* IJV (posterolateral, larger) */}
+      <ellipse cx="158" cy="274" rx="7" ry="6" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1.2" opacity="0.8" />
+      <text x="158" y="276" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>VYI</text>
+      {/* Left carotid */}
+      <path d="M398,222 Q410,230 416,252 Q418,274 410,290 Q400,302 382,300 Q370,292 366,272 Q364,252 370,234 Q378,222 390,218 Z"
+        fill="#fecaca" stroke="#ef4444" strokeWidth="1.4" opacity="0.55" className="dark:fill-red-900/40 dark:stroke-red-400" />
+      <circle cx="392" cy="254" r="5.5" fill="#ef4444" stroke="#b91c1c" strokeWidth="1.2" />
+      <text x="392" y="256" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>ACI</text>
+      <ellipse cx="382" cy="274" rx="7" ry="6" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1.2" opacity="0.8" />
+      <text x="382" y="276" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "4.5px" }}>VYI</text>
       {/* Label */}
-      <line x1="110" y1="242" x2="22" y2="268" stroke="#dc2626" strokeWidth="0.7" className="dark:stroke-red-400" />
-      <text x="20" y="266" textAnchor="end" fill="#dc2626" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-red-400">Carotídeo</text>
-      <text x="20" y="276" textAnchor="end" fill="#dc2626" style={{ fontSize: "6px" }} className="dark:fill-red-300">ACI · VYI · IX-XII</text>
+      <line x1="124" y1="270" x2="24" y2="308" stroke="#dc2626" strokeWidth="0.7" className="dark:stroke-red-400" />
+      <text x="22" y="304" textAnchor="end" fill="#dc2626" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-red-400">Carotídeo</text>
+      <text x="22" y="315" textAnchor="end" fill="#dc2626" style={{ fontSize: "5.5px" }} className="dark:fill-red-300">ACI · VYI · IX, X, XI, XII · Simpático</text>
 
-      {/* ── SCM (bilateral) ── */}
-      <path d="M96,252 C84,248 74,260 72,278 Q72,294 80,304 C90,312 106,308 112,296 Q116,284 114,270 Q112,256 96,252 Z"
-        fill="#d1d5db" stroke="#6b7280" strokeWidth="1.2" opacity="0.65" className="dark:fill-gray-600/40 dark:stroke-gray-400" />
-      <text x="92" y="282" textAnchor="middle" fill="#4b5563" fontWeight="600" style={{ fontSize: "6.5px" }} className="dark:fill-gray-300">ECM</text>
-      <path d="M404,252 C416,248 426,260 428,278 Q428,294 420,304 C410,312 394,308 388,296 Q384,284 386,270 Q388,256 404,252 Z"
-        fill="#d1d5db" stroke="#6b7280" strokeWidth="1.2" opacity="0.65" className="dark:fill-gray-600/40 dark:stroke-gray-400" />
-      <text x="408" y="282" textAnchor="middle" fill="#4b5563" fontWeight="600" style={{ fontSize: "6.5px" }} className="dark:fill-gray-300">ECM</text>
+      {/* ── SCM (bilateral) — posterolateral landmark ── */}
+      {/* Right SCM */}
+      <path d="M98,296 Q84,304 76,322 Q72,342 78,360 Q88,372 108,370 Q122,362 126,342 Q126,320 118,304 Q110,296 98,296 Z"
+        fill="#d1d5db" stroke="#6b7280" strokeWidth="1.3" opacity="0.7" className="dark:fill-gray-600/40 dark:stroke-gray-400" />
+      <text x="100" y="338" textAnchor="middle" fill="#374151" fontWeight="700" style={{ fontSize: "7px" }} className="dark:fill-gray-300">ECM</text>
+      {/* Left SCM */}
+      <path d="M442,296 Q456,304 464,322 Q468,342 462,360 Q452,372 432,370 Q418,362 414,342 Q414,320 422,304 Q430,296 442,296 Z"
+        fill="#d1d5db" stroke="#6b7280" strokeWidth="1.3" opacity="0.7" className="dark:fill-gray-600/40 dark:stroke-gray-400" />
+      <text x="440" y="338" textAnchor="middle" fill="#374151" fontWeight="700" style={{ fontSize: "7px" }} className="dark:fill-gray-300">ECM</text>
 
-      {/* ── Retropharyngeal space ── */}
-      <path d="M185,215 Q250,208 315,215 Q320,228 315,238 Q250,244 185,238 Q180,228 185,215 Z"
+      {/* ── RETROPHARYNGEAL SPACE — thin crescent posterior to PMS ── */}
+      <path d="M198,230 Q234,224 270,222 Q306,224 342,230 Q348,244 342,258 Q306,264 270,266 Q234,264 198,258 Q192,244 198,230 Z"
         fill="#fed7aa" stroke="#f97316" strokeWidth="1.2" opacity="0.55" className="dark:fill-orange-900/40 dark:stroke-orange-400" />
-      <text x="250" y="230" textAnchor="middle" fill="#ea580c" fontWeight="600" style={{ fontSize: "7px" }} className="dark:fill-orange-400">Retrofaríngeo</text>
-      {/* Retropharyngeal nodes */}
-      {[{x:220,y:224},{x:280,y:224}].map((p,i) => (
-        <circle key={`rpn${i}`} cx={p.x} cy={p.y} r="2.5" fill="#fb923c" stroke="#ea580c" strokeWidth="0.6" opacity="0.5" />
-      ))}
-      <text x="250" y="242" textAnchor="middle" fill="#ea580c" style={{ fontSize: "5px" }} className="dark:fill-orange-300">Rouvière</text>
+      <text x="270" y="248" textAnchor="middle" fill="#ea580c" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-orange-400">Retrofaríngeo</text>
+      {/* Retropharyngeal nodes (Rouvière) — lateral */}
+      <circle cx="224" cy="242" r="3" fill="#fb923c" stroke="#ea580c" strokeWidth="0.7" opacity="0.5" />
+      <circle cx="316" cy="242" r="3" fill="#fb923c" stroke="#ea580c" strokeWidth="0.7" opacity="0.5" />
+      <text x="270" y="262" textAnchor="middle" fill="#ea580c" style={{ fontSize: "5px" }} className="dark:fill-orange-300">Ganglios de Rouvière</text>
 
-      {/* ── Danger space (between retro & prevertebral) ── */}
-      <path d="M188,244 Q250,248 312,244 Q314,252 312,258 Q250,262 188,258 Q186,252 188,244 Z"
-        fill="#fef9c3" stroke="#eab308" strokeWidth="0.6" strokeDasharray="2,2" opacity="0.35" className="dark:fill-yellow-900/20 dark:stroke-yellow-500" />
-      <text x="250" y="254" textAnchor="middle" fill="#ca8a04" style={{ fontSize: "5px" }} className="dark:fill-yellow-400">Esp. peligroso</text>
+      {/* ── DANGER SPACE — potential space between alar & prevertebral fascia ── */}
+      <path d="M202,266 Q236,270 270,272 Q304,270 338,266 Q340,274 338,282 Q304,286 270,288 Q236,286 202,282 Q200,274 202,266 Z"
+        fill="#fef9c3" stroke="#eab308" strokeWidth="0.6" strokeDasharray="2,2" opacity="0.3" className="dark:fill-yellow-900/20 dark:stroke-yellow-500" />
+      <text x="270" y="278" textAnchor="middle" fill="#ca8a04" style={{ fontSize: "5px" }} className="dark:fill-yellow-400">Esp. peligroso (alar → prevertebral)</text>
 
-      {/* ── Prevertebral / perivertebral space ── */}
-      <path d="M150,268 Q200,258 250,256 Q300,258 350,268 Q366,290 366,320 Q360,350 340,366 Q300,380 250,382 Q200,380 160,366 Q140,350 134,320 Q134,290 150,268 Z"
-        fill="#cffafe" stroke="#06b6d4" strokeWidth="1.3" opacity="0.45" className="dark:fill-cyan-900/30 dark:stroke-cyan-400" />
-      {/* Longus colli/capitis muscles */}
-      <path d="M210,268 Q230,262 250,260 Q270,262 290,268 Q296,280 290,290 Q270,296 250,296 Q230,296 210,290 Q204,280 210,268 Z"
-        fill="#a5f3fc" stroke="#06b6d4" strokeWidth="0.8" opacity="0.5" className="dark:fill-cyan-800/30 dark:stroke-cyan-400" />
-      <text x="250" y="280" textAnchor="middle" fill="#0891b2" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-cyan-400">Longus colli</text>
+      {/* ── PERIVERTEBRAL SPACE ── */}
+      <path d="M160,290 Q214,278 270,276 Q326,278 380,290 Q400,316 400,348 Q394,380 372,398 Q326,414 270,416 Q214,414 168,398 Q146,380 140,348 Q140,316 160,290 Z"
+        fill="#cffafe" stroke="#06b6d4" strokeWidth="1.3" opacity="0.4" className="dark:fill-cyan-900/28 dark:stroke-cyan-400" />
+      {/* Longus colli (prevertebral muscles — anterior to vertebral body) */}
+      <path d="M226,292 Q248,284 270,282 Q292,284 314,292 Q322,306 316,318 Q294,326 270,328 Q246,326 224,318 Q218,306 226,292 Z"
+        fill="#a5f3fc" stroke="#06b6d4" strokeWidth="0.9" opacity="0.5" className="dark:fill-cyan-800/30 dark:stroke-cyan-400" />
+      <text x="270" y="308" textAnchor="middle" fill="#0891b2" fontWeight="600" style={{ fontSize: "6px" }} className="dark:fill-cyan-400">Longus colli / capitis</text>
       {/* Scalene muscles (lateral) */}
-      <path d="M154,280 Q148,296 148,316 Q150,332 158,342 L172,336 Q166,324 166,308 Q166,292 170,280 Z"
+      <path d="M164,302 Q156,320 154,346 Q158,370 168,382 L184,374 Q176,360 174,340 Q174,316 180,302 Z"
         fill="#67e8f9" stroke="#06b6d4" strokeWidth="0.8" opacity="0.4" className="dark:fill-cyan-800/25 dark:stroke-cyan-400" />
-      <text x="158" y="310" textAnchor="middle" fill="#0891b2" style={{ fontSize: "5px" }} transform="rotate(-10,158,310)" className="dark:fill-cyan-300">Escaleno</text>
-      <path d="M346,280 Q352,296 352,316 Q350,332 342,342 L328,336 Q334,324 334,308 Q334,292 330,280 Z"
+      <text x="166" y="344" textAnchor="middle" fill="#0891b2" style={{ fontSize: "5px" }} className="dark:fill-cyan-300">Escal.</text>
+      <path d="M376,302 Q384,320 386,346 Q382,370 372,382 L356,374 Q364,360 366,340 Q366,316 360,302 Z"
         fill="#67e8f9" stroke="#06b6d4" strokeWidth="0.8" opacity="0.4" className="dark:fill-cyan-800/25 dark:stroke-cyan-400" />
-      <text x="342" y="310" textAnchor="middle" fill="#0891b2" style={{ fontSize: "5px" }} transform="rotate(10,342,310)" className="dark:fill-cyan-300">Escaleno</text>
+      <text x="374" y="344" textAnchor="middle" fill="#0891b2" style={{ fontSize: "5px" }} className="dark:fill-cyan-300">Escal.</text>
       {/* Label */}
-      <text x="250" y="370" textAnchor="middle" fill="#0891b2" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-cyan-400">Perivertebral</text>
+      <text x="270" y="404" textAnchor="middle" fill="#0891b2" fontWeight="600" style={{ fontSize: "8px" }} className="dark:fill-cyan-400">Perivertebral</text>
 
       {/* ── Vertebral body ── */}
-      <path d="M220,300 Q230,294 250,292 Q270,294 280,300 Q286,312 286,324 Q284,340 276,348 Q264,354 250,354 Q236,354 224,348 Q216,340 214,324 Q214,312 220,300 Z"
-        fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2.5" className="dark:fill-gray-700 dark:stroke-gray-500" />
-      <text x="250" y="332" textAnchor="middle" className="fill-gray-500 dark:fill-gray-400" fontWeight="600" style={{ fontSize: "7px" }}>Vértebra</text>
-      {/* Vertebral foramen */}
-      <ellipse cx="250" cy="310" rx="12" ry="10" fill="white" stroke="#94a3b8" strokeWidth="1" className="dark:fill-gray-900 dark:stroke-gray-600" />
+      <path d="M236,326 Q248,318 270,316 Q292,318 304,326 Q312,340 312,356 Q308,374 298,382 Q284,388 270,388 Q256,388 242,382 Q232,374 228,356 Q228,340 236,326 Z"
+        fill="#d4d8e0" stroke="#5a6270" strokeWidth="2.5" className="dark:fill-gray-600 dark:stroke-gray-400" />
+      <text x="270" y="362" textAnchor="middle" className="fill-gray-500 dark:fill-gray-300" fontWeight="700" style={{ fontSize: "7.5px" }}>Vértebra</text>
+      {/* Vertebral foramen / spinal canal */}
+      <ellipse cx="270" cy="336" rx="14" ry="12" fill="white" stroke="#7a8090" strokeWidth="1" className="dark:fill-gray-900 dark:stroke-gray-600" />
       {/* Spinal cord */}
-      <circle cx="250" cy="310" r="6" fill="#fbbf24" stroke="#d97706" strokeWidth="1.5" />
-      <text x="250" y="300" textAnchor="middle" fill="#d97706" fontWeight="600" style={{ fontSize: "6px" }} className="dark:fill-yellow-400">Médula</text>
-      {/* Vertebral arteries */}
-      <circle cx="228" cy="320" r="3.5" fill="#ef4444" stroke="#dc2626" strokeWidth="0.8" opacity="0.7" />
-      <text x="228" y="322" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "3.5px" }}>AV</text>
-      <circle cx="272" cy="320" r="3.5" fill="#ef4444" stroke="#dc2626" strokeWidth="0.8" opacity="0.7" />
-      <text x="272" y="322" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "3.5px" }}>AV</text>
+      <circle cx="270" cy="336" r="7" fill="#fbbf24" stroke="#b45309" strokeWidth="1.5" />
+      <text x="270" y="326" textAnchor="middle" fill="#b45309" fontWeight="600" style={{ fontSize: "6px" }} className="dark:fill-yellow-400">Médula</text>
+      {/* Vertebral arteries (in transverse foramina) */}
+      <circle cx="244" cy="350" r="4" fill="#ef4444" stroke="#991b1b" strokeWidth="0.9" opacity="0.7" />
+      <text x="244" y="352" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "3.5px" }}>AV</text>
+      <circle cx="296" cy="350" r="4" fill="#ef4444" stroke="#991b1b" strokeWidth="0.9" opacity="0.7" />
+      <text x="296" y="352" textAnchor="middle" fill="white" fontWeight="700" style={{ fontSize: "3.5px" }}>AV</text>
 
-      {/* ── Posterior cervical space (bilateral) ── */}
-      <path d="M120,290 C108,296 98,318 96,340 Q96,360 108,374 C120,384 144,380 154,368 Q162,354 160,332 Q158,310 148,296 C142,290 130,288 120,290 Z"
+      {/* ── POSTERIOR CERVICAL SPACE (bilateral) — between SCM and trapezius ── */}
+      {/* Right */}
+      <path d="M128,362 Q114,370 106,390 Q104,410 112,424 Q124,434 146,430 Q162,422 168,404 Q168,384 160,370 Q148,360 128,362 Z"
         fill="#fbcfe8" stroke="#ec4899" strokeWidth="1.2" opacity="0.5" className="dark:fill-pink-900/40 dark:stroke-pink-400" />
-      <text x="128" y="342" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">Cerv.</text>
-      <text x="128" y="350" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">post.</text>
-      <path d="M380,290 C392,296 402,318 404,340 Q404,360 392,374 C380,384 356,380 346,368 Q338,354 340,332 Q342,310 352,296 C358,290 370,288 380,290 Z"
+      <text x="136" y="398" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">Cerv.</text>
+      <text x="136" y="408" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">post.</text>
+      {/* Left */}
+      <path d="M412,362 Q426,370 434,390 Q436,410 428,424 Q416,434 394,430 Q378,422 372,404 Q372,384 380,370 Q392,360 412,362 Z"
         fill="#fbcfe8" stroke="#ec4899" strokeWidth="1.2" opacity="0.5" className="dark:fill-pink-900/40 dark:stroke-pink-400" />
-      <text x="372" y="342" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">Cerv.</text>
-      <text x="372" y="350" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">post.</text>
+      <text x="404" y="398" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">Cerv.</text>
+      <text x="404" y="408" textAnchor="middle" fill="#db2777" fontWeight="500" style={{ fontSize: "5.5px" }} className="dark:fill-pink-400">post.</text>
       {/* Label */}
-      <line x1="100" y1="352" x2="24" y2="372" stroke="#ec4899" strokeWidth="0.7" className="dark:stroke-pink-400" />
-      <text x="22" y="370" textAnchor="end" fill="#db2777" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-pink-400">Cervical post.</text>
-      <text x="22" y="380" textAnchor="end" fill="#db2777" style={{ fontSize: "6px" }} className="dark:fill-pink-300">N. espinal acc. · Grasa</text>
+      <line x1="106" y1="406" x2="28" y2="418" stroke="#ec4899" strokeWidth="0.7" className="dark:stroke-pink-400" />
+      <text x="26" y="416" textAnchor="end" fill="#db2777" fontWeight="600" style={{ fontSize: "7.5px" }} className="dark:fill-pink-400">Cervical post.</text>
+      <text x="26" y="427" textAnchor="end" fill="#db2777" style={{ fontSize: "5.5px" }} className="dark:fill-pink-300">N. espinal acc. (XI) · Grasa · Nivel V</text>
 
-      {/* ── Posterior paraspinal muscles ── */}
-      <path d="M190,360 Q220,354 250,352 Q280,354 310,360 Q318,378 316,396 Q306,408 250,410 Q194,408 184,396 Q182,378 190,360 Z"
-        fill="#d1d5db" stroke="#6b7280" strokeWidth="1" opacity="0.45" className="dark:fill-gray-600/30 dark:stroke-gray-400" />
-      <text x="250" y="388" textAnchor="middle" fill="#6b7280" fontWeight="500" style={{ fontSize: "6px" }} className="dark:fill-gray-400">Paravertebrales</text>
+      {/* ── Paraspinal muscles (posterior to vertebral body) ── */}
+      <path d="M202,394 Q236,386 270,384 Q304,386 338,394 Q348,412 346,432 Q334,444 270,448 Q206,444 194,432 Q192,412 202,394 Z"
+        fill="#d1d5db" stroke="#6b7280" strokeWidth="1" opacity="0.4" className="dark:fill-gray-600/30 dark:stroke-gray-400" />
+      <text x="270" y="426" textAnchor="middle" fill="#6b7280" fontWeight="500" style={{ fontSize: "6px" }} className="dark:fill-gray-400">Paraespinales</text>
 
-      {/* ── Deep cervical fascia layers (dashed boundaries) ── */}
-      {/* Superficial layer (investing) */}
-      <path d="M250,58 C336,58 414,104 424,182 C432,254 414,336 386,374 Q348,414 250,424 Q152,414 114,374 C86,336 68,254 76,182 C86,104 164,58 250,58 Z"
-        fill="none" stroke="#9ca3af" strokeWidth="0.8" strokeDasharray="4,3" opacity="0.4" className="dark:stroke-gray-500" />
+      {/* ── Buccopharyngeal fascia (middle layer DCF — between PMS and RPS) ── */}
+      <path d="M210,210 Q240,206 270,204 Q300,206 330,210" fill="none" stroke="#60a5fa" strokeWidth="0.7" strokeDasharray="2,2" opacity="0.35" className="dark:stroke-blue-300" />
+      <text x="340" y="210" fill="#60a5fa" style={{ fontSize: "4.5px" }} opacity="0.5" className="dark:fill-blue-300">F. bucofaríngea</text>
 
-      {/* ── Fascia labels ── */}
-      <line x1="424" y1="182" x2="468" y2="160" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2,2" className="dark:stroke-gray-500" />
-      <text x="470" y="158" textAnchor="start" fill="#9ca3af" style={{ fontSize: "5px" }} className="dark:fill-gray-500">Fascia invest.</text>
+      {/* ── Prevertebral fascia (deep layer DCF — anterior to prevertebral muscles) ── */}
+      <path d="M168,290 Q218,280 270,278 Q322,280 372,290" fill="none" stroke="#06b6d4" strokeWidth="0.7" strokeDasharray="2,2" opacity="0.35" className="dark:stroke-cyan-300" />
+      <text x="382" y="290" fill="#06b6d4" style={{ fontSize: "4.5px" }} opacity="0.5" className="dark:fill-cyan-300">F. prevertebral</text>
 
-      {/* ── Orientation markers ── */}
-      <text x="250" y="46" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "9px" }}>ANT</text>
-      <text x="250" y="458" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "9px" }}>POST</text>
-      <text x="22" y="195" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "9px" }}>D</text>
-      <text x="478" y="195" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "9px" }}>I</text>
+      {/* ── Orientation ── */}
+      <text x="270" y="42" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "10px" }}>ANT</text>
+      <text x="270" y="488" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "10px" }}>POST</text>
+      <text x="18" y="230" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "10px" }}>D</text>
+      <text x="522" y="230" textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontWeight="600" style={{ fontSize: "10px" }}>I</text>
 
-      {/* ── Legend (color key) ── */}
-      <g transform="translate(12,410)">
+      {/* ── Legend ── */}
+      <g transform="translate(14,456)">
         {[
-          { c: "#3b82f6", l: "Mucoso faríngeo" },
+          { c: "#3b82f6", l: "Mucoso far." },
           { c: "#22c55e", l: "Parafaríngeo" },
           { c: "#7c3aed", l: "Masticador" },
           { c: "#f59e0b", l: "Parotídeo" },
           { c: "#ef4444", l: "Carotídeo" },
         ].map((item, i) => (
-          <g key={`lg${i}`} transform={`translate(${i * 92},0)`}>
-            <rect x="0" y="0" width="6" height="6" rx="1" fill={item.c} opacity="0.7" />
-            <text x="9" y="6" fill="#6b7280" style={{ fontSize: "5.5px" }} className="dark:fill-gray-400">{item.l}</text>
+          <g key={`lg${i}`} transform={`translate(${i * 102},0)`}>
+            <rect x="0" y="0" width="7" height="7" rx="1.5" fill={item.c} opacity="0.7" />
+            <text x="10" y="7" fill="#6b7280" style={{ fontSize: "6px" }} className="dark:fill-gray-400">{item.l}</text>
           </g>
         ))}
       </g>
-      <g transform="translate(12,422)">
+      <g transform="translate(14,470)">
         {[
           { c: "#f97316", l: "Retrofaríngeo" },
           { c: "#06b6d4", l: "Perivertebral" },
-          { c: "#ec4899", l: "Cervical post." },
+          { c: "#ec4899", l: "Cerv. post." },
           { c: "#6b7280", l: "ECM" },
           { c: "#d97706", l: "Médula" },
         ].map((item, i) => (
-          <g key={`lg2${i}`} transform={`translate(${i * 92},0)`}>
-            <rect x="0" y="0" width="6" height="6" rx="1" fill={item.c} opacity="0.7" />
-            <text x="9" y="6" fill="#6b7280" style={{ fontSize: "5.5px" }} className="dark:fill-gray-400">{item.l}</text>
+          <g key={`lg2${i}`} transform={`translate(${i * 102},0)`}>
+            <rect x="0" y="0" width="7" height="7" rx="1.5" fill={item.c} opacity="0.7" />
+            <text x="10" y="7" fill="#6b7280" style={{ fontSize: "6px" }} className="dark:fill-gray-400">{item.l}</text>
           </g>
         ))}
       </g>
 
-      {/* Level indicator */}
-      <text x="250" y="472" textAnchor="middle" fill="#9ca3af" fontWeight="500" style={{ fontSize: "7px" }} className="dark:fill-gray-500">Nivel orofaringe (C2-C3) — Suprahioideo</text>
+      {/* Level */}
+      <text x="270" y="498" textAnchor="middle" fill="#9ca3af" fontWeight="500" style={{ fontSize: "7px" }} className="dark:fill-gray-500">Nivel orofaringe (C2-C3) — Suprahioideo</text>
     </svg>
   );
 }
