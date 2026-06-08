@@ -28,6 +28,7 @@ import { useUIPrefs } from "@/lib/ui-prefs";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import { MODALITIES, SECTIONS } from "@/lib/types";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
+import { RadiogenBot } from "./radiogen-bot";
 
 const CUSTOM_KEY = "radiogenai_rec_custom";
 const HIDDEN_KEY = "radiogenai_rec_hidden";
@@ -461,6 +462,11 @@ export function RecommendationsTab() {
 
   return (
     <div className="space-y-4 py-4">
+      {/* Radiogen Bot */}
+      <div className="flex justify-end">
+        <RadiogenBot />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("mrec.manage_title")}</h2>
