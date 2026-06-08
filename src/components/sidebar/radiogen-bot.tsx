@@ -54,8 +54,15 @@ export function RadiogenBot() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Error" }));
-        setMessages((prev) => [...prev, { role: "assistant", content: err.error || t("bot.error") }]);
+        const text = await res.text().catch(() => "");
+        let errorMsg = `Error ${res.status}`;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.error) errorMsg = parsed.error;
+        } catch {
+          if (text) errorMsg = text.slice(0, 200);
+        }
+        setMessages((prev) => [...prev, { role: "assistant", content: errorMsg }]);
         setLoading(false);
         return;
       }

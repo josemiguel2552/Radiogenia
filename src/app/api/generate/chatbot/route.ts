@@ -67,15 +67,27 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`chatbot:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const body = await req.json();
-    const { messages, language } = body as { messages: ChatMessage[]; language: Lang };
+    let body: { messages?: ChatMessage[]; language?: Lang };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
+    const { messages, language } = body;
     if (!messages?.length) {
       return NextResponse.json({ error: "No messages" }, { status: 400 });
     }
 
     const lang: Lang = language || "es";
-    const globalConfig = await getGlobalAIConfig();
+
+    let globalConfig;
+    try {
+      globalConfig = await getGlobalAIConfig();
+    } catch (e) {
+      console.error("[chatbot] getGlobalAIConfig failed:", e);
+      return NextResponse.json({ error: "AI configuration not available" }, { status: 500 });
+    }
 
     const taskModel = globalConfig.taskOverrides?.conclusion;
     const effectiveProvider = taskModel?.provider || globalConfig.provider;
@@ -93,16 +105,24 @@ export async function POST(req: NextRequest) {
     const system = buildSystemPrompt(lang, knowledgeBase);
     const userMessage = buildUserMessage(messages);
 
-    const { stream, getUsage } = await generateAIStreamWithUsage({
-      provider: effectiveProvider,
-      modelName: effectiveModel,
-      apiKey: effectiveKey,
-      customBaseUrl: globalConfig.customBaseUrl,
-      system,
-      user: userMessage,
-      maxTokens: 1024,
-    });
+    let streamResult;
+    try {
+      streamResult = await generateAIStreamWithUsage({
+        provider: effectiveProvider,
+        modelName: effectiveModel,
+        apiKey: effectiveKey,
+        customBaseUrl: globalConfig.customBaseUrl,
+        system,
+        user: userMessage,
+        maxTokens: 1024,
+      });
+    } catch (e) {
+      console.error("[chatbot] AI stream failed:", e);
+      const msg = e instanceof Error ? e.message : "AI generation failed";
+      return NextResponse.json({ error: msg }, { status: 502 });
+    }
 
+    const { stream, getUsage } = streamResult;
     const reader = stream.getReader();
     const userId = user.id;
     const passthrough = new ReadableStream({
@@ -134,6 +154,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   } catch (error) {
+    console.error("[chatbot] Unhandled error:", error);
     return toErrorResponse(error);
   }
 }
