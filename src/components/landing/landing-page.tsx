@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Mic, FileText, Brain, Sparkles, Layout, Shield,
   ChevronRight, Check, ArrowRight, Globe,
-  Lock, ShieldCheck, Eye, ScrollText, Server, Fingerprint,
+  Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
   BookOpen, Download,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
@@ -224,10 +224,10 @@ const FEATURE_KEYS = [
 const SECURITY_ITEMS = [
   { icon: Lock, key: "encryption" },
   { icon: Fingerprint, key: "pii" },
-  { icon: Shield, key: "rls" },
+  { icon: ShieldCheck, key: "accuracy" },
   { icon: Eye, key: "zero_data" },
   { icon: ScrollText, key: "audit" },
-  { icon: Server, key: "rate_limit" },
+  { icon: BookOpen, key: "flexibility" },
 ] as const;
 
 const PLAN_ORDER: SubscriptionPlan[] = ["free", "resident", "starter", "professional"];
