@@ -8,15 +8,16 @@ import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { buildKnowledgeBase } from "@/lib/chatbot-knowledge";
 import { toErrorResponse } from "@/lib/api-error";
-import type { UILanguage } from "@/lib/ui-prefs";
+
+type Lang = "es" | "en" | "pt";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-function buildSystemPrompt(lang: UILanguage, knowledgeBase: string): string {
-  const instructions: Record<UILanguage, string> = {
+function buildSystemPrompt(lang: Lang, knowledgeBase: string): string {
+  const instructions: Record<Lang, string> = {
     es: `Eres Radiogen Bot, un asistente de referencia radiológica. Tu ÚNICA fuente de información es la base de conocimiento proporcionada abajo. Contiene datos de calculadoras radiológicas, clasificaciones, valores de referencia y recomendaciones clínicas basadas en evidencia.
 
 REGLAS ESTRICTAS:
@@ -67,13 +68,13 @@ export async function POST(req: NextRequest) {
     if (!rl.allowed) return rl.errorResponse!;
 
     const body = await req.json();
-    const { messages, language } = body as { messages: ChatMessage[]; language: UILanguage };
+    const { messages, language } = body as { messages: ChatMessage[]; language: Lang };
 
     if (!messages?.length) {
       return NextResponse.json({ error: "No messages" }, { status: 400 });
     }
 
-    const lang: UILanguage = language || "es";
+    const lang: Lang = language || "es";
     const globalConfig = await getGlobalAIConfig();
 
     const taskModel = globalConfig.taskOverrides?.conclusion;
