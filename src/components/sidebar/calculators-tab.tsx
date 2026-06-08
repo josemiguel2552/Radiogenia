@@ -1600,11 +1600,12 @@ function LungRadsSheet() {
 function BiradsSheet() {
   const t = useT();
   return (
-    <CheatSheet title="BI-RADS" source="ACR BI-RADS Atlas, 5th ed. (2013)">
+    <CheatSheet title="BI-RADS v2025" source="ACR BI-RADS v2025 Manual (Dec 2025)">
       <SheetTable
         headers={[t("calc.category"), t("calc.description"), t("calc.recommendation")]}
         rows={[
-          ["0", t("calc.birads_0"), t("calc.birads_0_rec")],
+          ["0a", t("calc.birads_0a"), t("calc.birads_0a_rec")],
+          ["0b", t("calc.birads_0b"), t("calc.birads_0b_rec")],
           ["1", t("calc.birads_1"), t("calc.birads_1_rec")],
           ["2", t("calc.birads_2"), t("calc.birads_2_rec")],
           ["3", t("calc.birads_3"), t("calc.birads_3_rec")],
@@ -1613,6 +1614,17 @@ function BiradsSheet() {
           ["4C", t("calc.birads_4c"), t("calc.birads_4c_rec")],
           ["5", t("calc.birads_5"), t("calc.birads_5_rec")],
           ["6", t("calc.birads_6"), t("calc.birads_6_rec")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_v2025_changes")}</p>
+      <SheetTable
+        headers={[t("calc.birads_topic"), t("calc.birads_change")]}
+        rows={[
+          [t("calc.birads_ch_cat0"), t("calc.birads_ch_cat0_d")],
+          [t("calc.birads_ch_cem"), t("calc.birads_ch_cem_d")],
+          [t("calc.birads_ch_density"), t("calc.birads_ch_density_d")],
+          [t("calc.birads_ch_lexicon"), t("calc.birads_ch_lexicon_d")],
+          [t("calc.birads_ch_ln"), t("calc.birads_ch_ln_d")],
         ]}
       />
     </CheatSheet>
@@ -3911,6 +3923,193 @@ function NeckAnatomySheet() {
   );
 }
 
+/* ── Neuro: Complex Infarct Syndromes ── */
+
+function ComplexInfarctSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.infarct_title")} source="Brazis PW, Localization in Clinical Neurology 8th ed; Caplan LR, Stroke 2019; Goyal M, Neuroradiology 2000">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.infarct_brainstem")}</p>
+      <SheetTable
+        headers={[t("calc.syndrome"), t("calc.vascular_territory"), t("calc.structures"), t("calc.clinical_key")]}
+        rows={[
+          ["Wallenberg", "PICA / A. vertebral", t("calc.infarct_wallenberg_s"), t("calc.infarct_wallenberg_c")],
+          ["Dejerine", "ASA / perf. vertebral", t("calc.infarct_dejerine_s"), t("calc.infarct_dejerine_c")],
+          ["Weber", "Perf. paramedianas (PCA)", t("calc.infarct_weber_s"), t("calc.infarct_weber_c")],
+          ["Claude", "Perf. paramedianas (PCA)", t("calc.infarct_claude_s"), t("calc.infarct_claude_c")],
+          ["Benedikt", "Perf. paramedianas (PCA)", t("calc.infarct_benedikt_s"), t("calc.infarct_benedikt_c")],
+          ["Millard-Gubler", "Perf. pontinas (basilar)", t("calc.infarct_mg_s"), t("calc.infarct_mg_c")],
+          ["Foville", "Perf. pontinas (basilar)", t("calc.infarct_foville_s"), t("calc.infarct_foville_c")],
+          [t("calc.infarct_locked"), "Basilar / perf. bilat.", t("calc.infarct_locked_s"), t("calc.infarct_locked_c")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.infarct_special")}</p>
+      <SheetTable
+        headers={[t("calc.pattern"), t("calc.vascular_territory"), t("calc.key_imaging"), t("calc.clinical_key")]}
+        rows={[
+          ["Percheron", t("calc.infarct_percheron_t"), t("calc.infarct_percheron_i"), t("calc.infarct_percheron_c")],
+          ["Top of basilar", t("calc.infarct_topbasilar_t"), t("calc.infarct_topbasilar_i"), t("calc.infarct_topbasilar_c")],
+          [t("calc.infarct_watershed_ext"), "ACA/MCA, MCA/PCA", t("calc.infarct_watershed_ext_i"), t("calc.infarct_watershed_ext_c")],
+          [t("calc.infarct_watershed_int"), t("calc.infarct_watershed_int_t"), t("calc.infarct_watershed_int_i"), t("calc.infarct_watershed_int_c")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.infarct_secondary")}</p>
+      <SheetTable
+        headers={[t("calc.pattern"), t("calc.mechanism"), t("calc.key_imaging"), t("calc.timeline")]}
+        rows={[
+          [t("calc.infarct_olivary"), t("calc.infarct_olivary_m"), t("calc.infarct_olivary_i"), t("calc.infarct_olivary_tl")],
+          [t("calc.infarct_wallerian"), t("calc.infarct_wallerian_m"), t("calc.infarct_wallerian_i"), t("calc.infarct_wallerian_tl")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Neuro: Demyelinating Diseases ── */
+
+function DemyelinatingSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.demyel_title")} source="Thompson AJ, Lancet Neurol 2025 (McDonald 2024); Wingerchuk DM, Neurology 2015; Banwell B, Lancet Neurol 2023">
+      <SheetTable
+        headers={[t("calc.disease"), t("calc.key_mri_findings"), t("calc.distribution"), t("calc.ddx_clue")]}
+        rows={[
+          [t("calc.demyel_ms"), t("calc.demyel_ms_f"), t("calc.demyel_ms_d"), t("calc.demyel_ms_dx")],
+          [t("calc.demyel_nmosd"), t("calc.demyel_nmosd_f"), t("calc.demyel_nmosd_d"), t("calc.demyel_nmosd_dx")],
+          ["MOGAD", t("calc.demyel_mogad_f"), t("calc.demyel_mogad_d"), t("calc.demyel_mogad_dx")],
+          ["ADEM", t("calc.demyel_adem_f"), t("calc.demyel_adem_d"), t("calc.demyel_adem_dx")],
+          ["PML", t("calc.demyel_pml_f"), t("calc.demyel_pml_d"), t("calc.demyel_pml_dx")],
+          [t("calc.demyel_osm"), t("calc.demyel_osm_f"), t("calc.demyel_osm_d"), t("calc.demyel_osm_dx")],
+          ["Marchiafava-Bignami", t("calc.demyel_mb_f"), t("calc.demyel_mb_d"), t("calc.demyel_mb_dx")],
+          [t("calc.demyel_balo"), t("calc.demyel_balo_f"), t("calc.demyel_balo_d"), t("calc.demyel_balo_dx")],
+          ["Susac", t("calc.demyel_susac_f"), t("calc.demyel_susac_d"), t("calc.demyel_susac_dx")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.demyel_mcdonald")}</p>
+      <SheetTable
+        headers={[t("calc.criterion"), t("calc.requirement")]}
+        rows={[
+          [t("calc.demyel_dis"), t("calc.demyel_dis_req")],
+          [t("calc.demyel_dit"), t("calc.demyel_dit_req")],
+          [t("calc.demyel_cvs"), t("calc.demyel_cvs_req")],
+          [t("calc.demyel_prl"), t("calc.demyel_prl_req")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Neuro: Degenerative Diseases ── */
+
+function DegenerativeSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.degen_title")} source="Defined imaging signs per Harper L, JNNP 2015; Quattrone A, Radiology 2008; Collie DA, AJNR 2003">
+      <SheetTable
+        headers={[t("calc.disease"), t("calc.key_mri_sign"), t("calc.atrophy_pattern"), t("calc.ddx_clue")]}
+        rows={[
+          [t("calc.degen_ad"), t("calc.degen_ad_s"), t("calc.degen_ad_a"), t("calc.degen_ad_dx")],
+          [t("calc.degen_ftd_bv"), t("calc.degen_ftd_bv_s"), t("calc.degen_ftd_bv_a"), t("calc.degen_ftd_bv_dx")],
+          [t("calc.degen_ftd_sem"), t("calc.degen_ftd_sem_s"), t("calc.degen_ftd_sem_a"), t("calc.degen_ftd_sem_dx")],
+          [t("calc.degen_ftd_nf"), t("calc.degen_ftd_nf_s"), t("calc.degen_ftd_nf_a"), t("calc.degen_ftd_nf_dx")],
+          [t("calc.degen_dlb"), t("calc.degen_dlb_s"), t("calc.degen_dlb_a"), t("calc.degen_dlb_dx")],
+          [t("calc.degen_pd"), t("calc.degen_pd_s"), t("calc.degen_pd_a"), t("calc.degen_pd_dx")],
+          ["MSA-C", t("calc.degen_msac_s"), t("calc.degen_msac_a"), t("calc.degen_msac_dx")],
+          ["MSA-P", t("calc.degen_msap_s"), t("calc.degen_msap_a"), t("calc.degen_msap_dx")],
+          ["PSP", t("calc.degen_psp_s"), t("calc.degen_psp_a"), t("calc.degen_psp_dx")],
+          ["CBD", t("calc.degen_cbd_s"), t("calc.degen_cbd_a"), t("calc.degen_cbd_dx")],
+          [t("calc.degen_hd"), t("calc.degen_hd_s"), t("calc.degen_hd_a"), t("calc.degen_hd_dx")],
+          ["ALS/ELA", t("calc.degen_als_s"), t("calc.degen_als_a"), t("calc.degen_als_dx")],
+          ["CJD/ECJ", t("calc.degen_cjd_s"), t("calc.degen_cjd_a"), t("calc.degen_cjd_dx")],
+          [t("calc.degen_nph"), t("calc.degen_nph_s"), t("calc.degen_nph_a"), t("calc.degen_nph_dx")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Thorax: Interstitial Lung Diseases ── */
+
+function InterstitialLungSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.ild_title")} source="Raghu G et al, ATS/ERS/JRS/ALAT 2022 (IPF); Raghu G et al, AJRCCM 2020 (HP); Travis WD et al, AJRCCM 2013">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.ild_uip_class")}</p>
+      <SheetTable
+        headers={[t("calc.ild_pattern"), t("calc.ild_hrct_features"), t("calc.ild_distribution")]}
+        rows={[
+          [t("calc.ild_uip_typical"), t("calc.ild_uip_typical_f"), t("calc.ild_uip_typical_d")],
+          [t("calc.ild_uip_probable"), t("calc.ild_uip_probable_f"), t("calc.ild_uip_probable_d")],
+          [t("calc.ild_uip_indet"), t("calc.ild_uip_indet_f"), t("calc.ild_uip_indet_d")],
+          [t("calc.ild_uip_alt"), t("calc.ild_uip_alt_f"), t("calc.ild_uip_alt_d")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.ild_hp_class")}</p>
+      <SheetTable
+        headers={[t("calc.ild_pattern"), t("calc.ild_hrct_features"), t("calc.ild_distribution")]}
+        rows={[
+          [t("calc.ild_hp_typical"), t("calc.ild_hp_typical_f"), t("calc.ild_hp_typical_d")],
+          [t("calc.ild_hp_compatible"), t("calc.ild_hp_compatible_f"), t("calc.ild_hp_compatible_d")],
+          [t("calc.ild_hp_indet"), t("calc.ild_hp_indet_f"), t("calc.ild_hp_indet_d")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.ild_other")}</p>
+      <SheetTable
+        headers={[t("calc.ild_pattern"), t("calc.ild_hrct_features"), t("calc.ild_key_clue")]}
+        rows={[
+          ["NSIP", t("calc.ild_nsip_f"), t("calc.ild_nsip_c")],
+          [t("calc.ild_op"), t("calc.ild_op_f"), t("calc.ild_op_c")],
+          ["LIP", t("calc.ild_lip_f"), t("calc.ild_lip_c")],
+          ["DIP", t("calc.ild_dip_f"), t("calc.ild_dip_c")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ── Pediatrics: Hip Ultrasound & DDH ── */
+
+function PediatricHipUSSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.hip_us_title")} source="Graf R, J Pediatr Orthop 1984; ACR Appropriateness Criteria 2019; AIUM Practice Parameter 2018">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.hip_graf")}</p>
+      <SheetTable
+        headers={[t("calc.type"), t("calc.hip_alpha"), t("calc.hip_beta"), t("calc.description")]}
+        rows={[
+          ["I", "≥ 60°", "< 77°", t("calc.hip_type1")],
+          ["IIa", "50–59°", "—", t("calc.hip_type2a")],
+          ["IIb", "50–59°", "—", t("calc.hip_type2b")],
+          ["IIc", "43–49°", "< 77°", t("calc.hip_type2c")],
+          ["IId", "43–49°", "> 77°", t("calc.hip_type2d")],
+          ["IIIa", "< 43°", "—", t("calc.hip_type3a")],
+          ["IIIb", "< 43°", "—", t("calc.hip_type3b")],
+          ["IV", "< 43°", "—", t("calc.hip_type4")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.hip_angles")}</p>
+      <SheetTable
+        headers={[t("calc.measurement"), t("calc.definition"), t("calc.interpretation")]}
+        rows={[
+          [t("calc.hip_alpha_angle"), t("calc.hip_alpha_def"), t("calc.hip_alpha_int")],
+          [t("calc.hip_beta_angle"), t("calc.hip_beta_def"), t("calc.hip_beta_int")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.hip_treatment")}</p>
+      <SheetTable
+        headers={[t("calc.finding"), t("calc.age"), t("calc.recommendation")]}
+        rows={[
+          [t("calc.hip_tx_2a"), "< 3 m", t("calc.hip_tx_2a_rec")],
+          [t("calc.hip_tx_2b"), "> 3 m", t("calc.hip_tx_2b_rec")],
+          [t("calc.hip_tx_3_red"), "< 6 m", t("calc.hip_tx_3_red_rec")],
+          [t("calc.hip_tx_3_irred"), t("calc.any_age"), t("calc.hip_tx_3_irred_rec")],
+          [t("calc.hip_tx_failed"), "> 6–12 m", t("calc.hip_tx_failed_rec")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 /* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
@@ -3970,6 +4169,7 @@ export function CalculatorsTab() {
       sheets: [
         { id: "lungrads", component: <LungRadsSheet />, label: "Lung-RADS" },
         { id: "fleischner", component: <FleischnerSheet />, label: "Fleischner 2017" },
+        { id: "ild", component: <InterstitialLungSheet />, label: t("calc.ild_title") },
         { id: "bts", component: <BtsNodulesSheet />, label: "BTS 2015" },
         { id: "thyroid_inc", component: <ThyroidIncidentalSheet />, label: t("calc.thyroid_incidental_title") },
         { id: "mediastinal_ln", component: <MediastinalLNSheet />, label: t("calc.mediastinal_ln_title") },
@@ -4008,6 +4208,9 @@ export function CalculatorsTab() {
         { id: "brain_tumor", component: <BrainTumorSheet />, label: t("calc.brain_tumor_title") },
         { id: "ct_perfusion", component: <CTPerfusionSheet />, label: t("calc.ctp_title") },
         { id: "neck_anatomy", component: <NeckAnatomySheet />, label: t("calc.neck_anatomy_title") },
+        { id: "complex_infarct", component: <ComplexInfarctSheet />, label: t("calc.infarct_title") },
+        { id: "demyelinating", component: <DemyelinatingSheet />, label: t("calc.demyel_title") },
+        { id: "degenerative", component: <DegenerativeSheet />, label: t("calc.degen_title") },
       ],
     },
     {
@@ -4045,6 +4248,7 @@ export function CalculatorsTab() {
         { id: "ped_tumors", component: <PediatricTumorsSheet />, label: t("calc.ped_tumors") },
         { id: "ped_crypto", component: <CryptorchidismSheet />, label: t("calc.ped_crypto") },
         { id: "ped_transf", component: <TransfontanellarUSSheet />, label: t("calc.ped_transf") },
+        { id: "ped_hip", component: <PediatricHipUSSheet />, label: t("calc.hip_us_title") },
       ],
     },
   ], [t]);
