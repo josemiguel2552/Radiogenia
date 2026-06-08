@@ -195,19 +195,28 @@ REGLAS OBLIGATORIAS:
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
 5. NO añadas diagnósticos, caracterizaciones ni interpretaciones que el radiólogo no haya dictado. Si dicta "lesión adrenal de 18 mm con densidad de 20 UH", escribe exactamente eso — NO añadas "compatible con adenoma", "sugestivo de quiste", etc. El radiólogo describe datos; tú los transcribes fielmente.
 6. IGNORA completamente la sección "CONCLUSION"/"CONCLUSIÓN" del template — NO la incluyas en tu respuesta.
-6. COLOCACIÓN ANATÓMICA CORRECTA — REGLA CRÍTICA:
-   Cada hallazgo DEBE ir en la sección cuya ESTRUCTURA ANATÓMICA coincide exactamente con la estructura descrita en el hallazgo. NO coloques un hallazgo en una sección solo porque están en la misma región corporal o comparten una palabra clave.
+6. COLOCACIÓN ANATÓMICA CORRECTA — REGLA CRÍTICA (PRIORIDAD MÁXIMA):
+   ALGORITMO OBLIGATORIO para asignar CADA hallazgo a una sección:
+   a) EXTRAE la estructura anatómica PRIMARIA del hallazgo. Ej: "nódulo tiroideo de 8 mm" → tiroides. "TEP en arteria lobar derecha" → arterias pulmonares. "derrame pleural derecho" → pleura.
+   b) BUSCA en el template la sección cuyo nombre designa ESA MISMA estructura anatómica.
+   c) Si la encuentras → asigna ahí. Si NO existe sección para esa estructura → "Otros hallazgos:".
+   d) NUNCA asignes por proximidad geográfica, vecindad anatómica, ni coincidencia parcial de palabras. Que dos estructuras estén en la misma región NO las hace la misma sección.
 
-   PRINCIPIO: Pregúntate "¿la estructura anatómica que describe este hallazgo ES la estructura que nombra la sección?" Si la respuesta es NO, ese hallazgo NO va ahí.
+   PROHIBICIÓN ABSOLUTA — MATCHING POR KEYWORDS:
+   NO asignes un hallazgo a una sección porque comparten una palabra. Ejemplos de errores PROHIBIDOS:
+   - "adenopatía mediastínica" → NO va en "Mediastino y vía aérea" si existe "Ganglios linfáticos". La estructura es GANGLIO, no mediastino como contenedor.
+   - "nódulo tiroideo" → NO va en "Tráquea y bronquios" ni "Cuello" aunque estén cerca. La estructura es TIROIDES.
+   - "derrame pleural" → NO va en "Parénquima pulmonar" aunque el pulmón esté junto a la pleura. La estructura es PLEURA.
+   - "lesión hepática" → NO va en "Vesícula biliar" ni "Vía biliar". La estructura es HÍGADO.
+   - "trombosis de vena porta" → NO va en "Hígado". La estructura es VENA PORTA / VASOS.
+   - "nódulo suprarrenal" → NO va en "Riñones". La estructura es GLÁNDULA SUPRARRENAL.
+   - "TEP / embolia pulmonar" → NO va en "Parénquima pulmonar" ni "Tráquea". La estructura es ARTERIA PULMONAR / VASOS.
+   - "hernia discal" → NO va en "Cuerpos vertebrales" si existe sección de "Canal raquídeo" o "Disco intervertebral". La estructura es DISCO.
+   - "estenosis de arteria renal" → NO va en "Riñones". La estructura es ARTERIA RENAL / VASOS.
+   - "líquido libre abdominal" → NO va en la primera sección abdominal que encuentres. Busca "Cavidad peritoneal", "Líquido libre" o "Otros hallazgos:".
+   - "fractura costal" → NO va en "Parénquima pulmonar" ni "Mediastino". Busca sección ósea o "Pared torácica".
 
-   Errores frecuentes que DEBES evitar:
-   - "Tráquea y bronquios" NO es tiroides, ni arterias pulmonares, ni esófago, ni mediastino.
-   - "Pulmón" o "Parénquima pulmonar" NO es pleura (si hay sección de pleura), ni arterias pulmonares, ni mediastino.
-   - "Hígado" NO es vesícula (si hay sección de vesícula), ni vena porta, ni vía biliar.
-   - "Riñones" NO es glándulas suprarrenales (si hay sección de suprarrenales), ni uréteres, ni vejiga.
-   - Hallazgos vasculares (TEP, disección, aneurisma, trombosis) van en la sección de vasos, arterias, corazón o mediastino — NO en la sección del órgano irrigado.
-   - Hallazgos de partes blandas NO van en secciones óseas y viceversa.
-   - Adenopatías van en la sección de ganglios o mediastino, NO en la sección del órgano adyacente.
+   REGLA DE ORO: Cuando dudes, es SIEMPRE mejor enviar el hallazgo a "Otros hallazgos:" que colocarlo en una sección incorrecta. Un hallazgo en la sección equivocada es un ERROR CLÍNICO; un hallazgo en "Otros hallazgos:" es perfectamente aceptable.
 
 7. HALLAZGOS SIN SECCIÓN — "OTROS HALLAZGOS":
    Si un hallazgo dictado NO encaja en NINGUNA sección del template, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
@@ -259,19 +268,28 @@ REGRAS OBRIGATÓRIAS:
 4. NÃO invente achados patológicos que o radiologista não tenha ditado.
 5. NÃO adicione diagnósticos, caracterizações nem interpretações que o radiologista não tenha ditado. Se dita "lesão adrenal de 18 mm com densidade de 20 UH", escreva exatamente isso — NÃO adicione "compatível com adenoma", "sugestivo de cisto", etc.
 6. IGNORE completamente a seção "CONCLUSÃO" do template — NÃO a inclua na resposta.
-6. COLOCAÇÃO ANATÔMICA CORRETA — REGRA CRÍTICA:
-   Cada achado DEVE ir na seção cuja ESTRUTURA ANATÔMICA coincide exatamente com a estrutura descrita no achado. NÃO coloque um achado em uma seção apenas porque estão na mesma região corporal ou compartilham uma palavra-chave.
+6. COLOCAÇÃO ANATÔMICA CORRETA — REGRA CRÍTICA (PRIORIDADE MÁXIMA):
+   ALGORITMO OBRIGATÓRIO para atribuir CADA achado a uma seção:
+   a) EXTRAIA a estrutura anatômica PRIMÁRIA do achado. Ex: "nódulo tireoidiano de 8 mm" → tireoide. "TEP em artéria lobar direita" → artérias pulmonares. "derrame pleural direito" → pleura.
+   b) PROCURE no template a seção cujo nome designa ESSA MESMA estrutura anatômica.
+   c) Se encontrar → atribua ali. Se NÃO existir seção para essa estrutura → "Outros achados:".
+   d) NUNCA atribua por proximidade geográfica, vizinhança anatômica nem coincidência parcial de palavras. Duas estruturas estarem na mesma região NÃO as torna a mesma seção.
 
-   PRINCÍPIO: Pergunte-se "a estrutura anatômica que este achado descreve É a estrutura que a seção nomeia?" Se a resposta é NÃO, esse achado NÃO vai ali.
+   PROIBIÇÃO ABSOLUTA — MATCHING POR KEYWORDS:
+   NÃO atribua um achado a uma seção porque compartilham uma palavra. Exemplos de erros PROIBIDOS:
+   - "linfonodomegalia mediastinal" → NÃO vai em "Mediastino e via aérea" se existir "Linfonodos". A estrutura é LINFONODO, não o mediastino como contêiner.
+   - "nódulo tireoidiano" → NÃO vai em "Traqueia e brônquios" nem "Pescoço" embora estejam perto. A estrutura é TIREOIDE.
+   - "derrame pleural" → NÃO vai em "Parênquima pulmonar" embora o pulmão esteja junto à pleura. A estrutura é PLEURA.
+   - "lesão hepática" → NÃO vai em "Vesícula biliar" nem "Via biliar". A estrutura é FÍGADO.
+   - "trombose de veia porta" → NÃO vai em "Fígado". A estrutura é VEIA PORTA / VASOS.
+   - "nódulo adrenal" → NÃO vai em "Rins". A estrutura é GLÂNDULA ADRENAL.
+   - "TEP / embolia pulmonar" → NÃO vai em "Parênquima pulmonar" nem "Traqueia". A estrutura é ARTÉRIA PULMONAR / VASOS.
+   - "hérnia discal" → NÃO vai em "Corpos vertebrais" se existir seção de "Canal raquídeo" ou "Disco intervertebral". A estrutura é DISCO.
+   - "estenose de artéria renal" → NÃO vai em "Rins". A estrutura é ARTÉRIA RENAL / VASOS.
+   - "líquido livre abdominal" → NÃO vai na primeira seção abdominal que encontrar. Procure "Cavidade peritoneal", "Líquido livre" ou "Outros achados:".
+   - "fratura costal" → NÃO vai em "Parênquima pulmonar" nem "Mediastino". Procure seção óssea ou "Parede torácica".
 
-   Erros frequentes que DEVE evitar:
-   - "Traqueia e brônquios" NÃO é tireoide, nem artérias pulmonares, nem esôfago, nem mediastino.
-   - "Pulmão" ou "Parênquima pulmonar" NÃO é pleura (se houver seção de pleura), nem artérias pulmonares, nem mediastino.
-   - "Fígado" NÃO é vesícula (se houver seção de vesícula), nem veia porta, nem via biliar.
-   - "Rins" NÃO é glândulas adrenais (se houver seção de adrenais), nem ureteres, nem bexiga.
-   - Achados vasculares (TEP, dissecção, aneurisma, trombose) vão na seção de vasos, artérias, coração ou mediastino — NÃO na seção do órgão irrigado.
-   - Achados de partes moles NÃO vão em seções ósseas e vice-versa.
-   - Linfonodomegalias vão na seção de linfonodos ou mediastino, NÃO na seção do órgão adjacente.
+   REGRA DE OURO: Quando em dúvida, é SEMPRE melhor enviar o achado para "Outros achados:" do que colocá-lo na seção errada. Um achado na seção errada é um ERRO CLÍNICO; um achado em "Outros achados:" é perfeitamente aceitável.
 
 7. ACHADOS SEM SEÇÃO — "OUTROS ACHADOS":
    Se um achado ditado NÃO se encaixa em NENHUMA seção do template, DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
@@ -322,19 +340,28 @@ MANDATORY RULES:
 4. Do NOT invent pathological findings that the radiologist did not dictate.
 5. Do NOT add diagnoses, characterizations, or interpretations the radiologist did not dictate. If they dictate "18 mm adrenal lesion with density of 20 HU", write exactly that — do NOT add "consistent with adenoma", "suggestive of cyst", etc. The radiologist reports data; you transcribe faithfully.
 6. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
-6. CORRECT ANATOMICAL PLACEMENT — CRITICAL RULE:
-   Each finding MUST go in the section whose ANATOMICAL STRUCTURE exactly matches the structure described in the finding. Do NOT place a finding in a section just because they are in the same body region or share a keyword.
+6. CORRECT ANATOMICAL PLACEMENT — CRITICAL RULE (HIGHEST PRIORITY):
+   MANDATORY ALGORITHM to assign EACH finding to a section:
+   a) EXTRACT the PRIMARY anatomical structure from the finding. E.g.: "8 mm thyroid nodule" → thyroid. "PE in right lobar artery" → pulmonary arteries. "right pleural effusion" → pleura.
+   b) SEARCH the template for the section whose name designates THAT SAME anatomical structure.
+   c) If found → assign there. If NO section exists for that structure → "Additional findings:".
+   d) NEVER assign by geographic proximity, anatomical neighborhood, or partial keyword match. Two structures being in the same region does NOT make them the same section.
 
-   PRINCIPLE: Ask yourself "is the anatomical structure this finding describes THE structure that the section names?" If the answer is NO, that finding does NOT go there.
+   ABSOLUTE PROHIBITION — KEYWORD MATCHING:
+   Do NOT assign a finding to a section because they share a word. Examples of PROHIBITED errors:
+   - "mediastinal lymphadenopathy" → does NOT go in "Mediastinum and airways" if a "Lymph nodes" section exists. The structure is LYMPH NODE, not the mediastinal container.
+   - "thyroid nodule" → does NOT go in "Trachea and bronchi" or "Neck" even though they are nearby. The structure is THYROID.
+   - "pleural effusion" → does NOT go in "Lung parenchyma" even though the lung is adjacent to the pleura. The structure is PLEURA.
+   - "hepatic lesion" → does NOT go in "Gallbladder" or "Bile ducts". The structure is LIVER.
+   - "portal vein thrombosis" → does NOT go in "Liver". The structure is PORTAL VEIN / VESSELS.
+   - "adrenal nodule" → does NOT go in "Kidneys". The structure is ADRENAL GLAND.
+   - "PE / pulmonary embolism" → does NOT go in "Lung parenchyma" or "Trachea". The structure is PULMONARY ARTERY / VESSELS.
+   - "disc herniation" → does NOT go in "Vertebral bodies" if a "Spinal canal" or "Intervertebral disc" section exists. The structure is DISC.
+   - "renal artery stenosis" → does NOT go in "Kidneys". The structure is RENAL ARTERY / VESSELS.
+   - "free abdominal fluid" → does NOT go in the first abdominal section you find. Look for "Peritoneal cavity", "Free fluid" or "Additional findings:".
+   - "rib fracture" → does NOT go in "Lung parenchyma" or "Mediastinum". Look for bone section or "Chest wall".
 
-   Common errors you MUST avoid:
-   - "Trachea and bronchi" is NOT thyroid, NOT pulmonary arteries, NOT esophagus, NOT mediastinum.
-   - "Lung" or "Lung parenchyma" is NOT pleura (if a pleura section exists), NOT pulmonary arteries, NOT mediastinum.
-   - "Liver" is NOT gallbladder (if a gallbladder section exists), NOT portal vein, NOT bile ducts.
-   - "Kidneys" is NOT adrenal glands (if an adrenal section exists), NOT ureters, NOT bladder.
-   - Vascular findings (PE, dissection, aneurysm, thrombosis) go in the vessels, arteries, heart or mediastinum section — NOT in the section of the organ they supply.
-   - Soft tissue findings do NOT go in bone sections and vice versa.
-   - Lymphadenopathy goes in the lymph node or mediastinum section, NOT in the section of the adjacent organ.
+   GOLDEN RULE: When in doubt, it is ALWAYS better to send the finding to "Additional findings:" than to place it in the wrong section. A finding in the wrong section is a CLINICAL ERROR; a finding in "Additional findings:" is perfectly acceptable.
 
 7. FINDINGS WITHOUT A SECTION — "ADDITIONAL FINDINGS":
    If a dictated finding does NOT fit ANY section of the template, you MUST add "Additional findings:" at the end with ALL orphan findings.
@@ -1029,12 +1056,33 @@ REGLAS (sin excepciones):
 4. NO inventes hallazgos patológicos ni diagnósticos que el radiólogo no haya dictado.
 5. NO añadas diagnósticos, caracterizaciones ni interpretaciones que el radiólogo no haya dictado.
 6. Ignora completamente la sección "CONCLUSIÓN" del template — NO la incluyas.
-7. HALLAZGOS SIN SECCIÓN — OBLIGATORIO:
-   Si un hallazgo dictado NO encaja claramente en NINGUNA sección anatómica del template, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
+7. COLOCACIÓN ANATÓMICA CORRECTA — REGLA CRÍTICA (PRIORIDAD MÁXIMA):
+   ALGORITMO OBLIGATORIO para asignar CADA hallazgo a una sección:
+   a) EXTRAE la estructura anatómica PRIMARIA del hallazgo. Ej: "nódulo tiroideo de 8 mm" → tiroides. "TEP en arteria lobar derecha" → arterias pulmonares. "derrame pleural derecho" → pleura.
+   b) BUSCA en el template la sección cuyo nombre designa ESA MISMA estructura anatómica.
+   c) Si la encuentras → asigna ahí. Si NO existe sección para esa estructura → "Otros hallazgos:".
+   d) NUNCA asignes por proximidad geográfica, vecindad anatómica, ni coincidencia parcial de palabras. Que dos estructuras estén en la misma región NO las hace la misma sección.
+
+   PROHIBICIÓN ABSOLUTA — MATCHING POR KEYWORDS:
+   NO asignes un hallazgo a una sección porque comparten una palabra. Ejemplos de errores PROHIBIDOS:
+   - "adenopatía mediastínica" → NO va en "Mediastino y vía aérea" si existe "Ganglios linfáticos". La estructura es GANGLIO, no mediastino como contenedor.
+   - "nódulo tiroideo" → NO va en "Tráquea y bronquios" ni "Cuello" aunque estén cerca. La estructura es TIROIDES.
+   - "derrame pleural" → NO va en "Parénquima pulmonar" aunque el pulmón esté junto a la pleura. La estructura es PLEURA.
+   - "lesión hepática" → NO va en "Vesícula biliar" ni "Vía biliar". La estructura es HÍGADO.
+   - "trombosis de vena porta" → NO va en "Hígado". La estructura es VENA PORTA / VASOS.
+   - "nódulo suprarrenal" → NO va en "Riñones". La estructura es GLÁNDULA SUPRARRENAL.
+   - "TEP / embolia pulmonar" → NO va en "Parénquima pulmonar" ni "Tráquea". La estructura es ARTERIA PULMONAR / VASOS.
+   - "hernia discal" → NO va en "Cuerpos vertebrales" si existe sección de "Canal raquídeo" o "Disco intervertebral". La estructura es DISCO.
+   - "estenosis de arteria renal" → NO va en "Riñones". La estructura es ARTERIA RENAL / VASOS.
+   - "líquido libre abdominal" → NO va en la primera sección abdominal que encuentres. Busca "Cavidad peritoneal", "Líquido libre" o "Otros hallazgos:".
+   - "fractura costal" → NO va en "Parénquima pulmonar" ni "Mediastino". Busca sección ósea o "Pared torácica".
+
+   REGLA DE ORO: Cuando dudes, es SIEMPRE mejor enviar el hallazgo a "Otros hallazgos:" que colocarlo en una sección incorrecta. Un hallazgo en la sección equivocada es un ERROR CLÍNICO; un hallazgo en "Otros hallazgos:" es perfectamente aceptable.
+
+8. HALLAZGOS SIN SECCIÓN — "OTROS HALLAZGOS":
+   Si un hallazgo dictado NO encaja en NINGUNA sección anatómica del template, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
    - NUNCA omitas un hallazgo dictado por falta de sección adecuada.
-   - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos". Cada hallazgo DEBE ir en la sección que corresponde ANATÓMICAMENTE. Si la estructura anatómica del hallazgo NO es la estructura de la sección, NO lo pongas ahí.
-   - EJEMPLOS de hallazgos que VAN a "Otros hallazgos": nódulos tiroideos en un template de tórax sin sección de tiroides, hallazgos en partes blandas en un template óseo, adenopatías en un template que no las incluye, hallazgos tiroideos en una sección de tráquea, hallazgos mamarios en un template torácico, etc.
-   - La sección debe corresponderse ANATÓMICAMENTE con el hallazgo. "Tráquea y bronquios" NO es tiroides. "Pulmón" NO es pleura si hay sección de pleura. "Hígado" NO es vesícula si hay sección de vesícula.
+   - NUNCA fuerces un hallazgo en una sección anatómica incorrecta solo para evitar crear "Otros hallazgos". Es PREFERIBLE tener una sección de "Otros hallazgos" larga a colocar un solo hallazgo en la sección equivocada.
    - Si TODOS los hallazgos encajan en secciones existentes, NO añadas esta sección.
 
 ⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA:
@@ -1073,12 +1121,33 @@ REGRAS (sem exceções):
 4. NÃO invente achados patológicos nem diagnósticos que o radiologista não tenha ditado.
 5. NÃO adicione diagnósticos, caracterizações nem interpretações que o radiologista não tenha ditado.
 6. Ignore completamente a seção "CONCLUSÃO" do template — NÃO a inclua.
-7. ACHADOS SEM SEÇÃO — OBRIGATÓRIO:
-   Se um achado ditado NÃO se encaixa claramente em NENHUMA seção anatômica do template, DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
+7. COLOCAÇÃO ANATÔMICA CORRETA — REGRA CRÍTICA (PRIORIDADE MÁXIMA):
+   ALGORITMO OBRIGATÓRIO para atribuir CADA achado a uma seção:
+   a) EXTRAIA a estrutura anatômica PRIMÁRIA do achado. Ex: "nódulo tireoidiano de 8 mm" → tireoide. "TEP em artéria lobar direita" → artérias pulmonares. "derrame pleural direito" → pleura.
+   b) PROCURE no template a seção cujo nome designa ESSA MESMA estrutura anatômica.
+   c) Se encontrar → atribua ali. Se NÃO existir seção para essa estrutura → "Outros achados:".
+   d) NUNCA atribua por proximidade geográfica, vizinhança anatômica nem coincidência parcial de palavras. Duas estruturas estarem na mesma região NÃO as torna a mesma seção.
+
+   PROIBIÇÃO ABSOLUTA — MATCHING POR KEYWORDS:
+   NÃO atribua um achado a uma seção porque compartilham uma palavra. Exemplos de erros PROIBIDOS:
+   - "linfonodomegalia mediastinal" → NÃO vai em "Mediastino e via aérea" se existir "Linfonodos". A estrutura é LINFONODO, não o mediastino como contêiner.
+   - "nódulo tireoidiano" → NÃO vai em "Traqueia e brônquios" nem "Pescoço" embora estejam perto. A estrutura é TIREOIDE.
+   - "derrame pleural" → NÃO vai em "Parênquima pulmonar" embora o pulmão esteja junto à pleura. A estrutura é PLEURA.
+   - "lesão hepática" → NÃO vai em "Vesícula biliar" nem "Via biliar". A estrutura é FÍGADO.
+   - "trombose de veia porta" → NÃO vai em "Fígado". A estrutura é VEIA PORTA / VASOS.
+   - "nódulo adrenal" → NÃO vai em "Rins". A estrutura é GLÂNDULA ADRENAL.
+   - "TEP / embolia pulmonar" → NÃO vai em "Parênquima pulmonar" nem "Traqueia". A estrutura é ARTÉRIA PULMONAR / VASOS.
+   - "hérnia discal" → NÃO vai em "Corpos vertebrais" se existir seção de "Canal raquídeo" ou "Disco intervertebral". A estrutura é DISCO.
+   - "estenose de artéria renal" → NÃO vai em "Rins". A estrutura é ARTÉRIA RENAL / VASOS.
+   - "líquido livre abdominal" → NÃO vai na primeira seção abdominal que encontrar. Procure "Cavidade peritoneal", "Líquido livre" ou "Outros achados:".
+   - "fratura costal" → NÃO vai em "Parênquima pulmonar" nem "Mediastino". Procure seção óssea ou "Parede torácica".
+
+   REGRA DE OURO: Quando em dúvida, é SEMPRE melhor enviar o achado para "Outros achados:" do que colocá-lo na seção errada. Um achado na seção errada é um ERRO CLÍNICO; um achado em "Outros achados:" é perfeitamente aceitável.
+
+8. ACHADOS SEM SEÇÃO — "OUTROS ACHADOS":
+   Se um achado ditado NÃO se encaixa em NENHUMA seção anatômica do template, DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
    - NUNCA omita um achado ditado por falta de seção adequada.
-   - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados". Cada achado DEVE ir na seção que corresponde ANATOMICAMENTE. Se a estrutura anatômica do achado NÃO é a estrutura da seção, NÃO o coloque lá.
-   - EXEMPLOS de achados que VÃO para "Outros achados": nódulos tireoidianos em um template de tórax sem seção de tireoide, achados em partes moles em um template ósseo, linfonodomegalias em um template que não as inclui, achados tireoidianos em uma seção de traqueia, etc.
-   - A seção deve corresponder ANATOMICAMENTE ao achado. "Traqueia e brônquios" NÃO é tireoide. "Pulmão" NÃO é pleura se houver seção de pleura.
+   - NUNCA force um achado em uma seção anatômica incorreta apenas para evitar criar "Outros achados". É PREFERÍVEL ter uma seção de "Outros achados" longa a colocar um único achado na seção errada.
    - Se TODOS os achados se encaixam em seções existentes, NÃO adicione esta seção.
 
 ⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA:
@@ -1116,19 +1185,28 @@ RULES (no exceptions):
 4. Do NOT invent pathological findings or diagnoses the radiologist did not dictate.
 5. Do NOT add diagnoses, characterizations, or interpretations the radiologist did not dictate.
 6. Completely IGNORE the "CONCLUSION" section of the template — do NOT include it.
-7. CORRECT ANATOMICAL PLACEMENT — CRITICAL RULE:
-   Each finding MUST go in the section whose ANATOMICAL STRUCTURE exactly matches the structure described in the finding. Do NOT place a finding in a section just because they are in the same body region or share a keyword.
+7. CORRECT ANATOMICAL PLACEMENT — CRITICAL RULE (HIGHEST PRIORITY):
+   MANDATORY ALGORITHM to assign EACH finding to a section:
+   a) EXTRACT the PRIMARY anatomical structure from the finding. E.g.: "8 mm thyroid nodule" → thyroid. "PE in right lobar artery" → pulmonary arteries. "right pleural effusion" → pleura.
+   b) SEARCH the template for the section whose name designates THAT SAME anatomical structure.
+   c) If found → assign there. If NO section exists for that structure → "Additional findings:".
+   d) NEVER assign by geographic proximity, anatomical neighborhood, or partial keyword match. Two structures being in the same region does NOT make them the same section.
 
-   PRINCIPLE: Ask "is the anatomical structure this finding describes THE structure that the section names?" If NO, that finding does NOT go there.
+   ABSOLUTE PROHIBITION — KEYWORD MATCHING:
+   Do NOT assign a finding to a section because they share a word. Examples of PROHIBITED errors:
+   - "mediastinal lymphadenopathy" → does NOT go in "Mediastinum and airways" if a "Lymph nodes" section exists. The structure is LYMPH NODE, not the mediastinal container.
+   - "thyroid nodule" → does NOT go in "Trachea and bronchi" or "Neck" even though they are nearby. The structure is THYROID.
+   - "pleural effusion" → does NOT go in "Lung parenchyma" even though the lung is adjacent to the pleura. The structure is PLEURA.
+   - "hepatic lesion" → does NOT go in "Gallbladder" or "Bile ducts". The structure is LIVER.
+   - "portal vein thrombosis" → does NOT go in "Liver". The structure is PORTAL VEIN / VESSELS.
+   - "adrenal nodule" → does NOT go in "Kidneys". The structure is ADRENAL GLAND.
+   - "PE / pulmonary embolism" → does NOT go in "Lung parenchyma" or "Trachea". The structure is PULMONARY ARTERY / VESSELS.
+   - "disc herniation" → does NOT go in "Vertebral bodies" if a "Spinal canal" or "Intervertebral disc" section exists. The structure is DISC.
+   - "renal artery stenosis" → does NOT go in "Kidneys". The structure is RENAL ARTERY / VESSELS.
+   - "free abdominal fluid" → does NOT go in the first abdominal section you find. Look for "Peritoneal cavity", "Free fluid" or "Additional findings:".
+   - "rib fracture" → does NOT go in "Lung parenchyma" or "Mediastinum". Look for bone section or "Chest wall".
 
-   Common errors you MUST avoid:
-   - "Trachea and bronchi" is NOT thyroid, NOT pulmonary arteries, NOT esophagus, NOT mediastinum.
-   - "Lung" or "Lung parenchyma" is NOT pleura (if a pleura section exists), NOT pulmonary arteries, NOT mediastinum.
-   - "Liver" is NOT gallbladder (if a gallbladder section exists), NOT portal vein, NOT bile ducts.
-   - "Kidneys" is NOT adrenal glands (if an adrenal section exists), NOT ureters, NOT bladder.
-   - Vascular findings (PE, dissection, aneurysm, thrombosis) go in the vessels, arteries, heart or mediastinum section — NOT in the section of the organ they supply.
-   - Soft tissue findings do NOT go in bone sections and vice versa.
-   - Lymphadenopathy goes in the lymph node or mediastinum section, NOT in the section of the adjacent organ.
+   GOLDEN RULE: When in doubt, it is ALWAYS better to send the finding to "Additional findings:" than to place it in the wrong section. A finding in the wrong section is a CLINICAL ERROR; a finding in "Additional findings:" is perfectly acceptable.
 
 8. FINDINGS WITHOUT A SECTION — "ADDITIONAL FINDINGS":
    If a dictated finding does NOT fit ANY section of the template, you MUST add "Additional findings:" at the end with ALL orphan findings.
