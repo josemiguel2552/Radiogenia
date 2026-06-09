@@ -3027,59 +3027,209 @@ function LiradsCalc() {
 }
 
 /* ═══════════════════════════════════════════
-   BI-RADS Calculator
+   BI-RADS Mammography Calculator
    ═══════════════════════════════════════════ */
-
-const BIRADS_CATEGORIES = [
-  { key: "0a", label: "0a", color: "gray" as const },
-  { key: "0b", label: "0b", color: "gray" as const },
-  { key: "1", label: "1", color: "green" as const },
-  { key: "2", label: "2", color: "green" as const },
-  { key: "3", label: "3", color: "blue" as const },
-  { key: "4a", label: "4A", color: "yellow" as const },
-  { key: "4b", label: "4B", color: "yellow" as const },
-  { key: "4c", label: "4C", color: "red" as const },
-  { key: "5", label: "5", color: "red" as const },
-  { key: "6", label: "6", color: "red" as const },
-];
 
 function BiradsCalc() {
   const t = useT();
-  const [cat, setCat] = useState("");
+  const [findingType, setFindingType] = useState("");
+  // Mass features
+  const [shape, setShape] = useState("");
+  const [margin, setMargin] = useState("");
+  const [density, setDensity] = useState("");
+  // Calcification features
+  const [morphology, setMorphology] = useState("");
+  const [distribution, setDistribution] = useState("");
+  // Asymmetry
+  const [asymType, setAsymType] = useState("");
 
-  const descKey: Record<string, string> = {
-    "0a": "calc.birads_0a", "0b": "calc.birads_0b",
-    "1": "calc.birads_1", "2": "calc.birads_2", "3": "calc.birads_3",
-    "4a": "calc.birads_4a", "4b": "calc.birads_4b", "4c": "calc.birads_4c",
-    "5": "calc.birads_5", "6": "calc.birads_6",
+  function calcBirads(): { cat: string; color: "green" | "blue" | "yellow" | "red" | "gray" } | null {
+    if (findingType === "mass") {
+      if (!shape || !margin) return null;
+      if (margin === "spiculated") return shape === "irregular" ? { cat: "5", color: "red" } : { cat: "4C", color: "red" };
+      if (shape === "irregular" && margin === "indistinct") return { cat: "4C", color: "red" };
+      if (shape === "irregular") return { cat: "4B", color: "yellow" };
+      if (margin === "indistinct") return { cat: "4B", color: "yellow" };
+      if (margin === "microlobulated") return { cat: "4A", color: "yellow" };
+      if (margin === "obscured") return { cat: "4A", color: "yellow" };
+      if (margin === "circumscribed" && (shape === "oval" || shape === "round")) return density === "fat" ? { cat: "2", color: "green" } : { cat: "3", color: "blue" };
+      return { cat: "3", color: "blue" };
+    }
+    if (findingType === "calc") {
+      if (!morphology) return null;
+      if (morphology === "benign") return { cat: "2", color: "green" };
+      if (morphology === "fine_linear") return distribution === "linear" || distribution === "segmental" ? { cat: "4C", color: "red" } : { cat: "4C", color: "red" };
+      if (morphology === "fine_pleo") {
+        if (distribution === "linear" || distribution === "segmental") return { cat: "4C", color: "red" };
+        return { cat: "4B", color: "yellow" };
+      }
+      if (morphology === "coarse_hetero") {
+        if (distribution === "linear" || distribution === "segmental") return { cat: "4B", color: "yellow" };
+        return { cat: "4A", color: "yellow" };
+      }
+      if (morphology === "amorphous") {
+        if (distribution === "linear" || distribution === "segmental") return { cat: "4B", color: "yellow" };
+        return { cat: "4A", color: "yellow" };
+      }
+      return null;
+    }
+    if (findingType === "distortion") return { cat: "4A", color: "yellow" };
+    if (findingType === "asymmetry") {
+      if (!asymType) return null;
+      if (asymType === "global") return { cat: "3", color: "blue" };
+      if (asymType === "focal") return { cat: "3", color: "blue" };
+      if (asymType === "developing") return { cat: "4A", color: "yellow" };
+      return { cat: "3", color: "blue" };
+    }
+    return null;
+  }
+
+  const result = calcBirads();
+
+  const biradsDesc: Record<string, string> = {
+    "2": t("calc.birads_2"), "3": t("calc.birads_3"),
+    "4A": t("calc.birads_4a"), "4B": t("calc.birads_4b"), "4C": t("calc.birads_4c"),
+    "5": t("calc.birads_5"),
   };
-  const recKey: Record<string, string> = {
-    "0a": "calc.birads_0a_rec", "0b": "calc.birads_0b_rec",
-    "1": "calc.birads_1_rec", "2": "calc.birads_2_rec", "3": "calc.birads_3_rec",
-    "4a": "calc.birads_4a_rec", "4b": "calc.birads_4b_rec", "4c": "calc.birads_4c_rec",
-    "5": "calc.birads_5_rec", "6": "calc.birads_6_rec",
+  const biradsRec: Record<string, string> = {
+    "2": t("calc.birads_2_rec"), "3": t("calc.birads_3_rec"),
+    "4A": t("calc.birads_4a_rec"), "4B": t("calc.birads_4b_rec"), "4C": t("calc.birads_4c_rec"),
+    "5": t("calc.birads_5_rec"),
   };
 
-  const selected = BIRADS_CATEGORIES.find((c) => c.key === cat);
-  const desc = cat ? t(descKey[cat] as "calc.birads_0a") : "";
-  const rec = cat ? t(recKey[cat] as "calc.birads_0a_rec") : "";
-
-  const copyText = selected
-    ? t("calc.copy_birads").replace("{category}", selected.label).replace("{description}", desc).replace("{recommendation}", rec)
+  const copyText = result
+    ? t("calc.copy_birads").replace("{category}", result.cat).replace("{description}", biradsDesc[result.cat] || "").replace("{recommendation}", biradsRec[result.cat] || "")
     : "";
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-gray-400">ACR BI-RADS v2025</p>
-        <ResetButton onClick={() => setCat("")} />
+        <ResetButton onClick={() => { setFindingType(""); setShape(""); setMargin(""); setDensity(""); setMorphology(""); setDistribution(""); setAsymType(""); }} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_select_cat")}</Label>
-        <OptionPills options={BIRADS_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))} value={cat} onChange={setCat} />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_finding_type")}</Label>
+        <OptionPills
+          options={[
+            { key: "mass", label: t("calc.birads_mass") },
+            { key: "calc", label: t("calc.birads_calcifications") },
+            { key: "distortion", label: t("calc.birads_distortion") },
+            { key: "asymmetry", label: t("calc.birads_asymmetry") },
+          ]}
+          value={findingType}
+          onChange={(v) => { setFindingType(v); setShape(""); setMargin(""); setDensity(""); setMorphology(""); setDistribution(""); setAsymType(""); }}
+        />
       </div>
-      {selected && (
-        <ResultBox label={`BI-RADS ${selected.label}`} value={desc} interpretation={rec} color={selected.color} />
+      {findingType === "mass" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_shape")}</Label>
+            <OptionPills
+              options={[
+                { key: "oval", label: t("calc.birads_oval") },
+                { key: "round", label: t("calc.birads_round") },
+                { key: "irregular", label: t("calc.birads_irregular") },
+              ]}
+              value={shape} onChange={setShape}
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_margin")}</Label>
+            <OptionPills
+              options={[
+                { key: "circumscribed", label: t("calc.birads_circumscribed") },
+                { key: "obscured", label: t("calc.birads_obscured") },
+                { key: "microlobulated", label: t("calc.birads_microlobulated") },
+                { key: "indistinct", label: t("calc.birads_indistinct") },
+              ]}
+              value={margin} onChange={setMargin}
+            />
+          </div>
+          {margin && (
+            <div>
+              <OptionPills
+                options={[{ key: "spiculated", label: t("calc.birads_spiculated") }]}
+                value={margin === "spiculated" ? "spiculated" : ""} onChange={(v) => setMargin(v === "spiculated" ? "spiculated" : margin)}
+              />
+            </div>
+          )}
+          {shape && margin === "circumscribed" && (
+            <div>
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_density")}</Label>
+              <OptionPills
+                options={[
+                  { key: "high", label: t("calc.birads_high_density") },
+                  { key: "equal", label: t("calc.birads_equal_density") },
+                  { key: "low", label: t("calc.birads_low_density") },
+                  { key: "fat", label: t("calc.birads_fat_density") },
+                ]}
+                value={density} onChange={setDensity}
+              />
+            </div>
+          )}
+        </>
+      )}
+      {findingType === "calc" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_morphology")}</Label>
+            <OptionPills
+              options={[
+                { key: "benign", label: t("calc.birads_morph_benign") },
+                { key: "amorphous", label: t("calc.birads_morph_amorphous") },
+                { key: "coarse_hetero", label: t("calc.birads_morph_coarse") },
+                { key: "fine_pleo", label: t("calc.birads_morph_fine_pleo") },
+              ]}
+              value={morphology} onChange={setMorphology}
+            />
+          </div>
+          {morphology && morphology !== "benign" && (
+            <>
+              <div>
+                <OptionPills
+                  options={[{ key: "fine_linear", label: t("calc.birads_morph_fine_linear") }]}
+                  value={morphology === "fine_linear" ? "fine_linear" : ""} onChange={(v) => setMorphology(v === "fine_linear" ? "fine_linear" : morphology)}
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_distribution")}</Label>
+                <OptionPills
+                  options={[
+                    { key: "diffuse", label: t("calc.birads_dist_diffuse") },
+                    { key: "regional", label: t("calc.birads_dist_regional") },
+                    { key: "grouped", label: t("calc.birads_dist_grouped") },
+                    { key: "linear", label: t("calc.birads_dist_linear") },
+                  ]}
+                  value={distribution} onChange={setDistribution}
+                />
+              </div>
+              {distribution && (
+                <div>
+                  <OptionPills
+                    options={[{ key: "segmental", label: t("calc.birads_dist_segmental") }]}
+                    value={distribution === "segmental" ? "segmental" : ""} onChange={(v) => setDistribution(v === "segmental" ? "segmental" : distribution)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+      {findingType === "asymmetry" && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_asym_type")}</Label>
+          <OptionPills
+            options={[
+              { key: "global", label: t("calc.birads_asym_global") },
+              { key: "focal", label: t("calc.birads_asym_focal") },
+              { key: "developing", label: t("calc.birads_asym_developing") },
+            ]}
+            value={asymType} onChange={setAsymType}
+          />
+        </div>
+      )}
+      {result && (
+        <ResultBox label={`BI-RADS ${result.cat}`} value={biradsDesc[result.cat] || ""} interpretation={biradsRec[result.cat] || ""} color={result.color} />
       )}
       {copyText && <CopyButton text={copyText} />}
     </div>
@@ -3087,50 +3237,177 @@ function BiradsCalc() {
 }
 
 /* ═══════════════════════════════════════════
-   O-RADS Calculator
+   O-RADS MRI Calculator
    ═══════════════════════════════════════════ */
-
-const ORADS_SCORES = [
-  { key: "1", color: "green" as const },
-  { key: "2", color: "green" as const },
-  { key: "3", color: "yellow" as const },
-  { key: "4", color: "red" as const },
-  { key: "5", color: "red" as const },
-];
 
 function OradsCalc() {
   const t = useT();
-  const [score, setScore] = useState("");
+  const [lesionType, setLesionType] = useState("");
+  // Cystic features
+  const [loculation, setLoculation] = useState("");
+  const [wallThickness, setWallThickness] = useState("");
+  const [cystSize, setCystSize] = useState("");
+  // Solid features
+  const [t2Signal, setT2Signal] = useState("");
+  const [dwiSignal, setDwiSignal] = useState("");
+  const [wallRegularity, setWallRegularity] = useState("");
+  const [ticType, setTicType] = useState("");
 
-  const riskKey: Record<string, string> = {
-    "1": "calc.orads_1", "2": "calc.orads_2", "3": "calc.orads_3",
-    "4": "calc.orads_4", "5": "calc.orads_5",
+  function calcOrads(): { score: string; color: "green" | "blue" | "yellow" | "red" } | null {
+    if (lesionType === "physiological") return { score: "1", color: "green" };
+    if (lesionType === "classic_benign") return { score: "2", color: "green" };
+    if (lesionType === "cystic") {
+      if (!wallThickness) return null;
+      if (wallThickness === "thick") return { score: "4", color: "red" };
+      if (!loculation) return null;
+      if (loculation === "unilocular") return { score: "2", color: "green" };
+      if (loculation === "multilocular") return cystSize === "gte10" ? { score: "3", color: "yellow" } : { score: "3", color: "yellow" };
+      return null;
+    }
+    if (lesionType === "solid") {
+      if (!t2Signal) return null;
+      if (t2Signal === "dark" && dwiSignal === "low") return { score: "3", color: "yellow" };
+      if (!wallRegularity) return null;
+      if (wallRegularity === "irregular") {
+        if (dwiSignal === "high" && ticType === "3") return { score: "5", color: "red" };
+        return { score: "4", color: "red" };
+      }
+      // smooth wall
+      if (!ticType) return null;
+      if (ticType === "1") return { score: "3", color: "yellow" };
+      return { score: "4", color: "red" };
+    }
+    return null;
+  }
+
+  const result = calcOrads();
+
+  const oradsRisk: Record<string, string> = {
+    "1": t("calc.orads_1"), "2": t("calc.orads_2"), "3": t("calc.orads_3"),
+    "4": t("calc.orads_4"), "5": t("calc.orads_5"),
   };
-  const recKey: Record<string, string> = {
-    "1": "calc.orads_1_rec", "2": "calc.orads_2_rec", "3": "calc.orads_3_rec",
-    "4": "calc.orads_4_rec", "5": "calc.orads_5_rec",
+  const oradsRec: Record<string, string> = {
+    "1": t("calc.orads_1_rec"), "2": t("calc.orads_2_rec"), "3": t("calc.orads_3_rec"),
+    "4": t("calc.orads_4_rec"), "5": t("calc.orads_5_rec"),
   };
 
-  const selected = ORADS_SCORES.find((s) => s.key === score);
-  const risk = score ? t(riskKey[score] as "calc.orads_1") : "";
-  const rec = score ? t(recKey[score] as "calc.orads_1_rec") : "";
-
-  const copyText = selected
-    ? t("calc.copy_orads").replace("{score}", score).replace("{risk}", risk).replace("{recommendation}", rec)
+  const copyText = result
+    ? t("calc.copy_orads").replace("{score}", result.score).replace("{risk}", oradsRisk[result.score] || "").replace("{recommendation}", oradsRec[result.score] || "")
     : "";
+
+  const resetAll = () => { setLesionType(""); setLoculation(""); setWallThickness(""); setCystSize(""); setT2Signal(""); setDwiSignal(""); setWallRegularity(""); setTicType(""); };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] text-gray-400">ACR O-RADS MRI 2022</p>
-        <ResetButton onClick={() => setScore("")} />
+        <p className="text-[10px] text-gray-400">Thomassin-Naggara et al., Radiology 2022</p>
+        <ResetButton onClick={resetAll} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_select_score")}</Label>
-        <OptionPills options={ORADS_SCORES.map((s) => ({ key: s.key, label: `O-RADS ${s.key}` }))} value={score} onChange={setScore} />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_lesion_type")}</Label>
+        <OptionPills
+          options={[
+            { key: "physiological", label: t("calc.orads_physiological") },
+            { key: "classic_benign", label: t("calc.orads_classic_benign") },
+            { key: "cystic", label: t("calc.orads_cystic") },
+            { key: "solid", label: t("calc.orads_solid") },
+          ]}
+          value={lesionType}
+          onChange={(v) => { setLesionType(v); setLoculation(""); setWallThickness(""); setCystSize(""); setT2Signal(""); setDwiSignal(""); setWallRegularity(""); setTicType(""); }}
+        />
       </div>
-      {selected && (
-        <ResultBox label={`O-RADS ${score}`} value={risk} interpretation={rec} color={selected.color} />
+      {lesionType === "cystic" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_wall")}</Label>
+            <OptionPills
+              options={[
+                { key: "thin", label: t("calc.orads_thin_wall") },
+                { key: "thick", label: t("calc.orads_thick_wall") },
+              ]}
+              value={wallThickness} onChange={setWallThickness}
+            />
+          </div>
+          {wallThickness === "thin" && (
+            <div>
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_loculation")}</Label>
+              <OptionPills
+                options={[
+                  { key: "unilocular", label: t("calc.orads_unilocular") },
+                  { key: "multilocular", label: t("calc.orads_multilocular") },
+                ]}
+                value={loculation} onChange={setLoculation}
+              />
+            </div>
+          )}
+          {wallThickness === "thin" && loculation === "multilocular" && (
+            <div>
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_cyst_size")}</Label>
+              <OptionPills
+                options={[
+                  { key: "lt10", label: "< 10 cm" },
+                  { key: "gte10", label: "≥ 10 cm" },
+                ]}
+                value={cystSize} onChange={setCystSize}
+              />
+            </div>
+          )}
+        </>
+      )}
+      {lesionType === "solid" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_t2_signal")}</Label>
+            <OptionPills
+              options={[
+                { key: "dark", label: t("calc.orads_t2_dark") },
+                { key: "intermediate", label: t("calc.orads_t2_inter") },
+                { key: "bright", label: t("calc.orads_t2_bright") },
+              ]}
+              value={t2Signal} onChange={setT2Signal}
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_dwi")}</Label>
+            <OptionPills
+              options={[
+                { key: "low", label: t("calc.orads_dwi_low") },
+                { key: "high", label: t("calc.orads_dwi_high") },
+              ]}
+              value={dwiSignal} onChange={setDwiSignal}
+            />
+          </div>
+          {!(t2Signal === "dark" && dwiSignal === "low") && t2Signal && dwiSignal && (
+            <>
+              <div>
+                <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_wall_reg")}</Label>
+                <OptionPills
+                  options={[
+                    { key: "smooth", label: t("calc.orads_smooth") },
+                    { key: "irregular", label: t("calc.orads_irregular_wall") },
+                  ]}
+                  value={wallRegularity} onChange={setWallRegularity}
+                />
+              </div>
+              {wallRegularity && (
+                <div>
+                  <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_tic")}</Label>
+                  <OptionPills
+                    options={[
+                      { key: "1", label: t("calc.orads_tic_1") },
+                      { key: "2", label: t("calc.orads_tic_2") },
+                      { key: "3", label: t("calc.orads_tic_3") },
+                    ]}
+                    value={ticType} onChange={setTicType}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+      {result && (
+        <ResultBox label={`O-RADS ${result.score}`} value={oradsRisk[result.score] || ""} interpretation={oradsRec[result.score] || ""} color={result.color} />
       )}
       {copyText && <CopyButton text={copyText} />}
     </div>
@@ -3138,55 +3415,141 @@ function OradsCalc() {
 }
 
 /* ═══════════════════════════════════════════
-   Lung-RADS Calculator
+   Lung-RADS v2022 Calculator
    ═══════════════════════════════════════════ */
-
-const LUNGRADS_CATEGORIES = [
-  { key: "0", color: "gray" as const },
-  { key: "1", color: "green" as const },
-  { key: "2", color: "green" as const },
-  { key: "3", color: "yellow" as const },
-  { key: "4A", color: "red" as const },
-  { key: "4B", color: "red" as const },
-  { key: "4X", color: "red" as const },
-  { key: "S", color: "blue" as const },
-];
 
 function LungRadsCalc() {
   const t = useT();
-  const [cat, setCat] = useState("");
+  const [noduleType, setNoduleType] = useState("");
+  const [examType, setExamType] = useState("");
+  const [sizeStr, setSizeStr] = useState("");
+  const [solidCompStr, setSolidCompStr] = useState("");
+  const [isNew, setIsNew] = useState("");
+  const [isGrowing, setIsGrowing] = useState("");
+  const [suspicious, setSuspicious] = useState("");
 
-  const findKey: Record<string, string> = {
-    "0": "calc.lungrads_0", "1": "calc.lungrads_1", "2": "calc.lungrads_2",
-    "3": "calc.lungrads_3", "4A": "calc.lungrads_4a", "4B": "calc.lungrads_4b",
-    "4X": "calc.lungrads_4x", "S": "calc.lungrads_s",
+  function calcLungRads(): { cat: string; color: "green" | "blue" | "yellow" | "red" | "gray" } | null {
+    if (!noduleType || !examType) return null;
+    const size = parseFloat(sizeStr);
+    const solidComp = parseFloat(solidCompStr);
+
+    if (noduleType === "solid") {
+      if (!sizeStr || isNaN(size)) return null;
+      if (examType === "baseline") {
+        if (size < 6) return { cat: "2", color: "green" };
+        if (size < 8) return { cat: "3", color: "yellow" };
+        if (size < 15) return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
+        return { cat: suspicious === "yes" ? "4X" : "4B", color: "red" };
+      }
+      // Follow-up
+      if (isNew === "yes") {
+        if (size < 4) return { cat: "2", color: "green" };
+        if (size < 8) return { cat: "3", color: "yellow" };
+        return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
+      }
+      if (isGrowing === "yes") {
+        if (size < 15) return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
+        return { cat: suspicious === "yes" ? "4X" : "4B", color: "red" };
+      }
+      // Stable
+      if (size < 6) return { cat: "2", color: "green" };
+      if (size < 8) return { cat: "3", color: "yellow" };
+      return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
+    }
+
+    if (noduleType === "partsolid") {
+      if (!sizeStr || isNaN(size)) return null;
+      if (size < 6) return { cat: "2", color: "green" };
+      if (examType === "followup" && isNew === "yes") return { cat: "3", color: "yellow" };
+      if (!solidCompStr || isNaN(solidComp)) return null;
+      if (solidComp < 6) return { cat: "3", color: "yellow" };
+      if (solidComp < 8) return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
+      return { cat: suspicious === "yes" ? "4X" : "4B", color: "red" };
+    }
+
+    if (noduleType === "groundglass") {
+      if (!sizeStr || isNaN(size)) return null;
+      if (examType === "followup" && isNew === "yes") return { cat: "2", color: "green" };
+      if (size < 30) return { cat: "2", color: "green" };
+      return { cat: suspicious === "yes" ? "4X" : "3", color: suspicious === "yes" ? "red" : "yellow" };
+    }
+
+    return null;
+  }
+
+  const result = calcLungRads();
+
+  const catDesc: Record<string, string> = {
+    "2": t("calc.lungrads_2"), "3": t("calc.lungrads_3"),
+    "4A": t("calc.lungrads_4a"), "4B": t("calc.lungrads_4b"), "4X": t("calc.lungrads_4x"),
   };
-  const recKey: Record<string, string> = {
-    "0": "calc.lungrads_0_rec", "1": "calc.lungrads_1_rec", "2": "calc.lungrads_2_rec",
-    "3": "calc.lungrads_3_rec", "4A": "calc.lungrads_4a_rec", "4B": "calc.lungrads_4b_rec",
-    "4X": "calc.lungrads_4x_rec", "S": "calc.lungrads_s_rec",
+  const catRec: Record<string, string> = {
+    "2": t("calc.lungrads_2_rec"), "3": t("calc.lungrads_3_rec"),
+    "4A": t("calc.lungrads_4a_rec"), "4B": t("calc.lungrads_4b_rec"), "4X": t("calc.lungrads_4x_rec"),
   };
 
-  const selected = LUNGRADS_CATEGORIES.find((c) => c.key === cat);
-  const finding = cat ? t(findKey[cat] as "calc.lungrads_0") : "";
-  const rec = cat ? t(recKey[cat] as "calc.lungrads_0_rec") : "";
-
-  const copyText = selected
-    ? t("calc.copy_lungrads").replace("{category}", cat).replace("{finding}", finding).replace("{recommendation}", rec)
+  const copyText = result
+    ? t("calc.copy_lungrads").replace("{category}", result.cat).replace("{finding}", catDesc[result.cat] || "").replace("{recommendation}", catRec[result.cat] || "")
     : "";
+
+  const resetAll = () => { setNoduleType(""); setExamType(""); setSizeStr(""); setSolidCompStr(""); setIsNew(""); setIsGrowing(""); setSuspicious(""); };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-gray-400">ACR Lung-RADS v2022</p>
-        <ResetButton onClick={() => setCat("")} />
+        <ResetButton onClick={resetAll} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_select_cat")}</Label>
-        <OptionPills options={LUNGRADS_CATEGORIES.map((c) => ({ key: c.key, label: c.key }))} value={cat} onChange={setCat} />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_nodule_type")}</Label>
+        <OptionPills
+          options={[
+            { key: "solid", label: t("calc.lungrads_solid") },
+            { key: "partsolid", label: t("calc.lungrads_partsolid") },
+            { key: "groundglass", label: t("calc.lungrads_ggn") },
+          ]}
+          value={noduleType}
+          onChange={(v) => { setNoduleType(v); setSizeStr(""); setSolidCompStr(""); setIsNew(""); setIsGrowing(""); setSuspicious(""); }}
+        />
       </div>
-      {selected && (
-        <ResultBox label={`Lung-RADS ${cat}`} value={finding} interpretation={rec} color={selected.color} />
+      {noduleType && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_exam_type")}</Label>
+          <OptionPills
+            options={[
+              { key: "baseline", label: t("calc.lungrads_baseline") },
+              { key: "followup", label: t("calc.lungrads_followup") },
+            ]}
+            value={examType} onChange={(v) => { setExamType(v); setIsNew(""); setIsGrowing(""); }}
+          />
+        </div>
+      )}
+      {noduleType && examType && (
+        <NumInput label={t("calc.lungrads_size")} value={sizeStr} onChange={setSizeStr} unit="mm" step={0.1} />
+      )}
+      {noduleType === "partsolid" && examType && sizeStr && parseFloat(sizeStr) >= 6 && !(examType === "followup" && isNew === "yes") && (
+        <NumInput label={t("calc.lungrads_solid_comp")} value={solidCompStr} onChange={setSolidCompStr} unit="mm" step={0.1} />
+      )}
+      {examType === "followup" && noduleType && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_new_nodule")}</Label>
+          <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={isNew} onChange={setIsNew} />
+        </div>
+      )}
+      {examType === "followup" && isNew === "no" && noduleType === "solid" && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_growing")}</Label>
+          <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={isGrowing} onChange={setIsGrowing} />
+        </div>
+      )}
+      {noduleType && examType && sizeStr && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_suspicious")}</Label>
+          <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={suspicious} onChange={setSuspicious} />
+        </div>
+      )}
+      {result && (
+        <ResultBox label={`Lung-RADS ${result.cat}`} value={catDesc[result.cat] || ""} interpretation={catRec[result.cat] || ""} color={result.color} />
       )}
       {copyText && <CopyButton text={copyText} />}
     </div>
