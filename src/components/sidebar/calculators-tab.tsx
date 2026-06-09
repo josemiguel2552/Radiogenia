@@ -185,6 +185,19 @@ function ResetButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+function CriteriaCheck({ label, checked, onChange, points }: {
+  label: string; checked: boolean; onChange: (v: boolean) => void; points?: number;
+}) {
+  return (
+    <label className="flex items-start gap-2 cursor-pointer py-0.5">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 accent-[var(--brand)]" />
+      <span className="text-[11px] text-gray-700 dark:text-gray-300 flex-1">{label}</span>
+      {points !== undefined && <span className="text-[10px] font-mono text-gray-400 shrink-0">{points > 0 ? `+${points}` : points}</span>}
+    </label>
+  );
+}
+
 /* ═══════════════════════════════════════════
    1. Adrenal CT Washout
    ═══════════════════════════════════════════ */
@@ -1617,15 +1630,15 @@ function TesticularTorsionSheet() {
         <p>{t("calc.torsion_time_12")}</p>
         <p>{t("calc.torsion_time_24")}</p>
       </div>
-      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.torsion_ri_title")}</p>
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("crit.torsion_ri_title")}</p>
       <SheetTable
-        headers={[t("calc.torsion_ri_param"), t("calc.torsion_ri_value"), t("calc.torsion_significance")]}
+        headers={[t("crit.torsion_ri_param"), t("crit.torsion_ri_value"), t("calc.torsion_significance")]}
         rows={[
-          [t("calc.torsion_ri_normal"), "0.50–0.70", t("calc.torsion_ri_normal_sig")],
-          [t("calc.torsion_ri_elevated"), "> 0.75", t("calc.torsion_ri_elevated_sig")],
-          [t("calc.torsion_ri_diff"), "> 0.10", t("calc.torsion_ri_diff_sig")],
-          [t("calc.torsion_ri_absent"), "—", t("calc.torsion_ri_absent_sig")],
-          [t("calc.torsion_ri_reversed"), "< 0", t("calc.torsion_ri_reversed_sig")],
+          [t("crit.torsion_ri_normal"), "0.50–0.70", t("crit.torsion_ri_normal_sig")],
+          [t("crit.torsion_ri_elevated"), "> 0.75", t("crit.torsion_ri_elevated_sig")],
+          [t("crit.torsion_ri_diff"), "> 0.10", t("crit.torsion_ri_diff_sig")],
+          [t("crit.torsion_ri_absent"), "—", t("crit.torsion_ri_absent_sig")],
+          [t("crit.torsion_ri_reversed"), "< 0", t("crit.torsion_ri_reversed_sig")],
         ]}
       />
       <p className="text-[10px] font-bold text-red-600 dark:text-red-400 mt-2">{t("calc.torsion_urgent")}</p>
@@ -2817,20 +2830,15 @@ const CADRADS_GRADES = [
   { key: "4B", stenosis: "LM ≥50% / 3v ≥70%", color: "red" as const },
   { key: "5", stenosis: "100%", color: "red" as const },
 ];
-
 const CADRADS_MODIFIERS = [
-  { key: "S", label: "/S" },
-  { key: "G", label: "/G" },
-  { key: "V", label: "/V" },
-  { key: "I", label: "/I" },
-  { key: "E", label: "/E" },
+  { key: "S", label: "/S — Stent" },
+  { key: "G", label: "/G — Graft" },
+  { key: "V", label: "/V — Vulnerable" },
+  { key: "I", label: "/I — Non-diagnostic" },
+  { key: "E", label: "/E — Exception" },
 ];
-
 const CADRADS_PLAQUE = [
-  { key: "P1", label: "P1" },
-  { key: "P2", label: "P2" },
-  { key: "P3", label: "P3" },
-  { key: "P4", label: "P4" },
+  { key: "P1" }, { key: "P2" }, { key: "P3" }, { key: "P4" },
 ];
 
 function CadRadsCalc() {
@@ -2840,10 +2848,10 @@ function CadRadsCalc() {
   const [plaque, setPlaque] = useState("");
 
   function getManagement(g: string): string {
-    if (g === "0") return t("calc.cadrads_no_further");
-    if (g === "1" || g === "2") return t("calc.cadrads_preventive");
-    if (g === "3") return t("calc.cadrads_functional");
-    return t("calc.cadrads_ica");
+    if (g === "0") return t("crit.cadrads_no_further");
+    if (g === "1" || g === "2") return t("crit.cadrads_preventive");
+    if (g === "3") return t("crit.cadrads_functional");
+    return t("crit.cadrads_ica");
   }
 
   function getInterpretation(g: string): string {
@@ -2858,11 +2866,11 @@ function CadRadsCalc() {
   }
 
   const gradeData = CADRADS_GRADES.find((g) => g.key === grade);
-  const modStr = modifiers.length > 0 ? modifiers.map((m) => `/${m}`).join("") : t("calc.cadrads_no_modifiers");
-  const plaqueStr = plaque || t("calc.cadrads_no_plaque");
+  const modStr = modifiers.length > 0 ? modifiers.map((m) => `/${m}`).join("") : t("crit.cadrads_no_modifiers");
+  const plaqueStr = plaque || t("crit.cadrads_no_plaque");
 
   const copyText = gradeData
-    ? t("calc.copy_cadrads")
+    ? t("crit.copy_cadrads")
         .replace("{grade}", `CAD-RADS ${gradeData.key}`)
         .replace("{stenosis}", `${gradeData.stenosis} — ${getInterpretation(gradeData.key)}`)
         .replace("{management}", getManagement(gradeData.key))
@@ -2877,36 +2885,19 @@ function CadRadsCalc() {
         <ResetButton onClick={() => { setGrade(""); setModifiers([]); setPlaque(""); }} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.cadrads_select_grade")}</Label>
-        <OptionPills
-          options={CADRADS_GRADES.map((g) => ({ key: g.key, label: `${g.key} (${g.stenosis})` }))}
-          value={grade}
-          onChange={setGrade}
-        />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.cadrads_select_grade")}</Label>
+        <OptionPills options={CADRADS_GRADES.map((g) => ({ key: g.key, label: `${g.key} (${g.stenosis})` }))} value={grade} onChange={setGrade} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.cadrads_select_modifiers")}</Label>
-        <MultiPills
-          options={CADRADS_MODIFIERS.map((m) => ({ key: m.key, label: m.label }))}
-          value={modifiers}
-          onChange={setModifiers}
-        />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.cadrads_select_modifiers")}</Label>
+        <MultiPills options={CADRADS_MODIFIERS.map((m) => ({ key: m.key, label: m.label }))} value={modifiers} onChange={setModifiers} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.cadrads_select_plaque")}</Label>
-        <OptionPills
-          options={CADRADS_PLAQUE.map((p) => ({ key: p.key, label: p.key }))}
-          value={plaque}
-          onChange={setPlaque}
-        />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.cadrads_select_plaque")}</Label>
+        <OptionPills options={CADRADS_PLAQUE.map((p) => ({ key: p.key, label: p.key }))} value={plaque} onChange={setPlaque} />
       </div>
       {gradeData && (
-        <ResultBox
-          label={`CAD-RADS ${gradeData.key}`}
-          value={`${gradeData.stenosis} — ${getInterpretation(gradeData.key)}`}
-          interpretation={getManagement(gradeData.key)}
-          color={gradeData.color}
-        />
+        <ResultBox label={`CAD-RADS ${gradeData.key}`} value={`${gradeData.stenosis} — ${getInterpretation(gradeData.key)}`} interpretation={getManagement(gradeData.key)} color={gradeData.color} />
       )}
       {copyText && <CopyButton text={copyText} />}
     </div>
@@ -2930,49 +2921,30 @@ function LiradsCalc() {
     if (lrm === "yes") return { cat: "LR-M", color: "red" };
     if (!aphe || (aphe === "yes" && !size)) return null;
     if (aphe === "no" && !size) return null;
-
     const nFeatures = features.length;
-
     if (aphe === "no") {
       if (size === "lt20") return nFeatures <= 1 ? { cat: "LR-3", color: "yellow" } : { cat: "LR-4", color: "red" };
       return nFeatures === 0 ? { cat: "LR-3", color: "yellow" } : { cat: "LR-4", color: "red" };
     }
-
-    // APHE present — use diagnostic table
     if (size === "lt10") return nFeatures === 0 ? { cat: "LR-3", color: "yellow" } : { cat: "LR-4", color: "red" };
     if (size === "10to19") {
       if (nFeatures === 0) return { cat: "LR-3", color: "yellow" };
       if (nFeatures === 1) return { cat: "LR-4", color: "red" };
       return { cat: "LR-5", color: "red" };
     }
-    // ≥20mm
     if (nFeatures === 0) return { cat: "LR-4", color: "red" };
     return { cat: "LR-5", color: "red" };
   }
 
   const result = calcCategory();
   const liradsInterpretations: Record<string, string> = {
-    "LR-3": t("calc.lirads_3"),
-    "LR-4": t("calc.lirads_4"),
-    "LR-5": t("calc.lirads_5"),
-    "LR-M": t("calc.lirads_m"),
-    "LR-TIV": t("calc.lirads_tiv"),
+    "LR-3": t("calc.lirads_3"), "LR-4": t("calc.lirads_4"), "LR-5": t("calc.lirads_5"),
+    "LR-M": t("calc.lirads_m"), "LR-TIV": t("calc.lirads_tiv"),
   };
-
-  const copyText = result
-    ? t("calc.copy_lirads").replace("{category}", result.cat).replace("{interpretation}", liradsInterpretations[result.cat] || "")
-    : "";
-
+  const copyText = result ? t("crit.copy_lirads").replace("{category}", result.cat).replace("{interpretation}", liradsInterpretations[result.cat] || "") : "";
   const sizeOptions = aphe === "yes"
-    ? [
-        { key: "lt10", label: "< 10 mm" },
-        { key: "10to19", label: "10–19 mm" },
-        { key: "gte20", label: "≥ 20 mm" },
-      ]
-    : [
-        { key: "lt20", label: "< 20 mm" },
-        { key: "gte20", label: "≥ 20 mm" },
-      ];
+    ? [{ key: "lt10", label: "< 10 mm" }, { key: "10to19", label: "10–19 mm" }, { key: "gte20", label: "≥ 20 mm" }]
+    : [{ key: "lt20", label: "< 20 mm" }, { key: "gte20", label: "≥ 20 mm" }];
 
   return (
     <div className="space-y-3">
@@ -2981,46 +2953,40 @@ function LiradsCalc() {
         <ResetButton onClick={() => { setTiv(""); setLrm(""); setAphe(""); setSize(""); setFeatures([]); }} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_tiv")}</Label>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lirads_calc_tiv")}</Label>
         <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={tiv} onChange={setTiv} />
       </div>
       {tiv === "no" && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_lrm")}</Label>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lirads_calc_lrm")}</Label>
           <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={lrm} onChange={setLrm} />
         </div>
       )}
       {tiv === "no" && lrm === "no" && (
         <>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_aphe")}</Label>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lirads_calc_aphe")}</Label>
             <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={aphe} onChange={(v) => { setAphe(v); setSize(""); }} />
           </div>
           {aphe && (
             <div>
-              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_size")}</Label>
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lirads_calc_size")}</Label>
               <OptionPills options={sizeOptions} value={size} onChange={setSize} />
             </div>
           )}
           {aphe && size && (
             <div>
-              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_features")}</Label>
-              <MultiPills
-                options={[
-                  { key: "washout", label: t("calc.lirads_washout") },
-                  { key: "capsule", label: t("calc.lirads_capsule") },
-                  { key: "growth", label: t("calc.lirads_growth") },
-                ]}
-                value={features}
-                onChange={setFeatures}
-              />
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lirads_calc_features")}</Label>
+              <MultiPills options={[
+                { key: "washout", label: t("calc.lirads_washout") },
+                { key: "capsule", label: t("calc.lirads_capsule") },
+                { key: "growth", label: t("calc.lirads_growth") },
+              ]} value={features} onChange={setFeatures} />
             </div>
           )}
         </>
       )}
-      {result && (
-        <ResultBox label={result.cat} value={liradsInterpretations[result.cat] || ""} color={result.color} />
-      )}
+      {result && <ResultBox label={result.cat} value={liradsInterpretations[result.cat] || ""} color={result.color} />}
       {copyText && <CopyButton text={copyText} />}
     </div>
   );
@@ -3033,14 +2999,11 @@ function LiradsCalc() {
 function BiradsCalc() {
   const t = useT();
   const [findingType, setFindingType] = useState("");
-  // Mass features
   const [shape, setShape] = useState("");
   const [margin, setMargin] = useState("");
   const [density, setDensity] = useState("");
-  // Calcification features
   const [morphology, setMorphology] = useState("");
   const [distribution, setDistribution] = useState("");
-  // Asymmetry
   const [asymType, setAsymType] = useState("");
 
   function calcBirads(): { cat: string; color: "green" | "blue" | "yellow" | "red" | "gray" } | null {
@@ -3058,26 +3021,15 @@ function BiradsCalc() {
     if (findingType === "calc") {
       if (!morphology) return null;
       if (morphology === "benign") return { cat: "2", color: "green" };
-      if (morphology === "fine_linear") return distribution === "linear" || distribution === "segmental" ? { cat: "4C", color: "red" } : { cat: "4C", color: "red" };
-      if (morphology === "fine_pleo") {
-        if (distribution === "linear" || distribution === "segmental") return { cat: "4C", color: "red" };
-        return { cat: "4B", color: "yellow" };
-      }
-      if (morphology === "coarse_hetero") {
-        if (distribution === "linear" || distribution === "segmental") return { cat: "4B", color: "yellow" };
-        return { cat: "4A", color: "yellow" };
-      }
-      if (morphology === "amorphous") {
-        if (distribution === "linear" || distribution === "segmental") return { cat: "4B", color: "yellow" };
-        return { cat: "4A", color: "yellow" };
-      }
+      if (morphology === "fine_linear") return { cat: "4C", color: "red" };
+      if (morphology === "fine_pleo") return (distribution === "linear" || distribution === "segmental") ? { cat: "4C", color: "red" } : { cat: "4B", color: "yellow" };
+      if (morphology === "coarse_hetero") return (distribution === "linear" || distribution === "segmental") ? { cat: "4B", color: "yellow" } : { cat: "4A", color: "yellow" };
+      if (morphology === "amorphous") return (distribution === "linear" || distribution === "segmental") ? { cat: "4B", color: "yellow" } : { cat: "4A", color: "yellow" };
       return null;
     }
     if (findingType === "distortion") return { cat: "4A", color: "yellow" };
     if (findingType === "asymmetry") {
       if (!asymType) return null;
-      if (asymType === "global") return { cat: "3", color: "blue" };
-      if (asymType === "focal") return { cat: "3", color: "blue" };
       if (asymType === "developing") return { cat: "4A", color: "yellow" };
       return { cat: "3", color: "blue" };
     }
@@ -3085,21 +3037,9 @@ function BiradsCalc() {
   }
 
   const result = calcBirads();
-
-  const biradsDesc: Record<string, string> = {
-    "2": t("calc.birads_2"), "3": t("calc.birads_3"),
-    "4A": t("calc.birads_4a"), "4B": t("calc.birads_4b"), "4C": t("calc.birads_4c"),
-    "5": t("calc.birads_5"),
-  };
-  const biradsRec: Record<string, string> = {
-    "2": t("calc.birads_2_rec"), "3": t("calc.birads_3_rec"),
-    "4A": t("calc.birads_4a_rec"), "4B": t("calc.birads_4b_rec"), "4C": t("calc.birads_4c_rec"),
-    "5": t("calc.birads_5_rec"),
-  };
-
-  const copyText = result
-    ? t("calc.copy_birads").replace("{category}", result.cat).replace("{description}", biradsDesc[result.cat] || "").replace("{recommendation}", biradsRec[result.cat] || "")
-    : "";
+  const biradsDesc: Record<string, string> = { "2": t("calc.birads_2"), "3": t("calc.birads_3"), "4A": t("calc.birads_4a"), "4B": t("calc.birads_4b"), "4C": t("calc.birads_4c"), "5": t("calc.birads_5") };
+  const biradsRec: Record<string, string> = { "2": t("calc.birads_2_rec"), "3": t("calc.birads_3_rec"), "4A": t("calc.birads_4a_rec"), "4B": t("calc.birads_4b_rec"), "4C": t("calc.birads_4c_rec"), "5": t("calc.birads_5_rec") };
+  const copyText = result ? t("crit.copy_birads").replace("{category}", result.cat).replace("{description}", biradsDesc[result.cat] || "").replace("{recommendation}", biradsRec[result.cat] || "") : "";
 
   return (
     <div className="space-y-3">
@@ -3108,63 +3048,37 @@ function BiradsCalc() {
         <ResetButton onClick={() => { setFindingType(""); setShape(""); setMargin(""); setDensity(""); setMorphology(""); setDistribution(""); setAsymType(""); }} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_finding_type")}</Label>
-        <OptionPills
-          options={[
-            { key: "mass", label: t("calc.birads_mass") },
-            { key: "calc", label: t("calc.birads_calcifications") },
-            { key: "distortion", label: t("calc.birads_distortion") },
-            { key: "asymmetry", label: t("calc.birads_asymmetry") },
-          ]}
-          value={findingType}
-          onChange={(v) => { setFindingType(v); setShape(""); setMargin(""); setDensity(""); setMorphology(""); setDistribution(""); setAsymType(""); }}
-        />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_finding_type")}</Label>
+        <OptionPills options={[
+          { key: "mass", label: t("crit.birads_mass") },
+          { key: "calc", label: t("crit.birads_calcifications") },
+          { key: "distortion", label: t("crit.birads_distortion") },
+          { key: "asymmetry", label: t("crit.birads_asymmetry") },
+        ]} value={findingType} onChange={(v) => { setFindingType(v); setShape(""); setMargin(""); setDensity(""); setMorphology(""); setDistribution(""); setAsymType(""); }} />
       </div>
       {findingType === "mass" && (
         <>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_shape")}</Label>
-            <OptionPills
-              options={[
-                { key: "oval", label: t("calc.birads_oval") },
-                { key: "round", label: t("calc.birads_round") },
-                { key: "irregular", label: t("calc.birads_irregular") },
-              ]}
-              value={shape} onChange={setShape}
-            />
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_shape")}</Label>
+            <OptionPills options={[{ key: "oval", label: t("crit.birads_oval") }, { key: "round", label: t("crit.birads_round") }, { key: "irregular", label: t("crit.birads_irregular") }]} value={shape} onChange={setShape} />
           </div>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_margin")}</Label>
-            <OptionPills
-              options={[
-                { key: "circumscribed", label: t("calc.birads_circumscribed") },
-                { key: "obscured", label: t("calc.birads_obscured") },
-                { key: "microlobulated", label: t("calc.birads_microlobulated") },
-                { key: "indistinct", label: t("calc.birads_indistinct") },
-              ]}
-              value={margin} onChange={setMargin}
-            />
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_margin")}</Label>
+            <OptionPills options={[
+              { key: "circumscribed", label: t("crit.birads_circumscribed") },
+              { key: "obscured", label: t("crit.birads_obscured") },
+              { key: "microlobulated", label: t("crit.birads_microlobulated") },
+              { key: "indistinct", label: t("crit.birads_indistinct") },
+            ]} value={margin} onChange={setMargin} />
           </div>
-          {margin && (
-            <div>
-              <OptionPills
-                options={[{ key: "spiculated", label: t("calc.birads_spiculated") }]}
-                value={margin === "spiculated" ? "spiculated" : ""} onChange={(v) => setMargin(v === "spiculated" ? "spiculated" : margin)}
-              />
-            </div>
-          )}
+          {margin && <OptionPills options={[{ key: "spiculated", label: t("crit.birads_spiculated") }]} value={margin === "spiculated" ? "spiculated" : ""} onChange={(v) => setMargin(v === "spiculated" ? "spiculated" : margin)} />}
           {shape && margin === "circumscribed" && (
             <div>
-              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_density")}</Label>
-              <OptionPills
-                options={[
-                  { key: "high", label: t("calc.birads_high_density") },
-                  { key: "equal", label: t("calc.birads_equal_density") },
-                  { key: "low", label: t("calc.birads_low_density") },
-                  { key: "fat", label: t("calc.birads_fat_density") },
-                ]}
-                value={density} onChange={setDensity}
-              />
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_density")}</Label>
+              <OptionPills options={[
+                { key: "high", label: t("crit.birads_high_density") }, { key: "equal", label: t("crit.birads_equal_density") },
+                { key: "low", label: t("crit.birads_low_density") }, { key: "fat", label: t("crit.birads_fat_density") },
+              ]} value={density} onChange={setDensity} />
             </div>
           )}
         </>
@@ -3172,82 +3086,51 @@ function BiradsCalc() {
       {findingType === "calc" && (
         <>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_morphology")}</Label>
-            <OptionPills
-              options={[
-                { key: "benign", label: t("calc.birads_morph_benign") },
-                { key: "amorphous", label: t("calc.birads_morph_amorphous") },
-                { key: "coarse_hetero", label: t("calc.birads_morph_coarse") },
-                { key: "fine_pleo", label: t("calc.birads_morph_fine_pleo") },
-              ]}
-              value={morphology} onChange={setMorphology}
-            />
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_morphology")}</Label>
+            <OptionPills options={[
+              { key: "benign", label: t("crit.birads_morph_benign") }, { key: "amorphous", label: t("crit.birads_morph_amorphous") },
+              { key: "coarse_hetero", label: t("crit.birads_morph_coarse") }, { key: "fine_pleo", label: t("crit.birads_morph_fine_pleo") },
+            ]} value={morphology} onChange={setMorphology} />
           </div>
           {morphology && morphology !== "benign" && (
             <>
+              <OptionPills options={[{ key: "fine_linear", label: t("crit.birads_morph_fine_linear") }]} value={morphology === "fine_linear" ? "fine_linear" : ""} onChange={(v) => setMorphology(v === "fine_linear" ? "fine_linear" : morphology)} />
               <div>
-                <OptionPills
-                  options={[{ key: "fine_linear", label: t("calc.birads_morph_fine_linear") }]}
-                  value={morphology === "fine_linear" ? "fine_linear" : ""} onChange={(v) => setMorphology(v === "fine_linear" ? "fine_linear" : morphology)}
-                />
+                <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_distribution")}</Label>
+                <OptionPills options={[
+                  { key: "diffuse", label: t("crit.birads_dist_diffuse") }, { key: "regional", label: t("crit.birads_dist_regional") },
+                  { key: "grouped", label: t("crit.birads_dist_grouped") }, { key: "linear", label: t("crit.birads_dist_linear") },
+                ]} value={distribution} onChange={setDistribution} />
               </div>
-              <div>
-                <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_distribution")}</Label>
-                <OptionPills
-                  options={[
-                    { key: "diffuse", label: t("calc.birads_dist_diffuse") },
-                    { key: "regional", label: t("calc.birads_dist_regional") },
-                    { key: "grouped", label: t("calc.birads_dist_grouped") },
-                    { key: "linear", label: t("calc.birads_dist_linear") },
-                  ]}
-                  value={distribution} onChange={setDistribution}
-                />
-              </div>
-              {distribution && (
-                <div>
-                  <OptionPills
-                    options={[{ key: "segmental", label: t("calc.birads_dist_segmental") }]}
-                    value={distribution === "segmental" ? "segmental" : ""} onChange={(v) => setDistribution(v === "segmental" ? "segmental" : distribution)}
-                  />
-                </div>
-              )}
+              {distribution && <OptionPills options={[{ key: "segmental", label: t("crit.birads_dist_segmental") }]} value={distribution === "segmental" ? "segmental" : ""} onChange={(v) => setDistribution(v === "segmental" ? "segmental" : distribution)} />}
             </>
           )}
         </>
       )}
       {findingType === "asymmetry" && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_asym_type")}</Label>
-          <OptionPills
-            options={[
-              { key: "global", label: t("calc.birads_asym_global") },
-              { key: "focal", label: t("calc.birads_asym_focal") },
-              { key: "developing", label: t("calc.birads_asym_developing") },
-            ]}
-            value={asymType} onChange={setAsymType}
-          />
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.birads_asym_type")}</Label>
+          <OptionPills options={[
+            { key: "global", label: t("crit.birads_asym_global") }, { key: "focal", label: t("crit.birads_asym_focal") },
+            { key: "developing", label: t("crit.birads_asym_developing") },
+          ]} value={asymType} onChange={setAsymType} />
         </div>
       )}
-      {result && (
-        <ResultBox label={`BI-RADS ${result.cat}`} value={biradsDesc[result.cat] || ""} interpretation={biradsRec[result.cat] || ""} color={result.color} />
-      )}
+      {result && <ResultBox label={`BI-RADS ${result.cat}`} value={biradsDesc[result.cat] || ""} interpretation={biradsRec[result.cat] || ""} color={result.color} />}
       {copyText && <CopyButton text={copyText} />}
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════
-   O-RADS MRI Calculator
+   O-RADS MRI 2022 Calculator
    ═══════════════════════════════════════════ */
 
 function OradsCalc() {
   const t = useT();
   const [lesionType, setLesionType] = useState("");
-  // Cystic features
   const [loculation, setLoculation] = useState("");
   const [wallThickness, setWallThickness] = useState("");
-  const [cystSize, setCystSize] = useState("");
-  // Solid features
   const [t2Signal, setT2Signal] = useState("");
   const [dwiSignal, setDwiSignal] = useState("");
   const [wallRegularity, setWallRegularity] = useState("");
@@ -3261,8 +3144,7 @@ function OradsCalc() {
       if (wallThickness === "thick") return { score: "4", color: "red" };
       if (!loculation) return null;
       if (loculation === "unilocular") return { score: "2", color: "green" };
-      if (loculation === "multilocular") return cystSize === "gte10" ? { score: "3", color: "yellow" } : { score: "3", color: "yellow" };
-      return null;
+      return { score: "3", color: "yellow" };
     }
     if (lesionType === "solid") {
       if (!t2Signal) return null;
@@ -3272,7 +3154,6 @@ function OradsCalc() {
         if (dwiSignal === "high" && ticType === "3") return { score: "5", color: "red" };
         return { score: "4", color: "red" };
       }
-      // smooth wall
       if (!ticType) return null;
       if (ticType === "1") return { score: "3", color: "yellow" };
       return { score: "4", color: "red" };
@@ -3281,21 +3162,10 @@ function OradsCalc() {
   }
 
   const result = calcOrads();
-
-  const oradsRisk: Record<string, string> = {
-    "1": t("calc.orads_1"), "2": t("calc.orads_2"), "3": t("calc.orads_3"),
-    "4": t("calc.orads_4"), "5": t("calc.orads_5"),
-  };
-  const oradsRec: Record<string, string> = {
-    "1": t("calc.orads_1_rec"), "2": t("calc.orads_2_rec"), "3": t("calc.orads_3_rec"),
-    "4": t("calc.orads_4_rec"), "5": t("calc.orads_5_rec"),
-  };
-
-  const copyText = result
-    ? t("calc.copy_orads").replace("{score}", result.score).replace("{risk}", oradsRisk[result.score] || "").replace("{recommendation}", oradsRec[result.score] || "")
-    : "";
-
-  const resetAll = () => { setLesionType(""); setLoculation(""); setWallThickness(""); setCystSize(""); setT2Signal(""); setDwiSignal(""); setWallRegularity(""); setTicType(""); };
+  const oradsRisk: Record<string, string> = { "1": t("calc.orads_1"), "2": t("calc.orads_2"), "3": t("calc.orads_3"), "4": t("calc.orads_4"), "5": t("calc.orads_5") };
+  const oradsRec: Record<string, string> = { "1": t("calc.orads_1_rec"), "2": t("calc.orads_2_rec"), "3": t("calc.orads_3_rec"), "4": t("calc.orads_4_rec"), "5": t("calc.orads_5_rec") };
+  const copyText = result ? t("crit.copy_orads").replace("{score}", result.score).replace("{risk}", oradsRisk[result.score] || "").replace("{recommendation}", oradsRec[result.score] || "") : "";
+  const resetAll = () => { setLesionType(""); setLoculation(""); setWallThickness(""); setT2Signal(""); setDwiSignal(""); setWallRegularity(""); setTicType(""); };
 
   return (
     <div className="space-y-3">
@@ -3304,52 +3174,22 @@ function OradsCalc() {
         <ResetButton onClick={resetAll} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_lesion_type")}</Label>
-        <OptionPills
-          options={[
-            { key: "physiological", label: t("calc.orads_physiological") },
-            { key: "classic_benign", label: t("calc.orads_classic_benign") },
-            { key: "cystic", label: t("calc.orads_cystic") },
-            { key: "solid", label: t("calc.orads_solid") },
-          ]}
-          value={lesionType}
-          onChange={(v) => { setLesionType(v); setLoculation(""); setWallThickness(""); setCystSize(""); setT2Signal(""); setDwiSignal(""); setWallRegularity(""); setTicType(""); }}
-        />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_lesion_type")}</Label>
+        <OptionPills options={[
+          { key: "physiological", label: t("crit.orads_physiological") }, { key: "classic_benign", label: t("crit.orads_classic_benign") },
+          { key: "cystic", label: t("crit.orads_cystic") }, { key: "solid", label: t("crit.orads_solid") },
+        ]} value={lesionType} onChange={(v) => { setLesionType(v); setLoculation(""); setWallThickness(""); setT2Signal(""); setDwiSignal(""); setWallRegularity(""); setTicType(""); }} />
       </div>
       {lesionType === "cystic" && (
         <>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_wall")}</Label>
-            <OptionPills
-              options={[
-                { key: "thin", label: t("calc.orads_thin_wall") },
-                { key: "thick", label: t("calc.orads_thick_wall") },
-              ]}
-              value={wallThickness} onChange={setWallThickness}
-            />
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_wall")}</Label>
+            <OptionPills options={[{ key: "thin", label: t("crit.orads_thin_wall") }, { key: "thick", label: t("crit.orads_thick_wall") }]} value={wallThickness} onChange={setWallThickness} />
           </div>
           {wallThickness === "thin" && (
             <div>
-              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_loculation")}</Label>
-              <OptionPills
-                options={[
-                  { key: "unilocular", label: t("calc.orads_unilocular") },
-                  { key: "multilocular", label: t("calc.orads_multilocular") },
-                ]}
-                value={loculation} onChange={setLoculation}
-              />
-            </div>
-          )}
-          {wallThickness === "thin" && loculation === "multilocular" && (
-            <div>
-              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_cyst_size")}</Label>
-              <OptionPills
-                options={[
-                  { key: "lt10", label: "< 10 cm" },
-                  { key: "gte10", label: "≥ 10 cm" },
-                ]}
-                value={cystSize} onChange={setCystSize}
-              />
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_loculation")}</Label>
+              <OptionPills options={[{ key: "unilocular", label: t("crit.orads_unilocular") }, { key: "multilocular", label: t("crit.orads_multilocular") }]} value={loculation} onChange={setLoculation} />
             </div>
           )}
         </>
@@ -3357,58 +3197,30 @@ function OradsCalc() {
       {lesionType === "solid" && (
         <>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_t2_signal")}</Label>
-            <OptionPills
-              options={[
-                { key: "dark", label: t("calc.orads_t2_dark") },
-                { key: "intermediate", label: t("calc.orads_t2_inter") },
-                { key: "bright", label: t("calc.orads_t2_bright") },
-              ]}
-              value={t2Signal} onChange={setT2Signal}
-            />
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_t2_signal")}</Label>
+            <OptionPills options={[{ key: "dark", label: t("crit.orads_t2_dark") }, { key: "intermediate", label: t("crit.orads_t2_inter") }, { key: "bright", label: t("crit.orads_t2_bright") }]} value={t2Signal} onChange={setT2Signal} />
           </div>
           <div>
-            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_dwi")}</Label>
-            <OptionPills
-              options={[
-                { key: "low", label: t("calc.orads_dwi_low") },
-                { key: "high", label: t("calc.orads_dwi_high") },
-              ]}
-              value={dwiSignal} onChange={setDwiSignal}
-            />
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_dwi")}</Label>
+            <OptionPills options={[{ key: "low", label: t("crit.orads_dwi_low") }, { key: "high", label: t("crit.orads_dwi_high") }]} value={dwiSignal} onChange={setDwiSignal} />
           </div>
           {!(t2Signal === "dark" && dwiSignal === "low") && t2Signal && dwiSignal && (
             <>
               <div>
-                <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_wall_reg")}</Label>
-                <OptionPills
-                  options={[
-                    { key: "smooth", label: t("calc.orads_smooth") },
-                    { key: "irregular", label: t("calc.orads_irregular_wall") },
-                  ]}
-                  value={wallRegularity} onChange={setWallRegularity}
-                />
+                <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_wall_reg")}</Label>
+                <OptionPills options={[{ key: "smooth", label: t("crit.orads_smooth") }, { key: "irregular", label: t("crit.orads_irregular_wall") }]} value={wallRegularity} onChange={setWallRegularity} />
               </div>
               {wallRegularity && (
                 <div>
-                  <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_tic")}</Label>
-                  <OptionPills
-                    options={[
-                      { key: "1", label: t("calc.orads_tic_1") },
-                      { key: "2", label: t("calc.orads_tic_2") },
-                      { key: "3", label: t("calc.orads_tic_3") },
-                    ]}
-                    value={ticType} onChange={setTicType}
-                  />
+                  <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.orads_tic")}</Label>
+                  <OptionPills options={[{ key: "1", label: t("crit.orads_tic_1") }, { key: "2", label: t("crit.orads_tic_2") }, { key: "3", label: t("crit.orads_tic_3") }]} value={ticType} onChange={setTicType} />
                 </div>
               )}
             </>
           )}
         </>
       )}
-      {result && (
-        <ResultBox label={`O-RADS ${result.score}`} value={oradsRisk[result.score] || ""} interpretation={oradsRec[result.score] || ""} color={result.color} />
-      )}
+      {result && <ResultBox label={`O-RADS ${result.score}`} value={oradsRisk[result.score] || ""} interpretation={oradsRec[result.score] || ""} color={result.color} />}
       {copyText && <CopyButton text={copyText} />}
     </div>
   );
@@ -3432,7 +3244,6 @@ function LungRadsCalc() {
     if (!noduleType || !examType) return null;
     const size = parseFloat(sizeStr);
     const solidComp = parseFloat(solidCompStr);
-
     if (noduleType === "solid") {
       if (!sizeStr || isNaN(size)) return null;
       if (examType === "baseline") {
@@ -3441,7 +3252,6 @@ function LungRadsCalc() {
         if (size < 15) return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
         return { cat: suspicious === "yes" ? "4X" : "4B", color: "red" };
       }
-      // Follow-up
       if (isNew === "yes") {
         if (size < 4) return { cat: "2", color: "green" };
         if (size < 8) return { cat: "3", color: "yellow" };
@@ -3451,12 +3261,10 @@ function LungRadsCalc() {
         if (size < 15) return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
         return { cat: suspicious === "yes" ? "4X" : "4B", color: "red" };
       }
-      // Stable
       if (size < 6) return { cat: "2", color: "green" };
       if (size < 8) return { cat: "3", color: "yellow" };
       return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
     }
-
     if (noduleType === "partsolid") {
       if (!sizeStr || isNaN(size)) return null;
       if (size < 6) return { cat: "2", color: "green" };
@@ -3466,32 +3274,18 @@ function LungRadsCalc() {
       if (solidComp < 8) return { cat: suspicious === "yes" ? "4X" : "4A", color: "red" };
       return { cat: suspicious === "yes" ? "4X" : "4B", color: "red" };
     }
-
     if (noduleType === "groundglass") {
       if (!sizeStr || isNaN(size)) return null;
-      if (examType === "followup" && isNew === "yes") return { cat: "2", color: "green" };
       if (size < 30) return { cat: "2", color: "green" };
       return { cat: suspicious === "yes" ? "4X" : "3", color: suspicious === "yes" ? "red" : "yellow" };
     }
-
     return null;
   }
 
   const result = calcLungRads();
-
-  const catDesc: Record<string, string> = {
-    "2": t("calc.lungrads_2"), "3": t("calc.lungrads_3"),
-    "4A": t("calc.lungrads_4a"), "4B": t("calc.lungrads_4b"), "4X": t("calc.lungrads_4x"),
-  };
-  const catRec: Record<string, string> = {
-    "2": t("calc.lungrads_2_rec"), "3": t("calc.lungrads_3_rec"),
-    "4A": t("calc.lungrads_4a_rec"), "4B": t("calc.lungrads_4b_rec"), "4X": t("calc.lungrads_4x_rec"),
-  };
-
-  const copyText = result
-    ? t("calc.copy_lungrads").replace("{category}", result.cat).replace("{finding}", catDesc[result.cat] || "").replace("{recommendation}", catRec[result.cat] || "")
-    : "";
-
+  const catDesc: Record<string, string> = { "2": t("calc.lungrads_2"), "3": t("calc.lungrads_3"), "4A": t("calc.lungrads_4a"), "4B": t("calc.lungrads_4b"), "4X": t("calc.lungrads_4x") };
+  const catRec: Record<string, string> = { "2": t("calc.lungrads_2_rec"), "3": t("calc.lungrads_3_rec"), "4A": t("calc.lungrads_4a_rec"), "4B": t("calc.lungrads_4b_rec"), "4X": t("calc.lungrads_4x_rec") };
+  const copyText = result ? t("crit.copy_lungrads").replace("{category}", result.cat).replace("{finding}", catDesc[result.cat] || "").replace("{recommendation}", catRec[result.cat] || "") : "";
   const resetAll = () => { setNoduleType(""); setExamType(""); setSizeStr(""); setSolidCompStr(""); setIsNew(""); setIsGrowing(""); setSuspicious(""); };
 
   return (
@@ -3501,113 +3295,76 @@ function LungRadsCalc() {
         <ResetButton onClick={resetAll} />
       </div>
       <div>
-        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_nodule_type")}</Label>
-        <OptionPills
-          options={[
-            { key: "solid", label: t("calc.lungrads_solid") },
-            { key: "partsolid", label: t("calc.lungrads_partsolid") },
-            { key: "groundglass", label: t("calc.lungrads_ggn") },
-          ]}
-          value={noduleType}
-          onChange={(v) => { setNoduleType(v); setSizeStr(""); setSolidCompStr(""); setIsNew(""); setIsGrowing(""); setSuspicious(""); }}
-        />
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lungrads_nodule_type")}</Label>
+        <OptionPills options={[
+          { key: "solid", label: t("crit.lungrads_solid") }, { key: "partsolid", label: t("crit.lungrads_partsolid") },
+          { key: "groundglass", label: t("crit.lungrads_ggn") },
+        ]} value={noduleType} onChange={(v) => { setNoduleType(v); resetAll(); setNoduleType(v); }} />
       </div>
       {noduleType && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_exam_type")}</Label>
-          <OptionPills
-            options={[
-              { key: "baseline", label: t("calc.lungrads_baseline") },
-              { key: "followup", label: t("calc.lungrads_followup") },
-            ]}
-            value={examType} onChange={(v) => { setExamType(v); setIsNew(""); setIsGrowing(""); }}
-          />
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lungrads_exam_type")}</Label>
+          <OptionPills options={[{ key: "baseline", label: t("crit.lungrads_baseline") }, { key: "followup", label: t("crit.lungrads_followup") }]} value={examType} onChange={(v) => { setExamType(v); setIsNew(""); setIsGrowing(""); }} />
         </div>
       )}
-      {noduleType && examType && (
-        <NumInput label={t("calc.lungrads_size")} value={sizeStr} onChange={setSizeStr} unit="mm" step={0.1} />
-      )}
+      {noduleType && examType && <NumInput label={t("crit.lungrads_size")} value={sizeStr} onChange={setSizeStr} unit="mm" step={0.1} />}
       {noduleType === "partsolid" && examType && sizeStr && parseFloat(sizeStr) >= 6 && !(examType === "followup" && isNew === "yes") && (
-        <NumInput label={t("calc.lungrads_solid_comp")} value={solidCompStr} onChange={setSolidCompStr} unit="mm" step={0.1} />
+        <NumInput label={t("crit.lungrads_solid_comp")} value={solidCompStr} onChange={setSolidCompStr} unit="mm" step={0.1} />
       )}
       {examType === "followup" && noduleType && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_new_nodule")}</Label>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lungrads_new_nodule")}</Label>
           <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={isNew} onChange={setIsNew} />
         </div>
       )}
       {examType === "followup" && isNew === "no" && noduleType === "solid" && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_growing")}</Label>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lungrads_growing")}</Label>
           <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={isGrowing} onChange={setIsGrowing} />
         </div>
       )}
       {noduleType && examType && sizeStr && (
         <div>
-          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_suspicious")}</Label>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("crit.lungrads_suspicious")}</Label>
           <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={suspicious} onChange={setSuspicious} />
         </div>
       )}
-      {result && (
-        <ResultBox label={`Lung-RADS ${result.cat}`} value={catDesc[result.cat] || ""} interpretation={catRec[result.cat] || ""} color={result.color} />
-      )}
+      {result && <ResultBox label={`Lung-RADS ${result.cat}`} value={catDesc[result.cat] || ""} interpretation={catRec[result.cat] || ""} color={result.color} />}
       {copyText && <CopyButton text={copyText} />}
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════
-   Renal Volume TKV Calculator (ADPKD)
+   Renal Volume TKV Calculator
    ═══════════════════════════════════════════ */
 
 function RenalVolumeTKVCalc() {
   const t = useT();
-  const [rL, setRL] = useState("");
-  const [rW, setRW] = useState("");
-  const [rD, setRD] = useState("");
-  const [lL, setLL] = useState("");
-  const [lW, setLW] = useState("");
-  const [lD, setLD] = useState("");
-  const [height, setHeight] = useState("");
-  const [age, setAge] = useState("");
+  const [rL, setRL] = useState(""); const [rW, setRW] = useState(""); const [rD, setRD] = useState("");
+  const [lL, setLL] = useState(""); const [lW, setLW] = useState(""); const [lD, setLD] = useState("");
+  const [height, setHeight] = useState(""); const [age, setAge] = useState("");
 
   const ellipsoid = (l: number, w: number, d: number) => (Math.PI / 6) * l * w * d;
-
   const rVol = (rL && rW && rD) ? ellipsoid(parseFloat(rL), parseFloat(rW), parseFloat(rD)) : null;
   const lVol = (lL && lW && lD) ? ellipsoid(parseFloat(lL), parseFloat(lW), parseFloat(lD)) : null;
   const tkv = (rVol !== null && lVol !== null) ? rVol + lVol : null;
   const htTKV = (tkv !== null && height) ? tkv / (parseFloat(height) / 100) : null;
 
   function getMayoClass(httkv: number, a: number): { cls: string; color: "green" | "blue" | "yellow" | "red" } {
-    const boundaries = [
-      { rate: 0.015 },
-      { rate: 0.03 },
-      { rate: 0.045 },
-      { rate: 0.06 },
-    ];
+    const rates = [0.015, 0.03, 0.045, 0.06];
     const classes: { cls: string; color: "green" | "blue" | "yellow" | "red" }[] = [
-      { cls: "1A", color: "green" },
-      { cls: "1B", color: "green" },
-      { cls: "1C", color: "yellow" },
-      { cls: "1D", color: "red" },
-      { cls: "1E", color: "red" },
+      { cls: "1A", color: "green" }, { cls: "1B", color: "green" }, { cls: "1C", color: "yellow" }, { cls: "1D", color: "red" }, { cls: "1E", color: "red" },
     ];
-    for (let i = 0; i < boundaries.length; i++) {
-      const threshold = 150 * Math.exp(boundaries[i].rate * a);
-      if (httkv <= threshold) return classes[i];
+    for (let i = 0; i < rates.length; i++) {
+      if (httkv <= 150 * Math.exp(rates[i] * a)) return classes[i];
     }
     return classes[4];
   }
 
   const mayo = (htTKV !== null && age) ? getMayoClass(htTKV, parseFloat(age)) : null;
-
   const copyText = tkv !== null
-    ? t("calc.copy_renal_vol")
-        .replace("{right}", rVol !== null ? rVol.toFixed(1) : "")
-        .replace("{left}", lVol !== null ? lVol.toFixed(1) : "")
-        .replace("{tkv}", tkv.toFixed(1))
-        .replace("{httkv}", htTKV !== null ? htTKV.toFixed(1) : "—")
-        .replace("{mayo}", mayo ? mayo.cls : "—")
+    ? t("crit.copy_renal_vol").replace("{right}", rVol !== null ? rVol.toFixed(1) : "").replace("{left}", lVol !== null ? lVol.toFixed(1) : "").replace("{tkv}", tkv.toFixed(1)).replace("{httkv}", htTKV !== null ? htTKV.toFixed(1) : "—").replace("{mayo}", mayo ? mayo.cls : "—")
     : "";
 
   return (
@@ -3616,36 +3373,341 @@ function RenalVolumeTKVCalc() {
         <p className="text-[10px] text-gray-400">Irazabal MV et al., JASN 2015</p>
         <ResetButton onClick={() => { setRL(""); setRW(""); setRD(""); setLL(""); setLW(""); setLD(""); setHeight(""); setAge(""); }} />
       </div>
-      <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{t("calc.renal_vol_right")}</p>
+      <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{t("crit.renal_vol_right")}</p>
       <div className="grid grid-cols-3 gap-2">
         <NumInput label={t("calc.length")} value={rL} onChange={setRL} unit="cm" />
         <NumInput label={t("calc.width")} value={rW} onChange={setRW} unit="cm" />
-        <NumInput label={t("calc.depth")} value={rD} onChange={setRD} unit="cm" />
+        <NumInput label={t("crit.depth")} value={rD} onChange={setRD} unit="cm" />
       </div>
-      <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{t("calc.renal_vol_left")}</p>
+      <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{t("crit.renal_vol_left")}</p>
       <div className="grid grid-cols-3 gap-2">
         <NumInput label={t("calc.length")} value={lL} onChange={setLL} unit="cm" />
         <NumInput label={t("calc.width")} value={lW} onChange={setLW} unit="cm" />
-        <NumInput label={t("calc.depth")} value={lD} onChange={setLD} unit="cm" />
+        <NumInput label={t("crit.depth")} value={lD} onChange={setLD} unit="cm" />
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <NumInput label={t("calc.renal_vol_height")} value={height} onChange={setHeight} unit="cm" step={1} />
-        <NumInput label={t("calc.renal_vol_age")} value={age} onChange={setAge} unit={t("calc.years")} step={1} />
+        <NumInput label={t("crit.renal_vol_height")} value={height} onChange={setHeight} unit="cm" step={1} />
+        <NumInput label={t("crit.renal_vol_age")} value={age} onChange={setAge} unit={t("crit.years")} step={1} />
       </div>
       {rVol !== null && lVol !== null && (
         <div className="space-y-1.5 text-[11px] text-gray-600 dark:text-gray-300">
-          <p>{t("calc.renal_vol_right")}: <span className="font-bold">{rVol.toFixed(1)} mL</span></p>
-          <p>{t("calc.renal_vol_left")}: <span className="font-bold">{lVol.toFixed(1)} mL</span></p>
+          <p>{t("crit.renal_vol_right")}: <span className="font-bold">{rVol.toFixed(1)} mL</span></p>
+          <p>{t("crit.renal_vol_left")}: <span className="font-bold">{lVol.toFixed(1)} mL</span></p>
           {tkv !== null && <p>TKV: <span className="font-bold">{tkv.toFixed(1)} mL</span></p>}
           {htTKV !== null && <p>htTKV: <span className="font-bold">{htTKV.toFixed(1)} mL/m</span></p>}
         </div>
       )}
-      {mayo && (
-        <ResultBox
-          label={`Mayo ${mayo.cls}`}
-          value={t(`calc.mayo_${mayo.cls.toLowerCase()}` as "calc.mayo_1a")}
-          color={mayo.color}
-        />
+      {mayo && <ResultBox label={`Mayo ${mayo.cls}`} value={t(`crit.mayo_${mayo.cls.toLowerCase()}` as "crit.mayo_1a")} color={mayo.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Canadian CT Head Rule
+   ═══════════════════════════════════════════ */
+
+function CanadianCTHeadCalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const highRisk = ["gcs_lt15", "skull_fx", "basal_fx", "vomiting_2", "age_65"];
+  const medRisk = ["amnesia_30", "dangerous_mech"];
+  const hasHigh = highRisk.some((k) => checks[k]);
+  const hasMed = medRisk.some((k) => checks[k]);
+  const anyChecked = hasHigh || hasMed;
+
+  const result = hasHigh ? { label: t("crit.ct_head_high"), color: "red" as const, rec: t("crit.ct_head_high_rec") }
+    : hasMed ? { label: t("crit.ct_head_medium"), color: "yellow" as const, rec: t("crit.ct_head_medium_rec") }
+    : anyChecked ? null : null;
+
+  const copyText = result ? t("crit.copy_ct_head").replace("{result}", result.label).replace("{recommendation}", result.rec) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Stiell IG et al., Lancet 2001</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <p className="text-[10px] font-semibold text-red-600 dark:text-red-400">{t("crit.ct_head_high_title")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.ct_head_gcs")} checked={!!checks.gcs_lt15} onChange={() => toggle("gcs_lt15")} />
+        <CriteriaCheck label={t("crit.ct_head_skull")} checked={!!checks.skull_fx} onChange={() => toggle("skull_fx")} />
+        <CriteriaCheck label={t("crit.ct_head_basal")} checked={!!checks.basal_fx} onChange={() => toggle("basal_fx")} />
+        <CriteriaCheck label={t("crit.ct_head_vomit")} checked={!!checks.vomiting_2} onChange={() => toggle("vomiting_2")} />
+        <CriteriaCheck label={t("crit.ct_head_age65")} checked={!!checks.age_65} onChange={() => toggle("age_65")} />
+      </div>
+      <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("crit.ct_head_med_title")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.ct_head_amnesia")} checked={!!checks.amnesia_30} onChange={() => toggle("amnesia_30")} />
+        <CriteriaCheck label={t("crit.ct_head_mechanism")} checked={!!checks.dangerous_mech} onChange={() => toggle("dangerous_mech")} />
+      </div>
+      {result && <ResultBox label={result.label} value={result.rec} color={result.color} />}
+      {!hasHigh && !hasMed && Object.values(checks).some(Boolean) && <ResultBox label={t("crit.ct_head_not_indicated")} value={t("crit.ct_head_not_indicated_rec")} color="green" />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Wells PE Score
+   ═══════════════════════════════════════════ */
+
+function WellsPECalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const items: { key: string; pts: number }[] = [
+    { key: "dvt_signs", pts: 3 }, { key: "pe_likely", pts: 3 }, { key: "hr_100", pts: 1.5 },
+    { key: "immob_surgery", pts: 1.5 }, { key: "prev_dvt_pe", pts: 1.5 },
+    { key: "hemoptysis", pts: 1 }, { key: "malignancy", pts: 1 },
+  ];
+  const score = items.reduce((s, i) => s + (checks[i.key] ? i.pts : 0), 0);
+  const anyChecked = Object.values(checks).some(Boolean);
+
+  const result = !anyChecked ? null
+    : score > 4 ? { label: `Wells ${score} — ${t("crit.pe_likely")}`, color: "red" as const, rec: t("crit.pe_likely_rec") }
+    : { label: `Wells ${score} — ${t("crit.pe_unlikely")}`, color: "green" as const, rec: t("crit.pe_unlikely_rec") };
+
+  const copyText = result ? t("crit.copy_wells_pe").replace("{score}", String(score)).replace("{result}", result.label).replace("{recommendation}", result.rec) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Wells PS et al., Thromb Haemost 2000</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <div className="space-y-0.5">
+        {items.map((i) => (
+          <CriteriaCheck key={i.key} label={t(`crit.pe_${i.key}` as "crit.pe_dvt_signs")} checked={!!checks[i.key]} onChange={() => toggle(i.key)} points={i.pts} />
+        ))}
+      </div>
+      {result && <ResultBox label={result.label} value={result.rec} color={result.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Wells DVT Score
+   ═══════════════════════════════════════════ */
+
+function WellsDVTCalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const items: { key: string; pts: number }[] = [
+    { key: "cancer", pts: 1 }, { key: "paralysis", pts: 1 }, { key: "bedridden", pts: 1 },
+    { key: "tenderness", pts: 1 }, { key: "leg_swollen", pts: 1 }, { key: "calf_3cm", pts: 1 },
+    { key: "pitting", pts: 1 }, { key: "collateral", pts: 1 }, { key: "prev_dvt", pts: 1 },
+    { key: "alt_diag", pts: -2 },
+  ];
+  const score = items.reduce((s, i) => s + (checks[i.key] ? i.pts : 0), 0);
+  const anyChecked = Object.values(checks).some(Boolean);
+
+  const result = !anyChecked ? null
+    : score >= 3 ? { label: `Wells ${score} — ${t("crit.dvt_high")}`, color: "red" as const, rec: t("crit.dvt_high_rec") }
+    : score >= 1 ? { label: `Wells ${score} — ${t("crit.dvt_moderate")}`, color: "yellow" as const, rec: t("crit.dvt_moderate_rec") }
+    : { label: `Wells ${score} — ${t("crit.dvt_low")}`, color: "green" as const, rec: t("crit.dvt_low_rec") };
+
+  const copyText = result ? t("crit.copy_wells_dvt").replace("{score}", String(score)).replace("{result}", result.label).replace("{recommendation}", result.rec) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Wells PS et al., NEJM 2003</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <div className="space-y-0.5">
+        {items.map((i) => (
+          <CriteriaCheck key={i.key} label={t(`crit.dvt_${i.key}` as "crit.dvt_cancer")} checked={!!checks[i.key]} onChange={() => toggle(i.key)} points={i.pts} />
+        ))}
+      </div>
+      {result && <ResultBox label={result.label} value={result.rec} color={result.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Alvarado Score (appendicitis)
+   ═══════════════════════════════════════════ */
+
+function AlvaradoCalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const items: { key: string; pts: number }[] = [
+    { key: "migration", pts: 1 }, { key: "anorexia", pts: 1 }, { key: "nausea", pts: 1 },
+    { key: "rlq_tender", pts: 2 }, { key: "rebound", pts: 1 }, { key: "fever", pts: 1 },
+    { key: "leukocytosis", pts: 2 }, { key: "shift_left", pts: 1 },
+  ];
+  const score = items.reduce((s, i) => s + (checks[i.key] ? i.pts : 0), 0);
+  const anyChecked = Object.values(checks).some(Boolean);
+
+  const result = !anyChecked ? null
+    : score >= 9 ? { label: `Alvarado ${score}/10 — ${t("crit.alv_very_high")}`, color: "red" as const, rec: t("crit.alv_very_high_rec") }
+    : score >= 7 ? { label: `Alvarado ${score}/10 — ${t("crit.alv_high")}`, color: "red" as const, rec: t("crit.alv_high_rec") }
+    : score >= 5 ? { label: `Alvarado ${score}/10 — ${t("crit.alv_moderate")}`, color: "yellow" as const, rec: t("crit.alv_moderate_rec") }
+    : { label: `Alvarado ${score}/10 — ${t("crit.alv_low")}`, color: "green" as const, rec: t("crit.alv_low_rec") };
+
+  const copyText = result ? t("crit.copy_alvarado").replace("{score}", String(score)).replace("{result}", result.label).replace("{recommendation}", result.rec) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Alvarado A, Ann Emerg Med 1986</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">{t("crit.alv_symptoms")}</p>
+      <div className="space-y-0.5">
+        {items.slice(0, 3).map((i) => <CriteriaCheck key={i.key} label={t(`crit.alv_${i.key}` as "crit.alv_migration")} checked={!!checks[i.key]} onChange={() => toggle(i.key)} points={i.pts} />)}
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">{t("crit.alv_signs")}</p>
+      <div className="space-y-0.5">
+        {items.slice(3, 6).map((i) => <CriteriaCheck key={i.key} label={t(`crit.alv_${i.key}` as "crit.alv_rlq_tender")} checked={!!checks[i.key]} onChange={() => toggle(i.key)} points={i.pts} />)}
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">{t("crit.alv_labs")}</p>
+      <div className="space-y-0.5">
+        {items.slice(6).map((i) => <CriteriaCheck key={i.key} label={t(`crit.alv_${i.key}` as "crit.alv_leukocytosis")} checked={!!checks[i.key]} onChange={() => toggle(i.key)} points={i.pts} />)}
+      </div>
+      {result && <ResultBox label={result.label} value={result.rec} color={result.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Tokyo Guidelines Cholecystitis (TG18)
+   ═══════════════════════════════════════════ */
+
+function TokyoCholecystitisCalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const localSigns = ["murphy", "ruq_pain"];
+  const systemic = ["fever_38", "elevated_crp", "elevated_wbc"];
+  const imaging = ["wall_thick", "pericholecystic", "distention", "sono_murphy", "stones"];
+  const severity3 = ["cardiovascular", "neurological", "respiratory", "renal", "hepatic", "hematologic"];
+  const severity2 = ["wbc_18k", "palpable_mass", "duration_72h", "marked_inflammation"];
+
+  const hasA = localSigns.some((k) => checks[k]);
+  const hasB = systemic.some((k) => checks[k]);
+  const hasC = imaging.some((k) => checks[k]);
+  const hasSev3 = severity3.some((k) => checks[k]);
+  const hasSev2 = severity2.some((k) => checks[k]);
+
+  const diagnosis = hasA && hasB && hasC ? t("crit.tg_definite") : hasA && hasB ? t("crit.tg_suspected") : null;
+  const grade = hasSev3 ? { g: "III", color: "red" as const, label: t("crit.tg_grade3") }
+    : hasSev2 ? { g: "II", color: "yellow" as const, label: t("crit.tg_grade2") }
+    : diagnosis ? { g: "I", color: "green" as const, label: t("crit.tg_grade1") } : null;
+
+  const copyText = diagnosis && grade ? t("crit.copy_cholecystitis").replace("{diagnosis}", diagnosis).replace("{grade}", `${t("crit.tg_grade")} ${grade.g}`).replace("{description}", grade.label) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Tokyo Guidelines 2018 (TG18)</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">A. {t("crit.tg_local")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.tg_murphy")} checked={!!checks.murphy} onChange={() => toggle("murphy")} />
+        <CriteriaCheck label={t("crit.tg_ruq_pain")} checked={!!checks.ruq_pain} onChange={() => toggle("ruq_pain")} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">B. {t("crit.tg_systemic")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.tg_fever")} checked={!!checks.fever_38} onChange={() => toggle("fever_38")} />
+        <CriteriaCheck label={t("crit.tg_crp")} checked={!!checks.elevated_crp} onChange={() => toggle("elevated_crp")} />
+        <CriteriaCheck label={t("crit.tg_wbc")} checked={!!checks.elevated_wbc} onChange={() => toggle("elevated_wbc")} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">C. {t("crit.tg_imaging")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.tg_wall")} checked={!!checks.wall_thick} onChange={() => toggle("wall_thick")} />
+        <CriteriaCheck label={t("crit.tg_peri")} checked={!!checks.pericholecystic} onChange={() => toggle("pericholecystic")} />
+        <CriteriaCheck label={t("crit.tg_distention")} checked={!!checks.distention} onChange={() => toggle("distention")} />
+        <CriteriaCheck label={t("crit.tg_sono_murphy")} checked={!!checks.sono_murphy} onChange={() => toggle("sono_murphy")} />
+        <CriteriaCheck label={t("crit.tg_stones")} checked={!!checks.stones} onChange={() => toggle("stones")} />
+      </div>
+      {diagnosis && (
+        <>
+          <ResultBox label={diagnosis} value={grade ? `${t("crit.tg_grade")} ${grade.g} — ${grade.label}` : ""} color={grade?.color || "gray"} />
+          <p className="text-[10px] font-semibold text-gray-500">{t("crit.tg_severity")}</p>
+          <div className="space-y-0.5">
+            {severity2.map((k) => <CriteriaCheck key={k} label={t(`crit.tg_sev_${k}` as "crit.tg_sev_wbc_18k")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+            {severity3.map((k) => <CriteriaCheck key={k} label={t(`crit.tg_sev_${k}` as "crit.tg_sev_cardiovascular")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+          </div>
+        </>
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Tokyo Guidelines Cholangitis (TG18)
+   ═══════════════════════════════════════════ */
+
+function TokyoCholangitisCalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const catA = ["chol_fever", "chol_wbc", "chol_crp"];
+  const catB = ["chol_jaundice", "chol_lft"];
+  const catC = ["chol_dilation", "chol_etiology"];
+  const severity3 = ["chol_cardio", "chol_neuro", "chol_resp", "chol_renal", "chol_hepatic", "chol_hemato"];
+  const severity2 = ["chol_wbc12k", "chol_fever39", "chol_age75", "chol_bili5", "chol_albumin"];
+
+  const hasA = catA.some((k) => checks[k]);
+  const hasB = catB.some((k) => checks[k]);
+  const hasC = catC.some((k) => checks[k]);
+  const hasSev3 = severity3.some((k) => checks[k]);
+  const hasSev2 = severity2.filter((k) => checks[k]).length >= 2;
+
+  const diagnosis = hasA && hasB && hasC ? t("crit.tg_definite") : (hasA && hasB) || (hasA && hasC) || (hasB && hasC) ? t("crit.tg_suspected") : null;
+  const grade = hasSev3 ? { g: "III", color: "red" as const, label: t("crit.chol_grade3") }
+    : hasSev2 ? { g: "II", color: "yellow" as const, label: t("crit.chol_grade2") }
+    : diagnosis ? { g: "I", color: "green" as const, label: t("crit.chol_grade1") } : null;
+
+  const copyText = diagnosis && grade ? t("crit.copy_cholangitis").replace("{diagnosis}", diagnosis).replace("{grade}", `${t("crit.tg_grade")} ${grade.g}`).replace("{description}", grade.label) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Tokyo Guidelines 2018 (TG18)</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">A. {t("crit.chol_systemic")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.chol_fever")} checked={!!checks.chol_fever} onChange={() => toggle("chol_fever")} />
+        <CriteriaCheck label={t("crit.chol_wbc_ab")} checked={!!checks.chol_wbc} onChange={() => toggle("chol_wbc")} />
+        <CriteriaCheck label={t("crit.chol_crp_ab")} checked={!!checks.chol_crp} onChange={() => toggle("chol_crp")} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">B. {t("crit.chol_cholestasis")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.chol_jaundice")} checked={!!checks.chol_jaundice} onChange={() => toggle("chol_jaundice")} />
+        <CriteriaCheck label={t("crit.chol_lft")} checked={!!checks.chol_lft} onChange={() => toggle("chol_lft")} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">C. {t("crit.chol_imaging_title")}</p>
+      <div className="space-y-0.5">
+        <CriteriaCheck label={t("crit.chol_dilation")} checked={!!checks.chol_dilation} onChange={() => toggle("chol_dilation")} />
+        <CriteriaCheck label={t("crit.chol_etiology")} checked={!!checks.chol_etiology} onChange={() => toggle("chol_etiology")} />
+      </div>
+      {diagnosis && (
+        <>
+          <ResultBox label={diagnosis} value={grade ? `${t("crit.tg_grade")} ${grade.g} — ${grade.label}` : ""} color={grade?.color || "gray"} />
+          <p className="text-[10px] font-semibold text-gray-500">{t("crit.tg_severity")}</p>
+          <div className="space-y-0.5">
+            {severity2.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.chol_wbc12k")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+            {severity3.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.chol_cardio")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+          </div>
+        </>
       )}
       {copyText && <CopyButton text={copyText} />}
     </div>
@@ -3799,6 +3861,342 @@ function T1T2MappingCalc() {
       </div>
 
       {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   CAD-RADS 2.0
+   ═══════════════════════════════════════════ */
+
+const CADRADS_GRADES = [
+  { key: "0", stenosis: "0%", color: "green" as const },
+  { key: "1", stenosis: "1-24%", color: "green" as const },
+  { key: "2", stenosis: "25-49%", color: "blue" as const },
+  { key: "3", stenosis: "50-69%", color: "yellow" as const },
+  { key: "4A", stenosis: "70-99%", color: "red" as const },
+  { key: "4B", stenosis: "LM ≥50% / 3v ≥70%", color: "red" as const },
+  { key: "5", stenosis: "100%", color: "red" as const },
+];
+const CADRADS_MODIFIERS = [
+  { key: "S", label: "/S — Stent" },
+  { key: "G", label: "/G — Graft" },
+  { key: "V", label: "/V — Vulnerable plaque" },
+  { key: "E", label: "/E — Extra-cardiac" },
+  { key: "N", label: "/N — Non-diagnostic" },
+];
+const CADRADS_PLAQUE = [
+  { key: "none", label: "—" },
+  { key: "mild", label: "P1 — Mild" },
+  { key: "moderate", label: "P2 — Moderate" },
+  { key: "severe", label: "P3 — Severe" },
+  { key: "extensive", label: "P4 — Extensive" },
+];
+
+function CadRadsCalc() {
+  const t = useT();
+  const [grade, setGrade] = useState("");
+  const [mods, setMods] = useState<string[]>([]);
+  const [plaque, setPlaque] = useState("");
+
+  const g = CADRADS_GRADES.find((x) => x.key === grade);
+  const management = !g ? "" :
+    grade === "0" ? t("crit.cadrads_no_further") :
+    grade === "1" || grade === "2" ? t("crit.cadrads_preventive") :
+    grade === "3" ? t("crit.cadrads_functional") :
+    t("crit.cadrads_ica");
+
+  const modStr = mods.length ? mods.map((m) => `/${m}`).join("") : t("crit.cadrads_no_modifiers");
+  const plaqueLabel = CADRADS_PLAQUE.find((p) => p.key === plaque)?.label || t("crit.cadrads_no_plaque");
+
+  const copyText = g ? t("crit.copy_cadrads")
+    .replace("{grade}", `CAD-RADS ${g.key}`)
+    .replace("{stenosis}", g.stenosis)
+    .replace("{management}", management)
+    .replace("{modifiers}", modStr)
+    .replace("{plaque}", plaqueLabel) : "";
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.cadrads_select_grade")}</p>
+      <OptionPills
+        options={CADRADS_GRADES.map((x) => ({ key: x.key, label: `${x.key} (${x.stenosis})` }))}
+        value={grade}
+        onChange={setGrade}
+      />
+      {g && (
+        <>
+          <ResultBox label={`CAD-RADS ${g.key}`} value={g.stenosis} interpretation={management} color={g.color} />
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.cadrads_select_modifiers")}</p>
+          <MultiPills
+            options={CADRADS_MODIFIERS.map((m) => ({ key: m.key, label: m.label }))}
+            value={mods}
+            onChange={setMods}
+          />
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.cadrads_select_plaque")}</p>
+          <OptionPills
+            options={CADRADS_PLAQUE.map((p) => ({ key: p.key, label: p.label }))}
+            value={plaque}
+            onChange={setPlaque}
+          />
+          <CopyButton text={copyText} />
+        </>
+      )}
+      <ResetButton onClick={() => { setGrade(""); setMods([]); setPlaque(""); }} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   LI-RADS v2018 Calculator
+   ═══════════════════════════════════════════ */
+
+function LiradsCalc() {
+  const t = useT();
+  const [tiv, setTiv] = useState(false);
+  const [lrm, setLrm] = useState(false);
+  const [aphe, setAphe] = useState(false);
+  const [size, setSize] = useState<"" | "<10" | "10-19" | ">=20">("");
+  const [washout, setWashout] = useState(false);
+  const [capsule, setCapsule] = useState(false);
+  const [growth, setGrowth] = useState(false);
+
+  let category = "";
+  let interpretation = "";
+  let color: "green" | "blue" | "yellow" | "red" = "green";
+
+  if (tiv) {
+    category = "LR-TIV";
+    interpretation = "Tumor in vein — definite HCC with venous invasion";
+    color = "red";
+  } else if (lrm) {
+    category = "LR-M";
+    interpretation = "Probably or definitely malignant, not HCC specific — biopsy recommended";
+    color = "red";
+  } else if (aphe && size) {
+    const majorFeatures = [washout, capsule, growth].filter(Boolean).length;
+    if (size === "<10") {
+      category = majorFeatures === 0 ? "LR-3" : "LR-4";
+      color = majorFeatures === 0 ? "yellow" : "red";
+    } else if (size === "10-19") {
+      if (majorFeatures === 0) { category = "LR-3"; color = "yellow"; }
+      else if (majorFeatures === 1) { category = "LR-4"; color = "red"; }
+      else { category = "LR-5"; color = "red"; }
+    } else {
+      if (majorFeatures === 0) { category = "LR-4"; color = "red"; }
+      else { category = "LR-5"; color = "red"; }
+    }
+    interpretation = category === "LR-3" ? "Intermediate probability of HCC"
+      : category === "LR-4" ? "Probably HCC"
+      : "Definitely HCC";
+  } else if (!aphe && size) {
+    category = "LR-3";
+    interpretation = "Intermediate probability — no APHE";
+    color = "yellow";
+  }
+
+  const copyText = category ? t("crit.copy_lirads")
+    .replace("{category}", category)
+    .replace("{interpretation}", interpretation) : "";
+
+  return (
+    <div className="space-y-3">
+      <CriteriaCheck label={t("crit.lirads_calc_tiv")} checked={tiv} onChange={setTiv} />
+      <CriteriaCheck label={t("crit.lirads_calc_lrm")} checked={lrm} onChange={setLrm} />
+      {!tiv && !lrm && (
+        <>
+          <CriteriaCheck label={t("crit.lirads_calc_aphe")} checked={aphe} onChange={setAphe} />
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.lirads_calc_size")}</p>
+          <OptionPills
+            options={[
+              { key: "<10", label: "< 10 mm" },
+              { key: "10-19", label: "10–19 mm" },
+              { key: ">=20", label: "≥ 20 mm" },
+            ]}
+            value={size}
+            onChange={(v) => setSize(v as typeof size)}
+          />
+          {aphe && size && (
+            <>
+              <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.lirads_calc_features")}</p>
+              <CriteriaCheck label="Washout" checked={washout} onChange={setWashout} />
+              <CriteriaCheck label="Enhancing capsule" checked={capsule} onChange={setCapsule} />
+              <CriteriaCheck label="Threshold growth" checked={growth} onChange={setGrowth} />
+            </>
+          )}
+        </>
+      )}
+      {category && (
+        <ResultBox label={category} value={interpretation} color={color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+      <ResetButton onClick={() => { setTiv(false); setLrm(false); setAphe(false); setSize(""); setWashout(false); setCapsule(false); setGrowth(false); }} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   BI-RADS Algorithmic Calculator
+   ═══════════════════════════════════════════ */
+
+type BiradsFinding = "mass" | "calcifications" | "distortion" | "asymmetry" | "";
+
+function BiradsCalc() {
+  const t = useT();
+  const [findingType, setFindingType] = useState<BiradsFinding>("");
+  const [shape, setShape] = useState("");
+  const [margin, setMargin] = useState("");
+  const [density, setDensity] = useState("");
+  const [morphology, setMorphology] = useState("");
+  const [distribution, setDistribution] = useState("");
+  const [asymType, setAsymType] = useState("");
+
+  let category = "";
+  let description = "";
+  let recommendation = "";
+  let color: "green" | "blue" | "yellow" | "red" = "green";
+
+  if (findingType === "mass" && shape && margin) {
+    if (margin === "spiculated" || shape === "irregular") {
+      category = "5"; description = "Highly suggestive of malignancy"; recommendation = "Biopsy"; color = "red";
+    } else if (margin === "indistinct" || margin === "microlobulated") {
+      category = "4"; description = "Suspicious"; recommendation = "Biopsy"; color = "red";
+    } else if (margin === "obscured") {
+      category = "4"; description = "Suspicious — obscured margin"; recommendation = "Biopsy recommended"; color = "yellow";
+    } else if (margin === "circumscribed" && (shape === "oval" || shape === "round")) {
+      if (density === "fat") {
+        category = "2"; description = "Benign — fat-containing mass"; recommendation = "Routine screening"; color = "green";
+      } else {
+        category = "3"; description = "Probably benign"; recommendation = "Short-interval follow-up (6 months)"; color = "blue";
+      }
+    }
+  } else if (findingType === "calcifications" && morphology) {
+    if (morphology === "benign") {
+      category = "2"; description = "Benign calcifications"; recommendation = "Routine screening"; color = "green";
+    } else if (morphology === "amorphous") {
+      category = "4"; description = "Amorphous calcifications — suspicious"; recommendation = "Biopsy"; color = "yellow";
+    } else if (morphology === "coarse") {
+      category = "4"; description = "Coarse heterogeneous calcifications"; recommendation = "Biopsy"; color = "yellow";
+    } else if (morphology === "fine_pleo") {
+      category = "4"; description = "Fine pleomorphic calcifications"; recommendation = "Biopsy"; color = "red";
+    } else if (morphology === "fine_linear") {
+      category = "5"; description = "Fine linear/branching — highly suspicious"; recommendation = "Biopsy"; color = "red";
+    }
+  } else if (findingType === "distortion") {
+    category = "4"; description = "Architectural distortion"; recommendation = "Biopsy / tomosynthesis"; color = "red";
+  } else if (findingType === "asymmetry" && asymType) {
+    if (asymType === "global") {
+      category = "2"; description = "Global asymmetry — usually benign"; recommendation = "Routine screening"; color = "green";
+    } else if (asymType === "focal") {
+      category = "3"; description = "Focal asymmetry"; recommendation = "Additional imaging / follow-up"; color = "blue";
+    } else if (asymType === "developing") {
+      category = "4"; description = "Developing asymmetry"; recommendation = "Biopsy"; color = "red";
+    }
+  }
+
+  const copyText = category ? t("crit.copy_birads")
+    .replace("{category}", category)
+    .replace("{description}", description)
+    .replace("{recommendation}", recommendation) : "";
+
+  const reset = () => {
+    setFindingType(""); setShape(""); setMargin(""); setDensity("");
+    setMorphology(""); setDistribution(""); setAsymType("");
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.birads_finding_type")}</p>
+      <OptionPills
+        options={[
+          { key: "mass", label: t("crit.birads_mass") },
+          { key: "calcifications", label: t("crit.birads_calcifications") },
+          { key: "distortion", label: t("crit.birads_distortion") },
+          { key: "asymmetry", label: t("crit.birads_asymmetry") },
+        ]}
+        value={findingType}
+        onChange={(v) => { setFindingType(v as BiradsFinding); setShape(""); setMargin(""); setDensity(""); setMorphology(""); setDistribution(""); setAsymType(""); }}
+      />
+
+      {findingType === "mass" && (
+        <>
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.birads_shape")}</p>
+          <OptionPills
+            options={[
+              { key: "oval", label: t("crit.birads_oval") },
+              { key: "round", label: t("crit.birads_round") },
+              { key: "irregular", label: t("crit.birads_irregular") },
+            ]}
+            value={shape}
+            onChange={setShape}
+          />
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.birads_margin")}</p>
+          <OptionPills
+            options={[
+              { key: "circumscribed", label: t("crit.birads_circumscribed") },
+              { key: "obscured", label: t("crit.birads_obscured") },
+              { key: "microlobulated", label: t("crit.birads_microlobulated") },
+              { key: "indistinct", label: t("crit.birads_indistinct") },
+              { key: "spiculated", label: t("crit.birads_spiculated") },
+            ]}
+            value={margin}
+            onChange={setMargin}
+          />
+          {margin === "circumscribed" && (shape === "oval" || shape === "round") && (
+            <>
+              <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.birads_density")}</p>
+              <OptionPills
+                options={[
+                  { key: "high", label: t("crit.birads_high_density") },
+                  { key: "equal", label: t("crit.birads_equal_density") },
+                  { key: "low", label: t("crit.birads_low_density") },
+                  { key: "fat", label: t("crit.birads_fat_density") },
+                ]}
+                value={density}
+                onChange={setDensity}
+              />
+            </>
+          )}
+        </>
+      )}
+
+      {findingType === "calcifications" && (
+        <>
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.birads_morphology")}</p>
+          <OptionPills
+            options={[
+              { key: "benign", label: t("crit.birads_morph_benign") },
+              { key: "amorphous", label: t("crit.birads_morph_amorphous") },
+              { key: "coarse", label: t("crit.birads_morph_coarse") },
+              { key: "fine_pleo", label: t("crit.birads_morph_fine_pleo") },
+              { key: "fine_linear", label: t("crit.birads_morph_fine_linear") },
+            ]}
+            value={morphology}
+            onChange={setMorphology}
+          />
+        </>
+      )}
+
+      {findingType === "asymmetry" && (
+        <>
+          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("crit.birads_asym_type")}</p>
+          <OptionPills
+            options={[
+              { key: "global", label: t("crit.birads_asym_global") },
+              { key: "focal", label: t("crit.birads_asym_focal") },
+              { key: "developing", label: t("crit.birads_asym_developing") },
+            ]}
+            value={asymType}
+            onChange={setAsymType}
+          />
+        </>
+      )}
+
+      {category && (
+        <ResultBox label={`BI-RADS ${category}`} value={description} interpretation={recommendation} color={color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+      <ResetButton onClick={reset} />
     </div>
   );
 }
@@ -5314,8 +5712,8 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "lung_tnm", emoji: "🫁" },
   { id: "larynx_tnm", emoji: "🗣️" },
   { id: "nodule_dt", emoji: "📈" },
-  { id: "cadrads", emoji: "❤️" },
   { id: "t1t2_mapping", emoji: "❤️‍🔥" },
+  { id: "cadrads", emoji: "❤️" },
   { id: "lirads", emoji: "🫀" },
   { id: "birads", emoji: "🎀" },
   { id: "orads", emoji: "🥚" },
@@ -5326,6 +5724,7 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
 export function CalculatorsTab() {
   const t = useT();
   const [openCalc, setOpenCalc] = useState<CalcId | null>(null);
+  const [openCrit, setOpenCrit] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const calcLabels: Record<CalcId, string> = {
@@ -5341,13 +5740,13 @@ export function CalculatorsTab() {
     lung_tnm: t("calc.lung_tnm_title"),
     larynx_tnm: t("calc.larynx_tnm_title"),
     nodule_dt: t("calc.dt_title"),
-    cadrads: "CAD-RADS 2.0",
     t1t2_mapping: "T1/T2 Mapping & ECV",
+    cadrads: "CAD-RADS 2.0",
     lirads: "LI-RADS v2018",
     birads: "BI-RADS v2025",
     orads: "O-RADS MRI",
     lungrads: "Lung-RADS v2022",
-    renal_vol: t("calc.renal_vol_title"),
+    renal_vol: t("crit.renal_vol_title"),
   };
 
   const q = search.toLowerCase();
@@ -5511,8 +5910,8 @@ export function CalculatorsTab() {
                   {c.id === "lung_tnm" && <LungTNMCalc />}
                   {c.id === "larynx_tnm" && <LarynxTNMCalc />}
                   {c.id === "nodule_dt" && <NoduleDTCalc />}
-                  {c.id === "cadrads" && <CadRadsCalc />}
                   {c.id === "t1t2_mapping" && <T1T2MappingCalc />}
+                  {c.id === "cadrads" && <CadRadsCalc />}
                   {c.id === "lirads" && <LiradsCalc />}
                   {c.id === "birads" && <BiradsCalc />}
                   {c.id === "orads" && <OradsCalc />}
@@ -5561,6 +5960,33 @@ export function CalculatorsTab() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Urgent Imaging Criteria */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
+          {t("crit.section_title")}
+        </p>
+        <div className="space-y-1">
+          {[
+            { id: "ct_head", emoji: "🧠", label: t("crit.ct_head_title"), component: <CanadianCTHeadCalc /> },
+            { id: "wells_pe", emoji: "🫁", label: t("crit.wells_pe_title"), component: <WellsPECalc /> },
+            { id: "wells_dvt", emoji: "🦵", label: t("crit.wells_dvt_title"), component: <WellsDVTCalc /> },
+            { id: "alvarado", emoji: "🔥", label: t("crit.alvarado_title"), component: <AlvaradoCalc /> },
+            { id: "cholecystitis", emoji: "💚", label: t("crit.cholecystitis_title"), component: <TokyoCholecystitisCalc /> },
+            { id: "cholangitis", emoji: "🟡", label: t("crit.cholangitis_title"), component: <TokyoCholangitisCalc /> },
+          ].filter((c) => !q || c.label.toLowerCase().includes(q)).map((c) => (
+            <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+              <button type="button" onClick={() => setOpenCrit(openCrit === c.id ? null : c.id)}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${openCrit === c.id ? "bg-brand/5 dark:bg-brand/10" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
+                <span className="text-sm">{c.emoji}</span>
+                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 flex-1">{c.label}</span>
+                {openCrit === c.id ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
+              </button>
+              {openCrit === c.id && <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800">{c.component}</div>}
+            </div>
+          ))}
         </div>
       </div>
     </div>
