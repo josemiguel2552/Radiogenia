@@ -2936,6 +2936,206 @@ function TransplantUSSheet() {
   );
 }
 
+/* ══════════════════════════════════════════════
+   CAD-RADS 2.0 Quick Reference
+   Source: Cury RC et al., Radiology 2022;305(3):209-221
+   ══════════════════════════════════════════════ */
+
+function CadRadsSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.cadrads_title")} source="Cury RC et al., CAD-RADS 2.0. Radiology 2022;305(3):209-221">
+      <SheetTable
+        headers={[t("calc.cadrads_grade"), t("calc.cadrads_stenosis"), t("calc.cadrads_interpretation"), t("calc.cadrads_management")]}
+        rows={[
+          ["0", "0%", t("calc.cadrads_none"), t("calc.cadrads_no_further")],
+          ["1", "1–24%", t("calc.cadrads_minimal"), t("calc.cadrads_preventive")],
+          ["2", "25–49%", t("calc.cadrads_mild"), t("calc.cadrads_preventive")],
+          ["3", "50–69%", t("calc.cadrads_moderate"), t("calc.cadrads_functional")],
+          ["4A", "70–99%", t("calc.cadrads_severe_focal"), t("calc.cadrads_ica")],
+          ["4B", "LM ≥50% / 3v ≥70%", t("calc.cadrads_severe_lm"), t("calc.cadrads_ica")],
+          ["5", "100%", t("calc.cadrads_occlusion"), t("calc.cadrads_ica")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.cadrads_modifiers")}</p>
+      <SheetTable
+        headers={[t("calc.cadrads_modifier"), t("calc.cadrads_meaning")]}
+        rows={[
+          ["/S", t("calc.cadrads_stent")],
+          ["/G", t("calc.cadrads_graft")],
+          ["/V", t("calc.cadrads_vuln")],
+          ["/I", t("calc.cadrads_nondiag")],
+          ["/E", t("calc.cadrads_exception")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.cadrads_plaque")}</p>
+      <SheetTable
+        headers={[t("calc.cadrads_grade"), t("calc.cadrads_plaque_desc")]}
+        rows={[
+          ["P1", t("calc.cadrads_p1")],
+          ["P2", t("calc.cadrads_p2")],
+          ["P3", t("calc.cadrads_p3")],
+          ["P4", t("calc.cadrads_p4")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Cardiac MRI — Myocardial Enhancement Patterns
+   Sources:
+   - Mahrholdt H et al., Eur Heart J 2005;26(15):1461-1474
+   - Cerqueira MD et al., Circulation 2002;105:539-542 (AHA 17-segment)
+   - Defined by Defined DJ Kim et al., Circulation 1999;100:1992-2002
+   ══════════════════════════════════════════════ */
+
+function BullseyeDiagram() {
+  const lad = "#ef4444";
+  const rca = "#3b82f6";
+  const lcx = "#22c55e";
+  const cx = 100;
+  const cy = 100;
+
+  const segmentArc = (rInner: number, rOuter: number, startAngle: number, endAngle: number, fill: string, label: string) => {
+    const toRad = (deg: number) => (deg - 90) * Math.PI / 180;
+    const x1o = cx + rOuter * Math.cos(toRad(startAngle));
+    const y1o = cy + rOuter * Math.sin(toRad(startAngle));
+    const x2o = cx + rOuter * Math.cos(toRad(endAngle));
+    const y2o = cy + rOuter * Math.sin(toRad(endAngle));
+    const x1i = cx + rInner * Math.cos(toRad(endAngle));
+    const y1i = cy + rInner * Math.sin(toRad(endAngle));
+    const x2i = cx + rInner * Math.cos(toRad(startAngle));
+    const y2i = cy + rInner * Math.sin(toRad(startAngle));
+    const large = endAngle - startAngle > 180 ? 1 : 0;
+    const midAngle = (startAngle + endAngle) / 2;
+    const rMid = (rInner + rOuter) / 2;
+    const tx = cx + rMid * Math.cos(toRad(midAngle));
+    const ty = cy + rMid * Math.sin(toRad(midAngle));
+    return (
+      <g key={label}>
+        <path
+          d={`M ${x1o} ${y1o} A ${rOuter} ${rOuter} 0 ${large} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${rInner} ${rInner} 0 ${large} 0 ${x2i} ${y2i} Z`}
+          fill={fill} fillOpacity={0.25} stroke={fill} strokeWidth={1.5}
+        />
+        <text x={tx} y={ty} textAnchor="middle" dominantBaseline="central" fontSize={7} fontWeight="bold" fill={fill}>{label}</text>
+      </g>
+    );
+  };
+
+  return (
+    <svg viewBox="0 0 200 200" className="w-full max-w-[220px] mx-auto">
+      {/* Basal ring (1-6): 60° each, starting at 120° (anterior=top) */}
+      {segmentArc(62, 90, 120, 180, lad, "1")}
+      {segmentArc(62, 90, 60, 120, lad, "2")}
+      {segmentArc(62, 90, 0, 60, rca, "3")}
+      {segmentArc(62, 90, 300, 360, rca, "4")}
+      {segmentArc(62, 90, 240, 300, lcx, "5")}
+      {segmentArc(62, 90, 180, 240, lcx, "6")}
+      {/* Mid ring (7-12) */}
+      {segmentArc(36, 62, 120, 180, lad, "7")}
+      {segmentArc(36, 62, 60, 120, lad, "8")}
+      {segmentArc(36, 62, 0, 60, rca, "9")}
+      {segmentArc(36, 62, 300, 360, rca, "10")}
+      {segmentArc(36, 62, 240, 300, lcx, "11")}
+      {segmentArc(36, 62, 180, 240, lcx, "12")}
+      {/* Apical ring (13-16): 90° each */}
+      {segmentArc(14, 36, 135, 225, lad, "13")}
+      {segmentArc(14, 36, 45, 135, lad, "14")}
+      {segmentArc(14, 36, 315, 405, rca, "15")}
+      {segmentArc(14, 36, 225, 315, lcx, "16")}
+      {/* Apex (17) */}
+      <circle cx={cx} cy={cy} r={14} fill={lad} fillOpacity={0.25} stroke={lad} strokeWidth={1.5} />
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fontSize={7} fontWeight="bold" fill={lad}>17</text>
+      {/* Legend */}
+      <rect x={5} y={175} width={10} height={10} rx={2} fill={lad} fillOpacity={0.4} stroke={lad} strokeWidth={1} />
+      <text x={18} y={183} fontSize={8} fill={lad} fontWeight="bold">LAD</text>
+      <rect x={50} y={175} width={10} height={10} rx={2} fill={rca} fillOpacity={0.4} stroke={rca} strokeWidth={1} />
+      <text x={63} y={183} fontSize={8} fill={rca} fontWeight="bold">RCA</text>
+      <rect x={95} y={175} width={10} height={10} rx={2} fill={lcx} fillOpacity={0.4} stroke={lcx} strokeWidth={1} />
+      <text x={108} y={183} fontSize={8} fill={lcx} fontWeight="bold">LCx</text>
+    </svg>
+  );
+}
+
+function LGEPatternDiagrams() {
+  const t = useT();
+  const wallColor = "#d1d5db";
+  const lgeColor = "#fbbf24";
+  const myoColor = "#9ca3af";
+
+  const CrossSection = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex flex-col items-center gap-1">
+      <svg viewBox="0 0 80 80" className="w-16 h-16">
+        {/* Epicardium */}
+        <circle cx={40} cy={40} r={36} fill="none" stroke={wallColor} strokeWidth={1} />
+        {/* Myocardium */}
+        <circle cx={40} cy={40} r={36} fill={myoColor} fillOpacity={0.15} />
+        {/* Endocardium / cavity */}
+        <circle cx={40} cy={40} r={22} fill="white" stroke={wallColor} strokeWidth={1} />
+        {children}
+      </svg>
+      <span className="text-[9px] text-center font-medium text-gray-600 dark:text-gray-400 leading-tight">{label}</span>
+    </div>
+  );
+
+  return (
+    <div className="mt-2">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("calc.cmr_ischemic_vs_non")}</p>
+      <div className="grid grid-cols-4 gap-2">
+        <CrossSection label={t("calc.cmr_subendo")}>
+          {/* Subendocardial LGE — inner ring partial */}
+          <path d="M 40 18 A 22 22 0 0 1 62 40 L 56.5 40 A 16.5 16.5 0 0 0 40 23.5 Z" fill={lgeColor} fillOpacity={0.7} />
+        </CrossSection>
+        <CrossSection label={t("calc.cmr_transmural")}>
+          {/* Transmural LGE — full wall segment */}
+          <path d="M 40 4 A 36 36 0 0 1 76 40 L 62 40 A 22 22 0 0 0 40 18 Z" fill={lgeColor} fillOpacity={0.7} />
+        </CrossSection>
+        <CrossSection label={t("calc.cmr_midwall")}>
+          {/* Mid-wall LGE — ring in middle of wall at septum */}
+          <path d="M 24 20 A 30 30 0 0 0 24 60" fill="none" stroke={lgeColor} strokeWidth={5} strokeOpacity={0.7} />
+        </CrossSection>
+        <CrossSection label={t("calc.cmr_epicardial")}>
+          {/* Epicardial LGE — outer ring partial */}
+          <path d="M 40 4 A 36 36 0 0 1 76 40 L 71 40 A 31 31 0 0 0 40 9 Z" fill={lgeColor} fillOpacity={0.7} />
+        </CrossSection>
+      </div>
+    </div>
+  );
+}
+
+function CardiacMRISheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.cmr_title")} source="Mahrholdt H et al., Eur Heart J 2005; Cerqueira MD et al., Circulation 2002; Kim RJ et al., Circulation 1999">
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.cmr_lge_patterns")}</p>
+      <SheetTable
+        headers={[t("calc.cmr_pattern"), t("calc.cmr_location"), t("calc.cmr_diseases")]}
+        rows={[
+          [t("calc.cmr_ischemic"), t("calc.cmr_ischemic_loc"), t("calc.cmr_ischemic_dis")],
+          [t("calc.cmr_midwall"), t("calc.cmr_midwall_loc"), t("calc.cmr_midwall_dis")],
+          [t("calc.cmr_epicardial"), t("calc.cmr_epicardial_loc"), t("calc.cmr_epicardial_dis")],
+          [t("calc.cmr_diffuse_sub"), t("calc.cmr_diffuse_sub_loc"), t("calc.cmr_diffuse_sub_dis")],
+          [t("calc.cmr_rvi"), t("calc.cmr_rvi_loc"), t("calc.cmr_rvi_dis")],
+          [t("calc.cmr_patchy"), t("calc.cmr_patchy_loc"), t("calc.cmr_patchy_dis")],
+          [t("calc.cmr_inferolat"), t("calc.cmr_inferolat_loc"), t("calc.cmr_inferolat_dis")],
+        ]}
+      />
+      <LGEPatternDiagrams />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.cmr_coronary_territories")}</p>
+      <BullseyeDiagram />
+      <SheetTable
+        headers={[t("calc.cmr_territory"), t("calc.cmr_segments")]}
+        rows={[
+          ["LAD", t("calc.cmr_lad_segments")],
+          ["RCA", t("calc.cmr_rca_segments")],
+          ["LCx", t("calc.cmr_lcx_segments")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 function CTPerfusionDiagrams() {
   const patterns = [
     { label: "Normal", cbf: "N", cbv: "N", mtt: "N", tmax: "N", color: "#22c55e", bgColor: "#dcfce7" },
@@ -4299,6 +4499,8 @@ export function CalculatorsTab() {
         { id: "dvt_pe", component: <DVTPESheet />, label: t("calc.dvt_pe_title") },
         { id: "ri", component: <ResistiveIndexSheet />, label: t("calc.ri_title") },
         { id: "transplant_us", component: <TransplantUSSheet />, label: t("calc.tx_us_title") },
+        { id: "cadrads", component: <CadRadsSheet />, label: "CAD-RADS 2.0" },
+        { id: "cardiac_mri", component: <CardiacMRISheet />, label: t("calc.cmr_title") },
       ],
     },
     {
