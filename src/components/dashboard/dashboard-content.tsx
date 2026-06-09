@@ -51,6 +51,7 @@ import { RecommendationPanel } from "./recommendation-panel";
 import { SelectionHighlight } from "@/components/ui/selection-highlight";
 import { toast } from "sonner";
 import { NpsSurvey } from "./nps-survey";
+import { RadiogenBot } from "@/components/sidebar/radiogen-bot";
 import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 import { useUIPrefs } from "@/lib/ui-prefs";
@@ -2020,6 +2021,10 @@ export function DashboardContent() {
             {traceData && (
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
+
+            <div className="flex justify-end">
+              <RadiogenBot />
+            </div>
 
             {/* SBS / Compact: findings + conclusion side by side */}
             <div className={(isSideBySide || isCompactLayout) ? "grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3" : ""}>
