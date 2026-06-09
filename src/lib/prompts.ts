@@ -218,6 +218,10 @@ REGLAS OBLIGATORIAS:
 
    REGLA DE ORO: Cuando dudes, es SIEMPRE mejor enviar el hallazgo a "Otros hallazgos:" que colocarlo en una sección incorrecta. Un hallazgo en la sección equivocada es un ERROR CLÍNICO; un hallazgo en "Otros hallazgos:" es perfectamente aceptable.
 
+   PROCESO OBLIGATORIO ANTES DE ESCRIBIR CADA SECCIÓN:
+   Antes de redactar cada sección del template, DETENTE y responde internamente: "¿Qué hallazgos del dictado describen ESPECÍFICAMENTE la estructura anatómica que nombra esta sección?" Solo incluye esos hallazgos. Si un hallazgo menciona una estructura diferente (aunque esté anatómicamente cerca), NO lo incluyas aquí — busca la sección correcta o envíalo a "Otros hallazgos:".
+   Ejemplo: si estás escribiendo "Parénquima pulmonar" y el dictado dice "TEP en rama lobar derecha", ese hallazgo describe una ARTERIA, no el parénquima → NO lo pongas aquí. Si estás escribiendo "Mediastino" y el dictado dice "adenopatía pretraqueal", la estructura es un GANGLIO → NO lo pongas en mediastino si existe sección de "Ganglios".
+
 7. HALLAZGOS SIN SECCIÓN — "OTROS HALLAZGOS":
    Si un hallazgo dictado NO encaja en NINGUNA sección del template, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
    - NUNCA omitas un hallazgo dictado por falta de sección adecuada.
@@ -291,6 +295,10 @@ REGRAS OBRIGATÓRIAS:
 
    REGRA DE OURO: Quando em dúvida, é SEMPRE melhor enviar o achado para "Outros achados:" do que colocá-lo na seção errada. Um achado na seção errada é um ERRO CLÍNICO; um achado em "Outros achados:" é perfeitamente aceitável.
 
+   PROCESSO OBRIGATÓRIO ANTES DE ESCREVER CADA SEÇÃO:
+   Antes de redigir cada seção do template, PARE e responda internamente: "Quais achados do ditado descrevem ESPECIFICAMENTE a estrutura anatômica que esta seção nomeia?" Inclua apenas esses achados. Se um achado menciona uma estrutura diferente (mesmo que esteja anatomicamente perto), NÃO o inclua aqui — procure a seção correta ou envie para "Outros achados:".
+   Exemplo: se está escrevendo "Parênquima pulmonar" e o ditado diz "TEP em ramo lobar direito", esse achado descreve uma ARTÉRIA, não o parênquima → NÃO coloque aqui. Se está escrevendo "Mediastino" e o ditado diz "linfonodomegalia pré-traqueal", a estrutura é um LINFONODO → NÃO coloque no mediastino se existir seção de "Linfonodos".
+
 7. ACHADOS SEM SEÇÃO — "OUTROS ACHADOS":
    Se um achado ditado NÃO se encaixa em NENHUMA seção do template, DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
    - NUNCA omita um achado ditado por falta de seção adequada.
@@ -362,6 +370,10 @@ MANDATORY RULES:
    - "rib fracture" → does NOT go in "Lung parenchyma" or "Mediastinum". Look for bone section or "Chest wall".
 
    GOLDEN RULE: When in doubt, it is ALWAYS better to send the finding to "Additional findings:" than to place it in the wrong section. A finding in the wrong section is a CLINICAL ERROR; a finding in "Additional findings:" is perfectly acceptable.
+
+   MANDATORY PROCESS BEFORE WRITING EACH SECTION:
+   Before writing each template section, STOP and answer internally: "Which findings from the dictation describe SPECIFICALLY the anatomical structure that this section names?" Only include those findings. If a finding mentions a different structure (even if anatomically nearby), do NOT include it here — find the correct section or send it to "Additional findings:".
+   Example: if writing "Lung parenchyma" and the dictation says "PE in right lobar artery", that finding describes an ARTERY, not the parenchyma → do NOT place it here. If writing "Mediastinum" and the dictation says "pretracheal lymphadenopathy", the structure is a LYMPH NODE → do NOT place it in mediastinum if a "Lymph nodes" section exists.
 
 7. FINDINGS WITHOUT A SECTION — "ADDITIONAL FINDINGS":
    If a dictated finding does NOT fit ANY section of the template, you MUST add "Additional findings:" at the end with ALL orphan findings.

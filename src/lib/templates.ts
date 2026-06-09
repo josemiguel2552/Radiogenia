@@ -843,10 +843,8 @@ export const DEFAULT_TEMPLATES: Template[] = [
   ].join("\n")),
 
   t(63, "AngioTC pulmonar", "CT", "Thorax", [
-    fld("Main pulmonary arteries"),
-    fld("Lobar pulmonary arteries"),
-    fld("Segmental and subsegmental arteries"),
-    fld("Right ventricle and interventricular septum"),
+    fld("Pulmonary arteries"),
+    fld("Heart and pericardium"),
     fld("Lung parenchyma"),
     fld("Pleura"),
     fld("Mediastinum"),
