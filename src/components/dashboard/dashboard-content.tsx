@@ -1997,6 +1997,10 @@ export function DashboardContent() {
       </div>
       </div>
 
+      <div className="flex justify-end">
+        <RadiogenBot />
+      </div>
+
       {/* ── Output ── */}
       {hasOutput && (
           <div className="space-y-3">
@@ -2021,10 +2025,6 @@ export function DashboardContent() {
             {traceData && (
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
-
-            <div className="flex justify-end">
-              <RadiogenBot />
-            </div>
 
             {/* SBS / Compact: findings + conclusion side by side */}
             <div className={(isSideBySide || isCompactLayout) ? "grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3" : ""}>
