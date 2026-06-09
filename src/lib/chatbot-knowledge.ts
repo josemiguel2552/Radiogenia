@@ -39,7 +39,8 @@ function buildClinicalReferenceData(lang: Lang): string {
       pet: "considerar PET/TC o biopsia",
       subsolid: "Nódulos subsólidos (vidrio deslustrado / parcialmente sólidos)",
       ggn: "Vidrio deslustrado puro (GGN)", partSolid: "Parcialmente sólido",
-      stable: "estable durante ≥ 3 años → no más seguimiento necesario",
+      solidStable: "SÓLIDO estable ≥ 3 años → no más seguimiento necesario",
+      subsolidStable: "SUBSÓLIDO / VIDRIO DESLUSTRADO: seguimiento recomendado durante mínimo 5 años por riesgo de crecimiento lento",
     },
     en: {
       aortaTitle: "NORMAL AORTIC DIAMETERS",
@@ -58,7 +59,8 @@ function buildClinicalReferenceData(lang: Lang): string {
       pet: "consider PET/CT or biopsy",
       subsolid: "Subsolid nodules (ground-glass / part-solid)",
       ggn: "Pure ground-glass nodule (GGN)", partSolid: "Part-solid",
-      stable: "stable for ≥ 3 years → no further follow-up needed",
+      solidStable: "SOLID nodule stable ≥ 3 years → no further follow-up needed",
+      subsolidStable: "SUBSOLID / GROUND-GLASS: follow-up recommended for minimum 5 years due to risk of slow growth",
     },
     pt: {
       aortaTitle: "DIÂMETROS AÓRTICOS NORMAIS",
@@ -77,7 +79,8 @@ function buildClinicalReferenceData(lang: Lang): string {
       pet: "considerar PET/TC ou biópsia",
       subsolid: "Nódulos subsólidos (vidro fosco / parcialmente sólidos)",
       ggn: "Vidro fosco puro (GGN)", partSolid: "Parcialmente sólido",
-      stable: "estável por ≥ 3 anos → sem mais seguimento necessário",
+      solidStable: "SÓLIDO estável ≥ 3 anos → sem mais seguimento necessário",
+      subsolidStable: "SUBSÓLIDO / VIDRO FOSCO: seguimento recomendado durante mínimo 5 anos por risco de crescimento lento",
     },
   };
   const l = L[lang] || L.en;
@@ -95,7 +98,9 @@ function buildClinicalReferenceData(lang: Lang): string {
     `${l.ggn} ≥ 6 mm: ${l.fu612}; then every 2 years for 5 years`,
     `${l.partSolid} < 6 mm: ${l.noFollowUp}`,
     `${l.partSolid} ≥ 6 mm: ${l.fu36}; if solid component ≥ 6mm → ${l.pet}`,
-    `IMPORTANT: Any nodule ${l.stable}`,
+    `STABILITY RULES (IMPORTANT — different for solid vs subsolid):`,
+    `${l.solidStable}`,
+    `${l.subsolidStable}`,
     `Multiple nodules: follow-up based on the most suspicious nodule`,
     "",
     `${l.aortaTitle}:`,
