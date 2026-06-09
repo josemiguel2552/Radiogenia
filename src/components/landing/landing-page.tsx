@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Mic, FileText, Brain, Sparkles, Layout, Shield,
+  Mic, FileText, Brain, Sparkles, Layout, Shield, MessageCircle,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
   BookOpen, Download,
@@ -217,6 +217,7 @@ const FEATURE_KEYS = [
   { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
   { icon: Brain, key: "style", color: "from-purple-500 to-pink-500" },
   { icon: Sparkles, key: "conclusions", color: "from-indigo-500 to-blue-600" },
+  { icon: MessageCircle, key: "bot", color: "from-violet-500 to-fuchsia-500" },
   { icon: Layout, key: "templates", color: "from-blue-600 to-cyan-500" },
   { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
 ];
@@ -653,29 +654,32 @@ const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
     { title: "Dicta tu informe", desc: "Habla naturalmente y observa cómo tu voz se transcribe en tiempo real" },
     { title: "La IA procesa", desc: "El dictado se envía a la inteligencia artificial que analiza y estructura el contenido" },
     { title: "Informe generado", desc: "El informe final aparece con secciones organizadas y tus guías clínicas accesibles" },
+    { title: "Consulta a Radiogen Bot", desc: "Pregunta clasificaciones, valores de referencia o criterios de seguimiento sin salir de tu informe" },
     { title: "Listo para exportar", desc: "Revisa, ajusta y exporta en el formato de tu hospital" },
   ],
   en: [
     { title: "Dictate your report", desc: "Speak naturally and watch your voice transcribed in real time" },
     { title: "AI processes", desc: "The dictation is sent to AI which analyzes and structures the content" },
     { title: "Report generated", desc: "The final report appears with organized sections and your clinical guides accessible" },
+    { title: "Ask Radiogen Bot", desc: "Look up classifications, reference values, or follow-up criteria without leaving your report" },
     { title: "Ready to export", desc: "Review, adjust, and export in your hospital's format" },
   ],
   pt: [
     { title: "Dite seu laudo", desc: "Fale naturalmente e veja sua voz transcrita em tempo real" },
     { title: "A IA processa", desc: "O ditado é enviado à inteligência artificial que analisa e estrutura o conteúdo" },
     { title: "Laudo gerado", desc: "O laudo final aparece com seções organizadas e seus guias clínicos acessíveis" },
+    { title: "Consulte o Radiogen Bot", desc: "Consulte classificações, valores de referência ou critérios de seguimento sem sair do laudo" },
     { title: "Pronto para exportar", desc: "Revise, ajuste e exporte no formato do seu hospital" },
   ],
 };
 
-const DEMO_ICONS = [Mic, Brain, FileText, Download];
+const DEMO_ICONS = [Mic, Brain, FileText, MessageCircle, Download];
 
 function ScrollDemo({ lang }: { lang: PublicLang }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const progress = useScrollProgress(containerRef);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const stepFloat = progress * totalSteps;
   const activeStep = Math.min(Math.floor(stepFloat), totalSteps - 1);
   const stepProgress = stepFloat - activeStep;
@@ -782,7 +786,8 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
                   <DemoStep0 active={activeStep === 0} progress={stepProgress} text={dictText} />
                   <DemoStepAI active={activeStep === 1} progress={stepProgress} lang={lang} dictText={dictText} />
                   <DemoStepReport active={activeStep === 2} progress={stepProgress} lang={lang} />
-                  <DemoStepDone active={activeStep === 3} progress={stepProgress} lang={lang} />
+                  <DemoStepBot active={activeStep === 3} progress={stepProgress} lang={lang} />
+                  <DemoStepDone active={activeStep === 4} progress={stepProgress} lang={lang} />
                 </div>
               </div>
             </div>
@@ -1004,6 +1009,98 @@ function DemoStepReport({ active, progress, lang }: { active: boolean; progress:
               </div>
             ))}
             <p className="text-[7px] text-gray-600 pt-0.5">MacMahon et al. 2017</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DemoStepBot({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const question = lang === "es"
+    ? "¿Qué seguimiento tiene un nódulo sólido de 7 mm?"
+    : lang === "pt"
+    ? "Qual seguimento para nódulo sólido de 7 mm?"
+    : "What follow-up for a 7 mm solid nodule?";
+
+  const answer = lang === "es"
+    ? "Según Fleischner 2017, un nódulo sólido de 6-8 mm:\n• Bajo riesgo: TC en 6-12 meses\n• Alto riesgo: TC en 6-12 meses, considerar TC 18-24 meses"
+    : lang === "pt"
+    ? "Segundo Fleischner 2017, nódulo sólido de 6-8 mm:\n• Baixo risco: TC em 6-12 meses\n• Alto risco: TC em 6-12 meses, considerar TC 18-24 meses"
+    : "Per Fleischner 2017, a 6-8 mm solid nodule:\n• Low risk: CT at 6-12 months\n• High risk: CT at 6-12 months, consider CT at 18-24 months";
+
+  const showQuestion = !active || progress > 0.15;
+  const showAnswer = !active || progress > 0.45;
+  const answerChars = showAnswer ? Math.floor(answer.length * Math.min((!active ? 1 : (progress - 0.45) / 0.4), 1)) : 0;
+
+  return (
+    <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      <div className="flex flex-col h-full">
+        {/* Bot header */}
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 border border-violet-500/30 flex items-center justify-center">
+            <span className="text-sm">🧠</span>
+          </div>
+          <span className="text-xs font-bold text-violet-300">Radiogen Bot</span>
+          <div className="ml-auto flex gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400/60" />
+            <span className="text-[9px] text-gray-500">Online</span>
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <div className="flex-1 flex flex-col justify-center gap-3">
+          {/* User question */}
+          <div
+            className="flex justify-end transition-all"
+            style={{
+              opacity: showQuestion ? 1 : 0,
+              transform: showQuestion ? "translateY(0)" : "translateY(10px)",
+              transitionDuration: "400ms",
+            }}
+          >
+            <div className="max-w-[75%] px-3 py-2 rounded-xl rounded-br-sm bg-violet-600/30 border border-violet-500/20">
+              <p className="text-xs text-violet-200">{question}</p>
+            </div>
+          </div>
+
+          {/* Bot answer */}
+          <div
+            className="flex justify-start transition-all"
+            style={{
+              opacity: showAnswer ? 1 : 0,
+              transform: showAnswer ? "translateY(0)" : "translateY(10px)",
+              transitionDuration: "400ms",
+            }}
+          >
+            <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-bl-sm bg-white/[0.04] border border-white/5">
+              {answerChars > 0 ? (
+                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">
+                  {answer.slice(0, answerChars)}
+                  {answerChars < answer.length && <span className="inline-block w-1.5 h-3 bg-violet-400/60 animate-pulse ml-0.5" />}
+                </p>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Input bar */}
+        <div className="mt-2 flex gap-2 items-center">
+          <div className="flex-1 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center px-3">
+            <span className="text-[10px] text-gray-600">
+              {lang === "es" ? "Pregunta sobre guías clínicas..." : lang === "pt" ? "Pergunte sobre guias clínicos..." : "Ask about clinical guidelines..."}
+            </span>
+          </div>
+          <div className="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/30 flex items-center justify-center">
+            <ArrowRight className="h-3.5 w-3.5 text-violet-300" />
           </div>
         </div>
       </div>

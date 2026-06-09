@@ -43,6 +43,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.conclusions.desc": "Borradores automáticos de conclusiones sintetizadas a partir de tus hallazgos.",
     "feat.templates.title": "Plantillas personalizables",
     "feat.templates.desc": "Crea y personaliza plantillas para cualquier tipo de estudio. Tu estructura, a tu manera.",
+    "feat.bot.title": "Radiogen Bot",
+    "feat.bot.desc": "Consulta clasificaciones, valores de referencia y criterios de seguimiento desde cualquier pantalla. Solo responde con datos de tus guías clínicas.",
     "feat.safety.title": "Seguridad clínica",
     "feat.safety.desc": "Política de cero alucinaciones. La IA solo usa lo que tú dictas. Trazabilidad completa.",
     // How it works
@@ -257,6 +259,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.conclusions.desc": "Automatic conclusion drafts synthesized from your findings.",
     "feat.templates.title": "Custom Templates",
     "feat.templates.desc": "Create and customize templates for any study type. Your structure, your way.",
+    "feat.bot.title": "Radiogen Bot",
+    "feat.bot.desc": "Look up classifications, reference values, and follow-up criteria from any screen. Only answers from your clinical guidelines.",
     "feat.safety.title": "Clinical Safety",
     "feat.safety.desc": "Zero hallucinations policy. AI only uses what you dictate. Full traceability.",
     // How it works
@@ -471,6 +475,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.conclusions.desc": "Rascunhos automáticos de conclusões e recomendações baseadas nos seus achados.",
     "feat.templates.title": "Modelos personalizáveis",
     "feat.templates.desc": "Crie e personalize modelos para qualquer tipo de exame. Sua estrutura, do seu jeito.",
+    "feat.bot.title": "Radiogen Bot",
+    "feat.bot.desc": "Consulte classificações, valores de referência e critérios de seguimento em qualquer tela. Responde apenas com dados dos seus guias clínicos.",
     "feat.safety.title": "Segurança clínica",
     "feat.safety.desc": "Política de zero alucinações. A IA usa apenas o que você dita. Rastreabilidade completa.",
     // How it works
