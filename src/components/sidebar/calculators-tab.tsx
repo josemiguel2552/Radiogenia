@@ -2794,6 +2794,115 @@ function NoduleDTCalc() {
 }
 
 /* ═══════════════════════════════════════════
+   CAD-RADS 2.0 Calculator
+   ═══════════════════════════════════════════ */
+
+const CADRADS_GRADES = [
+  { key: "0", stenosis: "0%", color: "green" as const },
+  { key: "1", stenosis: "1-24%", color: "green" as const },
+  { key: "2", stenosis: "25-49%", color: "blue" as const },
+  { key: "3", stenosis: "50-69%", color: "yellow" as const },
+  { key: "4A", stenosis: "70-99%", color: "red" as const },
+  { key: "4B", stenosis: "LM ≥50% / 3v ≥70%", color: "red" as const },
+  { key: "5", stenosis: "100%", color: "red" as const },
+];
+
+const CADRADS_MODIFIERS = [
+  { key: "S", label: "/S" },
+  { key: "G", label: "/G" },
+  { key: "V", label: "/V" },
+  { key: "I", label: "/I" },
+  { key: "E", label: "/E" },
+];
+
+const CADRADS_PLAQUE = [
+  { key: "P1", label: "P1" },
+  { key: "P2", label: "P2" },
+  { key: "P3", label: "P3" },
+  { key: "P4", label: "P4" },
+];
+
+function CadRadsCalc() {
+  const t = useT();
+  const [grade, setGrade] = useState("");
+  const [modifiers, setModifiers] = useState<string[]>([]);
+  const [plaque, setPlaque] = useState("");
+
+  function getManagement(g: string): string {
+    if (g === "0") return t("calc.cadrads_no_further");
+    if (g === "1" || g === "2") return t("calc.cadrads_preventive");
+    if (g === "3") return t("calc.cadrads_functional");
+    return t("calc.cadrads_ica");
+  }
+
+  function getInterpretation(g: string): string {
+    if (g === "0") return t("calc.cadrads_none");
+    if (g === "1") return t("calc.cadrads_minimal");
+    if (g === "2") return t("calc.cadrads_mild");
+    if (g === "3") return t("calc.cadrads_moderate");
+    if (g === "4A") return t("calc.cadrads_severe_focal");
+    if (g === "4B") return t("calc.cadrads_severe_lm");
+    if (g === "5") return t("calc.cadrads_occlusion");
+    return "";
+  }
+
+  const gradeData = CADRADS_GRADES.find((g) => g.key === grade);
+  const modStr = modifiers.length > 0 ? modifiers.map((m) => `/${m}`).join("") : t("calc.cadrads_no_modifiers");
+  const plaqueStr = plaque || t("calc.cadrads_no_plaque");
+
+  const copyText = gradeData
+    ? t("calc.copy_cadrads")
+        .replace("{grade}", `CAD-RADS ${gradeData.key}`)
+        .replace("{stenosis}", `${gradeData.stenosis} — ${getInterpretation(gradeData.key)}`)
+        .replace("{management}", getManagement(gradeData.key))
+        .replace("{modifiers}", modStr)
+        .replace("{plaque}", plaqueStr)
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Cury RC et al., Radiology 2022</p>
+        <ResetButton onClick={() => { setGrade(""); setModifiers([]); setPlaque(""); }} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.cadrads_select_grade")}</Label>
+        <OptionPills
+          options={CADRADS_GRADES.map((g) => ({ key: g.key, label: `${g.key} (${g.stenosis})` }))}
+          value={grade}
+          onChange={setGrade}
+        />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.cadrads_select_modifiers")}</Label>
+        <MultiPills
+          options={CADRADS_MODIFIERS.map((m) => ({ key: m.key, label: m.label }))}
+          value={modifiers}
+          onChange={setModifiers}
+        />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.cadrads_select_plaque")}</Label>
+        <OptionPills
+          options={CADRADS_PLAQUE.map((p) => ({ key: p.key, label: p.key }))}
+          value={plaque}
+          onChange={setPlaque}
+        />
+      </div>
+      {gradeData && (
+        <ResultBox
+          label={`CAD-RADS ${gradeData.key}`}
+          value={`${gradeData.stenosis} — ${getInterpretation(gradeData.key)}`}
+          interpretation={getManagement(gradeData.key)}
+          color={gradeData.color}
+        />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
    T1/T2 Mapping & ECV Calculator
    ═══════════════════════════════════════════ */
 
@@ -4440,7 +4549,7 @@ function PediatricHipUSSheet() {
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "t1t2_mapping";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -4455,6 +4564,7 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "lung_tnm", emoji: "🫁" },
   { id: "larynx_tnm", emoji: "🗣️" },
   { id: "nodule_dt", emoji: "📈" },
+  { id: "cadrads", emoji: "❤️" },
   { id: "t1t2_mapping", emoji: "❤️‍🔥" },
 ];
 
@@ -4476,6 +4586,7 @@ export function CalculatorsTab() {
     lung_tnm: t("calc.lung_tnm_title"),
     larynx_tnm: t("calc.larynx_tnm_title"),
     nodule_dt: t("calc.dt_title"),
+    cadrads: "CAD-RADS 2.0",
     t1t2_mapping: "T1/T2 Mapping & ECV",
   };
 
@@ -4640,6 +4751,7 @@ export function CalculatorsTab() {
                   {c.id === "lung_tnm" && <LungTNMCalc />}
                   {c.id === "larynx_tnm" && <LarynxTNMCalc />}
                   {c.id === "nodule_dt" && <NoduleDTCalc />}
+                  {c.id === "cadrads" && <CadRadsCalc />}
                   {c.id === "t1t2_mapping" && <T1T2MappingCalc />}
                 </div>
               )}
