@@ -1522,7 +1522,7 @@ function AdrenalIncidentalSheet() {
 function PancreaticCystSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.pancreas_title")} source="ACR Incidental Findings Committee 2017 / AGA 2015">
+    <CheatSheet title={t("calc.pancreas_title")} source="ACR Incidental Findings Committee 2017 / AGA 2015 / Fukuoka IAP 2017">
       <SheetTable
         headers={[t("calc.size"), t("calc.recommendation")]}
         rows={[
@@ -1530,6 +1530,25 @@ function PancreaticCystSheet() {
           ["1.5–2.5 cm", t("calc.pancreas_medium")],
           ["> 2.5 cm", t("calc.pancreas_large")],
           [t("calc.pancreas_worrisome"), t("calc.pancreas_worrisome_rec")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.pancreas_char_title")}</p>
+      <SheetTable
+        headers={[t("calc.pancreas_char_type"), t("calc.pancreas_char_imaging"), t("calc.pancreas_char_location"), t("calc.pancreas_char_duct"), t("calc.pancreas_char_malignancy")]}
+        rows={[
+          [t("calc.pancreas_scn"), t("calc.pancreas_scn_img"), t("calc.pancreas_scn_loc"), t("calc.pancreas_scn_duct"), t("calc.pancreas_scn_malig")],
+          [t("calc.pancreas_mcn"), t("calc.pancreas_mcn_img"), t("calc.pancreas_mcn_loc"), t("calc.pancreas_mcn_duct"), t("calc.pancreas_mcn_malig")],
+          [t("calc.pancreas_bdipmn"), t("calc.pancreas_bdipmn_img"), t("calc.pancreas_bdipmn_loc"), t("calc.pancreas_bdipmn_duct"), t("calc.pancreas_bdipmn_malig")],
+          [t("calc.pancreas_mdipmn"), t("calc.pancreas_mdipmn_img"), t("calc.pancreas_mdipmn_loc"), t("calc.pancreas_mdipmn_duct"), t("calc.pancreas_mdipmn_malig")],
+          [t("calc.pancreas_spn"), t("calc.pancreas_spn_img"), t("calc.pancreas_spn_loc"), t("calc.pancreas_spn_duct"), t("calc.pancreas_spn_malig")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.pancreas_fukuoka")}</p>
+      <SheetTable
+        headers={[t("calc.category"), t("calc.description")]}
+        rows={[
+          [t("calc.pancreas_worrisome_features"), t("calc.pancreas_wf_list")],
+          [t("calc.pancreas_high_risk"), t("calc.pancreas_hr_list")],
         ]}
       />
     </CheatSheet>
@@ -1543,6 +1562,7 @@ function LiradsSheet() {
       <SheetTable
         headers={[t("calc.category"), t("calc.description"), t("calc.malignancy_probability")]}
         rows={[
+          ["LR-NC", t("calc.lirads_nc"), t("calc.lirads_nc_prob")],
           ["LR-1", t("calc.lirads_1"), t("calc.lirads_1_prob")],
           ["LR-2", t("calc.lirads_2"), t("calc.lirads_2_prob")],
           ["LR-3", t("calc.lirads_3"), t("calc.lirads_3_prob")],
@@ -1552,6 +1572,52 @@ function LiradsSheet() {
           ["LR-TIV", t("calc.lirads_tiv"), "100%"],
         ]}
       />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.lirads_major_features")}</p>
+      <SheetTable
+        headers={[t("calc.lirads_feature"), t("calc.lirads_definition")]}
+        rows={[
+          [t("calc.lirads_aphe"), t("calc.lirads_aphe_def")],
+          [t("calc.lirads_washout"), t("calc.lirads_washout_def")],
+          [t("calc.lirads_capsule"), t("calc.lirads_capsule_def")],
+          [t("calc.lirads_growth"), t("calc.lirads_growth_def")],
+          [t("calc.lirads_size"), t("calc.lirads_size_def")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.lirads_dx_table")}</p>
+      <SheetTable
+        headers={[t("calc.lirads_dx_size"), t("calc.lirads_dx_no_extra"), t("calc.lirads_dx_one"), t("calc.lirads_dx_two")]}
+        rows={[
+          ["< 10 mm", "LR-3", "LR-4", "LR-4"],
+          ["10–19 mm", "LR-3", "LR-4", "LR-5"],
+          ["≥ 20 mm", "LR-4", "LR-5", "LR-5"],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
+function TesticularTorsionSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.torsion_title")} source="ACR Appropriateness Criteria 2022 / Blaivas M et al., Acad Emerg Med 2001">
+      <SheetTable
+        headers={[t("calc.torsion_finding"), t("calc.torsion_description"), t("calc.torsion_significance")]}
+        rows={[
+          [t("calc.torsion_doppler_absent"), t("calc.torsion_doppler_absent_desc"), t("calc.torsion_doppler_absent_sig")],
+          [t("calc.torsion_whirlpool"), t("calc.torsion_whirlpool_desc"), t("calc.torsion_whirlpool_sig")],
+          [t("calc.torsion_enlarge"), t("calc.torsion_enlarge_desc"), t("calc.torsion_enlarge_sig")],
+          [t("calc.torsion_hydrocele"), t("calc.torsion_hydrocele_desc"), t("calc.torsion_hydrocele_sig")],
+          [t("calc.torsion_wall"), t("calc.torsion_wall_desc"), t("calc.torsion_wall_sig")],
+          [t("calc.torsion_epi"), t("calc.torsion_epi_desc"), t("calc.torsion_epi_sig")],
+        ]}
+      />
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.torsion_timing")}</p>
+      <div className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5 mt-1">
+        <p>{t("calc.torsion_time_6")}</p>
+        <p>{t("calc.torsion_time_12")}</p>
+        <p>{t("calc.torsion_time_24")}</p>
+      </div>
+      <p className="text-[10px] font-bold text-red-600 dark:text-red-400 mt-2">{t("calc.torsion_urgent")}</p>
     </CheatSheet>
   );
 }
@@ -4445,6 +4511,7 @@ export function CalculatorsTab() {
         { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
         { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
         { id: "orads", component: <OradsSheet />, label: "O-RADS" },
+        { id: "torsion", component: <TesticularTorsionSheet />, label: t("calc.torsion_title") },
         { id: "diverticulitis", component: <DiverticulitisSheet />, label: t("calc.divert_title") },
       ],
     },
