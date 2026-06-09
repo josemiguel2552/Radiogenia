@@ -1617,6 +1617,17 @@ function TesticularTorsionSheet() {
         <p>{t("calc.torsion_time_12")}</p>
         <p>{t("calc.torsion_time_24")}</p>
       </div>
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.torsion_ri_title")}</p>
+      <SheetTable
+        headers={[t("calc.torsion_ri_param"), t("calc.torsion_ri_value"), t("calc.torsion_significance")]}
+        rows={[
+          [t("calc.torsion_ri_normal"), "0.50–0.70", t("calc.torsion_ri_normal_sig")],
+          [t("calc.torsion_ri_elevated"), "> 0.75", t("calc.torsion_ri_elevated_sig")],
+          [t("calc.torsion_ri_diff"), "> 0.10", t("calc.torsion_ri_diff_sig")],
+          [t("calc.torsion_ri_absent"), "—", t("calc.torsion_ri_absent_sig")],
+          [t("calc.torsion_ri_reversed"), "< 0", t("calc.torsion_ri_reversed_sig")],
+        ]}
+      />
       <p className="text-[10px] font-bold text-red-600 dark:text-red-400 mt-2">{t("calc.torsion_urgent")}</p>
     </CheatSheet>
   );
@@ -2895,6 +2906,382 @@ function CadRadsCalc() {
           value={`${gradeData.stenosis} — ${getInterpretation(gradeData.key)}`}
           interpretation={getManagement(gradeData.key)}
           color={gradeData.color}
+        />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   LI-RADS Calculator
+   ═══════════════════════════════════════════ */
+
+function LiradsCalc() {
+  const t = useT();
+  const [tiv, setTiv] = useState("");
+  const [lrm, setLrm] = useState("");
+  const [aphe, setAphe] = useState("");
+  const [size, setSize] = useState("");
+  const [features, setFeatures] = useState<string[]>([]);
+
+  function calcCategory(): { cat: string; color: "green" | "blue" | "yellow" | "red" | "gray" } | null {
+    if (tiv === "yes") return { cat: "LR-TIV", color: "red" };
+    if (lrm === "yes") return { cat: "LR-M", color: "red" };
+    if (!aphe || (aphe === "yes" && !size)) return null;
+    if (aphe === "no" && !size) return null;
+
+    const nFeatures = features.length;
+
+    if (aphe === "no") {
+      if (size === "lt20") return nFeatures <= 1 ? { cat: "LR-3", color: "yellow" } : { cat: "LR-4", color: "red" };
+      return nFeatures === 0 ? { cat: "LR-3", color: "yellow" } : { cat: "LR-4", color: "red" };
+    }
+
+    // APHE present — use diagnostic table
+    if (size === "lt10") return nFeatures === 0 ? { cat: "LR-3", color: "yellow" } : { cat: "LR-4", color: "red" };
+    if (size === "10to19") {
+      if (nFeatures === 0) return { cat: "LR-3", color: "yellow" };
+      if (nFeatures === 1) return { cat: "LR-4", color: "red" };
+      return { cat: "LR-5", color: "red" };
+    }
+    // ≥20mm
+    if (nFeatures === 0) return { cat: "LR-4", color: "red" };
+    return { cat: "LR-5", color: "red" };
+  }
+
+  const result = calcCategory();
+  const liradsInterpretations: Record<string, string> = {
+    "LR-3": t("calc.lirads_3"),
+    "LR-4": t("calc.lirads_4"),
+    "LR-5": t("calc.lirads_5"),
+    "LR-M": t("calc.lirads_m"),
+    "LR-TIV": t("calc.lirads_tiv"),
+  };
+
+  const copyText = result
+    ? t("calc.copy_lirads").replace("{category}", result.cat).replace("{interpretation}", liradsInterpretations[result.cat] || "")
+    : "";
+
+  const sizeOptions = aphe === "yes"
+    ? [
+        { key: "lt10", label: "< 10 mm" },
+        { key: "10to19", label: "10–19 mm" },
+        { key: "gte20", label: "≥ 20 mm" },
+      ]
+    : [
+        { key: "lt20", label: "< 20 mm" },
+        { key: "gte20", label: "≥ 20 mm" },
+      ];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">ACR LI-RADS v2018</p>
+        <ResetButton onClick={() => { setTiv(""); setLrm(""); setAphe(""); setSize(""); setFeatures([]); }} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_tiv")}</Label>
+        <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={tiv} onChange={setTiv} />
+      </div>
+      {tiv === "no" && (
+        <div>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_lrm")}</Label>
+          <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={lrm} onChange={setLrm} />
+        </div>
+      )}
+      {tiv === "no" && lrm === "no" && (
+        <>
+          <div>
+            <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_aphe")}</Label>
+            <OptionPills options={[{ key: "yes", label: t("calc.yes") }, { key: "no", label: t("calc.no") }]} value={aphe} onChange={(v) => { setAphe(v); setSize(""); }} />
+          </div>
+          {aphe && (
+            <div>
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_size")}</Label>
+              <OptionPills options={sizeOptions} value={size} onChange={setSize} />
+            </div>
+          )}
+          {aphe && size && (
+            <div>
+              <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lirads_calc_features")}</Label>
+              <MultiPills
+                options={[
+                  { key: "washout", label: t("calc.lirads_washout") },
+                  { key: "capsule", label: t("calc.lirads_capsule") },
+                  { key: "growth", label: t("calc.lirads_growth") },
+                ]}
+                value={features}
+                onChange={setFeatures}
+              />
+            </div>
+          )}
+        </>
+      )}
+      {result && (
+        <ResultBox label={result.cat} value={liradsInterpretations[result.cat] || ""} color={result.color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   BI-RADS Calculator
+   ═══════════════════════════════════════════ */
+
+const BIRADS_CATEGORIES = [
+  { key: "0a", label: "0a", color: "gray" as const },
+  { key: "0b", label: "0b", color: "gray" as const },
+  { key: "1", label: "1", color: "green" as const },
+  { key: "2", label: "2", color: "green" as const },
+  { key: "3", label: "3", color: "blue" as const },
+  { key: "4a", label: "4A", color: "yellow" as const },
+  { key: "4b", label: "4B", color: "yellow" as const },
+  { key: "4c", label: "4C", color: "red" as const },
+  { key: "5", label: "5", color: "red" as const },
+  { key: "6", label: "6", color: "red" as const },
+];
+
+function BiradsCalc() {
+  const t = useT();
+  const [cat, setCat] = useState("");
+
+  const descKey: Record<string, string> = {
+    "0a": "calc.birads_0a", "0b": "calc.birads_0b",
+    "1": "calc.birads_1", "2": "calc.birads_2", "3": "calc.birads_3",
+    "4a": "calc.birads_4a", "4b": "calc.birads_4b", "4c": "calc.birads_4c",
+    "5": "calc.birads_5", "6": "calc.birads_6",
+  };
+  const recKey: Record<string, string> = {
+    "0a": "calc.birads_0a_rec", "0b": "calc.birads_0b_rec",
+    "1": "calc.birads_1_rec", "2": "calc.birads_2_rec", "3": "calc.birads_3_rec",
+    "4a": "calc.birads_4a_rec", "4b": "calc.birads_4b_rec", "4c": "calc.birads_4c_rec",
+    "5": "calc.birads_5_rec", "6": "calc.birads_6_rec",
+  };
+
+  const selected = BIRADS_CATEGORIES.find((c) => c.key === cat);
+  const desc = cat ? t(descKey[cat] as "calc.birads_0a") : "";
+  const rec = cat ? t(recKey[cat] as "calc.birads_0a_rec") : "";
+
+  const copyText = selected
+    ? t("calc.copy_birads").replace("{category}", selected.label).replace("{description}", desc).replace("{recommendation}", rec)
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">ACR BI-RADS v2025</p>
+        <ResetButton onClick={() => setCat("")} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.birads_select_cat")}</Label>
+        <OptionPills options={BIRADS_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))} value={cat} onChange={setCat} />
+      </div>
+      {selected && (
+        <ResultBox label={`BI-RADS ${selected.label}`} value={desc} interpretation={rec} color={selected.color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   O-RADS Calculator
+   ═══════════════════════════════════════════ */
+
+const ORADS_SCORES = [
+  { key: "1", color: "green" as const },
+  { key: "2", color: "green" as const },
+  { key: "3", color: "yellow" as const },
+  { key: "4", color: "red" as const },
+  { key: "5", color: "red" as const },
+];
+
+function OradsCalc() {
+  const t = useT();
+  const [score, setScore] = useState("");
+
+  const riskKey: Record<string, string> = {
+    "1": "calc.orads_1", "2": "calc.orads_2", "3": "calc.orads_3",
+    "4": "calc.orads_4", "5": "calc.orads_5",
+  };
+  const recKey: Record<string, string> = {
+    "1": "calc.orads_1_rec", "2": "calc.orads_2_rec", "3": "calc.orads_3_rec",
+    "4": "calc.orads_4_rec", "5": "calc.orads_5_rec",
+  };
+
+  const selected = ORADS_SCORES.find((s) => s.key === score);
+  const risk = score ? t(riskKey[score] as "calc.orads_1") : "";
+  const rec = score ? t(recKey[score] as "calc.orads_1_rec") : "";
+
+  const copyText = selected
+    ? t("calc.copy_orads").replace("{score}", score).replace("{risk}", risk).replace("{recommendation}", rec)
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">ACR O-RADS MRI 2022</p>
+        <ResetButton onClick={() => setScore("")} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.orads_select_score")}</Label>
+        <OptionPills options={ORADS_SCORES.map((s) => ({ key: s.key, label: `O-RADS ${s.key}` }))} value={score} onChange={setScore} />
+      </div>
+      {selected && (
+        <ResultBox label={`O-RADS ${score}`} value={risk} interpretation={rec} color={selected.color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Lung-RADS Calculator
+   ═══════════════════════════════════════════ */
+
+const LUNGRADS_CATEGORIES = [
+  { key: "0", color: "gray" as const },
+  { key: "1", color: "green" as const },
+  { key: "2", color: "green" as const },
+  { key: "3", color: "yellow" as const },
+  { key: "4A", color: "red" as const },
+  { key: "4B", color: "red" as const },
+  { key: "4X", color: "red" as const },
+  { key: "S", color: "blue" as const },
+];
+
+function LungRadsCalc() {
+  const t = useT();
+  const [cat, setCat] = useState("");
+
+  const findKey: Record<string, string> = {
+    "0": "calc.lungrads_0", "1": "calc.lungrads_1", "2": "calc.lungrads_2",
+    "3": "calc.lungrads_3", "4A": "calc.lungrads_4a", "4B": "calc.lungrads_4b",
+    "4X": "calc.lungrads_4x", "S": "calc.lungrads_s",
+  };
+  const recKey: Record<string, string> = {
+    "0": "calc.lungrads_0_rec", "1": "calc.lungrads_1_rec", "2": "calc.lungrads_2_rec",
+    "3": "calc.lungrads_3_rec", "4A": "calc.lungrads_4a_rec", "4B": "calc.lungrads_4b_rec",
+    "4X": "calc.lungrads_4x_rec", "S": "calc.lungrads_s_rec",
+  };
+
+  const selected = LUNGRADS_CATEGORIES.find((c) => c.key === cat);
+  const finding = cat ? t(findKey[cat] as "calc.lungrads_0") : "";
+  const rec = cat ? t(recKey[cat] as "calc.lungrads_0_rec") : "";
+
+  const copyText = selected
+    ? t("calc.copy_lungrads").replace("{category}", cat).replace("{finding}", finding).replace("{recommendation}", rec)
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">ACR Lung-RADS v2022</p>
+        <ResetButton onClick={() => setCat("")} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{t("calc.lungrads_select_cat")}</Label>
+        <OptionPills options={LUNGRADS_CATEGORIES.map((c) => ({ key: c.key, label: c.key }))} value={cat} onChange={setCat} />
+      </div>
+      {selected && (
+        <ResultBox label={`Lung-RADS ${cat}`} value={finding} interpretation={rec} color={selected.color} />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Renal Volume TKV Calculator (ADPKD)
+   ═══════════════════════════════════════════ */
+
+function RenalVolumeTKVCalc() {
+  const t = useT();
+  const [rL, setRL] = useState("");
+  const [rW, setRW] = useState("");
+  const [rD, setRD] = useState("");
+  const [lL, setLL] = useState("");
+  const [lW, setLW] = useState("");
+  const [lD, setLD] = useState("");
+  const [height, setHeight] = useState("");
+  const [age, setAge] = useState("");
+
+  const ellipsoid = (l: number, w: number, d: number) => (Math.PI / 6) * l * w * d;
+
+  const rVol = (rL && rW && rD) ? ellipsoid(parseFloat(rL), parseFloat(rW), parseFloat(rD)) : null;
+  const lVol = (lL && lW && lD) ? ellipsoid(parseFloat(lL), parseFloat(lW), parseFloat(lD)) : null;
+  const tkv = (rVol !== null && lVol !== null) ? rVol + lVol : null;
+  const htTKV = (tkv !== null && height) ? tkv / (parseFloat(height) / 100) : null;
+
+  function getMayoClass(httkv: number, a: number): { cls: string; color: "green" | "blue" | "yellow" | "red" } {
+    const boundaries = [
+      { rate: 0.015 },
+      { rate: 0.03 },
+      { rate: 0.045 },
+      { rate: 0.06 },
+    ];
+    const classes: { cls: string; color: "green" | "blue" | "yellow" | "red" }[] = [
+      { cls: "1A", color: "green" },
+      { cls: "1B", color: "green" },
+      { cls: "1C", color: "yellow" },
+      { cls: "1D", color: "red" },
+      { cls: "1E", color: "red" },
+    ];
+    for (let i = 0; i < boundaries.length; i++) {
+      const threshold = 150 * Math.exp(boundaries[i].rate * a);
+      if (httkv <= threshold) return classes[i];
+    }
+    return classes[4];
+  }
+
+  const mayo = (htTKV !== null && age) ? getMayoClass(htTKV, parseFloat(age)) : null;
+
+  const copyText = tkv !== null
+    ? t("calc.copy_renal_vol")
+        .replace("{right}", rVol !== null ? rVol.toFixed(1) : "")
+        .replace("{left}", lVol !== null ? lVol.toFixed(1) : "")
+        .replace("{tkv}", tkv.toFixed(1))
+        .replace("{httkv}", htTKV !== null ? htTKV.toFixed(1) : "—")
+        .replace("{mayo}", mayo ? mayo.cls : "—")
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Irazabal MV et al., JASN 2015</p>
+        <ResetButton onClick={() => { setRL(""); setRW(""); setRD(""); setLL(""); setLW(""); setLD(""); setHeight(""); setAge(""); }} />
+      </div>
+      <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{t("calc.renal_vol_right")}</p>
+      <div className="grid grid-cols-3 gap-2">
+        <NumInput label={t("calc.length")} value={rL} onChange={setRL} unit="cm" />
+        <NumInput label={t("calc.width")} value={rW} onChange={setRW} unit="cm" />
+        <NumInput label={t("calc.depth")} value={rD} onChange={setRD} unit="cm" />
+      </div>
+      <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{t("calc.renal_vol_left")}</p>
+      <div className="grid grid-cols-3 gap-2">
+        <NumInput label={t("calc.length")} value={lL} onChange={setLL} unit="cm" />
+        <NumInput label={t("calc.width")} value={lW} onChange={setLW} unit="cm" />
+        <NumInput label={t("calc.depth")} value={lD} onChange={setLD} unit="cm" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput label={t("calc.renal_vol_height")} value={height} onChange={setHeight} unit="cm" step={1} />
+        <NumInput label={t("calc.renal_vol_age")} value={age} onChange={setAge} unit={t("calc.years")} step={1} />
+      </div>
+      {rVol !== null && lVol !== null && (
+        <div className="space-y-1.5 text-[11px] text-gray-600 dark:text-gray-300">
+          <p>{t("calc.renal_vol_right")}: <span className="font-bold">{rVol.toFixed(1)} mL</span></p>
+          <p>{t("calc.renal_vol_left")}: <span className="font-bold">{lVol.toFixed(1)} mL</span></p>
+          {tkv !== null && <p>TKV: <span className="font-bold">{tkv.toFixed(1)} mL</span></p>}
+          {htTKV !== null && <p>htTKV: <span className="font-bold">{htTKV.toFixed(1)} mL/m</span></p>}
+        </div>
+      )}
+      {mayo && (
+        <ResultBox
+          label={`Mayo ${mayo.cls}`}
+          value={t(`calc.mayo_${mayo.cls.toLowerCase()}` as "calc.mayo_1a")}
+          color={mayo.color}
         />
       )}
       {copyText && <CopyButton text={copyText} />}
@@ -4549,7 +4936,7 @@ function PediatricHipUSSheet() {
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -4566,6 +4953,11 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "nodule_dt", emoji: "📈" },
   { id: "cadrads", emoji: "❤️" },
   { id: "t1t2_mapping", emoji: "❤️‍🔥" },
+  { id: "lirads", emoji: "🫀" },
+  { id: "birads", emoji: "🎀" },
+  { id: "orads", emoji: "🥚" },
+  { id: "lungrads", emoji: "🫁" },
+  { id: "renal_vol", emoji: "📐" },
 ];
 
 export function CalculatorsTab() {
@@ -4588,6 +4980,11 @@ export function CalculatorsTab() {
     nodule_dt: t("calc.dt_title"),
     cadrads: "CAD-RADS 2.0",
     t1t2_mapping: "T1/T2 Mapping & ECV",
+    lirads: "LI-RADS v2018",
+    birads: "BI-RADS v2025",
+    orads: "O-RADS MRI",
+    lungrads: "Lung-RADS v2022",
+    renal_vol: t("calc.renal_vol_title"),
   };
 
   const q = search.toLowerCase();
@@ -4753,6 +5150,11 @@ export function CalculatorsTab() {
                   {c.id === "nodule_dt" && <NoduleDTCalc />}
                   {c.id === "cadrads" && <CadRadsCalc />}
                   {c.id === "t1t2_mapping" && <T1T2MappingCalc />}
+                  {c.id === "lirads" && <LiradsCalc />}
+                  {c.id === "birads" && <BiradsCalc />}
+                  {c.id === "orads" && <OradsCalc />}
+                  {c.id === "lungrads" && <LungRadsCalc />}
+                  {c.id === "renal_vol" && <RenalVolumeTKVCalc />}
                 </div>
               )}
             </div>
