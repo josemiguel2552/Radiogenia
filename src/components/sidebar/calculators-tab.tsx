@@ -3650,65 +3650,244 @@ function TokyoCholecystitisCalc() {
 }
 
 /* ═══════════════════════════════════════════
-   Tokyo Guidelines Cholangitis (TG18)
+   Canadian C-Spine Rule / NEXUS
    ═══════════════════════════════════════════ */
 
-function TokyoCholangitisCalc() {
+function CSpineCalc() {
   const t = useT();
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
 
-  const catA = ["chol_fever", "chol_wbc", "chol_crp"];
-  const catB = ["chol_jaundice", "chol_lft"];
-  const catC = ["chol_dilation", "chol_etiology"];
-  const severity3 = ["chol_cardio", "chol_neuro", "chol_resp", "chol_renal", "chol_hepatic", "chol_hemato"];
-  const severity2 = ["chol_wbc12k", "chol_fever39", "chol_age75", "chol_bili5", "chol_albumin"];
+  const highRisk = ["csp_age65", "csp_dangerous_mech", "csp_paresthesias"];
+  const lowRisk = ["csp_simple_rear", "csp_sitting_er", "csp_ambulatory", "csp_delayed_onset", "csp_no_midline"];
+  const nexus = ["csp_nex_midline", "csp_nex_intox", "csp_nex_alert", "csp_nex_focal", "csp_nex_distraction"];
 
-  const hasA = catA.some((k) => checks[k]);
-  const hasB = catB.some((k) => checks[k]);
-  const hasC = catC.some((k) => checks[k]);
-  const hasSev3 = severity3.some((k) => checks[k]);
-  const hasSev2 = severity2.filter((k) => checks[k]).length >= 2;
+  const anyHigh = highRisk.some((k) => checks[k]);
+  const anyLow = lowRisk.some((k) => checks[k]);
+  const canRotate = checks.csp_rotate_45;
+  const anyNexus = nexus.some((k) => checks[k]);
 
-  const diagnosis = hasA && hasB && hasC ? t("crit.tg_definite") : (hasA && hasB) || (hasA && hasC) || (hasB && hasC) ? t("crit.tg_suspected") : null;
-  const grade = hasSev3 ? { g: "III", color: "red" as const, label: t("crit.chol_grade3") }
-    : hasSev2 ? { g: "II", color: "yellow" as const, label: t("crit.chol_grade2") }
-    : diagnosis ? { g: "I", color: "green" as const, label: t("crit.chol_grade1") } : null;
+  let canadian: { label: string; color: "red" | "green" | "yellow" } | null = null;
+  if (anyHigh) {
+    canadian = { label: t("crit.csp_high_risk"), color: "red" };
+  } else if (anyLow && canRotate) {
+    canadian = { label: t("crit.csp_low_risk"), color: "green" };
+  } else if (anyLow && !canRotate) {
+    canadian = { label: t("crit.csp_unable_rotate"), color: "red" };
+  }
 
-  const copyText = diagnosis && grade ? t("crit.copy_cholangitis").replace("{diagnosis}", diagnosis).replace("{grade}", `${t("crit.tg_grade")} ${grade.g}`).replace("{description}", grade.label) : "";
+  const nexusResult = anyNexus
+    ? { label: t("crit.csp_nexus_pos"), color: "red" as const }
+    : nexus.every((k) => !checks[k]) && Object.keys(checks).length > 0
+      ? { label: t("crit.csp_nexus_neg"), color: "green" as const }
+      : null;
+
+  const ctIndicated = (canadian && canadian.color === "red") || (nexusResult && nexusResult.color === "red");
+  const copyText = ctIndicated ? t("crit.copy_cspine")
+    .replace("{canadian}", canadian?.label || "—")
+    .replace("{nexus}", nexusResult?.label || "—") : "";
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] text-gray-400">Tokyo Guidelines 2018 (TG18)</p>
+        <p className="text-[10px] text-gray-400">Stiell 2001 / Hoffman 2000</p>
         <ResetButton onClick={() => setChecks({})} />
       </div>
-      <p className="text-[10px] font-semibold text-gray-500">A. {t("crit.chol_systemic")}</p>
+      <p className="text-[10px] font-semibold text-gray-500">{t("crit.csp_canadian_title")}</p>
+      <p className="text-[10px] font-semibold text-red-500">{t("crit.csp_step1_high")}</p>
       <div className="space-y-0.5">
-        <CriteriaCheck label={t("crit.chol_fever")} checked={!!checks.chol_fever} onChange={() => toggle("chol_fever")} />
-        <CriteriaCheck label={t("crit.chol_wbc_ab")} checked={!!checks.chol_wbc} onChange={() => toggle("chol_wbc")} />
-        <CriteriaCheck label={t("crit.chol_crp_ab")} checked={!!checks.chol_crp} onChange={() => toggle("chol_crp")} />
+        {highRisk.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.csp_age65")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
       </div>
-      <p className="text-[10px] font-semibold text-gray-500">B. {t("crit.chol_cholestasis")}</p>
+      <p className="text-[10px] font-semibold text-green-600">{t("crit.csp_step2_low")}</p>
       <div className="space-y-0.5">
-        <CriteriaCheck label={t("crit.chol_jaundice")} checked={!!checks.chol_jaundice} onChange={() => toggle("chol_jaundice")} />
-        <CriteriaCheck label={t("crit.chol_lft")} checked={!!checks.chol_lft} onChange={() => toggle("chol_lft")} />
+        {lowRisk.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.csp_simple_rear")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
       </div>
-      <p className="text-[10px] font-semibold text-gray-500">C. {t("crit.chol_imaging_title")}</p>
+      <CriteriaCheck label={t("crit.csp_rotate_45")} checked={!!checks.csp_rotate_45} onChange={() => toggle("csp_rotate_45")} />
+      {canadian && <ResultBox label={t("crit.csp_canadian_result")} value={canadian.label} color={canadian.color} />}
+
+      <p className="text-[10px] font-semibold text-gray-500 mt-2">{t("crit.csp_nexus_title")}</p>
       <div className="space-y-0.5">
-        <CriteriaCheck label={t("crit.chol_dilation")} checked={!!checks.chol_dilation} onChange={() => toggle("chol_dilation")} />
-        <CriteriaCheck label={t("crit.chol_etiology")} checked={!!checks.chol_etiology} onChange={() => toggle("chol_etiology")} />
+        {nexus.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.csp_nex_midline")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
       </div>
-      {diagnosis && (
+      {nexusResult && <ResultBox label={t("crit.csp_nexus_result")} value={nexusResult.label} color={nexusResult.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   PECARN Pediatric Head CT Rule
+   ═══════════════════════════════════════════ */
+
+function PecarnCalc() {
+  const t = useT();
+  const [ageGroup, setAgeGroup] = useState<"lt2" | "gte2" | null>(null);
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const criteriaLt2 = ["pec_gcs_lt2", "pec_palpable_fx", "pec_altered_lt2", "pec_scalp_hema", "pec_loc_gt5", "pec_not_normal_lt2", "pec_severe_mech_lt2"];
+  const criteriaGte2 = ["pec_gcs_gte2", "pec_altered_gte2", "pec_basilar_fx", "pec_loc_gte2", "pec_vomiting", "pec_severe_mech_gte2", "pec_severe_headache"];
+
+  const criteria = ageGroup === "lt2" ? criteriaLt2 : ageGroup === "gte2" ? criteriaGte2 : [];
+  const highRiskKeys = ageGroup === "lt2" ? criteriaLt2.slice(0, 2) : criteriaGte2.slice(0, 3);
+  const intermediateKeys = ageGroup === "lt2" ? criteriaLt2.slice(2) : criteriaGte2.slice(3);
+
+  const hasHighRisk = highRiskKeys.some((k) => checks[k]);
+  const intermediateCount = intermediateKeys.filter((k) => checks[k]).length;
+
+  let result: { label: string; color: "red" | "yellow" | "green"; detail: string } | null = null;
+  if (ageGroup && criteria.length > 0) {
+    if (hasHighRisk) {
+      result = { label: t("crit.pec_ct_recommended"), color: "red", detail: t("crit.pec_risk_high") };
+    } else if (intermediateCount > 0) {
+      result = { label: t("crit.pec_observe_vs_ct"), color: "yellow", detail: t("crit.pec_risk_intermediate") };
+    } else {
+      result = { label: t("crit.pec_ct_not_needed"), color: "green", detail: t("crit.pec_risk_very_low") };
+    }
+  }
+
+  const copyText = result ? t("crit.copy_pecarn")
+    .replace("{age}", ageGroup === "lt2" ? "< 2" : "≥ 2")
+    .replace("{result}", result.label)
+    .replace("{detail}", result.detail) : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Kuppermann 2009 (PECARN)</p>
+        <ResetButton onClick={() => { setChecks({}); setAgeGroup(null); }} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">{t("crit.pec_age_group")}</p>
+      <OptionPills
+        options={[
+          { key: "lt2", label: t("crit.pec_age_lt2") },
+          { key: "gte2", label: t("crit.pec_age_gte2") },
+        ]}
+        value={ageGroup ?? ""}
+        onChange={(v) => { setAgeGroup(v as "lt2" | "gte2"); setChecks({}); }}
+      />
+      {ageGroup && (
         <>
-          <ResultBox label={diagnosis} value={grade ? `${t("crit.tg_grade")} ${grade.g} — ${grade.label}` : ""} color={grade?.color || "gray"} />
-          <p className="text-[10px] font-semibold text-gray-500">{t("crit.tg_severity")}</p>
+          <p className="text-[10px] font-semibold text-red-500">{t("crit.pec_high_risk_criteria")}</p>
           <div className="space-y-0.5">
-            {severity2.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.chol_wbc12k")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
-            {severity3.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.chol_cardio")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+            {highRiskKeys.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.pec_gcs_lt2")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+          </div>
+          <p className="text-[10px] font-semibold text-yellow-600">{t("crit.pec_intermediate_criteria")}</p>
+          <div className="space-y-0.5">
+            {intermediateKeys.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.pec_scalp_hema")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
           </div>
         </>
       )}
+      {result && <ResultBox label={result.label} value={result.detail} color={result.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   San Francisco Syncope Rule (SFSR)
+   ═══════════════════════════════════════════ */
+
+function SFSyncopeCalc() {
+  const t = useT();
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setChecks((p) => ({ ...p, [k]: !p[k] }));
+
+  const criteria = ["sf_chf", "sf_hct", "sf_ecg", "sf_sob", "sf_sbp"];
+  const positive = criteria.some((k) => checks[k]);
+  const anyChecked = criteria.some((k) => checks[k]) || criteria.some((k) => checks[k] === false);
+  const allUnchecked = criteria.every((k) => !checks[k]);
+  const hasInteraction = Object.keys(checks).length > 0;
+
+  const result = hasInteraction
+    ? positive
+      ? { label: t("crit.sf_high_risk"), color: "red" as const, detail: t("crit.sf_high_detail") }
+      : { label: t("crit.sf_low_risk"), color: "green" as const, detail: t("crit.sf_low_detail") }
+    : null;
+
+  const copyText = result ? t("crit.copy_sfsr")
+    .replace("{result}", result.label)
+    .replace("{detail}", result.detail)
+    .replace("{criteria}", criteria.filter((k) => checks[k]).map((k) => t(`crit.${k}` as "crit.sf_chf")).join(", ") || "—") : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Quinn 2004 (CHESS)</p>
+        <ResetButton onClick={() => setChecks({})} />
+      </div>
+      <p className="text-[10px] font-semibold text-gray-500">{t("crit.sf_criteria_title")}</p>
+      <div className="space-y-0.5">
+        {criteria.map((k) => <CriteriaCheck key={k} label={t(`crit.${k}` as "crit.sf_chf")} checked={!!checks[k]} onChange={() => toggle(k)} />)}
+      </div>
+      {result && <ResultBox label={result.label} value={result.detail} color={result.color} />}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   HEART Score (Chest Pain)
+   ═══════════════════════════════════════════ */
+
+function HeartScoreCalc() {
+  const t = useT();
+  const [history, setHistory] = useState<string | null>(null);
+  const [ecg, setEcg] = useState<string | null>(null);
+  const [age, setAge] = useState<string | null>(null);
+  const [riskFactors, setRiskFactors] = useState<string | null>(null);
+  const [troponin, setTroponin] = useState<string | null>(null);
+
+  const scores: Record<string, number> = { "0": 0, "1": 1, "2": 2 };
+  const total = [history, ecg, age, riskFactors, troponin]
+    .filter((v): v is string => v !== null)
+    .reduce((sum, v) => sum + (scores[v] ?? 0), 0);
+
+  const allSelected = history !== null && ecg !== null && age !== null && riskFactors !== null && troponin !== null;
+
+  const result = allSelected
+    ? total <= 3
+      ? { label: t("crit.heart_low"), color: "green" as const, detail: t("crit.heart_low_detail") }
+      : total <= 6
+        ? { label: t("crit.heart_moderate"), color: "yellow" as const, detail: t("crit.heart_mod_detail") }
+        : { label: t("crit.heart_high"), color: "red" as const, detail: t("crit.heart_high_detail") }
+    : null;
+
+  const copyText = result ? t("crit.copy_heart")
+    .replace("{score}", String(total))
+    .replace("{result}", result.label)
+    .replace("{detail}", result.detail) : "";
+
+  const makeOpts = (k0: string, k1: string, k2: string) => [
+    { key: "0", label: t(k0 as "crit.heart_hist_0") },
+    { key: "1", label: t(k1 as "crit.heart_hist_1") },
+    { key: "2", label: t(k2 as "crit.heart_hist_2") },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Six 2008 — HEART Score</p>
+        <ResetButton onClick={() => { setHistory(null); setEcg(null); setAge(null); setRiskFactors(null); setTroponin(null); }} />
+      </div>
+
+      <p className="text-[10px] font-semibold text-gray-500">H — {t("crit.heart_h_title")}</p>
+      <OptionPills options={makeOpts("crit.heart_hist_0", "crit.heart_hist_1", "crit.heart_hist_2")} value={history ?? ""} onChange={setHistory} />
+
+      <p className="text-[10px] font-semibold text-gray-500">E — {t("crit.heart_e_title")}</p>
+      <OptionPills options={makeOpts("crit.heart_ecg_0", "crit.heart_ecg_1", "crit.heart_ecg_2")} value={ecg ?? ""} onChange={setEcg} />
+
+      <p className="text-[10px] font-semibold text-gray-500">A — {t("crit.heart_a_title")}</p>
+      <OptionPills options={makeOpts("crit.heart_age_0", "crit.heart_age_1", "crit.heart_age_2")} value={age ?? ""} onChange={setAge} />
+
+      <p className="text-[10px] font-semibold text-gray-500">R — {t("crit.heart_r_title")}</p>
+      <OptionPills options={makeOpts("crit.heart_rf_0", "crit.heart_rf_1", "crit.heart_rf_2")} value={riskFactors ?? ""} onChange={setRiskFactors} />
+
+      <p className="text-[10px] font-semibold text-gray-500">T — {t("crit.heart_t_title")}</p>
+      <OptionPills options={makeOpts("crit.heart_trop_0", "crit.heart_trop_1", "crit.heart_trop_2")} value={troponin ?? ""} onChange={setTroponin} />
+
+      {allSelected && <p className="text-xs font-bold text-center">{t("crit.heart_total")}: {total}/10</p>}
+      {result && <ResultBox label={result.label} value={result.detail} color={result.color} />}
       {copyText && <CopyButton text={copyText} />}
     </div>
   );
@@ -5639,7 +5818,10 @@ export function CalculatorsTab() {
             { id: "wells_dvt", emoji: "🦵", label: t("crit.wells_dvt_title"), component: <WellsDVTCalc /> },
             { id: "alvarado", emoji: "🔥", label: t("crit.alvarado_title"), component: <AlvaradoCalc /> },
             { id: "cholecystitis", emoji: "💚", label: t("crit.cholecystitis_title"), component: <TokyoCholecystitisCalc /> },
-            { id: "cholangitis", emoji: "🟡", label: t("crit.cholangitis_title"), component: <TokyoCholangitisCalc /> },
+            { id: "cspine", emoji: "🦴", label: t("crit.cspine_title"), component: <CSpineCalc /> },
+            { id: "pecarn", emoji: "👶", label: t("crit.pecarn_title"), component: <PecarnCalc /> },
+            { id: "sfsr", emoji: "💫", label: t("crit.sfsr_title"), component: <SFSyncopeCalc /> },
+            { id: "heart", emoji: "❤️‍🔥", label: t("crit.heart_title"), component: <HeartScoreCalc /> },
           ].filter((c) => !q || c.label.toLowerCase().includes(q)).map((c) => (
             <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
               <button type="button" onClick={() => setOpenCrit(openCrit === c.id ? null : c.id)}
