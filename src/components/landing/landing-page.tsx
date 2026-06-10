@@ -695,7 +695,7 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
     <section
       ref={containerRef}
       className="relative"
-      style={{ height: reduce ? "auto" : "500vh" }}
+      style={{ height: reduce ? "auto" : "1000vh" }}
     >
       <div
         className={`${
@@ -782,7 +782,7 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
                 </div>
 
                 {/* App mockup body */}
-                <div className="relative min-h-[340px] md:min-h-[380px]">
+                <div className="relative min-h-[540px] md:min-h-[600px]">
                   <DemoStep0 active={activeStep === 0} progress={stepProgress} text={dictText} />
                   <DemoStepAI active={activeStep === 1} progress={stepProgress} lang={lang} dictText={dictText} />
                   <DemoStepReport active={activeStep === 2} progress={stepProgress} lang={lang} />
