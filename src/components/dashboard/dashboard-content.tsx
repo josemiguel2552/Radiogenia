@@ -35,6 +35,7 @@ import {
   Heart,
   Target,
   Search,
+  Tags,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
@@ -84,6 +85,8 @@ export function DashboardContent() {
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
+  const [classifying, setClassifying] = useState(false);
+  const [classifyResult, setClassifyResult] = useState<string | null>(null);
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -1072,6 +1075,49 @@ export function DashboardContent() {
     setLoadingConcStyles({ concise: false, grouped: false });
     setLoadingTrace(false);
     toast(t("toast.generation_stopped"));
+  }
+
+  async function handleClassify() {
+    if (!conclusion.trim() || classifying) return;
+    setClassifying(true);
+    setClassifyResult(null);
+    try {
+      const res = await fetch("/api/generate/classify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conclusion: conclusion.trim(),
+          findings: findings.trim(),
+          language: outputLanguage,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        toast.error(text || t("gen_error"));
+        return;
+      }
+      const data = await res.json();
+      if (data.classifications) {
+        setClassifyResult(data.classifications);
+      }
+    } catch {
+      toast.error(t("gen_error"));
+    } finally {
+      setClassifying(false);
+    }
+  }
+
+  function applyClassification() {
+    if (!classifyResult) return;
+    const trimmedConclusion = conclusion.trimEnd();
+    const separator = trimmedConclusion ? "\n\n" : "";
+    setConclusionVersions((prev) => ({
+      ...prev,
+      [conclusionStyle]: trimmedConclusion + separator + classifyResult,
+    }));
+    reportDirtyRef.current = true;
+    setClassifyResult(null);
+    toast.success(t("classify.applied"));
   }
 
   function cleanReport(text: string): string {
@@ -2076,6 +2122,35 @@ export function DashboardContent() {
                   ))}
                 </div>
               }
+              footerExtra={conclusion.trim() ? (
+                classifyResult ? (
+                  <div className="border border-violet-200 dark:border-violet-800 rounded-lg bg-violet-50/50 dark:bg-violet-950/20 p-2.5">
+                    <p className="text-[10px] font-medium text-violet-700 dark:text-violet-300 mb-1.5">{t("classify.preview_title")}</p>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2">{classifyResult}</p>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button type="button" onClick={() => setClassifyResult(null)} className="text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                        {t("classify.dismiss")}
+                      </button>
+                      <button type="button" onClick={applyClassification} className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-violet-600 text-white hover:bg-violet-700 transition-colors">
+                        <Check className="h-2.5 w-2.5" />
+                        {t("classify.apply")}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleClassify}
+                      disabled={classifying}
+                      className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium transition-colors disabled:opacity-50"
+                    >
+                      {classifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
+                      {t("classify.button")}
+                    </button>
+                  </div>
+                )
+              ) : undefined}
             />
             </div>
 
@@ -2281,6 +2356,7 @@ function OutputCard({
   onEdit,
   minHeight,
   headerExtra,
+  footerExtra,
   traceHighlights,
   traceLocked,
   isDark,
@@ -2293,6 +2369,7 @@ function OutputCard({
   onEdit?: () => void;
   minHeight: number;
   headerExtra?: React.ReactNode;
+  footerExtra?: React.ReactNode;
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
   traceLocked?: boolean;
   isDark?: boolean;
@@ -2362,6 +2439,7 @@ function OutputCard({
             style={{ minHeight }}
           />
         )}
+        {footerExtra && <div className="mt-1.5">{footerExtra}</div>}
       </CardContent>
     </Card>
   );
