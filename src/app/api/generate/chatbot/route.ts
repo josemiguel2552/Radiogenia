@@ -44,6 +44,16 @@ CÓMO BUSCAR EN LA BASE DE CONOCIMIENTO:
   - "seguimiento" / "control" / "qué hago" → busca criterios de follow-up en Fleischner, BTS, Lung-RADS
   - "sospechoso" / "maligno" / "cáncer" → busca criterios de malignidad, VDT, staging
   - "primer estudio" vs "control" / "previo" → diferencia entre nódulo nuevo vs seguimiento
+  - "urgente" / "urgencia" / "criterios" / "cuándo pedir" / "indicación" → busca en URGENT IMAGING CRITERIA / CLINICAL DECISION RULES: Canadian CT Head Rule, Wells PE, Wells DVT, Alvarado (apendicitis), Tokyo (colecistitis), Canadian C-Spine/NEXUS, PECARN (pediátrico), SF Syncope CHESS, HEART Score
+  - "TCE" / "traumatismo craneal" / "golpe en la cabeza" → Canadian CT Head Rule o PECARN (si pediátrico)
+  - "TEP" / "tromboembolismo" / "embolia pulmonar" → Wells PE
+  - "TVP" / "trombosis venosa" → Wells DVT
+  - "apendicitis" / "dolor fosa iliaca" → Alvarado
+  - "colecistitis" / "vesícula" / "dolor hipocondrio derecho" → Tokyo Guidelines
+  - "cervical" / "columna cervical" / "whiplash" / "latigazo" → Canadian C-Spine / NEXUS
+  - "niño" / "pediátrico" / "caída niño" / "golpe cabeza niño" → PECARN
+  - "síncope" / "desmayo" / "pérdida de conciencia" → SF Syncope Rule CHESS
+  - "dolor torácico" / "dolor pecho" / "chest pain" / "infarto" → HEART Score
 - Cuando el usuario mencione una FUENTE (ej: "BTS", "Fleischner"), busca TODAS las entradas de esa fuente.
 - Relaciona sinónimos: "nódulo pulmonar" = "lung nodule", "subsólido" = "ground-glass" = "part-solid", etc.
 - Clasificaciones RADS: "Lung-RADS" = "lung rads" = "lungrads", "BI-RADS" = "birads", "LI-RADS" = "lirads", "O-RADS" = "orads", "TI-RADS" = "tirads", "PI-RADS" = "pirads", "CAD-RADS" = "cadrads".
@@ -92,6 +102,16 @@ HOW TO SEARCH THE KNOWLEDGE BASE:
   - "follow-up" / "what do I do" / "next step" → search follow-up criteria in Fleischner, BTS, Lung-RADS
   - "suspicious" / "malignant" / "cancer" → search malignancy criteria, VDT, staging
   - "first study" vs "follow-up" / "prior" → differentiate new nodule vs surveillance
+  - "urgent" / "emergency" / "criteria" / "when to order" / "indication" → search URGENT IMAGING CRITERIA / CLINICAL DECISION RULES: Canadian CT Head Rule, Wells PE, Wells DVT, Alvarado (appendicitis), Tokyo (cholecystitis), Canadian C-Spine/NEXUS, PECARN (pediatric), SF Syncope CHESS, HEART Score
+  - "head injury" / "head trauma" / "TBI" → Canadian CT Head Rule or PECARN (if pediatric)
+  - "PE" / "pulmonary embolism" / "chest pain + dyspnea" → Wells PE
+  - "DVT" / "deep vein thrombosis" / "leg swelling" → Wells DVT
+  - "appendicitis" / "RLQ pain" → Alvarado
+  - "cholecystitis" / "gallbladder" / "RUQ pain" → Tokyo Guidelines
+  - "cervical spine" / "neck trauma" / "whiplash" → Canadian C-Spine / NEXUS
+  - "pediatric" / "child" / "kid head injury" → PECARN
+  - "syncope" / "fainting" / "loss of consciousness" → SF Syncope Rule CHESS
+  - "chest pain" / "ACS" / "heart attack" → HEART Score
 - When the user mentions a SOURCE (e.g., "BTS", "Fleischner"), find ALL entries from that source.
 - Match synonyms: "lung nodule" = "pulmonary nodule", "subsolid" = "ground-glass" = "part-solid", etc.
 - RADS classifications: "Lung-RADS" = "lung rads" = "lungrads", "BI-RADS" = "birads", "LI-RADS" = "lirads", "O-RADS" = "orads", "TI-RADS" = "tirads", "PI-RADS" = "pirads", "CAD-RADS" = "cadrads".
@@ -140,6 +160,16 @@ COMO BUSCAR NA BASE DE CONHECIMENTO:
   - "seguimento" / "controle" / "o que faço" → busque critérios de follow-up em Fleischner, BTS, Lung-RADS
   - "suspeito" / "maligno" / "câncer" → busque critérios de malignidade, VDT, staging
   - "primeiro exame" vs "controle" / "prévio" → diferencie nódulo novo vs seguimento
+  - "urgente" / "urgência" / "critérios" / "quando pedir" / "indicação" → busque em URGENT IMAGING CRITERIA / CLINICAL DECISION RULES: Canadian CT Head Rule, Wells PE, Wells DVT, Alvarado (apendicite), Tokyo (colecistite), Canadian C-Spine/NEXUS, PECARN (pediátrico), SF Syncope CHESS, HEART Score
+  - "TCE" / "trauma craniano" / "bateu a cabeça" → Canadian CT Head Rule ou PECARN (se pediátrico)
+  - "TEP" / "tromboembolismo" / "embolia pulmonar" → Wells PE
+  - "TVP" / "trombose venosa" → Wells DVT
+  - "apendicite" / "dor fossa ilíaca" → Alvarado
+  - "colecistite" / "vesícula" / "dor hipocôndrio direito" → Tokyo Guidelines
+  - "cervical" / "coluna cervical" / "chicotada" → Canadian C-Spine / NEXUS
+  - "criança" / "pediátrico" / "queda criança" → PECARN
+  - "síncope" / "desmaio" / "perda de consciência" → SF Syncope Rule CHESS
+  - "dor torácica" / "dor no peito" / "infarto" → HEART Score
 - Quando o usuário mencionar uma FONTE (ex: "BTS", "Fleischner"), busque TODAS as entradas dessa fonte.
 - Relacione sinônimos: "nódulo pulmonar" = "lung nodule", "subsólido" = "vidro fosco" = "part-solid", etc.
 - Classificações RADS: "Lung-RADS" = "lung rads" = "lungrads", "BI-RADS" = "birads", "LI-RADS" = "lirads", "O-RADS" = "orads", "TI-RADS" = "tirads", "PI-RADS" = "pirads", "CAD-RADS" = "cadrads".
