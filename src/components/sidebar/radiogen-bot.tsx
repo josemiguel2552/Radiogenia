@@ -6,10 +6,40 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+function BotMessage({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        h3: ({ children }) => (
+          <p className="font-semibold text-[11px] text-violet-700 dark:text-violet-300 mt-2 mb-0.5 first:mt-0">{children}</p>
+        ),
+        p: ({ children }) => (
+          <p className="mb-1.5 last:mb-0">{children}</p>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-semibold text-gray-900 dark:text-gray-100">{children}</strong>
+        ),
+        ul: ({ children }) => (
+          <ul className="mb-1.5 ml-2.5 space-y-0.5 last:mb-0">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="mb-1.5 ml-3 space-y-0.5 list-decimal marker:text-violet-400 marker:font-semibold marker:text-[10px] last:mb-0">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="relative pl-2.5 [ul>&]:before:content-['•'] before:absolute before:left-0 before:text-violet-400 before:font-bold before:text-[9px] before:top-[1px] [ol>&]:pl-0.5 [ol>&]:before:content-none">{children}</li>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 export function RadiogenBot() {
@@ -153,20 +183,26 @@ export function RadiogenBot() {
             key={i}
             className={`mb-2 flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div
-              className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-violet-600 text-white rounded-br-sm"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-sm"
-              }`}
-            >
-              {msg.content || (loading && i === messages.length - 1 ? (
-                <span className="flex items-center gap-1 text-gray-400">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {t("bot.thinking")}
-                </span>
-              ) : null)}
-            </div>
+            {msg.role === "user" ? (
+              <div className="max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs leading-relaxed whitespace-pre-wrap bg-violet-600 text-white rounded-br-sm">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="max-w-[90%] rounded-lg rounded-bl-sm bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/50 overflow-hidden">
+                {msg.content ? (
+                  <div className="px-3 py-2 text-[11px] leading-relaxed text-gray-700 dark:text-gray-200">
+                    <BotMessage content={msg.content} />
+                  </div>
+                ) : loading && i === messages.length - 1 ? (
+                  <div className="px-3 py-2">
+                    <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {t("bot.thinking")}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
