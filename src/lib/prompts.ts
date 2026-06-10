@@ -1540,7 +1540,11 @@ FORMATO:
 - Puntos numerados. Texto plano. Máximo ${maxPoints}.
 - NO uses asteriscos, almohadillas ni markdown.
 - NO incluyas el encabezado "CONCLUSIÓN".
-- Cada punto empieza DIRECTAMENTE con la descripción del hallazgo. PROHIBIDO anteponer títulos, categorías o encabezados antes de describir el hallazgo (NO: "Hallazgos pulmonares: ...", NO: "Hígado: ...", NO: "Cardiovascular: ..."). Escribe el hallazgo directamente sin preámbulo.
+- Cada punto empieza DIRECTAMENTE con la descripción del hallazgo. PROHIBIDO anteponer títulos, categorías, etiquetas anatómicas o encabezados de cualquier tipo antes de describir el hallazgo.
+  - PROHIBIDO: "1. Parénquima pulmonar: ...", "1. Hígado: ...", "1. Cardiovascular: ...", "1. Nódulos: ...", "1. Ganglios: ...", "1. Hallazgos vasculares: ..."
+  - CORRECTO: "1. Nódulo peribroncovascular de nueva aparición en lóbulo inferior derecho (9 x 8 mm)."
+  - CORRECTO: "1. Aumento de tamaño de la bulla en hemitórax izquierdo con nueva atelectasia subpleural compresiva."
+  - Si el primer token después del número es una categoría anatómica seguida de dos puntos, REESCRIBE la frase sin ese preámbulo.
 - CERO recomendaciones. La conclusión SOLO enumera hallazgos. Nunca incluyas seguimiento, correlación, biopsia ni acciones.`;
   } else {
     const styleBlock = lang === "pt" ? STYLE_BLOCK_PT[style] : STYLE_BLOCK_EN[style];
@@ -1640,7 +1644,11 @@ FORMAT:
 - Numbered points. Plain text. Maximum ${maxPoints}.
 - Do NOT use asterisks, hashes or markdown.
 - Do NOT include the heading "CONCLUSION".
-- Each point starts DIRECTLY with the finding description. FORBIDDEN to prepend titles, categories, or headings before describing the finding (NOT: "Pulmonary findings: ...", NOT: "Liver: ...", NOT: "Cardiovascular: ..."). Write the finding directly without preamble.
+- Each point starts DIRECTLY with the finding description. FORBIDDEN to prepend titles, categories, anatomical labels, or headings of any kind before describing the finding.
+  - FORBIDDEN: "1. Lung parenchyma and nodules: ...", "1. Liver: ...", "1. Cardiovascular: ...", "1. Lymph nodes: ...", "1. Vascular findings: ..."
+  - CORRECT: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)."
+  - CORRECT: "1. Interval increase of the left hemithorax bulla with new compressive subpleural atelectasis."
+  - If the first token after the number is an anatomical category followed by a colon, REWRITE the sentence without that preamble.
 - ZERO recommendations. The conclusion ONLY lists findings. Never include follow-up, correlation, biopsy, or actions.`;
   }
 
