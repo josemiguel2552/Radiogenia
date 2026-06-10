@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
       customBaseUrl: globalConfig.customBaseUrl,
       system,
       user: userMessage,
-      maxTokens: 1024,
+      maxTokens: 2048,
     });
 
     const reader = stream.getReader();
