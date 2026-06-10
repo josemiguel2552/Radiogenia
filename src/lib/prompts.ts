@@ -1409,10 +1409,11 @@ export function buildConclusionPrompt(params: {
     grouped: `ESTILO — INTEGRADO:
 - Cada punto es un párrafo breve con frases completas y bien redactadas.
 - Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
-- SOLO conecta hallazgos dentro de un punto si son parte del MISMO PROCESO PATOLÓGICO (ej: lesión primaria + sus adenopatías, derrame + atelectasia compresiva).
-- Si dos hallazgos no comparten fisiopatología, van en PUNTOS SEPARADOS aunque ambos sean importantes.
+- Agrupa hallazgos anatómicamente relacionados o del mismo órgano/región en un solo punto (ej: lesión hepática + adenopatías adyacentes, derrame + atelectasia compresiva).
+- Si dos hallazgos no están anatómicamente relacionados, van en PUNTOS SEPARADOS.
 - NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
-- Tono: integrador pero riguroso, sintético, descriptivo.`,
+- AGRUPAR NO significa diagnosticar. Describe los hallazgos juntos sin inferir su naturaleza, etiología ni relación causal. NUNCA uses frases como "potencialmente maligno", "probablemente metastásico", "en probable relación con", "sugestivo de neoplasia". Solo describe lo que se ve.
+- Tono: integrador pero riguroso, sintético, PURAMENTE DESCRIPTIVO.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
@@ -1424,10 +1425,11 @@ export function buildConclusionPrompt(params: {
     grouped: `STYLE — INTEGRATED:
 - Each point is a brief paragraph with complete, well-written sentences.
 - Include descriptive data: size, location, density/signal, evolution.
-- ONLY connect findings within a point if they are part of the SAME PATHOLOGICAL PROCESS (e.g., primary lesion + its lymphadenopathy, effusion + compressive atelectasis).
-- If two findings do not share pathophysiology, they go in SEPARATE POINTS even if both are important.
+- Group anatomically related findings or findings in the same organ/region into a single point (e.g., hepatic lesion + adjacent lymphadenopathy, effusion + compressive atelectasis).
+- If two findings are not anatomically related, they go in SEPARATE POINTS.
 - Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
-- Tone: integrative but rigorous, synthetic, descriptive.`,
+- GROUPING does NOT mean diagnosing. Describe findings together without inferring their nature, etiology, or causal relationship. NEVER use phrases like "potentially malignant", "probably metastatic", "likely related to", "suggestive of neoplasia". Only describe what is seen.
+- Tone: integrative but rigorous, synthetic, PURELY DESCRIPTIVE.`,
   };
 
   const STYLE_BLOCK_PT: Record<ConclusionStyle, string> = {
@@ -1439,10 +1441,11 @@ export function buildConclusionPrompt(params: {
     grouped: `ESTILO — INTEGRADO:
 - Cada ponto é um parágrafo breve com frases completas e bem redigidas.
 - Inclua dados descritivos: tamanho, localização, densidade/sinal, evolução.
-- SOMENTE conecte achados dentro de um ponto se fizerem parte do MESMO PROCESSO PATOLÓGICO (ex: lesão primária + suas linfonodomegalias, derrame + atelectasia compressiva).
-- Se dois achados não compartilham fisiopatologia, vão em PONTOS SEPARADOS mesmo que ambos sejam importantes.
+- Agrupe achados anatomicamente relacionados ou do mesmo órgão/região em um único ponto (ex: lesão hepática + linfonodomegalias adjacentes, derrame + atelectasia compressiva).
+- Se dois achados não estão anatomicamente relacionados, vão em PONTOS SEPARADOS.
 - NÃO force conectores entre achados independentes. Cada ponto é uma unidade clínica coerente.
-- Tom: integrador mas rigoroso, sintético, descritivo.`,
+- AGRUPAR NÃO significa diagnosticar. Descreva os achados juntos sem inferir sua natureza, etiologia nem relação causal. NUNCA use frases como "potencialmente maligno", "provavelmente metastático", "em provável relação com", "sugestivo de neoplasia". Só descreva o que se vê.
+- Tom: integrador mas rigoroso, sintético, PURAMENTE DESCRITIVO.`,
   };
 
   let system: string;
@@ -1473,9 +1476,9 @@ REGLAS DE CONTENIDO:
    - NUNCA: órganos normales, variantes anatómicas irrelevantes, hallazgos incidentales triviales (quistes simples renales/hepáticos pequeños, pequeños osteofitos degenerativos, etc.) SALVO que sean la razón del estudio.
    - Si un hallazgo no cambia nada para el clínico, no lo incluyas.
 
-4. AGRUPACIÓN POR PROCESO PATOLÓGICO:
-   Agrupa hallazgos que forman parte del MISMO proceso patológico o que se relacionan entre sí en un solo punto. El clínico necesita entender la historia completa de cada problema, no una lista fragmentada.
-   - Ej: lesión focal hepática + adenopatías regionales + alteración de marcadores → un solo punto que describe el conjunto.
+4. AGRUPACIÓN POR REGIÓN ANATÓMICA O RELACIÓN ESPACIAL:
+   Agrupa hallazgos que están anatómicamente relacionados o afectan al mismo órgano/región en un solo punto. El clínico necesita entender el panorama completo de cada zona, no una lista fragmentada. Agrupar NO implica diagnosticar — describe cada hallazgo dentro del punto sin inferir su naturaleza ni relación causal.
+   - Ej: lesión focal hepática + adenopatías regionales → un solo punto que describe ambos hallazgos sin asumir su relación.
    - Ej: derrame pleural + atelectasia compresiva adyacente → un solo punto.
    - Ej: fractura vertebral + canal estrecho + compresión medular → un solo punto.
    - Hallazgos que NO se relacionan entre sí van en PUNTOS SEPARADOS.
@@ -1524,6 +1527,7 @@ PROHIBIDO:
 - Emitir diagnósticos o interpretaciones etiológicas: "progresión tumoral", "metástasis", "neumonía", "compatible con X", "sugestivo de X", "en relación con X", "indicativo de X", "consistente con X", "adenoma", "quiste hemorrágico", "angiomiolipoma", "hemangioma". En su lugar, describe el hallazgo radiológico puro (tamaño, densidad, localización).
 - NUNCA caractericen ni clasifiquen lesiones a partir de valores de densidad, señal o realce. Si el radiólogo dicta "lesión adrenal de 18 mm con densidad de 20 UH", la conclusión dice exactamente eso, NO "adenoma", NO "compatible con adenoma". El radiólogo informa datos; el clínico interpreta.
 - Asumir naturaleza de lesiones: "lesión maligna", "tumor", "metástasis", "recidiva", "diseminación", "adenoma", "lipoma", "quiste complicado". En su lugar: "lesión", "nódulo", "masa", "imagen nodular", "captación patológica".
+- Sugerir malignidad o benignidad: "potencialmente maligno", "probablemente metastásico", "sospechoso de malignidad", "de aspecto benigno", "probablemente benigno". En su lugar, describe solo las características radiológicas objetivas.
 - Inferir progresión o respuesta terapéutica: "progresión tumoral", "respuesta parcial", "enfermedad estable". En su lugar: "aumento de tamaño de la lesión", "disminución de tamaño", "sin cambios significativos respecto al previo".
 - Recomendar acciones clínicas, seguimiento o correlación de NINGÚN tipo: "se recomienda biopsia", "completar con RM", "correlacionar clínicamente", "se sugiere seguimiento", "control en X meses", "valorar", "considerar". La conclusión NUNCA debe incluir recomendaciones — solo describe hallazgos.
 - Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
@@ -1577,9 +1581,9 @@ CONTENT RULES:
    - NEVER: normal organs, irrelevant anatomical variants, trivial incidental findings (small simple renal/hepatic cysts, small degenerative osteophytes, etc.) UNLESS they are the reason for the study.
    - If a finding changes nothing for the clinician, do not include it.
 
-4. GROUPING BY PATHOLOGICAL PROCESS:
-   Group findings that are part of the SAME pathological process or that relate to each other into a single point. The clinician needs to understand the complete picture of each problem, not a fragmented list.
-   - E.g.: focal hepatic lesion + regional lymphadenopathy + marker abnormalities → one single point describing the whole picture.
+4. GROUPING BY ANATOMICAL REGION OR SPATIAL RELATIONSHIP:
+   Group findings that are anatomically related or affect the same organ/region into a single point. The clinician needs to understand the complete picture of each area, not a fragmented list. Grouping does NOT imply diagnosing — describe each finding within the point without inferring their nature or causal relationship.
+   - E.g.: focal hepatic lesion + regional lymphadenopathy → one single point describing both findings without assuming their relationship.
    - E.g.: pleural effusion + adjacent compressive atelectasis → one single point.
    - E.g.: vertebral fracture + narrow canal + cord compression → one single point.
    - Findings that are NOT related go in SEPARATE POINTS.
@@ -1628,6 +1632,7 @@ FORBIDDEN:
 - Issuing diagnoses or etiological interpretations: "tumor progression", "metastasis", "pneumonia", "consistent with X", "suggestive of X", "in keeping with X", "indicative of X", "adenoma", "hemorrhagic cyst", "angiomyolipoma", "hemangioma". Instead, describe the pure radiological finding (size, density, location).
 - NEVER characterize or classify lesions based on density, signal, or enhancement values. If the radiologist dictates "18 mm adrenal lesion with density of 20 HU", the conclusion says exactly that, NOT "adenoma", NOT "consistent with adenoma". The radiologist reports data; the clinician interprets.
 - Assuming lesion nature: "malignant lesion", "tumor", "metastasis", "recurrence", "spread", "adenoma", "lipoma", "complicated cyst". Instead: "lesion", "nodule", "mass", "nodular image", "pathological enhancement".
+- Suggesting malignancy or benignity: "potentially malignant", "probably metastatic", "suspicious for malignancy", "benign-appearing", "likely benign". Instead, describe only the objective radiological characteristics.
 - Inferring progression or therapeutic response: "tumor progression", "partial response", "stable disease". Instead: "interval increase in lesion size", "interval decrease in size", "no significant change compared to prior".
 - Recommending clinical actions, follow-up, or correlation of ANY kind: "biopsy recommended", "further evaluation with MRI", "clinical correlation recommended", "follow-up suggested", "control in X months", "consider", "recommend". The conclusion must NEVER include recommendations — it only describes findings.
 - Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
