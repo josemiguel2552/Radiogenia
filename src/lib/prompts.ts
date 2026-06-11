@@ -232,7 +232,7 @@ FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Cada sección es exactamente UNA línea con el formato: "Sección anatómica: Descripción."
 - Primera letra de la sección en MAYÚSCULA, el resto en minúsculas. Dos puntos. Un espacio. Descripción. Punto final.
 - Una línea por sección. Sin líneas en blanco entre secciones. Sin saltos de línea dentro de una sección.
-- Si una sección tiene MÚLTIPLES hallazgos, sepáralos con PUNTOS (.), NUNCA con comas (,) ni punto y coma (;). Cada hallazgo distinto es una oración independiente que termina en punto. Ej CORRECTO: "Hígado: Lesión hipodensa de 15 mm en segmento VI. Quiste simple de 8 mm en segmento III." Ej INCORRECTO: "Hígado: Lesión hipodensa de 15 mm en segmento VI, quiste simple de 8 mm en segmento III."
+- NUNCA repitas el nombre de una sección. Si una sección tiene MÚLTIPLES hallazgos, TODOS van en la MISMA línea, separados con PUNTOS (.). NUNCA crees líneas separadas con el mismo nombre de sección para hallazgos distintos. Ej CORRECTO: "Porciones incluidas del tórax: Masa pulmonar de 45 mm en lóbulo superior derecho. Nódulos pulmonares de 10 y 12 mm en lóbulo inferior derecho." Ej INCORRECTO (PROHIBIDO): "Porciones incluidas del tórax: Masa pulmonar de 45 mm.\nPorciones incluidas del tórax: Nódulos pulmonares de 10 y 12 mm."
 - NO uses asteriscos (*), almohadillas (#), guiones (-), viñetas, negritas ni ningún formato markdown.
 - NO numeres las secciones.
 - NO añadas encabezados como "HALLAZGOS", "FINDINGS" ni agrupaciones. Solo la lista plana de secciones.
@@ -309,7 +309,7 @@ FORMATO DE SAÍDA — ESTRITO, SEM EXCEÇÕES:
 - Cada seção é exatamente UMA linha com o formato: "Seção anatômica: Descrição."
 - Primeira letra da seção em MAIÚSCULA, o restante em minúsculas. Dois pontos. Um espaço. Descrição. Ponto final.
 - Uma linha por seção. Sem linhas em branco entre seções. Sem quebras de linha dentro de uma seção.
-- Se uma seção tem MÚLTIPLOS achados, separe-os com PONTOS (.), NUNCA com vírgulas (,) nem ponto e vírgula (;). Cada achado distinto é uma frase independente terminada em ponto. Ex CORRETO: "Fígado: Lesão hipodensa de 15 mm no segmento VI. Cisto simples de 8 mm no segmento III." Ex INCORRETO: "Fígado: Lesão hipodensa de 15 mm no segmento VI, cisto simples de 8 mm no segmento III."
+- NUNCA repita o nome de uma seção. Se uma seção tem MÚLTIPLOS achados, TODOS vão na MESMA linha, separados com PONTOS (.). NUNCA crie linhas separadas com o mesmo nome de seção para achados distintos. Ex CORRETO: "Porções incluídas do tórax: Massa pulmonar de 45 mm no lobo superior direito. Nódulos pulmonares de 10 e 12 mm no lobo inferior direito." Ex INCORRETO (PROIBIDO): "Porções incluídas do tórax: Massa pulmonar de 45 mm.\nPorções incluídas do tórax: Nódulos pulmonares de 10 e 12 mm."
 - NÃO use asteriscos (*), cerquilhas (#), hífens (-), marcadores, negrito nem nenhuma formatação markdown.
 - NÃO numere as seções.
 - NÃO adicione cabeçalhos como "ACHADOS" nem agrupamentos. Apenas a lista plana de seções.
@@ -385,7 +385,7 @@ OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - Each section is exactly ONE line with the format: "Anatomical section: Description."
 - First letter of section name in UPPERCASE, rest in lowercase. Colon. One space. Description. Period.
 - One line per section. No blank lines between sections. No line breaks within a section.
-- If a section has MULTIPLE findings, separate them with PERIODS (.), NEVER with commas (,) or semicolons (;). Each distinct finding is an independent sentence ending with a period. CORRECT: "Liver: 15 mm hypodense lesion in segment VI. Simple 8 mm cyst in segment III." INCORRECT: "Liver: 15 mm hypodense lesion in segment VI, simple 8 mm cyst in segment III."
+- NEVER repeat a section name. If a section has MULTIPLE findings, ALL go on the SAME line, separated by PERIODS (.). NEVER create separate lines with the same section name for different findings. CORRECT: "Included portions of the chest: 45 mm pulmonary mass in the right upper lobe. 10 and 12 mm pulmonary nodules in the right lower lobe." INCORRECT (FORBIDDEN): "Included portions of the chest: 45 mm pulmonary mass.\nIncluded portions of the chest: 10 and 12 mm pulmonary nodules."
 - Do NOT use asteriscos (*), hashes (#), dashes (-), bullets, bold or any markdown formatting.
 - Do NOT number the sections.
 - Do NOT add headings like "FINDINGS" or groupings. Only the flat list of sections.

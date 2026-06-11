@@ -841,6 +841,38 @@ export function enforcePeriodSeparation(text: string): string {
   });
 }
 
+export function mergeDuplicateSections(text: string): string {
+  if (!text) return text;
+  const lines = text.split("\n");
+  const seen = new Map<string, number>();
+  const result: string[] = [];
+
+  for (const line of lines) {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) { result.push(line); continue; }
+
+    const label = line.slice(0, colonIdx).trim().toLowerCase();
+    const content = line.slice(colonIdx + 1).trim();
+
+    if (seen.has(label)) {
+      const idx = seen.get(label)!;
+      const existing = result[idx];
+      const existingColonIdx = existing.indexOf(":");
+      const existingContent = existing.slice(existingColonIdx + 1).trim();
+      const prefix = existing.slice(0, existingColonIdx + 1);
+      const merged = existingContent.endsWith(".")
+        ? `${existingContent} ${content}`
+        : `${existingContent}. ${content}`;
+      result[idx] = `${prefix} ${merged}`;
+    } else {
+      seen.set(label, result.length);
+      result.push(line);
+    }
+  }
+
+  return result.join("\n");
+}
+
 export function enforceOutputLanguage(text: string, lang: OutputLanguage): string {
   if (lang === "en" || !text) return text;
 

@@ -1122,7 +1122,7 @@ export function DashboardContent() {
   }
 
   function cleanReport(text: string): string {
-    return text
+    let cleaned = text
       .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES|RECOMMENDATIONS|RECOMENDACIONES)\*{2,}/gi, "")
       .replace(/^\s*(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES)\s*$/gim, "")
       .replace(/\*{2,3}([^*]+)\*{2,3}\s*:/g, (_match, name: string) => {
@@ -1136,6 +1136,28 @@ export function DashboardContent() {
       .replace(/\*+/g, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
+
+    const lines = cleaned.split("\n");
+    const seen = new Map<string, number>();
+    const merged: string[] = [];
+    for (const line of lines) {
+      const ci = line.indexOf(":");
+      if (ci === -1) { merged.push(line); continue; }
+      const key = line.slice(0, ci).trim().toLowerCase();
+      const val = line.slice(ci + 1).trim();
+      if (seen.has(key)) {
+        const idx = seen.get(key)!;
+        const prev = merged[idx];
+        const pci = prev.indexOf(":");
+        const pval = prev.slice(pci + 1).trim();
+        const prefix = prev.slice(0, pci + 1);
+        merged[idx] = `${prefix} ${pval.endsWith(".") ? pval : pval + "."} ${val}`;
+      } else {
+        seen.set(key, merged.length);
+        merged.push(line);
+      }
+    }
+    return merged.join("\n");
   }
 
   const SECTION_HEADERS: Record<string, { findings: string; conclusion: string; recommendations: string }> = {
