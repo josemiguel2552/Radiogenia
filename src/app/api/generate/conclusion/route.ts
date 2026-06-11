@@ -49,20 +49,17 @@ export async function POST(req: NextRequest) {
     let preferredConclusionPhrases: string[] | undefined;
     if (styleLearning && modality && studyType) {
       try {
-        const { data: exact } = await supabase
-          .from("style_patterns")
-          .select("phrase, frequency, last_seen_at")
-          .eq("user_id", user.id)
-          .eq("modality", modality)
-          .eq("study_type", studyType)
-          .eq("kind", "conclusion_sample")
-          .order("last_seen_at", { ascending: false })
-          .limit(3);
-
-        const samples = exact || [];
-
-        if (samples.length < 3) {
-          const { data: modalitySamples } = await supabase
+        const [{ data: exact }, { data: fallback }] = await Promise.all([
+          supabase
+            .from("style_patterns")
+            .select("phrase, frequency, last_seen_at")
+            .eq("user_id", user.id)
+            .eq("modality", modality)
+            .eq("study_type", studyType)
+            .eq("kind", "conclusion_sample")
+            .order("last_seen_at", { ascending: false })
+            .limit(3),
+          supabase
             .from("style_patterns")
             .select("phrase, frequency, last_seen_at")
             .eq("user_id", user.id)
@@ -70,13 +67,10 @@ export async function POST(req: NextRequest) {
             .neq("study_type", studyType)
             .eq("kind", "conclusion_sample")
             .order("last_seen_at", { ascending: false })
-            .limit(3 - samples.length);
+            .limit(3),
+        ]);
 
-          if (modalitySamples) {
-            samples.push(...modalitySamples);
-          }
-        }
-
+        const samples = [...(exact || []), ...(fallback || [])].slice(0, 3);
         if (samples.length > 0) {
           preferredConclusionPhrases = samples.map((s) => s.phrase);
         }

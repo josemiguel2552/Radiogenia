@@ -1657,25 +1657,6 @@ FORMAT:
 - ZERO recommendations. The conclusion ONLY lists findings. Never include follow-up, correlation, biopsy, or actions.`;
   }
 
-  if (params.preferredConclusionPhrases && params.preferredConclusionPhrases.length > 0) {
-    const block = lang === "es"
-      ? `EJEMPLOS DE CONCLUSIONES PREVIAS DEL RADIÓLOGO (aprendidas de sus informes corregidos).
-Reglas:
-- Observa la ESTRUCTURA (puntos numerados o párrafo único), el TONO y las FRASES recurrentes.
-- Imita el estilo, NO copies contenido clínico de los ejemplos.`
-      : `PREVIOUS CONCLUSION EXAMPLES FROM THIS RADIOLOGIST (learned from their corrected reports).
-Rules:
-- Observe the STRUCTURE (numbered points or single paragraph), TONE and recurring PHRASES.
-- Mimic the style, do NOT copy clinical content from the examples.`;
-
-    system += `\n\n${block}\n`;
-    params.preferredConclusionPhrases.forEach((p, i) => {
-      system += `\n--- ${i + 1} ---\n${p}`;
-    });
-  }
-
-
-
   // Final language enforcement
   if (lang !== "es" && lang !== "en") {
     system += `\n\nCRITICAL LANGUAGE REMINDER: Your ENTIRE output must be in ${l}. Not a single word in Spanish or English. Translate ALL medical terminology to ${l}.`;
@@ -1686,6 +1667,21 @@ Rules:
   }
 
   let userMsg = "";
+
+  if (params.preferredConclusionPhrases && params.preferredConclusionPhrases.length > 0) {
+    const block = lang === "es"
+      ? `EJEMPLOS DE CONCLUSIONES PREVIAS DEL RADIÓLOGO (imita estructura y tono, NO copies contenido clínico):`
+      : lang === "pt"
+      ? `EXEMPLOS DE CONCLUSÕES ANTERIORES DESTE RADIOLOGISTA (imite estrutura e tom, NÃO copie conteúdo clínico):`
+      : `PREVIOUS CONCLUSION EXAMPLES FROM THIS RADIOLOGIST (mimic structure and tone, do NOT copy clinical content):`;
+
+    userMsg += `${block}\n`;
+    params.preferredConclusionPhrases.forEach((p, i) => {
+      userMsg += `\n--- ${i + 1} ---\n${p}`;
+    });
+    userMsg += "\n\n";
+  }
+
   if (hasClinical) {
     const label = lang === "es" ? "Datos clínicos / pregunta clínica" : lang === "pt" ? "Dados clínicos / pergunta clínica" : "Clinical data / clinical question";
     userMsg += `${label}:\n${params.clinicalInfo}\n\n`;
