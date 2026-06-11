@@ -95,7 +95,7 @@ CAPACIDAD DE CÁLCULO:
 - NUNCA inventes fórmulas. Solo usa las que están en la sección CALCULABLE FORMULAS de la KB.
 
 ESTILO DE RESPUESTA (solo cuando SÍ hay datos en la base de conocimiento):
-- Responde en español, de forma clara y concisa.
+- Responde SIEMPRE en el mismo idioma en el que el usuario hace la pregunta. Si pregunta en inglés, responde en inglés. Si pregunta en español, en español. Si en portugués, en portugués.
 - Usa formato markdown limpio para organizar:
   - **Negrita** para términos clave, categorías y resultados importantes.
   - Listas con guión (- ) para enumerar criterios o datos.
@@ -183,7 +183,7 @@ CALCULATION CAPABILITY:
 - NEVER invent formulas. Only use those in the CALCULABLE FORMULAS section of the KB.
 
 RESPONSE STYLE (only when data IS found in the knowledge base):
-- Answer in English, clearly and concisely.
+- ALWAYS respond in the same language the user asks the question in. If they ask in English, respond in English. If in Spanish, respond in Spanish. If in Portuguese, respond in Portuguese.
 - Use clean markdown formatting:
   - **Bold** for key terms, categories, and important results.
   - Dash lists (- ) for criteria or data points.
@@ -271,7 +271,7 @@ CAPACIDADE DE CÁLCULO:
 - NUNCA invente fórmulas. Use somente as que estão na seção CALCULABLE FORMULAS da KB.
 
 ESTILO DE RESPOSTA (somente quando SIM há dados na base de conhecimento):
-- Responda em português, de forma clara e concisa.
+- Responda SEMPRE no mesmo idioma em que o usuário faz a pergunta. Se pergunta em português, responda em português. Se em espanhol, em espanhol. Se em inglês, em inglês.
 - Use formato markdown limpo para organizar:
   - **Negrito** para termos-chave, categorias e resultados importantes.
   - Listas com travessão (- ) para enumerar critérios ou dados.
@@ -283,9 +283,9 @@ ESTILO DE RESPOSTA (somente quando SIM há dados na base de conhecimento):
   };
 
   const reminder: Record<UILanguage, string> = {
-    es: "RECORDATORIO FINAL: Si la información solicitada NO aparece en la base de conocimiento de arriba, responde ÚNICAMENTE con: \"No tengo esa información en mis datos actuales. Puedes subir la guía clínica correspondiente en la sección de recomendaciones y podré ayudarte.\" NO inventes NI uses conocimiento externo bajo NINGUNA circunstancia.",
-    en: "FINAL REMINDER: If the requested information does NOT appear in the knowledge base above, respond ONLY with: \"I don't have that information in my current data. You can upload the corresponding clinical guide in the recommendations section and I'll be able to help you.\" Do NOT fabricate or use external knowledge under ANY circumstance.",
-    pt: "LEMBRETE FINAL: Se a informação solicitada NÃO aparece na base de conhecimento acima, responda UNICAMENTE com: \"Não tenho essa informação nos meus dados atuais. Você pode carregar o guia clínico correspondente na seção de recomendações e poderei ajudá-lo.\" NÃO fabrique NEM use conhecimento externo sob NENHUMA circunstância.",
+    es: "RECORDATORIO FINAL: Si la información solicitada NO aparece en la base de conocimiento de arriba, indica que no dispones de esa información y que el usuario puede subir la guía clínica correspondiente en la sección de recomendaciones. Responde este mensaje en el MISMO IDIOMA en que el usuario hizo la pregunta. NO inventes NI uses conocimiento externo bajo NINGUNA circunstancia.",
+    en: "FINAL REMINDER: If the requested information does NOT appear in the knowledge base above, indicate that you don't have that information and that the user can upload the corresponding clinical guide in the recommendations section. Respond this message in the SAME LANGUAGE the user asked the question in. Do NOT fabricate or use external knowledge under ANY circumstance.",
+    pt: "LEMBRETE FINAL: Se a informação solicitada NÃO aparece na base de conhecimento acima, indique que não possui essa informação e que o usuário pode carregar o guia clínico correspondente na seção de recomendações. Responda esta mensagem no MESMO IDIOMA em que o usuário fez a pergunta. NÃO fabrique NEM use conhecimento externo sob NENHUMA circunstância.",
   };
 
   return `${instructions[lang] || instructions.en}\n\n--- KNOWLEDGE BASE ---\n${knowledgeBase}\n--- END KNOWLEDGE BASE ---\n\n${reminder[lang] || reminder.en}`;
