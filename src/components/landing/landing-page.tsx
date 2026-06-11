@@ -6,7 +6,7 @@ import {
   Mic, FileText, Brain, Sparkles, Layout, Shield, MessageCircle,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
-  BookOpen, Download,
+  BookOpen, Download, Tags,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
@@ -218,6 +218,7 @@ const FEATURE_KEYS = [
   { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
   { icon: Brain, key: "style", color: "from-purple-500 to-pink-500" },
   { icon: Sparkles, key: "conclusions", color: "from-indigo-500 to-blue-600" },
+  { icon: Tags, key: "classify", color: "from-amber-500 to-orange-500" },
   { icon: MessageCircle, key: "bot", color: "from-violet-500 to-fuchsia-500" },
   { icon: Layout, key: "templates", color: "from-blue-600 to-cyan-500" },
   { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
@@ -640,13 +641,13 @@ export function LandingPage() {
 
 const DEMO_TEXTS: Record<PublicLang, string[]> = {
   es: [
-    "Pulmones bien ventilados sin opacidades de ocupación alveolar. Silueta cardiomediastínica dentro de límites normales. Senos costofrénicos libres. No se observan lesiones óseas...",
+    "Nódulo de 28 mm en lóbulo superior izquierdo con márgenes espiculados. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo nuevo de 18 mm. Pequeño derrame pleural derecho...",
   ],
   en: [
-    "Well-aerated lungs without alveolar opacities. Cardiomediastinal silhouette within normal limits. Clear costophrenic angles. No osseous lesions identified...",
+    "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy measuring 15 mm. New 18 mm left adrenal nodule. Small right pleural effusion...",
   ],
   pt: [
-    "Pulmões bem aerados sem opacidades de preenchimento alveolar. Silhueta cardiomediastinal dentro dos limites normais. Seios costofrênicos livres...",
+    "Nódulo de 28 mm no lobo superior esquerdo com margens espiculadas. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo novo de 18 mm. Pequeno derrame pleural direito...",
   ],
 };
 
@@ -655,6 +656,7 @@ const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
     { title: "Dicta tu informe", desc: "Habla naturalmente y observa cómo tu voz se transcribe en tiempo real" },
     { title: "La IA procesa", desc: "El dictado se envía a la inteligencia artificial que analiza y estructura el contenido" },
     { title: "Informe generado", desc: "El informe final aparece con secciones organizadas y tus guías clínicas accesibles" },
+    { title: "Clasifica hallazgos", desc: "Clasifica y estadifica automáticamente los hallazgos usando sistemas estándar (TNM, BI-RADS, etc.)" },
     { title: "Consulta a Radiogen Bot", desc: "Pregunta clasificaciones, valores de referencia o criterios de seguimiento sin salir de tu informe" },
     { title: "Listo para exportar", desc: "Revisa, ajusta y exporta en el formato de tu hospital" },
   ],
@@ -662,6 +664,7 @@ const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
     { title: "Dictate your report", desc: "Speak naturally and watch your voice transcribed in real time" },
     { title: "AI processes", desc: "The dictation is sent to AI which analyzes and structures the content" },
     { title: "Report generated", desc: "The final report appears with organized sections and your clinical guides accessible" },
+    { title: "Classify findings", desc: "Automatically classify and stage findings using standard systems (TNM, BI-RADS, etc.)" },
     { title: "Ask Radiogen Bot", desc: "Look up classifications, reference values, or follow-up criteria without leaving your report" },
     { title: "Ready to export", desc: "Review, adjust, and export in your hospital's format" },
   ],
@@ -669,18 +672,19 @@ const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
     { title: "Dite seu laudo", desc: "Fale naturalmente e veja sua voz transcrita em tempo real" },
     { title: "A IA processa", desc: "O ditado é enviado à inteligência artificial que analisa e estrutura o conteúdo" },
     { title: "Laudo gerado", desc: "O laudo final aparece com seções organizadas e seus guias clínicos acessíveis" },
+    { title: "Classifique achados", desc: "Classifique e estadifique automaticamente os achados usando sistemas padrão (TNM, BI-RADS, etc.)" },
     { title: "Consulte o Radiogen Bot", desc: "Consulte classificações, valores de referência ou critérios de seguimento sem sair do laudo" },
     { title: "Pronto para exportar", desc: "Revise, ajuste e exporte no formato do seu hospital" },
   ],
 };
 
-const DEMO_ICONS = [Mic, Brain, FileText, MessageCircle, Download];
+const DEMO_ICONS = [Mic, Brain, FileText, Tags, MessageCircle, Download];
 
 function ScrollDemo({ lang }: { lang: PublicLang }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const progress = useScrollProgress(containerRef);
 
-  const totalSteps = 5;
+  const totalSteps = 6;
   const stepFloat = progress * totalSteps;
   const activeStep = Math.min(Math.floor(stepFloat), totalSteps - 1);
   const stepProgress = stepFloat - activeStep;
@@ -696,7 +700,7 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
     <section
       ref={containerRef}
       className="relative"
-      style={{ height: reduce ? "auto" : "1300vh" }}
+      style={{ height: reduce ? "auto" : "1600vh" }}
     >
       <div
         className={`${
@@ -787,8 +791,9 @@ function ScrollDemo({ lang }: { lang: PublicLang }) {
                   <DemoStep0 active={activeStep === 0} progress={stepProgress} text={dictText} />
                   <DemoStepAI active={activeStep === 1} progress={stepProgress} lang={lang} dictText={dictText} />
                   <DemoStepReport active={activeStep === 2} progress={stepProgress} lang={lang} />
-                  <DemoStepBot active={activeStep === 3} progress={stepProgress} lang={lang} />
-                  <DemoStepDone active={activeStep === 4} progress={stepProgress} lang={lang} />
+                  <DemoStepClassify active={activeStep === 3} progress={stepProgress} lang={lang} />
+                  <DemoStepBot active={activeStep === 4} progress={stepProgress} lang={lang} />
+                  <DemoStepDone active={activeStep === 5} progress={stepProgress} lang={lang} />
                 </div>
               </div>
             </div>
@@ -936,29 +941,25 @@ function DemoStepAI({ active, progress, lang, dictText }: { active: boolean; pro
 function DemoStepReport({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
   const sections = lang === "es"
     ? [
-        { label: "TÉCNICA", text: "Radiografía PA y lateral de tórax." },
-        { label: "HALLAZGOS", text: "Pulmones bien ventilados sin opacidades de ocupación alveolar. Silueta cardiomediastínica normal. Senos costofrénicos libres." },
-        { label: "CONCLUSIÓN", text: "Estudio de tórax sin hallazgos patológicos significativos." },
+        { label: "TÉCNICA", text: "TC de tórax con contraste intravenoso." },
+        { label: "HALLAZGOS", text: "Nódulo espiculado de 28 mm en lóbulo superior izquierdo. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo de 18 mm. Pequeño derrame pleural derecho." },
+        { label: "CONCLUSIÓN", text: "Masa pulmonar con adenopatía y nódulo adrenal sospechosos de neoplasia pulmonar con diseminación a distancia." },
       ]
     : lang === "pt"
     ? [
-        { label: "TÉCNICA", text: "Radiografia PA e perfil de tórax." },
-        { label: "ACHADOS", text: "Pulmões bem aerados sem opacidades. Silhueta cardiomediastinal normal. Seios costofrênicos livres." },
-        { label: "CONCLUSÃO", text: "Estudo de tórax sem achados patológicos significativos." },
+        { label: "TÉCNICA", text: "TC de tórax com contraste intravenoso." },
+        { label: "ACHADOS", text: "Nódulo espiculado de 28 mm no lobo superior esquerdo. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo de 18 mm. Pequeno derrame pleural direito." },
+        { label: "CONCLUSÃO", text: "Massa pulmonar com linfonodomegalia e nódulo adrenal suspeitos de neoplasia pulmonar com disseminação à distância." },
       ]
     : [
-        { label: "TECHNIQUE", text: "PA and lateral chest radiograph." },
-        { label: "FINDINGS", text: "Well-aerated lungs without alveolar opacities. Normal cardiomediastinal silhouette. Clear costophrenic angles." },
-        { label: "CONCLUSION", text: "Chest study without significant pathologic findings." },
+        { label: "TECHNIQUE", text: "Contrast-enhanced chest CT." },
+        { label: "FINDINGS", text: "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy (15 mm). New 18 mm left adrenal nodule. Small right pleural effusion." },
+        { label: "CONCLUSION", text: "Lung mass with lymphadenopathy and adrenal nodule suspicious for pulmonary neoplasia with distant spread." },
       ];
-
-  const guideTitle = lang === "es" ? "Guía Fleischner 2017" : lang === "pt" ? "Guia Fleischner 2017" : "Fleischner Guide 2017";
-  const showGuide = !active || progress > 0.55;
 
   return (
     <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
       <div className="flex gap-3 h-full">
-        {/* Report sections */}
         <div className="flex-1 flex flex-col justify-center gap-2.5">
           {sections.map((s, i) => {
             const show = !active || progress > i * 0.15;
@@ -984,32 +985,86 @@ function DemoStepReport({ active, progress, lang }: { active: boolean; progress:
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Clinical guide panel sliding in */}
+function DemoStepClassify({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+  const title = lang === "es" ? "Clasificación propuesta" : lang === "pt" ? "Classificação proposta" : "Proposed classification";
+  const tnmLabel = "TNM (AJCC 8th ed.)";
+  const tnmItems = lang === "es"
+    ? [
+        { code: "T1c", meaning: "Tumor de 21-30 mm" },
+        { code: "N3", meaning: "Adenopatía supraclavicular contralateral" },
+        { code: "M1b", meaning: "Metástasis a distancia única (adrenal)" },
+        { code: "Estadio IVA", meaning: "" },
+      ]
+    : lang === "pt"
+    ? [
+        { code: "T1c", meaning: "Tumor de 21-30 mm" },
+        { code: "N3", meaning: "Linfonodomegalia supraclavicular contralateral" },
+        { code: "M1b", meaning: "Metástase à distância única (adrenal)" },
+        { code: "Estádio IVA", meaning: "" },
+      ]
+    : [
+        { code: "T1c", meaning: "Tumor 21-30 mm" },
+        { code: "N3", meaning: "Contralateral supraclavicular lymphadenopathy" },
+        { code: "M1b", meaning: "Single distant metastasis (adrenal)" },
+        { code: "Stage IVA", meaning: "" },
+      ];
+
+  const showTitle = !active || progress > 0.1;
+  const btnLabel = lang === "es" ? "Añadir a conclusión" : lang === "pt" ? "Adicionar à conclusão" : "Add to conclusion";
+  const showBtn = !active || progress > 0.7;
+
+  return (
+    <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+      <div className="flex flex-col h-full justify-center gap-3">
+        {/* Header */}
         <div
-          className="w-36 md:w-44 flex flex-col justify-center transition-all"
-          style={{
-            opacity: showGuide ? 1 : 0,
-            transform: showGuide ? "translateX(0)" : "translateX(20px)",
-            transitionDuration: "600ms",
-          }}
+          className="flex items-center gap-2 transition-all"
+          style={{ opacity: showTitle ? 1 : 0, transform: showTitle ? "translateY(0)" : "translateY(10px)", transitionDuration: "400ms" }}
         >
-          <div className="rounded-xl bg-gradient-to-b from-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-2.5 space-y-1.5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <BookOpen className="h-3 w-3 text-purple-400" />
-              <span className="text-[9px] font-bold text-purple-300 truncate">{guideTitle}</span>
-            </div>
-            {[
-              { size: "< 6 mm", action: lang === "es" ? "Sin seguimiento" : lang === "pt" ? "Sem seguimento" : "No follow-up" },
-              { size: "6–8 mm", action: lang === "es" ? "TC 6-12 m" : lang === "pt" ? "TC 6-12 m" : "CT 6-12 mo" },
-              { size: "> 8 mm", action: lang === "es" ? "PET-CT / biopsia" : lang === "pt" ? "PET-CT / biópsia" : "PET-CT / biopsy" },
-            ].map((r, i) => (
-              <div key={i} className="flex items-center justify-between py-1 px-1.5 rounded bg-white/[0.04]">
-                <span className="text-[10px] font-bold text-white">{r.size}</span>
-                <span className="text-[9px] text-gray-400">{r.action}</span>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/25 to-orange-500/25 border border-amber-500/30 flex items-center justify-center">
+            <Tags className="h-4 w-4 text-amber-400" />
+          </div>
+          <span className="text-xs font-bold text-amber-300">{title}</span>
+        </div>
+
+        {/* TNM card */}
+        <div className="rounded-xl bg-gradient-to-b from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-3 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold text-amber-300 tracking-wide">{tnmLabel}</span>
+          </div>
+          {tnmItems.map((item, i) => {
+            const show = !active || progress > 0.15 + i * 0.12;
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.04] transition-all"
+                style={{
+                  opacity: show ? 1 : 0,
+                  transform: show ? "translateX(0)" : "translateX(-12px)",
+                  transitionDuration: "400ms",
+                  transitionDelay: `${i * 80}ms`,
+                }}
+              >
+                <span className="text-[11px] font-bold text-white min-w-[70px]">{item.code}</span>
+                {item.meaning && <span className="text-[10px] text-gray-400">{item.meaning}</span>}
               </div>
-            ))}
-            <p className="text-[7px] text-gray-600 pt-0.5">MacMahon et al. 2017</p>
+            );
+          })}
+        </div>
+
+        {/* Add button */}
+        <div
+          className="flex justify-end transition-all"
+          style={{ opacity: showBtn ? 1 : 0, transform: showBtn ? "translateY(0)" : "translateY(8px)", transitionDuration: "400ms" }}
+        >
+          <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-amber-500/20">
+            <Check className="h-3.5 w-3.5" />
+            {btnLabel}
           </div>
         </div>
       </div>
@@ -1019,16 +1074,16 @@ function DemoStepReport({ active, progress, lang }: { active: boolean; progress:
 
 function DemoStepBot({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
   const question = lang === "es"
-    ? "¿Qué seguimiento tiene un nódulo sólido de 7 mm?"
+    ? "¿Qué estudio complementario para estadificación T1c N3 M1b?"
     : lang === "pt"
-    ? "Qual seguimento para nódulo sólido de 7 mm?"
-    : "What follow-up for a 7 mm solid nodule?";
+    ? "Qual exame complementar para estadiamento T1c N3 M1b?"
+    : "What complementary study for T1c N3 M1b staging?";
 
   const answer = lang === "es"
-    ? "Según Fleischner 2017, un nódulo sólido de 6-8 mm:\n• Bajo riesgo: TC en 6-12 meses\n• Alto riesgo: TC en 6-12 meses, considerar TC 18-24 meses"
+    ? "Para estadio IVA (T1c N3 M1b) se recomienda:\n• PET-CT de cuerpo completo para confirmar extensión de la enfermedad\n• Biopsia de la lesión primaria o metástasis accesible\n• RM cerebral para descartar metástasis cerebrales"
     : lang === "pt"
-    ? "Segundo Fleischner 2017, nódulo sólido de 6-8 mm:\n• Baixo risco: TC em 6-12 meses\n• Alto risco: TC em 6-12 meses, considerar TC 18-24 meses"
-    : "Per Fleischner 2017, a 6-8 mm solid nodule:\n• Low risk: CT at 6-12 months\n• High risk: CT at 6-12 months, consider CT at 18-24 months";
+    ? "Para estádio IVA (T1c N3 M1b) recomenda-se:\n• PET-CT de corpo inteiro para confirmar extensão da doença\n• Biópsia da lesão primária ou metástase acessível\n• RM cerebral para excluir metástases cerebrais"
+    : "For stage IVA (T1c N3 M1b) recommended:\n• Whole-body PET-CT to confirm disease extent\n• Biopsy of primary lesion or accessible metastasis\n• Brain MRI to rule out cerebral metastases";
 
   const showQuestion = !active || progress > 0.15;
   const showAnswer = !active || progress > 0.45;
