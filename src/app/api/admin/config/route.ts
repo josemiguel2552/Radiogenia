@@ -61,6 +61,7 @@ export async function PUT(req: NextRequest) {
       "dictation_correction_provider", "dictation_correction_model",
       "improve_writing_provider", "improve_writing_model",
       "data_augmentation_provider", "data_augmentation_model",
+      "classify_provider", "classify_model",
     ];
     for (const field of taskFields) {
       if (field in body) updates[field] = body[field] || null;

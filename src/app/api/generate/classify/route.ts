@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
 
     const lang = (language === "en" || language === "pt" ? language : "es") as Lang;
     const globalConfig = await getGlobalAIConfig();
-    const taskModel = globalConfig.taskOverrides?.conclusion;
+    const taskModel = globalConfig.taskOverrides?.classify;
     const effectiveProvider = taskModel?.provider || globalConfig.provider;
     const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);
 

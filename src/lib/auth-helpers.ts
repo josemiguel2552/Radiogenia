@@ -28,6 +28,7 @@ export interface GlobalAIConfig {
     dictation_correction?: TaskModelOverride;
     improve_writing?: TaskModelOverride;
     data_augmentation?: TaskModelOverride;
+    classify?: TaskModelOverride;
   };
 }
 
@@ -103,6 +104,9 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
   if (data.data_augmentation_provider && data.data_augmentation_model) {
     taskOverrides.data_augmentation = { provider: data.data_augmentation_provider as AIProvider, modelName: data.data_augmentation_model };
+  }
+  if (data.classify_provider && data.classify_model) {
+    taskOverrides.classify = { provider: data.classify_provider as AIProvider, modelName: data.classify_model };
   }
 
   return {
