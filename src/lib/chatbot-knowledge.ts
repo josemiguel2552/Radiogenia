@@ -20,7 +20,7 @@ export function buildKnowledgeBase(lang: Lang): string {
   ].join("\n");
 }
 
-function buildClinicalReferenceData(lang: Lang): string {
+export function buildClinicalReferenceData(lang: Lang): string {
   const L = {
     es: {
       aortaTitle: "DIÁMETROS AÓRTICOS NORMALES",
