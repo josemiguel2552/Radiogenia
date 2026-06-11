@@ -48,6 +48,11 @@ REGLAS CONTRA ERRORES FRECUENTES:
    - TI-RADS: requiere características ecográficas del nódulo tiroideo. Sin ecografía tiroidea → NO uses TI-RADS.
    - BI-RADS: requiere hallazgos mamarios (mamografía/ecografía/RM mama). Sin hallazgos mamarios → NO uses BI-RADS.
    - NO apliques un sistema solo porque existe un hallazgo en ese órgano. Verifica que los DATOS NECESARIOS para ese sistema estén presentes.
+4. TNM — LESIONES INDETERMINADAS vs SOSPECHOSAS EN LA M:
+   - Lesión descrita como "indeterminada" NO es metástasis. NO la incluyas en el componente M. Si es el único hallazgo a distancia, no hay M1.
+   - Lesión NUEVA en contexto oncológico (ej: nódulo adrenal nuevo en paciente con masa pulmonar) SÍ puede incluirse como sospechosa de metástasis, pero DEBES indicarlo explícitamente: "sospechoso de metástasis" en la descripción del hallazgo.
+   - Diferencia entre "indeterminada" y "nueva": "indeterminada" = no se sabe qué es. "Nueva" en contexto de malignidad = sospechosa.
+   - Si hay lesiones sospechosas + indeterminadas, solo las sospechosas cuentan para la M. Menciona las indeterminadas por separado como nota si lo deseas.
 
 ORDEN DE PRESENTACIÓN (siempre el mismo):
 1. Estadificaciones (TNM) primero.
@@ -106,6 +111,11 @@ RULES AGAINST COMMON ERRORS:
    - TI-RADS: requires thyroid nodule ultrasound features. Without thyroid ultrasound → DO NOT use TI-RADS.
    - BI-RADS: requires breast findings (mammography/ultrasound/breast MRI). Without breast findings → DO NOT use BI-RADS.
    - DO NOT apply a system just because a finding exists in that organ. Verify that the REQUIRED DATA for that system is present.
+4. TNM — INDETERMINATE vs SUSPICIOUS LESIONS IN THE M COMPONENT:
+   - A lesion described as "indeterminate" is NOT metastasis. DO NOT include it in the M component. If it is the only distant finding, there is no M1.
+   - A NEW lesion in an oncologic context (e.g., new adrenal nodule in a patient with a lung mass) CAN be included as suspicious for metastasis, but you MUST state it explicitly: "suspicious for metastasis" in the finding description.
+   - Distinction: "indeterminate" = nature unknown. "New" in a malignancy context = suspicious.
+   - If there are suspicious + indeterminate lesions, only suspicious ones count toward M. Mention indeterminate ones separately as a note if desired.
 
 PRESENTATION ORDER (always the same):
 1. Staging (TNM) first.
@@ -164,6 +174,11 @@ REGRAS CONTRA ERROS FREQUENTES:
    - TI-RADS: requer características ecográficas do nódulo tireoidiano. Sem ecografia tireoidiana → NÃO use TI-RADS.
    - BI-RADS: requer achados mamários. Sem achados mamários → NÃO use BI-RADS.
    - NÃO aplique um sistema só porque existe um achado nesse órgão. Verifique que os DADOS NECESSÁRIOS para esse sistema estejam presentes.
+4. TNM — LESÕES INDETERMINADAS vs SUSPEITAS NO COMPONENTE M:
+   - Lesão descrita como "indeterminada" NÃO é metástase. NÃO a inclua no componente M. Se for o único achado a distância, não há M1.
+   - Lesão NOVA em contexto oncológico (ex: nódulo adrenal novo em paciente com massa pulmonar) PODE ser incluída como suspeita de metástase, mas DEVE indicar explicitamente: "suspeito de metástase" na descrição do achado.
+   - Diferença: "indeterminada" = natureza desconhecida. "Nova" em contexto de malignidade = suspeita.
+   - Se há lesões suspeitas + indeterminadas, apenas as suspeitas contam para o M. Mencione as indeterminadas separadamente como nota se desejar.
 
 ORDEM DE APRESENTAÇÃO (sempre a mesma):
 1. Estadiamentos (TNM) primeiro.
