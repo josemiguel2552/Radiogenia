@@ -14,6 +14,7 @@ import {
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
+import { PriceTooltip } from "@/components/shared/price-tooltip";
 
 interface SubInfo {
   plan: SubscriptionPlan;
@@ -239,7 +240,7 @@ export function AccountTab() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-900 dark:text-white">{sub.planConfig.label}</span>
                       <Badge className="text-[10px]">
-                        {sub.planConfig.price === 0 ? t("account.free") : `${CURRENCY}${sub.planConfig.price}/${t("account.month")}`}
+                        {sub.planConfig.price === 0 ? t("account.free") : <>{CURRENCY}{sub.planConfig.price}/{t("account.month")}<PriceTooltip usd={sub.planConfig.price} /></>}
                       </Badge>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -397,6 +398,7 @@ export function AccountTab() {
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                           {billing.nextInvoice.currency === "usd" ? "$" : billing.nextInvoice.currency.toUpperCase() + " "}
                           {billing.nextInvoice.amountDue.toFixed(2)}
+                          {billing.nextInvoice.currency === "usd" && <PriceTooltip usd={billing.nextInvoice.amountDue} />}
                         </p>
                         {billing.nextInvoice.dueDate && (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -443,6 +445,7 @@ export function AccountTab() {
                               <p className="text-xs font-medium text-gray-900 dark:text-white">
                                 {inv.currency === "usd" ? "$" : inv.currency.toUpperCase() + " "}
                                 {inv.amount.toFixed(2)}
+                                {inv.currency === "usd" && <PriceTooltip usd={inv.amount} />}
                               </p>
                               <p className="text-[11px] text-gray-500 dark:text-gray-400">
                                 {formatDate(inv.date)}
@@ -605,7 +608,7 @@ export function AccountTab() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">{plan.label}</span>
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {plan.price === 0 ? t("account.free") : `${CURRENCY}${plan.price}/${t("account.month")}`}
+                      {plan.price === 0 ? t("account.free") : <>{CURRENCY}{plan.price}/{t("account.month")}<PriceTooltip usd={plan.price} /></>}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 space-x-3">

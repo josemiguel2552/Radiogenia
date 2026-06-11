@@ -38,6 +38,7 @@ import {
   Tags,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
+import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -2268,7 +2269,7 @@ export function DashboardContent() {
                       setLimitDialogOpen(false);
                     }}
                   >
-                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")} (+90 min)
+                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")} (+90 min)<PriceTooltip usd={4.99} />
                   </Button>
                 </div>
               </div>

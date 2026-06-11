@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, Upload, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import type { ResidentVerification } from "@/lib/types";
+import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { useT } from "@/lib/i18n";
 
 interface Props {
@@ -177,7 +178,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             {t("rv.title")}
           </h3>
           <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
-            {t("rv.price")}
+            {t("rv.price")}<PriceTooltip usd={4.99} />
           </Badge>
         </div>
         <p className="text-xs text-gray-500 mb-4">

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
+import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
 
 /* ─── Hooks ─── */
@@ -1295,7 +1296,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
             <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : lang === "pt" ? "Grátis" : "Free"}</span>
           ) : (
             <>
-              <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
+              <span className="text-4xl font-bold">{CURRENCY}{plan.price}<PriceTooltip usd={plan.price} /></span>
               <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
             </>
           )}
@@ -1325,7 +1326,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
           ? t("pricing.free_cta")
           : planKey === "resident"
           ? lang === "es" ? "Verificar y suscribirse" : lang === "pt" ? "Verificar e assinar" : "Verify & subscribe"
-          : `${t("pricing.subscribe_cta")} — ${CURRENCY}${plan.price}${t("pricing.per_month")}`}
+          : <>{t("pricing.subscribe_cta")} — {CURRENCY}{plan.price}{t("pricing.per_month")}<PriceTooltip usd={plan.price} /></>}
       </Link>
     </div>
     </div>
