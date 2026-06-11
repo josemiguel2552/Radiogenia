@@ -30,8 +30,8 @@ REGLAS CRÍTICAS:
 - Usa SOLO clasificaciones de la KB (entre --- KB --- y --- END KB ---).
 - Si el informe ya incluye una clasificación explícita, repórtala tal cual.
 - NO inventes hallazgos que no estén en el informe.
-- Si no hay hallazgos clasificables → "NO_CLASSIFICATIONS"
-- NUNCA emitas "NO_CLASSIFICATIONS" si ya has listado clasificaciones arriba.
+- SOLO muestra sistemas que tengan una clasificación asignada. OMITE completamente los sistemas que no apliquen — NO imprimas líneas con "NO_CLASSIFICATIONS".
+- Si NINGÚN hallazgo es clasificable, responde ÚNICAMENTE con "NO_CLASSIFICATIONS" (sin listar sistemas individuales).
 
 REGLAS CONTRA ERRORES FRECUENTES:
 1. TNM — USA LOS DATOS EXACTOS DEL INFORME:
@@ -88,8 +88,8 @@ CRITICAL RULES:
 - Use ONLY classifications from the KB (between --- KB --- and --- END KB ---).
 - If the report already includes an explicit classification, report it as-is.
 - DO NOT invent findings not present in the report.
-- If there are no classifiable findings → "NO_CLASSIFICATIONS"
-- NEVER output "NO_CLASSIFICATIONS" if you have already listed classifications above.
+- ONLY show systems that have an assigned classification. COMPLETELY OMIT systems that do not apply — DO NOT print lines with "NO_CLASSIFICATIONS".
+- If NO findings are classifiable at all, respond ONLY with "NO_CLASSIFICATIONS" (without listing individual systems).
 
 RULES AGAINST COMMON ERRORS:
 1. TNM — USE EXACT DATA FROM THE REPORT:
@@ -146,8 +146,8 @@ REGRAS CRÍTICAS:
 - Use SOMENTE classificações da KB (entre --- KB --- e --- END KB ---).
 - Se o relatório já inclui classificação explícita, reporte-a como está.
 - NÃO invente achados que não estejam no relatório.
-- Se não houver achados classificáveis → "NO_CLASSIFICATIONS"
-- NUNCA emita "NO_CLASSIFICATIONS" se já listou classificações acima.
+- SOMENTE mostre sistemas que tenham uma classificação atribuída. OMITA completamente os sistemas que não se apliquem — NÃO imprima linhas com "NO_CLASSIFICATIONS".
+- Se NENHUM achado for classificável, responda UNICAMENTE com "NO_CLASSIFICATIONS" (sem listar sistemas individuais).
 
 REGRAS CONTRA ERROS FREQUENTES:
 1. TNM — USE OS DADOS EXATOS DO RELATÓRIO:
@@ -265,12 +265,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const trimmed = text.trim();
-    if (trimmed === "NO_CLASSIFICATIONS" || !trimmed) {
+    const cleaned = text
+      .trim()
+      .split("\n")
+      .filter((line) => !line.includes("NO_CLASSIFICATIONS"))
+      .join("\n")
+      .trim();
+
+    if (!cleaned) {
       return NextResponse.json({ classifications: null });
     }
 
-    return NextResponse.json({ classifications: trimmed });
+    return NextResponse.json({ classifications: cleaned });
   } catch (error) {
     return toErrorResponse(error);
   }
