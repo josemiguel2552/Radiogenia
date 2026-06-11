@@ -316,7 +316,7 @@ export async function POST(req: NextRequest) {
     const lang: UILanguage = language || "es";
     const globalConfig = await getGlobalAIConfig();
 
-    const taskModel = globalConfig.taskOverrides?.conclusion;
+    const taskModel = globalConfig.taskOverrides?.chatbot || globalConfig.taskOverrides?.conclusion;
     const effectiveProvider = taskModel?.provider || globalConfig.provider;
     const effectiveKey = resolveApiKey(globalConfig, effectiveProvider);
 

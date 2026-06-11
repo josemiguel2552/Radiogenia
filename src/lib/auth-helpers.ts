@@ -29,6 +29,7 @@ export interface GlobalAIConfig {
     improve_writing?: TaskModelOverride;
     data_augmentation?: TaskModelOverride;
     classify?: TaskModelOverride;
+    chatbot?: TaskModelOverride;
   };
 }
 
@@ -107,6 +108,9 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
   if (data.classify_provider && data.classify_model) {
     taskOverrides.classify = { provider: data.classify_provider as AIProvider, modelName: data.classify_model };
+  }
+  if (data.chatbot_provider && data.chatbot_model) {
+    taskOverrides.chatbot = { provider: data.chatbot_provider as AIProvider, modelName: data.chatbot_model };
   }
 
   return {
