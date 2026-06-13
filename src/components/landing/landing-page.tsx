@@ -6,7 +6,7 @@ import {
   Mic, FileText, Brain, Sparkles, Layout, Shield, MessageCircle,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
-  BookOpen, Download, Tags,
+  BookOpen, Tags,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
@@ -54,24 +54,6 @@ function useScrollReveal() {
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
   }, []);
-}
-
-function useScrollProgress(ref: React.RefObject<HTMLElement | null>) {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => {
-      const rect = el.getBoundingClientRect();
-      const total = el.offsetHeight - window.innerHeight;
-      if (total <= 0) { setProgress(0); return; }
-      setProgress(Math.max(0, Math.min(1, -rect.top / total)));
-    };
-    window.addEventListener("scroll", update, { passive: true });
-    update();
-    return () => window.removeEventListener("scroll", update);
-  }, [ref]);
-  return progress;
 }
 
 function useCountUp(target: number, active: boolean, duration = 1500) {
@@ -385,8 +367,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Scroll-driven interactive demo ─── */}
-      <ScrollDemo lang={lang} />
+      {/* ─── Step-by-step showcase ─── */}
+      <StepsShowcase lang={lang} />
 
       {/* ─── Stats counter bar ─── */}
       <StatsBar lang={lang} />
@@ -637,202 +619,125 @@ export function LandingPage() {
   );
 }
 
-/* ─── Scroll-driven interactive demo ─── */
+/* ─── Step-by-step showcase ─── */
 
-const DEMO_TEXTS: Record<PublicLang, string[]> = {
+const DEMO_TEXTS: Record<PublicLang, string> = {
+  es: "Nódulo de 28 mm en lóbulo superior izquierdo con márgenes espiculados. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo nuevo de 18 mm. Pequeño derrame pleural derecho...",
+  en: "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy measuring 15 mm. New 18 mm left adrenal nodule. Small right pleural effusion...",
+  pt: "Nódulo de 28 mm no lobo superior esquerdo com margens espiculadas. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo novo de 18 mm. Pequeno derrame pleural direito...",
+};
+
+const STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
   es: [
-    "Nódulo de 28 mm en lóbulo superior izquierdo con márgenes espiculados. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo nuevo de 18 mm. Pequeño derrame pleural derecho...",
+    { title: "Dicta tu informe", desc: "Habla naturalmente y tu voz se transcribe en tiempo real con máxima precisión" },
+    { title: "Informe estructurado", desc: "La IA analiza tu dictado y genera un informe completo con hallazgos, técnica y conclusión en segundos" },
+    { title: "Clasificación automática", desc: "Estadifica y clasifica los hallazgos automáticamente usando sistemas estándar: TNM, BI-RADS, TI-RADS y más" },
+    { title: "Radiogen Bot", desc: "Consulta clasificaciones, valores de referencia o criterios de seguimiento sin salir de tu informe" },
   ],
   en: [
-    "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy measuring 15 mm. New 18 mm left adrenal nodule. Small right pleural effusion...",
+    { title: "Dictate your report", desc: "Speak naturally and your voice is transcribed in real time with maximum accuracy" },
+    { title: "Structured report", desc: "AI analyzes your dictation and generates a complete report with findings, technique, and conclusion in seconds" },
+    { title: "Automatic classification", desc: "Automatically stage and classify findings using standard systems: TNM, BI-RADS, TI-RADS and more" },
+    { title: "Radiogen Bot", desc: "Look up classifications, reference values, or follow-up criteria without leaving your report" },
   ],
   pt: [
-    "Nódulo de 28 mm no lobo superior esquerdo com margens espiculadas. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo novo de 18 mm. Pequeno derrame pleural direito...",
+    { title: "Dite seu laudo", desc: "Fale naturalmente e sua voz é transcrita em tempo real com máxima precisão" },
+    { title: "Laudo estruturado", desc: "A IA analisa seu ditado e gera um laudo completo com achados, técnica e conclusão em segundos" },
+    { title: "Classificação automática", desc: "Estadie e classifique os achados automaticamente usando sistemas padrão: TNM, BI-RADS, TI-RADS e mais" },
+    { title: "Radiogen Bot", desc: "Consulte classificações, valores de referência ou critérios de seguimento sem sair do laudo" },
   ],
 };
 
-const DEMO_STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
-  es: [
-    { title: "Dicta tu informe", desc: "Habla naturalmente y observa cómo tu voz se transcribe en tiempo real" },
-    { title: "La IA procesa", desc: "El dictado se envía a la inteligencia artificial que analiza y estructura el contenido" },
-    { title: "Informe generado", desc: "El informe final aparece con secciones organizadas y tus guías clínicas accesibles" },
-    { title: "Clasifica hallazgos", desc: "Clasifica y estadifica automáticamente los hallazgos usando sistemas estándar (TNM, BI-RADS, etc.)" },
-    { title: "Consulta a Radiogen Bot", desc: "Pregunta clasificaciones, valores de referencia o criterios de seguimiento sin salir de tu informe" },
-    { title: "Listo para exportar", desc: "Revisa, ajusta y exporta en el formato de tu hospital" },
-  ],
-  en: [
-    { title: "Dictate your report", desc: "Speak naturally and watch your voice transcribed in real time" },
-    { title: "AI processes", desc: "The dictation is sent to AI which analyzes and structures the content" },
-    { title: "Report generated", desc: "The final report appears with organized sections and your clinical guides accessible" },
-    { title: "Classify findings", desc: "Automatically classify and stage findings using standard systems (TNM, BI-RADS, etc.)" },
-    { title: "Ask Radiogen Bot", desc: "Look up classifications, reference values, or follow-up criteria without leaving your report" },
-    { title: "Ready to export", desc: "Review, adjust, and export in your hospital's format" },
-  ],
-  pt: [
-    { title: "Dite seu laudo", desc: "Fale naturalmente e veja sua voz transcrita em tempo real" },
-    { title: "A IA processa", desc: "O ditado é enviado à inteligência artificial que analisa e estrutura o conteúdo" },
-    { title: "Laudo gerado", desc: "O laudo final aparece com seções organizadas e seus guias clínicos acessíveis" },
-    { title: "Classifique achados", desc: "Classifique e estadifique automaticamente os achados usando sistemas padrão (TNM, BI-RADS, etc.)" },
-    { title: "Consulte o Radiogen Bot", desc: "Consulte classificações, valores de referência ou critérios de seguimento sem sair do laudo" },
-    { title: "Pronto para exportar", desc: "Revise, ajuste e exporte no formato do seu hospital" },
-  ],
-};
+const STEP_ICONS = [Mic, FileText, Tags, MessageCircle];
+const STEP_COLORS = [
+  "from-blue-500 to-indigo-600",
+  "from-violet-500 to-purple-600",
+  "from-amber-500 to-orange-500",
+  "from-violet-500 to-fuchsia-500",
+];
 
-const DEMO_ICONS = [Mic, Brain, FileText, Tags, MessageCircle, Download];
-
-function ScrollDemo({ lang }: { lang: PublicLang }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const progress = useScrollProgress(containerRef);
-
-  const totalSteps = 6;
-  const stepFloat = progress * totalSteps;
-  const activeStep = Math.min(Math.floor(stepFloat), totalSteps - 1);
-  const stepProgress = stepFloat - activeStep;
-
-  const steps = DEMO_STEPS_DATA[lang];
-  const dictText = DEMO_TEXTS[lang][0];
-
-  const reduce =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+function StepsShowcase({ lang }: { lang: PublicLang }) {
+  const steps = STEPS_DATA[lang];
+  const dictText = DEMO_TEXTS[lang];
 
   return (
-    <section
-      ref={containerRef}
-      className="relative"
-      style={{ height: reduce ? "auto" : "1600vh" }}
-    >
-      <div
-        className={`${
-          reduce ? "relative" : "sticky top-[12vh]"
-        } overflow-hidden py-6`}
-      >
-        <div className="absolute inset-0 -inset-y-[12vh] bg-gradient-to-b from-[#0a0a1a] via-indigo-950/20 to-[#0a0a1a] -z-10" />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
-          <div className="grid lg:grid-cols-[340px_1fr] gap-10 items-center">
-            {/* Left: step info */}
-            <div className="hidden lg:block space-y-8">
-              {steps.map((s, i) => {
-                const Icon = DEMO_ICONS[i];
-                const isActive = i === activeStep;
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-start gap-4 transition-all duration-500 ${
-                      isActive ? "opacity-100 translate-x-0" : "opacity-25 -translate-x-2"
-                    }`}
-                  >
-                    <div
-                      className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
-                        isActive
-                          ? "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-purple-500/30"
-                          : "bg-white/5 border border-white/10"
-                      }`}
-                    >
-                      <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-500"}`} />
+    <section className="relative py-24 px-6">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a1a] via-indigo-950/20 to-[#0a0a1a] pointer-events-none" />
+      <div className="relative max-w-6xl mx-auto space-y-6">
+        {steps.map((step, i) => {
+          const Icon = STEP_ICONS[i];
+          const reverse = i % 2 === 1;
+          return (
+            <div key={i}>
+              <div
+                data-reveal
+                style={revealDelay(0)}
+                className="grid lg:grid-cols-2 gap-10 items-center"
+              >
+                <div className={`space-y-4 ${reverse ? "lg:order-2" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center shadow-lg`}>
+                      <Icon className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-purple-400">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className={`text-sm font-semibold transition-colors duration-300 ${isActive ? "text-white" : "text-gray-500"}`}>
-                          {s.title}
-                        </span>
-                      </div>
-                      <p className={`text-xs leading-relaxed transition-colors duration-300 ${isActive ? "text-gray-400" : "text-gray-600"}`}>
-                        {s.desc}
-                      </p>
-                    </div>
+                    <span className="text-sm font-mono text-purple-400">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
-                );
-              })}
-
-              {/* progress dots */}
-              <div className="flex items-center gap-2 pt-2">
-                {steps.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      i === activeStep
-                        ? "w-8 bg-gradient-to-r from-blue-500 to-purple-500"
-                        : i < activeStep
-                        ? "w-1.5 bg-purple-500/50"
-                        : "w-1.5 bg-white/10"
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Right: demo screen */}
-            <div className="demo-screen rounded-2xl p-1 relative">
-              {/* Glow ring behind */}
-              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-blue-500/20 via-transparent to-purple-500/20 blur-sm -z-10" />
-
-              <div className="rounded-xl bg-[#0c0c20] overflow-hidden">
-                {/* Title bar */}
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border-b border-white/5">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
-                  </div>
-                  <div className="flex-1 flex justify-center">
-                    <div className="px-3 py-0.5 rounded bg-white/5 text-[10px] text-gray-500 font-mono">
-                      radiogen.ai/dashboard
-                    </div>
-                  </div>
+                  <h3 className="text-2xl md:text-3xl font-bold">{step.title}</h3>
+                  <p className="text-gray-400 leading-relaxed max-w-md">{step.desc}</p>
                 </div>
-
-                {/* App mockup body */}
-                <div className="relative min-h-[540px] md:min-h-[600px]">
-                  <DemoStep0 active={activeStep === 0} progress={stepProgress} text={dictText} />
-                  <DemoStepAI active={activeStep === 1} progress={stepProgress} lang={lang} dictText={dictText} />
-                  <DemoStepReport active={activeStep === 2} progress={stepProgress} lang={lang} />
-                  <DemoStepClassify active={activeStep === 3} progress={stepProgress} lang={lang} />
-                  <DemoStepBot active={activeStep === 4} progress={stepProgress} lang={lang} />
-                  <DemoStepDone active={activeStep === 5} progress={stepProgress} lang={lang} />
+                <div className={reverse ? "lg:order-1" : ""}>
+                  <MockScreen>
+                    {i === 0 && <DictateVisual text={dictText} />}
+                    {i === 1 && <ReportVisual lang={lang} />}
+                    {i === 2 && <ClassifyVisual lang={lang} />}
+                    {i === 3 && <BotVisual lang={lang} />}
+                  </MockScreen>
                 </div>
               </div>
+              {i < steps.length - 1 && (
+                <div className="flex justify-center py-4">
+                  <div className="w-px h-12 bg-gradient-to-b from-purple-500/30 to-transparent" />
+                </div>
+              )}
             </div>
-
-            {/* Mobile step indicator (below screen) */}
-            <div className="lg:hidden flex flex-col items-center gap-3 mt-4">
-              <div className="flex items-center gap-2">
-                {steps.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      i === activeStep
-                        ? "w-8 bg-gradient-to-r from-blue-500 to-purple-500"
-                        : "w-1.5 bg-white/10"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-sm font-semibold text-white">{steps[activeStep]?.title}</p>
-              <p className="text-xs text-gray-400 text-center max-w-xs">{steps[activeStep]?.desc}</p>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-/* ─── Demo step visuals ─── */
-
-function DemoStep0({ active, progress, text }: { active: boolean; progress: number; text: string }) {
-  const chars = Math.floor(text.length * (active ? Math.min(progress * 1.5, 1) : 1));
+function MockScreen({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+    <div className="demo-screen rounded-2xl p-1 relative">
+      <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-blue-500/20 via-transparent to-purple-500/20 blur-sm -z-10" />
+      <div className="rounded-xl bg-[#0c0c20] overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border-b border-white/5">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="px-3 py-0.5 rounded bg-white/5 text-[10px] text-gray-500 font-mono">radiogen.ai</div>
+          </div>
+        </div>
+        <div className="p-4 md:p-5 min-h-[280px] md:min-h-[340px] flex items-center justify-center">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DictateVisual({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-5 w-full">
       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center relative">
         <Mic className="h-6 w-6 text-blue-400" />
         <div className="absolute inset-0 rounded-full border-2 border-blue-400/40 animate-ping" />
       </div>
-
       <div className="flex items-end justify-center gap-[3px] h-10 w-48">
         {Array.from({ length: 28 }).map((_, i) => (
           <div
@@ -842,103 +747,12 @@ function DemoStep0({ active, progress, text }: { active: boolean; progress: numb
           />
         ))}
       </div>
-
-      <div className="max-w-sm text-center">
-        <p className="text-sm text-gray-300 font-mono leading-relaxed">
-          {active ? text.slice(0, chars) : text}
-          {active && chars < text.length && (
-            <span className="inline-block w-0.5 h-4 bg-blue-400 ml-0.5 align-text-bottom animate-pulse" />
-          )}
-        </p>
-      </div>
+      <p className="text-sm text-gray-300 font-mono leading-relaxed text-center max-w-sm">{text}</p>
     </div>
   );
 }
 
-function DemoStepAI({ active, progress, lang, dictText }: { active: boolean; progress: number; lang: PublicLang; dictText: string }) {
-  const phases = lang === "es"
-    ? ["Analizando contexto clínico...", "Estructurando hallazgos...", "Generando conclusión..."]
-    : lang === "pt"
-    ? ["Analisando contexto clínico...", "Estruturando achados...", "Gerando conclusão..."]
-    : ["Analyzing clinical context...", "Structuring findings...", "Generating conclusion..."];
-
-  const activePhase = active ? Math.min(Math.floor(progress * 3.5), 2) : 2;
-  const barPct = active ? Math.min(progress * 130, 100) : 100;
-
-  return (
-    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-4 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
-      {/* Fading dictated text snippet */}
-      <p className="text-[11px] text-gray-500/60 text-center max-w-xs truncate font-mono">
-        {dictText.slice(0, 70)}...
-      </p>
-
-      {/* Animated arrow down */}
-      <div className="flex flex-col items-center gap-0.5 text-purple-400/40">
-        <div className="w-px h-4 bg-gradient-to-b from-transparent to-purple-400/40" />
-        <ChevronRight className="h-3 w-3 rotate-90" />
-      </div>
-
-      {/* Brain icon with orbiting particles */}
-      <div className="relative w-20 h-20">
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/15 to-purple-500/15 border border-purple-500/25 flex items-center justify-center">
-          <Brain className="h-9 w-9 text-purple-400" />
-        </div>
-        <div className="absolute inset-0 rounded-full border border-purple-500/10 animate-ping" style={{ animationDuration: "2s" }} />
-        {/* Orbit ring 1 */}
-        <div className="absolute -inset-3 animate-spin" style={{ animationDuration: "3s" }}>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-blue-400/70 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
-        </div>
-        {/* Orbit ring 2 */}
-        <div className="absolute -inset-5 animate-spin" style={{ animationDuration: "5s", animationDirection: "reverse" }}>
-          <div className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-purple-400/70 shadow-[0_0_8px_rgba(192,132,252,0.5)]" />
-        </div>
-        {/* Orbit ring 3 */}
-        <div className="absolute -inset-4 animate-spin" style={{ animationDuration: "4s" }}>
-          <div className="absolute top-1/2 right-0 w-1.5 h-1.5 rounded-full bg-pink-400/50" />
-        </div>
-      </div>
-
-      {/* Processing phases */}
-      <div className="space-y-1.5 w-56">
-        {phases.map((phase, i) => {
-          const done = i < activePhase;
-          const current = i === activePhase;
-          return (
-            <div
-              key={i}
-              className={`flex items-center gap-2 text-xs transition-all duration-300 ${
-                done ? "text-purple-300/70" : current ? "text-purple-300" : "text-gray-600"
-              }`}
-            >
-              <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-[8px] font-bold transition-all duration-300 ${
-                done
-                  ? "bg-purple-500/30 text-purple-200"
-                  : current
-                  ? "bg-purple-500/20 border border-purple-400/40 text-purple-300"
-                  : "bg-white/5 text-gray-600"
-              }`}>
-                {done ? "✓" : current ? "◎" : "○"}
-              </div>
-              {phase}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-56">
-        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-300"
-            style={{ width: `${barPct}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DemoStepReport({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+function ReportVisual({ lang }: { lang: PublicLang }) {
   const sections = lang === "es"
     ? [
         { label: "TÉCNICA", text: "TC de tórax con contraste intravenoso." },
@@ -958,41 +772,24 @@ function DemoStepReport({ active, progress, lang }: { active: boolean; progress:
       ];
 
   return (
-    <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
-      <div className="flex gap-3 h-full">
-        <div className="flex-1 flex flex-col justify-center gap-2.5">
-          {sections.map((s, i) => {
-            const show = !active || progress > i * 0.15;
-            return (
-              <div
-                key={i}
-                className="transition-all"
-                style={{
-                  opacity: show ? 1 : 0,
-                  transform: show ? "translateY(0)" : "translateY(14px)",
-                  transitionDuration: "500ms",
-                  transitionDelay: `${i * 100}ms`,
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-px flex-1 max-w-5 bg-purple-500/30" />
-                  <span className="text-[9px] font-bold tracking-widest text-purple-400">{s.label}</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
-                  <p className="text-xs text-gray-300 leading-relaxed">{s.text}</p>
-                </div>
-              </div>
-            );
-          })}
+    <div className="flex flex-col justify-center gap-2.5 w-full">
+      {sections.map((s, i) => (
+        <div key={i}>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-px flex-1 max-w-5 bg-purple-500/30" />
+            <span className="text-[9px] font-bold tracking-widest text-purple-400">{s.label}</span>
+          </div>
+          <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+            <p className="text-xs text-gray-300 leading-relaxed">{s.text}</p>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
 
-function DemoStepClassify({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+function ClassifyVisual({ lang }: { lang: PublicLang }) {
   const title = lang === "es" ? "Clasificación propuesta" : lang === "pt" ? "Classificação proposta" : "Proposed classification";
-  const tnmLabel = "TNM (AJCC 8th ed.)";
   const tnmItems = lang === "es"
     ? [
         { code: "T1c", meaning: "Tumor de 21-30 mm" },
@@ -1014,198 +811,79 @@ function DemoStepClassify({ active, progress, lang }: { active: boolean; progres
         { code: "Stage IVA", meaning: "" },
       ];
 
-  const showTitle = !active || progress > 0.1;
-  const btnLabel = lang === "es" ? "Añadir a conclusión" : lang === "pt" ? "Adicionar à conclusão" : "Add to conclusion";
-  const showBtn = !active || progress > 0.7;
-
   return (
-    <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
-      <div className="flex flex-col h-full justify-center gap-3">
-        {/* Header */}
-        <div
-          className="flex items-center gap-2 transition-all"
-          style={{ opacity: showTitle ? 1 : 0, transform: showTitle ? "translateY(0)" : "translateY(10px)", transitionDuration: "400ms" }}
-        >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/25 to-orange-500/25 border border-amber-500/30 flex items-center justify-center">
-            <Tags className="h-4 w-4 text-amber-400" />
-          </div>
-          <span className="text-xs font-bold text-amber-300">{title}</span>
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/25 to-orange-500/25 border border-amber-500/30 flex items-center justify-center">
+          <Tags className="h-4 w-4 text-amber-400" />
         </div>
-
-        {/* TNM card */}
-        <div className="rounded-xl bg-gradient-to-b from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-3 space-y-2">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold text-amber-300 tracking-wide">{tnmLabel}</span>
+        <span className="text-xs font-bold text-amber-300">{title}</span>
+      </div>
+      <div className="rounded-xl bg-gradient-to-b from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-3 space-y-2">
+        <span className="text-[10px] font-bold text-amber-300 tracking-wide">TNM (AJCC 8th ed.)</span>
+        {tnmItems.map((item, i) => (
+          <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.04]">
+            <span className="text-[11px] font-bold text-white min-w-[70px]">{item.code}</span>
+            {item.meaning && <span className="text-[10px] text-gray-400">{item.meaning}</span>}
           </div>
-          {tnmItems.map((item, i) => {
-            const show = !active || progress > 0.15 + i * 0.12;
-            return (
-              <div
-                key={i}
-                className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.04] transition-all"
-                style={{
-                  opacity: show ? 1 : 0,
-                  transform: show ? "translateX(0)" : "translateX(-12px)",
-                  transitionDuration: "400ms",
-                  transitionDelay: `${i * 80}ms`,
-                }}
-              >
-                <span className="text-[11px] font-bold text-white min-w-[70px]">{item.code}</span>
-                {item.meaning && <span className="text-[10px] text-gray-400">{item.meaning}</span>}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Add button */}
-        <div
-          className="flex justify-end transition-all"
-          style={{ opacity: showBtn ? 1 : 0, transform: showBtn ? "translateY(0)" : "translateY(8px)", transitionDuration: "400ms" }}
-        >
-          <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-amber-500/20">
-            <Check className="h-3.5 w-3.5" />
-            {btnLabel}
-          </div>
+        ))}
+      </div>
+      <div className="flex justify-end">
+        <div className="px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-amber-500/20">
+          <Check className="h-3.5 w-3.5" />
+          {lang === "es" ? "Añadir a conclusión" : lang === "pt" ? "Adicionar à conclusão" : "Add to conclusion"}
         </div>
       </div>
     </div>
   );
 }
 
-function DemoStepBot({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
+function BotVisual({ lang }: { lang: PublicLang }) {
   const question = lang === "es"
     ? "¿Qué estudio complementario para estadificación T1c N3 M1b?"
     : lang === "pt"
     ? "Qual exame complementar para estadiamento T1c N3 M1b?"
     : "What complementary study for T1c N3 M1b staging?";
-
   const answer = lang === "es"
-    ? "Para estadio IVA (T1c N3 M1b) se recomienda:\n• PET-CT de cuerpo completo para confirmar extensión de la enfermedad\n• Biopsia de la lesión primaria o metástasis accesible\n• RM cerebral para descartar metástasis cerebrales"
+    ? "Para estadio IVA (T1c N3 M1b) se recomienda:\n• PET-CT de cuerpo completo\n• Biopsia de la lesión primaria o metástasis\n• RM cerebral para descartar metástasis"
     : lang === "pt"
-    ? "Para estádio IVA (T1c N3 M1b) recomenda-se:\n• PET-CT de corpo inteiro para confirmar extensão da doença\n• Biópsia da lesão primária ou metástase acessível\n• RM cerebral para excluir metástases cerebrais"
-    : "For stage IVA (T1c N3 M1b) recommended:\n• Whole-body PET-CT to confirm disease extent\n• Biopsy of primary lesion or accessible metastasis\n• Brain MRI to rule out cerebral metastases";
-
-  const showQuestion = !active || progress > 0.15;
-  const showAnswer = !active || progress > 0.45;
-  const answerChars = showAnswer ? Math.floor(answer.length * Math.min((!active ? 1 : (progress - 0.45) / 0.4), 1)) : 0;
+    ? "Para estádio IVA (T1c N3 M1b) recomenda-se:\n• PET-CT de corpo inteiro\n• Biópsia da lesão primária ou metástase\n• RM cerebral para excluir metástases"
+    : "For stage IVA (T1c N3 M1b) recommended:\n• Whole-body PET-CT to confirm extent\n• Biopsy of primary or accessible metastasis\n• Brain MRI to rule out cerebral metastases";
 
   return (
-    <div className={`absolute inset-0 p-4 md:p-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
-      <div className="flex flex-col h-full">
-        {/* Bot header */}
-        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 border border-violet-500/30 flex items-center justify-center">
-            <span className="text-sm">🧠</span>
-          </div>
-          <span className="text-xs font-bold text-violet-300">Radiogen Bot</span>
-          <div className="ml-auto flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400/60" />
-            <span className="text-[9px] text-gray-500">Online</span>
+    <div className="flex flex-col w-full">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 border border-violet-500/30 flex items-center justify-center">
+          <Brain className="h-4 w-4 text-violet-400" />
+        </div>
+        <span className="text-xs font-bold text-violet-300">Radiogen Bot</span>
+        <div className="ml-auto flex gap-1 items-center">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400/60" />
+          <span className="text-[9px] text-gray-500">Online</span>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col justify-center gap-3">
+        <div className="flex justify-end">
+          <div className="max-w-[75%] px-3 py-2 rounded-xl rounded-br-sm bg-violet-600/30 border border-violet-500/20">
+            <p className="text-xs text-violet-200">{question}</p>
           </div>
         </div>
-
-        {/* Chat area */}
-        <div className="flex-1 flex flex-col justify-center gap-3">
-          {/* User question */}
-          <div
-            className="flex justify-end transition-all"
-            style={{
-              opacity: showQuestion ? 1 : 0,
-              transform: showQuestion ? "translateY(0)" : "translateY(10px)",
-              transitionDuration: "400ms",
-            }}
-          >
-            <div className="max-w-[75%] px-3 py-2 rounded-xl rounded-br-sm bg-violet-600/30 border border-violet-500/20">
-              <p className="text-xs text-violet-200">{question}</p>
-            </div>
-          </div>
-
-          {/* Bot answer */}
-          <div
-            className="flex justify-start transition-all"
-            style={{
-              opacity: showAnswer ? 1 : 0,
-              transform: showAnswer ? "translateY(0)" : "translateY(10px)",
-              transitionDuration: "400ms",
-            }}
-          >
-            <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-bl-sm bg-white/[0.04] border border-white/5">
-              {answerChars > 0 ? (
-                <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">
-                  {answer.slice(0, answerChars)}
-                  {answerChars < answer.length && <span className="inline-block w-1.5 h-3 bg-violet-400/60 animate-pulse ml-0.5" />}
-                </p>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Input bar */}
-        <div className="mt-2 flex gap-2 items-center">
-          <div className="flex-1 h-8 rounded-lg bg-white/[0.03] border border-white/5 flex items-center px-3">
-            <span className="text-[10px] text-gray-600">
-              {lang === "es" ? "Pregunta sobre guías clínicas..." : lang === "pt" ? "Pergunte sobre guias clínicos..." : "Ask about clinical guidelines..."}
-            </span>
-          </div>
-          <div className="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/30 flex items-center justify-center">
-            <ArrowRight className="h-3.5 w-3.5 text-violet-300" />
+        <div className="flex justify-start">
+          <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-bl-sm bg-white/[0.04] border border-white/5">
+            <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">{answer}</p>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function DemoStepDone({ active, progress, lang }: { active: boolean; progress: number; lang: PublicLang }) {
-  const showCheck = !active || progress > 0.2;
-  const showExport = !active || progress > 0.5;
-  return (
-    <div className={`absolute inset-0 p-6 flex flex-col items-center justify-center gap-5 transition-all duration-500 ${active ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
-      <div
-        className="transition-all"
-        style={{ opacity: showCheck ? 1 : 0, transform: showCheck ? "scale(1)" : "scale(0.5)", transitionDuration: "600ms" }}
-      >
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/20 flex items-center justify-center">
-          {showCheck && (
-            <svg className="checkmark-anim h-8 w-8" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
+      <div className="mt-3 flex gap-2 items-center">
+        <div className="flex-1 h-8 rounded-full bg-white/[0.03] border border-white/5 flex items-center px-3">
+          <span className="text-[10px] text-gray-600">
+            {lang === "es" ? "Pregunta sobre guías clínicas..." : lang === "pt" ? "Pergunte sobre guias clínicos..." : "Ask about clinical guidelines..."}
+          </span>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 flex items-center justify-center">
+          <ArrowRight className="h-3.5 w-3.5 text-white" />
         </div>
       </div>
-
-      <p className="text-lg font-semibold text-white">
-        {lang === "es" ? "Informe completado" : lang === "pt" ? "Laudo concluído" : "Report completed"}
-      </p>
-
-      <div
-        className="flex items-center gap-3 transition-all duration-500"
-        style={{ opacity: showExport ? 1 : 0, transform: showExport ? "translateY(0)" : "translateY(12px)" }}
-      >
-        <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-xs font-semibold flex items-center gap-2 shadow-lg shadow-purple-500/20">
-          <Download className="h-3.5 w-3.5" />
-          {lang === "es" ? "Exportar PDF" : lang === "pt" ? "Exportar PDF" : "Export PDF"}
-        </div>
-        <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 font-medium">
-          {lang === "es" ? "Copiar texto" : lang === "pt" ? "Copiar texto" : "Copy text"}
-        </div>
-      </div>
-
-      <p className="text-xs text-gray-500 max-w-xs text-center">
-        {lang === "es"
-          ? "De la voz al informe final en menos de 30 segundos"
-          : lang === "pt"
-          ? "Da voz ao laudo final em menos de 30 segundos"
-          : "From voice to final report in under 30 seconds"}
-      </p>
     </div>
   );
 }
@@ -1369,12 +1047,14 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
 
       <Link
         href="/waitlist"
-        className={`block text-center text-sm font-semibold py-3 rounded-xl transition-all ${
+        className={`block text-center text-sm font-semibold py-3 rounded-full transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
             : planKey === "resident"
             ? "bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 shadow-lg shadow-violet-500/20"
-            : "bg-white/5 hover:bg-white/10 border border-white/10"
+            : plan.price === 0
+            ? "bg-white/5 hover:bg-white/10 border border-white/10"
+            : "bg-gradient-to-r from-blue-500/70 to-purple-600/70 hover:from-blue-500 hover:to-purple-600 shadow-md shadow-purple-500/10"
         }`}
       >
         {plan.price === 0
