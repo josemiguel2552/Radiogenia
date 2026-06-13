@@ -35,7 +35,7 @@ export default function NotApprovedPage() {
             {t("auth.not_approved_desc")}
           </p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            {t("auth.not_approved_waitlist")}
+            {t("auth.not_approved_contact")}
           </p>
         </div>
         <div className="flex gap-3 justify-center">
@@ -46,12 +46,6 @@ export default function NotApprovedPage() {
           >
             <LogOut className="h-4 w-4" />
             {t("auth.logout")}
-          </Button>
-          <Button
-            onClick={() => router.push("/waitlist")}
-            className="bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] hover:from-[#5b21b6] hover:to-[#6d28d9]"
-          >
-            {t("auth.join_waitlist")}
           </Button>
         </div>
       </div>

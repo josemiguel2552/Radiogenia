@@ -156,9 +156,32 @@ export function AccountTab() {
   }, [currentPw, newPw, confirmPw, t]);
 
   const handlePlanChange = useCallback(async () => {
-    if (!selectedPlan) return;
+    if (!selectedPlan || !sub) return;
     setPlanChangeLoading(true);
     setPlanMsg(null);
+
+    const isUpgrade = PLANS[selectedPlan].price > PLANS[sub.plan].price;
+
+    if (isUpgrade) {
+      try {
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: selectedPlan }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        setPlanMsg({ ok: false, text: data.error || t("gen_error") });
+      } catch {
+        setPlanMsg({ ok: false, text: t("gen_error") });
+      }
+      setPlanChangeLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/subscription", {
         method: "PUT",
@@ -178,7 +201,7 @@ export function AccountTab() {
       }
     } catch { /* ignore */ }
     setPlanChangeLoading(false);
-  }, [selectedPlan, loadSub, t]);
+  }, [selectedPlan, sub, loadSub, t]);
 
   const cancelPendingPlan = useCallback(async () => {
     try {

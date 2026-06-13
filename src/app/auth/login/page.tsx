@@ -114,12 +114,6 @@ function LoginContent() {
             <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-2">
               <p className="text-sm text-amber-200 font-medium">{t("auth.google_unavailable")}</p>
               <p className="text-xs text-gray-400">{t("auth.google_unavailable_desc")}</p>
-              <Link
-                href="/waitlist"
-                className="inline-block mt-1 text-sm text-blue-400 hover:text-blue-300 font-medium"
-              >
-                {t("auth.join_waitlist")}
-              </Link>
             </div>
           )}
 
@@ -178,11 +172,13 @@ function LoginContent() {
             </Button>
           </form>
 
-          <div className="text-center space-y-2">
-            <p className="text-xs text-gray-500">{t("auth.invite_only")}</p>
-            <Link href="/waitlist" className="inline-block text-sm text-blue-400 hover:text-blue-300 font-medium">
-              {t("auth.join_waitlist")}
-            </Link>
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              {t("auth.no_account")}{" "}
+              <Link href="/waitlist" className="text-blue-400 hover:text-blue-300 font-medium">
+                {t("auth.create_account_link")}
+              </Link>
+            </p>
           </div>
         </div>
       </div>

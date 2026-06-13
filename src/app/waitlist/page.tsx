@@ -11,16 +11,17 @@ import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 
 const COUNTRIES = [
   "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
-  "Ecuador", "El Salvador", "España", "Guatemala", "Honduras", "México",
-  "Nicaragua", "Panamá", "Paraguay", "Perú", "Portugal", "Puerto Rico",
+  "Ecuador", "El Salvador", "Guatemala", "Honduras", "México",
+  "Nicaragua", "Panamá", "Paraguay", "Perú", "Puerto Rico",
   "República Dominicana", "United States", "Uruguay", "Venezuela", "Other",
 ];
 
-export default function WaitlistPage() {
+export default function RegisterPage() {
   const { lang, setLang, t } = usePublicLang();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
   const [hospital, setHospital] = useState("");
   const [role, setRole] = useState<"attending" | "resident">("attending");
@@ -30,21 +31,40 @@ export default function WaitlistPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (password.length < 6) {
+      setError(t("waitlist.password_min"));
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch("/api/waitlist", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, country, hospital, role }),
+        body: JSON.stringify({ firstName, lastName, email, password, country, hospital, role }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Error");
+        const errorMap: Record<string, string> = {
+          already_registered: t("waitlist.already_registered"),
+          password_too_short: t("waitlist.password_min"),
+        };
+        setError(errorMap[data.error] || data.error || "Error");
         setLoading(false);
         return;
       }
+
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (loginRes.ok) {
+        window.location.href = "/dashboard";
+        return;
+      }
+
       setSubmitted(true);
     } catch {
       setError(t("waitlist.network_error"));
@@ -70,8 +90,8 @@ export default function WaitlistPage() {
               {t("waitlist.success_desc")}
             </p>
           </div>
-          <Link href="/" className="text-sm text-blue-400 hover:text-blue-300">
-            {t("waitlist.back_home")}
+          <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
+            {t("waitlist.signin_link")}
           </Link>
         </div>
       </div>
@@ -80,7 +100,7 @@ export default function WaitlistPage() {
 
   return (
     <div className="min-h-screen flex bg-[#0a0a1a]">
-      {/* Left panel — branding */}
+      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-blue-600/20" />
         <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px] animate-float-slow" />
@@ -95,10 +115,9 @@ export default function WaitlistPage() {
         </div>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile logo */}
           <div className="flex lg:hidden justify-center mb-4">
             <Logo size="md" forceDark />
           </div>
@@ -160,6 +179,20 @@ export default function WaitlistPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-300 text-sm">{t("waitlist.password")}</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder={t("waitlist.password_placeholder")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="country" className="text-gray-300 text-sm">{t("waitlist.country")}</Label>
               <select
                 id="country"
@@ -214,7 +247,7 @@ export default function WaitlistPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] hover:from-[#5b21b6] hover:to-[#6d28d9] font-semibold shadow-lg shadow-violet-500/20"
+              className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold shadow-lg shadow-purple-500/20"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("waitlist.submit")}

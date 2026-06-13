@@ -23,7 +23,7 @@ export async function ensureProfile(userId: string, email: string): Promise<stri
         email,
         role: isAdmin ? "admin" : "radiologist",
         subscription_plan: isAdmin ? "professional" : "free",
-        approved: isAdmin,
+        approved: true,
       });
     } else if (isAdmin && profile.role !== "admin") {
       await supabase
