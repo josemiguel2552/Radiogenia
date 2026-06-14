@@ -322,13 +322,13 @@ export function LandingPage() {
           </p>
 
           <div data-reveal style={revealDelay(300)} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/waitlist"
+            <a
+              href="#pricing"
               className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
             >
               {t("hero.cta_primary")}
               <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            </a>
             <a
               href="#features"
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-6 py-3.5 rounded-full border border-white/10 hover:border-white/20 transition-all backdrop-blur-sm"
@@ -582,13 +582,13 @@ export function LandingPage() {
               <p className="text-gray-400 mb-8 max-w-lg mx-auto">
                 {t("cta.subtitle")}
               </p>
-              <Link
-                href="/waitlist"
+              <a
+                href="#pricing"
                 className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
               >
                 {t("cta.button")}
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </a>
             </div>
           </div>
         </div>

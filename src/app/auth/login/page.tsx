@@ -175,7 +175,7 @@ function LoginContent() {
           <div className="text-center">
             <p className="text-sm text-gray-500">
               {t("auth.no_account")}{" "}
-              <Link href="/waitlist" className="text-blue-400 hover:text-blue-300 font-medium">
+              <Link href="/#pricing" className="text-blue-400 hover:text-blue-300 font-medium">
                 {t("auth.create_account_link")}
               </Link>
             </p>

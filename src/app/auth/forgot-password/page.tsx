@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
             </p>
             <div className="flex flex-col items-center gap-3 pt-2">
               <Link
-                href="/waitlist"
+                href="/#pricing"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] text-white text-sm font-semibold hover:from-[#5b21b6] hover:to-[#6d28d9] shadow-lg shadow-violet-500/20"
               >
                 <UserPlus className="h-4 w-4" />
