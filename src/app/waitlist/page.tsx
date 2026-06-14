@@ -75,20 +75,12 @@ function RegisterForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
-        if (loginRes.ok && PAID_PLANS.has(selectedPlan)) {
-          const checkoutRes = await fetch("/api/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ plan: selectedPlan }),
-          });
-          const checkoutData = await checkoutRes.json();
-          if (checkoutData.url) {
-            window.location.href = checkoutData.url;
-            return;
-          }
-        }
         if (loginRes.ok) {
-          window.location.href = "/dashboard";
+          if (PAID_PLANS.has(selectedPlan)) {
+            window.location.href = `/api/checkout?plan=${selectedPlan}`;
+          } else {
+            window.location.href = "/dashboard";
+          }
           return;
         }
         setSubmitted("approved");

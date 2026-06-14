@@ -2004,7 +2004,7 @@ function BrandKitSection() {
               { label: "Bio corta ES", text: "Radiogen.ai — Genera informes radiológicos estructurados con IA. Dictado por voz, plantillas personalizables, trazabilidad completa." },
               { label: "Bio corta EN", text: "Radiogen.ai — Generate structured radiology reports with AI. Voice dictation, custom templates, full traceability." },
               { label: "Bio larga ES", text: "Radiogen.ai es la plataforma de informes radiológicos potenciada por inteligencia artificial. Dicta tus hallazgos por voz, selecciona la plantilla y genera informes estructurados con conclusión automática en segundos. Compatible con cualquier modalidad: TC, RM, ecografía, radiografía, mamografía y procedimientos. Incluye trazabilidad de hallazgos, aprendizaje de estilo, gestión hospitalaria multiusuario y cumplimiento RGPD." },
-              { label: "CTA principal", text: "Prueba Radiogen.ai gratis — 30 informes/mes sin compromiso" },
+              { label: "CTA principal", text: "Prueba Radiogen.ai gratis — 20 informes/mes sin compromiso" },
               { label: "CTA hospital", text: "Programa piloto hospitalario — Solicita una demo para tu servicio de radiología" },
               { label: "Hashtags", text: "#Radiologia #IA #RadiologyAI #InformesRadiologicos #Teleradiologia #MedTech #HealthTech #Diagnostico #ImagenMedica" },
               { label: "Web URL", text: "https://radiogen.ai" },
@@ -2071,7 +2071,7 @@ function BrandKitSection() {
             <div className="space-y-1.5">
               <CopyBlock label="15 segundos" text="Radiogen.ai convierte tu dictado de hallazgos en un informe radiológico estructurado con conclusión automática. Dictas, revisas y firmas. 60% más rápido." copied={copiedColor} onCopy={cp} />
               <CopyBlock label="30 segundos" text="Radiogen.ai es una plataforma de informes radiológicos con IA. El radiólogo dicta sus hallazgos por voz o texto, selecciona la plantilla del estudio y la IA genera un informe estructurado completo con conclusión clínica en segundos. Funciona con cualquier modalidad — TC, RM, ecografía, radiografía. El radiólogo siempre revisa y aprueba. Reduce el tiempo de informe un 60%." copied={copiedColor} onCopy={cp} />
-              <CopyBlock label="60 segundos" text="Los radiólogos dedican entre 5 y 15 minutos a cada informe, gran parte del tiempo formateando y redactando secciones que ya saben que son normales. Radiogen.ai cambia eso. El radiólogo dicta solo lo relevante — los hallazgos — por voz o texto. Elige la plantilla del estudio y la IA genera un informe estructurado completo: rellena las secciones normales con frases de normalidad apropiadas, coloca cada hallazgo en su sección anatómica correcta y redacta una conclusión clínica priorizada. Todo con trazabilidad completa dictado-a-informe. El radiólogo revisa, ajusta si quiere y firma. Funciona con TC, RM, ecografía, radiografía, mamografía y procedimientos. Para hospitales, incluye gestión multiusuario, métricas de productividad y cumplimiento RGPD total. Plan gratuito con 30 informes/mes para que cualquier radiólogo lo pruebe sin compromiso." copied={copiedColor} onCopy={cp} />
+              <CopyBlock label="60 segundos" text="Los radiólogos dedican entre 5 y 15 minutos a cada informe, gran parte del tiempo formateando y redactando secciones que ya saben que son normales. Radiogen.ai cambia eso. El radiólogo dicta solo lo relevante — los hallazgos — por voz o texto. Elige la plantilla del estudio y la IA genera un informe estructurado completo: rellena las secciones normales con frases de normalidad apropiadas, coloca cada hallazgo en su sección anatómica correcta y redacta una conclusión clínica priorizada. Todo con trazabilidad completa dictado-a-informe. El radiólogo revisa, ajusta si quiere y firma. Funciona con TC, RM, ecografía, radiografía, mamografía y procedimientos. Para hospitales, incluye gestión multiusuario, métricas de productividad y cumplimiento RGPD total. Plan gratuito con 20 informes/mes para que cualquier radiólogo lo pruebe sin compromiso." copied={copiedColor} onCopy={cp} />
             </div>
           </CardContent></Card>
 
@@ -2118,7 +2118,7 @@ function BrandKitSection() {
           <Card><CardContent className="p-5 space-y-4">
             <SectionTitle>CTAs por contexto</SectionTitle>
             <div className="space-y-1.5">
-              <CopyBlock label="Landing page" text="Empieza gratis — 30 informes/mes, sin tarjeta de crédito" copied={copiedColor} onCopy={cp} />
+              <CopyBlock label="Landing page" text="Empieza gratis — 20 informes/mes, sin tarjeta de crédito" copied={copiedColor} onCopy={cp} />
               <CopyBlock label="Landing 2" text="Genera tu primer informe en 60 segundos →" copied={copiedColor} onCopy={cp} />
               <CopyBlock label="Email" text="Solicita tu acceso al programa piloto hospitalario — te respondemos en 24h" copied={copiedColor} onCopy={cp} />
               <CopyBlock label="Social" text="¿Aún formateas informes a mano? Prueba Radiogen.ai y recupera tu tiempo →" copied={copiedColor} onCopy={cp} />
@@ -2156,7 +2156,7 @@ function BrandKitSection() {
                 { q: "¿Es seguro para datos de pacientes?", a: "No almacenamos datos de pacientes en servidores de IA. Los datos se procesan y descartan. Cumplimiento RGPD total con datos alojados en la Unión Europea." },
                 { q: "¿Funciona con mi RIS/PACS?", a: "Sí. Radiogen.ai es independiente del RIS/PACS. Generas el informe en nuestra plataforma y lo copias a tu sistema habitual. Sin integraciones técnicas." },
                 { q: "¿Necesito instalar algo?", a: "No. Es una aplicación web que funciona en cualquier navegador moderno. Sin instalaciones, sin VPN, sin permisos de IT." },
-                { q: "¿Cuánto cuesta?", a: "Plan gratuito con 30 informes/mes. Planes profesionales desde 49€/mes con informes ilimitados. Planes hospitalarios a medida." },
+                { q: "¿Cuánto cuesta?", a: "Plan gratuito con 20 informes/mes. Planes profesionales desde 49€/mes con informes ilimitados. Planes hospitalarios a medida." },
                 { q: "¿Puedo crear mis propias plantillas?", a: "Sí. Puedes crear plantillas personalizadas con las secciones anatómicas que necesites, o usar las prediseñadas para cada modalidad y región." },
                 { q: "¿En qué idiomas funciona?", a: "Puedes dictar en 6 idiomas (español, inglés, portugués, francés, alemán, italiano) y generar el informe en cualquiera de ellos, incluso diferente al del dictado." },
                 { q: "¿Cómo funciona el programa piloto?", a: "Ofrecemos un programa piloto de 3-6 meses con métricas de impacto (tiempo, productividad, satisfacción). Sin coste durante el piloto. Incluye formación y soporte dedicado." },
@@ -2230,7 +2230,7 @@ Resumen de lo que vimos:
 • [personalizar según lo comentado]
 
 Próximos pasos que acordamos:
-1. [ej: Te envío acceso de prueba con 30 informes gratuitos]
+1. [ej: Te envío acceso de prueba con 20 informes gratuitos]
 2. [ej: Preparamos las plantillas de TC tórax y RM cerebral]
 3. [ej: Reunión con el jefe de servicio el día X]
 
@@ -2242,7 +2242,7 @@ Un saludo,
 [nombre]` },
             { label: "Newsletter bienvenida", subject: "Bienvenido/a a Radiogen.ai 🎉", body: `¡Hola!
 
-Bienvenido/a a Radiogen.ai. Ya tienes acceso a tu cuenta con 30 informes gratuitos al mes.
+Bienvenido/a a Radiogen.ai. Ya tienes acceso a tu cuenta con 20 informes gratuitos al mes.
 
 Primeros pasos:
 1️⃣ Entra en radiogen.ai e inicia sesión
@@ -2356,10 +2356,10 @@ Radiogen.ai` },
                 { label: "LinkedIn 3", text: "\"La IA en radiología no va de reemplazar al radiólogo. Va de devolverle el tiempo que la burocracia le ha robado.\"\n\nEn Radiogen.ai diseñamos herramientas que eliminan el formateo manual, no el criterio clínico.\n\nEl radiólogo dicta. Revisa. Firma. Mantiene el control total.\n\nLa IA es el copiloto, no el piloto.\n\n#InteligenciaArtificial #Radiologia" },
                 { label: "Instagram 1", text: "ANTES: 8 minutos por informe 😰\nDESPUÉS: 3 minutos con Radiogen.ai ⚡\n\nDicta → Genera → Revisa → Firma\n\n¿Aún formateas tus informes a mano? Link en bio 👆\n\n#Radiologia #IA #MedTech #ProductividadMedica #InformesRadiologicos" },
                 { label: "Instagram 2", text: "5 cosas que hace Radiogen.ai por ti:\n\n1️⃣ Transcribe tu dictado por voz\n2️⃣ Coloca cada hallazgo en su sección\n3️⃣ Rellena las secciones normales\n4️⃣ Genera la conclusión clínica\n5️⃣ Traza cada frase al dictado original\n\nTú solo revisas y firmas ✅\n\n#Radiologia #IA #HealthTech" },
-                { label: "X / Twitter 1", text: "El radiólogo medio pasa el 40% de su tiempo formateando informes.\n\nRadiogen.ai reduce eso a cero.\n\nDicta → Genera → Revisa → Firma.\n\n30 informes gratis/mes. Sin tarjeta. radiogen.ai" },
+                { label: "X / Twitter 1", text: "El radiólogo medio pasa el 40% de su tiempo formateando informes.\n\nRadiogen.ai reduce eso a cero.\n\nDicta → Genera → Revisa → Firma.\n\n20 informes gratis/mes. Sin tarjeta. radiogen.ai" },
                 { label: "X / Twitter 2", text: "Pregunta seria: ¿por qué seguimos rellenando \"hígado de tamaño y ecoestructura normal\" a mano en cada informe?\n\nLa IA puede hacer eso. Tú deberías estar dictando lo que importa.\n\nradiogen.ai" },
                 { label: "X / Twitter 3", text: "Lo que NO hace Radiogen.ai:\n❌ Diagnosticar\n❌ Interpretar imágenes\n❌ Sustituir al radiólogo\n\nLo que SÍ hace:\n✅ Estructurar tu dictado\n✅ Generar conclusiones\n✅ Ahorrarte 4 min/informe\n\nLa IA como copiloto, no como piloto." },
-                { label: "Facebook 1", text: "🏥 ¿Eres radiólogo/a y quieres recuperar tu tiempo?\n\nRadiogen.ai genera informes radiológicos estructurados a partir de tu dictado por voz. Funciona con TC, RM, ecografía, radiografía y más.\n\n✅ 30 informes gratis al mes\n✅ Sin instalación\n✅ RGPD compliant\n\nPruébalo en radiogen.ai" },
+                { label: "Facebook 1", text: "🏥 ¿Eres radiólogo/a y quieres recuperar tu tiempo?\n\nRadiogen.ai genera informes radiológicos estructurados a partir de tu dictado por voz. Funciona con TC, RM, ecografía, radiografía y más.\n\n✅ 20 informes gratis al mes\n✅ Sin instalación\n✅ RGPD compliant\n\nPruébalo en radiogen.ai" },
                 { label: "TikTok guión", text: "[Pantalla grabada del producto]\n\nVoz en off: \"¿Quieres ver cómo un radiólogo genera un informe de TC de tórax en 30 segundos?\"\n\n[Selecciona plantilla TC Tórax]\n\"Primero, selecciono la plantilla\"\n\n[Dicta por voz: 'consolidación en lóbulo inferior derecho con broncograma aéreo, derrame pleural bilateral de predominio izquierdo']\n\"Dicto solo lo relevante\"\n\n[Pulsa generar, aparece informe completo]\n\"Y la IA genera el informe completo con conclusión\"\n\n[Muestra la conclusión]\n\"Conclusión clínica automática, priorizada\"\n\n\"60% más rápido. Link en bio.\"\n\n#Radiologia #IA #MedTech #Doctor" },
               ].map((post) => <CopyBlock key={post.label} label={post.label} text={post.text} copied={copiedColor} onCopy={cp} />)}
             </div>
@@ -2406,9 +2406,9 @@ Radiogen.ai` },
             <SectionTitle>Meta titles y descriptions</SectionTitle>
             <div className="space-y-1.5">
               <CopyBlock label="Home title" text="Radiogen.ai — Informes Radiológicos con IA | Dictado por Voz + Conclusión Automática" copied={copiedColor} onCopy={cp} />
-              <CopyBlock label="Home desc" text="Genera informes radiológicos estructurados en segundos con IA. Dictado por voz, plantillas personalizables, conclusión automática y trazabilidad completa. 30 informes gratis/mes." copied={copiedColor} onCopy={cp} />
+              <CopyBlock label="Home desc" text="Genera informes radiológicos estructurados en segundos con IA. Dictado por voz, plantillas personalizables, conclusión automática y trazabilidad completa. 20 informes gratis/mes." copied={copiedColor} onCopy={cp} />
               <CopyBlock label="Pricing title" text="Precios Radiogen.ai — Desde 0€ | Plan Gratuito, Pro y Hospital" copied={copiedColor} onCopy={cp} />
-              <CopyBlock label="Pricing desc" text="Plan gratuito con 30 informes/mes. Plan Pro desde 49€/mes con informes ilimitados y aprendizaje de estilo. Planes hospitalarios a medida con métricas y gestión de usuarios." copied={copiedColor} onCopy={cp} />
+              <CopyBlock label="Pricing desc" text="Plan gratuito con 20 informes/mes. Plan Pro desde 49€/mes con informes ilimitados y aprendizaje de estilo. Planes hospitalarios a medida con métricas y gestión de usuarios." copied={copiedColor} onCopy={cp} />
               <CopyBlock label="Piloto title" text="Programa Piloto Hospitalario — Radiogen.ai | IA para tu Servicio de Radiología" copied={copiedColor} onCopy={cp} />
               <CopyBlock label="Piloto desc" text="Programa piloto gratuito de 3-6 meses para servicios de radiología. Métricas de impacto en tiempo real, formación personalizada y soporte dedicado. Sin compromiso de contratación." copied={copiedColor} onCopy={cp} />
             </div>
@@ -2475,7 +2475,7 @@ La plataforma es cloud-native, zero-install, compatible con cualquier RIS/PACS v
                 { label: "Mercado", value: "España, LATAM, Europa" },
                 { label: "Modalidades", value: "TC, RM, Eco, Rx, Mamografía, PET, Nuclear, Procedimientos" },
                 { label: "Idiomas", value: "ES, EN, PT, FR, DE, IT" },
-                { label: "Modelo", value: "Freemium — 30 informes gratis/mes" },
+                { label: "Modelo", value: "Freemium — 20 informes gratis/mes" },
                 { label: "Tecnología", value: "Next.js, Supabase, GPT-4, Whisper AI, Cloud EU" },
                 { label: "Cumplimiento", value: "RGPD, datos UE, sin datos paciente en IA" },
               ].map((d) => (

@@ -17,65 +17,90 @@ const PLAN_PRICE_ENV: Record<string, string> = {
   professional: "STRIPE_PRICE_PROFESSIONAL",
 };
 
-export async function POST(req: NextRequest) {
-  try {
-    const stripe = getStripe();
-    if (!stripe) {
-      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
-    }
+async function createCheckoutSession(plan: string, req: NextRequest): Promise<{ url: string | null; error?: string; status?: number }> {
+  const stripe = getStripe();
+  if (!stripe) return { url: null, error: "Stripe not configured", status: 503 };
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { url: null, error: "Unauthorized", status: 401 };
 
-    const { plan } = await req.json();
-    if (!plan || !PLANS[plan as SubscriptionPlan] || plan === "free") {
-      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
-    }
+  if (!plan || !PLANS[plan as SubscriptionPlan] || plan === "free") {
+    return { url: null, error: "Invalid plan", status: 400 };
+  }
 
-    const envKey = PLAN_PRICE_ENV[plan];
-    const priceId = envKey ? process.env[envKey] : null;
-    if (!priceId) {
-      return NextResponse.json(
-        { error: `Price not configured for plan "${plan}". Contact support.` },
-        { status: 503 },
-      );
-    }
+  const envKey = PLAN_PRICE_ENV[plan];
+  const priceId = envKey ? process.env[envKey] : null;
+  if (!priceId) {
+    return { url: null, error: `Price not configured for plan "${plan}".`, status: 503 };
+  }
 
-    const service = createServiceClient();
-    const { data: profile } = await service
-      .from("profiles")
-      .select("stripe_customer_id, email")
-      .eq("id", user.id)
-      .single();
+  const service = createServiceClient();
+  const { data: profile } = await service
+    .from("profiles")
+    .select("stripe_customer_id, email")
+    .eq("id", user.id)
+    .single();
 
-    if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  if (!profile) return { url: null, error: "Profile not found", status: 404 };
 
-    let customerId = profile.stripe_customer_id;
+  let customerId = profile.stripe_customer_id;
 
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile.email || user.email,
-        metadata: { supabase_user_id: user.id },
-      });
-      customerId = customer.id;
-      await service
-        .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", user.id);
-    }
-
-    const origin = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/dashboard?checkout=success`,
-      cancel_url: `${origin}/dashboard?checkout=cancel`,
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: profile.email || user.email,
       metadata: { supabase_user_id: user.id },
     });
+    customerId = customer.id;
+    await service
+      .from("profiles")
+      .update({ stripe_customer_id: customerId })
+      .eq("id", user.id);
+  }
 
-    return NextResponse.json({ url: session.url });
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: "subscription",
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${origin}/dashboard?checkout=success`,
+    cancel_url: `${origin}/dashboard?checkout=cancel`,
+    metadata: { supabase_user_id: user.id },
+  });
+
+  return { url: session.url };
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const plan = req.nextUrl.searchParams.get("plan") || "";
+    const result = await createCheckoutSession(plan, req);
+
+    if (result.url) {
+      return NextResponse.redirect(result.url);
+    }
+
+    const fallback = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
+    return NextResponse.redirect(`${fallback}/dashboard`);
+  } catch {
+    const fallback = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
+    return NextResponse.redirect(`${fallback}/dashboard`);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { plan } = await req.json();
+    const result = await createCheckoutSession(plan, req);
+
+    if (result.url) {
+      return NextResponse.json({ url: result.url });
+    }
+
+    return NextResponse.json(
+      { error: result.error },
+      { status: result.status || 500 },
+    );
   } catch (error) {
     return toErrorResponse(error);
   }
