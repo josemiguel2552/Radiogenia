@@ -15,11 +15,13 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
+  ArrowLeft,
   RotateCcw,
   Undo2,
   Eye,
   EyeOff,
   Loader2,
+  BookOpen,
 } from "lucide-react";
 import { useT, useSection, useModality } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
@@ -52,6 +54,33 @@ function tokenize(text: string): string[] {
     .filter((w) => w.length > 2);
 }
 
+const SECTION_COLORS: Record<string, string> = {
+  "Head and neck": "linear-gradient(135deg, #F43F5E, #BE123C)",
+  Thorax: "linear-gradient(135deg, #EF4444, #B91C1C)",
+  "Abdomen and pelvis": "linear-gradient(135deg, #F97316, #C2410C)",
+  Spine: "linear-gradient(135deg, #84CC16, #4D7C0F)",
+  "Upper limbs": "linear-gradient(135deg, #06B6D4, #0E7490)",
+  "Lower limbs": "linear-gradient(135deg, #A855F7, #7E22CE)",
+  _general: "linear-gradient(135deg, #6B7280, #4B5563)",
+};
+
+const GUIDELINE_COLORS = [
+  "linear-gradient(135deg, #3B82F6, #1D4ED8)",
+  "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+  "linear-gradient(135deg, #14B8A6, #0F766E)",
+  "linear-gradient(135deg, #F59E0B, #B45309)",
+  "linear-gradient(135deg, #EC4899, #BE185D)",
+  "linear-gradient(135deg, #10B981, #047857)",
+  "linear-gradient(135deg, #6366F1, #4338CA)",
+  "linear-gradient(135deg, #EF4444, #B91C1C)",
+  "linear-gradient(135deg, #06B6D4, #0E7490)",
+  "linear-gradient(135deg, #84CC16, #4D7C0F)",
+];
+
+function shortGuideline(source: string): string {
+  return source.replace(/\s*\(.*?\)\s*$/, "").trim();
+}
+
 export function RecommendationsTab() {
   const t = useT();
   const tSection = useSection();
@@ -59,9 +88,9 @@ export function RecommendationsTab() {
   const [customRecs, setCustomRecs] = useState<ManualRecommendation[]>([]);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [filterMod, setFilterMod] = useState<string>("all");
-  const [filterCat, setFilterCat] = useState<string>("all");
-  const [filterScope, setFilterScope] = useState<string>("all");
+  const [navLevel, setNavLevel] = useState<"sections" | "guidelines" | "list">("sections");
+  const [navSection, setNavSection] = useState("");
+  const [navGuideline, setNavGuideline] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRec, setEditingRec] = useState<ManualRecommendation | null>(null);
   const [editingIsSystem, setEditingIsSystem] = useState(false);
@@ -146,21 +175,68 @@ export function RecommendationsTab() {
     return result;
   }, [customRecs, overrideMap, hiddenSet]);
 
-  const filtered = useMemo(() => {
+  // Search-filtered recommendations (flat list)
+  const searchFiltered = useMemo(() => {
+    if (!search.trim()) return [];
     const searchLower = search.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     return visibleRecs.filter((r) => {
-      if (filterMod !== "all" && r.modality !== "all" && r.modality !== filterMod) return false;
-      if (filterCat !== "all" && r.category !== "all" && r.category !== filterCat) return false;
-      if (filterScope !== "all" && r.scope !== filterScope) return false;
-      if (searchLower) {
-        const title = (r.title[lang] || r.title.es || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-        const text = (r.text[lang] || r.text.es || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-        const tags = r.tags.join(" ").toLowerCase();
-        if (!title.includes(searchLower) && !text.includes(searchLower) && !tags.includes(searchLower)) return false;
-      }
+      const title = (r.title[lang] || r.title.es || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      const text = (r.text[lang] || r.text.es || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      const tags = r.tags.join(" ").toLowerCase();
+      const source = (r.source || "").toLowerCase();
+      return title.includes(searchLower) || text.includes(searchLower) || tags.includes(searchLower) || source.includes(searchLower);
+    });
+  }, [visibleRecs, search, lang]);
+
+  // Section counts for Level 1
+  const sectionCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of visibleRecs) {
+      const cat = r.category === "all" ? "_general" : r.category;
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+    return counts;
+  }, [visibleRecs]);
+
+  // Ordered sections for Level 1
+  const orderedSections = useMemo(() => {
+    const order = [...SECTIONS.map(String), "_general"];
+    return [...sectionCounts.keys()].sort((a, b) => {
+      const ai = order.indexOf(a);
+      const bi = order.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+  }, [sectionCounts]);
+
+  // Guideline counts for Level 2 (within selected section)
+  const guidelineCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of visibleRecs) {
+      const cat = r.category === "all" ? "_general" : r.category;
+      if (cat !== navSection) continue;
+      const key = shortGuideline(r.source || t("mrec.general"));
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return counts;
+  }, [visibleRecs, navSection, t]);
+
+  // Ordered guidelines for Level 2
+  const orderedGuidelines = useMemo(() => {
+    return [...guidelineCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([key]) => key);
+  }, [guidelineCounts]);
+
+  // Recommendations for Level 3 (filtered by section + guideline)
+  const drillFiltered = useMemo(() => {
+    return visibleRecs.filter((r) => {
+      const cat = r.category === "all" ? "_general" : r.category;
+      if (cat !== navSection) return false;
+      const key = shortGuideline(r.source || t("mrec.general"));
+      if (key !== navGuideline) return false;
       return true;
     });
-  }, [visibleRecs, filterMod, filterCat, filterScope, search, lang]);
+  }, [visibleRecs, navSection, navGuideline, t]);
 
   const hiddenRecs = useMemo(() => {
     const hidden: ManualRecommendation[] = DEFAULT_RECOMMENDATIONS.filter((r) => hiddenSet.has(r.id));
@@ -434,6 +510,61 @@ export function RecommendationsTab() {
 
   const isOverride = (rec: ManualRecommendation) => !!rec.overrides;
 
+  function renderRecCard(rec: ManualRecommendation) {
+    return (
+      <div key={rec.id} className="group p-2.5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900/50 hover:border-brand-soft transition-all">
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+              <span className="text-xs font-medium text-gray-900 dark:text-white">
+                {rec.title[lang] || rec.title.es}
+              </span>
+              {isOverride(rec) ? (
+                <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-400/50 text-amber-600 dark:text-amber-400">
+                  {t("mrec.modified")}
+                </Badge>
+              ) : rec.scope === "org" ? (
+                <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
+                  {(rec as ManualRecommendation & { section_name?: string }).section_name || "Hospital"}
+                </Badge>
+              ) : rec.scope === "user" ? (
+                <Badge variant="outline" className="text-[9px] px-1 py-0 border-brand/50 text-brand">{t("mrec.scope_user")}</Badge>
+              ) : null}
+            </div>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+              {rec.text[lang] || rec.text.es}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{modLabel(rec.modality)}</Badge>
+              <span className="text-[9px] text-gray-400">{rec.source}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+            {isOverride(rec) && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-amber-500" title={t("mrec.restore_original")} onClick={() => restoreOriginal(rec)}>
+                <Undo2 className="h-3 w-3" />
+              </Button>
+            )}
+            {rec.scope !== "org" && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
+                <Pencil className="h-3 w-3" />
+              </Button>
+            )}
+            {rec.scope === "org" ? (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-600" title={t("mrec.hide_btn")} onClick={() => { const n = [...hiddenIds, rec.id]; setHiddenIds(n); saveHiddenLocal(n); }}>
+                <EyeOff className="h-3 w-3" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => setDeleteConfirm(rec)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 py-4">
       {/* Radiogen Bot */}
@@ -496,117 +627,137 @@ export function RecommendationsTab() {
           data-lpignore="true"
           data-1p-ignore
         />
-      </div>
-
-      {/* Modality chips */}
-      <div className="flex flex-wrap gap-1" role="group">
-        {MODALITIES.map((m) => (
+        {search && (
           <button
-            key={m}
             type="button"
-            aria-pressed={filterMod === m}
-            onClick={() => setFilterMod(filterMod === m ? "all" : m)}
-            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-              filterMod === m
-                ? "bg-brand text-white border-brand"
-                : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
-            }`}
+            onClick={() => setSearch("")}
+            className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
           >
-            {tModality(m)}
-          </button>
-        ))}
-        {filterMod !== "all" && (
-          <button type="button" onClick={() => setFilterMod("all")} className="px-1 py-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
 
-      {/* Category chips */}
-      <div className="flex flex-wrap gap-1" role="group">
-        {SECTIONS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            aria-pressed={filterCat === s}
-            onClick={() => setFilterCat(filterCat === s ? "all" : s)}
-            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-              filterCat === s
-                ? "bg-violet-600 text-white border-violet-600"
-                : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
-            }`}
-          >
-            {tSection(s)}
-          </button>
-        ))}
-        {filterCat !== "all" && (
-          <button type="button" onClick={() => setFilterCat("all")} className="px-1 py-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+      {/* ── Search results (flat list) ── */}
+      {search.trim() ? (
+        <div className="space-y-1.5">
+          {searchFiltered.length === 0 ? (
+            <div className="text-center py-8 text-sm text-gray-400">{t("mrec.no_results")}</div>
+          ) : (
+            <>
+              <p className="text-[10px] text-gray-400">{searchFiltered.length} {t("mrec.total_count")}</p>
+              {searchFiltered.map((rec) => renderRecCard(rec))}
+            </>
+          )}
+        </div>
 
-      {/* Count */}
-      <p className="text-[10px] text-gray-400">{filtered.length} {t("mrec.total_count")}</p>
-
-      {/* Flat recommendation list */}
-      <div className="space-y-1.5">
-        {filtered.map((rec) => (
-          <div key={rec.id} className="group p-2.5 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft transition-all">
-            <div className="flex items-start gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                  <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                    {rec.title[lang] || rec.title.es}
-                  </span>
-                  {isOverride(rec) ? (
-                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-400/50 text-amber-600 dark:text-amber-400">
-                      {t("mrec.modified")}
-                    </Badge>
-                  ) : rec.scope === "org" ? (
-                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
-                      {(rec as ManualRecommendation & { section_name?: string }).section_name || "Hospital"}
-                    </Badge>
-                  ) : rec.scope === "user" ? (
-                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-brand/50 text-brand">{t("mrec.scope_user")}</Badge>
-                  ) : null}
-                </div>
-                <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                  {rec.text[lang] || rec.text.es}
-                </p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{modLabel(rec.modality)}</Badge>
-                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{catLabel(rec.category)}</Badge>
-                </div>
-              </div>
-              <div className="flex items-center gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                {isOverride(rec) && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-amber-500" title={t("mrec.restore_original")} onClick={() => restoreOriginal(rec)}>
-                    <Undo2 className="h-3 w-3" />
-                  </Button>
-                )}
-                {rec.scope !== "org" && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                )}
-                {rec.scope === "org" ? (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-600" title={t("mrec.hide_btn")} onClick={() => { const n = [...hiddenIds, rec.id]; setHiddenIds(n); saveHiddenLocal(n); }}>
-                    <EyeOff className="h-3 w-3" />
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => setDeleteConfirm(rec)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-            </div>
+      /* ── Level 1: Anatomical section cards ── */
+      ) : navLevel === "sections" ? (
+        <div className="space-y-3">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {t("mrec.choose_section")}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {orderedSections.map((section) => {
+              const count = sectionCounts.get(section) || 0;
+              const gradient = SECTION_COLORS[section] || SECTION_COLORS._general;
+              const label = section === "_general" ? t("mrec.general") : tSection(section);
+              return (
+                <button
+                  key={section}
+                  type="button"
+                  className="group flex flex-col rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 overflow-hidden hover:shadow-xl hover:scale-[1.03] hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-200"
+                  onClick={() => { setNavSection(section); setNavLevel("guidelines"); setSearch(""); }}
+                >
+                  <div className="h-1.5 w-full" style={{ background: gradient }} />
+                  <div className="flex flex-col items-center gap-1.5 p-4">
+                    <p className="text-[13px] font-semibold text-gray-900 dark:text-white text-center leading-tight">{label}</p>
+                    <p className="text-[10px] text-gray-400">
+                      {count} {t("mrec.total_count")}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        ))}
-      </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-8 text-sm text-gray-400">{t("mrec.no_results")}</div>
+          {visibleRecs.length === 0 && (
+            <div className="text-center py-8 text-sm text-gray-400">{t("mrec.no_results")}</div>
+          )}
+        </div>
+
+      /* ── Level 2: Guideline cards (for selected section) ── */
+      ) : navLevel === "guidelines" ? (
+        <div className="space-y-3">
+          {/* Back button */}
+          <button
+            type="button"
+            onClick={() => { setNavLevel("sections"); setNavSection(""); }}
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{navSection === "_general" ? t("mrec.general") : tSection(navSection)}</span>
+          </button>
+
+          <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {t("mrec.choose_guideline")}
+          </p>
+
+          <div className="grid grid-cols-1 gap-2">
+            {orderedGuidelines.map((guideline, idx) => {
+              const count = guidelineCounts.get(guideline) || 0;
+              const gradient = GUIDELINE_COLORS[idx % GUIDELINE_COLORS.length];
+              return (
+                <button
+                  key={guideline}
+                  type="button"
+                  className="group flex items-center gap-3 w-full p-3.5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 overflow-hidden hover:shadow-xl hover:scale-[1.01] hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-200 text-left"
+                  onClick={() => { setNavGuideline(guideline); setNavLevel("list"); }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md shrink-0 group-hover:shadow-lg group-hover:scale-105 transition-all"
+                    style={{ background: gradient }}
+                  >
+                    <BookOpen className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight truncate">{guideline}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {count} {t("mrec.total_count")}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-200 dark:text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+      /* ── Level 3: Recommendation list (for selected section + guideline) ── */
+      ) : (
+        <div className="space-y-2">
+          {/* Breadcrumb back */}
+          <button
+            type="button"
+            onClick={() => { setNavLevel("guidelines"); setNavGuideline(""); }}
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{navSection === "_general" ? t("mrec.general") : tSection(navSection)}</span>
+            <ChevronRight className="h-3 w-3 text-gray-300 dark:text-gray-600" />
+            <span className="truncate max-w-[200px]">{navGuideline}</span>
+          </button>
+
+          <p className="text-[10px] text-gray-400">{drillFiltered.length} {t("mrec.total_count")}</p>
+
+          {drillFiltered.length === 0 ? (
+            <div className="text-center py-8 text-sm text-gray-400">{t("mrec.no_results")}</div>
+          ) : (
+            <div className="space-y-1.5">
+              {drillFiltered.map((rec) => renderRecCard(rec))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Hidden / recoverable section */}
