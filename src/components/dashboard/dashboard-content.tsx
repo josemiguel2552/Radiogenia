@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import {
   FileText,
@@ -65,9 +64,6 @@ export function DashboardContent() {
   const tplName = useTemplateName();
   const modName = useModality();
   const { prefs: uiPrefs } = useUIPrefs();
-  const layoutMode = uiPrefs.layout || "classic";
-  const isCompactLayout = layoutMode === "compact";
-  const isSideBySide = layoutMode === "side-by-side";
 
   // Templates state
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
@@ -645,7 +641,7 @@ export function DashboardContent() {
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
-  const compactSearchTemplates = useMemo(() => {
+  const searchResults = useMemo(() => {
     if (!templateSearch.trim()) return templates.slice(0, 30);
     const q = templateSearch.toLowerCase();
     return templates.filter((t) =>
@@ -1542,10 +1538,8 @@ export function DashboardContent() {
 
   const rPct = subReportsLimit > 0 ? Math.min(100, Math.round((subReportsUsed / subReportsLimit) * 100)) : 0;
   const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
-  const effectiveSetupCollapsed = isCompactLayout || (!isSideBySide && setupCollapsed);
-
   return (
-    <div className={`flex flex-col ${isCompactLayout ? "gap-2" : "gap-3 md:gap-4"}`}>
+    <div className="flex flex-col gap-3 md:gap-4">
       {/* ── Usage bar ── */}
       <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
@@ -1570,72 +1564,9 @@ export function DashboardContent() {
         </div>
       </div>
 
-      {/* ── Compact: template search + clinical data row ── */}
-      {isCompactLayout && (
-        <Card>
-          <CardContent className="p-2.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
-                <Input
-                  placeholder={t("dash.search_template")}
-                  value={templateSearch}
-                  onChange={(e) => setTemplateSearch(e.target.value)}
-                  className="pl-8 h-9 text-xs"
-                  autoComplete="off"
-                />
-                {templateSearch.trim() && compactSearchTemplates.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-md border bg-[hsl(var(--card))] shadow-lg">
-                    {compactSearchTemplates.map((tpl) => (
-                      <button
-                        key={tpl.id}
-                        type="button"
-                        onClick={() => { setSelectedTemplateId(tpl.id); setSelectedModality(tpl.modality); setTemplateSearch(""); }}
-                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedTemplateId === tpl.id ? "bg-brand-soft text-brand font-medium" : ""}`}
-                      >
-                        <span className="font-medium">{tplName(tpl.name)}</span>
-                        <span className="ml-1.5 text-gray-400">{tpl.modality}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {selectedTemplate && !templateSearch.trim() && (
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <Badge variant="secondary" className="text-[10px] h-5">{modName(selectedTemplate.modality)}</Badge>
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{tplName(selectedTemplate.name)}</span>
-                    <button type="button" onClick={() => { setSelectedTemplateId(""); setSelectedModality(""); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setClinicalOpen(!clinicalOpen)}
-                  className="flex items-center gap-1.5 w-full h-9 px-3 rounded-md border text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  {t("dash.clinical_context")}
-                  {clinicalInfo.trim() && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
-                  <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
-                </button>
-                {clinicalOpen && (
-                  <Textarea
-                    placeholder={t("dash.clinical_placeholder")}
-                    value={clinicalInfo}
-                    onChange={(e) => setClinicalInfo(e.target.value)}
-                    className="mt-1.5 min-h-[56px] text-xs resize-none"
-                  />
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── Setup + Dictation (grid in SBS, stacked otherwise) ── */}
-      <div className={isSideBySide ? "grid grid-cols-1 md:grid-cols-[minmax(300px,2fr)_3fr] gap-3 md:gap-4" : ""}>
-      {!isCompactLayout && (effectiveSetupCollapsed ? (
+      {/* ── Setup + Dictation (responsive grid) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,2fr)_3fr] gap-3 md:gap-4">
+      {setupCollapsed ? (
           <div
             className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-[hsl(var(--muted)/0.8)] cursor-pointer hover:bg-[hsl(var(--muted))] transition-colors"
             onClick={() => setSetupCollapsed(false)}
@@ -1659,7 +1590,7 @@ export function DashboardContent() {
           </div>
       ) : (
           <Card>
-            <CardContent className={isCompactLayout ? "p-2.5" : "p-4"}>
+            <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
@@ -1669,15 +1600,14 @@ export function DashboardContent() {
                   <button type="button" onClick={() => setShowTemplateHelp(!showTemplateHelp)} className={`p-1 rounded-full transition-colors ${showTemplateHelp ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" : "text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"}`}>
                     <HelpCircle className="h-4 w-4" />
                   </button>
-                  {!isSideBySide && (
-                    <button
-                      type="button"
-                      onClick={() => setSetupCollapsed(true)}
-                      className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
-                    >
-                      <ChevronDown className="h-3.5 w-3.5 rotate-90" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setSetupCollapsed(true)}
+                    className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded lg:hidden"
+                    aria-label={t("dash.collapse_setup")}
+                  >
+                    <ChevronDown className="h-3.5 w-3.5 rotate-90" />
+                  </button>
                 </div>
               </div>
               {showTemplateHelp && (
@@ -1686,102 +1616,136 @@ export function DashboardContent() {
                 </div>
               )}
 
-              {/* Row 1: Modality pills */}
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {MODALITIES.map((mod) => (
-                  <Button
-                    key={mod}
-                    variant={selectedModality === mod ? "default" : "outline"}
-                    size="sm"
-                    className="h-7 px-2.5 text-[11px]"
-                    onClick={() => {
-                      setSelectedModality(selectedModality === mod ? "" : mod);
-                      setSelectedSection("");
-                      setSelectedTemplateId("");
-                    }}
-                  >
-                    {modName(mod)}
-                  </Button>
-                ))}
+              {/* Template search */}
+              <div className="relative mb-3">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden="true" />
+                <Input
+                  placeholder={t("dash.search_template")}
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="pl-8 h-9 text-xs"
+                  autoComplete="off"
+                  aria-label={t("dash.search_template")}
+                />
+                {templateSearch.trim() && searchResults.length > 0 && (
+                  <ul role="listbox" className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-md border bg-[hsl(var(--card))] shadow-lg">
+                    {searchResults.map((tpl) => (
+                      <li key={tpl.id} role="option" aria-selected={selectedTemplateId === tpl.id}>
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedTemplateId(tpl.id); setSelectedModality(tpl.modality); setTemplateSearch(""); }}
+                          className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedTemplateId === tpl.id ? "bg-brand-soft text-brand font-medium" : ""}`}
+                        >
+                          <span className="font-medium">{tplName(tpl.name)}</span>
+                          <span className="ml-1.5 text-gray-400">{modName(tpl.modality)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
-              {/* Row 2: Region + Template + Contrast — responsive grid */}
-              <div className={`grid gap-3 mb-3 ${isSideBySide ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-3"}`}>
-                <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
-                  <SelectContent>
-                    {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
-                      <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Modality chips */}
+              <fieldset className="mb-3">
+                <legend className="sr-only">{t("dash.modality")}</legend>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("dash.modality")}>
+                  {MODALITIES.map((mod) => (
+                    <Button
+                      key={mod}
+                      variant={selectedModality === mod ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 px-2.5 text-[11px]"
+                      aria-pressed={selectedModality === mod}
+                      onClick={() => {
+                        setSelectedModality(selectedModality === mod ? "" : mod);
+                        setSelectedSection("");
+                        setSelectedTemplateId("");
+                      }}
+                    >
+                      {modName(mod)}
+                    </Button>
+                  ))}
+                </div>
+              </fieldset>
 
-                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const hasOrgTemplates = filteredTemplates.some((tp) => tp.is_org);
-                      if (!hasOrgTemplates) {
-                        return filteredTemplates.map((tpl) => (
-                          <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
-                        ));
-                      }
-                      const own = filteredTemplates.filter((tp) => !tp.is_global && !tp.is_org);
-                      const sectionGroups = new Map<string, typeof filteredTemplates>();
-                      filteredTemplates.filter((tp) => tp.is_org).forEach((tp) => {
-                        const key = tp.section_name || "Hospital";
-                        if (!sectionGroups.has(key)) sectionGroups.set(key, []);
-                        sectionGroups.get(key)!.push(tp);
-                      });
-                      const global = filteredTemplates.filter((tp) => tp.is_global && !tp.is_org);
-                      return (
-                        <>
-                          {own.length > 0 && (
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider">Mis plantillas</SelectLabel>
-                              {own.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
-                            </SelectGroup>
-                          )}
-                          {Array.from(sectionGroups.entries()).map(([secName, tpls]) => (
-                            <SelectGroup key={secName}>
-                              <SelectLabel className="text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-wider">{secName}</SelectLabel>
-                              {tpls.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
-                            </SelectGroup>
-                          ))}
-                          {global.length > 0 && (
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] text-gray-400 uppercase tracking-wider">Globales</SelectLabel>
-                              {global.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
-                            </SelectGroup>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </SelectContent>
-                </Select>
-
-                <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-                  {[
-                    { v: "default", l: t("dash.default") },
-                    { v: "con_contraste", l: "C+" },
-                    { v: "sin_contraste", l: "C−" },
-                  ].map((opt) => (
+              {/* Section chips */}
+              <fieldset className="mb-3">
+                <legend className="sr-only">{t("dash.any_region")}</legend>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("dash.any_region")}>
+                  {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
                     <button
-                      key={opt.v}
+                      key={s}
                       type="button"
-                      onClick={() => setContrastOption(opt.v)}
-                      className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
-                        contrastOption === opt.v
-                          ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
-                          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      aria-pressed={selectedSection === s}
+                      onClick={() => { setSelectedSection(selectedSection === s ? "" : s); setSelectedTemplateId(""); }}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                        selectedSection === s
+                          ? "bg-brand text-white border-brand"
+                          : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-600 dark:text-gray-300 hover:border-brand/50"
                       }`}
                     >
-                      {opt.l}
+                      {sec(s)}
                     </button>
                   ))}
                 </div>
+              </fieldset>
+
+              {/* Template chips */}
+              {filteredTemplates.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto" role="listbox" aria-label={t("dash.select_template")}>
+                    {filteredTemplates.map((tpl) => {
+                      const isOrg = tpl.is_org;
+                      const isGlobal = tpl.is_global && !tpl.is_org;
+                      return (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          role="option"
+                          aria-selected={selectedTemplateId === tpl.id}
+                          onClick={() => setSelectedTemplateId(selectedTemplateId === tpl.id ? "" : tpl.id)}
+                          className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors truncate max-w-[200px] ${
+                            selectedTemplateId === tpl.id
+                              ? "bg-brand text-white border-brand shadow-sm"
+                              : isOrg
+                              ? "bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:border-violet-400"
+                              : isGlobal
+                              ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400"
+                              : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-700 dark:text-gray-300 hover:border-brand/50"
+                          }`}
+                        >
+                          {tplName(tpl.name)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {filteredTemplates.length === 0 && (
+                <p className="text-[11px] text-gray-400 mb-3">{t("dash.no_templates")}</p>
+              )}
+
+              {/* Contrast toggle */}
+              <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800 mb-3" role="group" aria-label={t("dash.default")}>
+                {[
+                  { v: "default", l: t("dash.default") },
+                  { v: "con_contraste", l: "C+" },
+                  { v: "sin_contraste", l: "C−" },
+                ].map((opt) => (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    aria-pressed={contrastOption === opt.v}
+                    onClick={() => setContrastOption(opt.v)}
+                    className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
+                      contrastOption === opt.v
+                        ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
               </div>
 
               {/* Cardiac MRI techniques + dictation guide */}
@@ -1904,12 +1868,12 @@ export function DashboardContent() {
               </div>
             </CardContent>
           </Card>
-      ))}
+      )}
 
       {/* ── Dictation ── */}
       <div>
           <Card>
-            <CardContent className={`space-y-3 ${isCompactLayout ? "p-2.5" : "p-4"}`}>
+            <CardContent className="space-y-3 p-4">
               {/* Language selector */}
               <div className="flex items-center gap-1">
                 <Mic className="h-3 w-3 text-gray-400 shrink-0" />
@@ -1942,7 +1906,7 @@ export function DashboardContent() {
                       setDictSelRange(null);
                     }
                   }}
-                  className={`text-sm pr-14 resize-none ${isCompactLayout ? "min-h-[80px]" : "min-h-[140px]"}`}
+                  className="text-sm pr-14 resize-none min-h-[140px]"
                 />
                 <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
                 <Button
@@ -2038,7 +2002,7 @@ export function DashboardContent() {
                 <Wand2 className="h-3 w-3" />
                 {t("dash.light_paraphrase")}
               </button>
-              {!effectiveSetupCollapsed && !setupReady && (
+              {!setupCollapsed && !setupReady && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
                   {t("dash.select_template_first")}
                 </p>
@@ -2096,7 +2060,7 @@ export function DashboardContent() {
             )}
 
             {/* SBS / Compact: findings + conclusion side by side */}
-            <div className={(isSideBySide || isCompactLayout) ? "grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3" : ""}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
             <OutputCard
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
@@ -2104,7 +2068,7 @@ export function DashboardContent() {
               value={findings}
               onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
-              minHeight={isCompactLayout ? 100 : 140}
+              minHeight={140}
               traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
               traceLocked={loadingTrace}
               isDark={isDark}

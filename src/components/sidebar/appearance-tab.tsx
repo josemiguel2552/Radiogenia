@@ -3,9 +3,8 @@
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUIPrefs, SKINS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage, type LayoutMode } from "@/lib/ui-prefs";
+import { useUIPrefs, SKINS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
-import { Columns2, LayoutList, Minimize2 } from "lucide-react";
 
 export function AppearanceTab() {
   const { prefs, update, skin: activeSkin } = useUIPrefs();
@@ -37,41 +36,6 @@ export function AppearanceTab() {
         </div>
         <p className="text-[10px] text-gray-400 mt-2">
           {t("app.ui_lang_hint")}
-        </p>
-      </div>
-
-      {/* Layout mode */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.layout")}
-        </Label>
-        <div className="grid grid-cols-3 gap-2">
-          {([
-            { v: "classic", icon: LayoutList, desc: t("app.layout_classic_desc") },
-            { v: "side-by-side", icon: Columns2, desc: t("app.layout_sidebyside_desc") },
-            { v: "compact", icon: Minimize2, desc: t("app.layout_compact_desc") },
-          ] as { v: LayoutMode; icon: typeof LayoutList; desc: string }[]).map(({ v, icon: Icon, desc }) => {
-            const active = prefs.layout === v;
-            return (
-              <button
-                key={v}
-                type="button"
-                onClick={() => update({ layout: v })}
-                className={`flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg border transition-all text-center ${
-                  active
-                    ? "border-transparent shadow-sm bg-brand-soft"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                }`}
-                style={active ? { color: "hsl(var(--primary))" } : undefined}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="text-[10px] font-medium">{t(`app.layout_${v.replace("-", "")}`)}</span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-[10px] text-gray-400 mt-2">
-          {t(`app.layout_${prefs.layout.replace("-", "")}_desc`)}
         </p>
       </div>
 
@@ -192,7 +156,7 @@ export function AppearanceTab() {
       <button
         type="button"
         onClick={() => {
-          update({ skin: "clasico", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es", layout: "classic" });
+          update({ skin: "clasico", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es" });
         }}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >
