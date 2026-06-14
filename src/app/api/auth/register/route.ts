@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
+import { sendWelcomeEmail, sendPendingApprovalEmail } from "@/lib/email";
 
 const LATAM_COUNTRIES = new Set([
   "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
@@ -66,6 +67,11 @@ export async function POST(req: NextRequest) {
     });
 
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
+
+    const emailFn = autoApprove ? sendWelcomeEmail : sendPendingApprovalEmail;
+    emailFn(normalizedEmail, fullName).catch((err) =>
+      console.error(`[register] email error: ${err}`)
+    );
 
     return NextResponse.json({ ok: true, approved: autoApprove });
   } catch (error) {
