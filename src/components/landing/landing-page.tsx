@@ -277,12 +277,6 @@ export function LandingPage() {
             >
               {t("nav.signin")}
             </Link>
-            <Link
-              href="/waitlist"
-              className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-5 py-2 rounded-full transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
-            >
-              {t("nav.get_started")}
-            </Link>
           </div>
         </div>
       </nav>
@@ -650,9 +644,9 @@ const STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
 
 const STEP_ICONS = [Mic, FileText, Tags, MessageCircle];
 const STEP_COLORS = [
+  "from-blue-400 to-blue-600",
   "from-blue-500 to-indigo-600",
-  "from-violet-500 to-purple-600",
-  "from-amber-500 to-orange-500",
+  "from-purple-500 to-violet-600",
   "from-violet-500 to-fuchsia-500",
 ];
 
@@ -667,23 +661,27 @@ function StepsShowcase({ lang }: { lang: PublicLang }) {
         {steps.map((step, i) => {
           const Icon = STEP_ICONS[i];
           const reverse = i % 2 === 1;
+          const isHighlight = i >= 2;
           return (
             <div key={i}>
               <div
                 data-reveal
                 style={revealDelay(0)}
-                className="grid lg:grid-cols-2 gap-10 items-center"
+                className={`grid lg:grid-cols-2 gap-10 items-center ${isHighlight ? "relative rounded-2xl p-6 lg:p-8 border border-purple-500/10 bg-gradient-to-br from-purple-500/[0.04] to-transparent" : ""}`}
               >
+                {isHighlight && (
+                  <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-purple-500/10 via-transparent to-fuchsia-500/10 blur-sm -z-10" />
+                )}
                 <div className={`space-y-4 ${reverse ? "lg:order-2" : ""}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center shadow-lg`}>
-                      <Icon className="h-6 w-6 text-white" />
+                    <div className={`${isHighlight ? "w-14 h-14" : "w-12 h-12"} rounded-2xl bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center shadow-lg ${isHighlight ? "shadow-purple-500/20" : ""}`}>
+                      <Icon className={`${isHighlight ? "h-7 w-7" : "h-6 w-6"} text-white`} />
                     </div>
-                    <span className="text-sm font-mono text-purple-400">
+                    <span className={`text-sm font-mono ${isHighlight ? "text-purple-300" : "text-blue-400"}`}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold">{step.title}</h3>
+                  <h3 className={`font-bold ${isHighlight ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"}`}>{step.title}</h3>
                   <p className="text-gray-400 leading-relaxed max-w-md">{step.desc}</p>
                 </div>
                 <div className={reverse ? "lg:order-1" : ""}>
@@ -697,7 +695,7 @@ function StepsShowcase({ lang }: { lang: PublicLang }) {
               </div>
               {i < steps.length - 1 && (
                 <div className="flex justify-center py-4">
-                  <div className="w-px h-12 bg-gradient-to-b from-purple-500/30 to-transparent" />
+                  <div className={`w-px h-12 bg-gradient-to-b ${i === 1 ? "from-blue-500/30 via-purple-500/30 to-transparent" : i >= 2 ? "from-purple-500/30 to-transparent" : "from-blue-500/30 to-transparent"}`} />
                 </div>
               )}
             </div>
