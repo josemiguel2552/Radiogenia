@@ -537,42 +537,98 @@ export function RecommendationsTab() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="flex-1 min-w-[120px]">
-            <label className="text-[10px] font-medium text-gray-500 mb-1 block">{t("mrec.filter_modality")}</label>
-            <Select value={filterMod} onValueChange={setFilterMod}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("mrec.mod_all")}</SelectItem>
-                {MODALITIES.map((m) => (
-                  <SelectItem key={m} value={m}>{tModality(m)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+          {/* Modality chips */}
+          <div>
+            <label className="text-[10px] font-medium text-gray-500 mb-1.5 block">{t("mrec.filter_modality")}</label>
+            <div className="flex flex-wrap gap-1" role="group">
+              <button
+                type="button"
+                aria-pressed={filterMod === "all"}
+                onClick={() => setFilterMod("all")}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                  filterMod === "all"
+                    ? "bg-brand text-white border-brand"
+                    : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
+                }`}
+              >
+                {t("mrec.mod_all")}
+              </button>
+              {MODALITIES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={filterMod === m}
+                  onClick={() => setFilterMod(filterMod === m ? "all" : m)}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                    filterMod === m
+                      ? "bg-brand text-white border-brand"
+                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
+                  }`}
+                >
+                  {tModality(m)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex-1 min-w-[120px]">
-            <label className="text-[10px] font-medium text-gray-500 mb-1 block">{t("mrec.filter_category")}</label>
-            <Select value={filterCat} onValueChange={setFilterCat}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("mrec.cat_all")}</SelectItem>
-                {SECTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>{tSection(s)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Category chips */}
+          <div>
+            <label className="text-[10px] font-medium text-gray-500 mb-1.5 block">{t("mrec.filter_category")}</label>
+            <div className="flex flex-wrap gap-1" role="group">
+              <button
+                type="button"
+                aria-pressed={filterCat === "all"}
+                onClick={() => setFilterCat("all")}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                  filterCat === "all"
+                    ? "bg-violet-600 text-white border-violet-600"
+                    : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
+                }`}
+              >
+                {t("mrec.cat_all")}
+              </button>
+              {SECTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  aria-pressed={filterCat === s}
+                  onClick={() => setFilterCat(filterCat === s ? "all" : s)}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                    filterCat === s
+                      ? "bg-violet-600 text-white border-violet-600"
+                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
+                  }`}
+                >
+                  {tSection(s)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex-1 min-w-[120px]">
-            <label className="text-[10px] font-medium text-gray-500 mb-1 block">{t("mrec.filter_scope")}</label>
-            <Select value={filterScope} onValueChange={setFilterScope}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("mrec.scope_all")}</SelectItem>
-                <SelectItem value="system">{t("mrec.scope_system")}</SelectItem>
-                <SelectItem value="org">{t("mrec.scope_org")}</SelectItem>
-                <SelectItem value="user">{t("mrec.scope_user")}</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Scope chips */}
+          <div>
+            <label className="text-[10px] font-medium text-gray-500 mb-1.5 block">{t("mrec.filter_scope")}</label>
+            <div className="flex flex-wrap gap-1" role="group">
+              {([
+                { v: "all", l: t("mrec.scope_all") },
+                { v: "system", l: t("mrec.scope_system") },
+                { v: "org", l: t("mrec.scope_org") },
+                { v: "user", l: t("mrec.scope_user") },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  aria-pressed={filterScope === opt.v}
+                  onClick={() => setFilterScope(filterScope === opt.v ? "all" : opt.v)}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                    filterScope === opt.v
+                      ? "bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-900 border-gray-700 dark:border-gray-200"
+                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-gray-400"
+                  }`}
+                >
+                  {opt.l}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

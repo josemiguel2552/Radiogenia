@@ -52,6 +52,8 @@ export function TemplatesTab() {
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterModality, setFilterModality] = useState<string>("");
+  const [filterSection, setFilterSection] = useState<string>("");
   const [editTemplate, setEditTemplate] = useState<UserTemplate | null>(null);
   const [creatingNew, setCreatingNew] = useState(false);
   const [editName, setEditName] = useState("");
@@ -118,14 +120,28 @@ export function TemplatesTab() {
   }, []);
 
   const filtered = templates.filter((tmpl) => {
-    const q = search.toLowerCase();
-    return tmpl.name.toLowerCase().includes(q) ||
-      tplName(tmpl.name).toLowerCase().includes(q) ||
-      tmpl.modality.toLowerCase().includes(q) ||
-      modName(tmpl.modality).toLowerCase().includes(q) ||
-      (tmpl.structure?.section || "").toLowerCase().includes(q) ||
-      sec(tmpl.structure?.section || "").toLowerCase().includes(q);
+    if (filterModality && tmpl.modality !== filterModality) return false;
+    if (filterSection && tmpl.structure?.section !== filterSection) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (
+        !tmpl.name.toLowerCase().includes(q) &&
+        !tplName(tmpl.name).toLowerCase().includes(q) &&
+        !tmpl.modality.toLowerCase().includes(q) &&
+        !modName(tmpl.modality).toLowerCase().includes(q) &&
+        !(tmpl.structure?.section || "").toLowerCase().includes(q) &&
+        !sec(tmpl.structure?.section || "").toLowerCase().includes(q)
+      ) return false;
+    }
+    return true;
   });
+
+  const availableSections = [...new Set(
+    templates
+      .filter((t) => !filterModality || t.modality === filterModality)
+      .map((t) => t.structure?.section)
+      .filter(Boolean) as string[]
+  )];
 
   const grouped = filtered.reduce<Record<string, UserTemplate[]>>((acc, t) => {
     const section = t.structure?.section || "Other";
@@ -402,6 +418,69 @@ export function TemplatesTab() {
         onChange={handleWordUpload}
         className="hidden"
       />
+
+      {/* Modality chips */}
+      <div className="flex flex-wrap gap-1" role="group" aria-label={t("tpl.modality")}>
+        {MODALITIES.map((mod) => (
+          <button
+            key={mod}
+            type="button"
+            aria-pressed={filterModality === mod}
+            onClick={() => {
+              setFilterModality(filterModality === mod ? "" : mod);
+              setFilterSection("");
+            }}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+              filterModality === mod
+                ? "bg-brand text-white border-brand"
+                : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
+            }`}
+          >
+            {modName(mod)}
+          </button>
+        ))}
+        {filterModality && (
+          <button
+            type="button"
+            onClick={() => { setFilterModality(""); setFilterSection(""); }}
+            className="px-1.5 py-0.5 rounded-full text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            aria-label={t("mrec.clear")}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
+      {/* Section chips */}
+      {availableSections.length > 0 && (
+        <div className="flex flex-wrap gap-1" role="group" aria-label={t("tpl.anatomical_region")}>
+          {availableSections.map((s) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={filterSection === s}
+              onClick={() => setFilterSection(filterSection === s ? "" : s)}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                filterSection === s
+                  ? "bg-violet-600 text-white border-violet-600"
+                  : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
+              }`}
+            >
+              {sec(s)}
+            </button>
+          ))}
+          {filterSection && (
+            <button
+              type="button"
+              onClick={() => setFilterSection("")}
+              className="px-1.5 py-0.5 rounded-full text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              aria-label={t("mrec.clear")}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
 
       {justHiddenMsg && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs">
