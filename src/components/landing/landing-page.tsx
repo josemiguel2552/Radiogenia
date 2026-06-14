@@ -200,7 +200,7 @@ const FEATURE_KEYS = [
   { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
   { icon: Brain, key: "style", color: "from-purple-500 to-pink-500" },
   { icon: Sparkles, key: "conclusions", color: "from-indigo-500 to-blue-600" },
-  { icon: Tags, key: "classify", color: "from-amber-500 to-orange-500" },
+  { icon: Tags, key: "classify", color: "from-purple-500 to-violet-600" },
   { icon: MessageCircle, key: "bot", color: "from-violet-500 to-fuchsia-500" },
   { icon: Layout, key: "templates", color: "from-blue-600 to-cyan-500" },
   { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
@@ -812,13 +812,13 @@ function ClassifyVisual({ lang }: { lang: PublicLang }) {
   return (
     <div className="flex flex-col gap-3 w-full">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/25 to-orange-500/25 border border-amber-500/30 flex items-center justify-center">
-          <Tags className="h-4 w-4 text-amber-400" />
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/25 to-violet-500/25 border border-purple-500/30 flex items-center justify-center">
+          <Tags className="h-4 w-4 text-purple-400" />
         </div>
-        <span className="text-xs font-bold text-amber-300">{title}</span>
+        <span className="text-xs font-bold text-purple-300">{title}</span>
       </div>
-      <div className="rounded-xl bg-gradient-to-b from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-3 space-y-2">
-        <span className="text-[10px] font-bold text-amber-300 tracking-wide">TNM (AJCC 8th ed.)</span>
+      <div className="rounded-xl bg-gradient-to-b from-purple-500/10 to-violet-500/10 border border-purple-500/20 p-3 space-y-2">
+        <span className="text-[10px] font-bold text-purple-300 tracking-wide">TNM (AJCC 8th ed.)</span>
         {tnmItems.map((item, i) => (
           <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.04]">
             <span className="text-[11px] font-bold text-white min-w-[70px]">{item.code}</span>
@@ -827,7 +827,7 @@ function ClassifyVisual({ lang }: { lang: PublicLang }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <div className="px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-amber-500/20">
+        <div className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-purple-500/20">
           <Check className="h-3.5 w-3.5" />
           {lang === "es" ? "Añadir a conclusión" : lang === "pt" ? "Adicionar à conclusão" : "Add to conclusion"}
         </div>
