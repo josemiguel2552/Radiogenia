@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Globe, CheckCircle2, Clock } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
+import { PLANS } from "@/lib/types";
 
 const COUNTRIES = [
   "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
@@ -16,8 +18,20 @@ const COUNTRIES = [
   "República Dominicana", "United States", "Uruguay", "Venezuela", "Other",
 ];
 
+const PAID_PLANS = new Set(["resident", "starter", "professional"]);
+
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a1a]" />}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const { lang, setLang, t } = usePublicLang();
+  const searchParams = useSearchParams();
+  const selectedPlan = searchParams.get("plan") || "";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -61,6 +75,18 @@ export default function RegisterPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
+        if (loginRes.ok && PAID_PLANS.has(selectedPlan)) {
+          const checkoutRes = await fetch("/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan: selectedPlan }),
+          });
+          const checkoutData = await checkoutRes.json();
+          if (checkoutData.url) {
+            window.location.href = checkoutData.url;
+            return;
+          }
+        }
         if (loginRes.ok) {
           window.location.href = "/dashboard";
           return;
@@ -145,6 +171,20 @@ export default function RegisterPage() {
               {langLabel(lang)}
             </button>
           </div>
+
+          {PAID_PLANS.has(selectedPlan) && PLANS[selectedPlan as keyof typeof PLANS] && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/20 bg-blue-500/5">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">
+                  {lang === "es" ? "Plan seleccionado:" : lang === "pt" ? "Plano selecionado:" : "Selected plan:"}{" "}
+                  <span className="text-blue-400">{PLANS[selectedPlan as keyof typeof PLANS].label}</span>
+                </p>
+                <p className="text-xs text-gray-400">
+                  ${PLANS[selectedPlan as keyof typeof PLANS].price} USD{t("pricing.per_month")} — {lang === "es" ? "se cobrará después del registro" : lang === "pt" ? "será cobrado após o registro" : "will be charged after registration"}
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -260,7 +300,11 @@ export default function RegisterPage() {
               className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold shadow-lg shadow-purple-500/20"
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("waitlist.submit")}
+              {loading
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : PAID_PLANS.has(selectedPlan)
+                  ? lang === "es" ? "Crear cuenta y suscribirse" : lang === "pt" ? "Criar conta e assinar" : "Create account & subscribe"
+                  : t("waitlist.submit")}
             </Button>
           </form>
 

@@ -1049,7 +1049,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
       </ul>
 
       <Link
-        href="/waitlist"
+        href={plan.price === 0 ? "/waitlist" : `/waitlist?plan=${planKey}`}
         className={`block text-center text-sm font-semibold py-3 rounded-full transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
