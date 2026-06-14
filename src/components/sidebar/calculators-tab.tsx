@@ -5593,7 +5593,7 @@ export function CalculatorsTab() {
   const q = search.toLowerCase();
   const filteredCalcs = CALCULATORS.filter(
     (c) => !q || calcLabels[c.id].toLowerCase().includes(q),
-  );
+  ).sort((a, b) => calcLabels[a.id].localeCompare(calcLabels[b.id]));
 
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -5604,93 +5604,93 @@ export function CalculatorsTab() {
     {
       key: "thorax", label: t("calc.section_thorax"), icon: "🫁",
       sheets: [
-        { id: "lungrads", component: <LungRadsSheet />, label: "Lung-RADS" },
+        { id: "bts", component: <BtsNodulesSheet />, label: "BTS 2015" },
         { id: "fleischner", component: <FleischnerSheet />, label: "Fleischner 2017" },
         { id: "ild", component: <InterstitialLungSheet />, label: t("calc.ild_title") },
-        { id: "bts", component: <BtsNodulesSheet />, label: "BTS 2015" },
-        { id: "thyroid_inc", component: <ThyroidIncidentalSheet />, label: t("calc.thyroid_incidental_title") },
+        { id: "lungrads", component: <LungRadsSheet />, label: "Lung-RADS" },
         { id: "mediastinal_ln", component: <MediastinalLNSheet />, label: t("calc.mediastinal_ln_title") },
-      ],
+        { id: "thyroid_inc", component: <ThyroidIncidentalSheet />, label: t("calc.thyroid_incidental_title") },
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     {
       key: "abdomen", label: t("calc.section_abdomen"), icon: "🩻",
       sheets: [
+        { id: "adrenal_inc", component: <AdrenalIncidentalSheet />, label: t("calc.adrenal_incidental_title") },
+        { id: "diverticulitis", component: <DiverticulitisSheet />, label: t("calc.divert_title") },
+        { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
         { id: "lirads", component: <LiradsSheet />, label: "LI-RADS" },
         { id: "liver", component: <LiverIncidentalSheet />, label: t("calc.liver_title") },
-        { id: "adrenal_inc", component: <AdrenalIncidentalSheet />, label: t("calc.adrenal_incidental_title") },
-        { id: "pancreas", component: <PancreaticCystSheet />, label: t("calc.pancreas_title") },
-        { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
-        { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
         { id: "orads", component: <OradsSheet />, label: "O-RADS" },
+        { id: "ovarian", component: <OvarianIncidentalSheet />, label: t("calc.ovarian_title") },
+        { id: "pancreas", component: <PancreaticCystSheet />, label: t("calc.pancreas_title") },
         { id: "torsion", component: <TesticularTorsionSheet />, label: t("calc.torsion_title") },
-        { id: "diverticulitis", component: <DiverticulitisSheet />, label: t("calc.divert_title") },
-      ],
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     {
       key: "breast", label: t("calc.section_breast"), icon: "🎗️",
       sheets: [
         { id: "birads", component: <BiradsSheet />, label: "BI-RADS" },
         { id: "breast_density", component: <BreastDensitySheet />, label: t("calc.breast_density_title") },
-        { id: "breast_us", component: <BreastUSLexiconSheet />, label: t("calc.breast_us_title") },
-        { id: "breast_screening", component: <BreastScreeningSheet />, label: t("calc.breast_screening_title") },
         { id: "breast_implant", component: <BreastImplantSheet />, label: t("calc.breast_implant_title") },
-      ],
+        { id: "breast_screening", component: <BreastScreeningSheet />, label: t("calc.breast_screening_title") },
+        { id: "breast_us", component: <BreastUSLexiconSheet />, label: t("calc.breast_us_title") },
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     {
       key: "neuro", label: t("calc.section_neuro"), icon: "🧠",
       sheets: [
-        { id: "fazekas", component: <FazekasSheet />, label: t("calc.fazekas_title") },
-        { id: "vasc_terr", component: <VascularTerritoriesSheet />, label: t("calc.vasc_territories_title") },
-        { id: "cerebral_aneur", component: <CerebralAneurysmSheet />, label: t("calc.cerebral_aneurysm_title") },
-        { id: "fisher", component: <FisherSAHSheet />, label: t("calc.fisher_title") },
         { id: "brain_tumor", component: <BrainTumorSheet />, label: t("calc.brain_tumor_title") },
+        { id: "cerebral_aneur", component: <CerebralAneurysmSheet />, label: t("calc.cerebral_aneurysm_title") },
         { id: "ct_perfusion", component: <CTPerfusionSheet />, label: t("calc.ctp_title") },
-        { id: "neck_anatomy", component: <NeckAnatomySheet />, label: t("calc.neck_anatomy_title") },
-        { id: "complex_infarct", component: <ComplexInfarctSheet />, label: t("calc.infarct_title") },
-        { id: "demyelinating", component: <DemyelinatingSheet />, label: t("calc.demyel_title") },
         { id: "degenerative", component: <DegenerativeSheet />, label: t("calc.degen_title") },
-      ],
+        { id: "demyelinating", component: <DemyelinatingSheet />, label: t("calc.demyel_title") },
+        { id: "fazekas", component: <FazekasSheet />, label: t("calc.fazekas_title") },
+        { id: "fisher", component: <FisherSAHSheet />, label: t("calc.fisher_title") },
+        { id: "complex_infarct", component: <ComplexInfarctSheet />, label: t("calc.infarct_title") },
+        { id: "neck_anatomy", component: <NeckAnatomySheet />, label: t("calc.neck_anatomy_title") },
+        { id: "vasc_terr", component: <VascularTerritoriesSheet />, label: t("calc.vasc_territories_title") },
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     {
       key: "msk", label: t("calc.section_msk"), icon: "🦴",
       sheets: [
-        { id: "mri_shoulder", component: <MRIShoulderSheet />, label: t("calc.mri_shoulder_title") },
-        { id: "mri_knee", component: <MRIKneeSheet />, label: t("calc.mri_knee_title") },
-        { id: "mri_ankle", component: <MRIAnkleSheet />, label: t("calc.mri_ankle_title") },
-        { id: "mri_thigh_leg", component: <MRIThighLegSheet />, label: t("calc.mri_thigh_title") },
-        { id: "rc", component: <RotatorCuffSheet />, label: t("calc.rc_title") },
         { id: "bone_tumor", component: <BoneTumorSheet />, label: t("calc.bone_tumor_title") },
-        { id: "vfx", component: <VertebralFractureSheet />, label: t("calc.vfx_title") },
-        { id: "spine_nom", component: <SpineNomenclatureSheet />, label: t("calc.spine_nomen_title") },
-        { id: "foraminal", component: <ForaminalStenosisSheet />, label: t("calc.foraminal_title") },
         { id: "canal", component: <CanalStenosisSheet />, label: t("calc.canal_title") },
-      ],
+        { id: "foraminal", component: <ForaminalStenosisSheet />, label: t("calc.foraminal_title") },
+        { id: "mri_ankle", component: <MRIAnkleSheet />, label: t("calc.mri_ankle_title") },
+        { id: "mri_knee", component: <MRIKneeSheet />, label: t("calc.mri_knee_title") },
+        { id: "mri_shoulder", component: <MRIShoulderSheet />, label: t("calc.mri_shoulder_title") },
+        { id: "mri_thigh_leg", component: <MRIThighLegSheet />, label: t("calc.mri_thigh_title") },
+        { id: "spine_nom", component: <SpineNomenclatureSheet />, label: t("calc.spine_nomen_title") },
+        { id: "rc", component: <RotatorCuffSheet />, label: t("calc.rc_title") },
+        { id: "vfx", component: <VertebralFractureSheet />, label: t("calc.vfx_title") },
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     {
       key: "vascular", label: t("calc.section_vascular"), icon: "❤️",
       sheets: [
-        { id: "whole_aorta", component: <WholeAortaCTASheet />, label: t("calc.whole_aorta_title") },
         { id: "aorta", component: <AorticAneurysmSheet />, label: t("calc.aorta_title") },
-        { id: "dissection", component: <AorticDissectionSheet />, label: t("calc.dissection_title") },
-        { id: "carotid", component: <CarotidStenosisSheet />, label: t("calc.carotid_title") },
-        { id: "pad", component: <PadClassSheet />, label: t("calc.pad_title") },
-        { id: "dvt_pe", component: <DVTPESheet />, label: t("calc.dvt_pe_title") },
-        { id: "ri", component: <ResistiveIndexSheet />, label: t("calc.ri_title") },
-        { id: "transplant_us", component: <TransplantUSSheet />, label: t("calc.tx_us_title") },
         { id: "cadrads", component: <CadRadsSheet />, label: "CAD-RADS 2.0" },
         { id: "cardiac_mri", component: <CardiacMRISheet />, label: t("calc.cmr_title") },
-      ],
+        { id: "carotid", component: <CarotidStenosisSheet />, label: t("calc.carotid_title") },
+        { id: "dissection", component: <AorticDissectionSheet />, label: t("calc.dissection_title") },
+        { id: "dvt_pe", component: <DVTPESheet />, label: t("calc.dvt_pe_title") },
+        { id: "whole_aorta", component: <WholeAortaCTASheet />, label: t("calc.whole_aorta_title") },
+        { id: "pad", component: <PadClassSheet />, label: t("calc.pad_title") },
+        { id: "ri", component: <ResistiveIndexSheet />, label: t("calc.ri_title") },
+        { id: "transplant_us", component: <TransplantUSSheet />, label: t("calc.tx_us_title") },
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
     {
       key: "pediatrics", label: t("calc.section_pediatrics"), icon: "👶",
       sheets: [
-        { id: "ped_cxr", component: <PediatricCXRSheet />, label: t("calc.ped_cxr") },
-        { id: "ped_hydro", component: <PediatricHydronephrosisSheet />, label: t("calc.ped_hydro") },
-        { id: "ped_tumors", component: <PediatricTumorsSheet />, label: t("calc.ped_tumors") },
         { id: "ped_crypto", component: <CryptorchidismSheet />, label: t("calc.ped_crypto") },
-        { id: "ped_transf", component: <TransfontanellarUSSheet />, label: t("calc.ped_transf") },
         { id: "ped_hip", component: <PediatricHipUSSheet />, label: t("calc.hip_us_title") },
-      ],
+        { id: "ped_hydro", component: <PediatricHydronephrosisSheet />, label: t("calc.ped_hydro") },
+        { id: "ped_cxr", component: <PediatricCXRSheet />, label: t("calc.ped_cxr") },
+        { id: "ped_tumors", component: <PediatricTumorsSheet />, label: t("calc.ped_tumors") },
+        { id: "ped_transf", component: <TransfontanellarUSSheet />, label: t("calc.ped_transf") },
+      ].sort((a, b) => a.label.localeCompare(b.label)),
     },
   ], [t]);
 
@@ -5811,16 +5811,16 @@ export function CalculatorsTab() {
         </p>
         <div className="space-y-1">
           {[
-            { id: "ct_head", emoji: "🧠", label: t("crit.ct_head_title"), component: <CanadianCTHeadCalc /> },
-            { id: "wells_pe", emoji: "🫁", label: t("crit.wells_pe_title"), component: <WellsPECalc /> },
-            { id: "wells_dvt", emoji: "🦵", label: t("crit.wells_dvt_title"), component: <WellsDVTCalc /> },
             { id: "alvarado", emoji: "🔥", label: t("crit.alvarado_title"), component: <AlvaradoCalc /> },
             { id: "cholecystitis", emoji: "💚", label: t("crit.cholecystitis_title"), component: <TokyoCholecystitisCalc /> },
+            { id: "ct_head", emoji: "🧠", label: t("crit.ct_head_title"), component: <CanadianCTHeadCalc /> },
             { id: "cspine", emoji: "🦴", label: t("crit.cspine_title"), component: <CSpineCalc /> },
+            { id: "heart", emoji: "❤️‍🔥", label: t("crit.heart_title"), component: <HeartScoreCalc /> },
             { id: "pecarn", emoji: "👶", label: t("crit.pecarn_title"), component: <PecarnCalc /> },
             { id: "sfsr", emoji: "💫", label: t("crit.sfsr_title"), component: <SFSyncopeCalc /> },
-            { id: "heart", emoji: "❤️‍🔥", label: t("crit.heart_title"), component: <HeartScoreCalc /> },
-          ].filter((c) => !q || c.label.toLowerCase().includes(q)).map((c) => (
+            { id: "wells_dvt", emoji: "🦵", label: t("crit.wells_dvt_title"), component: <WellsDVTCalc /> },
+            { id: "wells_pe", emoji: "🫁", label: t("crit.wells_pe_title"), component: <WellsPECalc /> },
+          ].sort((a, b) => a.label.localeCompare(b.label)).filter((c) => !q || c.label.toLowerCase().includes(q)).map((c) => (
             <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
               <button type="button" onClick={() => setOpenCrit(openCrit === c.id ? null : c.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${openCrit === c.id ? "bg-brand/5 dark:bg-brand/10" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
