@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Globe, CheckCircle2 } from "lucide-react";
+import { Loader2, Globe, CheckCircle2, Clock } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 
@@ -26,7 +26,7 @@ export default function RegisterPage() {
   const [hospital, setHospital] = useState("");
   const [role, setRole] = useState<"attending" | "resident">("attending");
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState<false | "approved" | "pending">(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,17 +55,20 @@ export default function RegisterPage() {
         return;
       }
 
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (loginRes.ok) {
-        window.location.href = "/dashboard";
-        return;
+      if (data.approved) {
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (loginRes.ok) {
+          window.location.href = "/dashboard";
+          return;
+        }
+        setSubmitted("approved");
+      } else {
+        setSubmitted("pending");
       }
-
-      setSubmitted(true);
     } catch {
       setError(t("waitlist.network_error"));
     }
@@ -73,6 +76,7 @@ export default function RegisterPage() {
   }
 
   if (submitted) {
+    const isPending = submitted === "pending";
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
         <div className="max-w-md w-full text-center space-y-6">
@@ -81,18 +85,24 @@ export default function RegisterPage() {
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
             <div className="flex justify-center">
-              <div className="h-12 w-12 rounded-full bg-violet-500/10 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-violet-400" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/10" : "bg-violet-500/10"}`}>
+                {isPending
+                  ? <Clock className="h-6 w-6 text-amber-400" />
+                  : <CheckCircle2 className="h-6 w-6 text-violet-400" />}
               </div>
             </div>
-            <h1 className="text-xl font-bold text-white">{t("waitlist.success_title")}</h1>
+            <h1 className="text-xl font-bold text-white">
+              {t(isPending ? "waitlist.pending_title" : "waitlist.success_title")}
+            </h1>
             <p className="text-sm text-gray-400 leading-relaxed">
-              {t("waitlist.success_desc")}
+              {t(isPending ? "waitlist.pending_desc" : "waitlist.success_desc")}
             </p>
           </div>
-          <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
-            {t("waitlist.signin_link")}
-          </Link>
+          {!isPending && (
+            <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
+              {t("waitlist.signin_link")}
+            </Link>
+          )}
         </div>
       </div>
     );

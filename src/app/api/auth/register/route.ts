@@ -3,6 +3,13 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
 
+const LATAM_COUNTRIES = new Set([
+  "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
+  "Ecuador", "El Salvador", "Guatemala", "Honduras", "México",
+  "Nicaragua", "Panamá", "Paraguay", "Perú", "Puerto Rico",
+  "República Dominicana", "Uruguay", "Venezuela",
+]);
+
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -41,12 +48,14 @@ export async function POST(req: NextRequest) {
     const userId = authData.user.id;
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
 
+    const autoApprove = LATAM_COUNTRIES.has(country || "");
+
     await service.from("profiles").upsert({
       id: userId,
       email: normalizedEmail,
       role: "radiologist",
       subscription_plan: "free",
-      approved: true,
+      approved: autoApprove,
       billing_period_start: new Date().toISOString(),
       reports_used_this_month: 0,
       dictation_seconds_used: 0,
@@ -58,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, approved: autoApprove });
   } catch (error) {
     return toErrorResponse(error);
   }

@@ -171,6 +171,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "waitlist.network_error": "Error de red. Inténtalo de nuevo.",
     "waitlist.success_title": "¡Cuenta creada!",
     "waitlist.success_desc": "Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesión.",
+    "waitlist.pending_title": "¡Solicitud recibida!",
+    "waitlist.pending_desc": "Tu cuenta ha sido creada y está pendiente de aprobación. Te notificaremos por correo cuando sea aprobada.",
     "waitlist.back_home": "Volver al inicio",
     // Invite
     "invite.title": "Has sido invitado",
@@ -392,6 +394,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "waitlist.network_error": "Network error. Please try again.",
     "waitlist.success_title": "Account created!",
     "waitlist.success_desc": "Your account has been created successfully. You can now sign in.",
+    "waitlist.pending_title": "Request received!",
+    "waitlist.pending_desc": "Your account has been created and is pending approval. We'll notify you by email once it's approved.",
     "waitlist.back_home": "Back to home",
     // Invite
     "invite.title": "You've been invited",
@@ -613,6 +617,8 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "waitlist.network_error": "Erro de rede. Tente novamente.",
     "waitlist.success_title": "Conta criada!",
     "waitlist.success_desc": "Sua conta foi criada com sucesso. Agora você pode fazer login.",
+    "waitlist.pending_title": "Solicitação recebida!",
+    "waitlist.pending_desc": "Sua conta foi criada e está pendente de aprovação. Notificaremos você por e-mail quando for aprovada.",
     "waitlist.back_home": "Voltar ao início",
     // Invite
     "invite.title": "Você foi convidado",
