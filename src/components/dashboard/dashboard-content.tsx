@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 
@@ -1668,84 +1669,85 @@ export function DashboardContent() {
                 </div>
               </fieldset>
 
-              {/* Section chips */}
-              <fieldset className="mb-3">
-                <legend className="sr-only">{t("dash.any_region")}</legend>
-                <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("dash.any_region")}>
-                  {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
+              {/* Region + Template + Contrast */}
+              <div className="grid gap-3 mb-3 grid-cols-1 sm:grid-cols-3">
+                <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
+                  <SelectContent>
+                    {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
+                      <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const hasOrgTemplates = filteredTemplates.some((tp) => tp.is_org);
+                      if (!hasOrgTemplates) {
+                        return filteredTemplates.map((tpl) => (
+                          <SelectItem key={tpl.id} value={tpl.id}>{tplName(tpl.name)}</SelectItem>
+                        ));
+                      }
+                      const own = filteredTemplates.filter((tp) => !tp.is_global && !tp.is_org);
+                      const sectionGroups = new Map<string, typeof filteredTemplates>();
+                      filteredTemplates.filter((tp) => tp.is_org).forEach((tp) => {
+                        const key = tp.section_name || "Hospital";
+                        if (!sectionGroups.has(key)) sectionGroups.set(key, []);
+                        sectionGroups.get(key)!.push(tp);
+                      });
+                      const global = filteredTemplates.filter((tp) => tp.is_global && !tp.is_org);
+                      return (
+                        <>
+                          {own.length > 0 && (
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider">Mis plantillas</SelectLabel>
+                              {own.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
+                            </SelectGroup>
+                          )}
+                          {Array.from(sectionGroups.entries()).map(([secName, tpls]) => (
+                            <SelectGroup key={secName}>
+                              <SelectLabel className="text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-wider">{secName}</SelectLabel>
+                              {tpls.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
+                            </SelectGroup>
+                          ))}
+                          {global.length > 0 && (
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] text-gray-400 uppercase tracking-wider">Globales</SelectLabel>
+                              {global.map((tp) => <SelectItem key={tp.id} value={tp.id}>{tplName(tp.name)}</SelectItem>)}
+                            </SelectGroup>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </SelectContent>
+                </Select>
+
+                {/* Contrast toggle */}
+                <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
+                  {[
+                    { v: "default", l: t("dash.default") },
+                    { v: "con_contraste", l: "C+" },
+                    { v: "sin_contraste", l: "C−" },
+                  ].map((opt) => (
                     <button
-                      key={s}
+                      key={opt.v}
                       type="button"
-                      aria-pressed={selectedSection === s}
-                      onClick={() => { setSelectedSection(selectedSection === s ? "" : s); setSelectedTemplateId(""); }}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                        selectedSection === s
-                          ? "bg-brand text-white border-brand"
-                          : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-600 dark:text-gray-300 hover:border-brand/50"
+                      aria-pressed={contrastOption === opt.v}
+                      onClick={() => setContrastOption(opt.v)}
+                      className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
+                        contrastOption === opt.v
+                          ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
-                      {sec(s)}
+                      {opt.l}
                     </button>
                   ))}
                 </div>
-              </fieldset>
-
-              {/* Template chips */}
-              {filteredTemplates.length > 0 && (
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto" role="listbox" aria-label={t("dash.select_template")}>
-                    {filteredTemplates.map((tpl) => {
-                      const isOrg = tpl.is_org;
-                      const isGlobal = tpl.is_global && !tpl.is_org;
-                      return (
-                        <button
-                          key={tpl.id}
-                          type="button"
-                          role="option"
-                          aria-selected={selectedTemplateId === tpl.id}
-                          onClick={() => setSelectedTemplateId(selectedTemplateId === tpl.id ? "" : tpl.id)}
-                          className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors truncate max-w-[200px] ${
-                            selectedTemplateId === tpl.id
-                              ? "bg-brand text-white border-brand shadow-sm"
-                              : isOrg
-                              ? "bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:border-violet-400"
-                              : isGlobal
-                              ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400"
-                              : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-700 dark:text-gray-300 hover:border-brand/50"
-                          }`}
-                        >
-                          {tplName(tpl.name)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {filteredTemplates.length === 0 && (
-                <p className="text-[11px] text-gray-400 mb-3">{t("dash.no_templates")}</p>
-              )}
-
-              {/* Contrast toggle */}
-              <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800 mb-3" role="group" aria-label={t("dash.default")}>
-                {[
-                  { v: "default", l: t("dash.default") },
-                  { v: "con_contraste", l: "C+" },
-                  { v: "sin_contraste", l: "C−" },
-                ].map((opt) => (
-                  <button
-                    key={opt.v}
-                    type="button"
-                    aria-pressed={contrastOption === opt.v}
-                    onClick={() => setContrastOption(opt.v)}
-                    className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
-                      contrastOption === opt.v
-                        ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                  >
-                    {opt.l}
-                  </button>
-                ))}
               </div>
 
               {/* Cardiac MRI techniques + dictation guide */}
