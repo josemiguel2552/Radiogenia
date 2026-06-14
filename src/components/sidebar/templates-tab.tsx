@@ -726,22 +726,16 @@ export function TemplatesTab() {
                 <button
                   key={mod}
                   type="button"
-                  className="group relative flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 hover:shadow-xl hover:scale-[1.03] hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-200"
+                  className="group flex flex-col rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 overflow-hidden hover:shadow-xl hover:scale-[1.03] hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-200"
                   onClick={() => { setNavModality(mod); setNavLevel("sections"); setSearch(""); }}
                 >
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-base shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all"
-                    style={{ background: card?.gradient || "linear-gradient(135deg, #6B7280, #4B5563)" }}
-                  >
-                    {card?.abbrev || mod.slice(0, 2)}
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[13px] font-semibold text-gray-900 dark:text-white">{modName(mod)}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                  <div className="h-1.5 w-full" style={{ background: card?.gradient || "linear-gradient(135deg, #6B7280, #4B5563)" }} />
+                  <div className="flex flex-col items-center gap-1.5 p-4">
+                    <p className="text-[13px] font-semibold text-gray-900 dark:text-white text-center leading-tight">{modName(mod)}</p>
+                    <p className="text-[10px] text-gray-400">
                       {count} {count === 1 ? t("tpl.template") : t("tpl.templates")}
                     </p>
                   </div>
-                  <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-200 dark:text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               );
             })}
@@ -774,7 +768,7 @@ export function TemplatesTab() {
             {t("tpl.choose_section")}
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-2">
             {orderedSections.map((section) => {
               const count = sectionCounts.get(section) || 0;
               const gradient = SECTION_COLORS[section] || SECTION_COLORS._general;
@@ -783,16 +777,22 @@ export function TemplatesTab() {
                 <button
                   key={section}
                   type="button"
-                  className="group flex flex-col rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 overflow-hidden hover:shadow-xl hover:scale-[1.03] hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-200"
+                  className="group flex items-center gap-3 w-full p-3.5 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 overflow-hidden hover:shadow-xl hover:scale-[1.01] hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-200 text-left"
                   onClick={() => { setNavSection(section); setNavLevel("list"); }}
                 >
-                  <div className="h-1.5 w-full" style={{ background: gradient }} />
-                  <div className="flex flex-col items-center gap-1.5 p-4">
-                    <p className="text-[13px] font-semibold text-gray-900 dark:text-white text-center leading-tight">{label}</p>
-                    <p className="text-[10px] text-gray-400">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0 group-hover:shadow-lg group-hover:scale-105 transition-all"
+                    style={{ background: gradient }}
+                  >
+                    {label.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight truncate">{label}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
                       {count} {count === 1 ? t("tpl.template") : t("tpl.templates")}
                     </p>
                   </div>
+                  <ChevronRight className="h-4 w-4 text-gray-200 dark:text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                 </button>
               );
             })}
