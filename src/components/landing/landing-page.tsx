@@ -1024,15 +1024,18 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
 
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-1">{plan.label}</h3>
-        <div className="flex items-baseline gap-1">
-          {plan.price === 0 ? (
-            <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : lang === "pt" ? "Grátis" : "Free"}</span>
-          ) : (
-            <>
-              <span className="text-4xl font-bold">{CURRENCY}{plan.price}<PriceTooltip usd={plan.price} /></span>
-              <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
-            </>
-          )}
+        <div>
+          <div className="flex items-baseline gap-1">
+            {plan.price === 0 ? (
+              <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : lang === "pt" ? "Grátis" : "Free"}</span>
+            ) : (
+              <>
+                <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
+                <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
+              </>
+            )}
+          </div>
+          {plan.price > 0 && <PriceTooltip usd={plan.price} inline />}
         </div>
       </div>
 
@@ -1061,7 +1064,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
           ? t("pricing.free_cta")
           : planKey === "resident"
           ? lang === "es" ? "Verificar y suscribirse" : lang === "pt" ? "Verificar e assinar" : "Verify & subscribe"
-          : <>{t("pricing.subscribe_cta")} — {CURRENCY}{plan.price}{t("pricing.per_month")}<PriceTooltip usd={plan.price} /></>}
+          : <>{t("pricing.subscribe_cta")} — {CURRENCY}{plan.price}{t("pricing.per_month")}</>}
       </Link>
     </div>
     </div>
