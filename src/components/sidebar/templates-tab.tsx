@@ -61,7 +61,6 @@ export function TemplatesTab() {
   const [editSection, setEditSection] = useState("");
   const [editFields, setEditFields] = useState<TemplateField[]>([]);
   const [saving, setSaving] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const t = useT();
   const sec = useSection();
   const tplName = useTemplateName();
@@ -143,23 +142,7 @@ export function TemplatesTab() {
       .filter(Boolean) as string[]
   )];
 
-  const grouped = filtered.reduce<Record<string, UserTemplate[]>>((acc, t) => {
-    const section = t.structure?.section || "Other";
-    if (!acc[section]) acc[section] = [];
-    acc[section].push(t);
-    return acc;
-  }, {});
-
   const sectionOrder = [...SECTIONS.map(String), "Other"];
-  const sortedSections = Object.keys(grouped).sort((a, b) => {
-    const ia = sectionOrder.indexOf(a);
-    const ib = sectionOrder.indexOf(b);
-    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-  });
-
-  function toggleSection(section: string) {
-    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  }
 
   function openEdit(t: UserTemplate) {
     setCreatingNew(false);
@@ -342,7 +325,7 @@ export function TemplatesTab() {
       <div>
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("tpl.title")}</h2>
         <p className="text-[11px] text-gray-500 dark:text-gray-400">
-          {templates.length} {templates.length === 1 ? t("tpl.template") : t("tpl.templates")} · {t("tpl.grouped_by")}
+          {filtered.length} / {templates.length} {templates.length === 1 ? t("tpl.template") : t("tpl.templates")}
         </p>
       </div>
 
@@ -669,114 +652,62 @@ export function TemplatesTab() {
         </div>
       )}
 
-      {/* Template list */}
+      {/* Template list — flat filtered */}
       <div className="space-y-1">
         {filtered.length === 0 && (
           <div className="text-center py-10 px-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
             <FileText className="h-10 w-10 mx-auto mb-3 text-gray-300 dark:text-gray-700" />
             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {search ? t("tpl.no_match") : t("tpl.no_templates")}
+              {search || filterModality || filterSection ? t("tpl.no_match") : t("tpl.no_templates")}
             </p>
             <p className="text-[11px] text-gray-400 mt-1">
-              {search ? t("tpl.try_different") : t("tpl.create_or_upload")}
+              {search || filterModality || filterSection ? t("tpl.try_different") : t("tpl.create_or_upload")}
             </p>
           </div>
         )}
-        {sortedSections.map((section) => {
-          const isCollapsed = collapsedSections[section];
-          return (
-            <div key={section} className="space-y-1">
-              <button
-                type="button"
-                onClick={() => toggleSection(section)}
-                className="w-full flex items-center gap-1.5 py-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                <span className="truncate">{sec(section)}</span>
-                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 ml-auto">
-                  {grouped[section].length}
-                </Badge>
-              </button>
-              {!isCollapsed && (
-                <div className="space-y-1 pl-1">
-                  {grouped[section].map((tpl) => (
-                    <div
-                      key={tpl.id}
-                      className="group p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                            {tplName(tpl.name)}
-                          </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                              {modName(tpl.modality)}
-                            </Badge>
-                            {tpl.is_org ? (
-                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-violet-300 text-violet-600 dark:border-violet-700 dark:text-violet-400">
-                                {tpl.section_name || "Hospital"}
-                              </Badge>
-                            ) : tpl.is_global ? (
-                              <Badge variant="outline" className="text-[9px] h-4 px-1.5">
-                                {t("global")}
-                              </Badge>
-                            ) : (
-                              <Badge className="text-[9px] h-4 px-1.5 bg-brand">{t("custom")}</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          {!tpl.is_global && !tpl.is_org && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => openEdit(tpl)}
-                              title={t("edit")}
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => handleDuplicate(tpl)}
-                            title={tpl.is_global ? t("tpl.customize") : t("duplicate")}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          {tpl.is_global ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-gray-400 hover:text-orange-500"
-                              onClick={() => handleDelete(tpl.id, true)}
-                              title={t("tpl.hide")}
-                            >
-                              <EyeOff className="h-3 w-3" />
-                            </Button>
-                          ) : !tpl.is_default && !tpl.is_org && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-red-500 hover:text-red-600"
-                              onClick={() => handleDelete(tpl.id)}
-                              title={t("delete")}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {filtered.map((tpl) => (
+          <div
+            key={tpl.id}
+            className="group flex items-center gap-2 p-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft hover:shadow-sm transition-all"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                {tplName(tpl.name)}
+              </p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{modName(tpl.modality)}</Badge>
+                <Badge variant="outline" className="text-[9px] h-4 px-1.5">{sec(tpl.structure?.section || "")}</Badge>
+                {tpl.is_org && (
+                  <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-violet-300 text-violet-600 dark:border-violet-700 dark:text-violet-400">
+                    {tpl.section_name || "Hospital"}
+                  </Badge>
+                )}
+                {!tpl.is_global && !tpl.is_org && (
+                  <Badge className="text-[9px] h-4 px-1.5 bg-brand">{t("custom")}</Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              {!tpl.is_global && !tpl.is_org && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(tpl)} title={t("edit")}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDuplicate(tpl)} title={tpl.is_global ? t("tpl.customize") : t("duplicate")}>
+                <Copy className="h-3 w-3" />
+              </Button>
+              {tpl.is_global ? (
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-orange-500" onClick={() => handleDelete(tpl.id, true)} title={t("tpl.hide")}>
+                  <EyeOff className="h-3 w-3" />
+                </Button>
+              ) : !tpl.is_default && !tpl.is_org && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600" onClick={() => handleDelete(tpl.id)} title={t("delete")}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               )}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Hidden globals — restore section */}

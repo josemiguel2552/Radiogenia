@@ -11,12 +11,10 @@ import {
   Pencil,
   Trash2,
   Search,
-  BookOpen,
-  User,
+  X,
   Building2,
   ChevronDown,
   ChevronRight,
-  Filter,
   RotateCcw,
   Undo2,
   Eye,
@@ -64,12 +62,10 @@ export function RecommendationsTab() {
   const [filterMod, setFilterMod] = useState<string>("all");
   const [filterCat, setFilterCat] = useState<string>("all");
   const [filterScope, setFilterScope] = useState<string>("all");
-  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRec, setEditingRec] = useState<ManualRecommendation | null>(null);
   const [editingIsSystem, setEditingIsSystem] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<ManualRecommendation | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
 
   const [formTitle, setFormTitle] = useState("");
@@ -166,16 +162,6 @@ export function RecommendationsTab() {
     });
   }, [visibleRecs, filterMod, filterCat, filterScope, search, lang]);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, ManualRecommendation[]>();
-    for (const r of filtered) {
-      const cat = r.category || "all";
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(r);
-    }
-    return map;
-  }, [filtered]);
-
   const hiddenRecs = useMemo(() => {
     const hidden: ManualRecommendation[] = DEFAULT_RECOMMENDATIONS.filter((r) => hiddenSet.has(r.id));
     for (const r of customRecs) {
@@ -183,18 +169,6 @@ export function RecommendationsTab() {
     }
     return hidden;
   }, [hiddenSet, customRecs]);
-
-  const toggleCat = useCallback((cat: string) => {
-    setExpandedCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat); else next.add(cat);
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    setExpandedCats(new Set(grouped.keys()));
-  }, [grouped]);
 
   const openAdd = useCallback(() => {
     setEditingRec(null);
@@ -507,238 +481,126 @@ export function RecommendationsTab() {
       )}
 
       {recSubTab === "all" && <>
-      {/* Search + filter toggle */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
-          <Input
-            type="search"
-            placeholder={t("mrec.search_ph")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-xs"
-            autoComplete="off"
-            name="rec-search-nonce"
-            data-form-type="other"
-            data-lpignore="true"
-            data-1p-ignore
-          />
-        </div>
-        <Button
-          variant={showFilters ? "default" : "outline"}
-          size="sm"
-          className="gap-1 text-xs h-9"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className="h-3.5 w-3.5" />
-          {t("mrec.filters")}
-        </Button>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+        <Input
+          type="search"
+          placeholder={t("mrec.search_ph")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-8 h-9 text-xs"
+          autoComplete="off"
+          name="rec-search-nonce"
+          data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore
+        />
       </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
-          {/* Modality chips */}
-          <div>
-            <label className="text-[10px] font-medium text-gray-500 mb-1.5 block">{t("mrec.filter_modality")}</label>
-            <div className="flex flex-wrap gap-1" role="group">
-              <button
-                type="button"
-                aria-pressed={filterMod === "all"}
-                onClick={() => setFilterMod("all")}
-                className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                  filterMod === "all"
-                    ? "bg-brand text-white border-brand"
-                    : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
-                }`}
-              >
-                {t("mrec.mod_all")}
-              </button>
-              {MODALITIES.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  aria-pressed={filterMod === m}
-                  onClick={() => setFilterMod(filterMod === m ? "all" : m)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                    filterMod === m
-                      ? "bg-brand text-white border-brand"
-                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
-                  }`}
-                >
-                  {tModality(m)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Category chips */}
-          <div>
-            <label className="text-[10px] font-medium text-gray-500 mb-1.5 block">{t("mrec.filter_category")}</label>
-            <div className="flex flex-wrap gap-1" role="group">
-              <button
-                type="button"
-                aria-pressed={filterCat === "all"}
-                onClick={() => setFilterCat("all")}
-                className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                  filterCat === "all"
-                    ? "bg-violet-600 text-white border-violet-600"
-                    : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
-                }`}
-              >
-                {t("mrec.cat_all")}
-              </button>
-              {SECTIONS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={filterCat === s}
-                  onClick={() => setFilterCat(filterCat === s ? "all" : s)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                    filterCat === s
-                      ? "bg-violet-600 text-white border-violet-600"
-                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
-                  }`}
-                >
-                  {tSection(s)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Scope chips */}
-          <div>
-            <label className="text-[10px] font-medium text-gray-500 mb-1.5 block">{t("mrec.filter_scope")}</label>
-            <div className="flex flex-wrap gap-1" role="group">
-              {([
-                { v: "all", l: t("mrec.scope_all") },
-                { v: "system", l: t("mrec.scope_system") },
-                { v: "org", l: t("mrec.scope_org") },
-                { v: "user", l: t("mrec.scope_user") },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.v}
-                  type="button"
-                  aria-pressed={filterScope === opt.v}
-                  onClick={() => setFilterScope(filterScope === opt.v ? "all" : opt.v)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                    filterScope === opt.v
-                      ? "bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-900 border-gray-700 dark:border-gray-200"
-                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-gray-400"
-                  }`}
-                >
-                  {opt.l}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="flex gap-3 text-[11px] text-gray-500 flex-wrap">
-        <span>{filtered.length} {t("mrec.total_count")}</span>
-        <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {filtered.filter((r) => r.scope === "system").length} {t("mrec.scope_system")}</span>
-        {filtered.some((r) => r.scope === "org") && (
-          <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {filtered.filter((r) => r.scope === "org").length} {t("mrec.scope_org")}</span>
+      {/* Modality chips */}
+      <div className="flex flex-wrap gap-1" role="group">
+        {MODALITIES.map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={filterMod === m}
+            onClick={() => setFilterMod(filterMod === m ? "all" : m)}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+              filterMod === m
+                ? "bg-brand text-white border-brand"
+                : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-brand/50"
+            }`}
+          >
+            {tModality(m)}
+          </button>
+        ))}
+        {filterMod !== "all" && (
+          <button type="button" onClick={() => setFilterMod("all")} className="px-1 py-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X className="h-3 w-3" />
+          </button>
         )}
-        <span className="flex items-center gap-1"><User className="h-3 w-3" /> {filtered.filter((r) => r.scope === "user").length} {t("mrec.scope_user")}</span>
       </div>
 
-      {/* Grouped list */}
-      <div className="space-y-2">
-        {Array.from(grouped.entries()).map(([cat, recs]) => (
-          <div key={cat} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleCat(cat)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {expandedCats.has(cat) ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex-1">{catLabel(cat)}</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{recs.length}</Badge>
-            </button>
-            {expandedCats.has(cat) && (
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {recs.map((rec) => (
-                  <div key={rec.id} className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                            {rec.title[lang] || rec.title.es}
-                          </span>
-                          {isOverride(rec) ? (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-400/50 text-amber-600 dark:text-amber-400">
-                              {t("mrec.modified")}
-                            </Badge>
-                          ) : rec.scope === "org" ? (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
-                              {(rec as ManualRecommendation & { section_name?: string }).section_name || "Hospital"}
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant={rec.scope === "system" ? "secondary" : "outline"}
-                              className={`text-[9px] px-1 py-0 shrink-0 ${rec.scope === "user" ? "border-brand/50 text-brand" : ""}`}
-                            >
-                              {rec.scope === "system" ? t("mrec.scope_system") : t("mrec.scope_user")}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                          {rec.text[lang] || rec.text.es}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] text-gray-400">{modLabel(rec.modality)}</span>
-                          <span className="text-[9px] text-gray-400">·</span>
-                          <span className="text-[9px] text-gray-400">{rec.source}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {isOverride(rec) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-amber-500"
-                            title={t("mrec.restore_original")}
-                            onClick={() => restoreOriginal(rec)}
-                          >
-                            <Undo2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {rec.scope !== "org" && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {rec.scope === "org" ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-gray-600"
-                            title={t("mrec.hide_btn")}
-                            onClick={() => {
-                              const newHidden = [...hiddenIds, rec.id];
-                              setHiddenIds(newHidden);
-                              saveHiddenLocal(newHidden);
-                            }}
-                          >
-                            <EyeOff className="h-3 w-3" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-red-500"
-                            onClick={() => setDeleteConfirm(rec)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+      {/* Category chips */}
+      <div className="flex flex-wrap gap-1" role="group">
+        {SECTIONS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={filterCat === s}
+            onClick={() => setFilterCat(filterCat === s ? "all" : s)}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+              filterCat === s
+                ? "bg-violet-600 text-white border-violet-600"
+                : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-500 dark:text-gray-400 hover:border-violet-400"
+            }`}
+          >
+            {tSection(s)}
+          </button>
+        ))}
+        {filterCat !== "all" && (
+          <button type="button" onClick={() => setFilterCat("all")} className="px-1 py-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
+      {/* Count */}
+      <p className="text-[10px] text-gray-400">{filtered.length} {t("mrec.total_count")}</p>
+
+      {/* Flat recommendation list */}
+      <div className="space-y-1.5">
+        {filtered.map((rec) => (
+          <div key={rec.id} className="group p-2.5 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-gray-900/50 hover:border-brand-soft transition-all">
+            <div className="flex items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                    {rec.title[lang] || rec.title.es}
+                  </span>
+                  {isOverride(rec) ? (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-400/50 text-amber-600 dark:text-amber-400">
+                      {t("mrec.modified")}
+                    </Badge>
+                  ) : rec.scope === "org" ? (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-400/50 text-violet-600 dark:text-violet-400">
+                      {(rec as ManualRecommendation & { section_name?: string }).section_name || "Hospital"}
+                    </Badge>
+                  ) : rec.scope === "user" ? (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 border-brand/50 text-brand">{t("mrec.scope_user")}</Badge>
+                  ) : null}
+                </div>
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  {rec.text[lang] || rec.text.es}
+                </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{modLabel(rec.modality)}</Badge>
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{catLabel(rec.category)}</Badge>
+                </div>
               </div>
-            )}
+              <div className="flex items-center gap-0.5 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                {isOverride(rec) && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-amber-500" title={t("mrec.restore_original")} onClick={() => restoreOriginal(rec)}>
+                    <Undo2 className="h-3 w-3" />
+                  </Button>
+                )}
+                {rec.scope !== "org" && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-brand" onClick={() => openEdit(rec)}>
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+                {rec.scope === "org" ? (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-600" title={t("mrec.hide_btn")} onClick={() => { const n = [...hiddenIds, rec.id]; setHiddenIds(n); saveHiddenLocal(n); }}>
+                    <EyeOff className="h-3 w-3" />
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => setDeleteConfirm(rec)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         ))}
       </div>
