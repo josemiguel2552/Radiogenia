@@ -1955,11 +1955,11 @@ export function DashboardContent() {
                   <Button
                     onClick={() => handleGenerate("structured")}
                     disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white"
                   >
                     {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
                   </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-indigo-300/60 hover:bg-indigo-300 transition-colors" />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-blue-300/60 hover:bg-blue-300 transition-colors" />
                 </div>
                 <div className="relative">
                   <Button
@@ -1975,11 +1975,11 @@ export function DashboardContent() {
                   <Button
                     onClick={() => handleGenerate("dictation_only")}
                     disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white"
+                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
                   >
                     {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
                   </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-amber-300/60 hover:bg-amber-300 transition-colors" />
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
                 </div>
               </div>
               {isGenerating && (
