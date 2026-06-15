@@ -32,6 +32,7 @@ import { MODALITIES, SECTIONS } from "@/lib/types";
 import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 import { SectionEditor, parseTemplateSections, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
 import type { TemplateField } from "@/components/shared/template-section-editor";
+import { TemplateBot } from "./template-bot";
 
 interface ExtractedTemplate {
   title: string;
@@ -419,11 +420,14 @@ export function TemplatesTab() {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("tpl.title")}</h2>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400">
-          {templates.length} {templates.length === 1 ? t("tpl.template") : t("tpl.templates")}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("tpl.title")}</h2>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+            {templates.length} {templates.length === 1 ? t("tpl.template") : t("tpl.templates")}
+          </p>
+        </div>
+        <TemplateBot templates={templates} />
       </div>
 
       {/* Sub-tabs: All / Hospital */}
