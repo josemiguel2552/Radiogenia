@@ -465,6 +465,11 @@ export function TemplatesTab() {
             value={tplSubTab === "all" ? search : catalogSearch}
             onChange={(e) => tplSubTab === "all" ? setSearch(e.target.value) : setCatalogSearch(e.target.value)}
             className="pl-8 h-8 text-xs"
+            autoComplete="new-password"
+            name="rg_tplsearch_x"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore
           />
           {search && tplSubTab === "all" && (
             <button
@@ -960,6 +965,11 @@ export function TemplatesTab() {
               value={catalogSearch}
               onChange={(e) => setCatalogSearch(e.target.value)}
               className="pl-8 h-8 text-xs"
+              autoComplete="new-password"
+              name="rg_catsearch_x"
+              data-form-type="other"
+              data-lpignore="true"
+              data-1p-ignore
             />
           </div>
 

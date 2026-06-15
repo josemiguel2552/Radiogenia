@@ -616,13 +616,13 @@ export function RecommendationsTab() {
       <div className="relative">
         <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
         <Input
-          type="search"
+          type="text"
           placeholder={t("mrec.search_ph")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8 h-9 text-xs"
-          autoComplete="off"
-          name="rec-search-nonce"
+          autoComplete="new-password"
+          name="rg_recsearch_x"
           data-form-type="other"
           data-lpignore="true"
           data-1p-ignore

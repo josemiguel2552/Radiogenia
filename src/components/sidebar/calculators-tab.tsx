@@ -5769,6 +5769,11 @@ export function CalculatorsTab() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8 h-8 text-xs"
+          autoComplete="new-password"
+          name="rg_calcsearch_x"
+          data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore
         />
       </div>
 
