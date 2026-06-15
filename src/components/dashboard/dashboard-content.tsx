@@ -2061,8 +2061,8 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
-            {/* SBS / Compact: findings + conclusion side by side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+            {/* SBS / Compact: findings + conclusion stacked */}
+            <div className="grid grid-cols-1 gap-2 md:gap-3">
             <OutputCard
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
