@@ -159,7 +159,16 @@ export function TemplateBot({ templates }: { templates: UserTemplate[] }) {
   }, [open]);
 
   const templatesSummary = templates
-    .map((tpl) => `- ${tpl.name} (${tpl.modality}, ${tpl.section_name || ""})`)
+    .map((tpl) => {
+      const fields = tpl.structure?.template;
+      if (!fields) return `- ${tpl.name} (${tpl.modality}, ${tpl.section_name || ""})`;
+      const fieldNames = fields
+        .split("\n")
+        .filter((l) => l.includes("**") && !l.includes("FINDINGS") && !l.includes("CONCLUSION"))
+        .map((l) => l.replace(/\*\*/g, "").replace(/\{[^}]*\}/g, "").replace(/:/g, "").trim())
+        .filter(Boolean);
+      return `- ${tpl.name} (${tpl.modality}, ${tpl.section_name || ""}): campos=[${fieldNames.join(", ")}]`;
+    })
     .join("\n");
 
   const handleSaveTemplate = useCallback(async (idx: number, parsed: ParsedTemplate) => {
