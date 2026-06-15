@@ -234,7 +234,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "tab.templates": "Plantillas", "tab.guidelines": "Guías clínicas",
     "tab.config": "Config. IA", "tab.appearance": "Apariencia",
     // Calculators tab
-    "calc.tab_title": "Calculadoras y chuletas",
+    "calc.tab_title": "Calculadoras y guías rápidas",
     "calc.tab_subtitle": "Herramientas de cálculo y guías rápidas",
     "calc.search": "Buscar calculadora o guía…",
     "calc.calculators": "Calculadoras",
@@ -787,7 +787,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "calc.rc_gout_3": "Infiltración grasa = músculo",
     "calc.rc_gout_4": "Infiltración grasa > músculo",
     // Bone tumors
-    "calc.bone_tumor_title": "Tumores óseos (chuleta diagnóstica)",
+    "calc.bone_tumor_title": "Tumores óseos (guía diagnóstica)",
     "calc.bone_tumor_age": "Por grupo de edad",
     "calc.age_group": "Edad",
     "calc.common_benign": "Benignos frecuentes",
