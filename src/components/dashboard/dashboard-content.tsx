@@ -44,7 +44,7 @@ import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
-import { FloatingDictation } from "./floating-dictation";
+// FloatingDictation removed — dictation is inline only
 import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 import { detectPii, stripPii, type PiiMatch } from "@/lib/pii-detect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -127,7 +127,17 @@ export function DashboardContent() {
   // Hidden templates
   const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
-  const [reportModeInfo, setReportModeInfo] = useState<string | null>(null);
+  const [reportMode, setReportModeState] = useState<"structured" | "compact" | "dictation_only">("structured");
+  const setReportMode = (mode: "structured" | "compact" | "dictation_only") => {
+    setReportModeState(mode);
+    try { localStorage.setItem("rg_report_mode", mode); } catch {}
+  };
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("rg_report_mode") as "structured" | "compact" | "dictation_only" | null;
+      if (saved && ["structured", "compact", "dictation_only"].includes(saved)) setReportModeState(saved);
+    } catch {}
+  }, []);
   const [showTemplateHelp, setShowTemplateHelp] = useState(false);
 
   // PII detection
@@ -1890,22 +1900,18 @@ export function DashboardContent() {
           <Card>
             <CardContent className="space-y-3 p-4">
               {/* Language selector */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <Mic className="h-3 w-3 text-gray-400 shrink-0" />
-                {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
-                  <button
-                    key={l.value}
-                    type="button"
-                    onClick={() => changeDictLang(l.value)}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-                      resolvedDictLang === l.value
-                        ? "bg-brand text-white"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    {l.value.toUpperCase()}
-                  </button>
-                ))}
+                <Select value={resolvedDictLang} onValueChange={changeDictLang}>
+                  <SelectTrigger className="h-6 w-[72px] text-[10px] px-2 py-0 border-gray-200 dark:border-gray-700">
+                    <SelectValue>{resolvedDictLang.toUpperCase()}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                      <SelectItem key={l.value} value={l.value} className="text-xs">{l.value.toUpperCase()} — {l.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="relative">
                 <Textarea
@@ -1963,60 +1969,52 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
-              <div className="grid grid-cols-3 gap-1.5">
-                <div className="relative">
+              <div className="flex items-center gap-1.5">
+                <Select value={reportMode} onValueChange={(v) => setReportMode(v as "structured" | "compact" | "dictation_only")}>
+                  <SelectTrigger className="h-9 md:h-8 text-xs flex-1 min-w-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="structured">
+                      <span className="flex items-center gap-1.5"><List className="h-3 w-3" /> {t("dash.generate_structured")}</span>
+                    </SelectItem>
+                    <SelectItem value="compact">
+                      <span className="flex items-center gap-1.5"><AlignLeft className="h-3 w-3" /> {t("dash.generate_compact")}</span>
+                    </SelectItem>
+                    <SelectItem value="dictation_only">
+                      <span className="flex items-center gap-1.5"><Pencil className="h-3 w-3" /> {t("dash.generate_dictation_only")}</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {isGenerating ? (
                   <Button
-                    onClick={() => handleGenerate("structured")}
-                    disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white"
+                    onClick={stopGeneration}
+                    variant="destructive"
+                    className="h-9 md:h-8 px-4 text-xs gap-1.5 shrink-0"
                   >
-                    {isGenerating ? <LoadingDots size="xs" /> : <><List className="h-3.5 w-3.5" /> {t("dash.generate_structured")}</>}
+                    <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
                   </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "structured" ? null : "structured"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-blue-300/60 hover:bg-blue-300 transition-colors" />
-                </div>
-                <div className="relative">
+                ) : (
                   <Button
-                    onClick={() => handleGenerate("compact")}
+                    onClick={() => handleGenerate(reportMode)}
                     disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white"
+                    className="h-9 md:h-8 px-4 text-xs gap-1.5 bg-brand hover:bg-brand/90 disabled:opacity-50 text-white shrink-0"
                   >
-                    {isGenerating ? <LoadingDots size="xs" /> : <><AlignLeft className="h-3.5 w-3.5" /> {t("dash.generate_compact")}</>}
+                    <Sparkles className="h-3.5 w-3.5" /> {t("dash.generate")}
                   </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "compact" ? null : "compact"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-violet-300/60 hover:bg-violet-300 transition-colors" />
-                </div>
-                <div className="relative">
-                  <Button
-                    onClick={() => handleGenerate("dictation_only")}
-                    disabled={!canGenerate}
-                    className="w-full h-11 md:h-9 gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
-                  >
-                    {isGenerating ? <LoadingDots size="xs" /> : <><Pencil className="h-3.5 w-3.5" /> {t("dash.generate_dictation_only")}</>}
-                  </Button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportModeInfo(reportModeInfo === "dictation_only" ? null : "dictation_only"); }} className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-sm bg-teal-300/60 hover:bg-teal-300 transition-colors" />
-                </div>
+                )}
               </div>
-              {isGenerating && (
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">{t(`dash.mode_info_${reportMode}`)}</p>
                 <button
                   type="button"
-                  onClick={stopGeneration}
-                  className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                  onClick={() => setLightParaphrase(!lightParaphrase)}
+                  className={`flex items-center gap-1 text-[10px] transition-colors shrink-0 ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
                 >
-                  <X className="h-3.5 w-3.5" /> {t("dash.stop_generation")}
+                  <Wand2 className="h-2.5 w-2.5" />
+                  {t("dash.light_paraphrase")}
                 </button>
-              )}
-              {reportModeInfo && (
-                <div className="text-[11px] px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 animate-[fade-in_0.15s_ease-out]">
-                  {t(`dash.mode_info_${reportModeInfo}`)}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setLightParaphrase(!lightParaphrase)}
-                className={`flex items-center gap-1.5 text-[11px] transition-colors ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
-              >
-                <Wand2 className="h-3 w-3" />
-                {t("dash.light_paraphrase")}
-              </button>
+              </div>
               {!setupCollapsed && !setupReady && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
                   {t("dash.select_template_first")}
@@ -2211,16 +2209,6 @@ export function DashboardContent() {
             </Card>
           </div>
         )}
-
-      <FloatingDictation
-        language={resolvedDictLang}
-        onSendText={(text) => {
-          setDictation((prev) => {
-            const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
-            return prev + sep + text;
-          });
-        }}
-      />
 
       <NpsSurvey open={showNpsSurvey} onClose={() => setShowNpsSurvey(false)} />
       <OnboardingDialog />
