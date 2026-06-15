@@ -622,8 +622,21 @@ export function DashboardContent() {
         if (data) setTemplates(data);
       }).catch(() => {});
     };
+    // Listen for config changes (language, dictation language, etc.)
+    const handleConfigChanged = () => {
+      fetch("/api/model-config").then(r => r.ok ? r.json() : null).then(cfg => {
+        if (!cfg) return;
+        if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+        if (cfg.output_language) setOutputLanguage(cfg.output_language);
+        if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
+      }).catch(() => {});
+    };
     window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
-    return () => window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
+    window.addEventListener("radiogenai:config-changed", handleConfigChanged);
+    return () => {
+      window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
+      window.removeEventListener("radiogenai:config-changed", handleConfigChanged);
+    };
   }, []);
 
   // Filtered data

@@ -133,6 +133,7 @@ export function ModelConfigTab() {
     setDirty(false);
     setSaving(false);
     load();
+    window.dispatchEvent(new CustomEvent("radiogenai:config-changed"));
   }
 
   async function handleSaveNormalityPhrase(modality: string, sectionLabel: string, phrase: string) {
