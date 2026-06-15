@@ -5694,6 +5694,64 @@ export function CalculatorsTab() {
     },
   ], [t]);
 
+  const ACCORDION_SECTIONS = useMemo(() => [
+    {
+      key: "calculators" as const,
+      label: t("calc.calculators"),
+      gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+      icon: "🧮",
+    },
+    {
+      key: "sheets" as const,
+      label: t("calc.cheat_sheets"),
+      gradient: "linear-gradient(135deg, #14B8A6, #0F766E)",
+      icon: "📋",
+    },
+    {
+      key: "urgent" as const,
+      label: t("crit.section_title"),
+      gradient: "linear-gradient(135deg, #EF4444, #B91C1C)",
+      icon: "🚨",
+    },
+  ], [t]);
+
+  type AccordionKey = "calculators" | "sheets" | "urgent";
+  const [openAccordions, setOpenAccordions] = useState<Set<AccordionKey>>(new Set(["calculators", "sheets", "urgent"]));
+
+  const toggleAccordion = (key: AccordionKey) => {
+    setOpenAccordions((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const urgentCriteria = useMemo(() => [
+    { id: "alvarado", emoji: "🔥", label: t("crit.alvarado_title"), component: <AlvaradoCalc /> },
+    { id: "cholecystitis", emoji: "💚", label: t("crit.cholecystitis_title"), component: <TokyoCholecystitisCalc /> },
+    { id: "ct_head", emoji: "🧠", label: t("crit.ct_head_title"), component: <CanadianCTHeadCalc /> },
+    { id: "cspine", emoji: "🦴", label: t("crit.cspine_title"), component: <CSpineCalc /> },
+    { id: "heart", emoji: "❤️‍🔥", label: t("crit.heart_title"), component: <HeartScoreCalc /> },
+    { id: "pecarn", emoji: "👶", label: t("crit.pecarn_title"), component: <PecarnCalc /> },
+    { id: "sfsr", emoji: "💫", label: t("crit.sfsr_title"), component: <SFSyncopeCalc /> },
+    { id: "wells_dvt", emoji: "🦵", label: t("crit.wells_dvt_title"), component: <WellsDVTCalc /> },
+    { id: "wells_pe", emoji: "🫁", label: t("crit.wells_pe_title"), component: <WellsPECalc /> },
+  ].sort((a, b) => a.label.localeCompare(b.label)), [t]);
+
+  const filteredUrgent = useMemo(() =>
+    urgentCriteria.filter((c) => !q || c.label.toLowerCase().includes(q)),
+  [urgentCriteria, q]);
+
+  const sectionItemCounts = useMemo(() => ({
+    calculators: filteredCalcs.length,
+    sheets: sheetSections.reduce((sum, sec) => {
+      const filtered = sec.sheets.filter((s) => !q || s.label.toLowerCase().includes(q) || sec.label.toLowerCase().includes(q));
+      return sum + filtered.length;
+    }, 0),
+    urgent: filteredUrgent.length,
+  }), [filteredCalcs, sheetSections, filteredUrgent, q]);
+
   return (
     <div className="space-y-3">
       <div>
@@ -5714,124 +5772,136 @@ export function CalculatorsTab() {
         />
       </div>
 
-      {/* Calculators */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
-          {t("calc.calculators")}
-        </p>
-        <div className="space-y-1">
-          {filteredCalcs.map((c) => (
-            <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+      <div className="space-y-3">
+        {ACCORDION_SECTIONS.map((acc) => {
+          const isOpen = openAccordions.has(acc.key);
+          const count = sectionItemCounts[acc.key];
+          if (q && count === 0) return null;
+          return (
+            <div key={acc.key} className="rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/80 overflow-hidden transition-all duration-200 hover:border-gray-200 dark:hover:border-gray-700">
               <button
                 type="button"
-                onClick={() => setOpenCalc(openCalc === c.id ? null : c.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${
-                  openCalc === c.id
-                    ? "bg-brand/5 dark:bg-brand/10"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                }`}
+                onClick={() => toggleAccordion(acc.key)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
               >
-                <span className="text-sm">{c.emoji}</span>
-                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 flex-1">{calcLabels[c.id]}</span>
-                {openCalc === c.id
-                  ? <ChevronDown className="h-3 w-3 text-gray-400" />
-                  : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                <div className="h-2 w-2 rounded-full shrink-0" style={{ background: acc.gradient }} />
+                <span className="text-sm">{acc.icon}</span>
+                <span className="text-[13px] font-semibold text-gray-900 dark:text-white flex-1">{acc.label}</span>
+                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 shrink-0">{count}</Badge>
+                {isOpen
+                  ? <ChevronDown className="h-4 w-4 text-gray-400 transition-transform" />
+                  : <ChevronRight className="h-4 w-4 text-gray-400 transition-transform" />}
               </button>
-              {openCalc === c.id && (
-                <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800">
-                  {c.id === "adrenal" && <AdrenalWashout />}
-                  {c.id === "tirads" && <TiradsCalc />}
-                  {c.id === "pirads" && <PiradsCalc />}
-                  {c.id === "bosniak" && <BosniakCalc />}
-                  {c.id === "thyroid" && <ThyroidVolume />}
-                  {c.id === "prostate" && <ProstateVolume />}
-                  {c.id === "aspects" && <AspectsCalc />}
-                  {c.id === "ontrack" && <OnTrackOffTrack />}
-                  {c.id === "renal" && <RenalLesionCalc />}
-                  {c.id === "lung_tnm" && <LungTNMCalc />}
-                  {c.id === "larynx_tnm" && <LarynxTNMCalc />}
-                  {c.id === "nodule_dt" && <NoduleDTCalc />}
-                  {c.id === "t1t2_mapping" && <T1T2MappingCalc />}
-                  {c.id === "cadrads" && <CadRadsCalc />}
-                  {c.id === "lirads" && <LiradsCalc />}
-                  {c.id === "birads" && <BiradsCalc />}
-                  {c.id === "orads" && <OradsCalc />}
-                  {c.id === "lungrads" && <LungRadsCalc />}
-                  {c.id === "renal_vol" && <RenalVolumeTKVCalc />}
+
+              {isOpen && (
+                <div className="border-t border-gray-100 dark:border-gray-800">
+                  <div className="h-1 w-full" style={{ background: acc.gradient }} />
+
+                  {/* ── Calculators ── */}
+                  {acc.key === "calculators" && (
+                    <div className="px-3 py-2.5 space-y-1">
+                      {filteredCalcs.map((c) => (
+                        <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setOpenCalc(openCalc === c.id ? null : c.id)}
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${
+                              openCalc === c.id
+                                ? "bg-brand/5 dark:bg-brand/10"
+                                : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            }`}
+                          >
+                            <span className="text-sm">{c.emoji}</span>
+                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 flex-1">{calcLabels[c.id]}</span>
+                            {openCalc === c.id
+                              ? <ChevronDown className="h-3 w-3 text-gray-400" />
+                              : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                          </button>
+                          {openCalc === c.id && (
+                            <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                              {c.id === "adrenal" && <AdrenalWashout />}
+                              {c.id === "tirads" && <TiradsCalc />}
+                              {c.id === "pirads" && <PiradsCalc />}
+                              {c.id === "bosniak" && <BosniakCalc />}
+                              {c.id === "thyroid" && <ThyroidVolume />}
+                              {c.id === "prostate" && <ProstateVolume />}
+                              {c.id === "aspects" && <AspectsCalc />}
+                              {c.id === "ontrack" && <OnTrackOffTrack />}
+                              {c.id === "renal" && <RenalLesionCalc />}
+                              {c.id === "lung_tnm" && <LungTNMCalc />}
+                              {c.id === "larynx_tnm" && <LarynxTNMCalc />}
+                              {c.id === "nodule_dt" && <NoduleDTCalc />}
+                              {c.id === "t1t2_mapping" && <T1T2MappingCalc />}
+                              {c.id === "cadrads" && <CadRadsCalc />}
+                              {c.id === "lirads" && <LiradsCalc />}
+                              {c.id === "birads" && <BiradsCalc />}
+                              {c.id === "orads" && <OradsCalc />}
+                              {c.id === "lungrads" && <LungRadsCalc />}
+                              {c.id === "renal_vol" && <RenalVolumeTKVCalc />}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ── Cheat Sheets ── */}
+                  {acc.key === "sheets" && (
+                    <div className="px-3 py-2.5 space-y-1.5">
+                      {sheetSections.map((sec) => {
+                        const filtered = sec.sheets.filter((s) => !q || s.label.toLowerCase().includes(q) || sec.label.toLowerCase().includes(q));
+                        if (q && filtered.length === 0) return null;
+                        const isSectionOpen = openSection === sec.key || !!q;
+                        return (
+                          <div key={sec.key} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setOpenSection(openSection === sec.key ? null : sec.key)}
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                                isSectionOpen ? "bg-gray-50 dark:bg-gray-800/50" : "hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                              }`}
+                            >
+                              <span className="text-sm">{sec.icon}</span>
+                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex-1">{sec.label}</span>
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{filtered.length}</Badge>
+                              {isSectionOpen
+                                ? <ChevronDown className="h-3 w-3 text-gray-400" />
+                                : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                            </button>
+                            {isSectionOpen && (
+                              <div className="px-2 pb-2 space-y-1">
+                                {(q ? filtered : sec.sheets).map((s) => (
+                                  <div key={s.id}>{s.component}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── Urgent Imaging Criteria ── */}
+                  {acc.key === "urgent" && (
+                    <div className="px-3 py-2.5 space-y-1">
+                      {filteredUrgent.map((c) => (
+                        <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                          <button type="button" onClick={() => setOpenCrit(openCrit === c.id ? null : c.id)}
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${openCrit === c.id ? "bg-brand/5 dark:bg-brand/10" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
+                            <span className="text-sm">{c.emoji}</span>
+                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 flex-1">{c.label}</span>
+                            {openCrit === c.id ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                          </button>
+                          {openCrit === c.id && <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800">{c.component}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Cheat Sheets — grouped by section */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
-          {t("calc.cheat_sheets")}
-        </p>
-        <div className="space-y-1.5">
-          {sheetSections.map((sec) => {
-            const filtered = sec.sheets.filter((s) => !q || s.label.toLowerCase().includes(q) || sec.label.toLowerCase().includes(q));
-            if (q && filtered.length === 0) return null;
-            const isOpen = openSection === sec.key || !!q;
-            return (
-              <div key={sec.key} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setOpenSection(openSection === sec.key ? null : sec.key)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-                    isOpen ? "bg-gray-50 dark:bg-gray-800/50" : "hover:bg-gray-50 dark:hover:bg-gray-800/30"
-                  }`}
-                >
-                  <span className="text-sm">{sec.icon}</span>
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex-1">{sec.label}</span>
-                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{filtered.length}</Badge>
-                  {isOpen
-                    ? <ChevronDown className="h-3 w-3 text-gray-400" />
-                    : <ChevronRight className="h-3 w-3 text-gray-400" />}
-                </button>
-                {isOpen && (
-                  <div className="px-2 pb-2 space-y-1">
-                    {(q ? filtered : sec.sheets).map((s) => (
-                      <div key={s.id}>{s.component}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Urgent Imaging Criteria */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1.5">
-          {t("crit.section_title")}
-        </p>
-        <div className="space-y-1">
-          {[
-            { id: "alvarado", emoji: "🔥", label: t("crit.alvarado_title"), component: <AlvaradoCalc /> },
-            { id: "cholecystitis", emoji: "💚", label: t("crit.cholecystitis_title"), component: <TokyoCholecystitisCalc /> },
-            { id: "ct_head", emoji: "🧠", label: t("crit.ct_head_title"), component: <CanadianCTHeadCalc /> },
-            { id: "cspine", emoji: "🦴", label: t("crit.cspine_title"), component: <CSpineCalc /> },
-            { id: "heart", emoji: "❤️‍🔥", label: t("crit.heart_title"), component: <HeartScoreCalc /> },
-            { id: "pecarn", emoji: "👶", label: t("crit.pecarn_title"), component: <PecarnCalc /> },
-            { id: "sfsr", emoji: "💫", label: t("crit.sfsr_title"), component: <SFSyncopeCalc /> },
-            { id: "wells_dvt", emoji: "🦵", label: t("crit.wells_dvt_title"), component: <WellsDVTCalc /> },
-            { id: "wells_pe", emoji: "🫁", label: t("crit.wells_pe_title"), component: <WellsPECalc /> },
-          ].sort((a, b) => a.label.localeCompare(b.label)).filter((c) => !q || c.label.toLowerCase().includes(q)).map((c) => (
-            <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-              <button type="button" onClick={() => setOpenCrit(openCrit === c.id ? null : c.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${openCrit === c.id ? "bg-brand/5 dark:bg-brand/10" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
-                <span className="text-sm">{c.emoji}</span>
-                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 flex-1">{c.label}</span>
-                {openCrit === c.id ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
-              </button>
-              {openCrit === c.id && <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800">{c.component}</div>}
-            </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
