@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import {
   Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
   ExternalLink, X, Zap, FileText, Mic, TrendingUp, User, Download, Receipt,
-  Gift, Copy, CheckCheck,
+  Gift, Copy, CheckCheck, ShieldCheck, Brain,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
@@ -84,6 +84,8 @@ export function AccountTab() {
   const [invite, setInvite] = useState<{ code: string; max_uses: number; used_count: number } | null>(null);
   const [inviteLoading, setInviteLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [consentRecords, setConsentRecords] = useState<{ document_type: string; document_version: string; accepted_at: string }[]>([]);
+  const [consentLoading, setConsentLoading] = useState(true);
 
   const loadSub = useCallback(async () => {
     try {
@@ -109,14 +111,27 @@ export function AccountTab() {
     setInviteLoading(false);
   }, []);
 
+  const loadConsent = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("consent_records")
+        .select("document_type, document_version, accepted_at")
+        .order("accepted_at", { ascending: true });
+      if (data) setConsentRecords(data);
+    } catch { /* ignore */ }
+    setConsentLoading(false);
+  }, []);
+
   useEffect(() => {
     loadSub();
     loadBilling();
     loadInvite();
+    loadConsent();
     createClient().auth.getUser().then(({ data }) => {
       if (data.user?.email) setUserEmail(data.user.email);
     });
-  }, [loadSub, loadBilling, loadInvite]);
+  }, [loadSub, loadBilling, loadInvite, loadConsent]);
 
   const handlePasswordChange = useCallback(async () => {
     setPwMsg(null);
@@ -596,6 +611,63 @@ export function AccountTab() {
           >
             {pwLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("account.update_password")}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Signed legal documents */}
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 rounded-xl bg-brand/10 flex items-center justify-center">
+              <ShieldCheck className="h-5 w-5 text-brand" />
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("account.signed_docs")}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.signed_docs_desc")}</p>
+            </div>
+          </div>
+          {consentLoading ? (
+            <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></div>
+          ) : consentRecords.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-3">{t("account.no_signed_docs")}</p>
+          ) : (
+            <div className="space-y-2">
+              {consentRecords.map((rec) => {
+                const DOC_ICONS_MAP: Record<string, typeof FileText> = {
+                  terms_of_use: FileText,
+                  privacy_policy: Lock,
+                  data_processing: ShieldCheck,
+                  ai_disclaimer: Brain,
+                };
+                const Icon = DOC_ICONS_MAP[rec.document_type] || FileText;
+                return (
+                  <div
+                    key={rec.document_type}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50"
+                  >
+                    <Icon className="h-4 w-4 text-brand shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">
+                        {t(`consent.doc.${rec.document_type}`)}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {t("account.signed_on")} {new Date(rec.accepted_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} · v{rec.document_version}
+                      </p>
+                    </div>
+                    <a
+                      href={`/legal/doc/${rec.document_type}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-brand hover:underline flex items-center gap-1 shrink-0"
+                    >
+                      {t("account.view_document")}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

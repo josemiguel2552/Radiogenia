@@ -24,7 +24,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "nav.get_started": "Empezar gratis",
     // Hero
     "hero.title": "Informes radiológicos en segundos",
-    "hero.subtitle": "Dicta tus hallazgos de forma natural. La IA los transcribe, estructura y formatea en un informe profesional — listo para revisar y firmar.",
+    "hero.subtitle": "Dicta tus hallazgos de forma natural. La plataforma los transcribe, estructura y organiza en las secciones de hallazgos y conclusión — listo para revisar y firmar. Tú decides qué se escribe, la herramienta solo lo organiza.",
     "hero.cta_primary": "Empieza gratis",
     "hero.cta_secondary": "Ver cómo funciona",
     "hero.badge_no_card": "Sin tarjeta de crédito",
@@ -48,13 +48,13 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.bot.title": "Radiogen Bot",
     "feat.bot.desc": "Consulta clasificaciones, valores de referencia y criterios de seguimiento desde cualquier pantalla. Solo responde con datos de tus guías clínicas.",
     "feat.safety.title": "Seguridad clínica",
-    "feat.safety.desc": "Política de cero alucinaciones. La IA solo usa lo que tú dictas. Trazabilidad completa.",
+    "feat.safety.desc": "Política de cero alucinaciones. La plataforma solo estructura lo que tú dictas. No emite diagnósticos ni recomendaciones. Trazabilidad completa.",
     // How it works
     "how.title": "Cómo funciona",
     "how.step1.title": "Dicta",
     "how.step1.desc": "Habla tus hallazgos de forma natural o escríbelos. La IA transcribe en tiempo real.",
     "how.step2.title": "Genera",
-    "how.step2.desc": "La IA estructura tu dictado en un informe completo usando tu plantilla preferida.",
+    "how.step2.desc": "La plataforma estructura y organiza tu dictado en las secciones de hallazgos y conclusión usando tu plantilla preferida.",
     "how.step3.title": "Revisa y guarda",
     "how.step3.desc": "Edita lo que necesites y guarda. La plataforma aprende tu estilo para la próxima vez.",
     // Pricing
@@ -90,7 +90,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "security.pii.title": "Detección automática de PII",
     "security.pii.desc": "El servidor detecta y elimina automáticamente datos identificativos de pacientes (DNI, NIE, teléfonos, nombres, NHC, CPF, CURP) antes del procesamiento por IA.",
     "security.accuracy.title": "Sin alucinaciones ni omisiones",
-    "security.accuracy.desc": "La IA genera exclusivamente a partir del texto dictado, sin inventar ni omitir hallazgos. Control total del radiólogo sobre el contenido final del informe.",
+    "security.accuracy.desc": "La plataforma estructura exclusivamente a partir del texto dictado por el radiólogo, organizándolo en las secciones de hallazgos y conclusión. No emite diagnósticos ni recomendaciones. Control total del radiólogo sobre el contenido final.",
     "security.zero_data.title": "Sin datos de pacientes",
     "security.zero_data.desc": "No se requiere ni almacena ningún dato identificativo de pacientes. Solo se procesa texto de dictado anonimizado. Diseño consciente de HIPAA.",
     "security.audit.title": "Registro de auditoría",
@@ -103,7 +103,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "security.badge_hsts": "HSTS + TLS 1.3",
     // CTA
     "cta.title": "¿Listo para informar más rápido?",
-    "cta.subtitle": "Únete a los radiólogos que ahorran horas cada semana con informes asistidos por IA.",
+    "cta.subtitle": "Únete a los radiólogos que ahorran horas cada semana estructurando sus informes de forma más rápida.",
     "cta.button": "Empieza gratis",
     // Footer
     "footer.legal": "Legal",
@@ -123,7 +123,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.create_free": "Crea una gratis",
     "auth.login_failed": "Error de inicio de sesión",
     "auth.network_error": "Error de red. Inténtalo de nuevo.",
-    "auth.sidebar_text": "Informes radiológicos asistidos por IA. Dicta, genera, entrega.",
+    "auth.sidebar_text": "Estructura tus informes radiológicos. Dicta, organiza, entrega.",
     // Auth - Register
     "auth.create_account": "Crea tu cuenta",
     "auth.register_subtitle": "Empieza a generar informes estructurados en segundos",
@@ -132,7 +132,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.fullname_placeholder": "Dr. Juan Pérez",
     "auth.password_min": "Mín. 6 caracteres",
     "auth.accept_terms": "Acepto los Términos de Uso, Política de Privacidad y Descargo de Responsabilidad.",
-    "auth.accept_terms_note": "Radiogen.AI es un asistente de redacción de informes. Los textos generados son borradores indicativos que deben ser revisados y validados antes de su uso clínico.",
+    "auth.accept_terms_note": "Radiogen.AI es una herramienta de estructuración de informes. Organiza la información que el radiólogo dicta en las secciones de hallazgos y conclusión. No emite diagnósticos ni recomendaciones. Los textos generados deben ser revisados y validados antes de su uso clínico.",
     "auth.create_btn": "Crear cuenta",
     "auth.have_account": "¿Ya tienes cuenta?",
     "auth.signin_link": "Iniciar sesión",
@@ -247,7 +247,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "nav.get_started": "Start free",
     // Hero
     "hero.title": "Radiology reports in seconds",
-    "hero.subtitle": "Dictate your findings naturally. AI transcribes, structures and formats them into a professional report — ready to review and sign.",
+    "hero.subtitle": "Dictate your findings naturally. The platform transcribes, structures, and organizes them into findings and conclusion sections — ready to review and sign. You decide what gets written, the tool just organizes it.",
     "hero.cta_primary": "Start free",
     "hero.cta_secondary": "See how it works",
     "hero.badge_no_card": "No credit card required",
@@ -271,13 +271,13 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.bot.title": "Radiogen Bot",
     "feat.bot.desc": "Look up classifications, reference values, and follow-up criteria from any screen. Only answers from your clinical guidelines.",
     "feat.safety.title": "Clinical Safety",
-    "feat.safety.desc": "Zero hallucinations policy. AI only uses what you dictate. Full traceability.",
+    "feat.safety.desc": "Zero hallucination policy. The platform only structures what you dictate. It does not issue diagnoses or recommendations. Full traceability.",
     // How it works
     "how.title": "How it works",
     "how.step1.title": "Dictate",
     "how.step1.desc": "Speak your findings naturally or type them. The AI transcribes in real time.",
     "how.step2.title": "Generate",
-    "how.step2.desc": "AI structures your dictation into a complete report using your preferred template.",
+    "how.step2.desc": "The platform structures and organizes your dictation into findings and conclusion sections using your preferred template.",
     "how.step3.title": "Review & Save",
     "how.step3.desc": "Edit anything, save. The platform learns your style for next time.",
     // Pricing
@@ -313,7 +313,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "security.pii.title": "Automatic PII Detection",
     "security.pii.desc": "Server-side automatic detection and stripping of patient-identifiable data (IDs, phone numbers, names, medical record numbers) before AI processing.",
     "security.accuracy.title": "No hallucinations or omissions",
-    "security.accuracy.desc": "AI generates exclusively from dictated text, without inventing or omitting findings. Full radiologist control over the final report content.",
+    "security.accuracy.desc": "The platform structures exclusively from the radiologist's dictated text, organizing it into findings and conclusion sections. It does not issue diagnoses or recommendations. Full radiologist control over the final content.",
     "security.zero_data.title": "No Patient Data",
     "security.zero_data.desc": "No patient-identifiable data is required or stored. Only anonymized dictation text is processed. HIPAA-conscious design.",
     "security.audit.title": "Audit Trail",
@@ -326,7 +326,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "security.badge_hsts": "HSTS + TLS 1.3",
     // CTA
     "cta.title": "Ready to report faster?",
-    "cta.subtitle": "Join radiologists who save hours every week with AI-assisted reporting.",
+    "cta.subtitle": "Join the radiologists saving hours every week by structuring their reports faster.",
     "cta.button": "Start free",
     // Footer
     "footer.legal": "Legal",
@@ -346,7 +346,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.create_free": "Create one free",
     "auth.login_failed": "Login failed",
     "auth.network_error": "Network error. Please try again.",
-    "auth.sidebar_text": "AI-powered radiology reporting. Dictate, generate, deliver.",
+    "auth.sidebar_text": "Structure your radiology reports. Dictate, organize, deliver.",
     // Auth - Register
     "auth.create_account": "Create your account",
     "auth.register_subtitle": "Start generating structured reports in seconds",
@@ -355,7 +355,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.fullname_placeholder": "Dr. Jane Smith",
     "auth.password_min": "Min. 6 characters",
     "auth.accept_terms": "I accept the Terms of Use, Privacy Policy and Liability Disclaimer.",
-    "auth.accept_terms_note": "Radiogen.AI is a report drafting assistant. Generated texts are indicative drafts that should be reviewed and validated before clinical use.",
+    "auth.accept_terms_note": "Radiogen.AI is a report structuring tool. It organizes information dictated by the radiologist into findings and conclusion sections. It does not issue diagnoses or recommendations. Generated text must be reviewed and validated before clinical use.",
     "auth.create_btn": "Create account",
     "auth.have_account": "Already have an account?",
     "auth.signin_link": "Sign in",
@@ -470,7 +470,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "nav.get_started": "Começar grátis",
     // Hero
     "hero.title": "Laudos radiológicos em segundos",
-    "hero.subtitle": "Dite seus achados de forma natural. A IA transcreve, estrutura e formata em um laudo profissional — pronto para revisar e assinar.",
+    "hero.subtitle": "Dite seus achados de forma natural. A plataforma transcreve, estrutura e organiza nas seções de achados e conclusão — pronto para revisar e assinar. Você decide o que se escreve, a ferramenta apenas organiza.",
     "hero.cta_primary": "Comece grátis",
     "hero.cta_secondary": "Veja como funciona",
     "hero.badge_no_card": "Sem cartão de crédito",
@@ -494,13 +494,13 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "feat.bot.title": "Radiogen Bot",
     "feat.bot.desc": "Consulte classificações, valores de referência e critérios de seguimento em qualquer tela. Responde apenas com dados dos seus guias clínicos.",
     "feat.safety.title": "Segurança clínica",
-    "feat.safety.desc": "Política de zero alucinações. A IA usa apenas o que você dita. Rastreabilidade completa.",
+    "feat.safety.desc": "Política de zero alucinações. A plataforma apenas estrutura o que você dita. Não emite diagnósticos nem recomendações. Rastreabilidade completa.",
     // How it works
     "how.title": "Como funciona",
     "how.step1.title": "Dite",
     "how.step1.desc": "Fale seus achados de forma natural ou digite-os. A IA transcreve em tempo real.",
     "how.step2.title": "Gere",
-    "how.step2.desc": "A IA estrutura seu ditado em um laudo completo usando seu modelo preferido.",
+    "how.step2.desc": "A plataforma estrutura e organiza seu ditado nas seções de achados e conclusão usando seu modelo preferido.",
     "how.step3.title": "Revise e salve",
     "how.step3.desc": "Edite o que precisar e salve. A plataforma aprende seu estilo para a próxima vez.",
     // Pricing
@@ -536,7 +536,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "security.pii.title": "Detecção automática de PII",
     "security.pii.desc": "Detecção e remoção automática no servidor de dados identificáveis de pacientes (CPF, telefones, nomes, prontuários) antes do processamento por IA.",
     "security.accuracy.title": "Sem alucinações nem omissões",
-    "security.accuracy.desc": "A IA gera exclusivamente a partir do texto ditado, sem inventar ou omitir achados. Controle total do radiologista sobre o conteúdo final do laudo.",
+    "security.accuracy.desc": "A plataforma estrutura exclusivamente a partir do texto ditado pelo radiologista, organizando nas seções de achados e conclusão. Não emite diagnósticos nem recomendações. Controle total do radiologista sobre o conteúdo final.",
     "security.zero_data.title": "Sem dados de pacientes",
     "security.zero_data.desc": "Nenhum dado identificável de pacientes é exigido ou armazenado. Apenas texto de ditado anonimizado é processado. Design consciente HIPAA.",
     "security.audit.title": "Trilha de auditoria",
@@ -549,7 +549,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "security.badge_hsts": "HSTS + TLS 1.3",
     // CTA
     "cta.title": "Pronto para laudar mais rápido?",
-    "cta.subtitle": "Junte-se aos radiologistas que economizam horas toda semana com laudos assistidos por IA.",
+    "cta.subtitle": "Junte-se aos radiologistas que economizam horas por semana estruturando seus laudos mais rapidamente.",
     "cta.button": "Comece grátis",
     // Footer
     "footer.legal": "Termos legais",
@@ -569,7 +569,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.create_free": "Crie uma grátis",
     "auth.login_failed": "Falha no login",
     "auth.network_error": "Erro de rede. Tente novamente.",
-    "auth.sidebar_text": "Laudos radiológicos com IA. Dite, gere, entregue.",
+    "auth.sidebar_text": "Estruture seus laudos radiológicos. Dite, organize, entregue.",
     // Auth - Register
     "auth.create_account": "Crie sua conta",
     "auth.register_subtitle": "Comece a gerar laudos estruturados em segundos",
@@ -578,7 +578,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.fullname_placeholder": "Dr. João Silva",
     "auth.password_min": "Mín. 6 caracteres",
     "auth.accept_terms": "Aceito os Termos de Uso, Política de Privacidade e Termo de Responsabilidade.",
-    "auth.accept_terms_note": "Radiogen.AI é um assistente de redação de laudos. Os textos gerados são rascunhos indicativos que devem ser revisados e validados antes do uso clínico.",
+    "auth.accept_terms_note": "Radiogen.AI é uma ferramenta de estruturação de laudos. Organiza as informações ditadas pelo radiologista nas seções de achados e conclusão. Não emite diagnósticos nem recomendações. Os textos gerados devem ser revisados e validados antes do uso clínico.",
     "auth.create_btn": "Criar conta",
     "auth.have_account": "Já tem uma conta?",
     "auth.signin_link": "Entrar",
