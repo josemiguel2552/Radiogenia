@@ -1977,15 +1977,19 @@ export function DashboardContent() {
                   <SelectContent>
                     <SelectItem value="structured">
                       <span className="flex items-center gap-1.5"><List className="h-3 w-3" /> {t("dash.generate_structured")}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_structured")}</span>
                     </SelectItem>
                     <SelectItem value="compact">
                       <span className="flex items-center gap-1.5"><AlignLeft className="h-3 w-3" /> {t("dash.generate_compact")}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_compact")}</span>
                     </SelectItem>
                     <SelectItem value="dictation_only">
                       <span className="flex items-center gap-1.5"><Pencil className="h-3 w-3" /> {t("dash.generate_dictation_only")}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_dictation_only")}</span>
                     </SelectItem>
                     <SelectItem value="unstructured">
                       <span className="flex items-center gap-1.5"><FileText className="h-3 w-3" /> {t("dash.generate_unstructured")}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_unstructured")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -1993,9 +1997,10 @@ export function DashboardContent() {
                   type="button"
                   onClick={() => setLightParaphrase(!lightParaphrase)}
                   title={t("dash.light_paraphrase")}
-                  className={`h-9 md:h-8 w-9 md:w-8 flex items-center justify-center rounded-md border transition-colors shrink-0 ${lightParaphrase ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400" : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                  className={`h-9 md:h-8 px-2 flex items-center gap-1 rounded-md border transition-colors shrink-0 text-[10px] font-medium ${lightParaphrase ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400" : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
                 >
                   <Wand2 className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{t("dash.paraphrase_short")}</span>
                 </button>
                 {isGenerating ? (
                   <Button
@@ -2009,7 +2014,7 @@ export function DashboardContent() {
                   <Button
                     onClick={() => handleGenerate(reportMode)}
                     disabled={!canGenerate}
-                    className="h-9 md:h-8 px-4 text-xs gap-1.5 bg-brand hover:bg-brand/90 disabled:opacity-50 text-white shrink-0"
+                    className="h-9 md:h-8 px-4 text-xs gap-1.5 bg-brand hover:bg-brand/90 shadow-brand disabled:opacity-50 text-white font-semibold shrink-0"
                   >
                     <Sparkles className="h-3.5 w-3.5" /> {t("dash.generate")}
                   </Button>
