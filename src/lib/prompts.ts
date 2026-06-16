@@ -1256,19 +1256,28 @@ MODALIDAD DEL ESTUDIO: ${modality}
 
 ⚠️⚠️⚠️ MODO NO ESTRUCTURADO — INSTRUCCIONES PRINCIPALES:
 
-ORGANIZACIÓN POR RELEVANCIA CLÍNICA:
-1. Escribe PRIMERO los hallazgos más importantes clínicamente (patológicos, urgentes, que requieren acción).
-2. Después los hallazgos moderadamente relevantes.
-3. Al final los hallazgos menores o incidentales.
-4. Agrupa hallazgos por similitud clínica o relación anatómica cuando tenga sentido (ej: todos los hallazgos vasculares juntos, todos los hallazgos óseos juntos).
+ORGANIZACIÓN — ORDEN LÓGICO:
+El texto debe seguir un orden clínico coherente, NO una lista aleatoria de hallazgos:
+
+1. HALLAZGOS PRINCIPALES: comienza por el hallazgo más relevante clínicamente (el motivo probable del estudio o el más urgente). Desarróllalo con todos sus descriptores (tamaño, localización, características).
+2. HALLAZGOS RELACIONADOS: inmediatamente después, hallazgos que estén clínica o anatómicamente relacionados con el principal (ej: si hay una masa hepática, a continuación describe adenopatías regionales, trombosis portal, etc.).
+3. HALLAZGOS EN OTROS SISTEMAS: agrupa los hallazgos restantes por sistema o región anatómica, manteniendo juntos los que están clínicamente relacionados (ej: todos los hallazgos vasculares juntos, todos los hallazgos óseos juntos).
+4. HALLAZGOS INCIDENTALES: al final, hallazgos menores o incidentales sin relación directa con la clínica principal.
+
+Dentro de cada grupo, describe los hallazgos de mayor a menor relevancia.
 
 FORMATO:
 - Texto continuo en párrafos, NO en lista de secciones anatómicas.
 - NO uses encabezados de secciones anatómicas (no "Hígado:", "Riñones:", etc.).
 - Separa hallazgos con puntos (.). Cada hallazgo es una oración independiente.
-- Puedes usar párrafos separados para agrupar hallazgos relacionados.
+- Usa párrafos separados para agrupar hallazgos clínicamente relacionados (un párrafo por grupo temático).
 - Sin markdown. Sin numeración. Sin viñetas.
 - Primera letra en MAYÚSCULA.
+
+⚠️ ESTILO DE REDACCIÓN — PROHIBICIONES:
+- PROHIBIDO usar expresiones vacías de relleno: "se identifica", "se observa", "se evidencia", "se aprecia", "se visualiza", "se reconoce", "llama la atención", "destaca la presencia de", "cabe mencionar", "es de notar".
+- Describe los hallazgos DIRECTAMENTE. En vez de "Se identifica una masa de 3 cm en lóbulo hepático derecho", escribe "Masa de 3 cm en lóbulo hepático derecho" o "Masa hepática de 3 cm en lóbulo derecho".
+- Usa oraciones directas y concisas: sujeto → descriptor. Ej: "Nódulo pulmonar sólido de 8 mm en lóbulo inferior derecho." "Derrame pleural bilateral de predominio izquierdo." "Adenopatías mediastínicas de hasta 15 mm en eje corto."
 
 REGLAS:
 1. Escribe ÚNICAMENTE lo que el radiólogo dictó. NO añadas hallazgos no dictados.
@@ -1292,18 +1301,27 @@ MODALIDADE DO ESTUDO: ${modality}
 
 ⚠️⚠️⚠️ MODO NÃO ESTRUTURADO — INSTRUÇÕES PRINCIPAIS:
 
-ORGANIZAÇÃO POR RELEVÂNCIA CLÍNICA:
-1. Escreva PRIMEIRO os achados mais importantes clinicamente (patológicos, urgentes, que requerem ação).
-2. Depois os achados moderadamente relevantes.
-3. Por último os achados menores ou incidentais.
-4. Agrupe achados por similaridade clínica ou relação anatômica quando fizer sentido.
+ORGANIZAÇÃO — ORDEM LÓGICA:
+O texto deve seguir uma ordem clínica coerente, NÃO uma lista aleatória de achados:
+
+1. ACHADOS PRINCIPAIS: comece pelo achado mais relevante clinicamente (o motivo provável do estudo ou o mais urgente). Desenvolva-o com todos os seus descritores (tamanho, localização, características).
+2. ACHADOS RELACIONADOS: imediatamente depois, achados que estejam clínica ou anatomicamente relacionados com o principal.
+3. ACHADOS EM OUTROS SISTEMAS: agrupe os achados restantes por sistema ou região anatômica, mantendo juntos os que estão clinicamente relacionados.
+4. ACHADOS INCIDENTAIS: por último, achados menores ou incidentais sem relação direta com a clínica principal.
+
+Dentro de cada grupo, descreva os achados do mais ao menos relevante.
 
 FORMATO:
 - Texto contínuo em parágrafos, NÃO em lista de seções anatômicas.
 - NÃO use cabeçalhos de seções anatômicas.
 - Separe achados com pontos (.). Cada achado é uma frase independente.
-- Pode usar parágrafos separados para agrupar achados relacionados.
+- Use parágrafos separados para agrupar achados clinicamente relacionados.
 - Sem markdown. Sem numeração. Sem marcadores.
+
+⚠️ ESTILO DE REDAÇÃO — PROIBIÇÕES:
+- PROIBIDO usar expressões vazias de preenchimento: "identifica-se", "observa-se", "evidencia-se", "aprecia-se", "visualiza-se", "nota-se", "chama atenção", "destaca-se a presença de", "cabe mencionar".
+- Descreva os achados DIRETAMENTE. Em vez de "Identifica-se uma massa de 3 cm no lobo hepático direito", escreva "Massa de 3 cm no lobo hepático direito" ou "Massa hepática de 3 cm no lobo direito".
+- Use frases diretas e concisas: sujeito → descritor.
 
 REGRAS:
 1. Escreva SOMENTE o que o radiologista ditou. NÃO adicione achados não ditados.
@@ -1325,18 +1343,27 @@ STUDY MODALITY: ${modality}
 
 ⚠️⚠️⚠️ UNSTRUCTURED MODE — MAIN INSTRUCTIONS:
 
-ORGANIZATION BY CLINICAL RELEVANCE:
-1. Write the most clinically important findings FIRST (pathological, urgent, requiring action).
-2. Then moderately relevant findings.
-3. Finally minor or incidental findings.
-4. Group findings by clinical similarity or anatomical relation when it makes sense (e.g., all vascular findings together, all bone findings together).
+ORGANIZATION — LOGICAL ORDER:
+The text must follow a coherent clinical order, NOT a random list of findings:
+
+1. MAIN FINDINGS: start with the most clinically relevant finding (the likely reason for the study or the most urgent). Develop it with all its descriptors (size, location, characteristics).
+2. RELATED FINDINGS: immediately after, findings that are clinically or anatomically related to the main one (e.g., if there is a hepatic mass, then describe regional lymphadenopathy, portal thrombosis, etc.).
+3. FINDINGS IN OTHER SYSTEMS: group remaining findings by system or anatomical region, keeping clinically related ones together (e.g., all vascular findings together, all osseous findings together).
+4. INCIDENTAL FINDINGS: at the end, minor or incidental findings unrelated to the main clinical concern.
+
+Within each group, describe findings from most to least relevant.
 
 FORMAT:
 - Continuous text in paragraphs, NOT in anatomical section lists.
 - Do NOT use anatomical section headings (no "Liver:", "Kidneys:", etc.).
 - Separate findings with periods (.). Each finding is an independent sentence.
-- You may use separate paragraphs to group related findings.
+- Use separate paragraphs to group clinically related findings (one paragraph per thematic group).
 - No markdown. No numbering. No bullet points.
+
+⚠️ WRITING STYLE — BANNED PHRASES:
+- BANNED filler expressions: "is noted", "is identified", "is observed", "is seen", "is visualized", "is appreciated", "there is", "there are", "it is worth noting", "attention is drawn to", "of note".
+- Describe findings DIRECTLY. Instead of "There is a 3 cm mass identified in the right hepatic lobe", write "3 cm mass in the right hepatic lobe" or "Right hepatic lobe mass measuring 3 cm".
+- Use direct, concise sentences: subject → descriptor. E.g.: "Solid pulmonary nodule measuring 8 mm in the right lower lobe." "Bilateral pleural effusion, predominantly left-sided." "Mediastinal lymphadenopathy measuring up to 15 mm in short axis."
 
 RULES:
 1. Write ONLY what the radiologist dictated. Do NOT add undictated findings.
@@ -1346,7 +1373,8 @@ RULES:
 5. Preserve ALL exact data: measurements, lateralities, locations.
 
 ⚠️⚠️ ZERO OMISSION RULE — ABSOLUTE:
-- EVERY finding from the dictation MUST appear in the report. NEVER omit a dictated finding.`;
+- EVERY finding from the dictation MUST appear in the report. NEVER omit a dictated finding.
+- Before finalizing, VERIFY that every piece of data from the dictation appears in your response.`;
 }
 
 export function buildFindingsPrompt(params: {
