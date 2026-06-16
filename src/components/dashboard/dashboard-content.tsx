@@ -1986,6 +1986,14 @@ export function DashboardContent() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                <button
+                  type="button"
+                  onClick={() => setLightParaphrase(!lightParaphrase)}
+                  title={t("dash.light_paraphrase")}
+                  className={`h-9 md:h-8 w-9 md:w-8 flex items-center justify-center rounded-md border transition-colors shrink-0 ${lightParaphrase ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400" : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                >
+                  <Wand2 className="h-3.5 w-3.5" />
+                </button>
                 {isGenerating ? (
                   <Button
                     onClick={stopGeneration}
@@ -2003,17 +2011,6 @@ export function DashboardContent() {
                     <Sparkles className="h-3.5 w-3.5" /> {t("dash.generate")}
                   </Button>
                 )}
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">{t(`dash.mode_info_${reportMode}`)}</p>
-                <button
-                  type="button"
-                  onClick={() => setLightParaphrase(!lightParaphrase)}
-                  className={`flex items-center gap-1 text-[10px] transition-colors shrink-0 ${lightParaphrase ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
-                >
-                  <Wand2 className="h-2.5 w-2.5" />
-                  {t("dash.light_paraphrase")}
-                </button>
               </div>
               {!setupCollapsed && !setupReady && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
