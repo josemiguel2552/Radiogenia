@@ -1976,21 +1976,17 @@ export function DashboardContent() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="structured">
+                    <SelectItem value="structured" description={t("dash.mode_info_structured")}>
                       <span className="flex items-center gap-1.5"><List className="h-3 w-3" /> {t("dash.generate_structured")}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_structured")}</span>
                     </SelectItem>
-                    <SelectItem value="compact">
+                    <SelectItem value="compact" description={t("dash.mode_info_compact")}>
                       <span className="flex items-center gap-1.5"><AlignLeft className="h-3 w-3" /> {t("dash.generate_compact")}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_compact")}</span>
                     </SelectItem>
-                    <SelectItem value="dictation_only">
+                    <SelectItem value="dictation_only" description={t("dash.mode_info_dictation_only")}>
                       <span className="flex items-center gap-1.5"><Pencil className="h-3 w-3" /> {t("dash.generate_dictation_only")}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_dictation_only")}</span>
                     </SelectItem>
-                    <SelectItem value="unstructured">
+                    <SelectItem value="unstructured" description={t("dash.mode_info_unstructured")}>
                       <span className="flex items-center gap-1.5"><FileText className="h-3 w-3" /> {t("dash.generate_unstructured")}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-5 block">{t("dash.mode_info_unstructured")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
