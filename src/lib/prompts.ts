@@ -1267,10 +1267,9 @@ El texto debe seguir un orden clínico coherente, NO una lista aleatoria de hall
 Dentro de cada grupo, describe los hallazgos de mayor a menor relevancia.
 
 FORMATO:
-- Texto continuo en párrafos, NO en lista de secciones anatómicas.
-- NO uses encabezados de secciones anatómicas (no "Hígado:", "Riñones:", etc.).
-- Separa hallazgos con puntos (.). Cada hallazgo es una oración independiente.
-- Usa párrafos separados para agrupar hallazgos clínicamente relacionados (un párrafo por grupo temático).
+- Cada hallazgo en su propia línea (salto de línea entre hallazgos), como en un informe de solo dictado.
+- NO uses encabezados ni etiquetas de secciones anatómicas (no "Hígado:", "Riñones:", etc.). Solo el texto del hallazgo.
+- Cada hallazgo es una oración independiente terminada en punto.
 - Sin markdown. Sin numeración. Sin viñetas.
 - Primera letra en MAYÚSCULA.
 
@@ -1312,10 +1311,9 @@ O texto deve seguir uma ordem clínica coerente, NÃO uma lista aleatória de ac
 Dentro de cada grupo, descreva os achados do mais ao menos relevante.
 
 FORMATO:
-- Texto contínuo em parágrafos, NÃO em lista de seções anatômicas.
-- NÃO use cabeçalhos de seções anatômicas.
-- Separe achados com pontos (.). Cada achado é uma frase independente.
-- Use parágrafos separados para agrupar achados clinicamente relacionados.
+- Cada achado em sua própria linha (quebra de linha entre achados), como em um laudo de só ditado.
+- NÃO use cabeçalhos nem rótulos de seções anatômicas (não "Fígado:", "Rins:", etc.). Apenas o texto do achado.
+- Cada achado é uma frase independente terminada em ponto.
 - Sem markdown. Sem numeração. Sem marcadores.
 
 ⚠️ ESTILO DE REDAÇÃO — PROIBIÇÕES:
@@ -1354,10 +1352,9 @@ The text must follow a coherent clinical order, NOT a random list of findings:
 Within each group, describe findings from most to least relevant.
 
 FORMAT:
-- Continuous text in paragraphs, NOT in anatomical section lists.
-- Do NOT use anatomical section headings (no "Liver:", "Kidneys:", etc.).
-- Separate findings with periods (.). Each finding is an independent sentence.
-- Use separate paragraphs to group clinically related findings (one paragraph per thematic group).
+- Each finding on its own line (line break between findings), like a dictation-only report.
+- Do NOT use anatomical section headings or labels (no "Liver:", "Kidneys:", etc.). Only the finding text.
+- Each finding is an independent sentence ending with a period.
 - No markdown. No numbering. No bullet points.
 
 ⚠️ WRITING STYLE — BANNED PHRASES:

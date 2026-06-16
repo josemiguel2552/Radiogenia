@@ -236,7 +236,7 @@ const COMPACT_SUFFIX: Record<string, string> = {
 function sectionsToText(sections: MappedSection[], compactNormals: boolean, dictationOnly: boolean, lang: OutputLanguage, unstructured?: boolean): string {
   if (unstructured) {
     const dictated = sections.filter((s) => s.source !== "normal_default");
-    return dictated.map((s) => s.text).join("\n\n");
+    return dictated.map((s) => s.text).join("\n");
   }
 
   if (dictationOnly) {
