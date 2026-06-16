@@ -122,6 +122,7 @@ export default function AdminPage() {
   const [anthropicKey, setAnthropicKey] = useState("");
   const [googleKey, setGoogleKey] = useState("");
   const [deepseekKey, setDeepseekKey] = useState("");
+  const [openrouterKey, setOpenrouterKey] = useState("");
   const [customProvKey, setCustomProvKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [showWhisperKey, setShowWhisperKey] = useState(false);
@@ -231,6 +232,7 @@ export default function AdminPage() {
       setAnthropicKey(d.anthropic_api_key_encrypted || "");
       setGoogleKey(d.google_api_key_encrypted || "");
       setDeepseekKey(d.deepseek_api_key_encrypted || "");
+      setOpenrouterKey(d.openrouter_api_key_encrypted || "");
       setCustomProvKey(d.custom_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
       const isCombo = d.findings_provider === "combo";
@@ -314,6 +316,7 @@ export default function AdminPage() {
       if (anthropicKey && anthropicKey !== "••••••••") body.anthropic_api_key = anthropicKey;
       if (googleKey && googleKey !== "••••••••") body.google_api_key = googleKey;
       if (deepseekKey && deepseekKey !== "••••••••") body.deepseek_api_key = deepseekKey;
+      if (openrouterKey && openrouterKey !== "••••••••") body.openrouter_api_key = openrouterKey;
       if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
@@ -338,6 +341,7 @@ export default function AdminPage() {
         setAnthropicKey(d.anthropic_api_key_encrypted || "");
         setGoogleKey(d.google_api_key_encrypted || "");
         setDeepseekKey(d.deepseek_api_key_encrypted || "");
+        setOpenrouterKey(d.openrouter_api_key_encrypted || "");
         setCustomProvKey(d.custom_api_key_encrypted || "");
         setConfigSuccess(true);
         setTimeout(() => setConfigSuccess(false), 3000);
@@ -1185,6 +1189,7 @@ export default function AdminPage() {
                     { prov: "claude", label: "Anthropic (Claude)", value: anthropicKey, setter: setAnthropicKey },
                     { prov: "gemini", label: "Google (Gemini)", value: googleKey, setter: setGoogleKey },
                     { prov: "deepseek", label: "DeepSeek", value: deepseekKey, setter: setDeepseekKey },
+                    { prov: "openrouter", label: "OpenRouter", value: openrouterKey, setter: setOpenrouterKey },
                     { prov: "custom", label: t("admin.custom_endpoint"), value: customProvKey, setter: setCustomProvKey },
                     { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: t("admin.uses_whisper_key") },
                   ];

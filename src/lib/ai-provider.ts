@@ -145,6 +145,35 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         },
       };
 
+    case "openrouter":
+      return {
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        buildBody: (model, system, user, maxTokens) => ({
+          model,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+          max_tokens: maxTokens,
+          temperature: 0,
+        }),
+        extractText: (data: unknown) => {
+          const d = data as { choices: { message: { content: string } }[] };
+          return d.choices?.[0]?.message?.content || "";
+        },
+        extractUsage: (data: unknown) => {
+          const d = data as { usage?: { prompt_tokens?: number; completion_tokens?: number } };
+          return {
+            inputTokens: d.usage?.prompt_tokens || 0,
+            outputTokens: d.usage?.completion_tokens || 0,
+          };
+        },
+      };
+
     case "custom":
       return {
         url: `${customBaseUrl || "http://localhost:11434"}/v1/chat/completions`,
@@ -226,6 +255,7 @@ function extractStreamToken(parsed: any, provider: AIProvider, eventType: string
   switch (provider) {
     case "openai":
     case "deepseek":
+    case "openrouter":
     case "custom":
       return parsed?.choices?.[0]?.delta?.content || "";
     case "claude":
@@ -245,6 +275,7 @@ function extractStreamUsage(parsed: any, provider: AIProvider, eventType: string
   switch (provider) {
     case "openai":
     case "deepseek":
+    case "openrouter":
     case "custom":
       if (parsed?.usage) {
         usage.inputTokens = parsed.usage.prompt_tokens || 0;
@@ -273,7 +304,7 @@ function extractSSEError(parsed: Record<string, unknown>, provider: AIProvider, 
     const err = parsed as { error?: { message?: string }; message?: string };
     return err.error?.message || err.message || "Stream error";
   }
-  if (provider === "openai" || provider === "deepseek" || provider === "custom") {
+  if (provider === "openai" || provider === "deepseek" || provider === "openrouter" || provider === "custom") {
     const obj = parsed as { error?: { message?: string } };
     if (obj.error?.message) return obj.error.message;
   }
@@ -434,7 +465,7 @@ export async function generateAIStreamWithUsage(params: GenerateParams): Promise
     url = url.replace(":generateContent", ":streamGenerateContent");
     url += url.includes("?") ? "&alt=sse" : "?alt=sse";
     requestBody = body;
-  } else if (provider === "openai" || provider === "deepseek" || provider === "custom") {
+  } else if (provider === "openai" || provider === "deepseek" || provider === "openrouter" || provider === "custom") {
     requestBody = { ...body, stream: true, stream_options: { include_usage: true } };
   } else {
     requestBody = { ...body, stream: true };
