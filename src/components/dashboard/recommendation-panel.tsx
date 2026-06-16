@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Star } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Star, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
@@ -84,10 +84,32 @@ function scoreRelevance(rec: ManualRecommendation, conclusionTokens: string[], l
   return score;
 }
 
+const CATEGORY_ICONS: Record<string, string> = {
+  "Thorax": "🫁",
+  "Abdomen and pelvis": "🫀",
+  "Head and neck": "🧠",
+  "Spine": "🦴",
+  "Upper limbs": "💪",
+  "Lower limbs": "🦵",
+  "Breast": "🩺",
+};
+
+const CATEGORY_ORDER = ["Thorax", "Abdomen and pelvis", "Head and neck", "Spine", "Upper limbs", "Lower limbs", "Breast"];
+
+const CATEGORY_LABELS: Record<string, Record<string, string>> = {
+  "Thorax": { es: "Tórax", en: "Thorax", pt: "Tórax" },
+  "Abdomen and pelvis": { es: "Abdomen y pelvis", en: "Abdomen & pelvis", pt: "Abdome e pelve" },
+  "Head and neck": { es: "Cabeza y cuello", en: "Head & neck", pt: "Cabeça e pescoço" },
+  "Spine": { es: "Columna", en: "Spine", pt: "Coluna" },
+  "Upper limbs": { es: "Miembros superiores", en: "Upper limbs", pt: "Membros superiores" },
+  "Lower limbs": { es: "Miembros inferiores", en: "Lower limbs", pt: "Membros inferiores" },
+  "Breast": { es: "Mama", en: "Breast", pt: "Mama" },
+};
+
 export function RecommendationPanel({ conclusionText, modality, section, outputLanguage, visible, onSelectionChange }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<UsageMap>({});
@@ -96,6 +118,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const [addingCustom, setAddingCustom] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
   const [customText, setCustomText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setUsage(loadUsageLocal());
@@ -112,6 +135,12 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   useEffect(() => {
     if (visible && conclusionText) setOpen(true);
   }, [visible, conclusionText]);
+
+  useEffect(() => {
+    if (open && section) {
+      setExpandedCategories(new Set([section]));
+    }
+  }, [open, section]);
 
   const modMap: Record<string, string> = {
     CT: "CT", MRI: "MRI", Ultrasound: "Ultrasound", XRay: "XRay",
@@ -148,10 +177,9 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const filtered = useMemo(() => {
     return allRecs.filter((r) => {
       if (r.modality !== "all" && r.modality !== currentMod) return false;
-      if (section && r.category !== section && r.category !== "all") return false;
       return true;
     });
-  }, [allRecs, currentMod, section]);
+  }, [allRecs, currentMod]);
 
   const conclusionTokens = useMemo(() => tokenize(conclusionText), [conclusionText]);
 
@@ -178,16 +206,47 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     return scored.filter((s) => s.relevance > 0).slice(0, 6);
   }, [scored]);
 
-  const restRecs = useMemo(() => {
-    const suggestedIds = new Set(suggestedRecs.map((s) => s.rec.id));
-    const frequentSet = new Set(frequentIds);
-    return scored.filter((s) => !suggestedIds.has(s.rec.id) && !frequentSet.has(s.rec.id));
-  }, [scored, suggestedRecs, frequentIds]);
+  const groupedByCategory = useMemo(() => {
+    const searchTokens = searchQuery ? tokenize(searchQuery) : [];
+    const groups = new Map<string, ManualRecommendation[]>();
+
+    for (const { rec } of scored) {
+      if (searchTokens.length > 0) {
+        const recTokens = [
+          ...tokenize(rec.title[outputLanguage] || rec.title.es || ""),
+          ...rec.tags.flatMap((tg) => tokenize(tg)),
+        ];
+        const matches = searchTokens.some((st) =>
+          recTokens.some((rt) => rt.includes(st) || st.includes(rt))
+        );
+        if (!matches) continue;
+      }
+      const cat = rec.category || "Other";
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat)!.push(rec);
+    }
+
+    const sorted = [...groups.entries()].sort(([a], [b]) => {
+      const ai = CATEGORY_ORDER.indexOf(a);
+      const bi = CATEGORY_ORDER.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+
+    return sorted;
+  }, [scored, searchQuery, outputLanguage]);
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleCategory = useCallback((cat: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
       return next;
     });
   }, []);
@@ -243,29 +302,45 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
 
   if (!visible) return null;
 
-  function RecPill({ rec, showRemove }: { rec: ManualRecommendation; showRemove?: boolean }) {
+  function RecItem({ rec, showRemove }: { rec: ManualRecommendation; showRemove?: boolean }) {
     const isSelected = selected.has(rec.id);
     const title = rec.title[outputLanguage] || rec.title.es;
+    const text = rec.text[outputLanguage] || rec.text.es;
     return (
-      <div className="flex items-center gap-0.5">
-        <button
-          type="button"
-          onClick={() => toggle(rec.id)}
-          title={rec.text[outputLanguage] || rec.text.es}
-          className={`px-2 py-1 text-[11px] rounded-md border transition-colors max-w-[200px] truncate ${
-            isSelected
-              ? "bg-brand text-white border-brand"
-              : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-gray-600 dark:text-gray-300 hover:border-brand/50"
-          }`}
-        >
-          {title}
-        </button>
-        {showRemove && (
-          <button type="button" onClick={() => removeCustom(rec.id)} className="text-gray-400 hover:text-red-500">
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => toggle(rec.id)}
+        className={`w-full text-left px-2.5 py-1.5 rounded-md border transition-colors group ${
+          isSelected
+            ? "bg-brand/10 border-brand/30 dark:bg-brand/20"
+            : "bg-[hsl(var(--card))] border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        }`}
+      >
+        <div className="flex items-start gap-2">
+          <div className={`mt-0.5 h-3.5 w-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+            isSelected ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
+          }`}>
+            {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className={`text-[11px] font-medium ${isSelected ? "text-brand" : "text-gray-800 dark:text-gray-200"}`}>
+                {title}
+              </span>
+              {rec.source && (
+                <span className="text-[9px] text-gray-400 dark:text-gray-500 flex-shrink-0">{rec.source.split("(")[0].trim()}</span>
+              )}
+              {showRemove && (
+                <button type="button" onClick={(e) => { e.stopPropagation(); removeCustom(rec.id); }}
+                  className="text-gray-400 hover:text-red-500 ml-auto flex-shrink-0">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">{text}</p>
+          </div>
+        </div>
+      </button>
     );
   }
 
@@ -289,60 +364,90 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
       </button>
 
       {open && (
-        <div className="px-3 pb-3 space-y-3 border-t border-gray-100 dark:border-gray-800">
-          {/* Frecuentes */}
-          {frequentRecs.length > 0 && (
-            <div>
-              <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-2 mb-1">
+        <div className="px-3 pb-3 space-y-2 border-t border-gray-100 dark:border-gray-800">
+          {/* Search */}
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("mrec.search_placeholder")}
+              className="w-full h-7 pl-7 pr-2 text-[11px] rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-brand/50"
+            />
+          </div>
+
+          {/* Frequent */}
+          {!searchQuery && frequentRecs.length > 0 && (
+            <div className="pt-1">
+              <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mb-1.5">
                 <Star className="h-3 w-3" /> {t("mrec.frequent")}
               </p>
-              <div className="flex flex-wrap gap-1">
-                {frequentRecs.map((r) => <RecPill key={r.id} rec={r} />)}
+              <div className="space-y-1">
+                {frequentRecs.map((r) => <RecItem key={r.id} rec={r} />)}
               </div>
             </div>
           )}
 
-          {/* Sugeridas por relevancia */}
-          {suggestedRecs.length > 0 && (
+          {/* Suggested by relevance */}
+          {!searchQuery && suggestedRecs.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mt-1 mb-1">
+              <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
                 {t("mrec.suggested")}
               </p>
-              <div className="flex flex-wrap gap-1">
-                {suggestedRecs.map((s) => <RecPill key={s.rec.id} rec={s.rec} />)}
+              <div className="space-y-1">
+                {suggestedRecs.map((s) => <RecItem key={s.rec.id} rec={s.rec} />)}
               </div>
             </div>
           )}
 
-          {/* Resto colapsable */}
-          {restRecs.length > 0 && (
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowAll(!showAll)}
-                className="text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 mt-1"
-              >
-                {showAll ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                {t("mrec.more")} ({restRecs.length})
-              </button>
-              {showAll && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {restRecs.map((s) => (
-                    <RecPill key={s.rec.id} rec={s.rec} showRemove={s.rec.scope === "user"} />
-                  ))}
+          {/* Grouped by category/organ */}
+          {groupedByCategory.length > 0 && (
+            <div className="space-y-1">
+              {!searchQuery && (suggestedRecs.length > 0 || frequentRecs.length > 0) && (
+                <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
+                  <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-1">{t("mrec.browse_by_organ")}</p>
                 </div>
               )}
+              {groupedByCategory.map(([category, recs]) => {
+                const isExpanded = expandedCategories.has(category) || !!searchQuery;
+                const catLabel = CATEGORY_LABELS[category]?.[outputLanguage] || CATEGORY_LABELS[category]?.es || category;
+                const icon = CATEGORY_ICONS[category] || "📄";
+                const selectedInCat = recs.filter((r) => selected.has(r.id)).length;
+                return (
+                  <div key={category} className="rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                    >
+                      <span className="text-xs">{icon}</span>
+                      <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex-1">{catLabel}</span>
+                      <span className="text-[9px] text-gray-400">{recs.length}</span>
+                      {selectedInCat > 0 && (
+                        <span className="text-[9px] bg-brand/10 text-brand px-1 py-0.5 rounded-full font-medium">{selectedInCat}</span>
+                      )}
+                      {isExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                    </button>
+                    {isExpanded && (
+                      <div className="px-2 pb-2 space-y-1">
+                        {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* No results */}
-          {scored.length === 0 && (
-            <p className="text-[10px] text-gray-400 italic mt-2">{t("mrec.no_recs")}</p>
+          {groupedByCategory.length === 0 && searchQuery && (
+            <p className="text-[10px] text-gray-400 italic text-center py-2">{t("mrec.no_recs")}</p>
           )}
 
-          {/* Añadir personalizada */}
+          {/* Add custom */}
           {addingCustom ? (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 space-y-1.5 mt-2">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 space-y-1.5">
               <Input
                 placeholder={t("mrec.custom_title_ph")}
                 value={customTitle}
@@ -364,16 +469,16 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
             <button
               type="button"
               onClick={() => setAddingCustom(true)}
-              className="text-[10px] text-brand hover:text-brand/80 flex items-center gap-1 mt-1"
+              className="text-[10px] text-brand hover:text-brand/80 flex items-center gap-1"
             >
               <Plus className="h-3 w-3" /> {t("mrec.add_custom")}
             </button>
           )}
 
-          {/* Seleccionadas + copiar */}
+          {/* Selected summary + copy */}
           {selected.size > 0 && (
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-2 mt-2">
-              <div className="flex items-center justify-between mb-1">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">
                   {t("mrec.selected")} ({selected.size})
                 </p>

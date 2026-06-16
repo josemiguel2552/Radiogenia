@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import {
   FileText,
@@ -1971,7 +1972,7 @@ export function DashboardContent() {
               {piiWarningBanner}
               <div className="flex items-center gap-1.5">
                 <Select value={reportMode} onValueChange={(v) => setReportMode(v as ReportMode)}>
-                  <SelectTrigger className="h-9 md:h-8 text-xs flex-1 min-w-0">
+                  <SelectTrigger className="h-9 md:h-8 text-[11px] flex-1 min-w-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1993,15 +1994,23 @@ export function DashboardContent() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <button
-                  type="button"
-                  onClick={() => setLightParaphrase(!lightParaphrase)}
-                  title={t("dash.light_paraphrase")}
-                  className={`h-9 md:h-8 px-2 flex items-center gap-1 rounded-md border transition-colors shrink-0 text-[10px] font-medium ${lightParaphrase ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400" : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
-                >
-                  <Wand2 className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t("dash.paraphrase_short")}</span>
-                </button>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setLightParaphrase(!lightParaphrase)}
+                        className={`h-9 md:h-8 px-2 flex items-center gap-1 rounded-md border transition-colors shrink-0 text-[11px] font-medium ${lightParaphrase ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400" : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                      >
+                        <Wand2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">{t("dash.paraphrase_short")}</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px] text-xs">
+                      {t("dash.light_paraphrase")}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 {isGenerating ? (
                   <Button
                     onClick={stopGeneration}
@@ -2098,7 +2107,7 @@ export function DashboardContent() {
               loading={loadingConcStyles[conclusionStyle] ?? false}
               value={conclusion}
               onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
-              minHeight={70}
+              minHeight={110}
               headerExtra={
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
                   {(["concise", "grouped"] as const).map((s) => (
