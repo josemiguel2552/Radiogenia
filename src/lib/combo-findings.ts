@@ -14,6 +14,7 @@ interface ComboParams {
   outputLanguage: OutputLanguage;
   compactNormals: boolean;
   dictationOnly?: boolean;
+  unstructured?: boolean;
   preferredNormalPhrases?: PreferredNormalPhrase[];
 }
 
@@ -232,7 +233,12 @@ const COMPACT_SUFFIX: Record<string, string> = {
   pt: "As demais estruturas avaliadas ({names}) não apresentam alterações significativas.",
 };
 
-function sectionsToText(sections: MappedSection[], compactNormals: boolean, dictationOnly: boolean, lang: OutputLanguage): string {
+function sectionsToText(sections: MappedSection[], compactNormals: boolean, dictationOnly: boolean, lang: OutputLanguage, unstructured?: boolean): string {
+  if (unstructured) {
+    const dictated = sections.filter((s) => s.source !== "normal_default");
+    return dictated.map((s) => s.text).join("\n\n");
+  }
+
   if (dictationOnly) {
     const dictated = sections.filter((s) => s.source !== "normal_default");
     return dictated.map((s) => `${s.label}: ${s.text}`).join("\n");
@@ -344,7 +350,7 @@ export async function runComboFindings(
     }));
   }
 
-  const rawText = sectionsToText(finalSections, params.compactNormals, !!params.dictationOnly, params.outputLanguage);
+  const rawText = sectionsToText(finalSections, params.compactNormals, !!params.dictationOnly, params.outputLanguage, params.unstructured);
   const translated = enforceOutputLanguage(rawText, params.outputLanguage);
   return {
     text: params.outputLanguage === "en" ? enforcePeriodSeparation(translated) : translated,

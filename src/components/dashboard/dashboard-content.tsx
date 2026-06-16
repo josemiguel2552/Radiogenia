@@ -127,15 +127,15 @@ export function DashboardContent() {
   // Hidden templates
   const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
-  const [reportMode, setReportModeState] = useState<"structured" | "compact" | "dictation_only">("structured");
-  const setReportMode = (mode: "structured" | "compact" | "dictation_only") => {
+  const [reportMode, setReportModeState] = useState<ReportMode>("structured");
+  const setReportMode = (mode: ReportMode) => {
     setReportModeState(mode);
-    try { localStorage.setItem("rg_report_mode", mode); } catch {}
+    try { localStorage.setItem("rg_report_mode", mode); } catch {};
   };
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("rg_report_mode") as "structured" | "compact" | "dictation_only" | null;
-      if (saved && ["structured", "compact", "dictation_only"].includes(saved)) setReportModeState(saved);
+      const saved = localStorage.getItem("rg_report_mode") as ReportMode | null;
+      if (saved && ["structured", "compact", "dictation_only", "unstructured"].includes(saved)) setReportModeState(saved);
     } catch {}
   }, []);
   const [showTemplateHelp, setShowTemplateHelp] = useState(false);
@@ -729,7 +729,7 @@ export function DashboardContent() {
   // Voice recording is handled by useVoiceDictation hook above
 
   // Generate report
-  type ReportMode = "structured" | "compact" | "dictation_only";
+  type ReportMode = "structured" | "compact" | "dictation_only" | "unstructured";
   async function handleGenerate(mode: ReportMode = "structured") {
     if (!selectedTemplate || !dictation.trim()) return;
 
@@ -1970,7 +1970,7 @@ export function DashboardContent() {
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {piiWarningBanner}
               <div className="flex items-center gap-1.5">
-                <Select value={reportMode} onValueChange={(v) => setReportMode(v as "structured" | "compact" | "dictation_only")}>
+                <Select value={reportMode} onValueChange={(v) => setReportMode(v as ReportMode)}>
                   <SelectTrigger className="h-9 md:h-8 text-xs flex-1 min-w-0">
                     <SelectValue />
                   </SelectTrigger>
@@ -1983,6 +1983,9 @@ export function DashboardContent() {
                     </SelectItem>
                     <SelectItem value="dictation_only">
                       <span className="flex items-center gap-1.5"><Pencil className="h-3 w-3" /> {t("dash.generate_dictation_only")}</span>
+                    </SelectItem>
+                    <SelectItem value="unstructured">
+                      <span className="flex items-center gap-1.5"><FileText className="h-3 w-3" /> {t("dash.generate_unstructured")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>

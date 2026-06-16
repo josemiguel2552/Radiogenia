@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
       style_learning_enabled: config?.style_learning_enabled ?? true,
       compact_normals: reportMode === "compact" || (compactOverride !== undefined ? compactOverride : (config?.compact_normals ?? false)),
       dictation_only: reportMode === "dictation_only",
+      unstructured: reportMode === "unstructured",
     };
 
     const outLang = safeConfig.output_language as OutputLanguage;
@@ -135,6 +136,7 @@ export async function POST(req: NextRequest) {
         outputLanguage: safeConfig.output_language as OutputLanguage,
         compactNormals: safeConfig.compact_normals,
         dictationOnly: safeConfig.dictation_only,
+        unstructured: safeConfig.unstructured,
         preferredNormalPhrases,
       });
 
@@ -165,6 +167,7 @@ export async function POST(req: NextRequest) {
       outputLanguage: safeConfig.output_language as OutputLanguage,
       compactNormals: safeConfig.compact_normals,
       dictationOnly: safeConfig.dictation_only,
+      unstructured: safeConfig.unstructured,
       preferredNormalPhrases,
       cardiacTechniques: Array.isArray(cardiacTechniques) ? cardiacTechniques : undefined,
       recistConfig: recistConfig || undefined,
