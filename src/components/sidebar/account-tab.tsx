@@ -189,9 +189,17 @@ export function AccountTab() {
           window.location.href = data.url;
           return;
         }
-        setPlanMsg({ ok: false, text: data.error || t("gen_error") });
+        const err = data.error || "";
+        const msg = err.includes("not configured") && err.includes("Price")
+          ? t("account.price_not_configured")
+          : err.includes("not configured")
+          ? t("account.stripe_not_configured")
+          : err.includes("verification")
+          ? t("account.resident_verification_required")
+          : t("account.checkout_error");
+        setPlanMsg({ ok: false, text: msg });
       } catch {
-        setPlanMsg({ ok: false, text: t("gen_error") });
+        setPlanMsg({ ok: false, text: t("account.checkout_error") });
       }
       setPlanChangeLoading(false);
       return;
@@ -720,7 +728,13 @@ export function AccountTab() {
               );
             })}
           </div>
-          {sub?.nextPeriodDate && (
+          {planMsg && (
+            <div className={`flex items-start gap-2 text-xs p-3 rounded-lg ${planMsg.ok ? "bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400" : "bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400"}`}>
+              {planMsg.ok ? <Check className="h-3.5 w-3.5 mt-0.5 shrink-0" /> : <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />}
+              <span>{planMsg.text}</span>
+            </div>
+          )}
+          {sub?.nextPeriodDate && !planMsg && (
             <p className="text-[11px] text-gray-400 flex items-center gap-1">
               <CalendarClock className="h-3 w-3" />
               {t("account.change_effective")}: {formatDate(sub.nextPeriodDate)}
