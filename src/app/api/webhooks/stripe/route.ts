@@ -15,9 +15,9 @@ const PRICE_TO_PLAN: Record<string, SubscriptionPlan> = {};
 function buildPriceMap() {
   if (Object.keys(PRICE_TO_PLAN).length > 0) return;
   const envMap: Record<string, string> = {
-    STRIPE_PRICE_RESIDENT: "resident",
-    STRIPE_PRICE_STARTER: "starter",
-    STRIPE_PRICE_PROFESSIONAL: "professional",
+    STRIPE_PRICE_ID_RESIDENT: "resident",
+    STRIPE_PRICE_ID_STARTER: "starter",
+    STRIPE_PRICE_ID_PROFESSIONAL: "professional",
   };
   for (const [envKey, plan] of Object.entries(envMap)) {
     const priceId = process.env[envKey];

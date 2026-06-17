@@ -12,9 +12,9 @@ function getStripe(): Stripe | null {
 }
 
 const PLAN_PRICE_ENV: Record<string, string> = {
-  resident: "STRIPE_PRICE_RESIDENT",
-  starter: "STRIPE_PRICE_STARTER",
-  professional: "STRIPE_PRICE_PROFESSIONAL",
+  resident: "STRIPE_PRICE_ID_RESIDENT",
+  starter: "STRIPE_PRICE_ID_STARTER",
+  professional: "STRIPE_PRICE_ID_PROFESSIONAL",
 };
 
 async function createCheckoutSession(plan: string, req: NextRequest): Promise<{ url: string | null; error?: string; status?: number }> {
