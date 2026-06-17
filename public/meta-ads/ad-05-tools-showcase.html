@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1080px; background: #0c0c22; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; position: relative; }
+.bg-orb { position: absolute; border-radius: 50%; filter: blur(100px); }
+.orb1 { width: 500px; height: 500px; top: -150px; right: -100px; background: rgba(99,102,241,0.2); }
+.orb2 { width: 400px; height: 400px; bottom: -100px; left: -50px; background: rgba(168,85,247,0.15); }
+.content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 50px; }
+.top { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 26px; font-weight: 700; color: #fff; }
+.logo span { color: #a78bfa; }
+.tag { background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05)); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 16px; }
+.headline { font-size: 42px; font-weight: 800; color: #fff; line-height: 1.15; margin-top: 28px; }
+.headline em { font-style: normal; color: #c084fc; }
+.screenshot { margin-top: 24px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 16px 50px rgba(99,102,241,0.15); }
+.screenshot img { width: 100%; display: block; }
+.bottom-features { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; }
+.bf { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.bf-emoji { font-size: 22px; }
+.bf-text { color: #cbd5e1; font-size: 15px; font-weight: 500; line-height: 1.25; }
+.cta { margin-top: auto; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 21px; font-weight: 700; padding: 20px; border-radius: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+<div class="content">
+  <div class="top">
+    <div class="logo">Radiogen<span>.AI</span></div>
+    <div class="tag">Todo en uno</div>
+  </div>
+  <div class="headline">Dictado, clasificación y recomendaciones <em>en un solo lugar</em></div>
+  <div class="screenshot">
+    <img src="/manual/tools.png" alt="Tools">
+  </div>
+  <div class="bottom-features">
+    <div class="bf"><div class="bf-emoji">🧮</div><div class="bf-text">TNM, BI-RADS, TI-RADS automáticos</div></div>
+    <div class="bf"><div class="bf-emoji">📋</div><div class="bf-text">Guías Fleischner, ACR integradas</div></div>
+    <div class="bf"><div class="bf-emoji">🎙️</div><div class="bf-text">Dictado de voz inteligente</div></div>
+    <div class="bf"><div class="bf-emoji">🤖</div><div class="bf-text">Radiogen Bot + plantillas</div></div>
+  </div>
+  <div class="cta">Empieza en radiogen.ai &rarr;</div>
+</div>
+</body>
+</html>

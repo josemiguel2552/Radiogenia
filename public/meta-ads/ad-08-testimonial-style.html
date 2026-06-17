@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1080px; background: #0a0a1a; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; position: relative; }
+.bg { position: absolute; inset: 0; background: radial-gradient(circle at 20% 80%, rgba(99,102,241,0.12), transparent 50%), radial-gradient(circle at 80% 20%, rgba(168,85,247,0.1), transparent 50%); }
+.content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 55px; }
+.logo { font-size: 26px; font-weight: 700; color: #fff; }
+.logo span { color: #a78bfa; }
+.quote-block { margin-top: 36px; padding: 30px 34px; background: rgba(99,102,241,0.06); border-left: 4px solid #818cf8; border-radius: 0 16px 16px 0; }
+.quote { font-size: 30px; font-weight: 600; color: #e2e8f0; line-height: 1.35; font-style: italic; }
+.quote em { font-style: normal; color: #a78bfa; }
+.author { margin-top: 14px; font-size: 16px; color: #64748b; font-weight: 500; }
+.section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: #818cf8; margin-top: 32px; margin-bottom: 16px; }
+.tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tool { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.tool-icon { font-size: 20px; flex-shrink: 0; }
+.tool-text { color: #cbd5e1; font-size: 14px; font-weight: 500; line-height: 1.3; }
+.highlight { margin-top: 20px; text-align: center; font-size: 22px; font-weight: 700; color: #fff; padding: 16px; background: rgba(99,102,241,0.08); border-radius: 12px; border: 1px solid rgba(99,102,241,0.15); }
+.highlight em { font-style: normal; color: #c084fc; }
+.cta { margin-top: auto; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 22px; font-weight: 700; padding: 22px; border-radius: 16px; text-align: center; box-shadow: 0 8px 30px rgba(99,102,241,0.25); }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="content">
+  <div class="logo">Radiogen<span>.AI</span></div>
+  <div class="quote-block">
+    <div class="quote">"Antes tardaba 15 minutos por informe. Ahora con <em>inteligencia artificial</em>, tardo la mitad."</div>
+    <div class="author">— Radiólogo usando Radiogen.AI</div>
+  </div>
+  <div class="section-title">Todo lo que necesitas</div>
+  <div class="tools-grid">
+    <div class="tool"><div class="tool-icon">🧮</div><div class="tool-text">TNM, BI-RADS, TI-RADS automáticos</div></div>
+    <div class="tool"><div class="tool-icon">📋</div><div class="tool-text">Guías Fleischner, ACR integradas</div></div>
+    <div class="tool"><div class="tool-icon">🤖</div><div class="tool-text">Radiogen Bot: consulta tu base de conocimiento</div></div>
+    <div class="tool"><div class="tool-icon">📝</div><div class="tool-text">Plantillas personalizadas</div></div>
+    <div class="tool"><div class="tool-icon">🎙️</div><div class="tool-text">Dictado de voz inteligente</div></div>
+    <div class="tool"><div class="tool-icon">⚡</div><div class="tool-text">Acelera tus informes con IA</div></div>
+  </div>
+  <div class="highlight">Clasificación y recomendaciones <em>en segundos</em></div>
+  <div class="cta">Únete a Radiogen.AI &rarr;</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1080px; background: #0a0a1a; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; position: relative; }
+.bg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.15), transparent 50%); }
+.content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 55px; }
+.logo { font-size: 26px; font-weight: 700; color: #fff; }
+.logo span { color: #a78bfa; }
+.hero-stat { text-align: center; margin-top: 50px; }
+.stat-number { font-size: 140px; font-weight: 900; background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
+.stat-label { font-size: 32px; color: #e2e8f0; font-weight: 600; margin-top: 4px; }
+.stat-sub { font-size: 20px; color: #94a3b8; margin-top: 8px; }
+.features { margin-top: 50px; display: flex; flex-direction: column; gap: 14px; }
+.feature { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: rgba(255,255,255,0.03); border-left: 3px solid #6366f1; border-radius: 0 12px 12px 0; }
+.feature-icon { font-size: 20px; width: 36px; text-align: center; }
+.feature-text { color: #cbd5e1; font-size: 18px; font-weight: 500; }
+.cta { margin-top: auto; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 22px; font-weight: 700; padding: 22px; border-radius: 16px; text-align: center; box-shadow: 0 8px 30px rgba(99,102,241,0.25); }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="content">
+  <div class="logo">Radiogen<span>.AI</span></div>
+  <div class="hero-stat">
+    <div class="stat-number">50%</div>
+    <div class="stat-label">menos tiempo por informe</div>
+    <div class="stat-sub">Acelera tus informes con inteligencia artificial</div>
+  </div>
+  <div class="features">
+    <div class="feature"><div class="feature-icon">🧮</div><div class="feature-text">Clasificación automática: TNM, BI-RADS, TI-RADS</div></div>
+    <div class="feature"><div class="feature-icon">📋</div><div class="feature-text">Recomendaciones basadas en guías (Fleischner, ACR)</div></div>
+    <div class="feature"><div class="feature-icon">🤖</div><div class="feature-text">Radiogen Bot para tu base de conocimiento</div></div>
+    <div class="feature"><div class="feature-icon">📝</div><div class="feature-text">Plantillas personalizadas + dictado de voz</div></div>
+  </div>
+  <div class="cta">Pruébalo gratis &rarr; radiogen.ai</div>
+</div>
+</body>
+</html>
