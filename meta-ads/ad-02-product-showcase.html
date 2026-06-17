@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1080px; background: linear-gradient(160deg, #0c0c24 0%, #1a103a 50%, #0f172a 100%); font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; position: relative; }
+.grid-lines { position: absolute; inset: 0; background-image: linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px); background-size: 60px 60px; }
+.content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 50px; }
+.top { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 26px; font-weight: 700; color: #fff; }
+.logo span { color: #a78bfa; }
+.badge { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); color: #c4b5fd; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 20px; }
+.headline { font-size: 44px; font-weight: 800; color: #fff; line-height: 1.15; margin-top: 30px; }
+.headline em { font-style: normal; color: #a78bfa; }
+.screenshot { margin-top: 28px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(99,102,241,0.2), 0 0 0 1px rgba(99,102,241,0.1); }
+.screenshot img { width: 100%; display: block; }
+.pills { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+.pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-size: 15px; font-weight: 500; padding: 10px 18px; border-radius: 24px; }
+.pill strong { color: #fff; }
+.cta { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 22px; font-weight: 700; padding: 20px; border-radius: 16px; }
+</style>
+</head>
+<body>
+<div class="grid-lines"></div>
+<div class="content">
+  <div class="top">
+    <div class="logo">Radiogen<span>.AI</span></div>
+    <div class="badge">Para radiólogos</div>
+  </div>
+  <div class="headline">Tus informes, <em>en la mitad de tiempo</em></div>
+  <div class="screenshot">
+    <img src="../public/manual/editor.png" alt="Editor">
+  </div>
+  <div class="pills">
+    <div class="pill"><strong>TNM</strong> &bull; BI-RADS &bull; TI-RADS</div>
+    <div class="pill">Fleischner &bull; ACR</div>
+    <div class="pill">Dictado de voz</div>
+    <div class="pill">Radiogen Bot</div>
+    <div class="pill">Plantillas</div>
+  </div>
+  <div class="cta">Empieza gratis &rarr;</div>
+</div>
+</body>
+</html>

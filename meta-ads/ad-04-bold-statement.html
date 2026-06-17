@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1080px; background: #0a0a1a; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; position: relative; }
+.bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.2), transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.15), transparent 50%); }
+.content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 55px; justify-content: center; }
+.logo { font-size: 24px; font-weight: 700; color: #fff; position: absolute; top: 50px; left: 55px; }
+.logo span { color: #a78bfa; }
+.question { font-size: 38px; color: #94a3b8; font-weight: 500; margin-bottom: 12px; }
+.answer { font-size: 62px; font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 40px; }
+.answer em { font-style: normal; background: linear-gradient(135deg, #818cf8, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.divider { height: 3px; width: 80px; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 2px; margin-bottom: 36px; }
+.list { display: flex; flex-direction: column; gap: 12px; }
+.item { color: #cbd5e1; font-size: 21px; font-weight: 400; display: flex; align-items: center; gap: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #a78bfa; flex-shrink: 0; }
+.cta { position: absolute; bottom: 55px; left: 55px; right: 55px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 22px; font-weight: 700; padding: 22px; border-radius: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="content">
+  <div class="logo">Radiogen<span>.AI</span></div>
+  <div class="question">¿Sigues redactando informes a mano?</div>
+  <div class="answer">Hay una forma <em>más inteligente</em></div>
+  <div class="divider"></div>
+  <div class="list">
+    <div class="item"><div class="dot"></div>Acelera tus informes con inteligencia artificial</div>
+    <div class="item"><div class="dot"></div>Clasificación automática: TNM, BI-RADS, TI-RADS</div>
+    <div class="item"><div class="dot"></div>Recomendaciones basadas en guías: Fleischner, ACR</div>
+    <div class="item"><div class="dot"></div>Radiogen Bot para consultas clínicas instantáneas</div>
+    <div class="item"><div class="dot"></div>Plantillas personalizadas + dictado de voz</div>
+  </div>
+</div>
+<div class="cta">Descúbrelo en radiogen.ai &rarr;</div>
+</body>
+</html>

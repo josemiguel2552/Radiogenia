@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1080px; background: #0a0a1a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow: hidden; position: relative; }
+.bg-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.3; }
+.glow-1 { top: -200px; left: -100px; background: #6366f1; }
+.glow-2 { bottom: -200px; right: -100px; background: #8b5cf6; }
+.glow-3 { top: 50%; left: 50%; transform: translate(-50%, -50%); background: #3b82f6; opacity: 0.15; }
+.content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 50px; }
+.logo { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.logo span { background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.headline { font-size: 52px; font-weight: 800; color: #fff; line-height: 1.15; margin-top: 40px; max-width: 700px; }
+.headline em { font-style: normal; background: linear-gradient(135deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.features { margin-top: 40px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.feature { display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px 20px; backdrop-filter: blur(10px); }
+.feature-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+.feature-text { color: #e2e8f0; font-size: 19px; font-weight: 500; line-height: 1.3; }
+.cta { margin-top: auto; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 22px; font-weight: 700; padding: 20px 40px; border-radius: 16px; text-align: center; letter-spacing: 0.3px; }
+</style>
+</head>
+<body>
+<div class="bg-glow glow-1"></div>
+<div class="bg-glow glow-2"></div>
+<div class="bg-glow glow-3"></div>
+<div class="content">
+  <div class="logo">Radiogen<span>.AI</span></div>
+  <div class="headline">Acelera tus informes con <em>inteligencia artificial</em></div>
+  <div class="features">
+    <div class="feature"><div class="feature-icon">🧮</div><div class="feature-text">Clasificación automática: TNM, BI-RADS, TI-RADS...</div></div>
+    <div class="feature"><div class="feature-icon">📋</div><div class="feature-text">Recomendaciones basadas en Fleischner, ACR...</div></div>
+    <div class="feature"><div class="feature-icon">🤖</div><div class="feature-text">Radiogen Bot: consulta tu base de conocimiento</div></div>
+    <div class="feature"><div class="feature-icon">📝</div><div class="feature-text">Plantillas personalizadas + Dictado de voz</div></div>
+  </div>
+  <div class="cta">Prueba gratis &rarr; radiogen.ai</div>
+</div>
+</body>
+</html>
