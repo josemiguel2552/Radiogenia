@@ -36,6 +36,20 @@ async function createCheckoutSession(plan: string, req: NextRequest): Promise<{ 
   }
 
   const service = createServiceClient();
+
+  if (plan === "resident") {
+    const { data: verification } = await service
+      .from("resident_verifications")
+      .select("status")
+      .eq("user_id", user.id)
+      .eq("status", "approved")
+      .limit(1)
+      .maybeSingle();
+    if (!verification) {
+      return { url: null, error: "Resident verification required", status: 403 };
+    }
+  }
+
   const { data: profile } = await service
     .from("profiles")
     .select("stripe_customer_id, email")

@@ -58,6 +58,14 @@ export async function POST(req: NextRequest) {
 
   const service = createServiceClient();
 
+  const { error: dupeError } = await service
+    .from("stripe_webhook_events")
+    .insert({ event_id: event.id, event_type: event.type });
+  if (dupeError?.code === "23505") {
+    console.log(`[stripe-webhook] Duplicate event ${event.id}, skipping`);
+    return NextResponse.json({ received: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -87,13 +95,21 @@ export async function POST(req: NextRequest) {
         const priceId = subscription.items.data[0]?.price?.id;
         const plan = priceId ? planFromPriceId(priceId) : "free";
         const isActive = subscription.status === "active" || subscription.status === "trialing";
+        let previousPlan: string | null = null;
 
         if (event.type === "customer.subscription.updated") {
           const { data: existing } = await service
             .from("profiles")
-            .select("pending_plan")
+            .select("pending_plan, subscription_plan, stripe_subscription_id")
             .eq("stripe_customer_id", customerId)
             .single();
+
+          previousPlan = existing?.subscription_plan ?? null;
+
+          if (existing?.stripe_subscription_id && existing.stripe_subscription_id !== subscription.id) {
+            console.log(`[stripe-webhook] ${event.type}: stale event for subscription ${subscription.id}, current is ${existing.stripe_subscription_id}, skipping`);
+            break;
+          }
 
           if (existing?.pending_plan) {
             const deferredUpdate: Record<string, unknown> = {
@@ -111,9 +127,10 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        const resolvedPlan = isActive ? plan : "free";
         const update: Record<string, unknown> = {
           stripe_subscription_id: subscription.id,
-          subscription_plan: isActive ? plan : "free",
+          subscription_plan: resolvedPlan,
         };
 
         if (isActive && subscription.items.data[0]?.current_period_start) {
@@ -125,20 +142,20 @@ export async function POST(req: NextRequest) {
           .update(update)
           .eq("stripe_customer_id", customerId);
 
-        if (isActive && event.type === "customer.subscription.updated") {
+        if (event.type === "customer.subscription.updated" && previousPlan !== resolvedPlan) {
           const { data: profile } = await service
             .from("profiles")
             .select("email, name")
             .eq("stripe_customer_id", customerId)
             .single();
           if (profile?.email) {
-            sendPlanChangeEmail(profile.email, profile.name, plan).catch((err) => {
+            sendPlanChangeEmail(profile.email, profile.name, resolvedPlan).catch((err) => {
               console.error("[stripe-webhook] plan change email error:", err instanceof Error ? err.message : err);
             });
           }
         }
 
-        console.log(`[stripe-webhook] ${event.type}: customer=${customerId}, plan=${plan}, active=${isActive}`);
+        console.log(`[stripe-webhook] ${event.type}: customer=${customerId}, plan=${resolvedPlan}, active=${isActive}`);
         break;
       }
 

@@ -192,7 +192,9 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
 
   const planConfig = PLANS[plan];
   const periodStart = new Date(profile?.billing_period_start || Date.now());
-  const needsReset = periodStart.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
+  const nextPeriod = new Date(periodStart);
+  nextPeriod.setMonth(nextPeriod.getMonth() + 1);
+  const needsReset = nextPeriod.getTime() <= Date.now();
   const used = needsReset ? 0 : (profile?.reports_used_this_month || 0);
 
   return {
@@ -250,7 +252,9 @@ export async function checkDictationLimit(userId: string): Promise<{
   const planConfig = PLANS[plan];
   const limitSeconds = planConfig.dictationMinutes * 60;
   const periodStart = new Date(profile?.billing_period_start || Date.now());
-  const needsReset = periodStart.getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
+  const nextPeriod = new Date(periodStart);
+  nextPeriod.setMonth(nextPeriod.getMonth() + 1);
+  const needsReset = nextPeriod.getTime() <= Date.now();
   const usedSeconds = needsReset ? 0 : (profile?.dictation_seconds_used || 0);
 
   return {
@@ -263,7 +267,9 @@ export async function checkDictationLimit(userId: string): Promise<{
 
 function isBillingPeriodStale(periodStart: string | null): boolean {
   if (!periodStart) return true;
-  return new Date(periodStart).getTime() + 30 * 24 * 60 * 60 * 1000 < Date.now();
+  const next = new Date(periodStart);
+  next.setMonth(next.getMonth() + 1);
+  return next.getTime() <= Date.now();
 }
 
 export async function incrementReportUsage(userId: string): Promise<void> {
