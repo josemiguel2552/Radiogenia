@@ -53,6 +53,41 @@ export async function GET() {
       stripeSubId = extra?.stripe_subscription_id ?? null;
     } catch { /* columns may not exist yet */ }
 
+    if (stripeSubId && profile.subscription_plan === "free") {
+      const stripe = getStripe();
+      if (stripe) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(stripeSubId);
+          const priceId = sub.items.data[0]?.price?.id;
+          if (priceId && (sub.status === "active" || sub.status === "trialing")) {
+            const envMap: Record<string, SubscriptionPlan> = {};
+            for (const [plan, envKey] of Object.entries(PLAN_PRICE_ENV)) {
+              const pid = process.env[envKey];
+              if (pid) envMap[pid] = plan as SubscriptionPlan;
+            }
+            const realPlan = envMap[priceId];
+            if (realPlan && realPlan !== "free") {
+              profile.subscription_plan = realPlan;
+              profile.billing_period_start = new Date(
+                (sub.items.data[0]?.current_period_start ?? Math.floor(Date.now() / 1000)) * 1000
+              ).toISOString();
+              profile.reports_used_this_month = 0;
+              profile.dictation_seconds_used = 0;
+              await service
+                .from("profiles")
+                .update({
+                  subscription_plan: realPlan,
+                  billing_period_start: profile.billing_period_start,
+                  reports_used_this_month: 0,
+                  dictation_seconds_used: 0,
+                })
+                .eq("id", user.id);
+            }
+          }
+        } catch { /* Stripe unreachable — use local data */ }
+      }
+    }
+
     const bonusExpired = referralBonusExpires
       && new Date(referralBonusExpires).getTime() <= Date.now();
     const hasPaidSub = !!stripeSubId;

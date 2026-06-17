@@ -74,12 +74,31 @@ export async function POST(req: NextRequest) {
         const subscriptionId = session.subscription as string;
 
         if (session.metadata?.supabase_user_id) {
+          const update: Record<string, unknown> = {
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+          };
+
+          if (subscriptionId) {
+            try {
+              const sub = await stripe.subscriptions.retrieve(subscriptionId);
+              const priceId = sub.items.data[0]?.price?.id;
+              const plan = priceId ? planFromPriceId(priceId) : "free";
+              if (plan !== "free" && (sub.status === "active" || sub.status === "trialing")) {
+                update.subscription_plan = plan;
+                update.billing_period_start = new Date().toISOString();
+                update.reports_used_this_month = 0;
+                update.dictation_seconds_used = 0;
+              }
+              console.log(`[stripe-webhook] checkout.session.completed: user=${session.metadata.supabase_user_id}, plan=${plan}`);
+            } catch (err) {
+              console.error("[stripe-webhook] checkout.session.completed: failed to retrieve subscription:", err instanceof Error ? err.message : err);
+            }
+          }
+
           await service
             .from("profiles")
-            .update({
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-            })
+            .update(update)
             .eq("id", session.metadata.supabase_user_id);
         }
         break;
