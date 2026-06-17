@@ -3,6 +3,19 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
+import Stripe from "stripe";
+
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  return new Stripe(key);
+}
+
+const PLAN_PRICE_ENV: Record<string, string> = {
+  resident: "STRIPE_PRICE_RESIDENT",
+  starter: "STRIPE_PRICE_STARTER",
+  professional: "STRIPE_PRICE_PROFESSIONAL",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -130,6 +143,36 @@ export async function PUT(req: NextRequest) {
     const service = createServiceClient();
 
     if (cancelPending) {
+      const { data: info } = await service
+        .from("profiles")
+        .select("stripe_subscription_id, pending_plan, subscription_plan")
+        .eq("id", user.id)
+        .single();
+
+      if (info?.stripe_subscription_id) {
+        const stripe = getStripe();
+        if (stripe) {
+          if (info.pending_plan === "free") {
+            await stripe.subscriptions.update(info.stripe_subscription_id, {
+              cancel_at_period_end: false,
+            });
+          } else if (info.pending_plan && info.subscription_plan && info.subscription_plan !== "free") {
+            const envKey = PLAN_PRICE_ENV[info.subscription_plan];
+            const currentPriceId = envKey ? process.env[envKey] : null;
+            if (currentPriceId) {
+              const sub = await stripe.subscriptions.retrieve(info.stripe_subscription_id);
+              const itemId = sub.items.data[0]?.id;
+              if (itemId) {
+                await stripe.subscriptions.update(info.stripe_subscription_id, {
+                  items: [{ id: itemId, price: currentPriceId }],
+                  proration_behavior: "none",
+                });
+              }
+            }
+          }
+        }
+      }
+
       await service
         .from("profiles")
         .update({ pending_plan: null, pending_plan_effective_date: null })
@@ -143,7 +186,7 @@ export async function PUT(req: NextRequest) {
 
     const { data: profile } = await service
       .from("profiles")
-      .select("subscription_plan, billing_period_start")
+      .select("subscription_plan, billing_period_start, stripe_subscription_id")
       .eq("id", user.id)
       .single();
 
@@ -159,6 +202,30 @@ export async function PUT(req: NextRequest) {
 
     if (isUpgrade) {
       return NextResponse.json({ error: "Upgrades require payment via Stripe checkout" }, { status: 402 });
+    }
+
+    if (profile.stripe_subscription_id) {
+      const stripe = getStripe();
+      if (stripe) {
+        if (plan === "free") {
+          await stripe.subscriptions.update(profile.stripe_subscription_id, {
+            cancel_at_period_end: true,
+          });
+        } else {
+          const envKey = PLAN_PRICE_ENV[plan];
+          const newPriceId = envKey ? process.env[envKey] : null;
+          if (newPriceId) {
+            const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+            const itemId = sub.items.data[0]?.id;
+            if (itemId) {
+              await stripe.subscriptions.update(profile.stripe_subscription_id, {
+                items: [{ id: itemId, price: newPriceId }],
+                proration_behavior: "none",
+              });
+            }
+          }
+        }
+      }
     }
 
     const effectiveDate = getNextPeriodDate(profile.billing_period_start || new Date().toISOString());

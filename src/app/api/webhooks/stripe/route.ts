@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendPaymentFailedEmail, sendPlanChangeEmail } from "@/lib/email";
-import { type SubscriptionPlan } from "@/lib/types";
+import { PLANS, type SubscriptionPlan } from "@/lib/types";
 import Stripe from "stripe";
 
 function getStripe(): Stripe | null {
@@ -88,13 +88,36 @@ export async function POST(req: NextRequest) {
         const plan = priceId ? planFromPriceId(priceId) : "free";
         const isActive = subscription.status === "active" || subscription.status === "trialing";
 
+        if (event.type === "customer.subscription.updated") {
+          const { data: existing } = await service
+            .from("profiles")
+            .select("pending_plan")
+            .eq("stripe_customer_id", customerId)
+            .single();
+
+          if (existing?.pending_plan) {
+            const deferredUpdate: Record<string, unknown> = {
+              stripe_subscription_id: subscription.id,
+            };
+            if (isActive && subscription.items.data[0]?.current_period_start) {
+              deferredUpdate.billing_period_start = new Date(subscription.items.data[0]?.current_period_start * 1000).toISOString();
+            }
+            await service
+              .from("profiles")
+              .update(deferredUpdate)
+              .eq("stripe_customer_id", customerId);
+            console.log(`[stripe-webhook] ${event.type}: customer=${customerId}, deferred downgrade in progress, skipping plan update`);
+            break;
+          }
+        }
+
         const update: Record<string, unknown> = {
           stripe_subscription_id: subscription.id,
           subscription_plan: isActive ? plan : "free",
         };
 
-        if (isActive && subscription.start_date) {
-          update.billing_period_start = new Date(subscription.start_date * 1000).toISOString();
+        if (isActive && subscription.items.data[0]?.current_period_start) {
+          update.billing_period_start = new Date(subscription.items.data[0]?.current_period_start * 1000).toISOString();
         }
 
         await service
@@ -146,15 +169,31 @@ export async function POST(req: NextRequest) {
           : invoice.customer?.id;
 
         if (customerId && invoice.billing_reason === "subscription_cycle") {
+          const { data: cycleProfile } = await service
+            .from("profiles")
+            .select("pending_plan")
+            .eq("stripe_customer_id", customerId)
+            .single();
+
+          const cycleUpdate: Record<string, unknown> = {
+            reports_used_this_month: 0,
+            dictation_seconds_used: 0,
+            billing_period_start: new Date().toISOString(),
+            pending_plan: null,
+            pending_plan_effective_date: null,
+          };
+
+          if (cycleProfile?.pending_plan) {
+            const pendingPlan = cycleProfile.pending_plan as SubscriptionPlan;
+            if (PLANS[pendingPlan]) {
+              cycleUpdate.subscription_plan = pendingPlan;
+              console.log(`[stripe-webhook] invoice.paid: applying deferred plan change to ${pendingPlan}`);
+            }
+          }
+
           await service
             .from("profiles")
-            .update({
-              reports_used_this_month: 0,
-              dictation_seconds_used: 0,
-              billing_period_start: new Date().toISOString(),
-              pending_plan: null,
-              pending_plan_effective_date: null,
-            })
+            .update(cycleUpdate)
             .eq("stripe_customer_id", customerId);
 
           console.log(`[stripe-webhook] invoice.paid (cycle): customer=${customerId}, usage reset`);
