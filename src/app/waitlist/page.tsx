@@ -70,20 +70,37 @@ function RegisterForm() {
       }
 
       if (data.approved) {
-        const loginRes = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        if (loginRes.ok) {
-          if (PAID_PLANS.has(selectedPlan)) {
-            window.location.href = `/api/checkout?plan=${selectedPlan}`;
-          } else {
-            window.location.href = "/dashboard";
+        if (PAID_PLANS.has(selectedPlan)) {
+          const loginRes = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (loginRes.ok) {
+            const checkoutRes = await fetch("/api/checkout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ plan: selectedPlan }),
+            });
+            const checkoutData = await checkoutRes.json();
+            if (checkoutData.url) {
+              window.location.href = checkoutData.url;
+              return;
+            }
           }
-          return;
+          setSubmitted("approved");
+        } else {
+          const loginRes = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (loginRes.ok) {
+            window.location.href = "/dashboard";
+            return;
+          }
+          setSubmitted("approved");
         }
-        setSubmitted("approved");
       } else {
         setSubmitted("pending");
       }

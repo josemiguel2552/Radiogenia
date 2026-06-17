@@ -95,10 +95,12 @@ export async function GET(req: NextRequest) {
     }
 
     const fallback = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-    return NextResponse.redirect(`${fallback}/dashboard`);
+    return NextResponse.redirect(
+      `${fallback}/dashboard?checkout=error&reason=${encodeURIComponent(result.error || "unknown")}`,
+    );
   } catch {
     const fallback = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-    return NextResponse.redirect(`${fallback}/dashboard`);
+    return NextResponse.redirect(`${fallback}/dashboard?checkout=error`);
   }
 }
 
