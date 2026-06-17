@@ -53,19 +53,38 @@ export async function GET() {
       stripeSubId = extra?.stripe_subscription_id ?? null;
     } catch { /* columns may not exist yet */ }
 
-    if (stripeSubId && profile.subscription_plan === "free") {
+    // Self-healing sync with Stripe: if the user has a Stripe customer but the
+    // local plan is "free" (e.g. the checkout webhook never arrived), query
+    // Stripe directly for the active subscription and reconcile the DB.
+    if (profile.stripe_customer_id && profile.subscription_plan === "free" && !profile.pending_plan) {
       const stripe = getStripe();
       if (stripe) {
         try {
-          const sub = await stripe.subscriptions.retrieve(stripeSubId);
-          const priceId = sub.items.data[0]?.price?.id;
-          if (priceId && (sub.status === "active" || sub.status === "trialing")) {
+          let sub: Stripe.Subscription | null = null;
+
+          if (stripeSubId) {
+            try {
+              sub = await stripe.subscriptions.retrieve(stripeSubId);
+            } catch { /* stored sub id stale — fall through to customer lookup */ }
+          }
+
+          if (!sub || (sub.status !== "active" && sub.status !== "trialing")) {
+            const list = await stripe.subscriptions.list({
+              customer: profile.stripe_customer_id,
+              status: "active",
+              limit: 1,
+            });
+            sub = list.data[0] ?? sub;
+          }
+
+          if (sub && (sub.status === "active" || sub.status === "trialing")) {
+            const priceId = sub.items.data[0]?.price?.id;
             const envMap: Record<string, SubscriptionPlan> = {};
             for (const [plan, envKey] of Object.entries(PLAN_PRICE_ENV)) {
               const pid = process.env[envKey];
               if (pid) envMap[pid] = plan as SubscriptionPlan;
             }
-            const realPlan = envMap[priceId];
+            const realPlan = priceId ? envMap[priceId] : undefined;
             if (realPlan && realPlan !== "free") {
               profile.subscription_plan = realPlan;
               profile.billing_period_start = new Date(
@@ -73,10 +92,12 @@ export async function GET() {
               ).toISOString();
               profile.reports_used_this_month = 0;
               profile.dictation_seconds_used = 0;
+              stripeSubId = sub.id;
               await service
                 .from("profiles")
                 .update({
                   subscription_plan: realPlan,
+                  stripe_subscription_id: sub.id,
                   billing_period_start: profile.billing_period_start,
                   reports_used_this_month: 0,
                   dictation_seconds_used: 0,
