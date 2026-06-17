@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Globe, CheckCircle2, Clock } from "lucide-react";
+import { Loader2, Globe, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 import { PLANS } from "@/lib/types";
@@ -40,8 +40,9 @@ function RegisterForm() {
   const [hospital, setHospital] = useState("");
   const [role, setRole] = useState<"attending" | "resident">("attending");
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState<false | "approved" | "pending">(false);
+  const [submitted, setSubmitted] = useState<false | "approved" | "pending" | "checkout_failed">(false);
   const [error, setError] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,18 +78,25 @@ function RegisterForm() {
             body: JSON.stringify({ email, password }),
           });
           if (loginRes.ok) {
-            const checkoutRes = await fetch("/api/checkout", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ plan: selectedPlan }),
-            });
-            const checkoutData = await checkoutRes.json();
-            if (checkoutData.url) {
-              window.location.href = checkoutData.url;
-              return;
+            setLoggedIn(true);
+            try {
+              const checkoutRes = await fetch("/api/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ plan: selectedPlan }),
+              });
+              const checkoutData = await checkoutRes.json();
+              if (checkoutData.url) {
+                window.location.href = checkoutData.url;
+                return;
+              }
+            } catch {
+              // checkout network error
             }
+            setSubmitted("checkout_failed");
+          } else {
+            setSubmitted("approved");
           }
-          setSubmitted("approved");
         } else {
           const loginRes = await fetch("/api/auth/login", {
             method: "POST",
@@ -110,8 +118,75 @@ function RegisterForm() {
     setLoading(false);
   }
 
+  async function retryCheckout() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: selectedPlan }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    } catch {
+      // network error
+    }
+    setLoading(false);
+  }
+
   if (submitted) {
     const isPending = submitted === "pending";
+    const isCheckoutFailed = submitted === "checkout_failed";
+
+    if (isCheckoutFailed) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
+          <div className="max-w-md w-full text-center space-y-6">
+            <div className="flex justify-center">
+              <Logo size="md" forceDark />
+            </div>
+            <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 space-y-4">
+              <div className="flex justify-center">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-amber-500/10">
+                  <AlertTriangle className="h-6 w-6 text-amber-400" />
+                </div>
+              </div>
+              <h1 className="text-xl font-bold text-white">
+                {lang === "es" ? "Cuenta creada" : lang === "pt" ? "Conta criada" : "Account created"}
+              </h1>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                {lang === "es"
+                  ? "Tu cuenta fue creada correctamente, pero no pudimos conectar con la pasarela de pago. Puedes intentarlo de nuevo o acceder con el plan gratuito."
+                  : lang === "pt"
+                  ? "Sua conta foi criada com sucesso, mas não conseguimos conectar ao gateway de pagamento. Você pode tentar novamente ou acessar com o plano gratuito."
+                  : "Your account was created successfully, but we couldn't connect to the payment gateway. You can try again or access with the free plan."}
+              </p>
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={retryCheckout}
+                  disabled={loading}
+                  className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 font-semibold"
+                >
+                  {loading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : lang === "es" ? "Reintentar pago" : lang === "pt" ? "Tentar pagamento novamente" : "Retry payment"}
+                </Button>
+                <Link
+                  href="/dashboard"
+                  className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+                >
+                  {lang === "es" ? "Continuar con plan gratuito →" : lang === "pt" ? "Continuar com plano gratuito →" : "Continue with free plan →"}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
         <div className="max-w-md w-full text-center space-y-6">
