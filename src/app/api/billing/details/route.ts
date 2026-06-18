@@ -26,7 +26,7 @@ export async function GET() {
     const service = createServiceClient();
     const { data: profile } = await service
       .from("profiles")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, stripe_subscription_id")
       .eq("id", user.id)
       .single();
 
@@ -35,10 +35,14 @@ export async function GET() {
     }
 
     const customerId = profile.stripe_customer_id;
+    const subscriptionId = profile.stripe_subscription_id;
+
+    const previewParams: Stripe.InvoiceCreatePreviewParams = { customer: customerId };
+    if (subscriptionId) previewParams.subscription = subscriptionId;
 
     const [paymentMethods, upcomingInvoice, invoicesList] = await Promise.allSettled([
       stripe.paymentMethods.list({ customer: customerId, type: "card", limit: 1 }),
-      stripe.invoices.createPreview({ customer: customerId }).catch(() => null),
+      stripe.invoices.createPreview(previewParams),
       stripe.invoices.list({ customer: customerId, limit: 12, status: "paid" }),
     ]);
 
