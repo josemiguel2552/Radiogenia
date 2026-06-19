@@ -61,7 +61,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex justify-center flex-1">
-            <Logo size="md" forceDark />
+            <Link href="/"><Logo size="md" forceDark /></Link>
           </div>
           <button
             onClick={() => setLang(nextLang(lang))}

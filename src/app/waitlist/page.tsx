@@ -146,7 +146,7 @@ function RegisterForm() {
         <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
           <div className="max-w-md w-full text-center space-y-6">
             <div className="flex justify-center">
-              <Logo size="md" forceDark />
+              <Link href="/"><Logo size="md" forceDark /></Link>
             </div>
             <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 space-y-4">
               <div className="flex justify-center">
@@ -191,7 +191,7 @@ function RegisterForm() {
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
         <div className="max-w-md w-full text-center space-y-6">
           <div className="flex justify-center">
-            <Logo size="md" forceDark />
+            <Link href="/"><Logo size="md" forceDark /></Link>
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
             <div className="flex justify-center">
@@ -227,7 +227,7 @@ function RegisterForm() {
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-float-slower" />
         <div className="relative z-10 max-w-md text-center px-8">
           <div className="flex items-center justify-center mb-8">
-            <Logo size="lg" forceDark />
+            <Link href="/"><Logo size="lg" forceDark /></Link>
           </div>
           <p className="text-lg text-gray-300 leading-relaxed">
             {t("waitlist.sidebar")}
@@ -239,7 +239,7 @@ function RegisterForm() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md space-y-8">
           <div className="flex lg:hidden justify-center mb-4">
-            <Logo size="md" forceDark />
+            <Link href="/"><Logo size="md" forceDark /></Link>
           </div>
 
           <div className="flex items-center justify-between">

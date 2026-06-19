@@ -65,7 +65,7 @@ function LoginContent() {
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[100px] animate-float-slower" />
         <div className="relative z-10 max-w-md text-center px-8">
           <div className="flex items-center justify-center mb-8">
-            <Logo size="lg" forceDark />
+            <Link href="/"><Logo size="lg" forceDark /></Link>
           </div>
           <p className="text-lg text-gray-300 leading-relaxed">
             {t("auth.sidebar_text")}
@@ -78,7 +78,7 @@ function LoginContent() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="flex lg:hidden justify-center mb-4">
-            <Logo size="md" forceDark />
+            <Link href="/"><Logo size="md" forceDark /></Link>
           </div>
 
           <div className="flex items-center justify-between">

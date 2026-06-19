@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -22,7 +23,7 @@ export default function NotApprovedPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
       <div className="max-w-md w-full text-center space-y-6">
         <div className="flex justify-center">
-          <Logo size="md" forceDark />
+          <Link href="/"><Logo size="md" forceDark /></Link>
         </div>
         <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
           <div className="flex justify-center">

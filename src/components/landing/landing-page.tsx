@@ -597,7 +597,7 @@ export function LandingPage() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/5 py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo size="sm" forceDark />
+          <Link href="/"><Logo size="sm" forceDark /></Link>
           <div className="flex items-center gap-6 text-xs text-gray-500">
             <a href="#features" className="hover:text-gray-300 transition-colors">{t("nav.features")}</a>
             <a href="#pricing" className="hover:text-gray-300 transition-colors">{t("nav.pricing")}</a>
