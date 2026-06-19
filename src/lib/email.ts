@@ -15,12 +15,15 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
 async function sendWithRetry(params: Parameters<Resend["emails"]["send"]>[0], maxRetries = 2): Promise<void> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      await getResend().emails.send(params);
+      const { error } = await getResend().emails.send(params);
+      if (error) {
+        throw new Error(error.message || JSON.stringify(error));
+      }
       return;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (attempt === maxRetries) {
-        console.error(`[email] FAILED after ${maxRetries + 1} attempts: to=${(params as { to: string }).to}, subject=${(params as { subject: string }).subject}, error=${msg}`);
+        console.error(`[email] FAILED after ${maxRetries + 1} attempts: to=${(params as { to: string }).to}, subject=${(params as { subject: string }).subject}, from=${(params as { from: string }).from}, error=${msg}`);
         return;
       }
       console.warn(`[email] Attempt ${attempt + 1} failed, retrying: ${msg}`);
