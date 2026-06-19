@@ -47,26 +47,37 @@ export async function POST(req: NextRequest) {
     if (!residencyStart || !residencyEnd) {
       return NextResponse.json({ error: "Residency start and end dates are required" }, { status: 400 });
     }
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File must be under 5 MB" }, { status: 400 });
+    if (file.size > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: "File must be under 2 MB" }, { status: 400 });
     }
 
     const service = createServiceClient();
 
-    const { data: existing } = await service
+    const { data: existing, error: existingError } = await service
       .from("resident_verifications")
       .select("id, status")
       .eq("user_id", user.id)
       .eq("status", "pending")
       .maybeSingle();
 
+    if (existingError) {
+      console.error("[resident-verification] check existing error:", existingError.message, existingError);
+      return NextResponse.json({ error: `DB check failed: ${existingError.message}` }, { status: 500 });
+    }
+
     if (existing) {
       return NextResponse.json({ error: "You already have a pending verification request" }, { status: 409 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64}`;
+    let dataUrl: string;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      dataUrl = `data:${file.type};base64,${base64}`;
+    } catch (err) {
+      console.error("[resident-verification] file read error:", err);
+      return NextResponse.json({ error: "Failed to read uploaded file" }, { status: 500 });
+    }
 
     const { data: verification, error: insertError } = await service
       .from("resident_verifications")
@@ -82,7 +93,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      console.error("[resident-verification] insert error:", insertError.message, insertError);
+      return NextResponse.json({ error: `DB insert failed: ${insertError.message}` }, { status: 500 });
     }
 
     return NextResponse.json(verification);
