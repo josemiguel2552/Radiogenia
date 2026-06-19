@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const { data: authData, error: authError } = await service.auth.admin.createUser({
       email: normalizedEmail,
       password,
-      email_confirm: true,
+      email_confirm: false,
     });
 
     if (authError) {
@@ -68,8 +68,25 @@ export async function POST(req: NextRequest) {
 
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
 
+    let confirmUrl: string | null = null;
+    if (autoApprove) {
+      try {
+        const { data: linkData } = await service.auth.admin.generateLink({
+          type: "signup",
+          email: normalizedEmail,
+          password,
+        });
+        if (linkData?.properties?.hashed_token) {
+          const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
+          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=signup`;
+        }
+      } catch (err) {
+        console.error(`[register] confirm link error: ${err}`);
+      }
+    }
+
     const emailFn = autoApprove ? sendWelcomeEmail : sendPendingApprovalEmail;
-    emailFn(normalizedEmail, fullName).catch((err) =>
+    emailFn(normalizedEmail, fullName, "es", confirmUrl).catch((err) =>
       console.error(`[register] email error: ${err}`)
     );
 

@@ -2251,25 +2251,33 @@ export function DashboardContent() {
                   {nextPlan && (
                     <Button
                       className="w-full gap-2 bg-brand-gradient text-brand-fg hover:opacity-90"
-                      onClick={() => {
-                        window.open(`mailto:info@radiogen.ai?subject=Upgrade to ${PLANS[nextPlan].label}&body=I'd like to upgrade from ${planLabel} to ${PLANS[nextPlan].label} ($${PLANS[nextPlan].price}/month).`, "_blank");
+                      onClick={async () => {
                         setLimitDialogOpen(false);
+                        const res = await fetch("/api/subscription", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ plan: nextPlan }),
+                        });
+                        const data = await res.json();
+                        if (data.needsCheckout) {
+                          const checkoutRes = await fetch("/api/checkout", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ plan: nextPlan }),
+                          });
+                          const checkoutData = await checkoutRes.json();
+                          if (checkoutData.url) {
+                            window.location.href = checkoutData.url;
+                            return;
+                          }
+                        }
+                        if (res.ok) window.location.reload();
                       }}
                     >
                       <Sparkles className="h-4 w-4" />
                       {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} inf. + {PLANS[nextPlan].dictationMinutes} min) ${PLANS[nextPlan].price}/mo
                     </Button>
                   )}
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2"
-                    onClick={() => {
-                      window.open("mailto:info@radiogen.ai?subject=Buy extra reports&body=I'd like to purchase 100 extra reports + 90 min dictation for my current billing period.", "_blank");
-                      setLimitDialogOpen(false);
-                    }}
-                  >
-                    {t("limit.buy_extra")} {t("limit.buy_extra_price").replace("{price}", "4.99")} (+90 min)<PriceTooltip usd={4.99} />
-                  </Button>
                 </div>
               </div>
             );

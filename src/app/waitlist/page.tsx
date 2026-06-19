@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Globe, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Loader2, Globe, CheckCircle2, Clock, AlertTriangle, Mail } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 import { PLANS } from "@/lib/types";
@@ -43,7 +43,6 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState<false | "approved" | "pending" | "checkout_failed">(false);
   const [error, setError] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,44 +75,7 @@ function RegisterForm() {
       }
 
       if (data.approved) {
-        if (PAID_PLANS.has(selectedPlan)) {
-          const loginRes = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
-          if (loginRes.ok) {
-            setLoggedIn(true);
-            try {
-              const checkoutRes = await fetch("/api/checkout", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ plan: selectedPlan }),
-              });
-              const checkoutData = await checkoutRes.json();
-              if (checkoutData.url) {
-                window.location.href = checkoutData.url;
-                return;
-              }
-            } catch {
-              // checkout network error
-            }
-            setSubmitted("checkout_failed");
-          } else {
-            setSubmitted("approved");
-          }
-        } else {
-          const loginRes = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
-          if (loginRes.ok) {
-            window.location.href = "/dashboard";
-            return;
-          }
-          setSubmitted("approved");
-        }
+        setSubmitted("approved");
       } else {
         setSubmitted("pending");
       }
@@ -200,10 +162,10 @@ function RegisterForm() {
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
             <div className="flex justify-center">
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/10" : "bg-violet-500/10"}`}>
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/10" : "bg-blue-500/10"}`}>
                 {isPending
                   ? <Clock className="h-6 w-6 text-amber-400" />
-                  : <CheckCircle2 className="h-6 w-6 text-violet-400" />}
+                  : <Mail className="h-6 w-6 text-blue-400" />}
               </div>
             </div>
             <h1 className="text-xl font-bold text-white">

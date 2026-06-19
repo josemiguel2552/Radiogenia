@@ -231,10 +231,11 @@ const welcomeI18n: Record<EmailLang, {
   },
 };
 
-export async function sendWelcomeEmail(to: string, name: string | null, lang: EmailLang = "es") {
+export async function sendWelcomeEmail(to: string, name: string | null, lang: EmailLang = "es", confirmUrl?: string | null) {
   const t = welcomeI18n[lang];
   const greeting = name ? name.split(" ")[0] : "";
-  const dashUrl = `${APP_URL}/dashboard`;
+  const dashUrl = confirmUrl || `${APP_URL}/dashboard`;
+  const btnLabel = confirmUrl ? (lang === "es" ? "Confirmar mi cuenta" : lang === "pt" ? "Confirmar minha conta" : "Confirm my account") : t.btn;
 
   const html = emailShell(`
         <tr><td style="padding:0 32px 4px;">
@@ -260,7 +261,7 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
           </table>
         </td></tr>
         ${tipBox(t.tip)}
-        ${cta(dashUrl, t.btn)}`, t.unsub, lang);
+        ${cta(dashUrl, btnLabel)}`, t.unsub, lang);
 
   const text = t.textTpl(greeting, dashUrl);
 

@@ -12,6 +12,21 @@ export async function GET(request: Request) {
 
   const code = searchParams.get("code");
   const type = searchParams.get("type");
+  const tokenHash = searchParams.get("token_hash");
+
+  if (tokenHash && type) {
+    const supabase = await createClient();
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: type as "signup" | "email",
+    });
+    if (verifyError) {
+      return NextResponse.redirect(
+        `${origin}/auth/login?error=${encodeURIComponent(verifyError.message)}`
+      );
+    }
+    return NextResponse.redirect(`${origin}/dashboard`);
+  }
 
   if (code) {
     const supabase = await createClient();
