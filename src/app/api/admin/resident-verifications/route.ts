@@ -79,6 +79,7 @@ export async function PUT(req: NextRequest) {
             .from("profiles")
             .update({
               subscription_plan: "resident",
+              pending_checkout_plan: null,
               billing_period_start: new Date().toISOString(),
               reports_used_this_month: 0,
               dictation_seconds_used: 0,

@@ -96,6 +96,8 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          update.pending_checkout_plan = null;
+
           await service
             .from("profiles")
             .update(update)

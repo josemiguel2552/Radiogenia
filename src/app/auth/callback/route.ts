@@ -36,6 +36,9 @@ export async function GET(request: Request) {
     }
 
     const plan = searchParams.get("plan");
+    if (plan === "resident") {
+      return NextResponse.redirect(`${origin}/auth/verify-resident`);
+    }
     if (plan && plan !== "free") {
       return NextResponse.redirect(`${origin}/api/checkout?plan=${encodeURIComponent(plan)}`);
     }

@@ -234,11 +234,39 @@ const welcomeI18n: Record<EmailLang, {
   },
 };
 
-export async function sendWelcomeEmail(to: string, name: string | null, lang: EmailLang = "es", confirmUrl?: string | null) {
+const welcomePlanLimits: Record<string, { reports: number; dictation: number }> = {
+  free: { reports: 20, dictation: 30 },
+  resident: { reports: 150, dictation: 120 },
+  starter: { reports: 150, dictation: 120 },
+  professional: { reports: 400, dictation: 300 },
+};
+
+const welcomePlanNames: Record<string, string> = {
+  free: "Free", starter: "Starter", resident: "Residente", professional: "Professional",
+};
+
+function welcomeFeat1(plan: string | null | undefined, lang: EmailLang): string {
+  const p = plan && welcomePlanLimits[plan] ? plan : "free";
+  const limits = welcomePlanLimits[p];
+  const label = welcomePlanNames[p] || "Free";
+  if (lang === "es") return `${limits.reports} informes al mes con tu plan ${label}`;
+  if (lang === "pt") return `${limits.reports} laudos por m&ecirc;s no plano ${label}`;
+  return `${limits.reports} reports per month on your ${label} plan`;
+}
+
+function welcomeFeat1Text(plan: string | null | undefined): string {
+  const p = plan && welcomePlanLimits[plan] ? plan : "free";
+  const limits = welcomePlanLimits[p];
+  const label = welcomePlanNames[p] || "Free";
+  return `${limits.reports} reports — ${label} plan`;
+}
+
+export async function sendWelcomeEmail(to: string, name: string | null, lang: EmailLang = "es", confirmUrl?: string | null, plan?: string | null) {
   const t = welcomeI18n[lang];
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = confirmUrl || `${APP_URL}/dashboard`;
   const btnLabel = confirmUrl ? (lang === "es" ? "Confirmar mi cuenta" : lang === "pt" ? "Confirmar minha conta" : "Confirm my account") : t.btn;
+  const feat1 = welcomeFeat1(plan, lang);
 
   const html = emailShell(`
         <tr><td style="padding:0 32px 4px;">
@@ -257,7 +285,7 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
         </td></tr>
         <tr><td style="padding:0 32px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-            ${featureRow("📄", t.feat1)}
+            ${featureRow("📄", feat1)}
             ${featureRow("🎙️", t.feat2)}
             ${featureRow("📋", t.feat3)}
             ${featureRow("🧮", t.feat4)}
@@ -266,7 +294,8 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
         ${tipBox(t.tip)}
         ${cta(dashUrl, btnLabel)}`, t.unsub, lang);
 
-  const text = t.textTpl(greeting, dashUrl);
+  const textFeat1 = welcomeFeat1Text(plan);
+  const text = t.textTpl(greeting, dashUrl).replace(/✓ \d+ (?:informes|reports|laudos).*(?:gratuito|free plan|plano gratuito)/, `✓ ${textFeat1}`);
 
   await sendWithRetry({
     from: FROM, replyTo: REPLY_TO, to, subject: t.subject, html, text,

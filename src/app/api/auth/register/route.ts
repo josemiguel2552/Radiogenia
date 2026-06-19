@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
 
     const autoApprove = LATAM_COUNTRIES.has(country || "") && role !== "resident";
 
+    const pendingPlan = plan && plan !== "free" ? plan : null;
+
     await service.from("profiles").upsert({
       id: userId,
       email: normalizedEmail,
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
       ...(country ? { country } : {}),
       ...(hospital ? { hospital } : {}),
       ...(role ? { professional_role: role } : {}),
+      ...(pendingPlan ? { pending_checkout_plan: pendingPlan } : {}),
     });
 
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
@@ -86,9 +89,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const emailFn = autoApprove ? sendWelcomeEmail : sendPendingApprovalEmail;
     try {
-      await emailFn(normalizedEmail, fullName, "es", confirmUrl);
+      if (autoApprove) {
+        await sendWelcomeEmail(normalizedEmail, fullName, "es", confirmUrl, pendingPlan);
+      } else {
+        await sendPendingApprovalEmail(normalizedEmail, fullName, "es");
+      }
     } catch (err) {
       console.error(`[register] email error: ${err}`);
     }
