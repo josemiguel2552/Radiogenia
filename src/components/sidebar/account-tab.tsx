@@ -175,36 +175,6 @@ export function AccountTab() {
     setPlanChangeLoading(true);
     setPlanMsg(null);
 
-    const isUpgrade = PLANS[selectedPlan].price > PLANS[sub.plan].price;
-
-    if (isUpgrade) {
-      try {
-        const res = await fetch("/api/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: selectedPlan }),
-        });
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
-        const err = data.error || "";
-        const msg = err.includes("not configured") && err.includes("Price")
-          ? t("account.price_not_configured")
-          : err.includes("not configured")
-          ? t("account.stripe_not_configured")
-          : err.includes("verification")
-          ? t("account.resident_verification_required")
-          : t("account.checkout_error");
-        setPlanMsg({ ok: false, text: msg });
-      } catch {
-        setPlanMsg({ ok: false, text: t("account.checkout_error") });
-      }
-      setPlanChangeLoading(false);
-      return;
-    }
-
     try {
       const res = await fetch("/api/subscription", {
         method: "PUT",
@@ -212,8 +182,27 @@ export function AccountTab() {
         body: JSON.stringify({ plan: selectedPlan }),
       });
       const data = await res.json();
+
+      if (data.needsCheckout) {
+        const checkoutRes = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: selectedPlan }),
+        });
+        const checkoutData = await checkoutRes.json();
+        if (checkoutData.url) {
+          window.location.href = checkoutData.url;
+          return;
+        }
+        setPlanMsg({ ok: false, text: t("account.checkout_error") });
+        setPlanChangeLoading(false);
+        return;
+      }
+
       if (res.ok) {
-        if (data.deferred && data.effectiveDate) {
+        if (data.immediate) {
+          setPlanMsg({ ok: true, text: t("account.plan_upgraded") });
+        } else if (data.deferred && data.effectiveDate) {
           setPlanMsg({
             ok: true,
             text: t("account.plan_deferred").replace("{date}", formatDate(data.effectiveDate)),
@@ -221,8 +210,12 @@ export function AccountTab() {
         }
         await loadSub();
         setChangePlanOpen(false);
+      } else {
+        setPlanMsg({ ok: false, text: data.error || t("gen_error") });
       }
-    } catch { /* ignore */ }
+    } catch {
+      setPlanMsg({ ok: false, text: t("account.checkout_error") });
+    }
     setPlanChangeLoading(false);
   }, [selectedPlan, sub, loadSub, t]);
 

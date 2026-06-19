@@ -256,8 +256,33 @@ export async function PUT(req: NextRequest) {
 
     const isUpgrade = PLANS[plan as SubscriptionPlan].price > PLANS[currentPlan].price;
 
-    if (isUpgrade) {
-      return NextResponse.json({ error: "Upgrades require payment via Stripe checkout" }, { status: 402 });
+    if (isUpgrade && !profile.stripe_subscription_id) {
+      return NextResponse.json({ error: "No active subscription — use checkout", needsCheckout: true }, { status: 402 });
+    }
+
+    if (isUpgrade && profile.stripe_subscription_id) {
+      const stripe = getStripe();
+      if (!stripe) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+
+      const envKey = PLAN_PRICE_ENV[plan];
+      const newPriceId = envKey ? process.env[envKey] : null;
+      if (!newPriceId) return NextResponse.json({ error: "Price not configured" }, { status: 503 });
+
+      const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+      const itemId = sub.items.data[0]?.id;
+      if (itemId) {
+        await stripe.subscriptions.update(profile.stripe_subscription_id, {
+          items: [{ id: itemId, price: newPriceId }],
+          proration_behavior: "none",
+        });
+      }
+
+      await service
+        .from("profiles")
+        .update({ subscription_plan: plan })
+        .eq("id", user.id);
+
+      return NextResponse.json({ ok: true, immediate: true });
     }
 
     if (profile.stripe_subscription_id) {
