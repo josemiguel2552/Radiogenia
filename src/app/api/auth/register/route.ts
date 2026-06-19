@@ -86,9 +86,11 @@ export async function POST(req: NextRequest) {
     }
 
     const emailFn = autoApprove ? sendWelcomeEmail : sendPendingApprovalEmail;
-    emailFn(normalizedEmail, fullName, "es", confirmUrl).catch((err) =>
-      console.error(`[register] email error: ${err}`)
-    );
+    try {
+      await emailFn(normalizedEmail, fullName, "es", confirmUrl);
+    } catch (err) {
+      console.error(`[register] email error: ${err}`);
+    }
 
     return NextResponse.json({ ok: true, approved: autoApprove });
   } catch (error) {
