@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -16,15 +17,24 @@ export async function GET(request: Request) {
 
   if (tokenHash && type) {
     const supabase = await createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: type as "signup" | "email",
+      type: type as "signup" | "email" | "magiclink",
     });
     if (verifyError) {
       return NextResponse.redirect(
         `${origin}/auth/login?error=${encodeURIComponent(verifyError.message)}`
       );
     }
+
+    if (data.user) {
+      const service = createServiceClient();
+      await service
+        .from("profiles")
+        .update({ email_verified: true })
+        .eq("id", data.user.id);
+    }
+
     return NextResponse.redirect(`${origin}/dashboard`);
   }
 

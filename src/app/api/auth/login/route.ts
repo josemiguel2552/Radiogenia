@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
@@ -46,9 +47,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    if (signInData.user && !signInData.user.email_confirmed_at) {
-      await supabase.auth.signOut();
-      return NextResponse.json({ error: "email_not_confirmed" }, { status: 403 });
+    if (signInData.user) {
+      const service = createServiceClient();
+      const { data: profile } = await service
+        .from("profiles")
+        .select("email_verified")
+        .eq("id", signInData.user.id)
+        .single();
+
+      if (profile && profile.email_verified === false) {
+        await supabase.auth.signOut();
+        return NextResponse.json({ error: "email_not_confirmed" }, { status: 403 });
+      }
     }
 
     return response;

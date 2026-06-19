@@ -103,7 +103,10 @@ export async function PUT(req: NextRequest) {
     if (subscription_plan && ["free", "starter", "professional"].includes(subscription_plan)) {
       updates.subscription_plan = subscription_plan;
     }
-    if (typeof approved === "boolean") updates.approved = approved;
+    if (typeof approved === "boolean") {
+      updates.approved = approved;
+      if (approved) updates.email_verified = true;
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

@@ -55,10 +55,10 @@ export async function isUserApproved(userId: string): Promise<boolean> {
     const supabase = createServiceClient();
     const { data } = await supabase
       .from("profiles")
-      .select("approved")
+      .select("approved, email_verified")
       .eq("id", userId)
       .single();
-    return data?.approved === true;
+    return data?.approved === true && data?.email_verified !== false;
   } catch {
     return false;
   }

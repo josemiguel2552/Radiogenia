@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const { data: authData, error: authError } = await service.auth.admin.createUser({
       email: normalizedEmail,
       password,
-      email_confirm: false,
+      email_confirm: true,
     });
 
     if (authError) {
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       role: "radiologist",
       subscription_plan: "free",
       approved: autoApprove,
+      email_verified: false,
       billing_period_start: new Date().toISOString(),
       reports_used_this_month: 0,
       dictation_seconds_used: 0,
@@ -72,13 +73,12 @@ export async function POST(req: NextRequest) {
     if (autoApprove) {
       try {
         const { data: linkData } = await service.auth.admin.generateLink({
-          type: "signup",
+          type: "magiclink",
           email: normalizedEmail,
-          password,
         });
         if (linkData?.properties?.hashed_token) {
           const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=signup`;
+          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink`;
         }
       } catch (err) {
         console.error(`[register] confirm link error: ${err}`);

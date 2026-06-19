@@ -55,13 +55,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !user.email_confirmed_at && !isPublic) {
-    await supabase.auth.signOut();
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    url.searchParams.set("error", "email_not_confirmed");
-    return NextResponse.redirect(url);
-  }
-
   return supabaseResponse;
 }
