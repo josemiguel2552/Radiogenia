@@ -47,10 +47,12 @@ export async function POST(req: NextRequest) {
     if (!residencyStart || !residencyEnd) {
       return NextResponse.json({ error: "Residency start and end dates are required" }, { status: 400 });
     }
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "File must be under 5 MB" }, { status: 400 });
+    }
 
     const service = createServiceClient();
 
-    // Check for existing pending verification
     const { data: existing } = await service
       .from("resident_verifications")
       .select("id, status")
@@ -62,28 +64,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "You already have a pending verification request" }, { status: 409 });
     }
 
-    // Upload document to resident-docs bucket
-    const ext = file.name.split(".").pop() || "pdf";
-    const filePath = `${user.id}/${Date.now()}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    const { error: uploadError } = await service.storage
-      .from("resident-docs")
-      .upload(filePath, arrayBuffer, {
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      return NextResponse.json({ error: `Upload failed: ${uploadError.message}` }, { status: 500 });
-    }
-
-    // Create verification record
     const { data: verification, error: insertError } = await service
       .from("resident_verifications")
       .insert({
         user_id: user.id,
-        document_url: filePath,
+        document_url: dataUrl,
         institution_name: institutionName,
         residency_start: residencyStart,
         residency_end: residencyEnd,
