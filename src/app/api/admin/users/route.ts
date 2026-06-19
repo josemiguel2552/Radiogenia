@@ -100,7 +100,7 @@ export async function PUT(req: NextRequest) {
 
     const updates: Record<string, string | boolean | number | null> = {};
     if (role && (role === "admin" || role === "radiologist")) updates.role = role;
-    if (subscription_plan && ["free", "starter", "professional"].includes(subscription_plan)) {
+    if (subscription_plan && ["free", "resident", "starter", "professional"].includes(subscription_plan)) {
       updates.subscription_plan = subscription_plan;
     }
     if (typeof approved === "boolean") {
@@ -117,9 +117,17 @@ export async function PUT(req: NextRequest) {
         await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
         const { data: profile } = await supabase
           .from("profiles")
-          .select("invitation_code, invited_by")
+          .select("invitation_code, invited_by, pending_checkout_plan")
           .eq("id", userId)
           .single();
+
+        if (profile?.pending_checkout_plan === "resident") {
+          updates.subscription_plan = "resident";
+          updates.pending_checkout_plan = null;
+          updates.billing_period_start = new Date().toISOString();
+          updates.reports_used_this_month = 0;
+          updates.dictation_seconds_used = 0;
+        }
 
         if (profile?.invitation_code && profile?.invited_by) {
           const bonusExpires = new Date();
