@@ -102,7 +102,7 @@ export default function LegalPage() {
             <h2 className="text-xl font-semibold text-white mb-3">{t("legal.s9.title")}</h2>
             <p>
               {t("legal.s9.p")}{" "}
-              <a href="mailto:legal@radiogen.ai" className="text-blue-400 hover:text-blue-300">legal@radiogen.ai</a>.
+              <a href="mailto:info@radiogen.ai" className="text-blue-400 hover:text-blue-300">info@radiogen.ai</a>.
             </p>
           </section>
         </div>

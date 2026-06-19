@@ -95,7 +95,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "12. Contacto",
           content: [
-            "Para consultas, solicitudes de eliminación de datos o cuestiones legales, contáctenos en legal@radiogen.ai.",
+            "Para consultas, solicitudes de eliminación de datos o cuestiones legales, contáctenos en info@radiogen.ai.",
           ],
         },
       ],
@@ -144,7 +144,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           title: "5. Derechos del Interesado",
           content: [
             "De conformidad con el RGPD (Arts. 15-22), el usuario tiene derecho a: acceso a sus datos personales; rectificación de datos inexactos; supresión de sus datos (\"derecho al olvido\"); limitación del tratamiento; portabilidad de los datos; oposición al tratamiento; no ser objeto de decisiones automatizadas.",
-            "Para ejercer cualquiera de estos derechos, el usuario puede enviar una solicitud a legal@radiogen.ai indicando claramente el derecho que desea ejercer y proporcionando su identificación. Responderemos en un plazo máximo de 30 días.",
+            "Para ejercer cualquiera de estos derechos, el usuario puede enviar una solicitud a info@radiogen.ai indicando claramente el derecho que desea ejercer y proporcionando su identificación. Responderemos en un plazo máximo de 30 días.",
             "El usuario tiene también derecho a presentar una reclamación ante la autoridad de control de protección de datos competente (en España, la AEPD).",
           ],
         },
@@ -172,7 +172,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "9. Contacto",
           content: [
-            "Para consultas sobre privacidad, ejercicio de derechos o solicitudes de eliminación de datos: legal@radiogen.ai.",
+            "Para consultas sobre privacidad, ejercicio de derechos o solicitudes de eliminación de datos: info@radiogen.ai.",
           ],
         },
       ],
@@ -232,7 +232,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "8. Derechos de Auditoría",
           content: [
-            "La organización cliente tiene derecho a solicitar información sobre las medidas de seguridad implementadas y los subencargados utilizados. Las solicitudes de auditoría deben dirigirse a legal@radiogen.ai con un preaviso mínimo de 30 días.",
+            "La organización cliente tiene derecho a solicitar información sobre las medidas de seguridad implementadas y los subencargados utilizados. Las solicitudes de auditoría deben dirigirse a info@radiogen.ai con un preaviso mínimo de 30 días.",
           ],
         },
       ],
@@ -371,7 +371,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "12. Contact",
           content: [
-            "For inquiries, data deletion requests, or legal matters, contact us at legal@radiogen.ai.",
+            "For inquiries, data deletion requests, or legal matters, contact us at info@radiogen.ai.",
           ],
         },
       ],
@@ -420,7 +420,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           title: "5. Data Subject Rights",
           content: [
             "Under the GDPR (Arts. 15-22), users have the right to: access their personal data; rectification of inaccurate data; erasure of their data (\"right to be forgotten\"); restriction of processing; data portability; objection to processing; not be subject to automated decisions.",
-            "To exercise any of these rights, users may send a request to legal@radiogen.ai clearly stating the right they wish to exercise and providing identification. We will respond within a maximum of 30 days.",
+            "To exercise any of these rights, users may send a request to info@radiogen.ai clearly stating the right they wish to exercise and providing identification. We will respond within a maximum of 30 days.",
             "Users also have the right to lodge a complaint with the competent data protection supervisory authority.",
           ],
         },
@@ -448,7 +448,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "9. Contact",
           content: [
-            "For privacy inquiries, rights exercise, or data deletion requests: legal@radiogen.ai.",
+            "For privacy inquiries, rights exercise, or data deletion requests: info@radiogen.ai.",
           ],
         },
       ],
@@ -464,7 +464,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         { title: "5. Security Measures", content: ["Technical measures detailed in the Privacy Policy apply, including: encryption at rest and in transit, per-user isolation (RLS), automatic PII detection, immutable audit logs, rate limiting, and HTTP security headers."] },
         { title: "6. Breach Notification", content: ["In the event of a security breach affecting personal data, Radiogen.AI will notify the affected organization within a maximum of 72 hours of detection, in accordance with Art. 33 of the GDPR."] },
         { title: "7. Data Deletion", content: ["Upon service termination or user request, Radiogen.AI will delete all personal data and generated content within a maximum of 30 days, unless legal retention obligations apply."] },
-        { title: "8. Audit Rights", content: ["The client organization has the right to request information about security measures implemented and sub-processors used. Audit requests should be directed to legal@radiogen.ai with a minimum of 30 days' notice."] },
+        { title: "8. Audit Rights", content: ["The client organization has the right to request information about security measures implemented and sub-processors used. Audit requests should be directed to info@radiogen.ai with a minimum of 30 days' notice."] },
       ],
     },
     ai_disclaimer: {
@@ -488,16 +488,16 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "3. Limitação de Responsabilidade", content: ["Todo o conteúdo clínico estruturado pelo Radiogen.AI é derivado exclusivamente do ditado do radiologista. A plataforma não adiciona achados clínicos, diagnósticos, recomendações nem avaliações patológicas não ditadas pelo usuário. O radiologista é o único responsável por revisar, validar e aprovar cada laudo antes de seu uso clínico.", "O Radiogen.AI e seus operadores não assumem responsabilidade alguma por decisões clínicas, erros diagnósticos ou qualquer resultado adverso decorrente do uso de laudos estruturados com esta ferramenta."] },
       { title: "4. Responsabilidade Profissional", content: ["Ao utilizar o Radiogen.AI, o radiologista confirma que revisará cada laudo gerado por IA em sua totalidade antes de assiná-lo e que entende que a IA é um assistente de redação."] },
       { title: "5. Usos Proibidos", content: ["É proibido usar o Radiogen.AI como substituto da avaliação radiológica profissional, incluir dados identificáveis de pacientes, ou distribuir laudos sem revisão prévia."] },
-      { title: "6. Contato", content: ["Para dúvidas ou questões legais: legal@radiogen.ai."] },
+      { title: "6. Contato", content: ["Para dúvidas ou questões legais: info@radiogen.ai."] },
     ]},
     privacy_policy: { title: "Política de Privacidade", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Responsável pelo Tratamento", content: ["O responsável pelo tratamento dos dados pessoais é o Radiogen.AI."] },
       { title: "2. Dados Coletados", content: ["Dados de conta (nome, e-mail, senha hash, função profissional), dados de uso (laudos, ditados anonimizados, preferências), dados técnicos (IP, user-agent, timestamps). NÃO são coletados dados identificáveis de pacientes."] },
       { title: "3. Base Legal", content: ["Execução do contrato (Art. 6.1.b RGPD), interesse legítimo (Art. 6.1.f), consentimento (Art. 6.1.a), obrigação legal (Art. 6.1.c)."] },
-      { title: "4. Direitos do Titular", content: ["Acesso, retificação, exclusão, limitação, portabilidade, oposição e decisões automatizadas (Arts. 15-22 RGPD/LGPD). Solicitações: legal@radiogen.ai, prazo de resposta: 30 dias."] },
+      { title: "4. Direitos do Titular", content: ["Acesso, retificação, exclusão, limitação, portabilidade, oposição e decisões automatizadas (Arts. 15-22 RGPD/LGPD). Solicitações: info@radiogen.ai, prazo de resposta: 30 dias."] },
       { title: "5. Transferências Internacionais e Processamento de IA", content: ["Para a geração de laudos, o Radiogen.AI envia texto clínico anonimizado a provedores externos de inteligência artificial por meio de APIs seguras. Antes de cada envio, o sistema aplica obrigatoriamente um filtro de anonimização que detecta e remove automaticamente qualquer dado identificável do paciente (nomes, CPF/RG, telefones, e-mails, números de prontuário). Este filtro não pode ser desativado pelo usuário e é executado tanto no cliente quanto no servidor.", "Os provedores de IA operam sob acordos de processamento de dados (DPA) que garantem: política de retenção zero — os textos enviados não são armazenados nem utilizados para treinamento de modelos; criptografia TLS 1.3 em trânsito; conformidade SOC 2 e, quando aplicável, HIPAA (BAA).", "Nenhum dado identificável de pacientes é transferido internacionalmente. Os dados pessoais dos usuários são armazenados exclusivamente na infraestrutura do Radiogen.AI."] },
       { title: "6. Medidas de Segurança", content: ["Criptografia AES-256-GCM em repouso, TLS 1.3 em trânsito, RLS no banco de dados, detecção automática de PII, rate limiting, headers de segurança HTTP, trilha de auditoria imutável."] },
-      { title: "7. Contato", content: ["legal@radiogen.ai."] },
+      { title: "7. Contato", content: ["info@radiogen.ai."] },
     ]},
     data_processing: { title: "Acordo de Tratamento de Dados", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Objeto", content: ["Este DPA estabelece as condições de processamento de dados clínicos anonimizados pelo Radiogen.AI (Art. 28 RGPD/LGPD)."] },
@@ -505,7 +505,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "3. Processamento por IA", content: ["O texto anonimizado de ditado é processado por meio de APIs seguras para: estruturação e organização de achados a partir do ditado do radiologista; organização de conclusões radiológicas com base no ditado; correção de erros de transcrição de voz; melhoria de redação. Em nenhum caso são gerados diagnósticos nem recomendações clínicas.", "Antes de cada envio, um filtro obrigatório de anonimização remove automaticamente qualquer dado identificável do paciente. Os provedores operam sob política de retenção zero e os dados NÃO são usados para treinamento de modelos."] },
       { title: "4. Subprocessadores", content: ["O Radiogen.AI utiliza subprocessadores para a prestação do serviço. A lista atualizada pode ser consultada pelo administrador da organização."] },
       { title: "5. Notificação de Violações", content: ["Em caso de violação de segurança, o Radiogen.AI notificará a organização afetada em até 72 horas (Art. 33 RGPD)."] },
-      { title: "6. Contato", content: ["legal@radiogen.ai."] },
+      { title: "6. Contato", content: ["info@radiogen.ai."] },
     ]},
     ai_disclaimer: { title: "Aviso sobre Inteligência Artificial", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Natureza da IA", content: ["O Radiogen.AI é uma ferramenta de estruturação de laudos radiológicos. A plataforma organiza as informações ditadas pelo radiologista nas seções de achados e conclusão. O Radiogen.AI NÃO interpreta imagens médicas, NÃO faz diagnósticos, NÃO emite recomendações clínicas e NÃO gera achados não ditados pelo usuário. A plataforma é exclusivamente uma ferramenta de organização e estruturação do conteúdo fornecido pelo radiologista."] },
@@ -513,7 +513,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "3. Limitações Conhecidas", content: ["Erros de transcrição, terminologia cruzada entre modalidades, alterações de pontuação e estrutura, variação de qualidade entre idiomas."] },
       { title: "4. Responsabilidade Profissional", content: ["O radiologista é o ÚNICO responsável pelo conteúdo final do laudo. A assinatura de um laudo gerado com assistência de IA implica revisão e validação completas."] },
       { title: "5. Sem Dados de Pacientes", content: ["A IA processa apenas texto de ditado anonimizado. Dados identificáveis são automaticamente detectados e removidos antes do processamento."] },
-      { title: "6. Contato", content: ["legal@radiogen.ai."] },
+      { title: "6. Contato", content: ["info@radiogen.ai."] },
     ]},
   },
 };

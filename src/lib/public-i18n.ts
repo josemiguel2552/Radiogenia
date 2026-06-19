@@ -142,7 +142,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.google_unavailable_desc": "Crea tu cuenta con email y contraseña para empezar a usar Radiogen.AI.",
     "auth.not_approved_title": "Cuenta pendiente de aprobación",
     "auth.not_approved_desc": "Tu cuenta aún no ha sido activada. Un administrador revisará tu solicitud y te notificará cuando puedas acceder.",
-    "auth.not_approved_contact": "Si necesitas ayuda, escríbenos a soporte@radiogen.ai.",
+    "auth.not_approved_contact": "Si necesitas ayuda, escríbenos a soporte@radiogen.ai. Para consultas generales: hola@radiogen.ai.",
     "auth.logout": "Cerrar sesión",
     // Waitlist
     "waitlist.title": "Crear cuenta",
@@ -365,7 +365,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.google_unavailable_desc": "Create your account with email and password to start using Radiogen.AI.",
     "auth.not_approved_title": "Account pending approval",
     "auth.not_approved_desc": "Your account has not been activated yet. An administrator will review your request and notify you when access is granted.",
-    "auth.not_approved_contact": "If you need help, contact us at support@radiogen.ai.",
+    "auth.not_approved_contact": "If you need help, contact us at soporte@radiogen.ai. For general inquiries: hola@radiogen.ai.",
     "auth.logout": "Sign out",
     // Waitlist
     "waitlist.title": "Create account",
@@ -588,7 +588,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.google_unavailable_desc": "Crie sua conta com e-mail e senha para começar a usar o Radiogen.AI.",
     "auth.not_approved_title": "Conta pendente de aprovação",
     "auth.not_approved_desc": "Sua conta ainda não foi ativada. Um administrador revisará sua solicitação e notificará quando o acesso for concedido.",
-    "auth.not_approved_contact": "Se precisar de ajuda, escreva para support@radiogen.ai.",
+    "auth.not_approved_contact": "Se precisar de ajuda, escreva para soporte@radiogen.ai. Para consultas gerais: hola@radiogen.ai.",
     "auth.logout": "Sair",
     // Waitlist
     "waitlist.title": "Criar conta",

@@ -343,7 +343,7 @@ export function AdminPilotTab() {
 
   <div class="ft">
     <p>Radiogenia — Informes radiológicos inteligentes</p>
-    <p>Para soporte técnico, contacta con soporte@radiogenia.com</p>
+    <p>Para soporte técnico, contacta con soporte@radiogen.ai</p>
     <p style="margin-top:2px;font-style:italic;">Documento confidencial — Uso exclusivo del jefe de servicio.</p>
   </div>
 </div></body></html>`;
