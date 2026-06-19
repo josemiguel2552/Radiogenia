@@ -36,6 +36,7 @@ function RegisterForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [country, setCountry] = useState("");
   const [hospital, setHospital] = useState("");
   const [role, setRole] = useState<"attending" | "resident">("attending");
@@ -48,6 +49,10 @@ function RegisterForm() {
     e.preventDefault();
     if (password.length < 6) {
       setError(t("waitlist.password_min"));
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError(t("waitlist.passwords_mismatch"));
       return;
     }
     setLoading(true);
@@ -312,18 +317,35 @@ function RegisterForm() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-300 text-sm">{t("waitlist.password")}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={t("waitlist.password_placeholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-300 text-sm">{t("waitlist.password")}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder={t("waitlist.password_placeholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-gray-300 text-sm">{t("waitlist.confirm_password")}</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder={t("waitlist.confirm_password_placeholder")}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
