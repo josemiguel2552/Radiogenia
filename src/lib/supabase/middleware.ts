@@ -37,21 +37,29 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/waitlist") &&
-    !request.nextUrl.pathname.startsWith("/api/waitlist") &&
-    !request.nextUrl.pathname.startsWith("/api/auth/") &&
-    !request.nextUrl.pathname.startsWith("/api/webhooks/") &&
-    !request.nextUrl.pathname.startsWith("/api/health") &&
-    !request.nextUrl.pathname.startsWith("/api/invite") &&
-    !request.nextUrl.pathname.startsWith("/invite") &&
-    !request.nextUrl.pathname.startsWith("/legal") &&
-    request.nextUrl.pathname !== "/"
-  ) {
+  const isPublic =
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/waitlist") ||
+    request.nextUrl.pathname.startsWith("/api/waitlist") ||
+    request.nextUrl.pathname.startsWith("/api/auth/") ||
+    request.nextUrl.pathname.startsWith("/api/webhooks/") ||
+    request.nextUrl.pathname.startsWith("/api/health") ||
+    request.nextUrl.pathname.startsWith("/api/invite") ||
+    request.nextUrl.pathname.startsWith("/invite") ||
+    request.nextUrl.pathname.startsWith("/legal") ||
+    request.nextUrl.pathname === "/";
+
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && !user.email_confirmed_at && !isPublic) {
+    await supabase.auth.signOut();
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/login";
+    url.searchParams.set("error", "email_not_confirmed");
     return NextResponse.redirect(url);
   }
 

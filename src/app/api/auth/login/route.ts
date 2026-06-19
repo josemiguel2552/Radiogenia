@@ -37,13 +37,18 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+
+    if (signInData.user && !signInData.user.email_confirmed_at) {
+      await supabase.auth.signOut();
+      return NextResponse.json({ error: "email_not_confirmed" }, { status: 403 });
     }
 
     return response;

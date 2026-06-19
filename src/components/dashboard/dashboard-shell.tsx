@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -132,11 +131,9 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   }, [prefs.panelSide]);
 
   async function handleLogout() {
-    const supabase = createClient();
     localStorage.removeItem("radiogenai_draft");
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-    router.refresh();
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/auth/login";
   }
 
   function togglePanel() {

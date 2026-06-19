@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const userId = authData.user.id;
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
 
-    const autoApprove = LATAM_COUNTRIES.has(country || "");
+    const autoApprove = LATAM_COUNTRIES.has(country || "") && role !== "resident";
 
     await service.from("profiles").upsert({
       id: userId,

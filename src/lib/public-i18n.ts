@@ -125,6 +125,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.no_account": "¿No tienes cuenta?",
     "auth.create_free": "Crea una gratis",
     "auth.login_failed": "Error de inicio de sesión",
+    "auth.email_not_confirmed": "Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
     "auth.network_error": "Error de red. Inténtalo de nuevo.",
     "auth.sidebar_text": "Estructura tus informes radiológicos. Dicta, organiza, entrega.",
     // Auth - Register
@@ -354,6 +355,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.no_account": "No account?",
     "auth.create_free": "Create one free",
     "auth.login_failed": "Login failed",
+    "auth.email_not_confirmed": "You must confirm your email before signing in. Check your inbox.",
     "auth.network_error": "Network error. Please try again.",
     "auth.sidebar_text": "Structure your radiology reports. Dictate, organize, deliver.",
     // Auth - Register
@@ -583,6 +585,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.no_account": "Não tem conta?",
     "auth.create_free": "Crie uma grátis",
     "auth.login_failed": "Falha no login",
+    "auth.email_not_confirmed": "Você precisa confirmar seu e-mail antes de entrar. Verifique sua caixa de entrada.",
     "auth.network_error": "Erro de rede. Tente novamente.",
     "auth.sidebar_text": "Estruture seus laudos radiológicos. Dite, organize, entregue.",
     // Auth - Register

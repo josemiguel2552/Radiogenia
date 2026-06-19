@@ -29,8 +29,13 @@ function LoginContent() {
 
   useEffect(() => {
     const callbackError = searchParams.get("error");
-    if (callbackError) setError(callbackError);
-  }, [searchParams]);
+    if (callbackError) {
+      const mapped: Record<string, string> = {
+        email_not_confirmed: t("auth.email_not_confirmed"),
+      };
+      setError(mapped[callbackError] || callbackError);
+    }
+  }, [searchParams, t]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +49,10 @@ function LoginContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || t("auth.login_failed"));
+        const errorMap: Record<string, string> = {
+          email_not_confirmed: t("auth.email_not_confirmed"),
+        };
+        setError(errorMap[data.error] || data.error || t("auth.login_failed"));
         setLoading(false);
       } else {
         window.location.href = "/dashboard";

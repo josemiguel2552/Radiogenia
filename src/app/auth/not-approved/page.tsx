@@ -1,22 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ShieldCheck, LogOut } from "lucide-react";
 import { usePublicLang } from "@/lib/public-i18n";
 
 export default function NotApprovedPage() {
-  const router = useRouter();
   const { t } = usePublicLang();
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/";
   }
 
   return (
