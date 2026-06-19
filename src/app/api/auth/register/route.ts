@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`auth-register:${ip}`, RATE_LIMITS.auth);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const { email, password, firstName, lastName, country, hospital, role } = await req.json();
+    const { email, password, firstName, lastName, country, hospital, role, plan } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: "email_password_required" }, { status: 400 });
@@ -78,7 +78,8 @@ export async function POST(req: NextRequest) {
         });
         if (linkData?.properties?.hashed_token) {
           const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink`;
+          const planParam = plan && plan !== "free" ? `&plan=${plan}` : "";
+          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink${planParam}`;
         }
       } catch (err) {
         console.error(`[register] confirm link error: ${err}`);

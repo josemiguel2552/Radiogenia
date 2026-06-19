@@ -61,7 +61,7 @@ function RegisterForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password, country, hospital, role }),
+        body: JSON.stringify({ firstName, lastName, email, password, country, hospital, role, plan: selectedPlan || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {

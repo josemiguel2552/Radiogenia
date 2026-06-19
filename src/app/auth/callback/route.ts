@@ -35,6 +35,11 @@ export async function GET(request: Request) {
         .eq("id", data.user.id);
     }
 
+    const plan = searchParams.get("plan");
+    if (plan && plan !== "free") {
+      return NextResponse.redirect(`${origin}/api/checkout?plan=${encodeURIComponent(plan)}`);
+    }
+
     return NextResponse.redirect(`${origin}/dashboard`);
   }
 
