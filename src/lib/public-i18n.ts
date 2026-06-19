@@ -108,6 +108,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // Footer
     "footer.legal": "Legal",
     "footer.rights": "Todos los derechos reservados.",
+    "footer.contact": "Contacto",
+    "footer.info": "Info",
+    "footer.support": "Soporte",
     // Auth - Login
     "auth.welcome_back": "Bienvenido de nuevo",
     "auth.sign_in_subtitle": "Inicia sesión en tu cuenta",
@@ -331,6 +334,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // Footer
     "footer.legal": "Legal",
     "footer.rights": "All rights reserved.",
+    "footer.contact": "Contact",
+    "footer.info": "Info",
+    "footer.support": "Support",
     // Auth - Login
     "auth.welcome_back": "Welcome back",
     "auth.sign_in_subtitle": "Sign in to your account",
@@ -554,6 +560,9 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // Footer
     "footer.legal": "Termos legais",
     "footer.rights": "Todos os direitos reservados.",
+    "footer.contact": "Contato",
+    "footer.info": "Info",
+    "footer.support": "Suporte",
     // Auth - Login
     "auth.welcome_back": "Bem-vindo de volta",
     "auth.sign_in_subtitle": "Entre na sua conta",

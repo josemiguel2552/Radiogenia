@@ -605,9 +605,9 @@ export function LandingPage() {
             <Link href="/auth/login" className="hover:text-gray-300 transition-colors">{t("nav.signin")}</Link>
           </div>
           <div className="flex items-center gap-4 text-xs text-gray-500">
-            <a href="mailto:hola@radiogen.ai" className="hover:text-gray-300 transition-colors">hola@radiogen.ai</a>
-            <a href="mailto:soporte@radiogen.ai" className="hover:text-gray-300 transition-colors">soporte@radiogen.ai</a>
-            <a href="mailto:info@radiogen.ai" className="hover:text-gray-300 transition-colors">info@radiogen.ai</a>
+            <a href="mailto:hola@radiogen.ai" className="hover:text-gray-300 transition-colors">{t("footer.contact")}: hola@radiogen.ai</a>
+            <a href="mailto:info@radiogen.ai" className="hover:text-gray-300 transition-colors">{t("footer.info")}: info@radiogen.ai</a>
+            <a href="mailto:soporte@radiogen.ai" className="hover:text-gray-300 transition-colors">{t("footer.support")}: soporte@radiogen.ai</a>
           </div>
           <p className="text-xs text-gray-600">
             &copy; {new Date().getFullYear()} Radiogen.AI
