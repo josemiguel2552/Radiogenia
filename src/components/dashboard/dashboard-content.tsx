@@ -1565,30 +1565,6 @@ export function DashboardContent() {
   const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
   return (
     <div className="flex flex-col gap-3 md:gap-4">
-      {/* ── Usage bar ── */}
-      <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2.5 flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            {t("stats.plan")}: <span className="text-gray-700 dark:text-gray-200 capitalize">{subPlan}</span>
-          </span>
-          <span className="text-[10px] text-gray-400">{t("stats.this_month")}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FileText className={`h-3.5 w-3.5 flex-shrink-0 ${rPct >= 90 ? "text-red-500" : rPct >= 70 ? "text-amber-500" : "text-brand"}`} />
-          <span className="text-xs font-semibold text-gray-900 dark:text-white w-16">{subReportsUsed}<span className="font-normal text-gray-400">/{subReportsLimit}</span></span>
-          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div className={`h-1.5 rounded-full transition-all ${rPct >= 90 ? "bg-red-500" : rPct >= 70 ? "bg-amber-500" : "bg-brand"}`} style={{ width: `${rPct}%` }} />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Mic className={`h-3.5 w-3.5 flex-shrink-0 ${dPct >= 90 ? "text-red-500" : dPct >= 70 ? "text-amber-500" : "text-violet-500"}`} />
-          <span className="text-xs font-semibold text-gray-900 dark:text-white w-16">{subDictUsedMin}<span className="font-normal text-gray-400">/{subDictLimitMin} min</span></span>
-          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div className={`h-1.5 rounded-full transition-all ${dPct >= 90 ? "bg-red-500" : dPct >= 70 ? "bg-amber-500" : "bg-violet-500"}`} style={{ width: `${dPct}%` }} />
-          </div>
-        </div>
-      </div>
-
       {/* ── Setup + Dictation (responsive grid) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,2fr)_3fr] gap-3 md:gap-4">
       {setupCollapsed ? (

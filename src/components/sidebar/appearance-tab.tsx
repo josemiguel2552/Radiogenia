@@ -1,9 +1,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUIPrefs, SKINS, FONT_FAMILIES, type PanelSide, type FontFamily, type UILanguage } from "@/lib/ui-prefs";
+import { useUIPrefs, SKINS, type UILanguage } from "@/lib/ui-prefs";
 import { useT } from "@/lib/i18n";
 
 export function AppearanceTab() {
@@ -88,75 +86,11 @@ export function AppearanceTab() {
         </div>
       </div>
 
-      {/* Font family */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.font_family")}
-        </Label>
-        <Select value={prefs.fontFamily} onValueChange={(v) => update({ fontFamily: v as FontFamily })}>
-          <SelectTrigger className="h-9 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_FAMILIES.map((f) => (
-              <SelectItem key={f.value} value={f.value}>
-                <span style={{ fontFamily: f.stack }}>{f.label}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Font size */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 block">
-          {t("app.font_size")}: {prefs.fontSize}px
-        </Label>
-        <Slider
-          value={[prefs.fontSize]}
-          min={12}
-          max={18}
-          step={1}
-          onValueChange={(v) => update({ fontSize: v[0] })}
-        />
-        <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-          <span>12px</span>
-          <span>18px</span>
-        </div>
-      </div>
-
-      {/* Panel side */}
-      <div>
-        <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.panel_position")}
-        </Label>
-        <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
-          {(["left", "right"] as PanelSide[]).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => update({ panelSide: s })}
-              className={`px-4 py-1.5 text-xs rounded-md transition-colors ${
-                prefs.panelSide === s
-                  ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-              style={prefs.panelSide === s ? { color: `hsl(${activeSkin.vars.primary})` } : undefined}
-            >
-              {t(`app.${s}`)}
-            </button>
-          ))}
-        </div>
-        <p className="text-[10px] text-gray-400 mt-2">
-          {t("app.panel_hint")}
-        </p>
-      </div>
-
       {/* Reset */}
       <button
         type="button"
         onClick={() => {
-          update({ skin: "clasico", panelSide: "right", fontSize: 14, fontFamily: "inter", uiLanguage: "es" });
+          update({ skin: "clasico", uiLanguage: "es" });
         }}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >

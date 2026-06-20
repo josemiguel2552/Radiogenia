@@ -26,6 +26,8 @@ import {
   Building2,
   EyeOff,
   Eye,
+  Brain,
+  RotateCcw,
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
@@ -33,6 +35,7 @@ import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 import { SectionEditor, parseTemplateSections, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
 import type { TemplateField } from "@/components/shared/template-section-editor";
 import { TemplateBot } from "./template-bot";
+import { useUIPrefs } from "@/lib/ui-prefs";
 
 interface ExtractedTemplate {
   title: string;
@@ -48,6 +51,14 @@ interface CatalogItem {
   section_id: string;
   section_name: string;
   imported: boolean;
+}
+
+interface NormalityPhraseRow {
+  modality: string;
+  section_label: string;
+  default_phrase: string;
+  phrase: string;
+  is_customized: boolean;
 }
 
 const MODALITY_CARDS: Record<string, { gradient: string; abbrev: string }> = {
@@ -110,6 +121,15 @@ export function TemplatesTab() {
   const [hiddenOpen, setHiddenOpen] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
   const [justHiddenMsg, setJustHiddenMsg] = useState<string | null>(null);
+
+  // Normality phrases
+  const { prefs: normPrefs } = useUIPrefs();
+  const normUiLang = (normPrefs.uiLanguage || "es") as "es" | "en";
+  const [normalityPhrases, setNormalityPhrases] = useState<NormalityPhraseRow[]>([]);
+  const [normSelectedModality, setNormSelectedModality] = useState("CT");
+  const [showNormality, setShowNormality] = useState(false);
+  const [normalitySearch, setNormalitySearch] = useState("");
+  const [savingNormPhrase, setSavingNormPhrase] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -319,6 +339,42 @@ export function TemplatesTab() {
     setRestoring(null);
     window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
   }
+
+  const loadNormality = useCallback(async (mod?: string) => {
+    const m = mod || normSelectedModality;
+    try {
+      const res = await fetch(`/api/normality-phrases?modality=${encodeURIComponent(m)}&lang=${normUiLang}`);
+      if (res.ok) setNormalityPhrases(await res.json());
+    } catch { /* ignore */ }
+  }, [normSelectedModality, normUiLang]);
+
+  useEffect(() => { loadNormality(); }, [loadNormality]);
+
+  async function handleSaveNormalityPhrase(modality: string, sectionLabel: string, phrase: string) {
+    setSavingNormPhrase(sectionLabel);
+    await fetch("/api/normality-phrases", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ modality, section_label: sectionLabel, phrase }),
+    });
+    await loadNormality(modality);
+    setSavingNormPhrase(null);
+  }
+
+  async function handleResetNormalityPhrase(modality: string, sectionLabel: string) {
+    setSavingNormPhrase(sectionLabel);
+    await fetch(`/api/normality-phrases?modality=${encodeURIComponent(modality)}&section_label=${encodeURIComponent(sectionLabel)}`, { method: "DELETE" });
+    await loadNormality(modality);
+    setSavingNormPhrase(null);
+  }
+
+  const normCustomizedCount = normalityPhrases.filter((p) => p.is_customized).length;
+  const normFilteredPhrases = normalitySearch
+    ? normalityPhrases.filter((p) => {
+        const q = normalitySearch.toLowerCase();
+        return p.section_label.toLowerCase().includes(q) || sec(p.section_label).toLowerCase().includes(q);
+      })
+    : normalityPhrases;
 
   async function loadCatalog() {
     setCatalogLoading(true);
@@ -1076,6 +1132,167 @@ export function TemplatesTab() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* ── Normality Phrases ── */}
+      <div className="mt-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <Brain className="h-4 w-4 text-violet-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("cfg.normality")}</h3>
+        </div>
+        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+          {t("cfg.normality_desc")}
+        </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Select value={normSelectedModality} onValueChange={(v) => { setNormSelectedModality(v); setNormalitySearch(""); loadNormality(v); }}>
+              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {MODALITIES.filter((m) => m !== "Procedures").map((m) => (
+                  <SelectItem key={m} value={m}>{modName(m)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant={normCustomizedCount > 0 ? "default" : "secondary"} className="text-[10px]">
+              {normCustomizedCount}/{normalityPhrases.length} {t("cfg.customized")}
+            </Badge>
+          </div>
+        </div>
+        <Button size="sm" variant="outline" className="w-full text-xs gap-1.5" onClick={() => setShowNormality(true)}>
+          <Pencil className="h-3 w-3" />
+          {t("cfg.edit_normality")}
+        </Button>
+      </div>
+
+      {/* Normality Phrases Editor Dialog */}
+      <Dialog open={showNormality} onOpenChange={setShowNormality}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{t("cfg.normality_dialog")}</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex items-center gap-2 pb-2">
+            <Select value={normSelectedModality} onValueChange={(v) => { setNormSelectedModality(v); setNormalitySearch(""); loadNormality(v); }}>
+              <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {MODALITIES.filter((m) => m !== "Procedures").map((m) => (
+                  <SelectItem key={m} value={m}>{modName(m)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex-1 relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <Input
+                value={normalitySearch}
+                onChange={(e) => setNormalitySearch(e.target.value)}
+                placeholder={`${t("search")}...`}
+                className="h-8 text-xs pl-7"
+              />
+            </div>
+            <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+              {normCustomizedCount}/{normalityPhrases.length}
+            </Badge>
+          </div>
+
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-1">
+            {normFilteredPhrases.map((p) => (
+              <NormPhraseRowComp
+                key={`${p.modality}|${p.section_label}`}
+                row={p}
+                saving={savingNormPhrase === p.section_label}
+                onSave={(phrase) => handleSaveNormalityPhrase(p.modality, p.section_label, phrase)}
+                onReset={() => handleResetNormalityPhrase(p.modality, p.section_label)}
+                translateLabel={sec}
+              />
+            ))}
+            {normFilteredPhrases.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-6">{t("no_match_search")}</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* ────────── Normality Phrase Row (inline) ────────── */
+
+function NormPhraseRowComp({ row, saving, onSave, onReset, translateLabel }: {
+  row: { modality: string; section_label: string; default_phrase: string; phrase: string; is_customized: boolean };
+  saving: boolean;
+  onSave: (phrase: string) => void;
+  onReset: () => void;
+  translateLabel: (name: string) => string;
+}) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(row.phrase);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { setDraft(row.phrase); }, [row.phrase]);
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.selectionStart = inputRef.current.value.length;
+    }
+  }, [editing]);
+
+  function handleSave() {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== row.phrase) {
+      onSave(trimmed);
+    }
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 space-y-1.5 bg-gray-50 dark:bg-gray-800">
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{translateLabel(row.section_label)}</span>
+        <textarea
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); }
+            if (e.key === "Escape") { setDraft(row.phrase); setEditing(false); }
+          }}
+          rows={2}
+          className="w-full text-xs border rounded-md px-2 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-600 resize-none focus:outline-none focus:ring-1 ring-brand"
+        />
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setDraft(row.phrase); setEditing(false); }}>
+            <X className="h-2.5 w-2.5 mr-1" />{t("cancel")}
+          </Button>
+          <Button size="sm" className="h-6 text-[10px] px-2" onClick={handleSave}>
+            <Check className="h-2.5 w-2.5 mr-1" />{t("save")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-start gap-2 p-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-violet-500" : ""}`}>
+      <div className="flex-1 min-w-0">
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{translateLabel(row.section_label)}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{row.phrase}</span>
+      </div>
+      <div className="flex items-center gap-0.5 flex-shrink-0 pt-0.5">
+        {saving ? (
+          <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+        ) : (
+          <>
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-brand" onClick={() => setEditing(true)} title={t("edit")}>
+              <Pencil className="h-2.5 w-2.5" />
+            </Button>
+            {row.is_customized && (
+              <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-amber-500" onClick={onReset} title={t("reset")}>
+                <RotateCcw className="h-2.5 w-2.5" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
