@@ -43,34 +43,40 @@ import type { User } from "@supabase/supabase-js";
 
 type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations" | "account";
 
+/* ── Popover helper (click-outside to close) ─────────────────── */
+
+function useClickOutside(ref: React.RefObject<HTMLDivElement | null>, open: boolean, close: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, ref, close]);
+}
+
 /* ── Theme picker popover ──────────────────────────────────────── */
 
 function ThemePicker() {
   const { prefs, update, skin: activeSkin } = useUIPrefs();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(ref, open, close);
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="h-5 w-5 rounded-full ring-2 ring-[hsl(var(--border))] transition-transform hover:scale-110"
+        className="h-6 w-6 rounded-full ring-2 ring-[hsl(var(--border))] transition-transform hover:scale-110 cursor-pointer"
         style={{ backgroundColor: activeSkin.preview.primary }}
         aria-label="Change theme"
       />
       {open && (
-        <div className="absolute top-full right-0 mt-2 p-2.5 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150">
-          <div className="grid grid-cols-3 gap-2">
+        <div className="absolute top-full right-0 mt-2.5 p-3 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+          <div className="grid grid-cols-3 gap-2.5" style={{ width: "198px" }}>
             {SKINS.map((skin) => {
               const active = prefs.skin === skin.id;
               return (
@@ -78,22 +84,87 @@ function ThemePicker() {
                   key={skin.id}
                   type="button"
                   onClick={() => { update({ skin: skin.id }); setOpen(false); }}
-                  className={`group relative w-9 h-9 rounded-lg transition-all ${
-                    active ? "ring-2 ring-offset-2 ring-[hsl(var(--ring))] scale-105" : "hover:scale-105"
+                  className={`relative rounded-lg transition-all overflow-hidden cursor-pointer ${
+                    active ? "ring-2 ring-offset-2 ring-[hsl(var(--ring))] scale-[1.03]" : "hover:scale-[1.03] hover:shadow-md"
                   }`}
-                  style={{ backgroundColor: skin.preview.bg }}
+                  style={{ width: "58px", height: "44px", backgroundColor: skin.preview.bg }}
                 >
                   <div
-                    className="absolute inset-1.5 rounded-md"
-                    style={{ backgroundColor: skin.preview.card, border: `1px solid ${skin.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}` }}
-                  />
+                    className="absolute inset-x-1.5 top-1.5 bottom-3 rounded"
+                    style={{ backgroundColor: skin.preview.card, border: `1px solid ${skin.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}` }}
+                  >
+                    <div className="mt-1.5 mx-1.5 h-1 w-5 rounded-full" style={{ backgroundColor: skin.preview.primary }} />
+                    <div className="mt-1 mx-1.5 h-0.5 w-full rounded-full" style={{ backgroundColor: skin.preview.fg, opacity: 0.12 }} />
+                  </div>
                   <div
-                    className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1 w-4 rounded-full"
+                    className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1.5 w-6 rounded-full"
                     style={{ backgroundColor: skin.preview.primary }}
                   />
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Language popover (UI + report in one place) ───────────────── */
+
+function LanguagePicker({ uiLang, outputLang, onUiLangChange, onOutputLangChange }: {
+  uiLang: UILanguage;
+  outputLang: OutputLanguage;
+  onUiLangChange: (lang: UILanguage) => void;
+  onOutputLangChange: (lang: string) => void;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(ref, open, close);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
+      >
+        <Globe className="h-3.5 w-3.5" />
+        <span className="font-semibold">{uiLang.toUpperCase()}</span>
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-2.5 p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150 w-56 space-y-4">
+          {/* Platform language */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-2">{t("app.ui_language")}</p>
+            <div className="flex rounded-md overflow-hidden border border-[hsl(var(--border))]">
+              {(["es", "en", "pt"] as UILanguage[]).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => onUiLangChange(lang)}
+                  className={`flex-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    uiLang === lang
+                      ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                  }`}
+                >
+                  {lang.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Report output language */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-2">{t("cfg.output_language")}</p>
+            <Select value={outputLang} onValueChange={onOutputLangChange}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value} className="text-xs">{l.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )}
@@ -380,15 +451,13 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
             <div className="flex-1" />
 
             {/* Right: controls (desktop) */}
-            <div className="hidden md:flex items-center gap-3">
-              {/* Theme picker */}
+            <div className="hidden md:flex items-center gap-2">
               <ThemePicker />
 
-              {/* Signature indicator */}
               <button
                 type="button"
                 onClick={() => setSigDialogOpen(true)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
                   hasActiveSig
                     ? "text-[hsl(var(--foreground))] bg-[hsl(var(--muted))]"
                     : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
@@ -399,43 +468,19 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                 {hasActiveSig && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
               </button>
 
-              {/* UI language */}
-              <div className="flex rounded-md overflow-hidden border border-[hsl(var(--border))]">
-                {(["es", "en", "pt"] as UILanguage[]).map((lang) => (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => update({ uiLanguage: lang })}
-                    className={`px-2 py-1 text-[10px] font-semibold tracking-wide transition-colors ${
-                      prefs.uiLanguage === lang
-                        ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                    }`}
-                  >
-                    {lang.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Report language */}
-              <div className="flex items-center gap-1">
-                <Globe className="h-3 w-3 text-[hsl(var(--muted-foreground))]" />
-                <Select value={outputLanguage} onValueChange={handleOutputLangChange}>
-                  <SelectTrigger className="h-7 w-24 text-[11px] border-[hsl(var(--border))] bg-transparent">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value} className="text-xs">{l.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+              <LanguagePicker
+                uiLang={prefs.uiLanguage}
+                outputLang={outputLanguage}
+                onUiLangChange={(lang) => update({ uiLanguage: lang })}
+                onOutputLangChange={handleOutputLangChange}
+              />
             </div>
 
             {/* Mobile: settings trigger */}
             <button
               type="button"
               onClick={() => setMobileDrawerOpen(true)}
-              className="md:hidden flex items-center gap-2 flex-shrink-0"
+              className="md:hidden flex items-center gap-2.5 flex-shrink-0"
             >
               <ThemePickerStatic />
               <PenLine className={`h-3.5 w-3.5 ${hasActiveSig ? "text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-foreground))]"}`} />
