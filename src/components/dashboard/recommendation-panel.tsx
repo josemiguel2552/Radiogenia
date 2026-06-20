@@ -366,26 +366,68 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
 
       {open && (
         <div className="px-3 pb-3 space-y-2 border-t border-gray-100 dark:border-gray-800 max-h-[60vh] overflow-y-auto">
-          {/* Suggested by relevance — always visible */}
+          {/* Suggested by relevance — chips */}
           {suggestedRecs.length > 0 && (
             <div className="pt-2">
               <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
                 {t("mrec.suggested")}
               </p>
-              <div className="space-y-1">
-                {suggestedRecs.map((s) => <RecItem key={s.rec.id} rec={s.rec} />)}
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedRecs.map((s) => {
+                  const isOn = selected.has(s.rec.id);
+                  const title = s.rec.title[outputLanguage] || s.rec.title.es;
+                  return (
+                    <button
+                      key={s.rec.id}
+                      type="button"
+                      onClick={() => toggle(s.rec.id)}
+                      title={s.rec.text[outputLanguage] || s.rec.text.es}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
+                        isOn
+                          ? "bg-brand/10 border-brand/30 text-brand font-medium dark:bg-brand/20"
+                          : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 border transition-colors ${
+                        isOn ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
+                      }`} />
+                      {title}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Frequent — always visible */}
+          {/* Frequent — chips */}
           {frequentRecs.length > 0 && (
             <div className="pt-1">
               <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mb-1.5">
                 <Star className="h-3 w-3" /> {t("mrec.frequent")}
               </p>
-              <div className="space-y-1">
-                {frequentRecs.map((r) => <RecItem key={r.id} rec={r} />)}
+              <div className="flex flex-wrap gap-1.5">
+                {frequentRecs.map((r) => {
+                  const isOn = selected.has(r.id);
+                  const title = r.title[outputLanguage] || r.title.es;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => toggle(r.id)}
+                      title={r.text[outputLanguage] || r.text.es}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
+                        isOn
+                          ? "bg-brand/10 border-brand/30 text-brand font-medium dark:bg-brand/20"
+                          : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 border transition-colors ${
+                        isOn ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
+                      }`} />
+                      {title}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
