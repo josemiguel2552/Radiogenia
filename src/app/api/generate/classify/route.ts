@@ -11,13 +11,17 @@ import { toErrorResponse } from "@/lib/api-error";
 
 type Lang = "es" | "en" | "pt";
 
-function buildClassifyPrompt(lang: Lang, kb: string, conclusion: string, findings: string): string {
+function buildClassifyPrompt(lang: Lang, kb: string, conclusion: string, findings: string, systems?: string[]): string {
+  const systemsList = systems && systems.length > 0
+    ? systems.join(", ")
+    : "BI-RADS, LI-RADS, TI-RADS, PI-RADS, Lung-RADS, O-RADS, CAD-RADS, Bosniak, TNM, Fazekas, Fisher, ASPECTS";
+
   const instructions: Record<Lang, string> = {
     es: `Eres un asistente radiológico experto en CLASIFICACIÓN y ESTADIFICACIÓN. Tu ÚNICA función es asignar categorías de clasificación o estadios a los hallazgos del informe.
 
-HERRAMIENTA DE CLASIFICACIÓN, NO DE RECOMENDACIÓN.
-- SÍ usa: BI-RADS, LI-RADS, TI-RADS, PI-RADS, Lung-RADS, O-RADS, CAD-RADS, Bosniak, TNM, Fazekas, Fisher, ASPECTS.
-- NO usa: Fleischner, BTS, ACR follow-up ni otras guías de manejo/recomendación.
+HERRAMIENTA DE CLASIFICACIÓN.
+- SÍ usa SOLO estos sistemas: ${systemsList}.
+- NO uses sistemas que no estén en la lista anterior.
 
 VISIÓN GLOBAL:
 Analiza TODOS los hallazgos EN CONJUNTO antes de clasificar.
@@ -74,13 +78,17 @@ Para escalas de categoría (BI-RADS, TI-RADS, LI-RADS, PI-RADS, Lung-RADS, O-RAD
 Para escalas de severidad (Fazekas, Fisher, ASPECTS):
 - [Sistema]: [Grado/Puntuación] — [significado del grado según la KB]
 
+Para guías de manejo de nódulos (Fleischner, BTS):
+- [Sistema]: [Categoría/Riesgo] — [recomendación de seguimiento según la KB]
+  Datos del nódulo: [tamaño, tipo (sólido/subsólido/vidrio esmerilado), único/múltiple]
+
 Sin texto introductorio ni explicativo fuera del formato.`,
 
     en: `You are a radiology assistant expert in CLASSIFICATION and STAGING. Your ONLY function is to assign classification categories or stages to report findings.
 
-CLASSIFICATION TOOL, NOT A RECOMMENDATION TOOL.
-- DO use: BI-RADS, LI-RADS, TI-RADS, PI-RADS, Lung-RADS, O-RADS, CAD-RADS, Bosniak, TNM, Fazekas, Fisher, ASPECTS.
-- DO NOT use: Fleischner, BTS, ACR follow-up or other management/recommendation guidelines.
+CLASSIFICATION TOOL.
+- Use ONLY these systems: ${systemsList}.
+- DO NOT use systems not in the list above.
 
 GLOBAL VIEW:
 Analyze ALL findings AS A WHOLE before classifying.
@@ -137,13 +145,17 @@ For category scales (BI-RADS, TI-RADS, LI-RADS, PI-RADS, Lung-RADS, O-RADS, CAD-
 For severity scales (Fazekas, Fisher, ASPECTS):
 - [System]: [Grade/Score] — [meaning of the grade per the KB]
 
+For nodule management guidelines (Fleischner, BTS):
+- [System]: [Category/Risk] — [follow-up recommendation per the KB]
+  Nodule data: [size, type (solid/subsolid/ground-glass), single/multiple]
+
 No introductory or explanatory text outside the format.`,
 
     pt: `Você é um assistente radiológico especialista em CLASSIFICAÇÃO e ESTADIAMENTO. Sua ÚNICA função é atribuir categorias de classificação ou estádios aos achados do relatório.
 
-FERRAMENTA DE CLASSIFICAÇÃO, NÃO DE RECOMENDAÇÃO.
-- SIM use: BI-RADS, LI-RADS, TI-RADS, PI-RADS, Lung-RADS, O-RADS, CAD-RADS, Bosniak, TNM, Fazekas, Fisher, ASPECTS.
-- NÃO use: Fleischner, BTS, ACR follow-up nem outros guias de manejo/recomendação.
+FERRAMENTA DE CLASSIFICAÇÃO.
+- Use SOMENTE estes sistemas: ${systemsList}.
+- NÃO use sistemas que não estejam na lista acima.
 
 VISÃO GLOBAL:
 Analise TODOS os achados EM CONJUNTO antes de classificar.
@@ -201,6 +213,10 @@ Para escalas de categoria (BI-RADS, TI-RADS, LI-RADS, PI-RADS, Lung-RADS, O-RADS
 Para escalas de severidade (Fazekas, Fisher, ASPECTS):
 - [Sistema]: [Grau/Pontuação] — [significado do grau segundo a KB]
 
+Para guias de manejo de nódulos (Fleischner, BTS):
+- [Sistema]: [Categoria/Risco] — [recomendação de seguimento segundo a KB]
+  Dados do nódulo: [tamanho, tipo (sólido/subsólido/vidro fosco), único/múltiplo]
+
 Sem texto introdutório, sem explicações adicionais fora do formato.`,
   };
 
@@ -232,10 +248,11 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`classify:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const { conclusion, findings, language } = await req.json() as {
+    const { conclusion, findings, language, systems } = await req.json() as {
       conclusion: string;
       findings?: string;
       language?: string;
+      systems?: string[];
     };
 
     if (!conclusion?.trim()) {
@@ -257,7 +274,7 @@ export async function POST(req: NextRequest) {
 
     const effectiveModel = taskModel?.modelName || globalConfig.modelName;
     const kb = buildClinicalReferenceData(lang);
-    const system = buildClassifyPrompt(lang, kb, conclusion, findings || "");
+    const system = buildClassifyPrompt(lang, kb, conclusion, findings || "", systems);
 
     const { text, usage } = await generateAIWithUsage({
       provider: effectiveProvider,

@@ -86,6 +86,9 @@ export function DashboardContent() {
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
   const [classifying, setClassifying] = useState(false);
   const [classifyResult, setClassifyResult] = useState<string | null>(null);
+  const [detectingSystems, setDetectingSystems] = useState(false);
+  const [detectedSystems, setDetectedSystems] = useState<{ id: string; label: string }[] | null>(null);
+  const [selectedSystems, setSelectedSystems] = useState<Set<string>>(new Set());
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -1099,10 +1102,49 @@ export function DashboardContent() {
     toast(t("toast.generation_stopped"));
   }
 
-  async function handleClassify() {
-    if (!conclusion.trim() || classifying) return;
+  async function handleDetectSystems() {
+    if (!conclusion.trim() || detectingSystems) return;
+    setDetectingSystems(true);
+    setDetectedSystems(null);
+    setSelectedSystems(new Set());
+    try {
+      const res = await fetch("/api/generate/classify/detect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conclusion: conclusion.trim(),
+          findings: findings.trim(),
+          language: outputLanguage,
+        }),
+      });
+      if (!res.ok) {
+        toast.error(t("gen_error"));
+        return;
+      }
+      const data = await res.json();
+      const systems: { id: string; label: string }[] = data.systems || [];
+      if (systems.length === 0) {
+        toast(t("classify.none_detected"));
+        return;
+      }
+      if (systems.length === 1) {
+        setDetectedSystems(null);
+        await runClassify(systems.map((s) => s.id));
+        return;
+      }
+      setDetectedSystems(systems);
+      setSelectedSystems(new Set(systems.map((s) => s.id)));
+    } catch {
+      toast.error(t("gen_error"));
+    } finally {
+      setDetectingSystems(false);
+    }
+  }
+
+  async function runClassify(systemIds?: string[]) {
     setClassifying(true);
     setClassifyResult(null);
+    setDetectedSystems(null);
     try {
       const res = await fetch("/api/generate/classify", {
         method: "POST",
@@ -1111,6 +1153,7 @@ export function DashboardContent() {
           conclusion: conclusion.trim(),
           findings: findings.trim(),
           language: outputLanguage,
+          ...(systemIds && systemIds.length > 0 ? { systems: systemIds } : {}),
         }),
       });
       if (!res.ok) {
@@ -2123,16 +2166,63 @@ export function DashboardContent() {
                       </button>
                     </div>
                   </div>
+                ) : detectedSystems ? (
+                  <div className="border border-violet-200 dark:border-violet-800 rounded-lg bg-violet-50/50 dark:bg-violet-950/20 p-2.5">
+                    <p className="text-[10px] font-medium text-violet-700 dark:text-violet-300 mb-1">{t("classify.select_systems")}</p>
+                    <p className="text-[9px] text-gray-500 dark:text-gray-400 mb-2">{t("classify.select_hint")}</p>
+                    <div className="flex flex-wrap gap-1.5 mb-2.5">
+                      {detectedSystems.map((sys) => {
+                        const isOn = selectedSystems.has(sys.id);
+                        return (
+                          <button
+                            key={sys.id}
+                            type="button"
+                            onClick={() => setSelectedSystems((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(sys.id)) next.delete(sys.id); else next.add(sys.id);
+                              return next;
+                            })}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                              isOn
+                                ? "bg-violet-100 dark:bg-violet-900/40 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300"
+                                : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                            }`}
+                          >
+                            <div className={`h-3 w-3 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                              isOn ? "bg-violet-500 border-violet-500" : "border-gray-300 dark:border-gray-600"
+                            }`}>
+                              {isOn && <Check className="h-2 w-2 text-white" />}
+                            </div>
+                            {sys.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button type="button" onClick={() => setDetectedSystems(null)} className="text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                        {t("classify.dismiss")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => runClassify([...selectedSystems])}
+                        disabled={selectedSystems.size === 0 || classifying}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-50"
+                      >
+                        {classifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
+                        {t("classify.run_selected")} ({selectedSystems.size})
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex justify-end">
                     <button
                       type="button"
-                      onClick={handleClassify}
-                      disabled={classifying}
+                      onClick={handleDetectSystems}
+                      disabled={classifying || detectingSystems}
                       className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium transition-colors disabled:opacity-50"
                     >
-                      {classifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
-                      {t("classify.button")}
+                      {(classifying || detectingSystems) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
+                      {detectingSystems ? t("classify.detecting") : t("classify.button")}
                     </button>
                   </div>
                 )

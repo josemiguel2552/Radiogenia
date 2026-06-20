@@ -119,6 +119,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const [customTitle, setCustomTitle] = useState("");
   const [customText, setCustomText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [browsing, setBrowsing] = useState(false);
 
   useEffect(() => {
     setUsage(loadUsageLocal());
@@ -203,7 +204,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   }, [frequentIds, allRecs]);
 
   const suggestedRecs = useMemo(() => {
-    return scored.filter((s) => s.relevance > 0).slice(0, 6);
+    return scored.filter((s) => s.relevance > 0).slice(0, 8);
   }, [scored]);
 
   const groupedByCategory = useMemo(() => {
@@ -364,21 +365,21 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
       </button>
 
       {open && (
-        <div className="px-3 pb-3 space-y-2 border-t border-gray-100 dark:border-gray-800">
-          {/* Search */}
-          <div className="relative mt-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("mrec.search_placeholder")}
-              className="w-full h-7 pl-7 pr-2 text-[11px] rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-brand/50"
-            />
-          </div>
+        <div className="px-3 pb-3 space-y-2 border-t border-gray-100 dark:border-gray-800 max-h-[60vh] overflow-y-auto">
+          {/* Suggested by relevance — always visible */}
+          {suggestedRecs.length > 0 && (
+            <div className="pt-2">
+              <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
+                {t("mrec.suggested")}
+              </p>
+              <div className="space-y-1">
+                {suggestedRecs.map((s) => <RecItem key={s.rec.id} rec={s.rec} />)}
+              </div>
+            </div>
+          )}
 
-          {/* Frequent */}
-          {!searchQuery && frequentRecs.length > 0 && (
+          {/* Frequent — always visible */}
+          {frequentRecs.length > 0 && (
             <div className="pt-1">
               <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mb-1.5">
                 <Star className="h-3 w-3" /> {t("mrec.frequent")}
@@ -389,93 +390,105 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
             </div>
           )}
 
-          {/* Suggested by relevance */}
-          {!searchQuery && suggestedRecs.length > 0 && (
-            <div>
-              <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
-                {t("mrec.suggested")}
-              </p>
-              <div className="space-y-1">
-                {suggestedRecs.map((s) => <RecItem key={s.rec.id} rec={s.rec} />)}
-              </div>
-            </div>
-          )}
-
-          {/* Grouped by category/organ */}
-          {groupedByCategory.length > 0 && (
-            <div className="space-y-1">
-              {!searchQuery && (suggestedRecs.length > 0 || frequentRecs.length > 0) && (
-                <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
-                  <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-1">{t("mrec.browse_by_organ")}</p>
-                </div>
-              )}
-              {groupedByCategory.map(([category, recs]) => {
-                const isExpanded = expandedCategories.has(category) || !!searchQuery;
-                const catLabel = CATEGORY_LABELS[category]?.[outputLanguage] || CATEGORY_LABELS[category]?.es || category;
-                const icon = CATEGORY_ICONS[category] || "📄";
-                const selectedInCat = recs.filter((r) => selected.has(r.id)).length;
-                return (
-                  <div key={category} className="rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => toggleCategory(category)}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
-                    >
-                      <span className="text-xs">{icon}</span>
-                      <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex-1">{catLabel}</span>
-                      <span className="text-[9px] text-gray-400">{recs.length}</span>
-                      {selectedInCat > 0 && (
-                        <span className="text-[9px] bg-brand/10 text-brand px-1 py-0.5 rounded-full font-medium">{selectedInCat}</span>
-                      )}
-                      {isExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
-                    </button>
-                    {isExpanded && (
-                      <div className="px-2 pb-2 space-y-1">
-                        {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* No results */}
-          {groupedByCategory.length === 0 && searchQuery && (
-            <p className="text-[10px] text-gray-400 italic text-center py-2">{t("mrec.no_recs")}</p>
-          )}
-
-          {/* Add custom */}
-          {addingCustom ? (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 space-y-1.5">
-              <Input
-                placeholder={t("mrec.custom_title_ph")}
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                className="h-7 text-xs"
-              />
-              <textarea
-                placeholder={t("mrec.custom_text_ph")}
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                className="w-full h-16 text-xs p-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] resize-none"
-              />
-              <div className="flex gap-1">
-                <Button size="sm" className="h-6 text-[10px]" onClick={addCustomRec}>{t("save")}</Button>
-                <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setAddingCustom(false)}>{t("cancel")}</Button>
-              </div>
-            </div>
-          ) : (
+          {/* Browse all toggle */}
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
             <button
               type="button"
-              onClick={() => setAddingCustom(true)}
-              className="text-[10px] text-brand hover:text-brand/80 flex items-center gap-1"
+              onClick={() => { setBrowsing(!browsing); if (browsing) setSearchQuery(""); }}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
-              <Plus className="h-3 w-3" /> {t("mrec.add_custom")}
+              {browsing ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              {outputLanguage === "en" ? "Browse all" : outputLanguage === "pt" ? "Ver todas" : "Ver todas"}
             </button>
+          </div>
+
+          {/* Browsing section — collapsed by default */}
+          {browsing && (
+            <div className="space-y-2">
+              {/* Search — inside browse section */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t("mrec.search_placeholder")}
+                  className="w-full h-7 pl-7 pr-2 text-[11px] rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-brand/50"
+                />
+              </div>
+
+              {/* Grouped by category/organ */}
+              {groupedByCategory.length > 0 && (
+                <div className="space-y-1">
+                  {groupedByCategory.map(([category, recs]) => {
+                    const isExpanded = expandedCategories.has(category) || !!searchQuery;
+                    const catLabel = CATEGORY_LABELS[category]?.[outputLanguage] || CATEGORY_LABELS[category]?.es || category;
+                    const icon = CATEGORY_ICONS[category] || "📄";
+                    const selectedInCat = recs.filter((r) => selected.has(r.id)).length;
+                    return (
+                      <div key={category} className="rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(category)}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                        >
+                          <span className="text-xs">{icon}</span>
+                          <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex-1">{catLabel}</span>
+                          <span className="text-[9px] text-gray-400">{recs.length}</span>
+                          {selectedInCat > 0 && (
+                            <span className="text-[9px] bg-brand/10 text-brand px-1 py-0.5 rounded-full font-medium">{selectedInCat}</span>
+                          )}
+                          {isExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                        </button>
+                        {isExpanded && (
+                          <div className="px-2 pb-2 space-y-1">
+                            {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* No results */}
+              {groupedByCategory.length === 0 && searchQuery && (
+                <p className="text-[10px] text-gray-400 italic text-center py-2">{t("mrec.no_recs")}</p>
+              )}
+
+              {/* Add custom */}
+              {addingCustom ? (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 space-y-1.5">
+                  <Input
+                    placeholder={t("mrec.custom_title_ph")}
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                  <textarea
+                    placeholder={t("mrec.custom_text_ph")}
+                    value={customText}
+                    onChange={(e) => setCustomText(e.target.value)}
+                    className="w-full h-16 text-xs p-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] resize-none"
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" className="h-6 text-[10px]" onClick={addCustomRec}>{t("save")}</Button>
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setAddingCustom(false)}>{t("cancel")}</Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingCustom(true)}
+                  className="text-[10px] text-brand hover:text-brand/80 flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" /> {t("mrec.add_custom")}
+                </button>
+              )}
+            </div>
           )}
 
-          {/* Selected summary + copy */}
+          {/* Selected summary + copy — always visible at bottom */}
           {selected.size > 0 && (
             <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
               <div className="flex items-center justify-between mb-1.5">
