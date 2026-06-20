@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Star, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
@@ -190,19 +190,6 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
       .sort((a, b) => b.relevance - a.relevance);
   }, [filtered, conclusionTokens, outputLanguage]);
 
-  const frequentIds = useMemo(() => {
-    return Object.entries(usage)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([id]) => id);
-  }, [usage]);
-
-  const frequentRecs = useMemo(() => {
-    return frequentIds
-      .map((id) => allRecs.find((r) => r.id === id))
-      .filter((r): r is ManualRecommendation => !!r);
-  }, [frequentIds, allRecs]);
-
   const suggestedRecs = useMemo(() => {
     return scored.filter((s) => s.relevance > 0).slice(0, 8);
   }, [scored]);
@@ -365,89 +352,81 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
       </button>
 
       {open && (
-        <div className="px-3 pb-3 space-y-2 border-t border-gray-100 dark:border-gray-800 max-h-[60vh] overflow-y-auto">
-          {/* Suggested by relevance — chips */}
+        <div className="px-3 pb-2.5 border-t border-gray-100 dark:border-gray-800 max-h-[60vh] overflow-y-auto">
+          {/* Suggested chips */}
           {suggestedRecs.length > 0 && (
-            <div className="pt-2">
-              <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
-                {t("mrec.suggested")}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {suggestedRecs.map((s) => {
-                  const isOn = selected.has(s.rec.id);
-                  const title = s.rec.title[outputLanguage] || s.rec.title.es;
-                  return (
-                    <button
-                      key={s.rec.id}
-                      type="button"
-                      onClick={() => toggle(s.rec.id)}
-                      title={s.rec.text[outputLanguage] || s.rec.text.es}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
-                        isOn
-                          ? "bg-brand/10 border-brand/30 text-brand font-medium dark:bg-brand/20"
-                          : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      }`}
-                    >
-                      <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 border transition-colors ${
-                        isOn ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
-                      }`} />
-                      {title}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="flex flex-wrap gap-1.5 pt-2.5">
+              {suggestedRecs.map((s) => {
+                const isOn = selected.has(s.rec.id);
+                const title = s.rec.title[outputLanguage] || s.rec.title.es;
+                return (
+                  <button
+                    key={s.rec.id}
+                    type="button"
+                    onClick={() => toggle(s.rec.id)}
+                    title={s.rec.text[outputLanguage] || s.rec.text.es}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
+                      isOn
+                        ? "bg-brand/10 border-brand/30 text-brand font-medium dark:bg-brand/20"
+                        : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    }`}
+                  >
+                    <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 border transition-colors ${
+                      isOn ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
+                    }`} />
+                    {title}
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          {/* Frequent — chips */}
-          {frequentRecs.length > 0 && (
-            <div className="pt-1">
-              <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mb-1.5">
-                <Star className="h-3 w-3" /> {t("mrec.frequent")}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {frequentRecs.map((r) => {
-                  const isOn = selected.has(r.id);
-                  const title = r.title[outputLanguage] || r.title.es;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => toggle(r.id)}
-                      title={r.text[outputLanguage] || r.text.es}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
-                        isOn
-                          ? "bg-brand/10 border-brand/30 text-brand font-medium dark:bg-brand/20"
-                          : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      }`}
-                    >
-                      <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 border transition-colors ${
-                        isOn ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
-                      }`} />
-                      {title}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          {suggestedRecs.length === 0 && !browsing && (
+            <p className="text-[10px] text-gray-400 italic pt-2.5">{t("mrec.no_recs")}</p>
           )}
 
-          {/* Browse all toggle */}
-          <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
+          {/* Action bar */}
+          <div className="flex items-center gap-2 pt-2 mt-1 border-t border-gray-100 dark:border-gray-800">
             <button
               type="button"
               onClick={() => { setBrowsing(!browsing); if (browsing) setSearchQuery(""); }}
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 transition-colors"
             >
               {browsing ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              {outputLanguage === "en" ? "Browse all" : outputLanguage === "pt" ? "Ver todas" : "Ver todas"}
+              {outputLanguage === "en" ? "Browse all" : "Ver todas"}
             </button>
+            <button
+              type="button"
+              onClick={() => { if (browsing) { setAddingCustom(true); } else { setBrowsing(true); setAddingCustom(true); } }}
+              className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-brand flex items-center gap-0.5 transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+            <div className="flex-1" />
+            {selected.size > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  className="text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  {t("mrec.clear")}
+                </button>
+                <button
+                  type="button"
+                  onClick={copySelected}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-brand/10 text-brand hover:bg-brand/20 transition-colors"
+                >
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied ? t("copied") : `${selected.size} · ${t("mrec.copy_selected")}`}
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Browsing section — collapsed by default */}
+          {/* Browsing section */}
           {browsing && (
-            <div className="space-y-2">
-              {/* Search — inside browse section */}
+            <div className="space-y-2 pt-2">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
                 <input
@@ -459,7 +438,6 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                 />
               </div>
 
-              {/* Grouped by category/organ */}
               {groupedByCategory.length > 0 && (
                 <div className="space-y-1">
                   {groupedByCategory.map(([category, recs]) => {
@@ -493,12 +471,10 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                 </div>
               )}
 
-              {/* No results */}
               {groupedByCategory.length === 0 && searchQuery && (
                 <p className="text-[10px] text-gray-400 italic text-center py-2">{t("mrec.no_recs")}</p>
               )}
 
-              {/* Add custom */}
               {addingCustom ? (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 space-y-1.5">
                   <Input
@@ -527,46 +503,6 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                   <Plus className="h-3 w-3" /> {t("mrec.add_custom")}
                 </button>
               )}
-            </div>
-          )}
-
-          {/* Selected summary + copy — always visible at bottom */}
-          {selected.size > 0 && (
-            <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-300">
-                  {t("mrec.selected")} ({selected.size})
-                </p>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 text-[10px] gap-1"
-                    onClick={copySelected}
-                  >
-                    {copied ? <Check className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
-                    {copied ? t("copied") : t("mrec.copy_selected")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 text-[10px] text-gray-400"
-                    onClick={() => setSelected(new Set())}
-                  >
-                    {t("mrec.clear")}
-                  </Button>
-                </div>
-              </div>
-              <ul className="space-y-1">
-                {allRecs
-                  .filter((r) => selected.has(r.id))
-                  .map((r) => (
-                    <li key={r.id} className="text-[10px] text-gray-600 dark:text-gray-400 pl-2 border-l-2 border-brand/30">
-                      {r.text[outputLanguage] || r.text.es}
-                      <span className="text-[9px] text-gray-400 ml-1">({r.source})</span>
-                    </li>
-                  ))}
-              </ul>
             </div>
           )}
         </div>
