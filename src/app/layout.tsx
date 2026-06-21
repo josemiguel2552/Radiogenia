@@ -59,7 +59,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
+      <body className="antialiased">
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-2PQPHJ8T3X"
           strategy="afterInteractive"
@@ -70,8 +70,6 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-2PQPHJ8T3X');`}
         </Script>
-      </head>
-      <body className="antialiased">
         {children}
         <CookieBanner />
         <Toaster
