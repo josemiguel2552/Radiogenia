@@ -19,7 +19,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
   es: {
     terms_of_use: {
       title: "Términos de Uso",
-      updated: "Última actualización: mayo 2026",
+      updated: "Última actualización: junio 2026",
       sections: [
         {
           title: "1. Naturaleza del Servicio",
@@ -87,13 +87,20 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           ],
         },
         {
-          title: "11. Ley Aplicable",
+          title: "11. Política de Devoluciones",
+          content: [
+            "Radiogen.AI no emite reembolsos. Todas las suscripciones se facturan por periodo mensual y el acceso se mantiene hasta el final del periodo pagado. Al cancelar la suscripción, el usuario conserva el acceso completo hasta que finalice el periodo de facturación en curso, momento en el cual la cuenta pasa al plan gratuito.",
+            "El usuario puede cancelar su suscripción en cualquier momento desde la configuración de su cuenta. No se realizarán cargos adicionales tras la cancelación.",
+          ],
+        },
+        {
+          title: "12. Ley Aplicable",
           content: [
             "Estos términos se rigen por la legislación aplicable en la jurisdicción del operador de la plataforma. Para cualquier controversia derivada de estos términos, las partes se someten a los juzgados y tribunales competentes.",
           ],
         },
         {
-          title: "12. Contacto",
+          title: "13. Contacto",
           content: [
             "Para consultas, solicitudes de eliminación de datos o cuestiones legales, contáctenos en info@radiogen.ai.",
           ],
@@ -295,7 +302,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
   en: {
     terms_of_use: {
       title: "Terms of Use",
-      updated: "Last updated: May 2026",
+      updated: "Last updated: June 2026",
       sections: [
         {
           title: "1. Nature of the Service",
@@ -363,13 +370,20 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           ],
         },
         {
-          title: "11. Governing Law",
+          title: "11. Refund Policy",
+          content: [
+            "Radiogen.AI does not issue refunds. All subscriptions are billed on a monthly basis and access is maintained until the end of the paid period. When a subscription is cancelled, the user retains full access until the current billing period ends, at which point the account switches to the free plan.",
+            "Users may cancel their subscription at any time from their account settings. No additional charges will be made after cancellation.",
+          ],
+        },
+        {
+          title: "12. Governing Law",
           content: [
             "These terms are governed by the applicable legislation in the jurisdiction of the platform operator. For any dispute arising from these terms, the parties submit to the competent courts.",
           ],
         },
         {
-          title: "12. Contact",
+          title: "13. Contact",
           content: [
             "For inquiries, data deletion requests, or legal matters, contact us at info@radiogen.ai.",
           ],
@@ -482,13 +496,14 @@ export const LEGAL_DOCS: Record<string, Docs> = {
     },
   },
   pt: {
-    terms_of_use: { title: "Termos de Uso", updated: "Última atualização: maio 2026", sections: [
+    terms_of_use: { title: "Termos de Uso", updated: "Última atualização: junho 2026", sections: [
       { title: "1. Natureza do Serviço", content: ["Radiogen.AI é uma ferramenta de estruturação de laudos radiológicos projetada exclusivamente para radiologistas licenciados e profissionais médicos qualificados. A plataforma organiza e estrutura as informações ditadas pelo radiologista nas seções de achados e conclusão do laudo. O radiologista decide quais informações são incluídas; a plataforma apenas as organiza.", "Radiogen.AI NÃO é uma ferramenta de diagnóstico. Não realiza análise de imagens, não interpreta imagens médicas, não gera diagnósticos clínicos autônomos, não emite recomendações terapêuticas e não adiciona informações não fornecidas pelo radiologista. A ferramenta limita-se a estruturar e organizar o conteúdo ditado pelo profissional."] },
       { title: "2. Aceitação dos Termos", content: ["Ao acessar e utilizar o Radiogen.AI, o usuário aceita integralmente estes Termos de Uso."] },
       { title: "3. Limitação de Responsabilidade", content: ["Todo o conteúdo clínico estruturado pelo Radiogen.AI é derivado exclusivamente do ditado do radiologista. A plataforma não adiciona achados clínicos, diagnósticos, recomendações nem avaliações patológicas não ditadas pelo usuário. O radiologista é o único responsável por revisar, validar e aprovar cada laudo antes de seu uso clínico.", "O Radiogen.AI e seus operadores não assumem responsabilidade alguma por decisões clínicas, erros diagnósticos ou qualquer resultado adverso decorrente do uso de laudos estruturados com esta ferramenta."] },
       { title: "4. Responsabilidade Profissional", content: ["Ao utilizar o Radiogen.AI, o radiologista confirma que revisará cada laudo gerado por IA em sua totalidade antes de assiná-lo e que entende que a IA é um assistente de redação."] },
       { title: "5. Usos Proibidos", content: ["É proibido usar o Radiogen.AI como substituto da avaliação radiológica profissional, incluir dados identificáveis de pacientes, ou distribuir laudos sem revisão prévia."] },
-      { title: "6. Contato", content: ["Para dúvidas ou questões legais: info@radiogen.ai."] },
+      { title: "6. Política de Reembolso", content: ["O Radiogen.AI não emite reembolsos. Todas as assinaturas são cobradas mensalmente e o acesso é mantido até o final do período pago. Ao cancelar a assinatura, o usuário mantém o acesso completo até o final do período de faturamento atual, momento em que a conta passa para o plano gratuito.", "O usuário pode cancelar sua assinatura a qualquer momento nas configurações da conta. Nenhuma cobrança adicional será realizada após o cancelamento."] },
+      { title: "7. Contato", content: ["Para dúvidas ou questões legais: info@radiogen.ai."] },
     ]},
     privacy_policy: { title: "Política de Privacidade", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Responsável pelo Tratamento", content: ["O responsável pelo tratamento dos dados pessoais é o Radiogen.AI."] },
