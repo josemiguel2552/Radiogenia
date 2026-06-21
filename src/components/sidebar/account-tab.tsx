@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import {
   Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
   ExternalLink, X, Zap, FileText, Mic, TrendingUp, User, Download, Receipt,
-  Gift, Copy, CheckCheck, ShieldCheck, Brain,
+  Gift, Copy, CheckCheck, ShieldCheck, Brain, Trash2,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
@@ -86,6 +86,11 @@ export function AccountTab() {
   const [copied, setCopied] = useState(false);
   const [consentRecords, setConsentRecords] = useState<{ document_type: string; document_version: string; accepted_at: string }[]>([]);
   const [consentLoading, setConsentLoading] = useState(true);
+  const [cancelSubOpen, setCancelSubOpen] = useState(false);
+  const [cancelSubLoading, setCancelSubLoading] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
 
   const loadSub = useCallback(async () => {
     try {
@@ -244,6 +249,37 @@ export function AccountTab() {
     } catch { /* ignore */ }
     setPortalLoading(false);
   }, [t]);
+
+  const handleCancelSubscription = useCallback(async () => {
+    setCancelSubLoading(true);
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "free" }),
+      });
+      if (res.ok) {
+        await loadSub();
+        setCancelSubOpen(false);
+        setPlanMsg({ ok: true, text: t("account.cancel_sub_success") });
+      }
+    } catch { /* ignore */ }
+    setCancelSubLoading(false);
+  }, [loadSub, t]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    setDeleteAccountLoading(true);
+    try {
+      const res = await fetch("/api/account/delete", { method: "DELETE" });
+      if (res.ok) {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        window.location.href = "/auth/login";
+        return;
+      }
+    } catch { /* ignore */ }
+    setDeleteAccountLoading(false);
+  }, []);
 
   const planKeys = Object.keys(PLANS) as SubscriptionPlan[];
 
@@ -614,6 +650,127 @@ export function AccountTab() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Danger zone */}
+      <Card className="border-red-200 dark:border-red-800">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-red-600 dark:text-red-400">{t("account.danger_zone")}</span>
+            </div>
+          </div>
+
+          {/* Cancel subscription - only show if on a paid plan and no pending downgrade to free */}
+          {sub && sub.plan !== "free" && sub.plan !== "resident" && sub.pendingPlan !== "free" && (
+            <div className="flex items-center justify-between p-3.5 rounded-lg border border-red-100 dark:border-red-900 bg-red-50/50 dark:bg-red-900/20">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t("account.cancel_subscription")}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.cancel_sub_warning")}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
+                onClick={() => setCancelSubOpen(true)}
+              >
+                {t("account.cancel_subscription")}
+              </Button>
+            </div>
+          )}
+
+          {/* Delete account - always visible */}
+          <div className="flex items-center justify-between p-3.5 rounded-lg border border-red-100 dark:border-red-900 bg-red-50/50 dark:bg-red-900/20">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t("account.delete_account")}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("account.delete_warning")}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
+              onClick={() => { setDeleteConfirmEmail(""); setDeleteAccountOpen(true); }}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              {t("account.delete_account")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cancel subscription dialog */}
+      <Dialog open={cancelSubOpen} onOpenChange={setCancelSubOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              {t("account.cancel_subscription")}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {t("account.cancel_sub_warning")}
+          </p>
+          <DialogFooter className="gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm" className="text-xs">{t("cancel")}</Button>
+            </DialogClose>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="text-xs"
+              onClick={handleCancelSubscription}
+              disabled={cancelSubLoading}
+            >
+              {cancelSubLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("account.cancel_sub_confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete account dialog */}
+      <Dialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              {t("account.delete_account")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t("account.delete_warning")}
+            </p>
+            <div>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
+                {t("account.delete_confirm_email")}
+              </label>
+              <Input
+                type="email"
+                value={deleteConfirmEmail}
+                onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                placeholder={userEmail}
+                className="h-9 text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <DialogClose asChild>
+              <Button variant="ghost" size="sm" className="text-xs">{t("cancel")}</Button>
+            </DialogClose>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="text-xs"
+              onClick={handleDeleteAccount}
+              disabled={deleteAccountLoading || deleteConfirmEmail !== userEmail}
+            >
+              {deleteAccountLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("account.delete_confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Signed legal documents */}
       <Card>
