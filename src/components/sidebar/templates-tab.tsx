@@ -1148,13 +1148,12 @@ export function TemplatesTab() {
           {showNormality ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
         </button>
 
-        {!showNormality && normalityPhrases.length > 0 && (
+        {!showNormality && (
           <div className="px-3 pb-2.5 -mt-1">
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 italic truncate">
-              {(() => {
-                const sample = normalityPhrases[0];
-                return sample ? `${sec(sample.section_label)}: ${sample.phrase}` : "";
-              })()}
+            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+              {normUiLang === "en"
+                ? "Text used when a section has no abnormal findings"
+                : "Texto que se usa cuando una sección no tiene hallazgos anormales"}
             </p>
           </div>
         )}
