@@ -101,6 +101,10 @@ export default function InvitePage() {
         return;
       }
 
+      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+        (window as any).fbq("track", "CompleteRegistration");
+      }
+
       setState(data.auto_approved ? "success" : "success_pending");
     } catch {
       setError(t("invite.error_generic"));

@@ -74,6 +74,10 @@ function RegisterForm() {
         return;
       }
 
+      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+        (window as any).fbq("track", "CompleteRegistration");
+      }
+
       if (data.approved) {
         setSubmitted("approved");
       } else {
