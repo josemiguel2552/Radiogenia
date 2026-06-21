@@ -261,6 +261,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     }).then(() => {
       window.dispatchEvent(new CustomEvent("radiogenai:config-changed"));
     }).catch(() => {});
+    window.dispatchEvent(new CustomEvent("radiogenai:output-lang-changed", { detail: { lang } }));
   }
 
   // Signatures

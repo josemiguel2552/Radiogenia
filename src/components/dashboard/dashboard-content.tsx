@@ -122,6 +122,7 @@ export function DashboardContent() {
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
+  const langRegenRef = useRef(false);
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
@@ -645,11 +646,20 @@ export function DashboardContent() {
         if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
       }).catch(() => {});
     };
+    const handleLangChanged = (e: Event) => {
+      const lang = (e as CustomEvent).detail?.lang;
+      if (lang) {
+        langRegenRef.current = true;
+        setOutputLanguage(lang);
+      }
+    };
     window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
     window.addEventListener("radiogenai:config-changed", handleConfigChanged);
+    window.addEventListener("radiogenai:output-lang-changed", handleLangChanged);
     return () => {
       window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
       window.removeEventListener("radiogenai:config-changed", handleConfigChanged);
+      window.removeEventListener("radiogenai:output-lang-changed", handleLangChanged);
     };
   }, []);
 
@@ -1092,6 +1102,15 @@ export function DashboardContent() {
       }
     }
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!langRegenRef.current) return;
+    langRegenRef.current = false;
+    if (findings.trim() && selectedTemplate && dictation.trim()) {
+      handleGenerate(reportMode);
+    }
+  }, [outputLanguage]);
 
   function stopGeneration() {
     abortControllerRef.current?.abort();
