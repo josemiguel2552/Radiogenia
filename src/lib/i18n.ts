@@ -1896,7 +1896,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     // Guidelines / recommendations tab
     // Model config tab
     "cfg.connection": "Conexión", "cfg.writing_prefs": "Preferencias de escritura",
-    "cfg.normality": "Frases de normalidad", "cfg.finetuning": "Ajuste fino (OpenAI)",
+    "cfg.normality": "Texto para hallazgos normales", "cfg.finetuning": "Ajuste fino (OpenAI)",
     "cfg.provider": "Proveedor", "cfg.model": "Modelo",
     "cfg.endpoint_url": "URL del endpoint", "cfg.api_key": "Clave API",
     "cfg.key_hint": "Cifrada con AES-256-GCM. Nunca sale de su servidor.",
@@ -4806,7 +4806,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "tpl.restore": "Restore",
     "tpl.hidden_success": "Template hidden. You can restore it from the section below.",
     "cfg.connection": "Connection", "cfg.writing_prefs": "Writing preferences",
-    "cfg.normality": "Normality phrases", "cfg.finetuning": "Fine-tuning (OpenAI)",
+    "cfg.normality": "Default normal findings", "cfg.finetuning": "Fine-tuning (OpenAI)",
     "cfg.provider": "Provider", "cfg.model": "Model",
     "cfg.endpoint_url": "Endpoint URL", "cfg.api_key": "API Key",
     "cfg.key_hint": "Encrypted with AES-256-GCM. Never leaves your server.",
@@ -7721,7 +7721,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     // Guidelines / recommendations tab
     // Model config tab
     "cfg.connection": "Conexão", "cfg.writing_prefs": "Preferências de redação",
-    "cfg.normality": "Frases de normalidade", "cfg.finetuning": "Ajuste fino (OpenAI)",
+    "cfg.normality": "Texto para achados normais", "cfg.finetuning": "Ajuste fino (OpenAI)",
     "cfg.provider": "Provedor", "cfg.model": "Modelo",
     "cfg.endpoint_url": "URL do endpoint", "cfg.api_key": "Chave API",
     "cfg.key_hint": "Criptografada com AES-256-GCM. Nunca sai do seu servidor.",
