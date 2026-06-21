@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { CookieBanner } from "@/components/cookie-banner";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -58,6 +59,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-2PQPHJ8T3X"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-2PQPHJ8T3X');`}
+        </Script>
+      </head>
       <body className="antialiased">
         {children}
         <CookieBanner />
