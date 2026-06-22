@@ -79,8 +79,11 @@ Para escalas de severidad (Fazekas, Fisher, ASPECTS):
 - [Sistema]: [Grado/Puntuación] — [significado del grado según la KB]
 
 Para guías de manejo de nódulos (Fleischner, BTS):
-- [Sistema]: [Categoría/Riesgo] — [recomendación de seguimiento según la KB]
-  Datos del nódulo: [tamaño, tipo (sólido/subsólido/vidrio esmerilado), único/múltiple]
+- Genera UNA SOLA FRASE lista para insertar directamente en la conclusión del informe.
+- La frase debe ser concisa y clínica, indicando la recomendación de manejo y citando la guía entre paréntesis.
+- Ejemplo: "No further follow-up needed as per current guidelines (Fleischner 2017)."
+- Ejemplo: "Follow-up CT recommended in 6-12 months as per BTS guidelines."
+- NO incluyas datos del nódulo, ni categorías internas, ni explicaciones. Solo la frase de recomendación.
 
 Sin texto introductorio ni explicativo fuera del formato.`,
 
@@ -146,8 +149,11 @@ For severity scales (Fazekas, Fisher, ASPECTS):
 - [System]: [Grade/Score] — [meaning of the grade per the KB]
 
 For nodule management guidelines (Fleischner, BTS):
-- [System]: [Category/Risk] — [follow-up recommendation per the KB]
-  Nodule data: [size, type (solid/subsolid/ground-glass), single/multiple]
+- Generate ONE SINGLE SENTENCE ready to be inserted directly into the report conclusion.
+- The sentence must be concise and clinical, stating the management recommendation and citing the guideline in parentheses.
+- Example: "No further follow-up needed as per current guidelines (Fleischner 2017)."
+- Example: "Follow-up CT recommended in 6-12 months as per BTS guidelines."
+- DO NOT include nodule data, internal categories, or explanations. Only the recommendation sentence.
 
 No introductory or explanatory text outside the format.`,
 
@@ -214,8 +220,11 @@ Para escalas de severidade (Fazekas, Fisher, ASPECTS):
 - [Sistema]: [Grau/Pontuação] — [significado do grau segundo a KB]
 
 Para guias de manejo de nódulos (Fleischner, BTS):
-- [Sistema]: [Categoria/Risco] — [recomendação de seguimento segundo a KB]
-  Dados do nódulo: [tamanho, tipo (sólido/subsólido/vidro fosco), único/múltiplo]
+- Gere UMA ÚNICA FRASE pronta para ser inserida diretamente na conclusão do laudo.
+- A frase deve ser concisa e clínica, indicando a recomendação de manejo e citando a diretriz entre parênteses.
+- Exemplo: "Não é necessário seguimento adicional conforme diretrizes atuais (Fleischner 2017)."
+- Exemplo: "Recomenda-se TC de controle em 6-12 meses conforme diretrizes BTS."
+- NÃO inclua dados do nódulo, categorias internas, nem explicações. Apenas a frase de recomendação.
 
 Sem texto introdutório, sem explicações adicionais fora do formato.`,
   };

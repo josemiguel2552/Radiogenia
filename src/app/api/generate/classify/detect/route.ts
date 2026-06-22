@@ -37,11 +37,11 @@ Sistemas disponibles: ${systemIds}
 
 REGLAS:
 - Un sistema es aplicable SOLO si el informe contiene los datos específicos necesarios para aplicarlo.
-- Para Fleischner/BTS: requieren nódulo(s) pulmonar(es) con tamaño. Fleischner es para incidentales, BTS para screening NHS.
+- Para Fleischner/BTS: ambos aplican a nódulos pulmonares con tamaño. Si hay un nódulo pulmonar con tamaño, incluye AMBOS (Fleischner y BTS) para que el usuario elija.
 - Para Lung-RADS: screening de cáncer de pulmón con nódulos.
 - Para TNM: requiere hallazgos sugestivos de neoplasia con datos suficientes para estadificar.
 - NO incluyas sistemas cuyos datos no estén en el informe.
-- Si varios sistemas aplican al MISMO hallazgo (ej: nódulo pulmonar → Lung-RADS Y Fleischner Y TNM), incluye TODOS para que el usuario elija.
+- Si varios sistemas aplican al MISMO hallazgo (ej: nódulo pulmonar → Fleischner Y BTS Y Lung-RADS), incluye TODOS para que el usuario elija.
 
 Responde SOLO con los IDs de los sistemas aplicables, uno por línea. Sin explicaciones.
 Si ninguno aplica, responde: NONE`,
@@ -52,11 +52,11 @@ Available systems: ${systemIds}
 
 RULES:
 - A system is applicable ONLY if the report contains the specific data needed to apply it.
-- For Fleischner/BTS: require pulmonary nodule(s) with size. Fleischner is for incidental, BTS for NHS screening.
+- For Fleischner/BTS: both apply to pulmonary nodules with size. If there is a pulmonary nodule with size, include BOTH (Fleischner and BTS) so the user can choose.
 - For Lung-RADS: lung cancer screening with nodules.
 - For TNM: requires findings suggestive of neoplasia with sufficient data for staging.
 - DO NOT include systems whose required data is not in the report.
-- If multiple systems apply to the SAME finding (e.g., lung nodule → Lung-RADS AND Fleischner AND TNM), include ALL so the user can choose.
+- If multiple systems apply to the SAME finding (e.g., lung nodule → Fleischner AND BTS AND Lung-RADS), include ALL so the user can choose.
 
 Respond ONLY with the IDs of applicable systems, one per line. No explanations.
 If none apply, respond: NONE`,
@@ -67,11 +67,11 @@ Sistemas disponíveis: ${systemIds}
 
 REGRAS:
 - Um sistema é aplicável SOMENTE se o relatório contém os dados específicos necessários para aplicá-lo.
-- Para Fleischner/BTS: requerem nódulo(s) pulmonar(es) com tamanho. Fleischner para incidentais, BTS para screening NHS.
+- Para Fleischner/BTS: ambos se aplicam a nódulos pulmonares com tamanho. Se há nódulo pulmonar com tamanho, inclua AMBOS (Fleischner e BTS) para o usuário escolher.
 - Para Lung-RADS: screening de câncer de pulmão com nódulos.
 - Para TNM: requer achados sugestivos de neoplasia com dados suficientes para estadiamento.
 - NÃO inclua sistemas cujos dados não estejam no relatório.
-- Se vários sistemas se aplicam ao MESMO achado (ex: nódulo pulmonar → Lung-RADS E Fleischner E TNM), inclua TODOS para que o usuário escolha.
+- Se vários sistemas se aplicam ao MESMO achado (ex: nódulo pulmonar → Fleischner E BTS E Lung-RADS), inclua TODOS para que o usuário escolha.
 
 Responda SOMENTE com os IDs dos sistemas aplicáveis, um por linha. Sem explicações.
 Se nenhum se aplica, responda: NONE`,
