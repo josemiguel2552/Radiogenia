@@ -1628,7 +1628,7 @@ export function DashboardContent() {
   return (
     <div className="flex flex-col gap-3 md:gap-4">
       {/* ── Setup + Dictation (responsive grid) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,2fr)_3fr] gap-3 md:gap-4">
+      <div className="grid grid-cols-1 gap-3 md:gap-4">
       {setupCollapsed ? (
           <div
             className="flex items-center gap-2 px-3 py-2.5 md:py-2 rounded-lg border bg-[hsl(var(--muted)/0.8)] cursor-pointer hover:bg-[hsl(var(--muted))] transition-colors"
