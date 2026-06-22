@@ -77,7 +77,11 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "9. Planes y Facturación",
           content: [
-            "Los planes de suscripción y sus límites se detallan en la sección de precios. Los periodos de facturación se renuevan automáticamente cada 30 días. El usuario puede solicitar la baja o cambio de plan en cualquier momento contactando al administrador.",
+            "Los planes de suscripción y sus límites se detallan en la sección de precios. Los periodos de facturación se renuevan automáticamente cada 30 días. El usuario puede solicitar la baja o cambio de plan en cualquier momento desde la configuración de su cuenta.",
+            "Mejora de plan (upgrade): al mejorar a un plan superior, se cobra de inmediato el precio completo del nuevo plan y se inicia un nuevo ciclo de facturación de 30 días desde ese momento. No se aplica prorrateo ni se reembolsa el tiempo restante del plan anterior.",
+            "Transferencia de uso en mejora de plan: los informes y minutos de dictado no utilizados del plan anterior se acumulan al nuevo plan durante el primer mes tras la mejora. Una vez finalizado ese primer ciclo de facturación del nuevo plan, el uso acumulado desaparece y los límites se restablecen a los valores normales del nuevo plan.",
+            "Reducción de plan (downgrade): al cambiar a un plan inferior, el plan actual permanece activo con todas sus prestaciones hasta el final del periodo de facturación en curso. Una vez finalizado dicho periodo, la cuenta cambia automáticamente al plan inferior seleccionado.",
+            "Cancelación: al cancelar la suscripción, el usuario conserva el acceso completo al plan contratado hasta que finalice el periodo de facturación en curso. Transcurrido ese periodo, la cuenta pasa automáticamente al plan gratuito.",
           ],
         },
         {
@@ -89,7 +93,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "11. Política de Devoluciones",
           content: [
-            "Radiogen.AI no emite reembolsos. Todas las suscripciones se facturan por periodo mensual y el acceso se mantiene hasta el final del periodo pagado. Al cancelar la suscripción, el usuario conserva el acceso completo hasta que finalice el periodo de facturación en curso, momento en el cual la cuenta pasa al plan gratuito.",
+            "Radiogen.AI no emite reembolsos bajo ninguna circunstancia, incluyendo, sin limitación, mejoras de plan, reducciones de plan, cancelaciones, tiempo no utilizado de un periodo de facturación, insatisfacción con el servicio o cualquier otro motivo. Todas las suscripciones se facturan por periodo mensual y el acceso se mantiene hasta el final del periodo pagado.",
             "El usuario puede cancelar su suscripción en cualquier momento desde la configuración de su cuenta. No se realizarán cargos adicionales tras la cancelación.",
           ],
         },
@@ -360,7 +364,11 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "9. Plans and Billing",
           content: [
-            "Subscription plans and their limits are detailed in the pricing section. Billing periods renew automatically every 30 days. Users may request cancellation or plan changes at any time by contacting the administrator.",
+            "Subscription plans and their limits are detailed in the pricing section. Billing periods renew automatically every 30 days. Users may request cancellation or plan changes at any time from their account settings.",
+            "Plan upgrade: when upgrading to a higher plan, the full price of the new plan is charged immediately and a new 30-day billing cycle begins from that moment. No proration is applied and the remaining time on the previous plan is not refunded.",
+            "Usage carryover on upgrade: unused reports and dictation minutes from the previous plan carry over into the new plan for the first month after the upgrade. Once that first billing cycle of the new plan ends, the carried-over usage expires and limits reset to the new plan's standard allowances.",
+            "Plan downgrade: when switching to a lower plan, the current plan remains active with all its features until the end of the current billing period. Once that period ends, the account automatically switches to the selected lower plan.",
+            "Cancellation: when a subscription is cancelled, the user retains full access to the subscribed plan until the end of the current billing period. After that period, the account automatically switches to the free plan.",
           ],
         },
         {
@@ -372,7 +380,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "11. Refund Policy",
           content: [
-            "Radiogen.AI does not issue refunds. All subscriptions are billed on a monthly basis and access is maintained until the end of the paid period. When a subscription is cancelled, the user retains full access until the current billing period ends, at which point the account switches to the free plan.",
+            "Radiogen.AI does not issue refunds under any circumstances, including but not limited to plan upgrades, plan downgrades, cancellations, unused time within a billing period, dissatisfaction with the service, or any other reason. All subscriptions are billed on a monthly basis and access is maintained until the end of the paid period.",
             "Users may cancel their subscription at any time from their account settings. No additional charges will be made after cancellation.",
           ],
         },
@@ -502,8 +510,15 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       { title: "3. Limitação de Responsabilidade", content: ["Todo o conteúdo clínico estruturado pelo Radiogen.AI é derivado exclusivamente do ditado do radiologista. A plataforma não adiciona achados clínicos, diagnósticos, recomendações nem avaliações patológicas não ditadas pelo usuário. O radiologista é o único responsável por revisar, validar e aprovar cada laudo antes de seu uso clínico.", "O Radiogen.AI e seus operadores não assumem responsabilidade alguma por decisões clínicas, erros diagnósticos ou qualquer resultado adverso decorrente do uso de laudos estruturados com esta ferramenta."] },
       { title: "4. Responsabilidade Profissional", content: ["Ao utilizar o Radiogen.AI, o radiologista confirma que revisará cada laudo gerado por IA em sua totalidade antes de assiná-lo e que entende que a IA é um assistente de redação."] },
       { title: "5. Usos Proibidos", content: ["É proibido usar o Radiogen.AI como substituto da avaliação radiológica profissional, incluir dados identificáveis de pacientes, ou distribuir laudos sem revisão prévia."] },
-      { title: "6. Política de Reembolso", content: ["O Radiogen.AI não emite reembolsos. Todas as assinaturas são cobradas mensalmente e o acesso é mantido até o final do período pago. Ao cancelar a assinatura, o usuário mantém o acesso completo até o final do período de faturamento atual, momento em que a conta passa para o plano gratuito.", "O usuário pode cancelar sua assinatura a qualquer momento nas configurações da conta. Nenhuma cobrança adicional será realizada após o cancelamento."] },
-      { title: "7. Contato", content: ["Para dúvidas ou questões legais: info@radiogen.ai."] },
+      { title: "6. Planos e Faturamento", content: [
+        "Os planos de assinatura e seus limites estão detalhados na seção de preços. Os períodos de faturamento são renovados automaticamente a cada 30 dias. O usuário pode solicitar cancelamento ou alteração de plano a qualquer momento nas configurações da conta.",
+        "Upgrade de plano: ao fazer upgrade para um plano superior, o preço completo do novo plano é cobrado imediatamente e um novo ciclo de faturamento de 30 dias começa a partir desse momento. Não há rateio e o tempo restante do plano anterior não é reembolsado.",
+        "Transferência de uso no upgrade: os laudos e minutos de ditado não utilizados do plano anterior são transferidos para o novo plano durante o primeiro mês após o upgrade. Ao final desse primeiro ciclo de faturamento do novo plano, o uso transferido expira e os limites são redefinidos para os valores padrão do novo plano.",
+        "Downgrade de plano: ao mudar para um plano inferior, o plano atual permanece ativo com todos os seus recursos até o final do período de faturamento em curso. Após esse período, a conta muda automaticamente para o plano inferior selecionado.",
+        "Cancelamento: ao cancelar a assinatura, o usuário mantém o acesso completo ao plano contratado até o final do período de faturamento atual. Após esse período, a conta passa automaticamente para o plano gratuito.",
+      ] },
+      { title: "7. Política de Reembolso", content: ["O Radiogen.AI não emite reembolsos sob nenhuma circunstância, incluindo, sem limitação, upgrades de plano, downgrades de plano, cancelamentos, tempo não utilizado dentro de um período de faturamento, insatisfação com o serviço ou qualquer outro motivo. Todas as assinaturas são cobradas mensalmente e o acesso é mantido até o final do período pago.", "O usuário pode cancelar sua assinatura a qualquer momento nas configurações da conta. Nenhuma cobrança adicional será realizada após o cancelamento."] },
+      { title: "8. Contato", content: ["Para dúvidas ou questões legais: info@radiogen.ai."] },
     ]},
     privacy_policy: { title: "Política de Privacidade", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Responsável pelo Tratamento", content: ["O responsável pelo tratamento dos dados pessoais é o Radiogen.AI."] },

@@ -135,8 +135,8 @@ export async function GET() {
     const needsReset = nextPeriod.getTime() <= Date.now();
 
     let plan = (profile.subscription_plan || "free") as SubscriptionPlan;
-    let used = profile.reports_used_this_month || 0;
-    let dictationSecondsUsed = profile.dictation_seconds_used || 0;
+    let used = profile.reports_used_this_month ?? 0;
+    let dictationSecondsUsed = profile.dictation_seconds_used ?? 0;
     let pendingPlan = profile.pending_plan as SubscriptionPlan | null;
     let pendingEffective = profile.pending_plan_effective_date;
 
@@ -164,23 +164,29 @@ export async function GET() {
 
     const planConfig = PLANS[plan];
 
+    const hasCarryover = used < 0 || dictationSecondsUsed < 0;
+    const effectiveLimit = hasCarryover ? planConfig.reports + Math.abs(Math.min(0, used)) : planConfig.reports;
+    const effectiveDictLimit = hasCarryover ? planConfig.dictationMinutes * 60 + Math.abs(Math.min(0, dictationSecondsUsed)) : planConfig.dictationMinutes * 60;
+    const displayUsed = Math.max(0, used);
+    const displayDictUsed = Math.max(0, dictationSecondsUsed);
+
     return NextResponse.json({
       plan,
       planConfig,
-      used,
-      limit: planConfig.reports,
-      remaining: Math.max(0, planConfig.reports - used),
+      used: displayUsed,
+      limit: effectiveLimit,
+      remaining: Math.max(0, effectiveLimit - displayUsed),
       periodStart,
       nextPeriodDate: nextPeriod.toISOString(),
       pendingPlan,
       pendingPlanEffectiveDate: pendingEffective,
       hasStripe: !!profile.stripe_customer_id,
       dictation: {
-        usedSeconds: dictationSecondsUsed,
-        limitSeconds: planConfig.dictationMinutes * 60,
-        usedMinutes: Math.round(dictationSecondsUsed / 60),
-        limitMinutes: planConfig.dictationMinutes,
-        remainingMinutes: Math.max(0, planConfig.dictationMinutes - Math.round(dictationSecondsUsed / 60)),
+        usedSeconds: displayDictUsed,
+        limitSeconds: effectiveDictLimit,
+        usedMinutes: Math.round(displayDictUsed / 60),
+        limitMinutes: Math.round(effectiveDictLimit / 60),
+        remainingMinutes: Math.max(0, Math.round(effectiveDictLimit / 60) - Math.round(displayDictUsed / 60)),
       },
     });
   } catch (error) {
@@ -242,7 +248,7 @@ export async function PUT(req: NextRequest) {
 
     const { data: profile } = await service
       .from("profiles")
-      .select("subscription_plan, billing_period_start, stripe_subscription_id")
+      .select("subscription_plan, billing_period_start, stripe_subscription_id, reports_used_this_month, dictation_seconds_used")
       .eq("id", user.id)
       .single();
 
@@ -274,12 +280,26 @@ export async function PUT(req: NextRequest) {
         await stripe.subscriptions.update(profile.stripe_subscription_id, {
           items: [{ id: itemId, price: newPriceId }],
           proration_behavior: "none",
+          billing_cycle_anchor: "now",
         });
       }
 
+      const oldLimits = PLANS[currentPlan];
+      const usedReports = Math.max(0, profile.reports_used_this_month ?? 0);
+      const usedDictation = Math.max(0, profile.dictation_seconds_used ?? 0);
+      const carryoverReports = Math.max(0, oldLimits.reports - usedReports);
+      const carryoverDictation = Math.max(0, oldLimits.dictationMinutes * 60 - usedDictation);
+
       await service
         .from("profiles")
-        .update({ subscription_plan: plan })
+        .update({
+          subscription_plan: plan,
+          billing_period_start: new Date().toISOString(),
+          reports_used_this_month: -carryoverReports,
+          dictation_seconds_used: -carryoverDictation,
+          pending_plan: null,
+          pending_plan_effective_date: null,
+        })
         .eq("id", user.id);
 
       return NextResponse.json({ ok: true, immediate: true });

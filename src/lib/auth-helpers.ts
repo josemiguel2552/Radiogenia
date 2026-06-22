@@ -195,12 +195,14 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   const nextPeriod = new Date(periodStart);
   nextPeriod.setMonth(nextPeriod.getMonth() + 1);
   const needsReset = nextPeriod.getTime() <= Date.now();
-  const used = needsReset ? 0 : (profile?.reports_used_this_month || 0);
+  const rawUsed = needsReset ? 0 : (profile?.reports_used_this_month ?? 0);
+  const used = Math.max(0, rawUsed);
+  const effectiveLimit = rawUsed < 0 ? planConfig.reports + Math.abs(rawUsed) : planConfig.reports;
 
   return {
-    allowed: used < planConfig.reports,
+    allowed: used < effectiveLimit,
     used,
-    limit: planConfig.reports,
+    limit: effectiveLimit,
     plan,
   };
 }
@@ -255,12 +257,14 @@ export async function checkDictationLimit(userId: string): Promise<{
   const nextPeriod = new Date(periodStart);
   nextPeriod.setMonth(nextPeriod.getMonth() + 1);
   const needsReset = nextPeriod.getTime() <= Date.now();
-  const usedSeconds = needsReset ? 0 : (profile?.dictation_seconds_used || 0);
+  const rawUsedSeconds = needsReset ? 0 : (profile?.dictation_seconds_used ?? 0);
+  const usedSeconds = Math.max(0, rawUsedSeconds);
+  const effectiveLimitSeconds = rawUsedSeconds < 0 ? limitSeconds + Math.abs(rawUsedSeconds) : limitSeconds;
 
   return {
-    allowed: usedSeconds < limitSeconds,
+    allowed: usedSeconds < effectiveLimitSeconds,
     usedSeconds,
-    limitSeconds,
+    limitSeconds: effectiveLimitSeconds,
     plan,
   };
 }
@@ -286,7 +290,7 @@ export async function incrementReportUsage(userId: string): Promise<void> {
   const { error } = await service
     .from("profiles")
     .update({
-      reports_used_this_month: stale ? 1 : (data.reports_used_this_month || 0) + 1,
+      reports_used_this_month: stale ? 1 : (data.reports_used_this_month ?? 0) + 1,
       ...(stale ? { dictation_seconds_used: 0, billing_period_start: new Date().toISOString() } : {}),
     })
     .eq("id", userId);
@@ -305,7 +309,7 @@ export async function incrementDictationUsage(userId: string, seconds: number): 
   if (!data) return seconds;
 
   const stale = isBillingPeriodStale(data.billing_period_start);
-  const newUsed = stale ? seconds : (data.dictation_seconds_used || 0) + seconds;
+  const newUsed = stale ? seconds : (data.dictation_seconds_used ?? 0) + seconds;
   const { error } = await service
     .from("profiles")
     .update({
