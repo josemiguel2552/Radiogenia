@@ -257,11 +257,12 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`classify:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const { conclusion, findings, language, systems } = await req.json() as {
+    const { conclusion, findings, language, systems, additionalContext } = await req.json() as {
       conclusion: string;
       findings?: string;
       language?: string;
       systems?: string[];
+      additionalContext?: string;
     };
 
     if (!conclusion?.trim()) {
@@ -283,7 +284,16 @@ export async function POST(req: NextRequest) {
 
     const effectiveModel = taskModel?.modelName || globalConfig.modelName;
     const kb = buildClinicalReferenceData(lang);
-    const system = buildClassifyPrompt(lang, kb, conclusion, findings || "", systems);
+    let system = buildClassifyPrompt(lang, kb, conclusion, findings || "", systems);
+
+    if (additionalContext?.trim()) {
+      const contextLabel: Record<Lang, string> = {
+        es: "INFORMACIÓN ADICIONAL proporcionada por el radiólogo (considérala como datos del informe para la clasificación)",
+        en: "ADDITIONAL INFORMATION provided by the radiologist (treat as report data for classification purposes)",
+        pt: "INFORMAÇÃO ADICIONAL fornecida pelo radiologista (considere como dados do relatório para classificação)",
+      };
+      system += `\n\n--- ${contextLabel[lang]} ---\n${additionalContext.trim()}\n--- END ---`;
+    }
 
     const { text, usage } = await generateAIWithUsage({
       provider: effectiveProvider,

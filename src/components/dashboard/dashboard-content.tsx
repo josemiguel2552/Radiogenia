@@ -89,6 +89,10 @@ export function DashboardContent() {
   const [detectingSystems, setDetectingSystems] = useState(false);
   const [detectedSystems, setDetectedSystems] = useState<{ id: string; label: string }[] | null>(null);
   const [selectedSystems, setSelectedSystems] = useState<Set<string>>(new Set());
+  const [preflightQuestions, setPreflightQuestions] = useState<{ id: string; question: string; options: string[] }[] | null>(null);
+  const [preflightAnswers, setPreflightAnswers] = useState<Record<string, string>>({});
+  const [preflightSystems, setPreflightSystems] = useState<string[]>([]);
+  const [checkingPreflight, setCheckingPreflight] = useState(false);
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -1126,6 +1130,8 @@ export function DashboardContent() {
     setDetectingSystems(true);
     setDetectedSystems(null);
     setSelectedSystems(new Set());
+    setPreflightQuestions(null);
+    setPreflightAnswers({});
     try {
       const res = await fetch("/api/generate/classify/detect", {
         method: "POST",
@@ -1148,7 +1154,7 @@ export function DashboardContent() {
       }
       if (systems.length === 1) {
         setDetectedSystems(null);
-        await runClassify(systems.map((s) => s.id));
+        await runPreflight(systems.map((s) => s.id));
         return;
       }
       setDetectedSystems(systems);
@@ -1160,10 +1166,55 @@ export function DashboardContent() {
     }
   }
 
-  async function runClassify(systemIds?: string[]) {
+  async function runPreflight(systemIds: string[]) {
+    setCheckingPreflight(true);
+    setDetectedSystems(null);
+    try {
+      const res = await fetch("/api/generate/classify/preflight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conclusion: conclusion.trim(),
+          findings: findings.trim(),
+          language: outputLanguage,
+          systems: systemIds,
+        }),
+      });
+      if (!res.ok) {
+        await runClassify(systemIds);
+        return;
+      }
+      const data = await res.json();
+      const questions: { id: string; question: string; options: string[] }[] = data.questions || [];
+      if (questions.length === 0) {
+        await runClassify(systemIds);
+        return;
+      }
+      setPreflightSystems(systemIds);
+      setPreflightQuestions(questions);
+      setPreflightAnswers({});
+    } catch {
+      await runClassify(systemIds);
+    } finally {
+      setCheckingPreflight(false);
+    }
+  }
+
+  function buildAdditionalContext(): string {
+    return Object.entries(preflightAnswers)
+      .map(([qId, answer]) => {
+        const q = preflightQuestions?.find((pq) => pq.id === qId);
+        return q ? `${q.question} → ${answer}` : "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  async function runClassify(systemIds?: string[], extraContext?: string) {
     setClassifying(true);
     setClassifyResult(null);
     setDetectedSystems(null);
+    setPreflightQuestions(null);
     try {
       const res = await fetch("/api/generate/classify", {
         method: "POST",
@@ -1173,6 +1224,7 @@ export function DashboardContent() {
           findings: findings.trim(),
           language: outputLanguage,
           ...(systemIds && systemIds.length > 0 ? { systems: systemIds } : {}),
+          ...(extraContext ? { additionalContext: extraContext } : {}),
         }),
       });
       if (!res.ok) {
@@ -2223,12 +2275,61 @@ export function DashboardContent() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => runClassify([...selectedSystems])}
-                        disabled={selectedSystems.size === 0 || classifying}
+                        onClick={() => runPreflight([...selectedSystems])}
+                        disabled={selectedSystems.size === 0 || classifying || checkingPreflight}
                         className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-violet-600 text-white hover:bg-violet-700 transition-colors disabled:opacity-50"
                       >
+                        {(classifying || checkingPreflight) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
+                        {checkingPreflight ? t("classify.checking_data") : t("classify.run_selected")} ({selectedSystems.size})
+                      </button>
+                    </div>
+                  </div>
+                ) : preflightQuestions ? (
+                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 p-2.5">
+                    <p className="text-[10px] font-medium text-amber-700 dark:text-amber-300 mb-1">{t("classify.preflight_title")}</p>
+                    <p className="text-[9px] text-gray-500 dark:text-gray-400 mb-2">{t("classify.preflight_hint")}</p>
+                    <div className="space-y-2.5 mb-2.5">
+                      {preflightQuestions.map((q) => (
+                        <div key={q.id}>
+                          <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">{q.question}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {q.options.map((opt) => {
+                              const isSelected = preflightAnswers[q.id] === opt;
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setPreflightAnswers((prev) => ({ ...prev, [q.id]: opt }))}
+                                  className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${
+                                    isSelected
+                                      ? "bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 font-medium"
+                                      : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => { setPreflightQuestions(null); runClassify(preflightSystems); }}
+                        className="text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                      >
+                        {t("classify.preflight_skip")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { const ctx = buildAdditionalContext(); setPreflightQuestions(null); runClassify(preflightSystems, ctx); }}
+                        disabled={classifying || Object.keys(preflightAnswers).length === 0}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-600 text-white hover:bg-amber-700 transition-colors disabled:opacity-50"
+                      >
                         {classifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
-                        {t("classify.run_selected")} ({selectedSystems.size})
+                        {t("classify.preflight_submit")}
                       </button>
                     </div>
                   </div>
@@ -2237,11 +2338,11 @@ export function DashboardContent() {
                     <button
                       type="button"
                       onClick={handleDetectSystems}
-                      disabled={classifying || detectingSystems}
+                      disabled={classifying || detectingSystems || checkingPreflight}
                       className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium transition-colors disabled:opacity-50"
                     >
-                      {(classifying || detectingSystems) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
-                      {detectingSystems ? t("classify.detecting") : t("classify.button")}
+                      {(classifying || detectingSystems || checkingPreflight) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
+                      {detectingSystems ? t("classify.detecting") : checkingPreflight ? t("classify.checking_data") : t("classify.button")}
                     </button>
                   </div>
                 )
