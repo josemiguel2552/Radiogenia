@@ -14,10 +14,7 @@ const SYSTEMS_LIST = [
   { id: "BI-RADS", label: { es: "BI-RADS (mama)", en: "BI-RADS (breast)", pt: "BI-RADS (mama)" } },
   { id: "Bosniak", label: { es: "Bosniak (quistes renales)", en: "Bosniak (renal cysts)", pt: "Bosniak (cistos renais)" } },
   { id: "CAD-RADS", label: { es: "CAD-RADS (coronarias)", en: "CAD-RADS (coronary)", pt: "CAD-RADS (coronárias)" } },
-  { id: "Fleischner", label: { es: "Fleischner 2017 (nódulos pulmonares)", en: "Fleischner 2017 (pulmonary nodules)", pt: "Fleischner 2017 (nódulos pulmonares)" } },
-  { id: "BTS", label: { es: "BTS (nódulos pulmonares)", en: "BTS (pulmonary nodules)", pt: "BTS (nódulos pulmonares)" } },
   { id: "LI-RADS", label: { es: "LI-RADS (hígado)", en: "LI-RADS (liver)", pt: "LI-RADS (fígado)" } },
-  { id: "Lung-RADS", label: { es: "Lung-RADS (screening pulmonar)", en: "Lung-RADS (lung screening)", pt: "Lung-RADS (screening pulmonar)" } },
   { id: "O-RADS", label: { es: "O-RADS (ovario)", en: "O-RADS (ovary)", pt: "O-RADS (ovário)" } },
   { id: "PI-RADS", label: { es: "PI-RADS (próstata)", en: "PI-RADS (prostate)", pt: "PI-RADS (próstata)" } },
   { id: "TI-RADS", label: { es: "TI-RADS (tiroides)", en: "TI-RADS (thyroid)", pt: "TI-RADS (tireoide)" } },
@@ -31,47 +28,53 @@ function buildDetectPrompt(lang: Lang, conclusion: string, findings: string): st
   const systemIds = SYSTEMS_LIST.map((s) => s.id).join(", ");
 
   const instructions: Record<Lang, string> = {
-    es: `Analiza los hallazgos y conclusión de este informe radiológico y determina qué sistemas de clasificación son APLICABLES.
+    es: `Analiza los hallazgos y conclusión de este informe radiológico y determina qué sistemas de CLASIFICACIÓN o ESTADIFICACIÓN son APLICABLES.
 
 Sistemas disponibles: ${systemIds}
 
+IMPORTANTE: Esta herramienta es SOLO para clasificaciones y estadificaciones (BI-RADS, Bosniak, TNM, TI-RADS, etc.), NO para recomendaciones de seguimiento de nódulos ni guías de manejo.
+
 REGLAS:
 - Un sistema es aplicable SOLO si el informe contiene los datos específicos necesarios para aplicarlo.
-- Para Fleischner/BTS: ambos aplican a nódulos pulmonares con tamaño. Si hay un nódulo pulmonar con tamaño, incluye AMBOS (Fleischner y BTS) para que el usuario elija.
-- Para Lung-RADS: screening de cáncer de pulmón con nódulos.
 - Para TNM: requiere hallazgos sugestivos de neoplasia con datos suficientes para estadificar.
+- Para BI-RADS: requiere hallazgos mamarios. Para TI-RADS: características ecográficas tiroideas. Para PI-RADS: hallazgos de RM de próstata.
+- Para LI-RADS: requiere datos de captación arterial, lavado, cápsula en paciente con riesgo de CHC.
+- Para Bosniak: requiere quiste renal con características descritas.
 - NO incluyas sistemas cuyos datos no estén en el informe.
-- Si varios sistemas aplican al MISMO hallazgo (ej: nódulo pulmonar → Fleischner Y BTS Y Lung-RADS), incluye TODOS para que el usuario elija.
 
 Responde SOLO con los IDs de los sistemas aplicables, uno por línea. Sin explicaciones.
 Si ninguno aplica, responde: NONE`,
 
-    en: `Analyze the findings and conclusion of this radiology report and determine which classification systems are APPLICABLE.
+    en: `Analyze the findings and conclusion of this radiology report and determine which CLASSIFICATION or STAGING systems are APPLICABLE.
 
 Available systems: ${systemIds}
 
+IMPORTANT: This tool is ONLY for classifications and staging (BI-RADS, Bosniak, TNM, TI-RADS, etc.), NOT for nodule follow-up recommendations or management guidelines.
+
 RULES:
 - A system is applicable ONLY if the report contains the specific data needed to apply it.
-- For Fleischner/BTS: both apply to pulmonary nodules with size. If there is a pulmonary nodule with size, include BOTH (Fleischner and BTS) so the user can choose.
-- For Lung-RADS: lung cancer screening with nodules.
 - For TNM: requires findings suggestive of neoplasia with sufficient data for staging.
+- For BI-RADS: requires breast findings. For TI-RADS: thyroid ultrasound features. For PI-RADS: prostate MRI findings.
+- For LI-RADS: requires arterial enhancement, washout, capsule data in a patient at risk for HCC.
+- For Bosniak: requires renal cyst with described characteristics.
 - DO NOT include systems whose required data is not in the report.
-- If multiple systems apply to the SAME finding (e.g., lung nodule → Fleischner AND BTS AND Lung-RADS), include ALL so the user can choose.
 
 Respond ONLY with the IDs of applicable systems, one per line. No explanations.
 If none apply, respond: NONE`,
 
-    pt: `Analise os achados e conclusão deste relatório radiológico e determine quais sistemas de classificação são APLICÁVEIS.
+    pt: `Analise os achados e conclusão deste relatório radiológico e determine quais sistemas de CLASSIFICAÇÃO ou ESTADIAMENTO são APLICÁVEIS.
 
 Sistemas disponíveis: ${systemIds}
 
+IMPORTANTE: Esta ferramenta é SOMENTE para classificações e estadiamentos (BI-RADS, Bosniak, TNM, TI-RADS, etc.), NÃO para recomendações de seguimento de nódulos nem guias de manejo.
+
 REGRAS:
 - Um sistema é aplicável SOMENTE se o relatório contém os dados específicos necessários para aplicá-lo.
-- Para Fleischner/BTS: ambos se aplicam a nódulos pulmonares com tamanho. Se há nódulo pulmonar com tamanho, inclua AMBOS (Fleischner e BTS) para o usuário escolher.
-- Para Lung-RADS: screening de câncer de pulmão com nódulos.
 - Para TNM: requer achados sugestivos de neoplasia com dados suficientes para estadiamento.
+- Para BI-RADS: requer achados mamários. Para TI-RADS: características ecográficas tireoidianas. Para PI-RADS: achados de RM de próstata.
+- Para LI-RADS: requer dados de captação arterial, lavagem, cápsula em paciente com risco de CHC.
+- Para Bosniak: requer cisto renal com características descritas.
 - NÃO inclua sistemas cujos dados não estejam no relatório.
-- Se vários sistemas se aplicam ao MESMO achado (ex: nódulo pulmonar → Fleischner E BTS E Lung-RADS), inclua TODOS para que o usuário escolha.
 
 Responda SOMENTE com os IDs dos sistemas aplicáveis, um por linha. Sem explicações.
 Se nenhum se aplica, responda: NONE`,

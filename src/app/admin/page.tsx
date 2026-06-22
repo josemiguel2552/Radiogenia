@@ -157,6 +157,12 @@ export default function AdminPage() {
   const [ftError, setFtError] = useState("");
   const [ftChecking, setFtChecking] = useState(false);
 
+  // Clinical checklist KB
+  const [checklistKb, setChecklistKb] = useState("");
+  const [checklistKbOriginal, setChecklistKbOriginal] = useState("");
+  const [savingChecklist, setSavingChecklist] = useState(false);
+  const [checklistExpanded, setChecklistExpanded] = useState(false);
+
   // Users
   const [users, setUsers] = useState<UserRow[]>([]);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
@@ -270,6 +276,15 @@ export default function AdminPage() {
         setAuditCursor(d.nextCursor || null);
       }
     } catch { /* audit_logs table may not exist yet */ }
+
+    try {
+      const ckRes = await fetch("/api/admin/clinical-checklist");
+      if (ckRes?.ok) {
+        const d = await ckRes.json();
+        setChecklistKb(d.kb || "");
+        setChecklistKbOriginal(d.kb || "");
+      }
+    } catch { /* clinical_checklist_kb column may not exist yet */ }
 
     setLoading(false);
   }, []);
@@ -758,6 +773,77 @@ export default function AdminPage() {
                   <Plug className="h-3 w-3" /> {t("admin.configure")}
                 </Button>
               </CardContent>
+            </Card>
+
+            {/* Clinical checklist KB */}
+            <Card>
+              <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.clinical_checklist_title")}</h3>
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">Beta</Badge>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setChecklistExpanded(!checklistExpanded)} className="text-xs gap-1">
+                  <ChevronDown className={`h-3 w-3 transition-transform ${checklistExpanded ? "rotate-180" : ""}`} />
+                  {checklistExpanded ? "Collapse" : "Expand"}
+                </Button>
+              </div>
+              {checklistExpanded && (
+                <CardContent className="pt-0 space-y-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("admin.clinical_checklist_desc")}</p>
+                  <textarea
+                    value={checklistKb}
+                    onChange={(e) => setChecklistKb(e.target.value)}
+                    className="w-full h-[400px] text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 resize-y focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    placeholder="# Clinical Checklist KB..."
+                  />
+                  <div className="flex items-center gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={async () => {
+                        const res = await fetch("/api/admin/clinical-checklist", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ kb: "" }),
+                        });
+                        if (res.ok) {
+                          setChecklistKb("");
+                          setChecklistKbOriginal("");
+                        }
+                      }}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      {t("admin.clinical_checklist_reset")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                      disabled={savingChecklist || checklistKb === checklistKbOriginal}
+                      onClick={async () => {
+                        setSavingChecklist(true);
+                        try {
+                          const res = await fetch("/api/admin/clinical-checklist", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ kb: checklistKb }),
+                          });
+                          if (res.ok) {
+                            setChecklistKbOriginal(checklistKb);
+                            alert(t("admin.clinical_checklist_saved"));
+                          }
+                        } finally {
+                          setSavingChecklist(false);
+                        }
+                      }}
+                    >
+                      {savingChecklist ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
+                      {t("admin.clinical_checklist_save")}
+                    </Button>
+                  </div>
+                </CardContent>
+              )}
             </Card>
 
             {/* Hospital manual download */}

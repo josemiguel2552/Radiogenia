@@ -37,6 +37,8 @@ import {
   Target,
   Search,
   Tags,
+  ClipboardCheck,
+  Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
@@ -93,6 +95,16 @@ export function DashboardContent() {
   const [preflightAnswers, setPreflightAnswers] = useState<Record<string, string>>({});
   const [preflightSystems, setPreflightSystems] = useState<string[]>([]);
   const [checkingPreflight, setCheckingPreflight] = useState(false);
+
+  // Clinical check state
+  const [clinicalCheckRunning, setClinicalCheckRunning] = useState(false);
+  const [clinicalSuggestions, setClinicalSuggestions] = useState<{
+    id: string;
+    question: string;
+    section: string;
+    options: { label: string; insertText: string }[];
+  }[] | null>(null);
+  const [clinicalAnswers, setClinicalAnswers] = useState<Record<string, number | null>>({});
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -1256,6 +1268,78 @@ export function DashboardContent() {
     toast.success(t("classify.applied"));
   }
 
+  async function handleClinicalCheck() {
+    if (clinicalCheckRunning || (!findings.trim() && !conclusion.trim())) return;
+    setClinicalCheckRunning(true);
+    setClinicalSuggestions(null);
+    setClinicalAnswers({});
+    try {
+      const res = await fetch("/api/generate/clinical-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          findings: findings.trim(),
+          conclusion: conclusion.trim(),
+          language: outputLanguage,
+        }),
+      });
+      if (!res.ok) {
+        toast.error(t("gen_error"));
+        return;
+      }
+      const data = await res.json();
+      const suggestions = data.suggestions || [];
+      if (suggestions.length === 0) {
+        toast(t("clinical_check.no_suggestions"));
+        return;
+      }
+      setClinicalSuggestions(suggestions);
+    } catch {
+      toast.error(t("gen_error"));
+    } finally {
+      setClinicalCheckRunning(false);
+    }
+  }
+
+  function applyClinicalSuggestion(suggestionId: string, insertText: string) {
+    if (!insertText.trim()) {
+      setClinicalAnswers((prev) => ({ ...prev, [suggestionId]: -1 }));
+      return;
+    }
+
+    const suggestion = clinicalSuggestions?.find((s) => s.id === suggestionId);
+    if (!suggestion) return;
+
+    const sectionName = suggestion.section.toLowerCase().replace(/[:\s]+$/, "");
+    const lines = findings.split("\n");
+    let inserted = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const lineSection = lines[i].split(":")[0]?.toLowerCase().trim();
+      if (lineSection && sectionName.includes(lineSection) || lineSection && lineSection.includes(sectionName)) {
+        lines[i] = lines[i].trimEnd().replace(/\.?\s*$/, ". ") + insertText;
+        inserted = true;
+        break;
+      }
+    }
+
+    if (!inserted) {
+      const othersLabel = outputLanguage === "es" ? "Otros hallazgos" : outputLanguage === "pt" ? "Outros achados" : "Additional findings";
+      const othersIdx = lines.findIndex((l) => l.toLowerCase().startsWith(othersLabel.toLowerCase()));
+      if (othersIdx >= 0) {
+        lines[othersIdx] = lines[othersIdx].trimEnd().replace(/\.?\s*$/, ". ") + insertText;
+      } else {
+        lines.push(`${othersLabel}: ${insertText}`);
+      }
+      toast(t("clinical_check.section_not_found"));
+    }
+
+    setFindings(lines.join("\n"));
+    reportDirtyRef.current = true;
+    setClinicalAnswers((prev) => ({ ...prev, [suggestionId]: -1 }));
+    toast.success(t("clinical_check.added"));
+  }
+
   function cleanReport(text: string): string {
     let cleaned = text
       .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES|RECOMMENDATIONS|RECOMENDACIONES)\*{2,}/gi, "")
@@ -2185,6 +2269,75 @@ export function DashboardContent() {
               traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
               traceLocked={loadingTrace}
               isDark={isDark}
+              footerExtra={findings.trim() ? (
+                clinicalSuggestions ? (
+                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 p-2.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-[10px] font-medium text-amber-700 dark:text-amber-300">{t("clinical_check.title")}</p>
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-amber-200/60 dark:bg-amber-800/40 text-amber-600 dark:text-amber-400 font-medium">{t("clinical_check.beta")}</span>
+                      </div>
+                      <button type="button" onClick={() => setClinicalSuggestions(null)} className="text-[10px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                        {t("clinical_check.dismiss")}
+                      </button>
+                    </div>
+                    <p className="text-[9px] text-gray-500 dark:text-gray-400 mb-2">{t("clinical_check.hint")}</p>
+                    <div className="space-y-2.5">
+                      {clinicalSuggestions.map((s) => {
+                        const answered = clinicalAnswers[s.id] !== undefined;
+                        if (answered) return null;
+                        return (
+                          <div key={s.id} className="border border-amber-100 dark:border-amber-900/30 rounded-md p-2 bg-white/50 dark:bg-gray-900/30">
+                            <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{s.question}</p>
+                            <p className="text-[9px] text-gray-400 dark:text-gray-500 mb-1">→ {s.section}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {s.options.map((opt, optIdx) => (
+                                <button
+                                  key={optIdx}
+                                  type="button"
+                                  onClick={() => {
+                                    if (opt.insertText.trim()) {
+                                      applyClinicalSuggestion(s.id, opt.insertText);
+                                    } else {
+                                      setClinicalAnswers((prev) => ({ ...prev, [s.id]: -1 }));
+                                    }
+                                  }}
+                                  className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] border transition-colors ${
+                                    opt.insertText.trim()
+                                      ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                                      : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300"
+                                  }`}
+                                >
+                                  {opt.insertText.trim() ? <Plus className="h-2.5 w-2.5" /> : null}
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {clinicalSuggestions.every((s) => clinicalAnswers[s.id] !== undefined) && (
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-1">
+                          {t("clinical_check.no_suggestions")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleClinicalCheck}
+                      disabled={clinicalCheckRunning}
+                      className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium transition-colors disabled:opacity-50"
+                    >
+                      {clinicalCheckRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <ClipboardCheck className="h-3 w-3" />}
+                      {clinicalCheckRunning ? t("clinical_check.running") : t("clinical_check.button")}
+                      <span className="text-[8px] px-1 py-0 rounded bg-amber-100/60 dark:bg-amber-800/30 text-amber-500 dark:text-amber-400 font-medium ml-0.5">{t("clinical_check.beta")}</span>
+                    </button>
+                  </div>
+                )
+              ) : undefined}
             />
 
             <OutputCard

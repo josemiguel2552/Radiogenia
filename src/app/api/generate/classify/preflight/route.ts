@@ -29,10 +29,10 @@ REGLAS:
 - Cada pregunta debe tener opciones predefinidas que el radiólogo pueda seleccionar rápidamente.
 
 DATOS TÍPICAMENTE NECESARIOS (solo si NO están en el informe):
-- Fleischner/BTS: ¿El nódulo es nuevo o ha estado estable en estudios previos? ¿El paciente es de alto riesgo (fumador, antecedentes oncológicos)?
 - LI-RADS: ¿El paciente tiene riesgo de CHC (cirrosis, hepatitis B/C crónica)?
-- Lung-RADS: ¿Es un estudio de screening? ¿Hay estudios previos de comparación?
-- TNM: ¿Se conoce el tipo histológico?
+- TNM: ¿Se conoce el tipo histológico? ¿Hay datos de extensión local o a distancia?
+- BI-RADS: ¿Screening vs diagnóstico?
+- PI-RADS: ¿Volumen prostático? ¿PSA?
 
 Si TODOS los datos necesarios están en el informe, responde EXACTAMENTE: NO_QUESTIONS
 
@@ -57,10 +57,10 @@ RULES:
 - Each question must have predefined options the radiologist can quickly select.
 
 TYPICALLY NEEDED DATA (only if NOT in the report):
-- Fleischner/BTS: Is the nodule new or has it been stable on prior studies? Is the patient high-risk (smoker, cancer history)?
 - LI-RADS: Is the patient at risk for HCC (cirrhosis, chronic hepatitis B/C)?
-- Lung-RADS: Is this a screening study? Are prior comparison studies available?
-- TNM: Is the histological type known?
+- TNM: Is the histological type known? Is there data on local or distant extension?
+- BI-RADS: Screening vs diagnostic?
+- PI-RADS: Prostate volume? PSA?
 
 If ALL necessary data is present in the report, respond EXACTLY: NO_QUESTIONS
 
@@ -85,10 +85,10 @@ REGRAS:
 - Cada pergunta deve ter opções predefinidas que o radiologista possa selecionar rapidamente.
 
 DADOS TIPICAMENTE NECESSÁRIOS (somente se NÃO estiverem no relatório):
-- Fleischner/BTS: O nódulo é novo ou esteve estável em estudos prévios? O paciente é de alto risco (fumante, histórico oncológico)?
 - LI-RADS: O paciente tem risco de CHC (cirrose, hepatite B/C crônica)?
-- Lung-RADS: É um estudo de screening? Há estudos prévios de comparação?
-- TNM: O tipo histológico é conhecido?
+- TNM: O tipo histológico é conhecido? Há dados de extensão local ou a distância?
+- BI-RADS: Screening vs diagnóstico?
+- PI-RADS: Volume prostático? PSA?
 
 Se TODOS os dados necessários estão no relatório, responda EXATAMENTE: NO_QUESTIONS
 
