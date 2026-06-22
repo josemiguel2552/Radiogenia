@@ -189,7 +189,7 @@ HALLAZGOS NEGATIVOS DICTADOS:
 Cuando el radiólogo dicta explícitamente la AUSENCIA de un hallazgo (ej: "no masa colónica", "sin evidencia de TEP", "no disección aórtica", "no se identifica litiasis"), esto es un hallazgo negativo relevante y DEBE incluirse en la sección anatómica correspondiente. No lo omitas ni lo sustituyas por una frase genérica de normalidad. Reproduce fielmente la negación dictada.
 
 REGLAS OBLIGATORIAS:
-1. La salida debe contener EXACTAMENTE las mismas secciones que el template, en el MISMO ORDEN. No cambies el orden. No omitas ninguna.
+1. La salida debe contener EXACTAMENTE las mismas secciones que el template. No omitas ninguna. ORDÉNALAS en sentido CRANEOCAUDAL (de cabeza a pies): estructuras craneales/cerebrales → cuello/tiroides → mediastino/vía aérea → corazón/grandes vasos → pulmones/pleura → abdomen superior (hígado, vesícula, vía biliar, bazo, páncreas) → abdomen inferior/pelvis → columna/estructuras óseas → extremidades → tejidos blandos/piel. Si el template tiene un orden diferente, REORDENA las secciones craneocaudalmente.
 2. Distribuye cada hallazgo dictado en la sección anatómica correcta del template. Esto incluye tanto hallazgos positivos como hallazgos negativos dictados por el radiólogo.
 3. Las secciones no mencionadas en el dictado se rellenan SIEMPRE con descripciones de normalidad radiológica profesional.
 4. NO inventes hallazgos patológicos que el radiólogo no haya dictado.
@@ -266,7 +266,7 @@ ACHADOS NEGATIVOS DITADOS:
 Quando o radiologista dita explicitamente a AUSÊNCIA de um achado (ex: "sem massa colônica", "sem evidência de TEP", "sem dissecção aórtica", "não se identifica litíase"), isso é um achado negativo relevante e DEVE ser incluído na seção anatômica correspondente. Não o omita nem o substitua por uma frase genérica de normalidade. Reproduza fielmente a negação ditada.
 
 REGRAS OBRIGATÓRIAS:
-1. A saída deve conter EXATAMENTE as mesmas seções do template, na MESMA ORDEM. Não reordene. Não omita nenhuma.
+1. A saída deve conter EXATAMENTE as mesmas seções do template. Não omita nenhuma. ORDENE-AS em sentido CRANIOCAUDAL (da cabeça aos pés): estruturas cranianas/cerebrais → pescoço/tireoide → mediastino/via aérea → coração/grandes vasos → pulmões/pleura → abdome superior (fígado, vesícula, via biliar, baço, pâncreas) → abdome inferior/pelve → coluna/estruturas ósseas → extremidades → tecidos moles/pele. Se o template tiver uma ordem diferente, REORDENE as seções craniocaudalmente.
 2. Distribua cada achado ditado na seção anatômica correta do template. Isso inclui tanto achados positivos quanto achados negativos ditados pelo radiologista.
 3. Seções não mencionadas no ditado são SEMPRE preenchidas com descrições de normalidade radiológica profissional.
 4. NÃO invente achados patológicos que o radiologista não tenha ditado.
@@ -342,7 +342,7 @@ DICTATED NEGATIVE FINDINGS:
 When the radiologist explicitly dictates the ABSENCE of a finding (e.g. "no colonic mass", "no CT evidence of acute pulmonary embolism", "no aortic dissection", "no lithiasis identified"), this is a relevant negative finding and MUST be included in the corresponding anatomical section. Do not omit it or replace it with a generic normality phrase. Faithfully reproduce the dictated negation.
 
 MANDATORY RULES:
-1. The output must contain EXACTLY the same sections as the template, in the SAME ORDER. Do not reorder. Do not omit any.
+1. The output must contain EXACTLY the same sections as the template. Do not omit any. REORDER them in CRANIOCAUDAL order (from head to toe): cranial/brain structures → neck/thyroid → mediastinum/airways → heart/great vessels → lungs/pleura → upper abdomen (liver, gallbladder, bile ducts, spleen, pancreas) → lower abdomen/pelvis → spine/osseous structures → extremities → soft tissues/skin. If the template has a different order, REORDER sections craniocaudally.
 2. Place each dictated finding in the correct anatomical section of the template. This includes both positive findings AND negative findings explicitly dictated by the radiologist.
 3. Unmentioned sections are ALWAYS filled with professional radiological normality descriptions.
 4. Do NOT invent pathological findings that the radiologist did not dictate.
@@ -1062,7 +1062,7 @@ MODALIDAD DEL ESTUDIO: ${modality}
 El informe SOLO contiene lo que el radiólogo dictó. NO escribas NADA que no haya sido dictado.
 
 REGLAS (sin excepciones):
-1. Escribe ÚNICAMENTE las secciones del template donde el radiólogo dictó un hallazgo (positivo o negativo explícito).
+1. Escribe ÚNICAMENTE las secciones del template donde el radiólogo dictó un hallazgo (positivo o negativo explícito). Ordénalas en sentido CRANEOCAUDAL (de cabeza a pies): estructuras craneales → cuello → tórax → abdomen superior → abdomen inferior/pelvis → columna → extremidades.
 2. Las secciones NO mencionadas en el dictado se OMITEN por completo — NO las incluyas en la salida.
 3. NO escribas frases de normalidad para secciones no mencionadas. Si el radiólogo no mencionó un órgano/estructura, esa sección NO EXISTE en tu respuesta.
 4. NO inventes hallazgos patológicos ni diagnósticos que el radiólogo no haya dictado.
@@ -1127,7 +1127,7 @@ MODALIDADE DO ESTUDO: ${modality}
 O laudo contém APENAS o que o radiologista ditou. NÃO escreva NADA que não tenha sido ditado.
 
 REGRAS (sem exceções):
-1. Escreva SOMENTE as seções do template onde o radiologista ditou um achado (positivo ou negativo explícito).
+1. Escreva SOMENTE as seções do template onde o radiologista ditou um achado (positivo ou negativo explícito). Ordene-as em sentido CRANIOCAUDAL (da cabeça aos pés): estruturas cranianas → pescoço → tórax → abdome superior → abdome inferior/pelve → coluna → extremidades.
 2. As seções NÃO mencionadas no ditado são OMITIDAS completamente — NÃO as inclua na saída.
 3. NÃO escreva frases de normalidade para seções não mencionadas. Se o radiologista não mencionou um órgão/estrutura, essa seção NÃO EXISTE na sua resposta.
 4. NÃO invente achados patológicos nem diagnósticos que o radiologista não tenha ditado.
@@ -1191,7 +1191,7 @@ STUDY MODALITY: ${modality}
 The report ONLY contains what the radiologist dictated. Do NOT write ANYTHING that was not dictated.
 
 RULES (no exceptions):
-1. Write ONLY template sections where the radiologist dictated a finding (positive or explicit negative).
+1. Write ONLY template sections where the radiologist dictated a finding (positive or explicit negative). Order them in CRANIOCAUDAL order (head to toe): cranial structures → neck → chest → upper abdomen → lower abdomen/pelvis → spine → extremities.
 2. Sections NOT mentioned in the dictation are OMITTED entirely — do NOT include them in the output.
 3. Do NOT write normality phrases for unmentioned sections. If the radiologist didn't mention an organ/structure, that section DOES NOT EXIST in your response.
 4. Do NOT invent pathological findings or diagnoses the radiologist did not dictate.
