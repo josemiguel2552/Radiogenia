@@ -158,10 +158,14 @@ export default function AdminPage() {
   const [ftChecking, setFtChecking] = useState(false);
 
   // Clinical checklist KB
-  const [checklistKb, setChecklistKb] = useState("");
-  const [checklistKbOriginal, setChecklistKbOriginal] = useState("");
+  const [checklistSections, setChecklistSections] = useState<{ id: string; name: string; conditions: { id: string; name: string; findings: string[] }[] }[]>([]);
   const [savingChecklist, setSavingChecklist] = useState(false);
   const [checklistExpanded, setChecklistExpanded] = useState(false);
+  const [checklistDirty, setChecklistDirty] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<{ role: "user" | "bot"; text: string }[]>([]);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   // Users
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -281,8 +285,8 @@ export default function AdminPage() {
       const ckRes = await fetch("/api/admin/clinical-checklist");
       if (ckRes?.ok) {
         const d = await ckRes.json();
-        setChecklistKb(d.kb || "");
-        setChecklistKbOriginal(d.kb || "");
+        setChecklistSections(d.sections || []);
+        setChecklistDirty(false);
       }
     } catch { /* clinical_checklist_kb column may not exist yet */ }
 
@@ -290,6 +294,35 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  async function handleChecklistChat() {
+    const msg = chatMessage.trim();
+    if (!msg || chatLoading) return;
+    setChatMessage("");
+    setChatLoading(true);
+    setChatHistory((prev) => [...prev, { role: "user", text: msg }]);
+    try {
+      const res = await fetch("/api/admin/clinical-checklist/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, sections: checklistSections }),
+      });
+      if (!res.ok) {
+        setChatHistory((prev) => [...prev, { role: "bot", text: "Error processing request." }]);
+        return;
+      }
+      const data = await res.json();
+      if (data.sections) {
+        setChecklistSections(data.sections);
+        setChecklistDirty(true);
+      }
+      setChatHistory((prev) => [...prev, { role: "bot", text: data.summary || "Done." }]);
+    } catch {
+      setChatHistory((prev) => [...prev, { role: "bot", text: "Error." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
 
   const loadMoreAuditLogs = useCallback(async () => {
     if (!auditCursor || auditLoadingMore) return;
@@ -782,22 +815,135 @@ export default function AdminPage() {
                   <ClipboardList className="h-4 w-4 text-amber-500" />
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.clinical_checklist_title")}</h3>
                   <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">Beta</Badge>
+                  {checklistDirty && <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px]">Sin guardar</Badge>}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setChecklistExpanded(!checklistExpanded)} className="text-xs gap-1">
-                  <ChevronDown className={`h-3 w-3 transition-transform ${checklistExpanded ? "rotate-180" : ""}`} />
-                  {checklistExpanded ? "Collapse" : "Expand"}
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  {checklistDirty && (
+                    <Button
+                      size="sm"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white h-7"
+                      disabled={savingChecklist}
+                      onClick={async () => {
+                        setSavingChecklist(true);
+                        try {
+                          const res = await fetch("/api/admin/clinical-checklist", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ sections: checklistSections }),
+                          });
+                          if (res.ok) { setChecklistDirty(false); }
+                        } finally { setSavingChecklist(false); }
+                      }}
+                    >
+                      {savingChecklist ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
+                      {t("admin.clinical_checklist_save")}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setChecklistExpanded(!checklistExpanded)} className="text-xs gap-1 h-7">
+                    <ChevronDown className={`h-3 w-3 transition-transform ${checklistExpanded ? "rotate-180" : ""}`} />
+                  </Button>
+                </div>
               </div>
               {checklistExpanded && (
-                <CardContent className="pt-0 space-y-3">
+                <CardContent className="pt-0 space-y-4">
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t("admin.clinical_checklist_desc")}</p>
-                  <textarea
-                    value={checklistKb}
-                    onChange={(e) => setChecklistKb(e.target.value)}
-                    className="w-full h-[400px] text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 resize-y focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                    placeholder="# Clinical Checklist KB..."
-                  />
-                  <div className="flex items-center gap-2 justify-end">
+
+                  {/* Structured sections view */}
+                  <div className="space-y-2">
+                    {checklistSections.map((section) => {
+                      const isOpen = expandedSections.has(section.id);
+                      return (
+                        <div key={section.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedSections((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(section.id)) next.delete(section.id); else next.add(section.id);
+                              return next;
+                            })}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`} />
+                              <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{section.name}</span>
+                              <Badge variant="secondary" className="text-[10px]">{section.conditions.length}</Badge>
+                            </div>
+                          </button>
+                          {isOpen && (
+                            <div className="px-3 py-2 space-y-2.5">
+                              {section.conditions.map((condition) => (
+                                <div key={condition.id} className="pl-4 border-l-2 border-amber-300 dark:border-amber-700">
+                                  <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">{condition.name}</p>
+                                  <ul className="space-y-0.5">
+                                    {condition.findings.map((finding, fi) => (
+                                      <li key={fi} className="text-[10px] text-gray-500 dark:text-gray-400 flex items-start gap-1">
+                                        <span className="text-amber-500 mt-0.5 flex-shrink-0">•</span>
+                                        <span>{finding}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {checklistSections.length === 0 && (
+                      <p className="text-xs text-gray-400 text-center py-4">No hay condiciones configuradas</p>
+                    )}
+                  </div>
+
+                  {/* Chat interface */}
+                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/30 dark:bg-amber-950/10 p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                      <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{t("admin.checklist_chat_title")}</span>
+                    </div>
+
+                    {chatHistory.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-1.5 mb-2">
+                        {chatHistory.map((msg, i) => (
+                          <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg ${
+                            msg.role === "user"
+                              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 ml-8"
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 mr-8 border border-gray-200 dark:border-gray-700"
+                          }`}>
+                            {msg.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey && chatMessage.trim() && !chatLoading) {
+                            e.preventDefault();
+                            handleChecklistChat();
+                          }
+                        }}
+                        placeholder={t("admin.checklist_chat_placeholder")}
+                        className="flex-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                        disabled={chatLoading}
+                      />
+                      <Button
+                        size="sm"
+                        className="text-xs bg-amber-600 hover:bg-amber-700 text-white h-7 px-3"
+                        disabled={chatLoading || !chatMessage.trim()}
+                        onClick={handleChecklistChat}
+                      >
+                        {chatLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "→"}
+                      </Button>
+                    </div>
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500">{t("admin.checklist_chat_hint")}</p>
+                  </div>
+
+                  {/* Reset */}
+                  <div className="flex justify-end">
                     <Button
                       variant="outline"
                       size="sm"
@@ -806,40 +952,20 @@ export default function AdminPage() {
                         const res = await fetch("/api/admin/clinical-checklist", {
                           method: "PUT",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ kb: "" }),
+                          body: JSON.stringify({ sections: [] }),
                         });
                         if (res.ok) {
-                          setChecklistKb("");
-                          setChecklistKbOriginal("");
+                          const reload = await fetch("/api/admin/clinical-checklist");
+                          if (reload.ok) {
+                            const d = await reload.json();
+                            setChecklistSections(d.sections || []);
+                            setChecklistDirty(false);
+                          }
                         }
                       }}
                     >
                       <RefreshCw className="h-3 w-3 mr-1" />
                       {t("admin.clinical_checklist_reset")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white"
-                      disabled={savingChecklist || checklistKb === checklistKbOriginal}
-                      onClick={async () => {
-                        setSavingChecklist(true);
-                        try {
-                          const res = await fetch("/api/admin/clinical-checklist", {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ kb: checklistKb }),
-                          });
-                          if (res.ok) {
-                            setChecklistKbOriginal(checklistKb);
-                            alert(t("admin.clinical_checklist_saved"));
-                          }
-                        } finally {
-                          setSavingChecklist(false);
-                        }
-                      }}
-                    >
-                      {savingChecklist ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
-                      {t("admin.clinical_checklist_save")}
                     </Button>
                   </div>
                 </CardContent>

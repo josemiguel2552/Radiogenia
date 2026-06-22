@@ -8,22 +8,25 @@ import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
-import { getClinicalChecklistKB } from "@/lib/clinical-checklist-kb";
+import { getClinicalChecklistKB, sectionsToText, type ChecklistSection } from "@/lib/clinical-checklist-kb";
 
 type Lang = "es" | "en" | "pt";
 
-async function loadKB(lang: Lang): Promise<string> {
+async function loadKB(): Promise<string> {
   try {
     const service = createServiceClient();
     const { data } = await service
       .from("global_model_config")
       .select("clinical_checklist_kb")
       .single();
-    if (data?.clinical_checklist_kb?.trim()) return data.clinical_checklist_kb;
+    if (data?.clinical_checklist_kb?.trim()) {
+      const parsed = JSON.parse(data.clinical_checklist_kb) as ChecklistSection[];
+      if (Array.isArray(parsed) && parsed.length > 0) return sectionsToText(parsed);
+    }
   } catch {
     // fall through to default
   }
-  return getClinicalChecklistKB(lang);
+  return getClinicalChecklistKB();
 }
 
 function buildClinicalCheckPrompt(lang: Lang, kb: string): string {
@@ -168,7 +171,7 @@ export async function POST(req: NextRequest) {
     ) as Lang;
 
     const [kb, globalConfig] = await Promise.all([
-      loadKB(lang),
+      loadKB(),
       getGlobalAIConfig(),
     ]);
 
