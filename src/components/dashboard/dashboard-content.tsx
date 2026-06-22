@@ -138,7 +138,7 @@ export function DashboardContent() {
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
   const [outputLanguage, setOutputLanguage] = useState<string>("es");
-  const langRegenRef = useRef(false);
+  const handleGenerateRef = useRef<(mode?: ReportMode, langOverride?: string) => void>(() => {});
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
@@ -665,8 +665,8 @@ export function DashboardContent() {
     const handleLangChanged = (e: Event) => {
       const lang = (e as CustomEvent).detail?.lang;
       if (lang) {
-        langRegenRef.current = true;
         setOutputLanguage(lang);
+        handleGenerateRef.current(undefined, lang);
       }
     };
     window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
@@ -760,7 +760,8 @@ export function DashboardContent() {
 
   // Generate report
   type ReportMode = "structured" | "compact" | "dictation_only" | "unstructured";
-  async function handleGenerate(mode: ReportMode = "structured") {
+  async function handleGenerate(mode: ReportMode = "structured", langOverride?: string) {
+    const effectiveLang = langOverride ?? outputLanguage;
     if (!selectedTemplate || !dictation.trim()) return;
 
     // Log any pending corrections from the previous report before starting a new generation
@@ -814,7 +815,7 @@ export function DashboardContent() {
           studyType: studyName,
           ...(lightParaphrase ? { paraphraseOverride: "free" } : {}),
           reportMode: mode,
-          outputLanguage,
+          outputLanguage: effectiveLang,
           ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
           ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
         }),
@@ -883,7 +884,7 @@ export function DashboardContent() {
           method: "POST",
           signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dictation, findings: findingsText, outputLanguage }),
+          body: JSON.stringify({ dictation, findings: findingsText, outputLanguage: effectiveLang }),
         });
         if (traceRes.ok) {
           const result = await traceRes.json();
@@ -934,7 +935,7 @@ export function DashboardContent() {
             modality: selectedTemplate.modality,
             studyType: studyName,
             conclusionStyle: style,
-            outputLanguage,
+            outputLanguage: effectiveLang,
             ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
             ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
           }),
@@ -1119,14 +1120,11 @@ export function DashboardContent() {
     }
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!langRegenRef.current) return;
-    langRegenRef.current = false;
+  handleGenerateRef.current = (mode, lang) => {
     if (findings.trim() && selectedTemplate && dictation.trim()) {
-      handleGenerate(reportMode);
+      handleGenerate(mode ?? reportMode, lang);
     }
-  }, [outputLanguage]);
+  };
 
   function stopGeneration() {
     abortControllerRef.current?.abort();
@@ -1473,8 +1471,6 @@ export function DashboardContent() {
   }
   copyFormattedRef.current = copyFormatted;
 
-  const handleGenerateRef = useRef(handleGenerate);
-  handleGenerateRef.current = handleGenerate;
   const startNewReportRef = useRef(startNewReport);
   startNewReportRef.current = startNewReport;
 
