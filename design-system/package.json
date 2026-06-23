@@ -1,0 +1,25 @@
+{
+  "name": "@radiogenia/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Radiogenia design system — tokens, themes and UI components.",
+  "type": "module",
+  "main": "./index.ts",
+  "module": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./tokens": "./tokens/index.ts",
+    "./components": "./components/index.ts",
+    "./catalog": "./components/catalog.ts"
+  },
+  "designSystem": {
+    "tokens": "./tokens/index.ts",
+    "components": "./components/index.ts",
+    "catalog": "./components/catalog.ts",
+    "sources": {
+      "themes": "../src/lib/ui-prefs.tsx",
+      "globalCss": "../src/app/globals.css"
+    }
+  }
+}
