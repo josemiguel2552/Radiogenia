@@ -75,6 +75,7 @@ export function DashboardContent() {
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templateSearch, setTemplateSearch] = useState("");
+  const [templateSearchReadOnly, setTemplateSearchReadOnly] = useState(true);
   const [contrastOption, setContrastOption] = useState<string>("default");
   const [cardiacTechniques, setCardiacTechniques] = useState<Record<string, boolean>>({});
   const [recistBaseline, setRecistBaseline] = useState(true);
@@ -1820,11 +1821,21 @@ export function DashboardContent() {
               <div className="relative mb-3">
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden="true" />
                 <Input
+                  type="search"
                   placeholder={t("dash.search_template")}
                   value={templateSearch}
                   onChange={(e) => setTemplateSearch(e.target.value)}
                   className="pl-8 h-9 text-xs"
+                  readOnly={templateSearchReadOnly}
+                  onFocus={() => setTemplateSearchReadOnly(false)}
                   autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  name="rg_tplsearch_x"
+                  data-form-type="other"
+                  data-lpignore="true"
+                  data-1p-ignore
                   aria-label={t("dash.search_template")}
                 />
                 {templateSearch.trim() && searchResults.length > 0 && (
