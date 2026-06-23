@@ -2,6 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { useUIPrefs, SKINS, type UILanguage } from "@/lib/ui-prefs";
+import { setUnifiedLanguage } from "@/lib/set-language";
 import { useT } from "@/lib/i18n";
 
 export function AppearanceTab() {
@@ -10,17 +11,17 @@ export function AppearanceTab() {
 
   return (
     <div className="space-y-6">
-      {/* UI language */}
+      {/* Language (platform + reports unified) */}
       <div>
         <Label className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3 block">
-          {t("app.ui_language")}
+          {t("app.language")}
         </Label>
         <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
           {([{ v: "es", l: "Español" }, { v: "en", l: "English" }, { v: "pt", l: "Português" }] as { v: UILanguage; l: string }[]).map((lang) => (
             <button
               key={lang.v}
               type="button"
-              onClick={() => update({ uiLanguage: lang.v })}
+              onClick={() => { if (lang.v !== prefs.uiLanguage) setUnifiedLanguage(lang.v, update); }}
               className={`px-4 py-1.5 text-xs rounded-md transition-colors ${
                 prefs.uiLanguage === lang.v
                   ? "bg-white dark:bg-gray-900 shadow-sm font-medium"
@@ -33,7 +34,7 @@ export function AppearanceTab() {
           ))}
         </div>
         <p className="text-[10px] text-gray-400 mt-2">
-          {t("app.ui_lang_hint")}
+          {t("app.language_hint")}
         </p>
       </div>
 
@@ -90,7 +91,8 @@ export function AppearanceTab() {
       <button
         type="button"
         onClick={() => {
-          update({ skin: "clasico", uiLanguage: "es" });
+          update({ skin: "clasico" });
+          if (prefs.uiLanguage !== "es") setUnifiedLanguage("es", update);
         }}
         className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2"
       >

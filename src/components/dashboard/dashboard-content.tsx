@@ -137,7 +137,8 @@ export function DashboardContent() {
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
-  const [outputLanguage, setOutputLanguage] = useState<string>("es");
+  // Report output language is unified with the platform UI language.
+  const outputLanguage = uiPrefs.uiLanguage;
   const handleGenerateRef = useRef<(mode?: ReportMode, langOverride?: string) => void>(() => {});
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
@@ -641,7 +642,6 @@ export function DashboardContent() {
       if (cfgRes?.ok) {
         const cfg = await cfgRes.json();
         if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
-        if (cfg.output_language) setOutputLanguage(cfg.output_language);
         if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
       }
     }
@@ -658,14 +658,14 @@ export function DashboardContent() {
       fetch("/api/model-config").then(r => r.ok ? r.json() : null).then(cfg => {
         if (!cfg) return;
         if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
-        if (cfg.output_language) setOutputLanguage(cfg.output_language);
         if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
       }).catch(() => {});
     };
     const handleLangChanged = (e: Event) => {
       const lang = (e as CustomEvent).detail?.lang;
       if (lang) {
-        setOutputLanguage(lang);
+        // The UI language (source of truth) is updated by the shell via uiPrefs;
+        // here we just regenerate the current report in the new language.
         handleGenerateRef.current(undefined, lang);
       }
     };
@@ -822,8 +822,6 @@ export function DashboardContent() {
       });
 
       if (res.ok && res.body) {
-        const lang = res.headers.get("X-Output-Language") || "es";
-        setOutputLanguage(lang);
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let streamError = "";

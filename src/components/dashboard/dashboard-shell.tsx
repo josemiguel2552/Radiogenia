@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,8 +35,9 @@ import { AccountTab } from "@/components/sidebar/account-tab";
 import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs, SKINS } from "@/lib/ui-prefs";
 import type { UILanguage } from "@/lib/ui-prefs";
+import { setUnifiedLanguage } from "@/lib/set-language";
 import { LANGUAGES } from "@/lib/types";
-import type { Signature, OutputLanguage } from "@/lib/types";
+import type { Signature } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
@@ -110,13 +110,11 @@ function ThemePicker() {
   );
 }
 
-/* ── Language popover (UI + report in one place) ───────────────── */
+/* ── Language popover (unified platform + report language) ─────── */
 
-function LanguagePicker({ uiLang, outputLang, onUiLangChange, onOutputLangChange }: {
-  uiLang: UILanguage;
-  outputLang: OutputLanguage;
-  onUiLangChange: (lang: UILanguage) => void;
-  onOutputLangChange: (lang: string) => void;
+function LanguagePicker({ lang, onLangChange }: {
+  lang: UILanguage;
+  onLangChange: (lang: UILanguage) => void;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -132,40 +130,28 @@ function LanguagePicker({ uiLang, outputLang, onUiLangChange, onOutputLangChange
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
       >
         <Globe className="h-3.5 w-3.5" />
-        <span className="font-semibold">{uiLang.toUpperCase()}</span>
+        <span className="font-semibold">{lang.toUpperCase()}</span>
       </button>
       {open && (
-        <div className="absolute top-full right-0 mt-2.5 p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150 w-56 space-y-4">
-          {/* Platform language */}
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-2">{t("app.ui_language")}</p>
-            <div className="flex rounded-md overflow-hidden border border-[hsl(var(--border))]">
-              {(["es", "en", "pt"] as UILanguage[]).map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => onUiLangChange(lang)}
-                  className={`flex-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    uiLang === lang
-                      ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                  }`}
-                >
-                  {lang.toUpperCase()}
-                </button>
-              ))}
-            </div>
+        <div className="absolute top-full right-0 mt-2.5 p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150 w-56 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-2">{t("app.language")}</p>
+          <div className="flex rounded-md overflow-hidden border border-[hsl(var(--border))]">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.value}
+                type="button"
+                onClick={() => onLangChange(l.value)}
+                className={`flex-1 px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  lang === l.value
+                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                    : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                }`}
+              >
+                {l.value.toUpperCase()}
+              </button>
+            ))}
           </div>
-          {/* Report output language */}
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-2">{t("cfg.output_language")}</p>
-            <Select value={outputLang} onValueChange={onOutputLangChange}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value} className="text-xs">{l.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-snug pt-1">{t("app.language_hint")}</p>
         </div>
       )}
     </div>
@@ -233,35 +219,27 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     };
   }, []);
 
-  // Output language
-  const [outputLanguage, setOutputLanguage] = useState<OutputLanguage>("es");
+  // Unified platform + report language. Source of truth is the UI language
+  // (uiPrefs, persisted in localStorage). On a fresh device with no saved
+  // preference, adopt the language stored server-side so it carries over.
   useEffect(() => {
     fetch("/api/model-config")
       .then((r) => r.ok ? r.json() : null)
       .then((cfg) => {
-        if (cfg?.output_language) setOutputLanguage(cfg.output_language);
+        if (!cfg?.output_language) return;
+        let hasLocalPref = false;
+        try { hasLocalPref = !!localStorage.getItem("radiogenai_ui_prefs"); } catch { /* ignore */ }
+        if (!hasLocalPref && cfg.output_language !== prefs.uiLanguage) {
+          update({ uiLanguage: cfg.output_language as UILanguage });
+        }
       })
       .catch(() => {});
-
-    const handleConfigChanged = () => {
-      fetch("/api/model-config").then((r) => r.ok ? r.json() : null).then((cfg) => {
-        if (cfg?.output_language) setOutputLanguage(cfg.output_language);
-      }).catch(() => {});
-    };
-    window.addEventListener("radiogenai:config-changed", handleConfigChanged);
-    return () => window.removeEventListener("radiogenai:config-changed", handleConfigChanged);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleOutputLangChange(lang: string) {
-    setOutputLanguage(lang as OutputLanguage);
-    fetch("/api/model-config", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ output_language: lang }),
-    }).then(() => {
-      window.dispatchEvent(new CustomEvent("radiogenai:config-changed"));
-    }).catch(() => {});
-    window.dispatchEvent(new CustomEvent("radiogenai:output-lang-changed", { detail: { lang } }));
+  function handleLanguageChange(lang: UILanguage) {
+    if (lang === prefs.uiLanguage) return;
+    setUnifiedLanguage(lang, update);
   }
 
   // Signatures
@@ -470,10 +448,8 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
               </button>
 
               <LanguagePicker
-                uiLang={prefs.uiLanguage}
-                outputLang={outputLanguage}
-                onUiLangChange={(lang) => update({ uiLanguage: lang })}
-                onOutputLangChange={handleOutputLangChange}
+                lang={prefs.uiLanguage}
+                onLangChange={handleLanguageChange}
               />
             </div>
 
@@ -588,36 +564,26 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
                 </Button>
               </div>
 
-              {/* UI language */}
+              {/* Language (platform + reports unified) */}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-3">{t("app.ui_language")}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-3">{t("app.language")}</p>
                 <div className="flex rounded-md overflow-hidden border border-[hsl(var(--border))]">
-                  {(["es", "en", "pt"] as UILanguage[]).map((lang) => (
+                  {LANGUAGES.map((l) => (
                     <button
-                      key={lang}
+                      key={l.value}
                       type="button"
-                      onClick={() => update({ uiLanguage: lang })}
+                      onClick={() => handleLanguageChange(l.value)}
                       className={`flex-1 px-3 py-2 text-xs font-semibold transition-colors ${
-                        prefs.uiLanguage === lang
+                        prefs.uiLanguage === l.value
                           ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
                           : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]"
                       }`}
                     >
-                      {lang.toUpperCase()}
+                      {l.value.toUpperCase()}
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Report language */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] mb-3">{t("cfg.output_language")}</p>
-                <Select value={outputLanguage} onValueChange={handleOutputLangChange}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-snug mt-2">{t("app.language_hint")}</p>
               </div>
             </div>
           </aside>
