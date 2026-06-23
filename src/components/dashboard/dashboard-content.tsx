@@ -95,6 +95,7 @@ export function DashboardContent() {
   const [preflightAnswers, setPreflightAnswers] = useState<Record<string, string>>({});
   const [preflightSystems, setPreflightSystems] = useState<string[]>([]);
   const [checkingPreflight, setCheckingPreflight] = useState(false);
+  const [classifyEmpty, setClassifyEmpty] = useState(false);
 
   // Clinical check state
   const [clinicalCheckRunning, setClinicalCheckRunning] = useState(false);
@@ -105,6 +106,7 @@ export function DashboardContent() {
     options: { label: string; insertText: string }[];
   }[] | null>(null);
   const [clinicalAnswers, setClinicalAnswers] = useState<Record<string, number | null>>({});
+  const [clinicalEmpty, setClinicalEmpty] = useState(false);
 
   // Dictation state
   const [dictation, setDictation] = useState("");
@@ -1140,6 +1142,7 @@ export function DashboardContent() {
     setSelectedSystems(new Set());
     setPreflightQuestions(null);
     setPreflightAnswers({});
+    setClassifyEmpty(false);
     try {
       const res = await fetch("/api/generate/classify/detect", {
         method: "POST",
@@ -1157,7 +1160,7 @@ export function DashboardContent() {
       const data = await res.json();
       const systems: { id: string; label: string }[] = data.systems || [];
       if (systems.length === 0) {
-        toast(t("classify.none_detected"));
+        setClassifyEmpty(true);
         return;
       }
       if (systems.length === 1) {
@@ -1223,6 +1226,7 @@ export function DashboardContent() {
     setClassifyResult(null);
     setDetectedSystems(null);
     setPreflightQuestions(null);
+    setClassifyEmpty(false);
     try {
       const res = await fetch("/api/generate/classify", {
         method: "POST",
@@ -1241,8 +1245,10 @@ export function DashboardContent() {
         return;
       }
       const data = await res.json();
-      if (data.classifications) {
+      if (data.classifications && String(data.classifications).trim()) {
         setClassifyResult(data.classifications);
+      } else {
+        setClassifyEmpty(true);
       }
     } catch {
       toast.error(t("gen_error"));
@@ -1269,6 +1275,7 @@ export function DashboardContent() {
     setClinicalCheckRunning(true);
     setClinicalSuggestions(null);
     setClinicalAnswers({});
+    setClinicalEmpty(false);
     try {
       const res = await fetch("/api/generate/clinical-check", {
         method: "POST",
@@ -1286,7 +1293,7 @@ export function DashboardContent() {
       const data = await res.json();
       const suggestions = data.suggestions || [];
       if (suggestions.length === 0) {
-        toast(t("clinical_check.no_suggestions"));
+        setClinicalEmpty(true);
         return;
       }
       setClinicalSuggestions(suggestions);
@@ -2318,7 +2325,10 @@ export function DashboardContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-end">
+                  <div className="flex flex-col items-end gap-1">
+                    {clinicalEmpty && (
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("clinical_check.no_suggestions")}</span>
+                    )}
                     <button
                       type="button"
                       onClick={handleClinicalCheck}
@@ -2326,7 +2336,7 @@ export function DashboardContent() {
                       className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium transition-colors disabled:opacity-50"
                     >
                       {clinicalCheckRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <ClipboardCheck className="h-3 w-3" />}
-                      {clinicalCheckRunning ? t("clinical_check.running") : t("clinical_check.button")}
+                      {clinicalCheckRunning ? t("clinical_check.running") : clinicalEmpty ? t("clinical_check.recheck") : t("clinical_check.button")}
                       <span className="text-[8px] px-1 py-0 rounded bg-amber-100/60 dark:bg-amber-800/30 text-amber-500 dark:text-amber-400 font-medium ml-0.5">{t("clinical_check.beta")}</span>
                     </button>
                   </div>
@@ -2481,7 +2491,10 @@ export function DashboardContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-end">
+                  <div className="flex flex-col items-end gap-1">
+                    {classifyEmpty && (
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("classify.none_detected")}</span>
+                    )}
                     <button
                       type="button"
                       onClick={handleDetectSystems}
@@ -2489,7 +2502,7 @@ export function DashboardContent() {
                       className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium transition-colors disabled:opacity-50"
                     >
                       {(classifying || detectingSystems || checkingPreflight) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
-                      {detectingSystems ? t("classify.detecting") : checkingPreflight ? t("classify.checking_data") : t("classify.button")}
+                      {detectingSystems ? t("classify.detecting") : checkingPreflight ? t("classify.checking_data") : classifyEmpty ? t("classify.recheck") : t("classify.button")}
                     </button>
                   </div>
                 )
