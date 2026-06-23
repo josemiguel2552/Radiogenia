@@ -154,7 +154,7 @@ export function RadiogenBot() {
   }
 
   return (
-    <div className="border border-violet-200 dark:border-violet-800 rounded-xl bg-white dark:bg-gray-900 shadow-lg flex flex-col" style={{ height: "420px" }}>
+    <div className="border border-violet-200 dark:border-violet-800 rounded-xl bg-white dark:bg-gray-900 shadow-lg flex flex-col w-[380px] max-w-full" style={{ height: "420px" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-violet-100 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/40 rounded-t-xl">
         <div className="flex items-center gap-1.5">
