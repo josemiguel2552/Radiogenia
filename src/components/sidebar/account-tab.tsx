@@ -15,6 +15,7 @@ import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
+import { copyToClipboard } from "@/lib/copy-text";
 
 interface SubInfo {
   plan: SubscriptionPlan;
@@ -581,7 +582,7 @@ export function AccountTab() {
                   className="shrink-0 gap-1.5"
                   onClick={() => {
                     const url = `${window.location.origin}/invite/${invite.code}`;
-                    navigator.clipboard.writeText(url);
+                    copyToClipboard(url);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}

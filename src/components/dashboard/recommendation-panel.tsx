@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
+import { copyToClipboard } from "@/lib/copy-text";
 
 interface Props {
   conclusionText: string;
@@ -242,7 +243,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const copySelected = useCallback(() => {
     const selectedRecs = allRecs.filter((r) => selected.has(r.id));
     const texts = selectedRecs.map((r) => "- " + (r.text[outputLanguage] || r.text.es));
-    navigator.clipboard.writeText(texts.join("\n"));
+    copyToClipboard(texts.join("\n"));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
 

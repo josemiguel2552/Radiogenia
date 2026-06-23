@@ -17,6 +17,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { copyToClipboard } from "@/lib/copy-text";
 
 /* ═══════════════════════════════════════════
    Shared helpers
@@ -97,7 +98,7 @@ function CopyButton({ text }: { text: string }) {
       size="sm"
       className="h-7 text-[11px] gap-1.5"
       onClick={() => {
-        navigator.clipboard.writeText(text);
+        copyToClipboard(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}

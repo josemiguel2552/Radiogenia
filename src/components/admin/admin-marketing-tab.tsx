@@ -14,6 +14,7 @@ import {
   PackageCheck,
 } from "lucide-react";
 import JSZip from "jszip";
+import { copyToClipboard } from "@/lib/copy-text";
 
 type SubTab = "posts" | "images" | "brand" | "library";
 type PostType = "testimonial" | "tip" | "promo" | "educational" | "announcement";
@@ -1939,13 +1940,13 @@ function BrandKitSection() {
   };
 
   const copyColor = (hex: string) => {
-    navigator.clipboard.writeText(hex);
+    copyToClipboard(hex);
     setCopiedColor(hex);
     setTimeout(() => setCopiedColor(null), 1500);
   };
 
   const cp = (label: string, text: string) => {
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     setCopiedColor(label);
     setTimeout(() => setCopiedColor(null), 1500);
   };
@@ -2994,7 +2995,7 @@ export function AdminMarketingTab() {
                     size="sm"
                     className="flex-1 gap-1.5"
                     onClick={() => {
-                      navigator.clipboard.writeText(generatedPost);
+                      copyToClipboard(generatedPost);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
@@ -3188,7 +3189,7 @@ export function AdminMarketingTab() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
-                            onClick={() => navigator.clipboard.writeText(asset.content)}
+                            onClick={() => copyToClipboard(asset.content)}
                           >
                             <Copy className="h-3 w-3" />
                           </Button>

@@ -60,6 +60,7 @@ import { RadiogenBot } from "@/components/sidebar/radiogen-bot";
 import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 import { useUIPrefs } from "@/lib/ui-prefs";
+import { copyToClipboard } from "@/lib/copy-text";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -1413,7 +1414,7 @@ export function DashboardContent() {
   const copyFormattedRef = useRef<(mode: "findings" | "findings_conclusion" | "full") => void>(null as unknown as (mode: "findings" | "findings_conclusion" | "full") => void);
 
   function copyText(text: string, id: string) {
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     setCopied(id);
     toast.success(t("toast.copied"));
     setTimeout(() => setCopied(null), 2000);
@@ -1827,6 +1828,7 @@ export function DashboardContent() {
                   onChange={(e) => setTemplateSearch(e.target.value)}
                   className="pl-8 h-9 text-xs"
                   readOnly={templateSearchReadOnly}
+                  onPointerDown={() => setTemplateSearchReadOnly(false)}
                   onFocus={() => setTemplateSearchReadOnly(false)}
                   autoComplete="off"
                   autoCorrect="off"

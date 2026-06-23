@@ -623,6 +623,7 @@ export function RecommendationsTab() {
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8 h-9 text-xs"
           readOnly={searchReadOnly}
+          onPointerDown={() => setSearchReadOnly(false)}
           onFocus={() => setSearchReadOnly(false)}
           autoComplete="off"
           autoCorrect="off"

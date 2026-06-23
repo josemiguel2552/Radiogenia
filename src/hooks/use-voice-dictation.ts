@@ -380,6 +380,8 @@ export function useVoiceDictation({
       ? "audio/webm;codecs=opus"
       : MediaRecorder.isTypeSupported("audio/webm")
       ? "audio/webm"
+      : MediaRecorder.isTypeSupported("audio/mp4")
+      ? "audio/mp4"
       : "";
 
     const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
@@ -416,13 +418,15 @@ export function useVoiceDictation({
   const sendWhisperRefinement = useCallback(async (durationSec: number, snapshotBlobs: Blob[], snapshotDgText: string, sessionId: number) => {
     if (!snapshotBlobs.length || !snapshotDgText.trim() || !onWhisperRefineRef.current) return;
 
-    const audioBlob = new Blob(snapshotBlobs, { type: snapshotBlobs[0]?.type || "audio/webm" });
+    const blobType = snapshotBlobs[0]?.type || "audio/webm";
+    const audioBlob = new Blob(snapshotBlobs, { type: blobType });
     if (audioBlob.size < 1000) return;
 
+    const ext = blobType.includes("mp4") ? "mp4" : "webm";
     setIsRefining(true);
     try {
       const form = new FormData();
-      form.append("audio", audioBlob, "dictation.webm");
+      form.append("audio", audioBlob, `dictation.${ext}`);
       form.append("language", language);
       form.append("duration_seconds", String(Math.round(durationSec)));
       form.append("context", snapshotDgText.slice(-200));

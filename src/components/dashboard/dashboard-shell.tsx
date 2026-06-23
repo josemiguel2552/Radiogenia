@@ -344,7 +344,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   );
 
   return (
-    <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-[hsl(var(--background))]">
+    <div className="flex h-dvh w-screen max-w-[100vw] overflow-hidden bg-[hsl(var(--background))]">
       {/* ── Desktop left rail ── */}
       <aside className="hidden md:flex w-14 bg-gray-900 dark:bg-black flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
         <Logo size="sm" variant="icon" />
