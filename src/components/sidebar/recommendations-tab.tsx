@@ -88,6 +88,7 @@ export function RecommendationsTab() {
   const [customRecs, setCustomRecs] = useState<ManualRecommendation[]>([]);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [searchReadOnly, setSearchReadOnly] = useState(true);
   const [navLevel, setNavLevel] = useState<"sections" | "guidelines" | "list">("sections");
   const [navSection, setNavSection] = useState("");
   const [navGuideline, setNavGuideline] = useState("");
@@ -616,12 +617,17 @@ export function RecommendationsTab() {
       <div className="relative">
         <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
         <Input
-          type="text"
+          type="search"
           placeholder={t("mrec.search_ph")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8 h-9 text-xs"
-          autoComplete="new-password"
+          readOnly={searchReadOnly}
+          onFocus={() => setSearchReadOnly(false)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           name="rg_recsearch_x"
           data-form-type="other"
           data-lpignore="true"
