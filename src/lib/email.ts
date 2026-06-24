@@ -9,7 +9,7 @@ function getResend() {
 }
 
 const FROM = process.env.EMAIL_FROM || "Radiogen.AI <noreply@radiogen.ai>";
-const REPLY_TO = process.env.EMAIL_REPLY_TO || "soporte@radiogen.ai";
+const REPLY_TO = process.env.EMAIL_REPLY_TO || "info@radiogen.ai";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
 
 async function sendWithRetry(params: Parameters<Resend["emails"]["send"]>[0], maxRetries = 2): Promise<void> {
