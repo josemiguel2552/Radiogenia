@@ -1,12 +1,12 @@
-# Evaluacion de Impacto en Proteccion de Datos (EIPD / DPIA)
+# Evaluacion de Impacto en Proteccion de Datos / Relatorio de Impacto (EIPD / RIPD / DPIA)
 
 **Radiogen.AI (Radiogenia)**
-**Version del documento:** 1.0
-**Fecha:** 23 de mayo de 2026
-**Responsable del tratamiento:** Radiogenia S.L.
-**Delegado de Proteccion de Datos (DPD):** [Pendiente de designacion]
-**Marco normativo:** Reglamento (UE) 2016/679 (RGPD), Ley Organica 3/2018 (LOPDGDD), Guia para la Evaluacion de Impacto de la AEPD
-**Ambito territorial:** Espana y Latinoamerica (LATAM)
+**Version del documento:** 2.0 (adaptada a Latinoamerica)
+**Fecha:** 27 de junio de 2026
+**Responsable del tratamiento (Controlador):** Radiogenia
+**Encargado de Proteccion de Datos (DPO):** [Pendiente de designacion]
+**Marco normativo:** Brasil — Lei 13.709/2018 (LGPD); Mexico — LFPDPPP; Colombia — Ley 1581/2012; Argentina — Ley 25.326; Chile — Ley 21.719; y demas normativas nacionales de proteccion de datos de America Latina. Metodologia de analisis de riesgos compatible con las guias de la ANPD (Brasil) y autoridades equivalentes.
+**Ambito territorial:** America Latina (LATAM). El servicio NO se comercializa ni se ofrece en la Union Europea / EEE.
 
 ---
 
@@ -36,17 +36,17 @@ Radiogen.AI es una plataforma SaaS (Software como Servicio) disenada para que ra
 
 ### 1.2 Justificacion de la EIPD
 
-La realizacion de esta Evaluacion de Impacto es obligatoria conforme al articulo 35 del RGPD y la lista publicada por la AEPD de tratamientos que requieren EIPD, por concurrir los siguientes criterios:
+La realizacion de este Relatorio/Evaluacion de Impacto es una buena practica exigida por el Art. 38 de la LGPD (y recomendada por las autoridades equivalentes de la region) cuando el tratamiento puede generar riesgos a las libertades civiles y a los derechos fundamentales, por concurrir los siguientes criterios:
 
 - **Uso de nuevas tecnologias:** Inteligencia artificial generativa aplicada al ambito sanitario.
-- **Datos relativos a la salud:** El texto de los dictados contiene terminologia clinica radiologica que, si bien se refiere a hallazgos anonimizados, podria contextualmente constituir dato de salud.
-- **Tratamiento a gran escala:** Despliegue hospitalario (Hospital Universitario de Gran Canaria Doctor Negrin) con potencial de escalar a multiples centros en Espana y LATAM.
+- **Datos relativos a la salud:** El texto de los dictados contiene terminologia clinica radiologica que, si bien se refiere a hallazgos anonimizados, podria contextualmente constituir dato sensible de salud.
+- **Tratamiento a gran escala:** Despliegue hospitalario en centros de America Latina con potencial de escalar a multiples centros en la region.
 - **Uso de perfilado:** Aprendizaje de estilo del radiologo basado en el analisis sistematico de sus informes previos.
-- **Transferencias internacionales:** Los proveedores de IA (OpenAI, Anthropic, Google, DeepSeek) procesan datos fuera del Espacio Economico Europeo (EEE).
+- **Transferencias internacionales:** Los proveedores de IA (OpenAI, Anthropic, Google) procesan datos fuera del pais de origen del responsable, lo que activa las garantias de transferencia internacional de la LGPD (Arts. 33-36) y normativas equivalentes.
 
-### 1.3 Primer despliegue hospitalario
+### 1.3 Despliegue hospitalario
 
-El primer centro hospitalario que despliega Radiogen.AI es el **Hospital Universitario de Gran Canaria Doctor Negrin** (Las Palmas de Gran Canaria, Espana). Este despliegue implica la integracion del servicio en el flujo de trabajo de multiples secciones de radiologia, con roles jerarquicos (jefe de organizacion, jefe de seccion, editor de seccion, radiologo adjunto y residente).
+Radiogen.AI se despliega en centros hospitalarios de **America Latina** (mercados prioritarios: Brasil, Mexico, Colombia, Argentina y Chile). Cada despliegue implica la integracion del servicio en el flujo de trabajo de multiples secciones de radiologia, con roles jerarquicos (jefe de organizacion, jefe de seccion, editor de seccion, radiologo adjunto y residente). El servicio no se ofrece en la Union Europea / EEE.
 
 ---
 
@@ -54,14 +54,14 @@ El primer centro hospitalario que despliega Radiogen.AI es el **Hospital Univers
 
 ### 2.1 Finalidad del tratamiento
 
-| Finalidad | Base juridica (art. 6 RGPD) | Base para datos de salud (art. 9 RGPD) |
+| Finalidad | Base legal (Art. 7 LGPD y equivalentes) | Base para datos sensibles de salud (Art. 11 LGPD y equivalentes) |
 |---|---|---|
-| Prestacion del servicio de dictado y estructuracion de informes radiologicos | Art. 6.1.b) Ejecucion de contrato (Condiciones de Uso aceptadas por el usuario) | Art. 9.2.h) Fines de medicina preventiva, diagnostico medico y prestacion de asistencia sanitaria |
-| Aprendizaje de estilo del radiologo | Art. 6.1.b) Ejecucion de contrato | No aplica (datos de estilo linguistico, no datos de salud) |
-| Gestion de cuentas de usuario y organizaciones hospitalarias | Art. 6.1.b) Ejecucion de contrato | No aplica |
-| Facturacion y gestion de suscripciones | Art. 6.1.b) Ejecucion de contrato | No aplica |
-| Mejora del servicio y soporte tecnico | Art. 6.1.f) Interes legitimo | No aplica |
-| Registro de uso y auditoria | Art. 6.1.c) Obligacion legal; Art. 6.1.f) Interes legitimo | Art. 9.2.h) cuando aplique |
+| Prestacion del servicio de dictado y estructuracion de informes radiologicos | Art. 7, V) Ejecucion de contrato (Condiciones de Uso aceptadas por el usuario) | Art. 11, II, f) Tutela de la salud, en procedimiento realizado por profesionales de salud o servicios sanitarios |
+| Aprendizaje de estilo del radiologo | Art. 7, V) Ejecucion de contrato | No aplica (datos de estilo linguistico, no datos de salud) |
+| Gestion de cuentas de usuario y organizaciones hospitalarias | Art. 7, V) Ejecucion de contrato | No aplica |
+| Facturacion y gestion de suscripciones | Art. 7, V) Ejecucion de contrato | No aplica |
+| Mejora del servicio y soporte tecnico | Art. 7, IX) Legitimo interes | No aplica |
+| Registro de uso y auditoria | Art. 7, II) Cumplimiento de obligacion legal/regulatoria; Art. 7, IX) Legitimo interes | Art. 11, II, f) cuando aplique |
 
 ### 2.2 Categorias de interesados
 
@@ -75,7 +75,7 @@ El primer centro hospitalario que despliega Radiogen.AI es el **Hospital Univers
 
 #### 2.3.1 Datos de los usuarios (radiologos)
 
-| Dato | Categoria RGPD | Retencion |
+| Dato | Categoria del dato | Retencion |
 |---|---|---|
 | Nombre y apellidos | Dato identificativo | Vigencia de la cuenta + periodo legal |
 | Direccion de correo electronico | Dato identificativo | Vigencia de la cuenta + periodo legal |
@@ -87,9 +87,9 @@ El primer centro hospitalario que despliega Radiogen.AI es el **Hospital Univers
 
 #### 2.3.2 Datos contenidos en los dictados
 
-| Dato | Categoria RGPD | Retencion |
+| Dato | Categoria del dato | Retencion |
 |---|---|---|
-| Texto del dictado (hallazgos radiologicos anonimizados) | Potencialmente dato de salud (art. 9) | Vigencia de la cuenta del usuario |
+| Texto del dictado (hallazgos radiologicos anonimizados) | Potencialmente dato sensible de salud (Art. 11 LGPD) | Vigencia de la cuenta del usuario |
 | Audio del dictado | Dato de salud (contenido clinico) | Efimero: se procesa y se descarta. No se almacena en servidores de Radiogenia. |
 | Informe estructurado generado | Potencialmente dato de salud | Vigencia de la cuenta del usuario |
 | Conclusiones generadas | Potencialmente dato de salud | Vigencia de la cuenta del usuario |
@@ -197,23 +197,23 @@ Supabase (PostgreSQL)
 
 | Encargado | Funcion | Ubicacion | Garantias de transferencia |
 |---|---|---|---|
-| **Supabase Inc.** | Alojamiento de base de datos, autenticacion, almacenamiento | EE.UU. (AWS) / UE (disponible) | Data Processing Agreement (DPA); EU-US Data Privacy Framework; cifrado en reposo y en transito |
-| **Deepgram Inc.** | Transcripcion de voz en tiempo real | EE.UU. | DPA; clausulas contractuales tipo (SCC) |
-| **OpenAI LLC** | Transcripcion Whisper, correccion de dictado, estructuracion de informes (GPT-4o/mini) | EE.UU. | DPA; Zero Data Retention (ZDR) policy para API; SCC |
-| **Anthropic PBC** | Estructuracion de informes (Claude) | EE.UU. | DPA; no entrenamiento con datos de API; SCC |
-| **DeepSeek** | Estructuracion de informes (DeepSeek) | China | DPA; clausulas contractuales tipo (SCC); evaluacion de adecuacion por pais |
-| **Google LLC** | Estructuracion de informes (Gemini) | EE.UU./UE | DPA; EU-US Data Privacy Framework; no entrenamiento con datos de API |
-| **Stripe Inc.** | Procesamiento de pagos | EE.UU./UE | DPA; EU-US Data Privacy Framework; PCI DSS Level 1 |
+| **Supabase Inc.** | Alojamiento de base de datos, autenticacion, almacenamiento | EE.UU. (AWS) / region disponible | Data Processing Agreement (DPA); clausulas contractuales de transferencia internacional (Art. 33 LGPD); cifrado en reposo y en transito |
+| **Deepgram Inc.** | Transcripcion de voz en tiempo real | EE.UU. | DPA; clausulas contractuales de transferencia internacional |
+| **OpenAI LLC** | Transcripcion Whisper, correccion de dictado, estructuracion de informes (GPT-4o/mini) | EE.UU. | DPA; Zero Data Retention (ZDR) policy para API; clausulas contractuales de transferencia internacional |
+| **Anthropic PBC** | Estructuracion de informes (Claude) | EE.UU. | DPA; no entrenamiento con datos de API; clausulas contractuales de transferencia internacional |
+| **DeepSeek** | Estructuracion de informes (DeepSeek) | China | DPA; clausulas contractuales de transferencia internacional; evaluacion de adecuacion por pais |
+| **Google LLC** | Estructuracion de informes (Gemini) | EE.UU./UE | DPA; clausulas contractuales de transferencia internacional (Art. 33 LGPD); no entrenamiento con datos de API |
+| **Stripe Inc.** | Procesamiento de pagos | EE.UU./UE | DPA; clausulas contractuales de transferencia internacional (Art. 33 LGPD); PCI DSS Level 1 |
 | **Vercel Inc.** | Hosting de la aplicacion web (Next.js) | EE.UU./UE | DPA; cifrado en transito |
 
 ### 2.6 Transferencias internacionales de datos
 
-Las transferencias de datos fuera del EEE se realizan a los siguientes paises:
+Las transferencias internacionales de datos (texto clinico anonimizado) se realizan a los siguientes paises, conforme a las garantias de los Arts. 33-36 de la LGPD y normativas equivalentes:
 
 | Destino | Datos transferidos | Mecanismo de proteccion |
 |---|---|---|
-| EE.UU. | Texto anonimizado de dictados (a OpenAI, Anthropic, Deepgram, Google) | EU-US Data Privacy Framework (Decision de adecuacion de la CE de 10/07/2023) + SCC como mecanismo subsidiario |
-| China | Texto anonimizado de dictados (a DeepSeek, solo si el administrador selecciona este proveedor) | Clausulas contractuales tipo (SCC) del art. 46.2.c) RGPD + Evaluacion de Impacto de Transferencia (TIA) |
+| EE.UU. | Texto anonimizado de dictados (a OpenAI, Anthropic, Deepgram, Google) | Clausulas contractuales y Acuerdos de Tratamiento de Datos (DPA) con cada proveedor; politica de no entrenamiento y retencion cero; cifrado en transito. Al tratarse de datos anonimizados (Art. 12 LGPD) el riesgo de transferencia es reducido. |
+| China | Texto anonimizado de dictados (a DeepSeek, solo si el administrador selecciona este proveedor) | Clausulas contractuales + Evaluacion de Impacto de Transferencia (TIA). Desactivado por defecto; no recomendado para datos de salud. |
 
 **Nota importante sobre DeepSeek:** El uso de DeepSeek como proveedor de IA es **configurable por el administrador** y no esta activado por defecto. Dada la situacion normativa de China respecto a la proteccion de datos, se recomienda a las organizaciones hospitalarias una evaluacion especifica antes de activar este proveedor. El sistema permite utilizar exclusivamente proveedores con sede en EE.UU. o con infraestructura en la UE.
 
@@ -231,14 +231,14 @@ En el modo hospitalario, la plataforma implementa una estructura jerarquica de r
 
 La relacion entre la organizacion hospitalaria y Radiogenia se rige por:
 - **Contrato de prestacion de servicios** con el hospital.
-- **Acuerdo de encargado del tratamiento** (art. 28 RGPD) firmado entre el hospital (responsable) y Radiogenia (encargado).
+- **Acuerdo de tratamiento de datos** (Arts. 37-39 LGPD y equivalentes) firmado entre el hospital (controlador) y Radiogenia (operador).
 - **Politica de uso aceptable** para los usuarios individuales.
 
 ---
 
 ## 3. Necesidad y proporcionalidad
 
-### 3.1 Principio de minimizacion de datos (art. 5.1.c RGPD)
+### 3.1 Principio de necesidad / minimizacion de datos (Art. 6, III LGPD y equivalentes)
 
 | Principio | Implementacion en Radiogen.AI |
 |---|---|
@@ -247,7 +247,7 @@ La relacion entre la organizacion hospitalaria y Radiogenia se rige por:
 | **Minimizacion en el almacenamiento** | Solo se almacena el texto del dictado, el informe estructurado y las muestras de estilo. No se almacena audio, ni datos biometricos de voz, ni datos identificativos de pacientes. |
 | **Minimizacion en las transferencias** | A los proveedores de IA solo se envia el texto clinico anonimizado necesario para la tarea especifica (estructuracion o correccion). No se envian datos del usuario ni metadatos del paciente. |
 
-### 3.2 Principio de limitacion de la finalidad (art. 5.1.b RGPD)
+### 3.2 Principio de finalidad (Art. 6, I LGPD y equivalentes)
 
 Los datos se tratan exclusivamente para las finalidades descritas en la seccion 2.1. En particular:
 
@@ -255,13 +255,13 @@ Los datos se tratan exclusivamente para las finalidades descritas en la seccion 
 - **No se comparten datos entre usuarios** de diferentes cuentas u organizaciones.
 - **No se realizan perfilados comerciales** ni se ceden datos a terceros con fines de marketing.
 
-### 3.3 Principio de exactitud (art. 5.1.d RGPD)
+### 3.3 Principio de calidad / exactitud de los datos (Art. 6, V LGPD y equivalentes)
 
 - El radiologo tiene control total sobre el informe generado: puede editar, corregir o reescribir cualquier seccion antes de utilizarlo.
 - El sistema no emite diagnosticos: describe hallazgos radiologicos segun el dictado del profesional.
 - Se incluyen advertencias explicitas de que la IA es una herramienta de asistencia y que el radiologo es el responsable final del informe.
 
-### 3.4 Principio de limitacion del plazo de conservacion (art. 5.1.e RGPD)
+### 3.4 Principio de limitacion del plazo de conservacion (Art. 6, III y Arts. 15-16 LGPD y equivalentes)
 
 | Tipo de dato | Periodo de conservacion | Justificacion |
 |---|---|---|
@@ -273,7 +273,7 @@ Los datos se tratan exclusivamente para las finalidades descritas en la seccion 
 | Documentos de verificacion de residencia | Hasta resolucion de la solicitud | Finalidad cumplida |
 | Logs de auditoria | 2 anos | Interes legitimo y obligacion legal |
 
-### 3.5 Derechos de los interesados (arts. 15-22 RGPD)
+### 3.5 Derechos de los titulares (Art. 18 LGPD y equivalentes)
 
 | Derecho | Mecanismo |
 |---|---|
@@ -308,7 +308,7 @@ Los datos se tratan exclusivamente para las finalidades descritas en la seccion 
 
 ### 4.1 Metodologia
 
-Se utiliza la metodologia de analisis de riesgos de la AEPD (Guia de Analisis de Riesgos 2021), que evalua cada riesgo en funcion de:
+Se utiliza una metodologia de analisis de riesgos compatible con buenas practicas internacionales (ISO/IEC 29134) y con las orientaciones de la ANPD y autoridades equivalentes de la region, que evalua cada riesgo en funcion de:
 
 - **Probabilidad:** Muy baja (1), Baja (2), Media (3), Alta (4), Muy alta (5)
 - **Impacto:** Muy bajo (1), Bajo (2), Medio (3), Alto (4), Muy alto (5)
@@ -414,7 +414,7 @@ Se utiliza la metodologia de analisis de riesgos de la AEPD (Guia de Analisis de
 | **Descripcion** | Cuando se selecciona DeepSeek como proveedor, los datos del dictado se transfieren a servidores en China, pais sin decision de adecuacion de la Comision Europea. |
 | **Categoria de datos afectados** | Texto del dictado (potencialmente datos de salud anonimizados) |
 | **Probabilidad** | 2 (Baja) - DeepSeek esta desactivado por defecto; requiere activacion explicita por el administrador. |
-| **Impacto** | 5 (Muy alto) - Riesgo regulatorio significativo: posible acceso gubernamental bajo la Ley de Inteligencia Nacional de China; posible incumplimiento del capitulo V del RGPD. |
+| **Impacto** | 5 (Muy alto) - Riesgo regulatorio significativo: posible acceso gubernamental bajo la Ley de Inteligencia Nacional de China; posible incumplimiento de las reglas de transferencia internacional de la LGPD (Arts. 33-36) y equivalentes. |
 | **Riesgo inherente** | **10 (Alto)** |
 | **Medidas de mitigacion aplicadas** | DeepSeek desactivado por defecto; requiere activacion explicita; aviso al administrador sobre las implicaciones; datos siempre filtrados por PII antes del envio; recomendacion activa de no usar DeepSeek para datos de salud. |
 | **Riesgo residual** | **6 (Medio)** - Se recomienda no activar DeepSeek en despliegues hospitalarios espanoles. |
@@ -516,9 +516,9 @@ El sistema incorpora un modulo de deteccion de datos de identificacion personal 
 | Documento | Contenido | Momento de aceptacion |
 |---|---|---|
 | **Condiciones de Uso** | Descripcion del servicio, limitaciones, responsabilidades | Registro del usuario |
-| **Politica de Privacidad** | Tratamiento de datos conforme al RGPD, derechos de los interesados, transferencias internacionales | Registro del usuario |
+| **Politica de Privacidad** | Tratamiento de datos conforme a la LGPD y normativas LATAM, derechos de los titulares, transferencias internacionales | Registro del usuario |
 | **Disclaimer de Responsabilidad** | Exencion de responsabilidad clinica: el radiologo es el unico responsable del contenido final del informe; la IA es una herramienta de asistencia | Registro del usuario |
-| **Acuerdo de Encargado del Tratamiento** (art. 28 RGPD) | Obligaciones del encargado, subencargados, medidas de seguridad, notificacion de brechas | Firma con cada organizacion hospitalaria |
+| **Acuerdo de Tratamiento de Datos** (Arts. 37-39 LGPD y equivalentes) | Obligaciones del operador, suboperadores, medidas de seguridad, notificacion de incidentes | Firma con cada organizacion hospitalaria |
 
 #### 5.2.2 Formacion y concienciacion
 
@@ -538,9 +538,9 @@ Para el despliegue hospitalario se establece:
 |---|---|---|
 | Deteccion | Monitorizacion de logs, alertas de proveedores, reporte por usuarios | Continuo |
 | Evaluacion | Determinacion del alcance, datos afectados y riesgo para los interesados | 24 horas |
-| Notificacion a la AEPD | Si existe riesgo para los derechos y libertades de los interesados | 72 horas desde la deteccion (art. 33 RGPD) |
-| Notificacion a los interesados | Si existe alto riesgo para los derechos y libertades | Sin dilacion indebida (art. 34 RGPD) |
-| Notificacion al hospital | Si se trata de un despliegue hospitalario | Inmediata tras la deteccion |
+| Notificacion a la autoridad de proteccion de datos (ANPD u homologa) | Si el incidente puede generar riesgo o dano relevante a los titulares | En plazo razonable desde la deteccion (Art. 48 LGPD y equivalentes) |
+| Notificacion a los titulares | Si existe riesgo o dano relevante para los titulares | Sin dilacion indebida (Art. 48 LGPD) |
+| Notificacion al hospital (controlador) | Siempre, en despliegues hospitalarios | Inmediata tras la deteccion |
 | Registro | Documentacion del incidente, medidas adoptadas y resultados | 30 dias |
 
 #### 5.2.4 Evaluacion continua
@@ -558,7 +558,7 @@ Para el despliegue hospitalario se establece:
 
 | Medida | Detalle |
 |---|---|
-| **Contrato art. 28 RGPD** | Acuerdo de encargado del tratamiento firmado entre el hospital y Radiogenia, que detalla instrucciones de tratamiento, medidas de seguridad, gestion de subencargados y procedimiento de notificacion de brechas. |
+| **Acuerdo de tratamiento de datos (Arts. 37-39 LGPD)** | Acuerdo controlador-operador firmado entre el hospital y Radiogenia, que detalla instrucciones de tratamiento, medidas de seguridad, gestion de suboperadores y procedimiento de notificacion de incidentes. |
 | **Restriccion de proveedores de IA** | El hospital puede restringir los proveedores de IA permitidos (ej: solo OpenAI y Anthropic, excluyendo DeepSeek). |
 | **Segregacion de datos** | Los datos de cada organizacion estan completamente segregados mediante RLS y el identificador de organizacion. |
 | **Roles y permisos** | El jefe de organizacion controla los accesos: puede desactivar miembros, asignar roles y gestionar secciones. |
@@ -585,36 +585,36 @@ La evaluacion de impacto identifica que el tratamiento de datos realizado por Ra
 
 1. **R01 (Inclusion accidental de PII):** Riesgo residual medio. El filtro PII es una mitigacion efectiva pero no infalible. Requiere monitorizacion y mejora continua.
 2. **R07 (Alucinaciones de la IA):** Riesgo residual medio. La barrera principal es la revision humana del radiologo. Es fundamental que los usuarios comprendan que la IA es una herramienta de asistencia y que deben verificar cada informe.
-3. **R08 (Transferencias a China/DeepSeek):** Riesgo residual medio cuando esta activado. Se recomienda firmemente no activar DeepSeek en despliegues hospitalarios sujetos al RGPD.
+3. **R08 (Transferencias a China/DeepSeek):** Riesgo residual medio cuando esta activado. Se recomienda firmemente no activar DeepSeek en despliegues hospitalarios sujetos a la LGPD y normativas LATAM.
 
 ### 6.2 Plan de accion
 
 | # | Accion | Prioridad | Responsable | Plazo | Estado |
 |---|---|---|---|---|---|
-| 1 | Designar formalmente un Delegado de Proteccion de Datos (DPD/DPO) | Alta | Direccion | T3 2026 | Pendiente |
-| 2 | Formalizar los DPAs con todos los proveedores de IA (OpenAI, Anthropic, Google, Deepgram) | Alta | DPD / Legal | T3 2026 | En curso |
-| 3 | Firmar el acuerdo de encargado del tratamiento (art. 28 RGPD) con el Hospital Negrin | Alta | DPD / Legal | Previo al despliegue | En curso |
+| 1 | Designar formalmente un Encargado de Proteccion de Datos (DPO) | Alta | Direccion | T3 2026 | Pendiente |
+| 2 | Formalizar los DPAs con todos los proveedores de IA (OpenAI, Anthropic, Google, Deepgram) | Alta | DPO / Legal | T3 2026 | En curso |
+| 3 | Firmar el acuerdo de tratamiento de datos (Arts. 37-39 LGPD y equivalentes) con cada hospital cliente | Alta | DPO / Legal | Previo al despliegue | En curso |
 | 4 | Implementar autenticacion multifactor (MFA) para cuentas hospitalarias | Alta | Ingenieria | T3 2026 | Pendiente |
 | 5 | Desactivar DeepSeek por defecto en todos los despliegues hospitalarios espanoles y anadir aviso regulatorio | Alta | Ingenieria | T3 2026 | Implementado (desactivado por defecto) |
 | 6 | Ampliar el filtro PII para detectar numeros de historia clinica (formatos hospitalarios comunes) | Media | Ingenieria | T4 2026 | Pendiente |
 | 7 | Implementar mecanismo de exportacion/portabilidad de datos para todos los planes | Media | Ingenieria | T4 2026 | Parcialmente implementado |
-| 8 | Realizar test de penetracion externo | Media | Seguridad / DPD | T3 2026 | Pendiente |
-| 9 | Establecer procedimiento formal de gestion de brechas de seguridad con plantillas de notificacion a la AEPD | Media | DPD / Legal | T3 2026 | Pendiente |
-| 10 | Crear programa de formacion en proteccion de datos para usuarios hospitalarios | Media | DPD / Producto | Previo al despliegue | En desarrollo |
-| 11 | Implementar registro de actividades de tratamiento (art. 30 RGPD) formal | Media | DPD | T3 2026 | Pendiente |
-| 12 | Evaluar la viabilidad de utilizar proveedores de IA con infraestructura en la UE (Azure OpenAI EU, Google Cloud EU) | Media | Ingenieria / DPD | T4 2026 | Pendiente |
-| 13 | Realizar Evaluacion de Impacto de Transferencia (TIA) especifica para DeepSeek | Baja (si no se activa) | DPD / Legal | Antes de activacion | Pendiente |
+| 8 | Realizar test de penetracion externo | Media | Seguridad / DPO | T3 2026 | Pendiente |
+| 9 | Establecer procedimiento formal de gestion de incidentes con plantillas de notificacion a la ANPD y autoridades equivalentes | Media | DPO / Legal | T3 2026 | Pendiente |
+| 10 | Crear programa de formacion en proteccion de datos para usuarios hospitalarios | Media | DPO / Producto | Previo al despliegue | En desarrollo |
+| 11 | Implementar registro de operaciones de tratamiento (Art. 37 LGPD y equivalentes) formal | Media | DPO | T3 2026 | Pendiente |
+| 12 | Evaluar proveedores de IA con infraestructura regional/local (p. ej., en Brasil) para minimizar transferencias internacionales | Media | Ingenieria / DPO | T4 2026 | Pendiente |
+| 13 | Realizar Evaluacion de Impacto de Transferencia (TIA) especifica para DeepSeek | Baja (si no se activa) | DPO / Legal | Antes de activacion | Pendiente |
 | 14 | Implementar mecanismo de consentimiento granular para la seleccion de proveedor de IA en modo hospitalario | Baja | Ingenieria | T1 2027 | Pendiente |
-| 15 | Revisar y actualizar esta EIPD | Media | DPD | Mayo 2027 | Programado |
+| 15 | Revisar y actualizar este RIPD | Media | DPO | Mayo 2027 | Programado |
 
 ### 6.3 Dictamen
 
 Considerando el analisis realizado, las medidas de mitigacion implementadas y el plan de accion definido, se concluye que:
 
-1. El tratamiento de datos realizado por Radiogen.AI **es conforme con los principios del RGPD**, siempre que se ejecuten las acciones del plan de accion con los plazos establecidos.
-2. Los riesgos residuales identificados son **gestionables** y no alcanzan el umbral que exigiria consulta previa a la AEPD (art. 36 RGPD).
+1. El tratamiento de datos realizado por Radiogen.AI **es conforme con los principios de la LGPD y las normativas de proteccion de datos de Latinoamerica**, siempre que se ejecuten las acciones del plan de accion con los plazos establecidos.
+2. Los riesgos residuales identificados son **gestionables**. La ANPD (Art. 38 LGPD) y autoridades equivalentes pueden solicitar este RIPD; el documento se mantiene disponible y actualizado a tal efecto.
 3. La **revision humana obligatoria** por parte del radiologo constituye la medida de mitigacion mas efectiva tanto para riesgos de proteccion de datos como para riesgos de seguridad del paciente.
-4. Se recomienda **no activar DeepSeek** en despliegues hospitalarios sujetos al RGPD hasta que exista una evaluacion de adecuacion favorable o garantias equivalentes verificables.
+4. Se recomienda **no activar DeepSeek** en despliegues hospitalarios sujetos a la LGPD y normativas LATAM hasta que existan garantias de transferencia internacional verificables.
 5. La EIPD debera **revisarse anualmente** o ante cualquier cambio significativo en el tratamiento (nuevo proveedor de IA, nuevo tipo de dato, nueva funcionalidad, expansion a nuevos mercados).
 
 ---
@@ -625,14 +625,14 @@ Considerando el analisis realizado, las medidas de mitigacion implementadas y el
 
 | Campo | Valor |
 |---|---|
-| **Responsable del tratamiento** | Radiogenia S.L. |
+| **Responsable del tratamiento (Controlador)** | Radiogenia |
 | **Contacto del responsable** | [Direccion de contacto] |
-| **DPD** | [Pendiente de designacion] |
+| **DPO (Encargado de Proteccion de Datos)** | [Pendiente de designacion] |
 | **Finalidades** | Prestacion de servicio de dictado radiologico asistido por IA; gestion de cuentas; facturacion; mejora del servicio |
 | **Categorias de interesados** | Radiologos, residentes, pacientes (indirectamente) |
 | **Categorias de datos** | Datos identificativos (usuarios), datos de salud (anonimizados, en dictados), datos economicos (facturacion) |
 | **Destinatarios** | Proveedores de IA (OpenAI, Anthropic, Deepgram, Google, DeepSeek); Supabase; Stripe; Vercel |
-| **Transferencias internacionales** | EE.UU. (DPF + SCC), China (SCC - solo si DeepSeek activado) |
+| **Transferencias internacionales** | EE.UU. (DPA + clausulas contractuales, datos anonimizados), China (clausulas contractuales + TIA - solo si DeepSeek activado) |
 | **Plazos de supresion** | Vigencia de la cuenta + 30 dias (informes); 5 anos (facturacion); efimero (audio) |
 | **Medidas de seguridad** | Cifrado AES-256 (reposo y claves), TLS 1.2+ (transito), RLS, filtro PII, roles jerarquicos, sesiones de 6h |
 
@@ -667,9 +667,9 @@ detectPii(text)
 
 | Proveedor | API utilizada | Politica de retencion | Entrenamiento con datos | DPA disponible | Jurisdiccion |
 |---|---|---|---|---|---|
-| OpenAI | GPT-4o, GPT-4o-mini, Whisper | Zero Data Retention (API) | No (API empresarial) | Si | EE.UU. (DPF) |
-| Anthropic | Claude Sonnet, Haiku | No retencion (API) | No (API) | Si | EE.UU. (DPF) |
-| Google | Gemini 1.5 Pro, 2.0 Flash | No retencion (API) | No (API de pago) | Si | EE.UU. (DPF) / UE |
+| OpenAI | GPT-4o, GPT-4o-mini, Whisper | Zero Data Retention (API) | No (API empresarial) | Si | EE.UU. |
+| Anthropic | Claude Sonnet, Haiku | No retencion (API) | No (API) | Si | EE.UU. |
+| Google | Gemini 1.5 Pro, 2.0 Flash | No retencion (API) | No (API de pago) | Si | EE.UU. |
 | Deepgram | Speech-to-Text | No retencion | No | Si | EE.UU. |
 | DeepSeek | DeepSeek-v4 | Segun terminos | Politica no transparente | Limitado | China |
 
@@ -677,18 +677,20 @@ detectPii(text)
 
 | Termino | Definicion |
 |---|---|
-| **AEPD** | Agencia Espanola de Proteccion de Datos |
-| **DPA** | Data Processing Agreement / Acuerdo de Encargado del Tratamiento |
-| **DPD/DPO** | Delegado de Proteccion de Datos / Data Protection Officer |
-| **EEE** | Espacio Economico Europeo |
-| **EIPD/DPIA** | Evaluacion de Impacto en Proteccion de Datos / Data Protection Impact Assessment |
+| **ANPD** | Autoridade Nacional de Protecao de Dados (Brasil) |
+| **AAIP** | Agencia de Acceso a la Informacion Publica (Argentina) |
+| **Controlador** | Quien toma las decisiones sobre el tratamiento (equivale a "responsable del tratamiento") |
+| **DPA** | Data Processing Agreement / Acuerdo de Tratamiento de Datos |
+| **DPO** | Data Protection Officer / Encargado de Proteccion de Datos |
+| **INAI** | Instituto Nacional de Transparencia y Proteccion de Datos (Mexico) |
+| **LFPDPPP** | Ley Federal de Proteccion de Datos Personales en Posesion de los Particulares (Mexico) |
+| **LGPD** | Lei Geral de Protecao de Dados Pessoais (Brasil, Lei 13.709/2018) |
 | **LLM** | Large Language Model / Modelo de Lenguaje de Gran Tamano |
-| **LOPDGDD** | Ley Organica 3/2018, de Proteccion de Datos Personales y garantia de los derechos digitales |
-| **NSS** | Numero de la Seguridad Social |
+| **Operador** | Quien trata los datos por cuenta del controlador (equivale a "encargado del tratamiento") |
 | **PII** | Personally Identifiable Information / Informacion de Identificacion Personal |
-| **RGPD** | Reglamento General de Proteccion de Datos (UE) 2016/679 |
+| **RIPD/DPIA** | Relatorio de Impacto a la Proteccion de Datos / Data Protection Impact Assessment |
 | **RLS** | Row Level Security / Seguridad a nivel de fila |
-| **SCC** | Standard Contractual Clauses / Clausulas Contractuales Tipo |
+| **SIC** | Superintendencia de Industria y Comercio (Colombia) |
 | **SaaS** | Software as a Service / Software como Servicio |
 | **TIA** | Transfer Impact Assessment / Evaluacion de Impacto de Transferencia |
 | **TLS** | Transport Layer Security |
@@ -701,9 +703,9 @@ detectPii(text)
 | Rol | Nombre | Firma | Fecha |
 |---|---|---|---|
 | Responsable del tratamiento | _________________________ | _________________________ | ____/____/________ |
-| Delegado de Proteccion de Datos | _________________________ | _________________________ | ____/____/________ |
+| Encargado de Proteccion de Datos (DPO) | _________________________ | _________________________ | ____/____/________ |
 | Director tecnico (CTO) | _________________________ | _________________________ | ____/____/________ |
 
 ---
 
-*Este documento ha sido elaborado conforme a la Guia para la gestion del riesgo y evaluacion de impacto en los tratamientos de datos personales de la AEPD (2021), el Reglamento (UE) 2016/679 (RGPD) y la Ley Organica 3/2018 (LOPDGDD). Debe revisarse anualmente o ante cambios significativos en el tratamiento.*
+*Este documento ha sido elaborado conforme a la Lei 13.709/2018 (LGPD) de Brasil y demas normativas de proteccion de datos de America Latina (Mexico LFPDPPP, Colombia Ley 1581/2012, Argentina Ley 25.326, Chile Ley 21.719), siguiendo buenas practicas internacionales de evaluacion de impacto (ISO/IEC 29134). El servicio no se ofrece en la Union Europea / EEE. Debe revisarse anualmente o ante cambios significativos en el tratamiento.*

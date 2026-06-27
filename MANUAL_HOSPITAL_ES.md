@@ -620,8 +620,8 @@ Para el servicio de dictado por voz, se utilizan claves de API temporales con un
 
 ### 17.5 Cumplimiento normativo
 
-- Diseñado con principios de **GDPR** (Reglamento General de Protección de Datos).
-- Residencia de datos en la UE (servidores Supabase en Europa).
+- Diseñado conforme a la **LGPD** (Brasil) y demás normativas de protección de datos de Latinoamérica (México LFPDPPP, Colombia Ley 1581/2012, Argentina Ley 25.326, Chile Ley 21.719).
+- Anonimización automática en origen: ningún dato identificativo de pacientes se envía a los proveedores de IA ni se almacena.
 - Registro de auditoría completo de todas las acciones.
 
 ---

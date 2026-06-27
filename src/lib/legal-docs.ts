@@ -116,9 +116,9 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       updated: "Última actualización: mayo 2026",
       sections: [
         {
-          title: "1. Responsable del Tratamiento",
+          title: "1. Responsable del Tratamiento (Controlador)",
           content: [
-            "El responsable del tratamiento de los datos personales es Radiogen.AI (en adelante, \"el Operador\"). Los datos de contacto para el ejercicio de derechos se encuentran al final de este documento.",
+            "El responsable del tratamiento (controlador, en la terminología de la LGPD) de los datos personales es Radiogen.AI (en adelante, \"el Operador\"). Los datos de contacto para el ejercicio de derechos y para el Encargado/Responsable de Protección de Datos (DPO) se encuentran al final de este documento.",
           ],
         },
         {
@@ -134,10 +134,11 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "3. Finalidades y Base Legal del Tratamiento",
           content: [
-            "Ejecución del contrato (Art. 6.1.b RGPD): prestación del servicio de asistencia a la redacción de informes, gestión de la cuenta de usuario, facturación y soporte.",
-            "Interés legítimo (Art. 6.1.f RGPD): mejora del servicio mediante análisis de uso agregado (no individual), prevención de fraude y abuso, seguridad de la plataforma.",
-            "Consentimiento (Art. 6.1.a RGPD): aprendizaje de estilo del usuario (personalización de informes), comunicaciones opcionales sobre el servicio.",
-            "Obligación legal (Art. 6.1.c RGPD): conservación de registros de facturación y auditoría según la normativa fiscal y sanitaria aplicable.",
+            "Radiogen.AI opera en Latinoamérica y trata los datos conforme a las leyes de protección de datos aplicables: Brasil (LGPD, Ley 13.709/2018), México (LFPDPPP), Colombia (Ley 1581/2012), Argentina (Ley 25.326), Chile (Ley 21.719) y demás normativas nacionales equivalentes.",
+            "Ejecución del contrato (Art. 7, V LGPD y equivalentes): prestación del servicio de asistencia a la redacción de informes, gestión de la cuenta de usuario, facturación y soporte.",
+            "Interés legítimo (Art. 7, IX LGPD y equivalentes): mejora del servicio mediante análisis de uso agregado (no individual), prevención de fraude y abuso, seguridad de la plataforma.",
+            "Consentimiento (Art. 7, I y Art. 8 LGPD y equivalentes): aprendizaje de estilo del usuario (personalización de informes), comunicaciones opcionales sobre el servicio.",
+            "Cumplimiento de obligación legal o regulatoria (Art. 7, II LGPD y equivalentes): conservación de registros de facturación y auditoría según la normativa fiscal y sanitaria aplicable.",
           ],
         },
         {
@@ -147,16 +148,16 @@ export const LEGAL_DOCS: Record<string, Docs> = {
             "Historial de informes y dictados: mientras la cuenta esté activa. Se eliminan junto con la cuenta.",
             "Datos de aprendizaje de estilo: mientras la cuenta esté activa.",
             "Registros de auditoría: 2 años desde su generación.",
-            "Registros de consentimiento: 5 años desde la aceptación (para cumplimiento del Art. 7 RGPD).",
+            "Registros de consentimiento: 5 años desde la aceptación (para acreditar el consentimiento conforme al Art. 8 LGPD y normativas equivalentes).",
             "Datos de facturación: según la legislación fiscal aplicable (generalmente 5-6 años).",
           ],
         },
         {
-          title: "5. Derechos del Interesado",
+          title: "5. Derechos del Titular de los Datos",
           content: [
-            "De conformidad con el RGPD (Arts. 15-22), el usuario tiene derecho a: acceso a sus datos personales; rectificación de datos inexactos; supresión de sus datos (\"derecho al olvido\"); limitación del tratamiento; portabilidad de los datos; oposición al tratamiento; no ser objeto de decisiones automatizadas.",
-            "Para ejercer cualquiera de estos derechos, el usuario puede enviar una solicitud a info@radiogen.ai indicando claramente el derecho que desea ejercer y proporcionando su identificación. Responderemos en un plazo máximo de 30 días.",
-            "El usuario tiene también derecho a presentar una reclamación ante la autoridad de control de protección de datos competente (en España, la AEPD).",
+            "De conformidad con las leyes de protección de datos de Latinoamérica (Art. 18 LGPD de Brasil, derechos ARCO de México, y equivalentes), el titular tiene derecho a: confirmación de la existencia del tratamiento; acceso a sus datos personales; rectificación de datos inexactos o desactualizados; anonimización, bloqueo o eliminación de datos innecesarios o tratados en disconformidad; portabilidad de los datos; eliminación de los datos tratados con base en el consentimiento; información sobre las entidades con las que se compartieron los datos; y revocación del consentimiento.",
+            "Para ejercer cualquiera de estos derechos, el titular puede enviar una solicitud a info@radiogen.ai indicando claramente el derecho que desea ejercer y proporcionando su identificación. Responderemos en el plazo establecido por la normativa aplicable (en general, 15 días conforme a la LGPD).",
+            "El titular tiene también derecho a presentar una reclamación ante la autoridad de protección de datos competente de su país (p. ej., ANPD en Brasil, INAI en México, SIC en Colombia, AAIP en Argentina, o la Agencia de Protección de Datos Personales en Chile).",
           ],
         },
         {
@@ -164,7 +165,8 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           content: [
             "Para la generación de informes, Radiogen.AI envía texto clínico anonimizado a proveedores externos de inteligencia artificial mediante APIs seguras. Antes de cada envío, el sistema aplica de forma obligatoria un filtro de anonimización que detecta y elimina automáticamente cualquier dato identificativo del paciente (nombres, DNI/NIE/CURP/CPF/RUT/cédula, teléfonos, emails, números de historia clínica). Este filtro no puede ser desactivado por el usuario y se ejecuta tanto en el cliente como en el servidor.",
             "Los proveedores de IA utilizados operan bajo acuerdos de procesamiento de datos (DPA) que garantizan: política de retención cero (zero data retention) — los textos enviados no se almacenan ni se utilizan para entrenamiento de modelos de IA; cifrado TLS 1.3 en tránsito; cumplimiento con estándares de seguridad SOC 2 y, cuando aplique, HIPAA (BAA).",
-            "En consecuencia, ningún dato identificativo de pacientes es transferido internacionalmente. Los únicos datos enviados a procesamiento externo son descripciones clínicas anonimizadas (ej.: \"masa de 3 cm en lóbulo superior derecho\") que, al carecer de información identificativa, no constituyen datos personales de salud según el RGPD (Considerando 26) ni la mayoría de normativas latinoamericanas de protección de datos.",
+            "En consecuencia, ningún dato identificativo de pacientes es transferido internacionalmente. Los únicos datos enviados a procesamiento externo son descripciones clínicas anonimizadas (ej.: \"masa de 3 cm en lóbulo superior derecho\") que, al carecer de información identificativa, no constituyen datos personales según el principio de anonimización reconocido por la LGPD (Art. 12) y demás normativas latinoamericanas de protección de datos.",
+            "Las transferencias internacionales a los proveedores de IA se realizan con las garantías exigidas por la normativa aplicable (cláusulas contractuales, acuerdos de tratamiento de datos y, cuando corresponda, consentimiento específico), conforme a los Arts. 33-36 de la LGPD y equivalentes en cada país.",
             "Los datos personales de los usuarios (cuenta, preferencias, historial de informes) se almacenan exclusivamente en la infraestructura de Radiogen.AI con las medidas de seguridad detalladas en la sección 7.",
           ],
         },
@@ -195,7 +197,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "1. Objeto y Ámbito",
           content: [
-            "Este Acuerdo de Tratamiento de Datos (DPA) establece las condiciones bajo las cuales Radiogen.AI procesa datos clínicos anonimizados en nombre del usuario y su organización, en cumplimiento del Art. 28 del RGPD.",
+            "Este Acuerdo de Tratamiento de Datos (DPA) establece las condiciones bajo las cuales Radiogen.AI actúa como operador (encargado) procesando datos clínicos anonimizados en nombre del usuario y su organización (controlador), en cumplimiento de los Arts. 37-39 de la LGPD de Brasil y de la normativa de protección de datos equivalente de cada país de Latinoamérica.",
           ],
         },
         {
@@ -231,7 +233,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "6. Notificación de Brechas",
           content: [
-            "En caso de brecha de seguridad que afecte a datos personales, Radiogen.AI notificará a la organización afectada en un plazo máximo de 72 horas desde la detección, de conformidad con el Art. 33 del RGPD. La notificación incluirá: naturaleza de la brecha, categorías de datos afectados, medidas adoptadas, y punto de contacto.",
+            "En caso de incidente de seguridad que pueda generar riesgo o daño relevante a los titulares, Radiogen.AI notificará a la organización afectada en un plazo razonable desde la detección, de conformidad con el Art. 48 de la LGPD y la normativa equivalente, para que esta pueda cumplir sus obligaciones de comunicación a la autoridad de protección de datos (p. ej., ANPD) y a los titulares. La notificación incluirá: naturaleza del incidente, categorías de datos afectados, medidas adoptadas, y punto de contacto.",
           ],
         },
         {
@@ -421,10 +423,11 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "3. Purposes and Legal Basis",
           content: [
-            "Contract performance (Art. 6.1.b GDPR): provision of report drafting assistance, user account management, billing, and support.",
-            "Legitimate interest (Art. 6.1.f GDPR): service improvement through aggregate usage analysis, fraud and abuse prevention, platform security.",
-            "Consent (Art. 6.1.a GDPR): user style learning (report personalization), optional service communications.",
-            "Legal obligation (Art. 6.1.c GDPR): retention of billing and audit records as required by applicable tax and healthcare regulations.",
+            "Radiogen.AI operates in Latin America and processes data in accordance with the applicable data protection laws: Brazil (LGPD, Law 13.709/2018), Mexico (LFPDPPP), Colombia (Law 1581/2012), Argentina (Law 25.326), Chile (Law 21.719), and other equivalent national regulations.",
+            "Contract performance (Art. 7, V LGPD and equivalents): provision of report drafting assistance, user account management, billing, and support.",
+            "Legitimate interest (Art. 7, IX LGPD and equivalents): service improvement through aggregate usage analysis, fraud and abuse prevention, platform security.",
+            "Consent (Art. 7, I and Art. 8 LGPD and equivalents): user style learning (report personalization), optional service communications.",
+            "Compliance with a legal or regulatory obligation (Art. 7, II LGPD and equivalents): retention of billing and audit records as required by applicable tax and healthcare regulations.",
           ],
         },
         {
@@ -434,16 +437,16 @@ export const LEGAL_DOCS: Record<string, Docs> = {
             "Report and dictation history: while the account is active. Deleted with the account.",
             "Style learning data: while the account is active.",
             "Audit logs: 2 years from generation.",
-            "Consent records: 5 years from acceptance (for Art. 7 GDPR compliance).",
+            "Consent records: 5 years from acceptance (to evidence consent under Art. 8 LGPD and equivalent regulations).",
             "Billing data: as required by applicable tax legislation (generally 5-6 years).",
           ],
         },
         {
           title: "5. Data Subject Rights",
           content: [
-            "Under the GDPR (Arts. 15-22), users have the right to: access their personal data; rectification of inaccurate data; erasure of their data (\"right to be forgotten\"); restriction of processing; data portability; objection to processing; not be subject to automated decisions.",
-            "To exercise any of these rights, users may send a request to info@radiogen.ai clearly stating the right they wish to exercise and providing identification. We will respond within a maximum of 30 days.",
-            "Users also have the right to lodge a complaint with the competent data protection supervisory authority.",
+            "Under Latin American data protection laws (Art. 18 LGPD of Brazil, Mexico's ARCO rights, and equivalents), the data subject has the right to: confirmation that processing exists; access to their personal data; rectification of inaccurate or outdated data; anonymization, blocking, or deletion of unnecessary or non-compliant data; data portability; deletion of data processed on the basis of consent; information about the entities with which data has been shared; and withdrawal of consent.",
+            "To exercise any of these rights, users may send a request to info@radiogen.ai clearly stating the right they wish to exercise and providing identification. We will respond within the period established by the applicable law (generally 15 days under the LGPD).",
+            "Users also have the right to lodge a complaint with the competent data protection authority of their country (e.g., ANPD in Brazil, INAI in Mexico, SIC in Colombia, AAIP in Argentina, or the Personal Data Protection Agency in Chile).",
           ],
         },
         {
@@ -451,7 +454,8 @@ export const LEGAL_DOCS: Record<string, Docs> = {
           content: [
             "To generate reports, Radiogen.AI sends anonymized clinical text to external AI providers via secure APIs. Before each transmission, the system applies a mandatory anonymization filter that automatically detects and removes any patient-identifiable data (names, national IDs, phone numbers, emails, medical record numbers). This filter cannot be disabled by the user and runs on both the client and server side.",
             "AI providers operate under Data Processing Agreements (DPAs) that guarantee: zero data retention policy — submitted texts are not stored or used for AI model training; TLS 1.3 encryption in transit; SOC 2 compliance and, where applicable, HIPAA (BAA) compliance.",
-            "Consequently, no patient-identifiable data is transferred internationally. The only data sent for external processing consists of anonymized clinical descriptions (e.g., \"3 cm mass in the right upper lobe\") which, lacking identifiable information, do not constitute personal health data under the GDPR (Recital 26) or most data protection regulations.",
+            "Consequently, no patient-identifiable data is transferred internationally. The only data sent for external processing consists of anonymized clinical descriptions (e.g., \"3 cm mass in the right upper lobe\") which, lacking identifiable information, do not constitute personal data under the anonymization principle recognized by the LGPD (Art. 12) and other Latin American data protection regulations.",
+            "International transfers to AI providers are carried out with the safeguards required by applicable law (contractual clauses, data processing agreements, and, where applicable, specific consent), in accordance with Arts. 33-36 of the LGPD and equivalents in each country.",
             "Users' personal data (account, preferences, report history) is stored exclusively within Radiogen.AI infrastructure with the security measures detailed in section 7.",
           ],
         },
@@ -479,12 +483,12 @@ export const LEGAL_DOCS: Record<string, Docs> = {
       title: "Data Processing Agreement",
       updated: "Last updated: May 2026",
       sections: [
-        { title: "1. Object and Scope", content: ["This Data Processing Agreement (DPA) establishes the conditions under which Radiogen.AI processes anonymized clinical data on behalf of the user and their organization, in compliance with Art. 28 of the GDPR."] },
+        { title: "1. Object and Scope", content: ["This Data Processing Agreement (DPA) establishes the conditions under which Radiogen.AI acts as processor (operator), processing anonymized clinical data on behalf of the user and their organization (controller), in compliance with Arts. 37-39 of Brazil's LGPD and equivalent data protection regulations in each Latin American country."] },
         { title: "2. Data Categories Processed", content: ["Anonymized radiology dictation text (voice-to-text transcription).", "Report findings and conclusions (generated text).", "Radiologist style preferences (normal phrases, templates).", "NO patient-identifiable data is processed. The system automatically detects and removes any personal data (IDs, phone numbers, names, medical record numbers) before processing."] },
         { title: "3. AI Processing", content: ["Anonymized dictation text is processed through secure APIs for: structuring and organizing findings from the radiologist's dictation; organizing radiological conclusions based on dictation; voice transcription error correction; writing improvement. In no case are diagnoses or clinical recommendations generated.", "Before each transmission, a mandatory anonymization filter automatically removes any patient-identifiable data. This filter operates in dual layers (client and server) and cannot be disabled.", "AI providers operate under contracts with zero data retention policy: processed texts are not stored or used for model training. Radiogen.AI does not use user data to train AI models."] },
         { title: "4. Sub-processors", content: ["Radiogen.AI uses sub-processors for service provision. The updated list of sub-processors can be consulted by the organization administrator.", "The operator will notify users of changes to sub-processors with at least 30 days' notice."] },
         { title: "5. Security Measures", content: ["Technical measures detailed in the Privacy Policy apply, including: encryption at rest and in transit, per-user isolation (RLS), automatic PII detection, immutable audit logs, rate limiting, and HTTP security headers."] },
-        { title: "6. Breach Notification", content: ["In the event of a security breach affecting personal data, Radiogen.AI will notify the affected organization within a maximum of 72 hours of detection, in accordance with Art. 33 of the GDPR."] },
+        { title: "6. Breach Notification", content: ["In the event of a security incident that may create relevant risk or harm to data subjects, Radiogen.AI will notify the affected organization within a reasonable period of detection, in accordance with Art. 48 of the LGPD and equivalent regulations, so that the organization can meet its obligations to notify the data protection authority (e.g., ANPD) and the data subjects."] },
         { title: "7. Data Deletion", content: ["Upon service termination or user request, Radiogen.AI will delete all personal data and generated content within a maximum of 30 days, unless legal retention obligations apply."] },
         { title: "8. Audit Rights", content: ["The client organization has the right to request information about security measures implemented and sub-processors used. Audit requests should be directed to info@radiogen.ai with a minimum of 30 days' notice."] },
       ],
@@ -523,18 +527,18 @@ export const LEGAL_DOCS: Record<string, Docs> = {
     privacy_policy: { title: "Política de Privacidade", updated: "Última atualização: maio 2026", sections: [
       { title: "1. Responsável pelo Tratamento", content: ["O responsável pelo tratamento dos dados pessoais é o Radiogen.AI."] },
       { title: "2. Dados Coletados", content: ["Dados de conta (nome, e-mail, senha hash, função profissional), dados de uso (laudos, ditados anonimizados, preferências), dados técnicos (IP, user-agent, timestamps). NÃO são coletados dados identificáveis de pacientes."] },
-      { title: "3. Base Legal", content: ["Execução do contrato (Art. 6.1.b RGPD), interesse legítimo (Art. 6.1.f), consentimento (Art. 6.1.a), obrigação legal (Art. 6.1.c)."] },
-      { title: "4. Direitos do Titular", content: ["Acesso, retificação, exclusão, limitação, portabilidade, oposição e decisões automatizadas (Arts. 15-22 RGPD/LGPD). Solicitações: info@radiogen.ai, prazo de resposta: 30 dias."] },
+      { title: "3. Base Legal", content: ["O Radiogen.AI atua na América Latina e trata os dados conforme a LGPD (Lei 13.709/2018) e demais leis nacionais equivalentes (México LFPDPPP, Colômbia Lei 1581/2012, Argentina Lei 25.326, Chile Lei 21.719). Bases legais: execução do contrato (Art. 7, V LGPD), legítimo interesse (Art. 7, IX), consentimento (Art. 7, I e Art. 8), cumprimento de obrigação legal ou regulatória (Art. 7, II)."] },
+      { title: "4. Direitos do Titular", content: ["Confirmação da existência de tratamento, acesso, correção, anonimização/bloqueio/eliminação, portabilidade, eliminação dos dados tratados com base no consentimento, informação sobre compartilhamento e revogação do consentimento (Art. 18 LGPD e equivalentes). Solicitações: info@radiogen.ai, prazo de resposta: 15 dias (LGPD). O titular pode reclamar à autoridade de proteção de dados competente (p. ex., ANPD no Brasil)."] },
       { title: "5. Transferências Internacionais e Processamento de IA", content: ["Para a geração de laudos, o Radiogen.AI envia texto clínico anonimizado a provedores externos de inteligência artificial por meio de APIs seguras. Antes de cada envio, o sistema aplica obrigatoriamente um filtro de anonimização que detecta e remove automaticamente qualquer dado identificável do paciente (nomes, CPF/RG, telefones, e-mails, números de prontuário). Este filtro não pode ser desativado pelo usuário e é executado tanto no cliente quanto no servidor.", "Os provedores de IA operam sob acordos de processamento de dados (DPA) que garantem: política de retenção zero — os textos enviados não são armazenados nem utilizados para treinamento de modelos; criptografia TLS 1.3 em trânsito; conformidade SOC 2 e, quando aplicável, HIPAA (BAA).", "Nenhum dado identificável de pacientes é transferido internacionalmente. Os dados pessoais dos usuários são armazenados exclusivamente na infraestrutura do Radiogen.AI."] },
       { title: "6. Medidas de Segurança", content: ["Criptografia AES-256-GCM em repouso, TLS 1.3 em trânsito, RLS no banco de dados, detecção automática de PII, rate limiting, headers de segurança HTTP, trilha de auditoria imutável."] },
       { title: "7. Contato", content: ["info@radiogen.ai."] },
     ]},
     data_processing: { title: "Acordo de Tratamento de Dados", updated: "Última atualização: maio 2026", sections: [
-      { title: "1. Objeto", content: ["Este DPA estabelece as condições de processamento de dados clínicos anonimizados pelo Radiogen.AI (Art. 28 RGPD/LGPD)."] },
+      { title: "1. Objeto", content: ["Este DPA estabelece as condições sob as quais o Radiogen.AI atua como operador, tratando dados clínicos anonimizados em nome do usuário e de sua organização (controlador), em conformidade com os Arts. 37-39 da LGPD e legislação equivalente na América Latina."] },
       { title: "2. Dados Processados", content: ["Texto de ditado radiológico anonimizado, achados e conclusões de laudos, preferências de estilo. NÃO são processados dados identificáveis de pacientes."] },
       { title: "3. Processamento por IA", content: ["O texto anonimizado de ditado é processado por meio de APIs seguras para: estruturação e organização de achados a partir do ditado do radiologista; organização de conclusões radiológicas com base no ditado; correção de erros de transcrição de voz; melhoria de redação. Em nenhum caso são gerados diagnósticos nem recomendações clínicas.", "Antes de cada envio, um filtro obrigatório de anonimização remove automaticamente qualquer dado identificável do paciente. Os provedores operam sob política de retenção zero e os dados NÃO são usados para treinamento de modelos."] },
       { title: "4. Subprocessadores", content: ["O Radiogen.AI utiliza subprocessadores para a prestação do serviço. A lista atualizada pode ser consultada pelo administrador da organização."] },
-      { title: "5. Notificação de Violações", content: ["Em caso de violação de segurança, o Radiogen.AI notificará a organização afetada em até 72 horas (Art. 33 RGPD)."] },
+      { title: "5. Notificação de Incidentes", content: ["Em caso de incidente de segurança que possa acarretar risco ou dano relevante aos titulares, o Radiogen.AI notificará a organização afetada em prazo razoável a partir da detecção, conforme o Art. 48 da LGPD, para que esta cumpra suas obrigações de comunicação à ANPD e aos titulares."] },
       { title: "6. Contato", content: ["info@radiogen.ai."] },
     ]},
     ai_disclaimer: { title: "Aviso sobre Inteligência Artificial", updated: "Última atualização: maio 2026", sections: [

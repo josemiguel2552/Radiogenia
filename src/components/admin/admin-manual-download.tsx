@@ -225,8 +225,8 @@ ${sectionTitle("11")}Seguridad y privacidad</span></div>
       <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">RBAC, rate limiting, aprobación manual, cabeceras seguras.</p>
     </div>
     <div style="flex:1;min-width:45%;background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;">
-      <p style="font-size:8px;font-weight:700;color:${C.lteal};margin:0 0 2px;">GDPR</p>
-      <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">Residencia UE, registro de auditoría completo.</p>
+      <p style="font-size:8px;font-weight:700;color:${C.lteal};margin:0 0 2px;">LGPD</p>
+      <p style="font-size:8px;color:rgba(255,255,255,0.7);margin:0;line-height:1.5;">Anonimización en origen, registro de auditoría completo.</p>
     </div>
   </div>
 </div>

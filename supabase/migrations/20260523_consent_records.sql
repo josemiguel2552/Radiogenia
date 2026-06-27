@@ -1,5 +1,5 @@
 -- Consent records: stores acceptance of legal documents by org members.
--- Required for RGPD compliance — proof that hospital users accepted
+-- Required for LGPD / LATAM data protection compliance — proof that hospital users accepted
 -- terms, privacy policy, and data processing agreement.
 
 create table if not exists public.consent_records (
