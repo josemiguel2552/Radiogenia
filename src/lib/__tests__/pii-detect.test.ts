@@ -300,6 +300,103 @@ describe("detectPii", () => {
     });
   });
 
+  // ── Reinforced names / surnames (Spanish + English) ──
+  describe("English and Spanish names & surnames", () => {
+    it("detects English full name (known first name + surname)", () => {
+      const matches = detectPii("Patient John Smith referred for chest CT.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects English female full name", () => {
+      const matches = detectPii("Report for Mary Johnson, abdominal ultrasound.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects a sequence of two known surnames (uncommon first name)", () => {
+      const matches = detectPii("Se presenta Yaiza García Betancor para resonancia.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects 'Apellido, Nombre' list format (Spanish)", () => {
+      const matches = detectPii("García, Juan — TC de tórax.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects 'Surname, Firstname' list format (English)", () => {
+      const matches = detectPii("Smith, John — MRI brain.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("does NOT flag medical eponyms as names", () => {
+      const text = [
+        "Down syndrome features noted.",
+        "Findings consistent with a Smith fracture.",
+        "Positive Murphy sign on examination.",
+        "Baker cyst in the popliteal fossa.",
+      ].join(" ");
+      const matches = detectPii(text);
+      expect(matches.filter((m) => m.type === "name")).toHaveLength(0);
+    });
+
+    it("does not false-positive on an English radiology report", () => {
+      const text = [
+        "CT chest without contrast.",
+        "Lungs are clear without consolidation or effusion.",
+        "No mediastinal lymphadenopathy.",
+        "Normal cardiac silhouette.",
+        "Impression: No acute findings.",
+      ].join(" ");
+      const matches = detectPii(text);
+      expect(matches).toHaveLength(0);
+    });
+  });
+
+  // ── US Social Security Number ──
+  describe("US SSN detection", () => {
+    it("detects a valid US SSN", () => {
+      const matches = detectPii("Patient SSN 123-45-6789 on file.");
+      expect(matches.some((m) => m.type === "us_ssn")).toBe(true);
+    });
+
+    it("ignores invalid SSN area numbers (000 / 666 / 9xx)", () => {
+      const matches = detectPii("Codes 000-45-6789, 666-12-3456 and 900-11-2222.");
+      expect(matches.filter((m) => m.type === "us_ssn")).toHaveLength(0);
+    });
+
+    it("does not treat a date as an SSN", () => {
+      const matches = detectPii("Study performed on 12-05-2024.");
+      expect(matches.filter((m) => m.type === "us_ssn")).toHaveLength(0);
+    });
+  });
+
+  // ── English medical record identifiers ──
+  describe("English medical record numbers", () => {
+    it("detects MRN", () => {
+      const matches = detectPii("MRN: 12345678, prior comparison available.");
+      expect(matches.some((m) => m.type === "nhc")).toBe(true);
+    });
+
+    it("detects 'Patient ID'", () => {
+      const matches = detectPii("Patient ID 9876543 — follow-up CT.");
+      expect(matches.some((m) => m.type === "nhc")).toBe(true);
+    });
+
+    it("strips English PII from a realistic dictation", () => {
+      const text = [
+        "Patient John Smith, MRN: 45678901, SSN 123-45-6789.",
+        "CT abdomen and pelvis with contrast.",
+        "Liver is normal in size without focal lesions.",
+        "Spleen homogeneous. Kidneys unremarkable.",
+      ].join(" ");
+      const result = stripPii(text);
+      expect(result.cleaned).not.toContain("John Smith");
+      expect(result.cleaned).not.toContain("45678901");
+      expect(result.cleaned).not.toContain("123-45-6789");
+      expect(result.cleaned).toContain("Liver is normal in size");
+      expect(result.cleaned).toContain("Kidneys unremarkable");
+    });
+  });
+
   describe("hasPii", () => {
     it("returns true when PII exists", () => {
       expect(hasPii("Email: test@example.com")).toBe(true);

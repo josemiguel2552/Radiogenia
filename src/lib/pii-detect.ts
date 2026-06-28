@@ -1,5 +1,5 @@
 export interface PiiMatch {
-  type: "dni" | "nie" | "phone" | "email" | "ssn" | "name" | "curp" | "rfc" | "cpf" | "rut" | "cedula" | "nhc";
+  type: "dni" | "nie" | "phone" | "email" | "ssn" | "us_ssn" | "name" | "curp" | "rfc" | "cpf" | "rut" | "cedula" | "nhc";
   value: string;
   index: number;
 }
@@ -461,7 +461,7 @@ function detectSsn(text: string): PiiMatch[] {
 // These are patient identifiers within a hospital.
 // ---------------------------------------------------------------------------
 function detectNhc(text: string): PiiMatch[] {
-  const re = /(?:NHC|N\.?H\.?C\.?|HC|H\.?C\.?|[Nn]º?\s*(?:[Hh]istoria|[Hh]ist)\.?|[Hh]istoria\s*[Cc]línica)\s*:?\s*#?\s*(\d[\d/.-]{3,12}\d)/g;
+  const re = /(?:NHC|N\.?H\.?C\.?|HC|H\.?C\.?|[Nn]º?\s*(?:[Hh]istoria|[Hh]ist)\.?|[Hh]istoria\s*[Cc]l[íi]nica|MRN|M\.?R\.?N\.?|medical\s*record(?:\s*(?:no\.?|number|#))?|patient\s*(?:id|number|no\.?|#)|record\s*(?:no\.?|number|#)|chart\s*(?:no\.?|number|#))\s*:?\s*#?\s*(\d[\d/.-]{3,12}\d)/gi;
   const results: PiiMatch[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
@@ -524,6 +524,29 @@ const SPANISH_NAMES = new Set([
   "génesis","gerónimo","gael","ian","ivana","josué","lautaro","leila",
   "liam","luana","luciana","maite","malena","máximo","nahuel","oriana",
   "pilar","renato","romina","santino","thiago","tobías","valentino","zoe",
+  // English male first names
+  "james","john","robert","michael","william","richard","joseph","charles",
+  "christopher","matthew","anthony","donald","steven","andrew","joshua",
+  "kenneth","brian","george","timothy","ronald","jason","jeffrey","ryan",
+  "jacob","nicholas","jonathan","stephen","larry","justin","scott","brandon",
+  "frank","raymond","jack","dennis","jerry","tyler","jose","henry","douglas",
+  "peter","zachary","kyle","walter","harold","jeremy","ethan","carl","keith",
+  "roger","gerald","christian","terry","sean","arthur","austin","noah","jesse",
+  "joe","bryan","billy","jordan","albert","dylan","bruce","willie","wayne",
+  "roy","ralph","randy","eugene","russell","louis","philip","bobby","johnny",
+  "bradley","harry","fred","stanley","leonard","nathan","travis","cody",
+  // English female first names
+  "mary","patricia","jennifer","linda","elizabeth","barbara","susan","jessica",
+  "sarah","karen","lisa","nancy","betty","margaret","sandra","ashley","kimberly",
+  "donna","michelle","dorothy","carol","melissa","deborah","stephanie","rebecca",
+  "sharon","cynthia","kathleen","amy","shirley","anna","brenda","pamela","nicole",
+  "helen","samantha","katherine","christine","debra","rachel","carolyn","janet",
+  "catherine","heather","diane","ruth","julie","joyce","virginia","kelly",
+  "lauren","christina","joan","evelyn","judith","megan","cheryl","hannah",
+  "jacqueline","martha","gloria","ann","madison","frances","kathryn","janice",
+  "jean","abigail","alice","judy","grace","denise","amber","doris","marilyn",
+  "danielle","beverly","theresa","brittany","charlotte","marie","kayla","lori",
+  "tiffany","tracy","stacy","crystal","wendy","dawn","ellen","kristen","leslie",
 ]);
 
 function normalizeForLookup(word: string): string {
@@ -534,6 +557,77 @@ function isKnownName(word: string): boolean {
   const lower = word.toLowerCase();
   const normalized = normalizeForLookup(word);
   return SPANISH_NAMES.has(lower) || SPANISH_NAMES.has(normalized);
+}
+
+// ---------------------------------------------------------------------------
+// Common surnames (Spanish / LATAM + English) to strengthen full-name detection
+// ---------------------------------------------------------------------------
+const SURNAMES = new Set([
+  // Spanish / LATAM surnames
+  "garcía","garcia","rodríguez","rodriguez","gonzález","gonzalez","fernández",
+  "fernandez","lópez","lopez","martínez","martinez","sánchez","sanchez","pérez",
+  "perez","gómez","gomez","martín","martin","jiménez","jimenez","ruiz",
+  "hernández","hernandez","díaz","diaz","moreno","muñoz","munoz","álvarez",
+  "alvarez","romero","alonso","gutiérrez","gutierrez","navarro","torres",
+  "domínguez","dominguez","vázquez","vazquez","ramos","gil","ramírez","ramirez",
+  "serrano","blanco","suárez","suarez","molina","morales","ortega","delgado",
+  "castro","ortiz","rubio","marín","marin","sanz","núñez","nunez","iglesias",
+  "medina","garrido","cortés","cortes","castillo","santos","lozano","guerrero",
+  "cano","prieto","méndez","mendez","cruz","calvo","gallego","vidal","león",
+  "leon","herrera","márquez","marquez","peña","pena","flores","cabrera","campos",
+  "vega","fuentes","carrasco","caballero","reyes","nieto","aguilar","pascual",
+  "santana","herrero","montero","hidalgo","giménez","gimenez","ibáñez","ibanez",
+  "ferrer","durán","duran","santiago","benítez","benitez","mora","vicente",
+  "vargas","arias","carmona","crespo","román","roman","pastor","soto","sáez",
+  "saez","velasco","soler","moya","esteban","parra","bravo","gallardo","rojas",
+  "chávez","chavez","mendoza","aguirre","cárdenas","cardenas","salazar","pacheco",
+  "maldonado","espinoza","figueroa","cordero","paredes","contreras","sepúlveda",
+  "sepulveda","tapia","vergara","acosta","rivera","ríos","rios","cáceres",
+  "caceres","quispe","mamani","huamán","huaman","betancor","santiago","ponce",
+  "miranda","cabello","escobar","peralta","carrillo","villalobos","zúñiga",
+  "zuniga","fuentealba","cisneros","montoya","valdez","valdés","valdes",
+  // English surnames
+  "smith","johnson","williams","brown","jones","miller","davis","wilson",
+  "anderson","taylor","thomas","moore","jackson","lee","thompson","white",
+  "harris","clark","lewis","robinson","walker","young","allen","king","wright",
+  "scott","green","baker","adams","nelson","hill","campbell","mitchell",
+  "roberts","carter","phillips","evans","turner","parker","collins","edwards",
+  "stewart","morris","murphy","cook","rogers","morgan","peterson","cooper",
+  "reed","bailey","bell","kelly","howard","ward","cox","richardson","wood",
+  "watson","brooks","bennett","gray","james","hughes","price","myers","long",
+  "foster","sanders","ross","powell","sullivan","russell","jenkins","perry",
+  "butler","barnes","fisher","henderson","coleman","simmons","patterson",
+  "jordan","reynolds","hamilton","graham","kim","wallace","woods","cole",
+  "west","owens","harrison","fox","ellis","gibson","mcdonald","webb","tucker",
+  "porter","hunter","hicks","crawford","henry","boyd","mason","morales",
+]);
+
+function isKnownSurname(word: string): boolean {
+  const lower = word.toLowerCase();
+  const normalized = normalizeForLookup(word);
+  return SURNAMES.has(lower) || SURNAMES.has(normalized);
+}
+
+// Words that, when they follow a capitalized term, signal a medical eponym
+// ("Down syndrome", "Smith fracture", "Murphy sign") rather than a person name.
+const EPONYM_FOLLOWERS = new Set([
+  "sign","signo","sinal","syndrome","sindrome","síndrome","disease","enfermedad",
+  "doenca","doença","fracture","fractura","fratura","cyst","quiste","cisto",
+  "ligament","ligamento","maneuver","maniobra","manobra","test","prueba","teste",
+  "classification","clasificacion","clasificación","classificacao","classificação",
+  "grade","grado","grau","score","indice","índice","space","espacio","espaco",
+  "espaço","fossa","fosa","canal","hernia","hernia","point","punto","ponto",
+  "line","linea","línea","linha","angle","angulo","ángulo","view","projection",
+  "proyeccion","proyección","position","posicion","posición","method","metodo",
+  "método","lesion","lesión","tubercle","tuberculo","tubérculo","node","nodulo",
+  "nódulo","gland","glandula","glándula","duct","conducto","fold","pliegue",
+  "recess","receso","triangle","triangulo","triángulo","plane","plano","septum",
+  "tabique","band","banda","disease's","tumor","tumour","plexus","plexo",
+]);
+
+function followedByEponymTerm(text: string, end: number): boolean {
+  const after = text.slice(end).match(/^\s+([A-Za-zÀ-ÿ']+)/);
+  return !!after && EPONYM_FOLLOWERS.has(normalizeForLookup(after[1]));
 }
 
 const CAPITALIZED_WORD = /[A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ][a-záéíóúñàèìòùüçâêîôûãõ]+/;
@@ -633,6 +727,75 @@ function detectNames(text: string): PiiMatch[] {
 }
 
 // ---------------------------------------------------------------------------
+// Surname-anchored names ("Apellido, Nombre" lists and surname-bearing sequences)
+// ---------------------------------------------------------------------------
+function detectSurnameNames(text: string): PiiMatch[] {
+  const results: PiiMatch[] = [];
+
+  // Pattern A: "Apellido, Nombre" / "Apellido Apellido, Nombre Nombre"
+  const comma = new RegExp(
+    `(?<![A-Za-zÀ-ÿ])(${CAPITALIZED_WORD.source}(?:\\s+${CAPITALIZED_WORD.source})?)\\s*,\\s*(${CAPITALIZED_WORD.source}(?:\\s+${CAPITALIZED_WORD.source})?)`,
+    "g",
+  );
+  let m: RegExpExecArray | null;
+  while ((m = comma.exec(text)) !== null) {
+    const tokens = [...m[1].split(/\s+/), ...m[2].split(/\s+/)];
+    if (tokens.some((w) => isAnatomyTerm(w))) continue;
+    const known = tokens.some((w) => isKnownName(w) || isKnownSurname(w));
+    if (!known) continue;
+    results.push({ type: "name", value: m[0].trim(), index: m.index });
+  }
+
+  // Pattern B: capitalized sequence containing >=2 known name/surname tokens
+  // (catches "García Betancor" even when the first name is uncommon).
+  const seq = new RegExp(
+    `(?<![A-Za-zÀ-ÿ])(${CAPITALIZED_WORD.source})` +
+      `((?:\\s+(?:de(?:l)?|da|das|dos|do|la|las|los|y|e))*\\s+${CAPITALIZED_WORD.source})+`,
+    "g",
+  );
+  while ((m = seq.exec(text)) !== null) {
+    const full = m[0].trim();
+    const words = full.split(/\s+/);
+    if (words.some((w) => isAnatomyTerm(w))) continue;
+    if (followedByEponymTerm(text, m.index + m[0].length)) continue;
+
+    const knownCount = words.filter(
+      (w) => !CONNECTORS.test(w.toLowerCase()) && (isKnownName(w) || isKnownSurname(w)),
+    ).length;
+    if (knownCount < 2) continue;
+
+    results.push({ type: "name", value: full, index: m.index });
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// US Social Security Number: XXX-XX-XXXX
+// ---------------------------------------------------------------------------
+function detectUsSsn(text: string): PiiMatch[] {
+  const re = /(?<!\d)(\d{3})-(\d{2})-(\d{4})(?!\d)/g;
+  const results: PiiMatch[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const idx = m.index;
+    if (insideDateOrTime(text, idx, idx + m[0].length)) continue;
+    if (followedByMedicalUnit(text, idx + m[0].length)) continue;
+    if (precededByRadiologyContext(text, idx)) continue;
+
+    const area = parseInt(m[1], 10);
+    const group = parseInt(m[2], 10);
+    const serial = parseInt(m[3], 10);
+    // Invalid SSN ranges per SSA rules
+    if (area === 0 || area === 666 || area >= 900) continue;
+    if (group === 0 || serial === 0) continue;
+
+    results.push({ type: "us_ssn", value: m[0], index: idx });
+  }
+  return results;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -648,13 +811,26 @@ export function detectPii(text: string): PiiMatch[] {
     ...detectPhone(text),
     ...detectEmail(text),
     ...detectSsn(text),
+    ...detectUsSsn(text),
     ...detectNhc(text),
     ...detectNames(text),
+    ...detectSurnameNames(text),
   ];
 
-  matches.sort((a, b) => a.index - b.index);
+  // Resolve overlaps: keep the earliest, longest match and drop anything that
+  // overlaps it (prevents double placeholders from the two name detectors).
+  matches.sort((a, b) => a.index - b.index || b.value.length - a.value.length);
 
-  return matches;
+  const deduped: PiiMatch[] = [];
+  let lastEnd = -1;
+  for (const match of matches) {
+    if (match.index >= lastEnd) {
+      deduped.push(match);
+      lastEnd = match.index + match.value.length;
+    }
+  }
+
+  return deduped;
 }
 
 export function hasPii(text: string): boolean {
@@ -671,6 +847,7 @@ const PII_PLACEHOLDER: Record<PiiMatch["type"], string> = {
   phone: "[TELÉFONO]",
   email: "[EMAIL]",
   ssn: "[NSS]",
+  us_ssn: "[SSN]",
   name: "[NOMBRE]",
   curp: "[CURP]",
   rfc: "[RFC]",
