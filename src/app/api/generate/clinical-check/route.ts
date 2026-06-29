@@ -134,11 +134,20 @@ Se há dados faltantes, responda em formato JSON (sem blocos de código):
 IMPORTANTE: o insertText deve ser uma frase radiológica profissional pronta para adicionar ao laudo, NÃO uma pergunta nem uma explicação.`,
   };
 
+  const langLabel: Record<Lang, string> = { es: "español (Spanish)", en: "English", pt: "português (Portuguese)" };
+  const langEnforce: Record<Lang, string> = {
+    es: `⚠️ IDIOMA DE SALIDA OBLIGATORIO: ${langLabel.es}. TODO el contenido que generes (question, section, label, insertText) DEBE estar en ${langLabel.es}. El checklist clínico y el informe pueden estar en otro idioma — TRADÚCELO. No devuelvas ninguna palabra en otro idioma.`,
+    en: `⚠️ MANDATORY OUTPUT LANGUAGE: ${langLabel.en}. EVERYTHING you generate (question, section, label, insertText) MUST be in ${langLabel.en}. The clinical checklist and the report may be in another language (e.g. Spanish) — TRANSLATE it. Do not return a single word in any other language.`,
+    pt: `⚠️ IDIOMA DE SAÍDA OBRIGATÓRIO: ${langLabel.pt}. TODO o conteúdo que você gerar (question, section, label, insertText) DEVE estar em ${langLabel.pt}. O checklist clínico e o laudo podem estar em outro idioma — TRADUZA. Não retorne nenhuma palavra em outro idioma.`,
+  };
+
   return `${instructions[lang]}
 
 --- CLINICAL CHECKLIST KB ---
 ${kb}
---- END KB ---`;
+--- END KB ---
+
+${langEnforce[lang]}`;
 }
 
 export async function POST(req: NextRequest) {
