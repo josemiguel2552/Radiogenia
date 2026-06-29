@@ -139,7 +139,16 @@ export function DashboardContent() {
   const setConclusion = useCallback((v: string) => {
     setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
   }, [conclusionStyle]);
+  // Permanent (per-device) dismissal of the diagnostic-language warning.
+  const DIAG_WARN_DISMISSED_KEY = "radiogenai_diag_warn_dismissed";
   const [conclusionWarnDismissed, setConclusionWarnDismissed] = useState(false);
+  useEffect(() => {
+    try { if (localStorage.getItem(DIAG_WARN_DISMISSED_KEY) === "1") setConclusionWarnDismissed(true); } catch { /* */ }
+  }, []);
+  const dismissConclusionWarn = useCallback(() => {
+    setConclusionWarnDismissed(true);
+    try { localStorage.setItem(DIAG_WARN_DISMISSED_KEY, "1"); } catch { /* */ }
+  }, []);
   // Deterministic safety net: flag (not delete) interpretive/diagnostic language
   // that may have leaked into the AI conclusion. Disease names are only flagged
   // when not present in the dictated findings (mirrors the prompt's exception).
@@ -797,7 +806,6 @@ export function DashboardContent() {
     setErrorReported(false);
     setLoadingFindings(true);
     setLoadingConcStyles({ concise: true, grouped: true });
-    setConclusionWarnDismissed(false);
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
     setInitialFindings("");
@@ -2378,7 +2386,7 @@ export function DashboardContent() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setConclusionWarnDismissed(true)}
+                  onClick={dismissConclusionWarn}
                   className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 shrink-0 mt-0.5"
                   aria-label={t("conclusion.diag_dismiss")}
                 >
