@@ -613,6 +613,11 @@ export function LandingPage() {
             &copy; {new Date().getFullYear()} Radiogen.AI
           </p>
         </div>
+        <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-white/5">
+          <p className="text-[11px] leading-relaxed text-gray-600 text-center">
+            {t("footer.disclaimer")}
+          </p>
+        </div>
       </footer>
     </div>
   );
