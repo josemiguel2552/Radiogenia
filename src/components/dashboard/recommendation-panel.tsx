@@ -118,6 +118,77 @@ const CATEGORY_LABELS: Record<string, Record<string, string>> = {
   "Breast": { es: "Mama", en: "Breast", pt: "Mama" },
 };
 
+// ── Topic (sub-category) within an anatomical section ──────────────
+// Derived from the recommendation id prefix so the 100+ guideline entries
+// don't need per-row edits. Lets the browse view sub-group by theme.
+const TOPIC_ORDER = [
+  // Thorax
+  "pulm_nodules", "lung_screening", "thoracic_aorta", "aortic_dissection", "breast",
+  // Abdomen & pelvis
+  "liver", "renal_cyst", "adrenal", "pancreatic_cyst", "ovarian", "prostate",
+  "gb_polyp", "aaa", "diverticulitis", "hydronephrosis",
+  // Head & neck
+  "thyroid", "cerebral_aneurysm", "carotid", "meningioma",
+  // MSK
+  "bone_lesion", "vertebral_fracture",
+  "other",
+];
+
+const TOPIC_LABELS: Record<string, Record<string, string>> = {
+  pulm_nodules: { es: "Nódulos pulmonares incidentales", en: "Incidental pulmonary nodules", pt: "Nódulos pulmonares incidentais" },
+  lung_screening: { es: "Cribado pulmonar (Lung-RADS)", en: "Lung screening (Lung-RADS)", pt: "Rastreio pulmonar (Lung-RADS)" },
+  thoracic_aorta: { es: "Aorta torácica", en: "Thoracic aorta", pt: "Aorta torácica" },
+  aortic_dissection: { es: "Disección aórtica", en: "Aortic dissection", pt: "Dissecção aórtica" },
+  breast: { es: "Mama (BI-RADS)", en: "Breast (BI-RADS)", pt: "Mama (BI-RADS)" },
+  liver: { es: "Hígado (LI-RADS)", en: "Liver (LI-RADS)", pt: "Fígado (LI-RADS)" },
+  renal_cyst: { es: "Quiste renal (Bosniak)", en: "Renal cyst (Bosniak)", pt: "Cisto renal (Bosniak)" },
+  adrenal: { es: "Glándula suprarrenal", en: "Adrenal gland", pt: "Glândula adrenal" },
+  pancreatic_cyst: { es: "Quiste pancreático", en: "Pancreatic cyst", pt: "Cisto pancreático" },
+  ovarian: { es: "Ovario y anexos (O-RADS)", en: "Ovary & adnexa (O-RADS)", pt: "Ovário e anexos (O-RADS)" },
+  prostate: { es: "Próstata (PI-RADS)", en: "Prostate (PI-RADS)", pt: "Próstata (PI-RADS)" },
+  gb_polyp: { es: "Pólipo vesicular", en: "Gallbladder polyp", pt: "Pólipo da vesícula" },
+  aaa: { es: "Aneurisma de aorta abdominal", en: "Abdominal aortic aneurysm", pt: "Aneurisma da aorta abdominal" },
+  diverticulitis: { es: "Diverticulitis", en: "Diverticulitis", pt: "Diverticulite" },
+  hydronephrosis: { es: "Hidronefrosis", en: "Hydronephrosis", pt: "Hidronefrose" },
+  thyroid: { es: "Tiroides (TI-RADS)", en: "Thyroid (TI-RADS)", pt: "Tireoide (TI-RADS)" },
+  cerebral_aneurysm: { es: "Aneurisma cerebral", en: "Cerebral aneurysm", pt: "Aneurisma cerebral" },
+  carotid: { es: "Estenosis carotídea", en: "Carotid stenosis", pt: "Estenose carotídea" },
+  meningioma: { es: "Meningioma incidental", en: "Incidental meningioma", pt: "Meningioma incidental" },
+  bone_lesion: { es: "Lesión ósea", en: "Bone lesion", pt: "Lesão óssea" },
+  vertebral_fracture: { es: "Fractura vertebral", en: "Vertebral fracture", pt: "Fratura vertebral" },
+  other: { es: "Otras", en: "Other", pt: "Outras" },
+};
+
+function deriveTopic(rec: ManualRecommendation): string {
+  const id = rec.id || "";
+  // Thorax
+  if (/^fleisch_|^bts_/.test(id)) return "pulm_nodules";
+  if (/^lungrads_/.test(id)) return "lung_screening";
+  if (/^birads_|^breast_/.test(id)) return "breast";
+  if (/^thoracic_aorta_/.test(id)) return "thoracic_aorta";
+  if (/^dissection_/.test(id)) return "aortic_dissection";
+  // Abdomen & pelvis
+  if (/^liver_|^lirads_/.test(id)) return "liver";
+  if (/^renal_bosniak_/.test(id)) return "renal_cyst";
+  if (/^adrenal_/.test(id)) return "adrenal";
+  if (/^pancreas_cyst_/.test(id)) return "pancreatic_cyst";
+  if (/^ovarian_|^orads_/.test(id)) return "ovarian";
+  if (/^pirads_/.test(id)) return "prostate";
+  if (/^gb_polyp_/.test(id)) return "gb_polyp";
+  if (/^aaa_/.test(id)) return "aaa";
+  if (/^diverticulitis_/.test(id)) return "diverticulitis";
+  if (/^hydronephrosis_/.test(id)) return "hydronephrosis";
+  // Head & neck
+  if (/^thyroid_|^tirads_/.test(id)) return "thyroid";
+  if (/^aneurysm_/.test(id)) return "cerebral_aneurysm";
+  if (/^carotid_/.test(id)) return "carotid";
+  if (/^meningioma_/.test(id)) return "meningioma";
+  // MSK
+  if (/^bone_lesion/.test(id)) return "bone_lesion";
+  if (/^compression_fx/.test(id)) return "vertebral_fracture";
+  return "other";
+}
+
 export function RecommendationPanel({ conclusionText, modality, section, outputLanguage, visible, onSelectionChange }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -206,9 +277,10 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     return scored.filter((s) => s.relevance > 0).slice(0, 8);
   }, [scored]);
 
+  // Two-level grouping: anatomical section → topic → recommendations.
   const groupedByCategory = useMemo(() => {
     const searchTokens = searchQuery ? tokenize(searchQuery) : [];
-    const groups = new Map<string, ManualRecommendation[]>();
+    const groups = new Map<string, Map<string, ManualRecommendation[]>>();
 
     for (const { rec } of scored) {
       if (searchTokens.length > 0) {
@@ -222,17 +294,28 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
         if (!matches) continue;
       }
       const cat = rec.category || "Other";
-      if (!groups.has(cat)) groups.set(cat, []);
-      groups.get(cat)!.push(rec);
+      const topic = deriveTopic(rec);
+      if (!groups.has(cat)) groups.set(cat, new Map());
+      const topicMap = groups.get(cat)!;
+      if (!topicMap.has(topic)) topicMap.set(topic, []);
+      topicMap.get(topic)!.push(rec);
     }
 
-    const sorted = [...groups.entries()].sort(([a], [b]) => {
-      const ai = CATEGORY_ORDER.indexOf(a);
-      const bi = CATEGORY_ORDER.indexOf(b);
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-    });
-
-    return sorted;
+    return [...groups.entries()]
+      .sort(([a], [b]) => {
+        const ai = CATEGORY_ORDER.indexOf(a);
+        const bi = CATEGORY_ORDER.indexOf(b);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      })
+      .map(([cat, topicMap]) => {
+        const topics = [...topicMap.entries()].sort(([a], [b]) => {
+          const ai = TOPIC_ORDER.indexOf(a);
+          const bi = TOPIC_ORDER.indexOf(b);
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        });
+        const count = topics.reduce((n, [, recs]) => n + recs.length, 0);
+        return { cat, topics, count };
+      });
   }, [scored, searchQuery, outputLanguage]);
 
   const toggle = useCallback((id: string) => {
@@ -483,12 +566,13 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
 
               {groupedByCategory.length > 0 && (
                 <div className="space-y-1">
-                  {groupedByCategory.map(([category, recs]) => {
+                  {groupedByCategory.map(({ cat: category, topics, count }) => {
                     const isExpanded = expandedCategories.has(category) || !!searchQuery;
                     const catLabel = CATEGORY_LABELS[category]?.[outputLanguage] || CATEGORY_LABELS[category]?.es || category;
                     const icon = CATEGORY_ICONS[category] || "📄";
                     const catColor = CATEGORY_COLORS[category] || "bg-gray-100 dark:bg-gray-800";
-                    const selectedInCat = recs.filter((r) => selected.has(r.id)).length;
+                    const selectedInCat = topics.reduce((n, [, recs]) => n + recs.filter((r) => selected.has(r.id)).length, 0);
+                    const showTopicHeaders = topics.length > 1 || (topics[0] && topics[0][0] !== "other");
                     return (
                       <div key={category} className="rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
                         <button
@@ -501,12 +585,29 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                           {selectedInCat > 0 && (
                             <span className="text-[9px] bg-brand text-white px-1.5 py-0.5 rounded-full font-semibold">{selectedInCat}</span>
                           )}
-                          <span className="text-[9px] text-gray-400 tabular-nums">{recs.length}</span>
+                          <span className="text-[9px] text-gray-400 tabular-nums">{count}</span>
                           {isExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
                         </button>
                         {isExpanded && (
-                          <div className="px-2 pb-2 space-y-1">
-                            {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                          <div className="px-2 pb-2 space-y-2">
+                            {topics.map(([topicKey, recs]) => {
+                              const topicLabel = TOPIC_LABELS[topicKey]?.[outputLanguage] || TOPIC_LABELS[topicKey]?.es || topicKey;
+                              const selectedInTopic = recs.filter((r) => selected.has(r.id)).length;
+                              return (
+                                <div key={topicKey} className="space-y-1">
+                                  {showTopicHeaders && (
+                                    <div className="flex items-center gap-1.5 px-1 pt-1">
+                                      <span className="h-1 w-1 rounded-full bg-brand/50 flex-shrink-0" />
+                                      <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex-1 truncate">{topicLabel}</span>
+                                      {selectedInTopic > 0 && (
+                                        <span className="text-[8px] text-brand font-semibold">{selectedInTopic}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
