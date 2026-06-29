@@ -132,6 +132,80 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
   },
 
   // ═══════════════════════════════════════════
+  // THORAX — Fleischner 2017: seguimientos subsecuentes / finales
+  // ═══════════════════════════════════════════
+  {
+    id: "fleisch_solid_6to8_stable_first",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Sólido 6-8mm estable (1er control)", en: "Solid 6-8mm stable (1st follow-up)", pt: "Sólido 6-8mm estável (1º controle)" },
+    text: {
+      es: "Nódulo pulmonar sólido de 6-8 mm estable en el primer control. Se recomienda TC de control adicional a los 18-24 meses para completar la vigilancia (Fleischner 2017).",
+      en: "Solid pulmonary nodule 6-8 mm, stable at first follow-up. Additional follow-up CT at 18-24 months recommended to complete surveillance (Fleischner 2017).",
+      pt: "Nódulo pulmonar sólido de 6-8 mm, estável no primeiro controle. TC de controle adicional em 18-24 meses recomendada para completar a vigilância (Fleischner 2017).",
+    },
+    tags: ["nódulo", "nodule", "sólido", "solid", "estable", "stable", "seguimiento", "follow-up", "control", "18-24 meses", "subsecuente"],
+    source: "Fleischner 2017",
+    scope: "system",
+  },
+  {
+    id: "fleisch_solid_gt8_stable_3mo",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Sólido >8mm estable (control 3m)", en: "Solid >8mm stable (3mo CT)", pt: "Sólido >8mm estável (controle 3m)" },
+    text: {
+      es: "Nódulo pulmonar sólido >8 mm estable en la TC de control a los 3 meses. Se recomienda continuar la vigilancia (p. ej. TC a los 9-12 meses); valorar PET/TC según el contexto clínico (Fleischner 2017).",
+      en: "Solid pulmonary nodule >8 mm, stable on 3-month follow-up CT. Continued surveillance recommended (e.g., CT at 9-12 months); consider PET/CT depending on clinical context (Fleischner 2017).",
+      pt: "Nódulo pulmonar sólido >8 mm, estável na TC de controle de 3 meses. Recomenda-se continuar a vigilância (ex.: TC em 9-12 meses); considerar PET/TC conforme o contexto clínico (Fleischner 2017).",
+    },
+    tags: ["nódulo", "nodule", "sólido", "solid", "estable", "stable", "seguimiento", "follow-up", "3 meses", "12 meses", "PET", "subsecuente"],
+    source: "Fleischner 2017",
+    scope: "system",
+  },
+  {
+    id: "fleisch_solid_stable_complete",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Sólido estable: fin de vigilancia", en: "Solid stable: end of surveillance", pt: "Sólido estável: fim da vigilância" },
+    text: {
+      es: "Nódulo pulmonar sólido estable durante el periodo de vigilancia completo (aprox. 2 años). No se requiere seguimiento radiológico adicional según Fleischner 2017.",
+      en: "Solid pulmonary nodule stable throughout the full surveillance period (approx. 2 years). No further imaging follow-up required per Fleischner 2017.",
+      pt: "Nódulo pulmonar sólido estável durante todo o período de vigilância (aprox. 2 anos). Não requer seguimento radiológico adicional segundo Fleischner 2017.",
+    },
+    tags: ["nódulo", "nodule", "sólido", "solid", "estable", "stable", "alta", "fin de seguimiento", "end of follow-up", "sin seguimiento", "subsecuente"],
+    source: "Fleischner 2017",
+    scope: "system",
+  },
+  {
+    id: "fleisch_ggn_stable_persistent",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Vidrio deslustrado ≥6mm persistente", en: "GGN ≥6mm persistent", pt: "Vidro fosco ≥6mm persistente" },
+    text: {
+      es: "Nódulo en vidrio deslustrado ≥6 mm persistente y estable en el control inicial. Se recomienda TC cada 2 años hasta completar 5 años de vigilancia (Fleischner 2017).",
+      en: "Persistent, stable ground-glass nodule ≥6 mm at initial follow-up. CT every 2 years until 5 years of surveillance recommended (Fleischner 2017).",
+      pt: "Nódulo em vidro fosco ≥6 mm persistente e estável no controle inicial. TC a cada 2 anos até completar 5 anos de vigilância recomendada (Fleischner 2017).",
+    },
+    tags: ["vidrio", "deslustrado", "ground-glass", "GGN", "subsólido", "persistente", "persistent", "estable", "stable", "seguimiento", "5 años", "subsecuente"],
+    source: "Fleischner 2017",
+    scope: "system",
+  },
+  {
+    id: "fleisch_partsolid_stable_persistent",
+    category: "Thorax",
+    modality: "CT",
+    title: { es: "Parcialmente sólido ≥6mm persistente", en: "Part-solid ≥6mm persistent", pt: "Parcialmente sólido ≥6mm persistente" },
+    text: {
+      es: "Nódulo parcialmente sólido ≥6 mm persistente con componente sólido <6 mm. Se recomienda TC anual durante 5 años (Fleischner 2017).",
+      en: "Persistent part-solid nodule ≥6 mm with solid component <6 mm. Annual CT for 5 years recommended (Fleischner 2017).",
+      pt: "Nódulo parcialmente sólido ≥6 mm persistente com componente sólido <6 mm. TC anual por 5 anos recomendada (Fleischner 2017).",
+    },
+    tags: ["parcialmente", "part-solid", "subsólido", "persistente", "persistent", "componente sólido", "estable", "stable", "anual", "5 años", "subsecuente"],
+    source: "Fleischner 2017",
+    scope: "system",
+  },
+
+  // ═══════════════════════════════════════════
   // THORAX — BTS 2015
   // ═══════════════════════════════════════════
   {
@@ -265,6 +339,20 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Lesão renal cística Bosniak IIF. Seguimento por imagem em 6 e 12 meses para confirmar estabilidade recomendado (Bosniak 2019).",
     },
     tags: ["Bosniak", "renal", "quiste", "cyst", "quístico", "cystic", "riñón", "kidney"],
+    source: "Bosniak Classification v2019 (Silverman et al., Radiology 2019)",
+    scope: "system",
+  },
+  {
+    id: "renal_bosniak_iif_stable",
+    category: "Abdomen and pelvis",
+    modality: "CT",
+    title: { es: "Bosniak IIF estable: fin de seguimiento", en: "Bosniak IIF stable: end of follow-up", pt: "Bosniak IIF estável: fim do seguimento" },
+    text: {
+      es: "Lesión renal quística Bosniak IIF estable tras vigilancia de 5 años. Puede considerarse benigna; no se requiere seguimiento adicional (Bosniak 2019).",
+      en: "Bosniak IIF cystic renal lesion stable after 5 years of surveillance. May be considered benign; no further follow-up required (Bosniak 2019).",
+      pt: "Lesão renal cística Bosniak IIF estável após 5 anos de vigilância. Pode ser considerada benigna; não requer seguimento adicional (Bosniak 2019).",
+    },
+    tags: ["Bosniak", "renal", "quiste", "cyst", "estable", "stable", "5 años", "fin de seguimiento", "subsecuente", "riñón", "kidney"],
     source: "Bosniak Classification v2019 (Silverman et al., Radiology 2019)",
     scope: "system",
   },
@@ -1423,6 +1511,20 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "ACR TI-RADS TR5 (altamente suspeito, ≥7 pontos). PAAF recomendada se ≥1.0 cm; seguimento ecográfico se ≥0.5 cm. Nódulos <0.5 cm não requerem seguimento salvo suspeita de extensão extratireoidiana ou metástases ganglionares. Seguimento anual por 5 anos se aplicável (ACR TI-RADS 2017).",
     },
     tags: ["TI-RADS", "tiroides", "thyroid", "TR5", "PAAF", "FNA", "altamente sospechoso", "highly suspicious", "biopsia"],
+    source: "ACR TI-RADS 2017 (Tessler FN et al., JACR 2017)",
+    scope: "system",
+  },
+  {
+    id: "tirads_followup_stable",
+    category: "Head and neck",
+    modality: "Ultrasound",
+    title: { es: "TI-RADS estable: fin de seguimiento", en: "TI-RADS stable: end of follow-up", pt: "TI-RADS estável: fim do seguimento" },
+    text: {
+      es: "Nódulo tiroideo en seguimiento ecográfico (TI-RADS TR3/TR4/TR5 que no cumplió criterio de PAAF) estable durante el periodo de vigilancia recomendado (controles a 1, 2, 3 y 5 años). Si permanece estable a los 5 años, puede finalizarse el seguimiento (ACR TI-RADS 2017).",
+      en: "Thyroid nodule under ultrasound surveillance (TR3/TR4/TR5 not meeting FNA criteria) stable throughout the recommended period (follow-up at 1, 2, 3 and 5 years). If stable at 5 years, surveillance may be discontinued (ACR TI-RADS 2017).",
+      pt: "Nódulo tireoidiano em seguimento ecográfico (TR3/TR4/TR5 que não atingiu critério de PAAF) estável durante o período recomendado (controles em 1, 2, 3 e 5 anos). Se estável aos 5 anos, o seguimento pode ser encerrado (ACR TI-RADS 2017).",
+    },
+    tags: ["TI-RADS", "tiroides", "thyroid", "estable", "stable", "seguimiento", "follow-up", "5 años", "fin de seguimiento", "subsecuente"],
     source: "ACR TI-RADS 2017 (Tessler FN et al., JACR 2017)",
     scope: "system",
   },
