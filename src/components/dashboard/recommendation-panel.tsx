@@ -193,6 +193,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const t = useT();
   const [open, setOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<UsageMap>({});
@@ -330,6 +331,14 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     setExpandedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+  }, []);
+
+  const toggleTopic = useCallback((key: string) => {
+    setExpandedTopics((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
   }, []);
@@ -589,22 +598,40 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                           {isExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
                         </button>
                         {isExpanded && (
-                          <div className="px-2 pb-2 space-y-2">
+                          <div className="px-2 pb-2 space-y-1.5">
                             {topics.map(([topicKey, recs]) => {
                               const topicLabel = TOPIC_LABELS[topicKey]?.[outputLanguage] || TOPIC_LABELS[topicKey]?.es || topicKey;
                               const selectedInTopic = recs.filter((r) => selected.has(r.id)).length;
+                              // Single unnamed group → render items directly, no collapsible header.
+                              if (!showTopicHeaders) {
+                                return (
+                                  <div key={topicKey} className="space-y-1 pt-1">
+                                    {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                                  </div>
+                                );
+                              }
+                              const topicId = `${category}::${topicKey}`;
+                              const topicExpanded = expandedTopics.has(topicId) || !!searchQuery;
                               return (
-                                <div key={topicKey} className="space-y-1">
-                                  {showTopicHeaders && (
-                                    <div className="flex items-center gap-1.5 px-1 pt-1">
-                                      <span className="h-1 w-1 rounded-full bg-brand/50 flex-shrink-0" />
-                                      <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex-1 truncate">{topicLabel}</span>
-                                      {selectedInTopic > 0 && (
-                                        <span className="text-[8px] text-brand font-semibold">{selectedInTopic}</span>
-                                      )}
+                                <div key={topicKey} className="rounded-md bg-gray-50/60 dark:bg-gray-800/20">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleTopic(topicId)}
+                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 text-left hover:bg-gray-100/70 dark:hover:bg-gray-800/40 rounded-md transition-colors"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-brand/50 flex-shrink-0" />
+                                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 flex-1 truncate">{topicLabel}</span>
+                                    {selectedInTopic > 0 && (
+                                      <span className="text-[8px] bg-brand text-white px-1.5 py-0.5 rounded-full font-semibold">{selectedInTopic}</span>
+                                    )}
+                                    <span className="text-[9px] text-gray-400 tabular-nums">{recs.length}</span>
+                                    {topicExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
+                                  </button>
+                                  {topicExpanded && (
+                                    <div className="px-1.5 pb-1.5 space-y-1">
+                                      {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
                                     </div>
                                   )}
-                                  {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
                                 </div>
                               );
                             })}
