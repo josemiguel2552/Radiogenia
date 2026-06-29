@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Search, ClipboardList, Sparkles, ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
@@ -87,12 +87,23 @@ function scoreRelevance(rec: ManualRecommendation, conclusionTokens: string[], l
 
 const CATEGORY_ICONS: Record<string, string> = {
   "Thorax": "🫁",
-  "Abdomen and pelvis": "🫀",
+  "Abdomen and pelvis": "🩻",
   "Head and neck": "🧠",
   "Spine": "🦴",
   "Upper limbs": "💪",
   "Lower limbs": "🦵",
   "Breast": "🩺",
+};
+
+// Soft tinted background per category for a cohesive, less "emoji-soup" look.
+const CATEGORY_COLORS: Record<string, string> = {
+  "Thorax": "bg-sky-100 dark:bg-sky-900/30",
+  "Abdomen and pelvis": "bg-amber-100 dark:bg-amber-900/30",
+  "Head and neck": "bg-violet-100 dark:bg-violet-900/30",
+  "Spine": "bg-emerald-100 dark:bg-emerald-900/30",
+  "Upper limbs": "bg-rose-100 dark:bg-rose-900/30",
+  "Lower limbs": "bg-indigo-100 dark:bg-indigo-900/30",
+  "Breast": "bg-pink-100 dark:bg-pink-900/30",
 };
 
 const CATEGORY_ORDER = ["Thorax", "Abdomen and pelvis", "Head and neck", "Spine", "Upper limbs", "Lower limbs", "Breast"];
@@ -299,17 +310,17 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
       <button
         type="button"
         onClick={() => toggle(rec.id)}
-        className={`w-full text-left px-2.5 py-1.5 rounded-md border transition-colors group ${
+        className={`w-full text-left pl-2 pr-2.5 py-1.5 rounded-lg border-l-2 border transition-all group ${
           isSelected
-            ? "bg-brand/10 border-brand/30 dark:bg-brand/20"
-            : "bg-[hsl(var(--card))] border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            ? "bg-brand/10 border-brand/30 border-l-brand dark:bg-brand/20"
+            : "bg-[hsl(var(--card))] border-transparent border-l-transparent hover:bg-gray-50 hover:border-l-gray-200 dark:hover:bg-gray-800/50 dark:hover:border-l-gray-700"
         }`}
       >
         <div className="flex items-start gap-2">
-          <div className={`mt-0.5 h-3.5 w-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-            isSelected ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
+          <div className={`mt-0.5 h-4 w-4 rounded-[5px] border flex-shrink-0 flex items-center justify-center transition-colors ${
+            isSelected ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600 group-hover:border-brand/50"
           }`}>
-            {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
+            {isSelected && <Check className="h-3 w-3 text-white" />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
@@ -317,7 +328,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                 {title}
               </span>
               {rec.source && (
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 flex-shrink-0">{rec.source.split("(")[0].trim()}</span>
+                <span className="text-[8px] uppercase tracking-wide text-gray-400 dark:text-gray-500 flex-shrink-0 px-1 py-px rounded bg-gray-100 dark:bg-gray-800">{rec.source.split("(")[0].trim()}</span>
               )}
               {showRemove && (
                 <button type="button" onClick={(e) => { e.stopPropagation(); removeCustom(rec.id); }}
@@ -326,7 +337,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">{text}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed">{text}</p>
           </div>
         </div>
       </button>
@@ -334,74 +345,97 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   }
 
   return (
-    <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden bg-[hsl(var(--card))]">
+    <div className={`border rounded-xl overflow-hidden bg-[hsl(var(--card))] transition-shadow ${open ? "border-brand/20 shadow-sm" : "border-[hsl(var(--border))]"}`}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
       >
-        <span className="text-sm">📋</span>
-        <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 flex-1">
-          {t("mrec.title")}
+        <span className="h-7 w-7 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+          <ClipboardList className="h-4 w-4 text-brand" />
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-xs font-semibold text-gray-800 dark:text-gray-200">
+            {t("mrec.title")}
+          </span>
+          <span className="block text-[10px] text-gray-400 dark:text-gray-500 truncate">
+            {selected.size > 0 ? t("mrec.added_hint") : t("mrec.subtitle")}
+          </span>
         </span>
         {selected.size > 0 && (
-          <span className="text-[10px] bg-brand/10 text-brand px-1.5 py-0.5 rounded-full font-medium">
+          <span className="text-[10px] bg-brand text-white px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
             {selected.size}
           </span>
         )}
-        {open ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
+        {open ? <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" /> : <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />}
       </button>
 
       {open && (
         <div className="px-3 pb-2.5 border-t border-gray-100 dark:border-gray-800 max-h-[60vh] overflow-y-auto">
           {/* Suggested chips */}
           {suggestedRecs.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-2.5">
-              {suggestedRecs.map((s) => {
-                const isOn = selected.has(s.rec.id);
-                const title = s.rec.title[outputLanguage] || s.rec.title.es;
-                return (
-                  <button
-                    key={s.rec.id}
-                    type="button"
-                    onClick={() => toggle(s.rec.id)}
-                    title={s.rec.text[outputLanguage] || s.rec.text.es}
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
-                      isOn
-                        ? "bg-brand/10 border-brand/30 text-brand font-medium dark:bg-brand/20"
-                        : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    }`}
-                  >
-                    <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 border transition-colors ${
-                      isOn ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600"
-                    }`} />
-                    {title}
-                  </button>
-                );
-              })}
+            <div className="pt-2.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Sparkles className="h-3 w-3 text-brand" />
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("mrec.suggested_label")}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedRecs.map((s) => {
+                  const isOn = selected.has(s.rec.id);
+                  const title = s.rec.title[outputLanguage] || s.rec.title.es;
+                  return (
+                    <button
+                      key={s.rec.id}
+                      type="button"
+                      onClick={() => toggle(s.rec.id)}
+                      title={s.rec.text[outputLanguage] || s.rec.text.es}
+                      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full text-[11px] border transition-all ${
+                        isOn
+                          ? "bg-brand text-white border-brand font-medium shadow-sm"
+                          : "bg-[hsl(var(--card))] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-brand/40 hover:bg-brand/5"
+                      }`}
+                    >
+                      <span className={`h-3.5 w-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-colors ${
+                        isOn ? "bg-white/25" : "border border-gray-300 dark:border-gray-600"
+                      }`}>
+                        {isOn ? <Check className="h-2.5 w-2.5 text-white" /> : <Plus className="h-2.5 w-2.5 text-gray-400" />}
+                      </span>
+                      {title}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {suggestedRecs.length === 0 && !browsing && (
-            <p className="text-[10px] text-gray-400 italic pt-2.5">{t("mrec.no_recs")}</p>
+            <div className="flex flex-col items-center text-center gap-1 py-4">
+              <span className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-gray-400" />
+              </span>
+              <p className="text-[10px] text-gray-400">{t("mrec.no_recs")}</p>
+            </div>
           )}
 
           {/* Action bar */}
-          <div className="flex items-center gap-2 pt-2 mt-1 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-1.5 pt-2 mt-1.5 border-t border-gray-100 dark:border-gray-800">
             <button
               type="button"
               onClick={() => { setBrowsing(!browsing); if (browsing) setSearchQuery(""); }}
-              className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 transition-colors"
+              className={`text-[10px] flex items-center gap-1 px-2 py-1 rounded-md transition-colors ${
+                browsing ? "bg-brand/10 text-brand font-medium" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
             >
-              {browsing ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              {outputLanguage === "en" ? "Browse all" : "Ver todas"}
+              <ListFilter className="h-3 w-3" />
+              {t("mrec.browse_all")}
             </button>
             <button
               type="button"
               onClick={() => { if (browsing) { setAddingCustom(true); } else { setBrowsing(true); setAddingCustom(true); } }}
-              className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-brand flex items-center gap-0.5 transition-colors"
+              className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-brand flex items-center gap-0.5 px-1.5 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title={t("mrec.add_custom")}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3.5 w-3.5" />
             </button>
             <div className="flex-1" />
             {selected.size > 0 && (
@@ -453,20 +487,21 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                     const isExpanded = expandedCategories.has(category) || !!searchQuery;
                     const catLabel = CATEGORY_LABELS[category]?.[outputLanguage] || CATEGORY_LABELS[category]?.es || category;
                     const icon = CATEGORY_ICONS[category] || "📄";
+                    const catColor = CATEGORY_COLORS[category] || "bg-gray-100 dark:bg-gray-800";
                     const selectedInCat = recs.filter((r) => selected.has(r.id)).length;
                     return (
                       <div key={category} className="rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
                         <button
                           type="button"
                           onClick={() => toggleCategory(category)}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
                         >
-                          <span className="text-xs">{icon}</span>
+                          <span className={`h-5 w-5 rounded-md flex items-center justify-center text-[11px] flex-shrink-0 ${catColor}`}>{icon}</span>
                           <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex-1">{catLabel}</span>
-                          <span className="text-[9px] text-gray-400">{recs.length}</span>
                           {selectedInCat > 0 && (
-                            <span className="text-[9px] bg-brand/10 text-brand px-1 py-0.5 rounded-full font-medium">{selectedInCat}</span>
+                            <span className="text-[9px] bg-brand text-white px-1.5 py-0.5 rounded-full font-semibold">{selectedInCat}</span>
                           )}
+                          <span className="text-[9px] text-gray-400 tabular-nums">{recs.length}</span>
                           {isExpanded ? <ChevronDown className="h-3 w-3 text-gray-400" /> : <ChevronRight className="h-3 w-3 text-gray-400" />}
                         </button>
                         {isExpanded && (
