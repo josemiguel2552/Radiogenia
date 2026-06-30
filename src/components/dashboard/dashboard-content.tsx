@@ -61,7 +61,6 @@ import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
-import { summarizeDiagnoses } from "@/lib/diagnosis-detect";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -139,23 +138,6 @@ export function DashboardContent() {
   const setConclusion = useCallback((v: string) => {
     setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
   }, [conclusionStyle]);
-  // Permanent (per-device) dismissal of the diagnostic-language warning.
-  const DIAG_WARN_DISMISSED_KEY = "radiogenai_diag_warn_dismissed";
-  const [conclusionWarnDismissed, setConclusionWarnDismissed] = useState(false);
-  useEffect(() => {
-    try { if (localStorage.getItem(DIAG_WARN_DISMISSED_KEY) === "1") setConclusionWarnDismissed(true); } catch { /* */ }
-  }, []);
-  const dismissConclusionWarn = useCallback(() => {
-    setConclusionWarnDismissed(true);
-    try { localStorage.setItem(DIAG_WARN_DISMISSED_KEY, "1"); } catch { /* */ }
-  }, []);
-  // Deterministic safety net: flag (not delete) interpretive/diagnostic language
-  // that may have leaked into the AI conclusion. Disease names are only flagged
-  // when not present in the dictated findings (mirrors the prompt's exception).
-  const conclusionFlags = useMemo(
-    () => (conclusion.trim() ? summarizeDiagnoses(conclusion, findings) : []),
-    [conclusion, findings],
-  );
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -2374,26 +2356,6 @@ export function DashboardContent() {
                 )
               ) : undefined}
             />
-
-            {conclusionFlags.length > 0 && !conclusionWarnDismissed && conclusion.trim() && !loadingConcStyles[conclusionStyle] && (
-              <div className="mb-2 flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/80 dark:bg-amber-950/30 px-3 py-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-200">
-                    {t("conclusion.diag_warning")}
-                    <span className="font-medium"> {conclusionFlags.join(", ")}</span>
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={dismissConclusionWarn}
-                  className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 shrink-0 mt-0.5"
-                  aria-label={t("conclusion.diag_dismiss")}
-                >
-                  {t("conclusion.diag_dismiss")}
-                </button>
-              </div>
-            )}
 
             <OutputCard
               title={t("dash.conclusion")}
