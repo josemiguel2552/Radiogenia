@@ -1538,6 +1538,8 @@ export function buildConclusionPrompt(params: {
 - Cada punto es UNA SOLA FRASE breve, directa y accionable.
 - Sin subordinadas largas ni explicaciones. Solo el dato clave condensado.
 - Usa paréntesis para medidas y datos: "Aumento de la lesión hepática del segmento VII (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
+- ORDENA los puntos por RELEVANCIA CLÍNICA de MAYOR a MENOR: primero lo agudo / lo que responde a la pregunta clínica / lo que cambia el manejo inmediato; al final lo incidental o crónico estable.
+- AGRUPA en un mismo punto los hallazgos clínica o anatómicamente relacionados (mismo órgano/región), manteniendo la frase breve. Los hallazgos no relacionados van en PUNTOS SEPARADOS. Agrupar NO significa diagnosticar.
 - Tono: directo, escueto, descriptivo.`,
     grouped: `ESTILO — INTEGRADO:
 - Cada punto es un párrafo breve con frases completas y bien redactadas.
@@ -1554,6 +1556,8 @@ export function buildConclusionPrompt(params: {
 - Each point is ONE SINGLE brief, direct, actionable phrase.
 - No long subordinate clauses or explanations. Only the key data condensed.
 - Use parentheses for measurements and data: "Interval increase of segment VII hepatic lesion (2→3.5 cm) with new retroperitoneal lymph node (15 mm)."
+- ORDER the points by CLINICAL RELEVANCE from HIGHEST to LOWEST: acute findings / what answers the clinical question / what changes immediate management first; incidental or stable chronic findings last.
+- GROUP clinically or anatomically related findings (same organ/region) into a single point while keeping the phrase brief. Unrelated findings go in SEPARATE POINTS. Grouping does NOT mean diagnosing.
 - Tone: direct, succinct, descriptive.`,
     grouped: `STYLE — INTEGRATED:
 - Each point is a brief paragraph with complete, well-written sentences.
@@ -1570,6 +1574,8 @@ export function buildConclusionPrompt(params: {
 - Cada ponto é UMA ÚNICA frase breve, direta e acionável.
 - Sem orações subordinadas longas nem explicações. Apenas o dado-chave condensado.
 - Use parênteses para medidas e dados: "Aumento da lesão hepática do segmento VII (2→3,5 cm) com nova linfonodomegalia retroperitoneal (15 mm)."
+- ORDENE os pontos por RELEVÂNCIA CLÍNICA de MAIOR a MENOR: primeiro o agudo / o que responde à pergunta clínica / o que muda o manejo imediato; por último o incidental ou crônico estável.
+- AGRUPE em um mesmo ponto os achados clínica ou anatomicamente relacionados (mesmo órgão/região), mantendo a frase breve. Achados não relacionados vão em PONTOS SEPARADOS. Agrupar NÃO significa diagnosticar.
 - Tom: direto, sucinto, descritivo.`,
     grouped: `ESTILO — INTEGRADO:
 - Cada ponto é um parágrafo breve com frases completas e bem redigidas.
@@ -1841,3 +1847,67 @@ GOLDEN RULE: when in doubt whether something is a diagnosis or an interpretation
   return { system, user: userMsg };
 }
 
+
+/**
+ * Final wording-review pass for an already-generated conclusion.
+ * Improves readability/style ONLY — must not lengthen it, change clinical
+ * content, or add diagnoses. The user message is the draft conclusion.
+ */
+export function buildConclusionRefinePrompt(lang: OutputLanguage): string {
+  const l = LANGUAGE_LABEL[lang];
+  if (lang === "es") {
+    return `Eres un editor de estilo radiológico. Recibes la CONCLUSIÓN de un informe ya redactada y tu única tarea es PULIR LA REDACCIÓN.
+
+IDIOMA: ${l}. Devuelve la conclusión en ${l}.
+
+QUÉ DEBES HACER:
+- Mejorar la fluidez, la claridad y la precisión terminológica de cada punto.
+- Eliminar redundancias, muletillas y palabras superfluas ("se observa", "se identifica", "cabe destacar"…).
+- Unificar el estilo (tiempo verbal, estructura paralela entre puntos).
+
+LÍMITES ESTRICTOS (NO NEGOCIABLES):
+- NO alargues la conclusión. El resultado debe ser IGUAL de largo o MÁS CORTO que el original. Si un punto se puede decir con menos palabras, hazlo.
+- NO añadas ni elimines hallazgos, ni datos, ni medidas, ni lateralidades.
+- NO cambies el significado clínico ni el orden de los puntos.
+- NO añadas diagnósticos, interpretaciones, inferencias ("compatible con", "sugestivo de"…), recomendaciones ni clasificaciones que no estuvieran ya.
+- Mantén el formato: mismos puntos numerados, texto plano, sin markdown, sin encabezado "CONCLUSIÓN".
+
+Si la redacción ya es óptima, devuélvela SIN CAMBIOS. Responde ÚNICAMENTE con la conclusión mejorada, nada más.`;
+  }
+  if (lang === "pt") {
+    return `Você é um editor de estilo radiológico. Recebe a CONCLUSÃO de um laudo já redigida e sua única tarefa é POLIR A REDAÇÃO.
+
+IDIOMA: ${l}. Devolva a conclusão em ${l}.
+
+O QUE FAZER:
+- Melhorar a fluidez, a clareza e a precisão terminológica de cada ponto.
+- Eliminar redundâncias, vícios de linguagem e palavras supérfluas ("observa-se", "identifica-se", "cabe destacar"…).
+- Unificar o estilo (tempo verbal, estrutura paralela entre os pontos).
+
+LIMITES ESTRITOS (NÃO NEGOCIÁVEIS):
+- NÃO alongue a conclusão. O resultado deve ser IGUAL ou MAIS CURTO que o original.
+- NÃO adicione nem remova achados, dados, medidas ou lateralidades.
+- NÃO mude o significado clínico nem a ordem dos pontos.
+- NÃO adicione diagnósticos, interpretações, inferências, recomendações nem classificações que já não estivessem.
+- Mantenha o formato: mesmos pontos numerados, texto simples, sem markdown, sem cabeçalho "CONCLUSÃO".
+
+Se a redação já for ótima, devolva-a SEM ALTERAÇÕES. Responda APENAS com a conclusão melhorada.`;
+  }
+  return `You are a radiology style editor. You receive an already-written report CONCLUSION and your only task is to POLISH THE WORDING.
+
+LANGUAGE: ${l}. Return the conclusion in ${l}.
+
+WHAT TO DO:
+- Improve the flow, clarity, and terminological precision of each point.
+- Remove redundancies, filler verbs, and superfluous words ("is noted", "is identified", "of note"…).
+- Unify style (verb tense, parallel structure across points).
+
+STRICT LIMITS (NON-NEGOTIABLE):
+- Do NOT lengthen the conclusion. The result must be EQUAL length or SHORTER than the original.
+- Do NOT add or remove findings, data, measurements, or lateralities.
+- Do NOT change the clinical meaning or the order of the points.
+- Do NOT add diagnoses, interpretations, inferences ("consistent with", "suggestive of"…), recommendations, or classifications that were not already there.
+- Keep the format: same numbered points, plain text, no markdown, no "CONCLUSION" heading.
+
+If the wording is already optimal, return it UNCHANGED. Respond ONLY with the improved conclusion, nothing else.`;
+}

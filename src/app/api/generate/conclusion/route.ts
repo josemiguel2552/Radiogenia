@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
-import { generateAIStreamWithUsage } from "@/lib/ai-provider";
+import { generateAIStreamWithUsage, generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
-import { buildConclusionPrompt } from "@/lib/prompts";
+import { buildConclusionPrompt, buildConclusionRefinePrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import { logPiiStrip } from "@/lib/pii-log";
@@ -102,6 +102,74 @@ export async function POST(req: NextRequest) {
     const effectiveModel = taskModel?.modelName || globalConfig.modelName;
     const findingsLen = findingsText.length;
     const maxTokens = findingsLen > 5000 ? 1024 : findingsLen > 2000 ? 768 : 512;
+    const userId = user.id;
+
+    // Stream a ReadableStream to the client, logging AI cost on completion.
+    const streamToResponse = (
+      stream: ReadableStream<Uint8Array>,
+      getUsage: () => { inputTokens: number; outputTokens: number } | null,
+      action: string,
+    ) => {
+      const reader = stream.getReader();
+      const passthrough = new ReadableStream({
+        async start(controller) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              controller.enqueue(value);
+            }
+          } finally {
+            controller.close();
+            const usage = getUsage();
+            if (usage) {
+              logAICost({ userId, action, provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+            }
+          }
+        },
+      });
+      return new Response(passthrough, {
+        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage },
+      });
+    };
+
+    // Integrated (grouped) conclusions get a second wording-polish pass. The
+    // specialized cardiac/RECIST formats keep their single-pass generation.
+    const isCardiac = Array.isArray(cardiacTechniques) && cardiacTechniques.length > 0;
+    const isRecist = !!recistConfig;
+    const shouldRefine = conclusionStyle === "grouped" && !isCardiac && !isRecist;
+
+    if (shouldRefine) {
+      // Pass 1 — generate the draft (buffered).
+      const draft = await generateAIWithUsage({
+        provider: effectiveProvider,
+        modelName: effectiveModel,
+        apiKey: effectiveKey,
+        customBaseUrl: globalConfig.customBaseUrl,
+        system,
+        user: userPrompt,
+        maxTokens,
+      });
+      if (draft.usage) {
+        logAICost({ userId, action: "generate_conclusion", provider: effectiveProvider, model: effectiveModel, inputTokens: draft.usage.inputTokens, outputTokens: draft.usage.outputTokens });
+      }
+      const draftText = (draft.text || "").trim();
+      if (!draftText) {
+        return new Response("", { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage } });
+      }
+      // Pass 2 — polish the wording (streamed).
+      const { stream, getUsage } = await generateAIStreamWithUsage({
+        provider: effectiveProvider,
+        modelName: effectiveModel,
+        apiKey: effectiveKey,
+        customBaseUrl: globalConfig.customBaseUrl,
+        system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage),
+        user: draftText,
+        maxTokens,
+      });
+      return streamToResponse(stream, getUsage, "conclusion_refine");
+    }
+
     const { stream, getUsage } = await generateAIStreamWithUsage({
       provider: effectiveProvider,
       modelName: effectiveModel,
@@ -111,33 +179,7 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
       maxTokens,
     });
-
-    const reader = stream.getReader();
-    const userId = user.id;
-    const passthrough = new ReadableStream({
-      async start(controller) {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-        } finally {
-          controller.close();
-          const usage = getUsage();
-          if (usage) {
-            logAICost({ userId, action: "generate_conclusion", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
-          }
-        }
-      },
-    });
-
-    return new Response(passthrough, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Output-Language": outputLanguage,
-      },
-    });
+    return streamToResponse(stream, getUsage, "generate_conclusion");
   } catch (error) {
     return toErrorResponse(error);
   }
