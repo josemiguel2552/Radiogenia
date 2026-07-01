@@ -56,6 +56,11 @@ REGLAS CONTRA ERRORES FRECUENTES:
    - Lesión NUEVA en contexto oncológico (ej: nódulo adrenal nuevo en paciente con masa pulmonar) SÍ puede incluirse como sospechosa de metástasis, pero DEBES indicarlo explícitamente: "sospechoso de metástasis" en la descripción del hallazgo.
    - Diferencia entre "indeterminada" y "nueva": "indeterminada" = no se sabe qué es. "Nueva" en contexto de malignidad = sospechosa.
    - Si hay lesiones sospechosas + indeterminadas, solo las sospechosas cuentan para la M. Menciona las indeterminadas por separado como nota si lo deseas.
+5. ESTADIAJE CONDICIONAL — cuando el estadio depende de un dato que el radiólogo NO puede confirmar por imagen:
+   Si un componente (T, N o M) depende de información NO radiológica (p. ej. la malignidad de un derrame pleural/pericárdico, la naturaleza de una lesión indeterminada, el tipo histológico), NO lo omitas ni lo dejes como simple "no valorable": PROPÓN el estadio de forma CONDICIONAL, indicando el supuesto y qué lo confirmaría. Asigna con firmeza solo lo determinable por imagen.
+   - Ej (derrame pleural en cáncer de pulmón): "M1a SI el derrame se confirma maligno (requiere citología); si es benigno/paraneumónico, no cuenta para la M → M0."
+   - Ej (nódulo suprarrenal indeterminado): "M1 SI se confirma metastásico (caracterizar con RM/PET); actualmente indeterminado, no cuenta para la M."
+   - Da el estadio global de la forma más probable e indica entre paréntesis cómo cambiaría según la confirmación. Sé breve y práctico: lo indispensable.
 
 ORDEN DE PRESENTACIÓN (siempre el mismo):
 1. Estadificaciones (TNM) primero.
@@ -118,6 +123,11 @@ RULES AGAINST COMMON ERRORS:
    - A NEW lesion in an oncologic context (e.g., new adrenal nodule in a patient with a lung mass) CAN be included as suspicious for metastasis, but you MUST state it explicitly: "suspicious for metastasis" in the finding description.
    - Distinction: "indeterminate" = nature unknown. "New" in a malignancy context = suspicious.
    - If there are suspicious + indeterminate lesions, only suspicious ones count toward M. Mention indeterminate ones separately as a note if desired.
+5. CONDITIONAL STAGING — when a stage component depends on data the radiologist CANNOT confirm from imaging:
+   If a component (T, N, or M) depends on non-radiological information (e.g., malignancy of a pleural/pericardial effusion, the nature of an indeterminate lesion, the histological type), do NOT omit it or just leave it "not assessable": PROPOSE the stage CONDITIONALLY, stating the assumption and what would confirm it. Firmly assign only what is determinable from imaging.
+   - E.g. (pleural effusion in lung cancer): "M1a IF the effusion is confirmed malignant (requires cytology); if benign/parapneumonic, it does not count toward M → M0."
+   - E.g. (indeterminate adrenal nodule): "M1 IF confirmed metastatic (characterize with MRI/PET); currently indeterminate, does not count toward M."
+   - Give the most likely overall stage and note in parentheses how it would change with confirmation. Be brief and practical: only the essentials.
 
 PRESENTATION ORDER (always the same):
 1. Staging (TNM) first.
@@ -180,6 +190,11 @@ REGRAS CONTRA ERROS FREQUENTES:
    - Lesão NOVA em contexto oncológico (ex: nódulo adrenal novo em paciente com massa pulmonar) PODE ser incluída como suspeita de metástase, mas DEVE indicar explicitamente: "suspeito de metástase" na descrição do achado.
    - Diferença: "indeterminada" = natureza desconhecida. "Nova" em contexto de malignidade = suspeita.
    - Se há lesões suspeitas + indeterminadas, apenas as suspeitas contam para o M. Mencione as indeterminadas separadamente como nota se desejar.
+5. ESTADIAMENTO CONDICIONAL — quando o estágio depende de um dado que o radiologista NÃO pode confirmar por imagem:
+   Se um componente (T, N ou M) depende de informação NÃO radiológica (ex.: malignidade de um derrame pleural/pericárdico, natureza de uma lesão indeterminada, tipo histológico), NÃO o omita nem o deixe apenas como "não avaliável": PROPONHA o estágio de forma CONDICIONAL, indicando o pressuposto e o que o confirmaria. Atribua com firmeza apenas o determinável por imagem.
+   - Ex. (derrame pleural em câncer de pulmão): "M1a SE o derrame for confirmado maligno (requer citologia); se benigno/parapneumônico, não conta para o M → M0."
+   - Ex. (nódulo adrenal indeterminado): "M1 SE confirmado metastático (caracterizar com RM/PET); atualmente indeterminado, não conta para o M."
+   - Dê o estágio global mais provável e indique entre parênteses como mudaria com a confirmação. Seja breve e prático: apenas o indispensável.
 
 ORDEM DE APRESENTAÇÃO (sempre a mesma):
 1. Estadiamentos (TNM) primeiro.
