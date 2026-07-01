@@ -189,6 +189,61 @@ function deriveTopic(rec: ManualRecommendation): string {
   return "other";
 }
 
+// Module-scope so React preserves the subtree across parent re-renders
+// (defining it inline recreated the component type on every render).
+function RecItem({ rec, isSelected, lang, onToggle, onRemove }: {
+  rec: ManualRecommendation;
+  isSelected: boolean;
+  lang: OutputLanguage;
+  onToggle: (id: string) => void;
+  onRemove?: (id: string) => void;
+}) {
+  const title = rec.title[lang] || rec.title.es;
+  const text = rec.text[lang] || rec.text.es;
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(rec.id)}
+      className={`w-full text-left pl-2 pr-2.5 py-1.5 rounded-lg border-l-2 border transition-all group ${
+        isSelected
+          ? "bg-brand/10 border-brand/30 border-l-brand dark:bg-brand/20"
+          : "bg-[hsl(var(--card))] border-transparent border-l-transparent hover:bg-gray-50 hover:border-l-gray-200 dark:hover:bg-gray-800/50 dark:hover:border-l-gray-700"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <div className={`mt-0.5 h-4 w-4 rounded-[5px] border flex-shrink-0 flex items-center justify-center transition-colors ${
+          isSelected ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600 group-hover:border-brand/50"
+        }`}>
+          {isSelected && <Check className="h-3 w-3 text-white" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className={`text-[11px] font-medium ${isSelected ? "text-brand" : "text-gray-800 dark:text-gray-200"}`}>
+              {title}
+            </span>
+            {rec.source && (
+              <span className="text-[8px] uppercase tracking-wide text-gray-400 dark:text-gray-500 flex-shrink-0 px-1 py-px rounded bg-gray-100 dark:bg-gray-800">{rec.source.split("(")[0].trim()}</span>
+            )}
+            {onRemove && (
+              // span, not button: a button may not contain another button (invalid HTML)
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.stopPropagation(); onRemove(rec.id); }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onRemove(rec.id); } }}
+                className="text-gray-400 hover:text-red-500 ml-auto flex-shrink-0 cursor-pointer"
+              >
+                <X className="h-3 w-3" />
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed">{text}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export function RecommendationPanel({ conclusionText, modality, section, outputLanguage, visible, onSelectionChange }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -394,48 +449,6 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
 
   if (!visible) return null;
 
-  function RecItem({ rec, showRemove }: { rec: ManualRecommendation; showRemove?: boolean }) {
-    const isSelected = selected.has(rec.id);
-    const title = rec.title[outputLanguage] || rec.title.es;
-    const text = rec.text[outputLanguage] || rec.text.es;
-    return (
-      <button
-        type="button"
-        onClick={() => toggle(rec.id)}
-        className={`w-full text-left pl-2 pr-2.5 py-1.5 rounded-lg border-l-2 border transition-all group ${
-          isSelected
-            ? "bg-brand/10 border-brand/30 border-l-brand dark:bg-brand/20"
-            : "bg-[hsl(var(--card))] border-transparent border-l-transparent hover:bg-gray-50 hover:border-l-gray-200 dark:hover:bg-gray-800/50 dark:hover:border-l-gray-700"
-        }`}
-      >
-        <div className="flex items-start gap-2">
-          <div className={`mt-0.5 h-4 w-4 rounded-[5px] border flex-shrink-0 flex items-center justify-center transition-colors ${
-            isSelected ? "bg-brand border-brand" : "border-gray-300 dark:border-gray-600 group-hover:border-brand/50"
-          }`}>
-            {isSelected && <Check className="h-3 w-3 text-white" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[11px] font-medium ${isSelected ? "text-brand" : "text-gray-800 dark:text-gray-200"}`}>
-                {title}
-              </span>
-              {rec.source && (
-                <span className="text-[8px] uppercase tracking-wide text-gray-400 dark:text-gray-500 flex-shrink-0 px-1 py-px rounded bg-gray-100 dark:bg-gray-800">{rec.source.split("(")[0].trim()}</span>
-              )}
-              {showRemove && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); removeCustom(rec.id); }}
-                  className="text-gray-400 hover:text-red-500 ml-auto flex-shrink-0">
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed">{text}</p>
-          </div>
-        </div>
-      </button>
-    );
-  }
-
   return (
     <div className={`border rounded-xl overflow-hidden bg-[hsl(var(--card))] transition-shadow ${open ? "border-brand/20 shadow-sm" : "border-[hsl(var(--border))]"}`}>
       <button
@@ -606,7 +619,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                               if (!showTopicHeaders) {
                                 return (
                                   <div key={topicKey} className="space-y-1 pt-1">
-                                    {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                                    {recs.map((r) => <RecItem key={r.id} rec={r} isSelected={selected.has(r.id)} lang={outputLanguage} onToggle={toggle} onRemove={r.scope === "user" ? removeCustom : undefined} />)}
                                   </div>
                                 );
                               }
@@ -629,7 +642,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
                                   </button>
                                   {topicExpanded && (
                                     <div className="px-1.5 pb-1.5 space-y-1">
-                                      {recs.map((r) => <RecItem key={r.id} rec={r} showRemove={r.scope === "user"} />)}
+                                      {recs.map((r) => <RecItem key={r.id} rec={r} isSelected={selected.has(r.id)} lang={outputLanguage} onToggle={toggle} onRemove={r.scope === "user" ? removeCustom : undefined} />)}
                                     </div>
                                   )}
                                 </div>

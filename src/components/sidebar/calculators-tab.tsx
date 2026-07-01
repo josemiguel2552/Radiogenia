@@ -3981,26 +3981,29 @@ function BullseyeDiagram() {
   );
 }
 
-function LGEPatternDiagrams() {
-  const t = useT();
-  const wallColor = "#d1d5db";
-  const lgeColor = "#fbbf24";
-  const myoColor = "#9ca3af";
+const LGE_WALL_COLOR = "#d1d5db";
+const LGE_MYO_COLOR = "#9ca3af";
 
-  const CrossSection = ({ label, children }: { label: string; children: React.ReactNode }) => (
+function CrossSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
     <div className="flex flex-col items-center gap-1">
       <svg viewBox="0 0 80 80" className="w-16 h-16">
         {/* Epicardium */}
-        <circle cx={40} cy={40} r={36} fill="none" stroke={wallColor} strokeWidth={1} />
+        <circle cx={40} cy={40} r={36} fill="none" stroke={LGE_WALL_COLOR} strokeWidth={1} />
         {/* Myocardium */}
-        <circle cx={40} cy={40} r={36} fill={myoColor} fillOpacity={0.15} />
+        <circle cx={40} cy={40} r={36} fill={LGE_MYO_COLOR} fillOpacity={0.15} />
         {/* Endocardium / cavity */}
-        <circle cx={40} cy={40} r={22} fill="white" stroke={wallColor} strokeWidth={1} />
+        <circle cx={40} cy={40} r={22} fill="white" stroke={LGE_WALL_COLOR} strokeWidth={1} />
         {children}
       </svg>
       <span className="text-[9px] text-center font-medium text-gray-600 dark:text-gray-400 leading-tight">{label}</span>
     </div>
   );
+}
+
+function LGEPatternDiagrams() {
+  const t = useT();
+  const lgeColor = "#fbbf24";
 
   return (
     <div className="mt-2">

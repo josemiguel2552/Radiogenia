@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const fileName = file.name.toLowerCase();
 
     if (fileName.endsWith(".docx") || fileName.endsWith(".doc")) {
-      const mammoth = require("mammoth");
+      const mammoth = (await import("mammoth")).default;
       const buffer = Buffer.from(await file.arrayBuffer());
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;

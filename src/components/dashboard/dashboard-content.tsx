@@ -188,6 +188,8 @@ export function DashboardContent() {
   // Audit: timing + error reporting
   const generateStartRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Cancel any in-flight generation streams when the component unmounts.
+  useEffect(() => () => { abortControllerRef.current?.abort(); }, []);
   interface ReportSnapshot {
     dictation: string; findings: string; conclusionVersions: Record<string, string>;
     initialFindings: string; initialConclusion: string; clinicalInfo: string;

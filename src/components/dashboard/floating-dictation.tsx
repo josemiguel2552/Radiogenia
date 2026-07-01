@@ -86,6 +86,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
   }, [toggleRecording, expanded]);
 
   // Dragging
+  const dragCleanupRef = useRef<(() => void) | null>(null);
   const onDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     dragging.current = true;
@@ -104,16 +105,21 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
     };
     const onUp = () => {
       dragging.current = false;
+      dragCleanupRef.current = null;
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
       document.removeEventListener("touchmove", onMove);
       document.removeEventListener("touchend", onUp);
     };
+    dragCleanupRef.current = onUp;
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
     document.addEventListener("touchmove", onMove);
     document.addEventListener("touchend", onUp);
   }, [position]);
+
+  // Remove document drag listeners if the component unmounts mid-drag.
+  useEffect(() => () => { dragCleanupRef.current?.(); }, []);
 
   function handleSend() {
     if (!buffer.trim()) return;

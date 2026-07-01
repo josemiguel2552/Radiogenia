@@ -6,7 +6,8 @@ AI-powered radiology reporting platform built with Next.js and Supabase.
 
 - `npm run dev` — start dev server
 - `npm run build` — production build
-- `npm run lint` — run Next.js linter
+- `npm run lint` — ESLint over `src/` (flat config in `eslint.config.mjs`; must pass with 0 errors)
+- `npm run typecheck` — TypeScript `tsc --noEmit`
 - `npm test` — run tests (vitest)
 - `npm run test:watch` — run tests in watch mode
 
