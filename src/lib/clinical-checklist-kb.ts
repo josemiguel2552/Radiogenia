@@ -162,6 +162,105 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
           "Fuga de contraste oral (localización del defecto)",
         ],
       },
+      {
+        id: "pulmonary-nodule",
+        name: "Nódulo pulmonar incidental / Incidental Pulmonary Nodule",
+        findings: [
+          "Sólido vs subsólido (vidrio deslustrado / parcialmente sólido) — determina el algoritmo de seguimiento",
+          "Tamaño exacto (mm) y comparación con estudios previos (crecimiento)",
+          "Márgenes espiculados, retracción pleural o realce (rasgos de sospecha)",
+          "Categoría Fleischner / Lung-RADS aplicable",
+        ],
+      },
+      {
+        id: "bronchiectasis",
+        name: "Bronquiectasias / Bronchiectasis",
+        findings: [
+          "Distribución (central vs periférica; predominio lobar) — orienta la causa",
+          "Signos de infección/exacerbación activa (impactación mucoide, árbol en brote, consolidación)",
+          "Micetoma en bronquiectasia quística",
+          "Atrapamiento aéreo asociado",
+        ],
+      },
+      {
+        id: "tuberculosis",
+        name: "Tuberculosis pulmonar / Pulmonary Tuberculosis",
+        findings: [
+          "Actividad: cavitación, árbol en brote, consolidación (vs secuela fibrocicatricial)",
+          "Distribución típica (segmentos apicales y posteriores)",
+          "Adenopatías con centro necrótico",
+          "Diseminación miliar; derrame o empiema tuberculoso",
+        ],
+      },
+      {
+        id: "aspiration-pneumonia",
+        name: "Neumonía por aspiración / Aspiration Pneumonia",
+        findings: [
+          "Distribución gravitacional (segmentos dependientes: posteriores de LLSS, basales)",
+          "Cavitación / absceso pulmonar",
+          "Cuerpo extraño endobronquial",
+          "Empiema asociado",
+        ],
+      },
+      {
+        id: "svc-syndrome",
+        name: "Síndrome de vena cava superior / SVC Syndrome",
+        findings: [
+          "Causa (masa mediastínica, adenopatías, trombo) y grado de estenosis/oclusión",
+          "Circulación colateral desarrollada",
+          "Trombo asociado en la VCS y extensión a aurícula derecha",
+        ],
+      },
+      {
+        id: "atelectasis",
+        name: "Atelectasia / Atelectasis",
+        findings: [
+          "Causa obstructiva (tapón mucoso vs masa endobronquial) — clave",
+          "Volumen colapsado y desplazamiento de estructuras",
+          "Broncograma aéreo (sugiere no obstructiva)",
+          "Derrame asociado",
+        ],
+      },
+      {
+        id: "ards",
+        name: "SDRA / Distrés respiratorio agudo / ARDS",
+        findings: [
+          "Extensión y distribución (dependiente, en gradiente) de consolidaciones y vidrio deslustrado",
+          "Barotrauma: neumotórax, neumomediastino, enfisema intersticial",
+          "Derrames asociados",
+          "Consolidación focal nueva (sobreinfección)",
+        ],
+      },
+      {
+        id: "lymphangitic-carcinomatosis",
+        name: "Linfangitis carcinomatosa / Lymphangitic Carcinomatosis",
+        findings: [
+          "Engrosamiento nodular de septos interlobulillares y haces broncovasculares",
+          "Distribución (unilateral orienta a origen pulmonar; bilateral a metastásica)",
+          "Adenopatías hiliares/mediastínicas",
+          "Derrame pleural asociado",
+        ],
+      },
+      {
+        id: "central-airway-lesion",
+        name: "Lesión de tráquea / vía aérea central / Central Airway Lesion",
+        findings: [
+          "Grado de estenosis luminal (porcentaje) — riesgo de vía aérea",
+          "Lesión intraluminal vs compresión extrínseca vs infiltración parietal",
+          "Extensión longitudinal",
+          "Afectación de carina y bronquios principales",
+        ],
+      },
+      {
+        id: "cardiac-mass-thrombus",
+        name: "Masa cardíaca / trombo intracavitario / Cardiac Mass",
+        findings: [
+          "Localización (cavidad, pared) y movilidad (riesgo embólico)",
+          "Trombo vs tumor (realce tras contraste)",
+          "Obstrucción del flujo o afectación valvular",
+          "Derrame pericárdico asociado",
+        ],
+      },
     ],
   },
   {
@@ -381,6 +480,104 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
           "Hallazgos vasculares postoperatorios (trombosis, sangrado activo)",
         ],
       },
+      {
+        id: "epiploic-appendagitis",
+        name: "Apendagitis epiploica / infarto omental / Epiploic Appendagitis",
+        findings: [
+          "Lesión ovalada con grasa central y anillo hiperdenso adyacente al colon",
+          "Descartar diverticulitis o apendicitis como alternativa (evita cirugía innecesaria)",
+          "Ausencia de engrosamiento parietal significativo del colon",
+        ],
+      },
+      {
+        id: "adrenal-mass",
+        name: "Masa suprarrenal / Adrenal Mass",
+        findings: [
+          "Densidad basal (UH) y lavado de contraste (adenoma vs no adenoma)",
+          "Tamaño y crecimiento respecto a previos",
+          "Rasgos de malignidad (bordes irregulares, necrosis, invasión)",
+          "Bilateralidad; en contexto oncológico, sospecha metastásica",
+        ],
+      },
+      {
+        id: "abdominal-wall-hernia",
+        name: "Hernia de pared abdominal complicada / Abdominal Wall Hernia",
+        findings: [
+          "Contenido (asa, grasa) y signos de incarceración/estrangulación (falta de realce, líquido)",
+          "Obstrucción intestinal proximal asociada",
+          "Tipo y localización del defecto",
+        ],
+      },
+      {
+        id: "inflammatory-bowel-disease",
+        name: "Enfermedad inflamatoria intestinal (Crohn) / IBD",
+        findings: [
+          "Segmentos afectados y longitud; patrón salteado",
+          "Actividad (realce mural, ingurgitación vascular — signo del peine)",
+          "Complicaciones: fístulas, abscesos, estenosis con obstrucción",
+          "Perforación / neumoperitoneo",
+        ],
+      },
+      {
+        id: "peritoneal-carcinomatosis",
+        name: "Carcinomatosis peritoneal / Peritoneal Carcinomatosis",
+        findings: [
+          "Implantes peritoneales (localización, tamaño) y omental cake",
+          "Ascitis asociada",
+          "Obstrucción intestinal por implantes",
+          "Resecabilidad (afectación de raíz del mesenterio, intestino delgado difuso)",
+        ],
+      },
+      {
+        id: "pancreatic-mass",
+        name: "Masa pancreática / Pancreatic Mass",
+        findings: [
+          "Relación con vasos (tronco celíaco, AMS, vena porta/mesentérica) — resecabilidad",
+          "Dilatación de vía biliar y conducto pancreático (signo del doble conducto)",
+          "Metástasis hepáticas y adenopatías",
+          "Atrofia parenquimatosa distal",
+        ],
+      },
+      {
+        id: "gallbladder-carcinoma",
+        name: "Carcinoma de vesícula / pólipo / Gallbladder Carcinoma",
+        findings: [
+          "Engrosamiento parietal focal/irregular o masa que reemplaza la vesícula",
+          "Invasión hepática y de vía biliar",
+          "Adenopatías regionales y metástasis",
+          "Pólipo >10 mm o de crecimiento (rasgo de sospecha)",
+        ],
+      },
+      {
+        id: "retroperitoneal-mass",
+        name: "Masa / hematoma retroperitoneal / Retroperitoneal Mass",
+        findings: [
+          "Origen (adenopatías/linfoma, sarcoma, hematoma) y relación con grandes vasos (englobamiento vs desplazamiento)",
+          "Extravasación activa si es hematoma",
+          "Hidronefrosis por englobamiento ureteral",
+          "Extensión a psoas y pared",
+        ],
+      },
+      {
+        id: "splenic-lesion",
+        name: "Lesión esplénica no traumática / Splenic Lesion",
+        findings: [
+          "Infarto (cuña periférica hipodensa) vs absceso (gas, realce en anillo) vs masa",
+          "Origen embólico (buscar cardiopatía) o infeccioso",
+          "Esplenomegalia asociada",
+          "Rotura espontánea (hemoperitoneo)",
+        ],
+      },
+      {
+        id: "adnexal-mass",
+        name: "Masa anexial / Adnexal Mass (O-RADS)",
+        findings: [
+          "Componentes sólidos con realce, septos gruesos o proyecciones papilares (rasgos de sospecha)",
+          "Ascitis e implantes peritoneales",
+          "Bilateralidad",
+          "Torsión asociada",
+        ],
+      },
     ],
   },
   {
@@ -530,6 +727,106 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
           "Realce leptomeníngeo patológico y su distribución",
         ],
       },
+      {
+        id: "subdural-hematoma-chronic",
+        name: "Hematoma subdural crónico / Chronic Subdural Hematoma",
+        findings: [
+          "Componente agudo sobreañadido (resangrado — membranas, niveles líquido-líquido)",
+          "Efecto de masa: desviación de línea media, borramiento de surcos",
+          "Bilateralidad (puede enmascarar el desplazamiento)",
+          "Herniación",
+        ],
+      },
+      {
+        id: "pituitary-mass",
+        name: "Masa hipofisaria / apoplejía / Pituitary Mass",
+        findings: [
+          "Extensión supraselar y compresión del quiasma óptico",
+          "Invasión de senos cavernosos (englobamiento carotídeo)",
+          "Apoplejía (hemorragia/necrosis aguda) — urgencia",
+          "Hidrocefalia por compresión del III ventrículo",
+        ],
+      },
+      {
+        id: "posterior-fossa-lesion",
+        name: "Lesión de fosa posterior / Posterior Fossa Lesion",
+        findings: [
+          "Efecto de masa sobre el IV ventrículo → hidrocefalia obstructiva (urgencia)",
+          "Compresión o desplazamiento del tronco encefálico",
+          "Herniación amigdalar descendente o transtentorial ascendente",
+          "Edema asociado",
+        ],
+      },
+      {
+        id: "demyelinating-disease",
+        name: "Enfermedad desmielinizante (EM) / Demyelinating Disease",
+        findings: [
+          "Lesiones activas (realce tras contraste) vs crónicas",
+          "Distribución típica (periventricular perpendicular, yuxtacortical, infratentorial, medular)",
+          "Carga lesional y comparación con previos (lesiones nuevas)",
+          "Lesión medular asociada",
+        ],
+      },
+      {
+        id: "cerebral-metastases",
+        name: "Metástasis cerebrales / Cerebral Metastases",
+        findings: [
+          "Número y localización (unión córtico-subcortical) — buscar en todo el estudio",
+          "Edema desproporcionado y efecto de masa/herniación",
+          "Componente hemorrágico",
+          "Afectación leptomeníngea",
+        ],
+      },
+      {
+        id: "avm-vascular-malformation",
+        name: "Malformación vascular (MAV) / Vascular Malformation",
+        findings: [
+          "Nido, arterias aferentes y drenaje venoso (drenaje venoso profundo = mayor riesgo)",
+          "Aneurismas de flujo asociados",
+          "Hemorragia aguda",
+          "Efecto de masa y edema",
+        ],
+      },
+      {
+        id: "hypoxic-ischemic-encephalopathy",
+        name: "Encefalopatía hipóxico-isquémica / HIE",
+        findings: [
+          "Pérdida de diferenciación córtico-subcortical y borramiento de surcos (edema difuso)",
+          "Afectación de ganglios basales y tálamos",
+          "Signo del cerebelo blanco (white cerebellum)",
+          "Herniación",
+        ],
+      },
+      {
+        id: "intracranial-vasculopathy",
+        name: "Vasculopatía intracraneal (vasculitis / moyamoya) / Intracranial Vasculopathy",
+        findings: [
+          "Estenosis y oclusiones multifocales y su distribución",
+          "Infartos en distintos territorios y de distintas edades",
+          "Circulación colateral (moyamoya)",
+          "Realce parietal arterial (vasculitis)",
+        ],
+      },
+      {
+        id: "spinal-cord-tumor",
+        name: "Tumor medular / Spinal Cord Tumor",
+        findings: [
+          "Compartimento (intramedular, intradural-extramedular, extradural) — orienta el diagnóstico",
+          "Extensión (niveles) y ensanchamiento medular",
+          "Realce y componente quístico/siringomielia asociada",
+          "Compresión medular / mielopatía",
+        ],
+      },
+      {
+        id: "cauda-equina-syndrome",
+        name: "Síndrome de cola de caballo / Cauda Equina Syndrome",
+        findings: [
+          "Causa compresiva (hernia discal masiva, masa, hematoma, absceso) y nivel",
+          "Grado de compresión del saco tecal y aglutinación de raíces",
+          "Realce (proceso inflamatorio o tumoral)",
+          "Urgencia quirúrgica — señalar",
+        ],
+      },
     ],
   },
   {
@@ -601,6 +898,106 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
           "Masa de partes blandas asociada",
         ],
       },
+      {
+        id: "hip-fracture",
+        name: "Fractura de cadera / cuello femoral / Hip Fracture",
+        findings: [
+          "Localización (intracapsular vs extracapsular) — cambia el tratamiento",
+          "Desplazamiento y conminución",
+          "Fractura oculta (edema en RM si radiografía dudosa)",
+          "Fractura patológica subyacente",
+        ],
+      },
+      {
+        id: "long-bone-fracture",
+        name: "Fractura de hueso largo / Long Bone Fracture",
+        findings: [
+          "Desplazamiento, angulación y conminución",
+          "Lesión vascular asociada (angio si déficit de pulsos)",
+          "Riesgo de síndrome compartimental (edema muscular tenso)",
+          "Extensión intraarticular",
+        ],
+      },
+      {
+        id: "osteomyelitis",
+        name: "Osteomielitis / Osteomyelitis",
+        findings: [
+          "Absceso intraóseo (Brodie) o de partes blandas asociado",
+          "Secuestro y afectación cortical",
+          "Extensión articular (artritis séptica)",
+          "Trayecto fistuloso a piel",
+        ],
+      },
+      {
+        id: "primary-bone-tumor",
+        name: "Tumor óseo primario / Primary Bone Tumor",
+        findings: [
+          "Rasgos de agresividad (patrón permeativo, reacción perióstica interrumpida, masa de partes blandas)",
+          "Matriz (condroide, osteoide) — orienta el tipo",
+          "Extensión intramedular y a partes blandas (planificación)",
+          "Afectación articular o neurovascular",
+        ],
+      },
+      {
+        id: "pathological-fracture",
+        name: "Fractura patológica / Pathological Fracture",
+        findings: [
+          "Lesión ósea subyacente (lítica/blástica) y su naturaleza",
+          "Otras localizaciones de carga en riesgo (buscar más lesiones)",
+          "Masa de partes blandas asociada",
+          "Colapso o inestabilidad si es vertebral",
+        ],
+      },
+      {
+        id: "avascular-necrosis",
+        name: "Necrosis avascular / Avascular Necrosis",
+        findings: [
+          "Estadio (colapso subcondral, signo de la media luna) — determina el tratamiento",
+          "Afectación de la superficie articular",
+          "Bilateralidad (valorar contralateral)",
+          "Edema óseo asociado (RM)",
+        ],
+      },
+      {
+        id: "soft-tissue-mass",
+        name: "Masa de partes blandas / Soft-Tissue Mass",
+        findings: [
+          "Rasgos de sospecha (>5 cm, profunda a la fascia, heterogénea, realce)",
+          "Relación con paquete neurovascular y hueso",
+          "Extensión compartimental (planificación quirúrgica)",
+          "Adenopatías regionales",
+        ],
+      },
+      {
+        id: "tendon-rupture",
+        name: "Rotura tendinosa mayor / Major Tendon Rupture",
+        findings: [
+          "Rotura completa vs parcial y gap entre cabos (retracción)",
+          "Tendón afectado (Aquiles, cuádriceps, rotuliano, manguito)",
+          "Derrame o hematoma asociado",
+          "Cronicidad (retracción, atrofia)",
+        ],
+      },
+      {
+        id: "joint-dislocation",
+        name: "Luxación articular / Joint Dislocation",
+        findings: [
+          "Dirección de la luxación y fracturas asociadas (fractura-luxación)",
+          "Lesión neurovascular asociada",
+          "Congruencia tras reducción y cuerpos libres intraarticulares",
+          "Lesiones de partes blandas (Bankart, Hill-Sachs en el hombro)",
+        ],
+      },
+      {
+        id: "stress-insufficiency-fracture",
+        name: "Fractura de estrés / insuficiencia / Stress Fracture",
+        findings: [
+          "Localización de riesgo (cuello femoral, base del 5º metatarsiano, cortical anterior de tibia)",
+          "Línea de fractura vs solo edema óseo",
+          "Enfermedad ósea subyacente (insuficiencia)",
+          "Bilateralidad",
+        ],
+      },
     ],
   },
   {
@@ -638,6 +1035,106 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
           "Masa glandular subyacente que simule inflamación",
         ],
       },
+      {
+        id: "thyroid-nodule-mass",
+        name: "Nódulo / masa tiroidea / Thyroid Nodule",
+        findings: [
+          "Rasgos de sospecha (microcalcificaciones, hipoecogenicidad marcada, más alto que ancho, márgenes irregulares) — TI-RADS",
+          "Extensión extratiroidea e invasión de estructuras (tráquea, esófago, nervio recurrente)",
+          "Adenopatías cervicales sospechosas",
+          "Desviación o compresión traqueal",
+        ],
+      },
+      {
+        id: "salivary-gland-mass",
+        name: "Masa de glándula salival (parótida) / Salivary Gland Mass",
+        findings: [
+          "Lóbulo superficial vs profundo (relación con el nervio facial) — planificación",
+          "Rasgos de malignidad (márgenes infiltrantes, adenopatías, invasión perineural)",
+          "Multiplicidad o bilateralidad (Warthin)",
+          "Extensión al espacio parafaríngeo",
+        ],
+      },
+      {
+        id: "laryngeal-hypopharyngeal-cancer",
+        name: "Cáncer laríngeo / hipofaríngeo / Laryngeal Cancer",
+        findings: [
+          "Subsitio y extensión (comisura anterior, espacio paraglótico y preepiglótico)",
+          "Invasión de cartílagos (tiroides, cricoides) — estadio T",
+          "Afectación de la vía aérea",
+          "Adenopatías cervicales (niveles) y metástasis",
+        ],
+      },
+      {
+        id: "oral-oropharyngeal-cancer",
+        name: "Cáncer de cavidad oral / orofaringe / Oral Cancer",
+        findings: [
+          "Tamaño y profundidad de invasión; cruce de la línea media",
+          "Invasión ósea (mandíbula/maxilar) e invasión perineural",
+          "Adenopatías cervicales (niveles, extensión extracapsular)",
+          "Extensión a espacios profundos",
+        ],
+      },
+      {
+        id: "cervical-lymphadenopathy",
+        name: "Adenopatías cervicales / Cervical Lymphadenopathy",
+        findings: [
+          "Rasgos de malignidad (necrosis central, redondeamiento, extensión extracapsular)",
+          "Nivel(es) y lateralidad — orienta el primario",
+          "Patrón (metastásico vs linfoma vs infeccioso)",
+          "Buscar el tumor primario (mucosa, tiroides, piel)",
+        ],
+      },
+      {
+        id: "nasopharyngeal-mass",
+        name: "Masa nasofaríngea / Nasopharyngeal Mass",
+        findings: [
+          "Extensión a la base del cráneo e invasión perineural (agujeros)",
+          "Afectación del espacio parafaríngeo y músculos",
+          "Adenopatías retrofaríngeas y cervicales",
+          "Ocupación del oído medio por disfunción tubárica",
+        ],
+      },
+      {
+        id: "orbital-mass",
+        name: "Masa orbitaria / Orbital Mass",
+        findings: [
+          "Localización (intraconal vs extraconal) — orienta el diagnóstico",
+          "Afectación del nervio óptico y músculos extraoculares",
+          "Remodelado/erosión ósea y extensión intracraneal o sinusal",
+          "Compromiso visual por compresión",
+        ],
+      },
+      {
+        id: "cholesteatoma-otomastoiditis",
+        name: "Colesteatoma / otomastoiditis complicada / Cholesteatoma",
+        findings: [
+          "Erosión osicular y de la pared del ático (scutum)",
+          "Complicaciones: erosión del tegmen, del canal facial o del conducto semicircular lateral (fístula)",
+          "Absceso o trombosis de senos (complicación intracraneal)",
+          "Extensión del tejido de partes blandas",
+        ],
+      },
+      {
+        id: "epiglottitis",
+        name: "Epiglotitis / supraglotitis / Epiglottitis",
+        findings: [
+          "Engrosamiento de epiglotis y pliegues aritenoepiglóticos — compromiso de vía aérea",
+          "Absceso asociado (epiglótico, retrofaríngeo)",
+          "Grado de estrechamiento de la vía aérea",
+          "Enfisema o edema cervical",
+        ],
+      },
+      {
+        id: "carotid-body-paraganglioma",
+        name: "Paraganglioma / tumor del cuerpo carotídeo / Paraganglioma",
+        findings: [
+          "Localización y separación de carótidas interna y externa (signo de la lira)",
+          "Vascularización/realce intenso y flow voids",
+          "Multicentricidad (buscar otros paragangliomas)",
+          "Extensión a la base del cráneo o compresión de la vía aérea",
+        ],
+      },
     ],
   },
   {
@@ -663,6 +1160,106 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
           "Crecimiento del saco aneurismático respecto a previos (medidas comparadas)",
           "Permeabilidad de ramas y migración de la endoprótesis",
           "Integridad del dispositivo (fractura, desconexión de módulos)",
+        ],
+      },
+      {
+        id: "acute-limb-ischemia",
+        name: "Isquemia arterial aguda de miembro / Acute Limb Ischemia",
+        findings: [
+          "Nivel de oclusión y longitud del segmento ocluido",
+          "Estado del lecho distal (reconstitución por colaterales) — viabilidad",
+          "Émbolo vs trombosis sobre placa",
+          "Colaterales desarrolladas",
+        ],
+      },
+      {
+        id: "peripheral-arterial-disease",
+        name: "Enfermedad arterial periférica / PAD",
+        findings: [
+          "Localización y grado de estenosis (>50% significativa) y oclusiones",
+          "Calcificación parietal (dificulta el tratamiento endovascular)",
+          "Estado del lecho distal (runoff) — planificación de revascularización",
+          "Aneurismas coexistentes",
+        ],
+      },
+      {
+        id: "thoracic-aortic-aneurysm",
+        name: "Aneurisma de aorta torácica / Thoracic Aortic Aneurysm",
+        findings: [
+          "Diámetro máximo y comparación con previos (crecimiento)",
+          "Signos de rotura o fisura inminente (hematoma, crescent sign)",
+          "Extensión (raíz, ascendente, arco, descendente) y relación con troncos supraaórticos",
+          "Trombo mural",
+        ],
+      },
+      {
+        id: "peripheral-aneurysm",
+        name: "Aneurisma periférico (poplíteo / ilíaco) / Peripheral Aneurysm",
+        findings: [
+          "Diámetro y trombo mural (riesgo embólico y de trombosis)",
+          "Permeabilidad y estado del lecho distal",
+          "Bilateralidad (valorar contralateral) y AAA asociado",
+          "Signos de rotura",
+        ],
+      },
+      {
+        id: "renal-artery-stenosis",
+        name: "Estenosis de arteria renal / Renal Artery Stenosis",
+        findings: [
+          "Grado y localización (ostial vs troncular; ateromatosa vs displasia fibromuscular)",
+          "Asimetría de tamaño renal o atrofia",
+          "Bilateralidad o riñón único",
+          "Infartos renales",
+        ],
+      },
+      {
+        id: "vascular-trauma-pseudoaneurysm",
+        name: "Traumatismo vascular / pseudoaneurisma / Vascular Trauma",
+        findings: [
+          "Extravasación activa de contraste (sangrado) — urgencia",
+          "Pseudoaneurisma y fístula arteriovenosa",
+          "Oclusión o disección traumática",
+          "Hematoma y efecto de masa",
+        ],
+      },
+      {
+        id: "carotid-stenosis",
+        name: "Estenosis carotídea / Carotid Stenosis",
+        findings: [
+          "Grado de estenosis (criterios NASCET)",
+          "Morfología de la placa (ulceración, hemorragia intraplaca — placa vulnerable)",
+          "Bilateralidad y lesión en tándem intracraneal",
+          "Infartos en el territorio",
+        ],
+      },
+      {
+        id: "large-vessel-vasculitis",
+        name: "Vasculitis de gran vaso (Takayasu / arteritis) / Large-Vessel Vasculitis",
+        findings: [
+          "Engrosamiento parietal circunferencial y realce (actividad)",
+          "Estenosis, oclusiones y aneurismas; distribución",
+          "Afectación de troncos supraaórticos y aorta",
+          "Comparación con previos (progresión)",
+        ],
+      },
+      {
+        id: "portomesenteric-thrombosis",
+        name: "Trombosis venosa portal / mesentérica / Portomesenteric Thrombosis",
+        findings: [
+          "Extensión (porta, esplénica, mesentérica superior) y agudo vs crónico (cavernomatosis)",
+          "Isquemia intestinal asociada (edema mural, neumatosis) — urgencia",
+          "Trombo tumoral vs blando (realce) en contexto de CHC",
+          "Causa (cirrosis, estado protrombótico, infección)",
+        ],
+      },
+      {
+        id: "aortic-graft-infection",
+        name: "Infección de prótesis vascular / Aortic Graft Infection",
+        findings: [
+          "Colección o gas periprotésico (tardío = infección)",
+          "Pseudoaneurisma anastomótico",
+          "Fístula aortoentérica (gas, contraste, contacto con duodeno) — urgencia",
+          "Afectación de estructuras vecinas",
         ],
       },
     ],
