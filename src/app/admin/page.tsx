@@ -14,9 +14,10 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical, Sparkles, ShieldAlert,
+  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical, Sparkles, ShieldAlert, Plus,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
+import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
 import { useT } from "@/lib/i18n";
 import { Logo } from "@/components/ui/logo";
 import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
@@ -162,6 +163,41 @@ export default function AdminPage() {
   const [savingChecklist, setSavingChecklist] = useState(false);
   const [checklistExpanded, setChecklistExpanded] = useState(false);
   const [checklistDirty, setChecklistDirty] = useState(false);
+
+  // How many default scenarios (sections/conditions) are missing from the
+  // current checklist — used to offer a non-destructive "add defaults" action.
+  const missingDefaultsCount = (() => {
+    let n = 0;
+    for (const ds of DEFAULT_CHECKLIST_SECTIONS) {
+      const cur = checklistSections.find((s) => s.id === ds.id);
+      if (!cur) { n += ds.conditions.length; continue; }
+      for (const dc of ds.conditions) {
+        if (!cur.conditions.some((c) => c.id === dc.id)) n += 1;
+      }
+    }
+    return n;
+  })();
+
+  // Merge default scenarios that are missing, WITHOUT touching existing edits.
+  function addMissingDefaults() {
+    setChecklistSections((prev) => {
+      const next = prev.map((s) => ({ ...s, conditions: [...s.conditions] }));
+      for (const ds of DEFAULT_CHECKLIST_SECTIONS) {
+        const cur = next.find((s) => s.id === ds.id);
+        if (!cur) {
+          next.push({ id: ds.id, name: ds.name, conditions: ds.conditions.map((c) => ({ ...c, findings: [...c.findings] })) });
+          continue;
+        }
+        for (const dc of ds.conditions) {
+          if (!cur.conditions.some((c) => c.id === dc.id)) {
+            cur.conditions.push({ ...dc, findings: [...dc.findings] });
+          }
+        }
+      }
+      return next;
+    });
+    setChecklistDirty(true);
+  }
   const [chatMessage, setChatMessage] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: "user" | "bot"; text: string }[]>([]);
@@ -837,6 +873,18 @@ export default function AdminPage() {
                     >
                       {savingChecklist ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
                       {t("admin.clinical_checklist_save")}
+                    </Button>
+                  )}
+                  {missingDefaultsCount > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 gap-1 border-amber-300 text-amber-700 dark:text-amber-300 dark:border-amber-700"
+                      onClick={addMissingDefaults}
+                      title={t("admin.clinical_checklist_add_defaults_hint")}
+                    >
+                      <Plus className="h-3 w-3" />
+                      {t("admin.clinical_checklist_add_defaults")} ({missingDefaultsCount})
                     </Button>
                   )}
                   <Button variant="ghost" size="sm" onClick={() => setChecklistExpanded(!checklistExpanded)} className="text-xs gap-1 h-7">
