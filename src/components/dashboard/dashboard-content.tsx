@@ -60,6 +60,7 @@ import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
+import { AutoGrowTextarea } from "@/components/ui/autogrow-textarea";
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -2053,11 +2054,12 @@ export function DashboardContent() {
                   <ChevronDown className={`h-3 w-3 transition-transform ${clinicalOpen ? "rotate-180" : ""}`} />
                 </button>
                 {clinicalOpen && (
-                  <Textarea
+                  <AutoGrowTextarea
                     placeholder={t("dash.clinical_placeholder")}
                     value={clinicalInfo}
                     onChange={(e) => setClinicalInfo(e.target.value)}
-                    className="mt-2 min-h-[56px] text-xs resize-none"
+                    className="mt-2 text-xs"
+                    minHeight={88}
                   />
                 )}
               </div>
@@ -2756,11 +2758,11 @@ function OutputCard({
         ) : showTrace && !editing ? (
           <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
         ) : (
-          <Textarea
+          <AutoGrowTextarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="text-sm leading-relaxed"
-            style={{ minHeight }}
+            minHeight={minHeight}
           />
         )}
         {footerExtra && <div className="mt-1.5">{footerExtra}</div>}
