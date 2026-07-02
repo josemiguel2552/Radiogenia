@@ -2257,6 +2257,7 @@ export function DashboardContent() {
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
               loading={loadingFindings}
+              loadingLabel={t("gen.phase_findings")}
               value={findings}
               onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
@@ -2342,6 +2343,7 @@ export function DashboardContent() {
               title={t("dash.conclusion")}
               icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
               loading={loadingConcStyles[conclusionStyle] ?? false}
+              loadingLabel={conclusionStyle === "grouped" ? t("gen.phase_conclusion_refine") : t("gen.phase_conclusion")}
               value={conclusion}
               onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
               minHeight={110}
@@ -2675,6 +2677,7 @@ function OutputCard({
   traceHighlights,
   traceLocked,
   isDark,
+  loadingLabel,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -2685,6 +2688,7 @@ function OutputCard({
   minHeight: number;
   headerExtra?: React.ReactNode;
   footerExtra?: React.ReactNode;
+  loadingLabel?: string;
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
   traceLocked?: boolean;
   isDark?: boolean;
@@ -2736,6 +2740,11 @@ function OutputCard({
             style={{ height: minHeight }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
+            {loadingLabel && (
+              <span className="absolute inset-0 flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500 animate-[fade-in_0.4s_ease-out]">
+                {loadingLabel}
+              </span>
+            )}
           </div>
         ) : loading && value ? (
           <div

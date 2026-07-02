@@ -28,10 +28,20 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import { TemplatesTab } from "@/components/sidebar/templates-tab";
-import { CalculatorsTab } from "@/components/sidebar/calculators-tab";
-import { RecommendationsTab } from "@/components/sidebar/recommendations-tab";
-import { AccountTab } from "@/components/sidebar/account-tab";
+import dynamic from "next/dynamic";
+
+// Heavy sidebar tabs are code-split: their JS only downloads on first visit
+// (CalculatorsTab alone is ~6k lines). After that they stay mounted so
+// in-tab state survives switching views.
+const tabLoading = () => (
+  <div className="py-16 flex justify-center">
+    <div className="h-5 w-5 rounded-full border-2 border-[hsl(var(--primary))] border-t-transparent animate-spin" />
+  </div>
+);
+const TemplatesTab = dynamic(() => import("@/components/sidebar/templates-tab").then((m) => m.TemplatesTab), { ssr: false, loading: tabLoading });
+const CalculatorsTab = dynamic(() => import("@/components/sidebar/calculators-tab").then((m) => m.CalculatorsTab), { ssr: false, loading: tabLoading });
+const RecommendationsTab = dynamic(() => import("@/components/sidebar/recommendations-tab").then((m) => m.RecommendationsTab), { ssr: false, loading: tabLoading });
+const AccountTab = dynamic(() => import("@/components/sidebar/account-tab").then((m) => m.AccountTab), { ssr: false, loading: tabLoading });
 import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs, SKINS } from "@/lib/ui-prefs";
 import type { UILanguage } from "@/lib/ui-prefs";
@@ -163,6 +173,11 @@ function LanguagePicker({ lang, onLangChange }: {
 function DashboardShellInner({ children, user, role }: { children: React.ReactNode; user: User; role: string }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+  // Views the user has opened at least once: mount lazily, then keep mounted.
+  const [visitedViews, setVisitedViews] = useState<Set<ActiveView>>(new Set(["dashboard"]));
+  useEffect(() => {
+    setVisitedViews((prev) => (prev.has(activeView) ? prev : new Set(prev).add(activeView)));
+  }, [activeView]);
   const { prefs, update } = useUIPrefs();
   const t = useT();
 
@@ -336,10 +351,10 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const mainContent = (
     <>
       <div className={activeView === "dashboard" ? "" : "hidden"}>{children}</div>
-      <div className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}><TemplatesTab /></div>
-      <div className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}><CalculatorsTab /></div>
-      <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}><RecommendationsTab /></div>
-      <div className={activeView === "account" ? "max-w-2xl mx-auto" : "hidden"}><AccountTab /></div>
+      {visitedViews.has("templates") && <div className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}><TemplatesTab /></div>}
+      {visitedViews.has("calculators") && <div className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}><CalculatorsTab /></div>}
+      {visitedViews.has("recommendations") && <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}><RecommendationsTab /></div>}
+      {visitedViews.has("account") && <div className={activeView === "account" ? "max-w-2xl mx-auto" : "hidden"}><AccountTab /></div>}
     </>
   );
 

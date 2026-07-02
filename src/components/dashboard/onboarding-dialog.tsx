@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Mic, Sparkles, PenLine, Save, ChevronRight, ChevronLeft, Rocket } from "lucide-react";
+import { Stethoscope, Mic, Sparkles, PenLine, Save, Wrench, ChevronRight, ChevronLeft, Rocket } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const STORAGE_KEY = "radiogenai_onboarding_done";
@@ -14,6 +14,7 @@ const STEPS = [
   { icon: Sparkles, titleKey: "help.step3_title", descKey: "help.step3_desc", color: "text-purple-500" },
   { icon: PenLine, titleKey: "help.step4_title", descKey: "help.step4_desc", color: "text-amber-500" },
   { icon: Save, titleKey: "help.step5_title", descKey: "help.step5_desc", color: "text-violet-500" },
+  { icon: Wrench, titleKey: "help.step6_title", descKey: "help.step6_desc", color: "text-emerald-500" },
 ];
 
 export function OnboardingDialog() {

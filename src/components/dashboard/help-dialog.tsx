@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HelpCircle, Stethoscope, Mic, Sparkles, PenLine, Save, Settings, Scale, Keyboard } from "lucide-react";
+import { HelpCircle, Stethoscope, Mic, Sparkles, PenLine, Save, Wrench, Settings, Scale, Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useT } from "@/lib/i18n";
@@ -12,6 +12,7 @@ const STEPS = [
   { icon: Sparkles, titleKey: "help.step3_title", descKey: "help.step3_desc" },
   { icon: PenLine, titleKey: "help.step4_title", descKey: "help.step4_desc" },
   { icon: Save, titleKey: "help.step5_title", descKey: "help.step5_desc" },
+  { icon: Wrench, titleKey: "help.step6_title", descKey: "help.step6_desc" },
 ];
 
 const isMac = typeof navigator !== "undefined" && /Mac/.test(navigator.userAgent);
@@ -23,6 +24,7 @@ const SHORTCUTS = [
   { keys: [`${mod}+Enter`], labelKey: "help.shortcut_generate" },
   { keys: [`${mod}+N`], labelKey: "help.shortcut_new" },
   { keys: [`${mod}+/`], labelKey: "help.shortcut_help" },
+  { keys: ["?"], labelKey: "help.shortcut_cheatsheet" },
 ];
 
 export function HelpDialog() {
@@ -31,8 +33,21 @@ export function HelpDialog() {
 
   useEffect(() => {
     function onOpenHelp() { setOpen(true); }
+    // Discreet cheat-sheet shortcut: "?" opens help (unless typing in a field).
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "?" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || el?.isContentEditable) return;
+      e.preventDefault();
+      setOpen(true);
+    }
     window.addEventListener("radiogenai:open-help", onOpenHelp);
-    return () => window.removeEventListener("radiogenai:open-help", onOpenHelp);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("radiogenai:open-help", onOpenHelp);
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, []);
 
   return (
