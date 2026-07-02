@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,6 @@ import {
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -135,9 +134,6 @@ export function DashboardContent() {
   const [loadingFindings, setLoadingFindings] = useState(false);
   const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, grouped: false });
   const conclusion = conclusionVersions[conclusionStyle] || "";
-  const setConclusion = useCallback((v: string) => {
-    setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
-  }, [conclusionStyle]);
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -151,8 +147,6 @@ export function DashboardContent() {
   const [repairMessage, setRepairMessage] = useState<string | null>(null);
 
   // Hidden templates
-  const [hiddenTemplates, setHiddenTemplates] = useState<{ id: string; name: string; modality: string }[]>([]);
-  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [reportMode, setReportModeState] = useState<ReportMode>("structured");
   const setReportMode = (mode: ReportMode) => {
     setReportModeState(mode);
@@ -168,7 +162,7 @@ export function DashboardContent() {
 
   // PII detection
   const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
-  const [piiDismissed, setPiiDismissed] = useState(false); // kept for reset logic
+  const [_piiDismissed, setPiiDismissed] = useState(false); // kept for reset logic
 
   // Pilot metrics
   const reportStartTimeRef = useRef(0);
@@ -222,12 +216,12 @@ export function DashboardContent() {
   const [reportingError, setReportingError] = useState(false);
 
   // Subscription usage (inline — replaces StatsPanel)
-  const [subPlan, setSubPlan] = useState<string>("free");
-  const [subReportsUsed, setSubReportsUsed] = useState(0);
-  const [subReportsLimit, setSubReportsLimit] = useState(30);
-  const [subDictUsedMin, setSubDictUsedMin] = useState(0);
-  const [subDictLimitMin, setSubDictLimitMin] = useState(30);
-  const [subLoaded, setSubLoaded] = useState(false);
+  const [_subPlan, setSubPlan] = useState<string>("free");
+  const [_subReportsUsed, setSubReportsUsed] = useState(0);
+  const [_subReportsLimit, setSubReportsLimit] = useState(30);
+  const [_subDictUsedMin, setSubDictUsedMin] = useState(0);
+  const [_subDictLimitMin, setSubDictLimitMin] = useState(30);
+  const [_subLoaded, setSubLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/subscription")
@@ -747,20 +741,7 @@ export function DashboardContent() {
     whisperStudyTypeRef.current = selectedTemplate?.name || "";
   }, [selectedTemplate]);
 
-  async function loadHiddenTemplates() {
-    try {
-      const res = await fetch("/api/templates/hidden");
-      if (res.ok) setHiddenTemplates(await res.json());
-    } catch { /* ignore */ }
-  }
-
-  async function handleRestoreTemplate(id: string) {
-    await fetch(`/api/templates/hidden?id=${id}`, { method: "DELETE" });
-    setHiddenTemplates((prev) => prev.filter((t) => t.id !== id));
-    const res = await fetch("/api/templates");
-    if (res.ok) setTemplates(await res.json());
-    window.dispatchEvent(new CustomEvent("radiogenai:templates-changed"));
-  }
+  // Hidden-template management (load/restore) lives in templates-tab.tsx.
 
   // Voice recording is handled by useVoiceDictation hook above
 
@@ -1348,7 +1329,7 @@ export function DashboardContent() {
   }
 
   function cleanReport(text: string): string {
-    let cleaned = text
+    const cleaned = text
       .replace(/\*{2,}(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES|RECOMMENDATIONS|RECOMENDACIONES)\*{2,}/gi, "")
       .replace(/^\s*(FINDINGS|HALLAZGOS|CONCLUSION|CONCLUSIÓN|CONCLUSIONES)\s*$/gim, "")
       .replace(/\*{2,3}([^*]+)\*{2,3}\s*:/g, (_match, name: string) => {
@@ -1764,8 +1745,6 @@ export function DashboardContent() {
     </div>
   ) : null;
 
-  const rPct = subReportsLimit > 0 ? Math.min(100, Math.round((subReportsUsed / subReportsLimit) * 100)) : 0;
-  const dPct = subDictLimitMin > 0 ? Math.min(100, Math.round((subDictUsedMin / subDictLimitMin) * 100)) : 0;
   return (
     <div className="flex flex-col gap-3 md:gap-4">
       {/* ── Setup + Dictation (responsive grid) ── */}
@@ -2677,39 +2656,6 @@ export function DashboardContent() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4" />
-              {t("dash.restore_templates_title")}
-            </DialogTitle>
-          </DialogHeader>
-          {hiddenTemplates.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">{t("dash.no_hidden_templates")}</p>
-          ) : (
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              {hiddenTemplates.map((tpl) => (
-                <div key={tpl.id} className="flex items-center justify-between px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700">
-                  <div className="min-w-0">
-                    <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{tpl.name}</p>
-                    <p className="text-[10px] text-gray-400">{tpl.modality}</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0 h-7 text-xs gap-1"
-                    onClick={() => handleRestoreTemplate(tpl.id)}
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    {t("dash.restore")}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

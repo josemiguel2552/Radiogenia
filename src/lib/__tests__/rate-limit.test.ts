@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { rateLimit, RATE_LIMITS } from "../rate-limit";
 
 describe("rateLimit", () => {
@@ -32,7 +32,7 @@ describe("rateLimit", () => {
   });
 
   it("predefined configs have expected shape", () => {
-    for (const [name, config] of Object.entries(RATE_LIMITS)) {
+    for (const [, config] of Object.entries(RATE_LIMITS)) {
       expect(config).toHaveProperty("maxTokens");
       expect(config).toHaveProperty("refillRate");
       expect(config).toHaveProperty("intervalMs");

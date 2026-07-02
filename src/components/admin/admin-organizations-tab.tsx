@@ -248,7 +248,7 @@ export function AdminOrganizationsTab() {
       setShowSectionForm(false);
       setSectionName("");
       await loadOrgDetail(selectedOrg);
-    } catch (e) {
+    } catch {
       setSectionError(t("admin.org.network_error_creating_section"));
       setSavingSection(false);
     }
@@ -400,7 +400,7 @@ export function AdminOrganizationsTab() {
         setShowMemberForm(false);
         await Promise.all([loadOrgDetail(selectedOrg), loadOrgs()]);
       }
-    } catch (e) {
+    } catch {
       setMemberError(t("admin.org.network_error_saving"));
       setSavingMember(false);
     }

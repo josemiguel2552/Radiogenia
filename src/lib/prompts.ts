@@ -124,47 +124,6 @@ Se o relatório resultante tiver mais seções do que achados ditados, você est
 - Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta. Se faltar algum, adicione-o a "Outros achados".`,
 };
 
-const DICTATION_ONLY_INSTRUCTION: Record<string, string> = {
-  es: `⚠️ MODO SOLO DICTADO — ESTA ES LA INSTRUCCIÓN MÁS IMPORTANTE:
-NO escribas secciones de normalidad. El informe SOLO contiene lo que el radiólogo dictó.
-1. Escribe ÚNICAMENTE las secciones del template donde el radiólogo dictó un hallazgo (positivo o negativo explícito).
-2. Las secciones NO mencionadas en el dictado se OMITEN por completo — NO las incluyas.
-3. Mantén el formato estructurado: "Sección: Descripción." — una línea por sección.
-⚠️ PROHIBIDO: escribir secciones con frases de normalidad inventadas por ti. Si el radiólogo no mencionó un órgano, NO aparece en el informe.
-
-⚠️⚠️ REGLA DE CERO OMISIONES — ABSOLUTA, SIN EXCEPCIONES:
-- CADA hallazgo del dictado DEBE aparecer en el informe. Si un hallazgo encaja en una sección del template, ponlo ahí. Si NO encaja en NINGUNA sección, DEBES añadir "Otros hallazgos:" al final con TODOS los hallazgos huérfanos.
-- NUNCA fuerces un hallazgo en una sección anatómica incorrecta. La sección debe corresponder ANATÓMICAMENTE al hallazgo (ej: "Tráquea y bronquios" NO es tiroides; nódulos tiroideos van a "Otros hallazgos" si no hay sección de tiroides).
-- NUNCA omitas un hallazgo dictado. Es preferible tener una sección "Otros hallazgos" larga que perder un solo dato clínico.
-- Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta. Si falta alguno, añádelo a "Otros hallazgos".`,
-
-  en: `⚠️ DICTATION ONLY MODE — THIS IS THE MOST IMPORTANT INSTRUCTION:
-Do NOT write normality sections. The report ONLY contains what the radiologist dictated.
-1. Write ONLY template sections where the radiologist dictated a finding (positive or explicit negative).
-2. Sections NOT mentioned in the dictation are OMITTED entirely — do NOT include them.
-3. Keep the structured format: "Section: Description." — one line per section.
-⚠️ FORBIDDEN: writing sections with normality phrases you invented. If the radiologist didn't mention an organ, it does NOT appear in the report.
-
-⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE, NO EXCEPTIONS:
-- EVERY dictated finding MUST appear in the report. If a finding fits a template section, place it there. If it does NOT fit ANY section, you MUST add "Additional findings:" at the end with ALL orphan findings.
-- NEVER force a finding into an incorrect anatomical section. Ask: "is the anatomical structure this finding describes THE structure named by this section?" If NO, move it to the correct section or "Additional findings". Vascular findings go in vessels/heart/mediastinum, not in the organ they supply. Pleural findings go in pleura, not lung. Thyroid findings go in thyroid, not trachea. Lymphadenopathy goes in lymph nodes or mediastinum, not in the adjacent organ section.
-- NEVER omit a dictated finding. A long "Additional findings" section is preferable to losing a single clinical data point.
-- Before finalizing, VERIFY that every piece of data from the dictation appears in your response. If anything is missing, add it to "Additional findings".`,
-
-  pt: `⚠️ MODO SOMENTE DITADO — ESTA É A INSTRUÇÃO MAIS IMPORTANTE:
-NÃO escreva seções de normalidade. O laudo contém APENAS o que o radiologista ditou.
-1. Escreva SOMENTE as seções do template onde o radiologista ditou um achado (positivo ou negativo explícito).
-2. As seções NÃO mencionadas no ditado são OMITIDAS completamente — NÃO as inclua.
-3. Mantenha o formato estruturado: "Seção: Descrição." — uma linha por seção.
-⚠️ PROIBIDO: escrever seções com frases de normalidade inventadas por você. Se o radiologista não mencionou um órgão, ele NÃO aparece no laudo.
-
-⚠️⚠️ REGRA DE ZERO OMISSÕES — ABSOLUTA, SEM EXCEÇÕES:
-- CADA achado do ditado DEVE aparecer no laudo. Se um achado se encaixa em uma seção do template, coloque-o lá. Se NÃO se encaixa em NENHUMA seção, você DEVE adicionar "Outros achados:" ao final com TODOS os achados órfãos.
-- NUNCA force um achado em uma seção anatômica incorreta. A seção deve corresponder ANATOMICAMENTE ao achado (ex: "Traqueia e brônquios" NÃO é tireoide; nódulos tireoidianos vão para "Outros achados" se não houver seção de tireoide).
-- NUNCA omita um achado ditado. Uma seção "Outros achados" longa é preferível a perder um único dado clínico.
-- Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta. Se faltar algum, adicione-o a "Outros achados".`,
-};
-
 /* ── System prompt templates per language ───────────────────── */
 
 function findingsSystemPrompt(lang: OutputLanguage, modality: string): string {

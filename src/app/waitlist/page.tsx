@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Globe, CheckCircle2, Clock, AlertTriangle, Mail } from "lucide-react";
+import { Loader2, Globe, Clock, AlertTriangle, Mail } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 import { PLANS } from "@/lib/types";
@@ -74,8 +74,8 @@ function RegisterForm() {
         return;
       }
 
-      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
-        (window as any).fbq("track", "CompleteRegistration");
+      if (typeof window !== "undefined" && typeof (window as unknown as { fbq?: unknown }).fbq === "function") {
+        (window as unknown as { fbq: (...a: unknown[]) => void }).fbq("track", "CompleteRegistration");
       }
 
       if (data.approved) {

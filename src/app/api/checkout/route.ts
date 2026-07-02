@@ -17,7 +17,7 @@ const PLAN_PRICE_ENV: Record<string, string> = {
   professional: "STRIPE_PRICE_ID_PROFESSIONAL",
 };
 
-async function createCheckoutSession(plan: string, req: NextRequest): Promise<{ url: string | null; error?: string; status?: number }> {
+async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{ url: string | null; error?: string; status?: number }> {
   const stripe = getStripe();
   if (!stripe) return { url: null, error: "Stripe not configured", status: 503 };
 

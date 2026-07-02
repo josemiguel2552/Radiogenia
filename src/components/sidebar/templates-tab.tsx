@@ -389,11 +389,6 @@ export function TemplatesTab() {
     setCatalogLoading(false);
   }
 
-  async function openCatalog() {
-    setCatalogOpen(true);
-    await loadCatalog();
-  }
-
   function switchToHospitalTab() {
     setTplSubTab("hospital");
     if (!catalogLoaded) loadCatalog();

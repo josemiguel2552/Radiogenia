@@ -51,7 +51,7 @@ function parseTemplateBlock(text: string): ParsedTemplate | null {
     const label = fieldMatch ? fieldMatch[1].trim() : trimmed.replace(/[*{}:]/g, "").trim();
     if (!label) continue;
 
-    const isParent = !isIndented && fieldLines.some((next) => {
+    const isParent = !isIndented && fieldLines.some((_next) => {
       const idx = fieldLines.indexOf(fl);
       const nextLine = fieldLines[idx + 1];
       return nextLine && /^\s{2,}/.test(nextLine);

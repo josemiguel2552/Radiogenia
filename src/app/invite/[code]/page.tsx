@@ -101,8 +101,8 @@ export default function InvitePage() {
         return;
       }
 
-      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
-        (window as any).fbq("track", "CompleteRegistration");
+      if (typeof window !== "undefined" && typeof (window as unknown as { fbq?: unknown }).fbq === "function") {
+        (window as unknown as { fbq: (...a: unknown[]) => void }).fbq("track", "CompleteRegistration");
       }
 
       setState(data.auto_approved ? "success" : "success_pending");

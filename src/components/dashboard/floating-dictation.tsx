@@ -149,7 +149,7 @@ export function FloatingDictation({ language, onSendText }: FloatingDictationPro
           type="button"
           onMouseDown={onDragStart}
           onTouchStart={onDragStart}
-          onClick={(e) => {
+          onClick={() => {
             if (!dragging.current) {
               setExpanded(true);
             }

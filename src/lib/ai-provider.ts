@@ -325,7 +325,6 @@ function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProv
     async start(controller) {
       let buffer = "";
       let eventType = "";
-      let hasTokens = false;
 
       try {
         while (true) {
@@ -357,7 +356,6 @@ function parseSSEToTextStream(body: ReadableStream<Uint8Array>, provider: AIProv
               }
               const token = extractStreamToken(parsed, provider, eventType);
               if (token) {
-                hasTokens = true;
                 controller.enqueue(encoder.encode(token));
               }
               if (usageHolder) {

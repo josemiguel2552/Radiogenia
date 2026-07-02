@@ -279,7 +279,6 @@ export async function runComboFindings(
   if (!openaiKey) throw new Error("No OpenAI API key configured for combo pipeline (GPT-4 Mini).");
   if (!deepseekKey) throw new Error("No DeepSeek API key configured for combo pipeline.");
 
-  const t0 = Date.now();
 
   // ── Stage 1: GPT-4 Mini maps dictation → structured JSON ──
   const mapper = buildMapperPrompt(params);
@@ -294,7 +293,6 @@ export async function runComboFindings(
   });
   const mapperRaw = mapperResult.text;
 
-  const t1 = Date.now();
 
   const jsonMatch = mapperRaw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -323,7 +321,6 @@ export async function runComboFindings(
   });
   const validatorRaw = validatorAI.text;
 
-  const t2 = Date.now();
 
   let validatorResult: ValidatorResult = { status: "validated", corrections: [] };
   try {

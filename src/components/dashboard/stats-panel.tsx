@@ -27,7 +27,6 @@ const PERIOD_KEYS: Record<string, string> = {
 export function StatsPanel() {
   const t = useT();
   const [reports, setReports] = useState<ReportStat[]>([]);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("month");
   const [expanded, setExpanded] = useState(false);
@@ -47,12 +46,6 @@ export function StatsPanel() {
       })
       .catch(() => {});
 
-    fetch("/api/reports?count_only=true")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data && typeof data.count === "number") setTotalCount(data.count);
-      })
-      .catch(() => {});
   }, [refreshKey]);
 
   // Refresh stats when a report is generated or saved
