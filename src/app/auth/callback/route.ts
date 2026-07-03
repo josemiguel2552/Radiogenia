@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { ensureProfile } from "@/lib/ensure-profile";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -57,6 +58,19 @@ export async function GET(request: Request) {
 
     if (type === "recovery") {
       return NextResponse.redirect(`${origin}/auth/reset-password`);
+    }
+
+    // OAuth sign-in (e.g. Google): the provider guarantees the email, so make
+    // sure the profile exists and is marked verified — first-time Google users
+    // would otherwise hit the email-verification gate.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) {
+      await ensureProfile(user.id, user.email);
+      const service = createServiceClient();
+      await service
+        .from("profiles")
+        .update({ email_verified: true })
+        .eq("id", user.id);
     }
   }
 
