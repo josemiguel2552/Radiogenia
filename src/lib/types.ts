@@ -395,4 +395,6 @@ export interface ResidentVerification {
   created_at: string;
   user_email?: string;
   user_name?: string;
+  /** True when the resident plan is already active (paid) for this user. */
+  plan_active?: boolean;
 }

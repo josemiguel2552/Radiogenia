@@ -796,3 +796,62 @@ export async function sendPlanChangeEmail(to: string, name: string | null, newPl
     headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `plan-change-${Date.now()}` },
   });
 }
+
+const residentReviewedI18n: Record<EmailLang, { approvedSubject: string; rejectedSubject: string; approvedTitle: string; approvedBody: string; rejectedTitle: string; rejectedBody: string; approvedBtn: string; unsub: string }> = {
+  es: {
+    approvedSubject: "Tu residencia ha sido verificada",
+    rejectedSubject: "Tu verificación de residente",
+    approvedTitle: "Residencia verificada",
+    approvedBody: "Hemos verificado tu certificado de residencia. Para activar el plan Residente ($4.99/mes), completa el pago desde el botón. Tendrás acceso completo en cuanto se confirme.",
+    rejectedTitle: "No pudimos verificar tu residencia",
+    rejectedBody: "No hemos podido validar el certificado enviado. Puedes revisar los datos y volver a enviarlo desde la plataforma, o continuar con el plan gratuito.",
+    approvedBtn: "Completar pago y activar",
+    unsub: "Recibes este correo por tu solicitud de verificación de residente.",
+  },
+  en: {
+    approvedSubject: "Your residency has been verified",
+    rejectedSubject: "Your resident verification",
+    approvedTitle: "Residency verified",
+    approvedBody: "We've verified your residency certificate. To activate the Resident plan ($4.99/mo), complete the payment using the button. You'll get full access as soon as it's confirmed.",
+    rejectedTitle: "We couldn't verify your residency",
+    rejectedBody: "We were unable to validate the certificate you sent. You can review the details and resubmit it from the platform, or continue on the free plan.",
+    approvedBtn: "Complete payment and activate",
+    unsub: "You're receiving this because of your resident verification request.",
+  },
+  pt: {
+    approvedSubject: "Sua residência foi verificada",
+    rejectedSubject: "Sua verificação de residente",
+    approvedTitle: "Residência verificada",
+    approvedBody: "Verificamos seu certificado de residência. Para ativar o plano Residente ($4.99/mês), conclua o pagamento pelo botão. Você terá acesso completo assim que for confirmado.",
+    rejectedTitle: "Não conseguimos verificar sua residência",
+    rejectedBody: "Não foi possível validar o certificado enviado. Você pode revisar os dados e reenviá-lo pela plataforma, ou continuar no plano gratuito.",
+    approvedBtn: "Concluir pagamento e ativar",
+    unsub: "Você recebe este e-mail devido à sua solicitação de verificação de residente.",
+  },
+};
+
+export async function sendResidentReviewedEmail(to: string, name: string | null, status: "approved" | "rejected", lang: EmailLang = "es") {
+  const t = residentReviewedI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+  const approved = status === "approved";
+  const title = approved ? t.approvedTitle : t.rejectedTitle;
+  const body = approved ? t.approvedBody : t.rejectedBody;
+
+  const html = emailShell(`
+        <tr><td style="padding:0 32px;">
+          <h1 style="color:#fff;font-size:23px;font-weight:700;text-align:center;margin:0 0 14px;letter-spacing:-0.3px;">
+            ${greeting ? `${greeting}, ${title.charAt(0).toLowerCase()}${title.slice(1)}` : title}
+          </h1>
+          <p style="color:#c9d1d9;font-size:14px;line-height:1.75;text-align:center;margin:0 0 24px;">${body}</p>
+        </td></tr>
+        ${approved ? cta(`${APP_URL}/auth/verify-resident`, t.approvedBtn) : ""}`,
+    t.unsub, lang);
+
+  const text = `${greeting ? greeting + ", " : ""}${body}${approved ? `\n\n${APP_URL}/auth/verify-resident` : ""}`;
+
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to,
+    subject: approved ? t.approvedSubject : t.rejectedSubject, html, text,
+    headers: { "X-Entity-Ref-ID": `resident-reviewed-${Date.now()}` },
+  });
+}

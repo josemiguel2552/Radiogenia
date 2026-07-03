@@ -82,6 +82,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
   }
 
   if (verification?.status === "approved") {
+    const active = verification.plan_active;
     return (
       <Card className="border-green-200 dark:border-green-800">
         <CardContent className="pt-6 space-y-3">
@@ -89,20 +90,23 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
               <p className="text-sm font-medium text-green-700 dark:text-violet-400">
-                {t("rv.status_approved")}
+                {active ? t("rv.plan_active") : t("rv.status_verified")}
               </p>
               <p className="text-xs text-gray-500">
-                {t("rv.plan_active")} {verification.institution_name && `${t("rv.institution_label")}: ${verification.institution_name}`}
+                {active ? "" : t("rv.verified_pay_hint")}
+                {verification.institution_name && ` ${t("rv.institution_label")}: ${verification.institution_name}`}
               </p>
             </div>
           </div>
-          <Button
-            size="sm"
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
-            onClick={() => { window.location.href = "/api/checkout?plan=resident"; }}
-          >
-            {t("rv.subscribe_now")} — {CURRENCY}{PLANS.resident.price}/{t("account.month")}
-          </Button>
+          {!active && (
+            <Button
+              size="sm"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => { window.location.href = "/api/checkout?plan=resident"; }}
+            >
+              {t("rv.subscribe_now")} — {CURRENCY}{PLANS.resident.price}/{t("account.month")}
+            </Button>
+          )}
         </CardContent>
       </Card>
     );

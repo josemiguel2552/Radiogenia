@@ -9,13 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import {
   Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
   ExternalLink, X, Zap, FileText, Mic, TrendingUp, User, Download, Receipt,
-  Gift, Copy, CheckCheck, ShieldCheck, Brain, Trash2,
+  Gift, Copy, CheckCheck, ShieldCheck, Brain, Trash2, GraduationCap,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { copyToClipboard } from "@/lib/copy-text";
+import { ResidentVerificationForm } from "@/components/resident-verification-form";
 
 interface SubInfo {
   plan: SubscriptionPlan;
@@ -408,6 +409,17 @@ export function AccountTab() {
               )}
             </CardContent>
           </Card>
+
+          {/* Become a resident (free users): verify certificate → pay → resident */}
+          {sub?.plan === "free" && (
+            <div>
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <GraduationCap className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("rv.become_resident")}</span>
+              </div>
+              <ResidentVerificationForm />
+            </div>
+          )}
 
           {/* Billing & Payment */}
           <Card>

@@ -121,13 +121,9 @@ export async function PUT(req: NextRequest) {
           .eq("id", userId)
           .single();
 
-        if (profile?.pending_checkout_plan === "resident") {
-          updates.subscription_plan = "resident";
-          updates.pending_checkout_plan = null;
-          updates.billing_period_start = new Date().toISOString();
-          updates.reports_used_this_month = 0;
-          updates.dictation_seconds_used = 0;
-        }
+        // NOTE: approving the account does NOT grant the resident plan.
+        // Residents keep pending_checkout_plan="resident" and must complete
+        // payment (after their certificate is verified) to activate it.
 
         if (profile?.invitation_code && profile?.invited_by) {
           const bonusExpires = new Date();

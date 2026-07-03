@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
+import { sendResidentReviewedEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -58,34 +59,24 @@ export async function PUT(req: NextRequest) {
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
 
-    // If approved, upgrade user to resident plan
-    if (status === "approved") {
-      const { data: verification } = await service
-        .from("resident_verifications")
-        .select("user_id")
-        .eq("id", id)
+    // Approval only VERIFIES the residency. It does NOT grant the plan — the
+    // user must pay through checkout to activate it. Notify them where to go.
+    const { data: verification } = await service
+      .from("resident_verifications")
+      .select("user_id")
+      .eq("id", id)
+      .single();
+
+    if (verification) {
+      const { data: profile } = await service
+        .from("profiles")
+        .select("email, name")
+        .eq("id", verification.user_id)
         .single();
-
-      if (verification) {
-        const { data: profile } = await service
-          .from("profiles")
-          .select("subscription_plan")
-          .eq("id", verification.user_id)
-          .single();
-
-        // Only upgrade if user is on free plan (don't downgrade from higher plans)
-        if (profile && (profile.subscription_plan === "free" || profile.subscription_plan === "resident")) {
-          await service
-            .from("profiles")
-            .update({
-              subscription_plan: "resident",
-              pending_checkout_plan: null,
-              billing_period_start: new Date().toISOString(),
-              reports_used_this_month: 0,
-              dictation_seconds_used: 0,
-            })
-            .eq("id", verification.user_id);
-        }
+      if (profile?.email) {
+        sendResidentReviewedEmail(profile.email, profile.name, status).catch((err) =>
+          console.error("[admin/resident-verifications] email error:", err instanceof Error ? err.message : err),
+        );
       }
     }
 
