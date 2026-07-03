@@ -246,6 +246,21 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
+    // Resident pricing requires an approved verification, also when arriving
+    // here as a plan change (checkout enforces the same rule).
+    if (plan === "resident") {
+      const { data: verification } = await service
+        .from("resident_verifications")
+        .select("status")
+        .eq("user_id", user.id)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+      if (!verification) {
+        return NextResponse.json({ error: "Resident verification required" }, { status: 403 });
+      }
+    }
+
     const { data: profile } = await service
       .from("profiles")
       .select("subscription_plan, billing_period_start, stripe_subscription_id, reports_used_this_month, dictation_seconds_used")
@@ -281,6 +296,9 @@ export async function PUT(req: NextRequest) {
           items: [{ id: itemId, price: newPriceId }],
           proration_behavior: "none",
           billing_cycle_anchor: "now",
+          // A previously scheduled cancellation must not survive an upgrade —
+          // the user is paying for the new plan going forward.
+          cancel_at_period_end: false,
         });
       }
 
@@ -305,30 +323,9 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ ok: true, immediate: true });
     }
 
-    if (profile.stripe_subscription_id) {
-      const stripe = getStripe();
-      if (stripe) {
-        if (plan === "free") {
-          await stripe.subscriptions.update(profile.stripe_subscription_id, {
-            cancel_at_period_end: true,
-          });
-        } else {
-          const envKey = PLAN_PRICE_ENV[plan];
-          const newPriceId = envKey ? process.env[envKey] : null;
-          if (newPriceId) {
-            const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
-            const itemId = sub.items.data[0]?.id;
-            if (itemId) {
-              await stripe.subscriptions.update(profile.stripe_subscription_id, {
-                items: [{ id: itemId, price: newPriceId }],
-                proration_behavior: "none",
-              });
-            }
-          }
-        }
-      }
-    }
-
+    // Write the deferred plan BEFORE touching Stripe: the subscription.updated
+    // webhook checks pending_plan to avoid applying the lower price
+    // immediately, so it must be visible before Stripe fires the event.
     const effectiveDate = getNextPeriodDate(profile.billing_period_start || new Date().toISOString());
     await service
       .from("profiles")
@@ -337,6 +334,41 @@ export async function PUT(req: NextRequest) {
         pending_plan_effective_date: effectiveDate.toISOString(),
       })
       .eq("id", user.id);
+
+    if (profile.stripe_subscription_id) {
+      const stripe = getStripe();
+      if (stripe) {
+        try {
+          if (plan === "free") {
+            await stripe.subscriptions.update(profile.stripe_subscription_id, {
+              cancel_at_period_end: true,
+            });
+          } else {
+            const envKey = PLAN_PRICE_ENV[plan];
+            const newPriceId = envKey ? process.env[envKey] : null;
+            if (newPriceId) {
+              const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+              const itemId = sub.items.data[0]?.id;
+              if (itemId) {
+                await stripe.subscriptions.update(profile.stripe_subscription_id, {
+                  items: [{ id: itemId, price: newPriceId }],
+                  proration_behavior: "none",
+                  // Choosing a (paid) plan supersedes any scheduled cancellation.
+                  cancel_at_period_end: false,
+                });
+              }
+            }
+          }
+        } catch (stripeErr) {
+          // Stripe failed → revert the deferred change so DB and Stripe agree.
+          await service
+            .from("profiles")
+            .update({ pending_plan: null, pending_plan_effective_date: null })
+            .eq("id", user.id);
+          throw stripeErr;
+        }
+      }
+    }
 
     return NextResponse.json({ ok: true, deferred: true, effectiveDate: effectiveDate.toISOString() });
   } catch (error) {

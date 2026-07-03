@@ -52,11 +52,18 @@ async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{
 
   const { data: profile } = await service
     .from("profiles")
-    .select("stripe_customer_id, email")
+    .select("stripe_customer_id, stripe_subscription_id, email")
     .eq("id", user.id)
     .single();
 
   if (!profile) return { url: null, error: "Profile not found", status: 404 };
+
+  // Guard against duplicate subscriptions (double billing): a user with an
+  // active subscription must change plans via PUT /api/subscription, never
+  // through a second Checkout session.
+  if (profile.stripe_subscription_id) {
+    return { url: null, error: "Active subscription exists — manage your plan from your account", status: 409 };
+  }
 
   let customerId = profile.stripe_customer_id;
 

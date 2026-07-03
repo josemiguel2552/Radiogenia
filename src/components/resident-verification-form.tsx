@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, Upload, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
-import type { ResidentVerification } from "@/lib/types";
+import { PLANS, CURRENCY, type ResidentVerification } from "@/lib/types";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { useT } from "@/lib/i18n";
 
@@ -84,7 +84,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
   if (verification?.status === "approved") {
     return (
       <Card className="border-green-200 dark:border-green-800">
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-3">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
@@ -96,6 +96,13 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
               </p>
             </div>
           </div>
+          <Button
+            size="sm"
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            onClick={() => { window.location.href = "/api/checkout?plan=resident"; }}
+          >
+            {t("rv.subscribe_now")} — {CURRENCY}{PLANS.resident.price}/{t("account.month")}
+          </Button>
         </CardContent>
       </Card>
     );
@@ -178,7 +185,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
             {t("rv.title")}
           </h3>
           <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
-            {t("rv.price")}<PriceTooltip usd={4.99} />
+            {CURRENCY}{PLANS.resident.price}/{t("account.month")}<PriceTooltip usd={PLANS.resident.price} />
           </Badge>
         </div>
         <p className="text-xs text-gray-500 mb-4">

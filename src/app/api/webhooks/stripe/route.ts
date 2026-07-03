@@ -186,6 +186,18 @@ export async function POST(req: NextRequest) {
           ? subscription.customer
           : subscription.customer.id;
 
+        // Only downgrade if the deleted subscription is the one we track —
+        // deleting a stale/replaced subscription must not kill the active plan.
+        const { data: delProfile } = await service
+          .from("profiles")
+          .select("stripe_subscription_id")
+          .eq("stripe_customer_id", customerId)
+          .single();
+        if (delProfile?.stripe_subscription_id && delProfile.stripe_subscription_id !== subscription.id) {
+          console.log(`[stripe-webhook] subscription.deleted: ${subscription.id} is not the tracked subscription (${delProfile.stripe_subscription_id}), skipping`);
+          break;
+        }
+
         await service
           .from("profiles")
           .update({

@@ -200,7 +200,12 @@ export function AccountTab() {
           window.location.href = checkoutData.url;
           return;
         }
-        setPlanMsg({ ok: false, text: t("account.checkout_error") });
+        // Surface the specific reason (e.g. resident verification required)
+        // instead of a generic failure.
+        const reason = checkoutRes.status === 403 && selectedPlan === "resident"
+          ? t("account.resident_verification_required")
+          : checkoutData.error || t("account.checkout_error");
+        setPlanMsg({ ok: false, text: reason });
         setPlanChangeLoading(false);
         return;
       }
@@ -217,7 +222,10 @@ export function AccountTab() {
         await loadSub();
         setChangePlanOpen(false);
       } else {
-        setPlanMsg({ ok: false, text: data.error || t("gen_error") });
+        const reason = res.status === 403 && selectedPlan === "resident"
+          ? t("account.resident_verification_required")
+          : data.error || t("gen_error");
+        setPlanMsg({ ok: false, text: reason });
       }
     } catch {
       setPlanMsg({ ok: false, text: t("account.checkout_error") });
@@ -320,7 +328,9 @@ export function AccountTab() {
                       </Badge>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      {t("account.next_renewal")}: {formatDate(sub.nextPeriodDate)}
+                      {sub.pendingPlan === "free"
+                        ? <>{t("account.ends_on")}: {formatDate(sub.nextPeriodDate)}</>
+                        : <>{t("account.next_renewal")}: {formatDate(sub.nextPeriodDate)}</>}
                     </p>
                   </div>
                 </div>
@@ -665,7 +675,7 @@ export function AccountTab() {
           </div>
 
           {/* Cancel subscription - only show if on a paid plan and no pending downgrade to free */}
-          {sub && sub.plan !== "free" && sub.plan !== "resident" && sub.pendingPlan !== "free" && (
+          {sub && sub.plan !== "free" && sub.pendingPlan !== "free" && (
             <div className="flex items-center justify-between p-3.5 rounded-lg border border-red-100 dark:border-red-900 bg-red-50/50 dark:bg-red-900/20">
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{t("account.cancel_subscription")}</p>
