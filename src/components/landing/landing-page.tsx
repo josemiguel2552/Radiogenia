@@ -273,9 +273,15 @@ export function LandingPage() {
             <LangToggle lang={lang} setLang={setLang} />
             <Link
               href="/auth/login"
-              className="text-sm text-gray-300 hover:text-white transition-colors px-4 py-2"
+              className="hidden sm:block text-sm text-gray-300 hover:text-white transition-colors px-4 py-2"
             >
               {t("nav.signin")}
+            </Link>
+            <Link
+              href="/waitlist"
+              className="text-sm font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-4 py-2 rounded-full transition-all shadow-lg shadow-purple-500/20"
+            >
+              {t("nav.get_started")}
             </Link>
           </div>
         </div>
@@ -322,13 +328,16 @@ export function LandingPage() {
           </p>
 
           <div data-reveal style={revealDelay(300)} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="#pricing"
-              className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
-            >
-              {t("hero.cta_primary")}
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-            </a>
+            <div className="flex flex-col items-center gap-2">
+              <Link
+                href="/waitlist"
+                className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
+              >
+                {t("hero.cta_primary")}
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <span className="text-[11px] text-gray-500">{t("hero.cta_microcopy")}</span>
+            </div>
             <a
               href="#features"
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-6 py-3.5 rounded-full border border-white/10 hover:border-white/20 transition-all backdrop-blur-sm"
@@ -583,12 +592,13 @@ export function LandingPage() {
                 {t("cta.subtitle")}
               </p>
               <a
-                href="#pricing"
+                href="/waitlist"
                 className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
               >
                 {t("cta.button")}
                 <ArrowRight className="h-4 w-4" />
               </a>
+              <p className="mt-3 text-[11px] text-gray-500">{t("hero.cta_microcopy")}</p>
             </div>
           </div>
         </div>

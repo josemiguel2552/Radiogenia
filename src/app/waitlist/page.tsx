@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Globe, Clock, AlertTriangle, Mail } from "lucide-react";
+import { Loader2, Globe, Clock, AlertTriangle, Mail, ExternalLink, RefreshCw, Check } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 import { PLANS } from "@/lib/types";
@@ -43,6 +43,24 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState<false | "approved" | "pending" | "checkout_failed">(false);
   const [error, setError] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+
+  async function handleResend() {
+    if (resendState !== "idle") return;
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setResendState("sent");
+      // Allow another resend after 30s.
+      setTimeout(() => setResendState("idle"), 30000);
+    } catch {
+      setResendState("idle");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -178,11 +196,56 @@ function RegisterForm() {
             <p className="text-sm text-gray-400 leading-relaxed">
               {t(isPending ? "waitlist.pending_desc" : "waitlist.success_desc")}
             </p>
+            {!isPending && (
+              <>
+                <p className="text-xs text-gray-500">
+                  {t("waitlist.email_sent_to")} <span className="text-gray-300 font-medium">{email}</span>
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <a
+                    href="https://mail.google.com/mail/u/0/#search/radiogen"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-200 hover:bg-white/10 transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t("waitlist.open_gmail")}
+                  </a>
+                  <a
+                    href="https://outlook.live.com/mail/0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-200 hover:bg-white/10 transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t("waitlist.open_outlook")}
+                  </a>
+                </div>
+                <p className="text-[11px] text-gray-500">{t("waitlist.spam_hint")}</p>
+              </>
+            )}
           </div>
           {!isPending && (
-            <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
-              {t("waitlist.signin_link")}
-            </Link>
+            <div className="flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendState !== "idle"}
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 disabled:opacity-60 transition-colors"
+              >
+                {resendState === "sending" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : resendState === "sent" ? (
+                  <Check className="h-3.5 w-3.5 text-green-400" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                {resendState === "sent" ? t("waitlist.resent") : t("waitlist.resend")}
+              </button>
+              <Link href="/auth/login" className="text-sm text-blue-400 hover:text-blue-300">
+                {t("waitlist.signin_link")}
+              </Link>
+            </div>
           )}
         </div>
       </div>
