@@ -6133,11 +6133,89 @@ const THYROID_DTC_TNM: TNMConfig = {
   },
 };
 
+/* ── 12. Uterine cervix (FIGO 2018 / AJCC 8th TNM) ── */
+const CERVIX_TNM: TNMConfig = {
+  edition: "FIGO 2018 / AJCC 8th ed. — Uterine cervix",
+  t: [
+    { code: "T1a1", label: { es: "T1a1 (invasión ≤3 mm) — IA1", en: "T1a1 (≤3 mm depth) — IA1", pt: "T1a1 (invasão ≤3 mm) — IA1" } },
+    { code: "T1a2", label: { es: "T1a2 (>3–5 mm) — IA2", en: "T1a2 (>3–5 mm) — IA2", pt: "T1a2 (>3–5 mm) — IA2" } },
+    { code: "T1b1", label: { es: "T1b1 (>5 mm, ≤2 cm) — IB1", en: "T1b1 (>5 mm, ≤2 cm) — IB1", pt: "T1b1 (>5 mm, ≤2 cm) — IB1" } },
+    { code: "T1b2", label: { es: "T1b2 (>2–4 cm) — IB2", en: "T1b2 (>2–4 cm) — IB2", pt: "T1b2 (>2–4 cm) — IB2" } },
+    { code: "T1b3", label: { es: "T1b3 (>4 cm) — IB3", en: "T1b3 (>4 cm) — IB3", pt: "T1b3 (>4 cm) — IB3" } },
+    { code: "T2a1", label: { es: "T2a1 (vagina sup., ≤4 cm) — IIA1", en: "T2a1 (upper vagina, ≤4 cm) — IIA1", pt: "T2a1 (vagina sup., ≤4 cm) — IIA1" } },
+    { code: "T2a2", label: { es: "T2a2 (vagina sup., >4 cm) — IIA2", en: "T2a2 (upper vagina, >4 cm) — IIA2", pt: "T2a2 (vagina sup., >4 cm) — IIA2" } },
+    { code: "T2b", label: { es: "T2b (parametrio) — IIB", en: "T2b (parametrium) — IIB", pt: "T2b (paramétrio) — IIB" } },
+    { code: "T3a", label: { es: "T3a (tercio inf. vagina) — IIIA", en: "T3a (lower third vagina) — IIIA", pt: "T3a (terço inf. vagina) — IIIA" } },
+    { code: "T3b", label: { es: "T3b (pared pélvica/hidronefrosis) — IIIB", en: "T3b (pelvic wall/hydronephrosis) — IIIB", pt: "T3b (parede pélvica/hidronefrose) — IIIB" } },
+    { code: "T4", label: { es: "T4 (vejiga/recto o >pelvis) — IVA", en: "T4 (bladder/rectum or beyond pelvis) — IVA", pt: "T4 (bexiga/reto ou >pelve) — IVA" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 — ganglios pélvicos (IIIC1)", en: "N1 — pelvic nodes (IIIC1)", pt: "N1 — linfonodos pélvicos (IIIC1)" } },
+    { code: "N1pa", label: { es: "N1 — paraaórticos (IIIC2)", en: "N1 — para-aortic (IIIC2)", pt: "N1 — para-aórticos (IIIC2)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1 (a distancia) — IVB", en: "M1 (distant) — IVB", pt: "M1 (à distância) — IVB" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (T === "T4") return { stage: "IVA", color: "red" };
+    if (N === "N1pa") return { stage: "IIIC2", color: "red" };
+    if (N === "N1") return { stage: "IIIC1", color: "red" };
+    const map: Record<string, { stage: string; color: StageColor }> = {
+      T1a1: { stage: "IA1", color: "green" }, T1a2: { stage: "IA2", color: "green" },
+      T1b1: { stage: "IB1", color: "green" }, T1b2: { stage: "IB2", color: "blue" }, T1b3: { stage: "IB3", color: "blue" },
+      T2a1: { stage: "IIA1", color: "yellow" }, T2a2: { stage: "IIA2", color: "yellow" }, T2b: { stage: "IIB", color: "yellow" },
+      T3a: { stage: "IIIA", color: "red" }, T3b: { stage: "IIIB", color: "red" },
+    };
+    return map[T] || null;
+  },
+};
+
+/* ── 13. Endometrium (AJCC 8th / FIGO 2009) ── */
+const ENDOMETRIUM_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. / FIGO 2009 — Endometrium",
+  t: [
+    { code: "T1a", label: { es: "T1a (<½ miometrio) — IA", en: "T1a (<½ myometrium) — IA", pt: "T1a (<½ miométrio) — IA" } },
+    { code: "T1b", label: { es: "T1b (≥½ miometrio) — IB", en: "T1b (≥½ myometrium) — IB", pt: "T1b (≥½ miométrio) — IB" } },
+    { code: "T2", label: { es: "T2 (estroma cervical) — II", en: "T2 (cervical stroma) — II", pt: "T2 (estroma cervical) — II" } },
+    { code: "T3a", label: { es: "T3a (serosa/anexos) — IIIA", en: "T3a (serosa/adnexa) — IIIA", pt: "T3a (serosa/anexos) — IIIA" } },
+    { code: "T3b", label: { es: "T3b (vagina/parametrio) — IIIB", en: "T3b (vagina/parametrium) — IIIB", pt: "T3b (vagina/paramétrio) — IIIB" } },
+    { code: "T4", label: { es: "T4 (vejiga/recto mucosa) — IVA", en: "T4 (bladder/bowel mucosa) — IVA", pt: "T4 (bexiga/reto mucosa) — IVA" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 — pélvicos (IIIC1)", en: "N1 — pelvic (IIIC1)", pt: "N1 — pélvicos (IIIC1)" } },
+    { code: "N2", label: { es: "N2 — paraaórticos (IIIC2)", en: "N2 — para-aortic (IIIC2)", pt: "N2 — para-aórticos (IIIC2)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1 (a distancia) — IVB", en: "M1 (distant) — IVB", pt: "M1 (à distância) — IVB" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (T === "T4") return { stage: "IVA", color: "red" };
+    if (N === "N2") return { stage: "IIIC2", color: "red" };
+    if (N === "N1") return { stage: "IIIC1", color: "red" };
+    if (T === "T1a") return { stage: "IA", color: "green" };
+    if (T === "T1b") return { stage: "IB", color: "green" };
+    if (T === "T2") return { stage: "II", color: "blue" };
+    if (T === "T3a") return { stage: "IIIA", color: "red" };
+    if (T === "T3b") return { stage: "IIIB", color: "red" };
+    return null;
+  },
+};
+
 /* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol" | "breast_tnm" | "colorectal_tnm" | "gastric_tnm" | "rcc_tnm" | "bladder_tnm" | "prostate_tnm" | "pancreas_tnm" | "hcc_tnm" | "esophagus_tnm" | "gallbladder_tnm" | "thyroid_dtc_tnm";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol" | "breast_tnm" | "colorectal_tnm" | "gastric_tnm" | "rcc_tnm" | "bladder_tnm" | "prostate_tnm" | "pancreas_tnm" | "hcc_tnm" | "esophagus_tnm" | "gallbladder_tnm" | "thyroid_dtc_tnm" | "cervix_tnm" | "endometrium_tnm";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -6170,6 +6248,8 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "esophagus_tnm", emoji: "🌭" },
   { id: "gallbladder_tnm", emoji: "🫧" },
   { id: "thyroid_dtc_tnm", emoji: "🦋" },
+  { id: "cervix_tnm", emoji: "🌸" },
+  { id: "endometrium_tnm", emoji: "🌷" },
 ];
 
 const TNM_TITLES: Partial<Record<CalcId, TL>> = {
@@ -6184,6 +6264,8 @@ const TNM_TITLES: Partial<Record<CalcId, TL>> = {
   esophagus_tnm: { es: "TNM Esófago", en: "Esophagus TNM", pt: "TNM Esôfago" },
   gallbladder_tnm: { es: "TNM Vesícula biliar", en: "Gallbladder TNM", pt: "TNM Vesícula biliar" },
   thyroid_dtc_tnm: { es: "TNM Tiroides (CDT)", en: "Thyroid (DTC) TNM", pt: "TNM Tireoide (CDT)" },
+  cervix_tnm: { es: "Cérvix (FIGO 2018)", en: "Cervix (FIGO 2018)", pt: "Colo do útero (FIGO 2018)" },
+  endometrium_tnm: { es: "Endometrio (FIGO)", en: "Endometrium (FIGO)", pt: "Endométrio (FIGO)" },
 };
 
 export function CalculatorsTab() {
@@ -6229,6 +6311,8 @@ export function CalculatorsTab() {
     esophagus_tnm: tnmTitle("esophagus_tnm"),
     gallbladder_tnm: tnmTitle("gallbladder_tnm"),
     thyroid_dtc_tnm: tnmTitle("thyroid_dtc_tnm"),
+    cervix_tnm: tnmTitle("cervix_tnm"),
+    endometrium_tnm: tnmTitle("endometrium_tnm"),
   };
 
   const q = search.toLowerCase();
@@ -6495,6 +6579,8 @@ export function CalculatorsTab() {
                               {c.id === "esophagus_tnm" && <TNMStager config={ESOPHAGUS_TNM} />}
                               {c.id === "gallbladder_tnm" && <TNMStager config={GALLBLADDER_TNM} />}
                               {c.id === "thyroid_dtc_tnm" && <TNMStager config={THYROID_DTC_TNM} />}
+                              {c.id === "cervix_tnm" && <TNMStager config={CERVIX_TNM} />}
+                              {c.id === "endometrium_tnm" && <TNMStager config={ENDOMETRIUM_TNM} />}
                             </div>
                           )}
                         </div>
