@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { copyToClipboard } from "@/lib/copy-text";
+import { track } from "@/lib/track";
 
 /* ═══════════════════════════════════════════
    Shared helpers
@@ -5812,7 +5813,7 @@ export function CalculatorsTab() {
                         <div key={c.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
                           <button
                             type="button"
-                            onClick={() => setOpenCalc(openCalc === c.id ? null : c.id)}
+                            onClick={() => { if (openCalc !== c.id) track("ui_calculator_opened", { calc: c.id }); setOpenCalc(openCalc === c.id ? null : c.id); }}
                             className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${
                               openCalc === c.id
                                 ? "bg-brand/5 dark:bg-brand/10"

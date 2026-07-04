@@ -1949,13 +1949,51 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
+            {/* Tool-usage summary: which features users actually touch */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <BarChart3 className="h-4 w-4 text-violet-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.usage_summary")}</h2>
+                <span className="text-[10px] text-gray-400">{t("admin.usage_summary_hint")}</span>
+              </div>
+              <CardContent className="pt-0">
+                {(() => {
+                  const counts = new Map<string, { total: number; users: Set<string> }>();
+                  for (const l of auditLogs) {
+                    const entry = counts.get(l.action) || { total: 0, users: new Set<string>() };
+                    entry.total += 1;
+                    if (l.user_email) entry.users.add(l.user_email);
+                    counts.set(l.action, entry);
+                  }
+                  const rows = [...counts.entries()].sort((a, b) => b[1].total - a[1].total);
+                  if (rows.length === 0) return <p className="text-xs text-gray-500 py-2">—</p>;
+                  const max = rows[0][1].total || 1;
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
+                      {rows.map(([action, v]) => (
+                        <div key={action} className="flex items-center gap-2">
+                          <span className={`text-[11px] w-44 shrink-0 truncate ${action.startsWith("ui_") ? "text-violet-600 dark:text-violet-400" : "text-gray-700 dark:text-gray-300"}`}>
+                            {action.replace(/^ui_/, "· ")}
+                          </span>
+                          <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                            <div className="h-full rounded-full bg-violet-400/70" style={{ width: `${Math.max(4, Math.round((v.total / max) * 100))}%` }} />
+                          </div>
+                          <span className="text-[11px] tabular-nums text-gray-500 w-16 text-right shrink-0">{v.total} · {v.users.size}u</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <ClipboardList className="h-4 w-4 text-blue-500" />
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.audit_logs")}</h2>
                 <Badge variant="secondary" className="text-xs">{auditLogs.length} {t("admin.entries")}</Badge>
                 <div className="ml-auto flex gap-1">
-                  {["all", "generate_findings", "generate_conclusion", "correction_logged", "save_report", "report_error"].map((f) => (
+                  {["all", "generate_findings", "generate_conclusion", "correction_logged", "save_report", "report_error", "ui"].map((f) => (
                     <Button
                       key={f}
                       variant={auditFilter === f ? "default" : "outline"}
@@ -1963,7 +2001,7 @@ export default function AdminPage() {
                       className="h-7 text-xs"
                       onClick={() => setAuditFilter(f)}
                     >
-                      {f === "all" ? t("admin.filter_all") : f === "generate_findings" ? t("admin.filter_findings") : f === "generate_conclusion" ? t("admin.filter_conclusions") : f === "correction_logged" ? t("admin.filter_corrections") : f === "save_report" ? t("admin.filter_saves") : t("admin.filter_errors")}
+                      {f === "all" ? t("admin.filter_all") : f === "generate_findings" ? t("admin.filter_findings") : f === "generate_conclusion" ? t("admin.filter_conclusions") : f === "correction_logged" ? t("admin.filter_corrections") : f === "save_report" ? t("admin.filter_saves") : f === "ui" ? t("admin.filter_ui") : t("admin.filter_errors")}
                     </Button>
                   ))}
                 </div>
@@ -1983,7 +2021,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {auditLogs
-                        .filter((l) => auditFilter === "all" || l.action === auditFilter)
+                        .filter((l) => auditFilter === "all" || (auditFilter === "ui" ? l.action.startsWith("ui_") : l.action === auditFilter))
                         .map((log) => {
                         const meta = log.metadata as Record<string, unknown>;
                         const isCorrection = log.action === "correction_logged";
@@ -2143,7 +2181,7 @@ export default function AdminPage() {
                         </tr>
                         );
                       })}
-                      {auditLogs.filter((l) => auditFilter === "all" || l.action === auditFilter).length === 0 && (
+                      {auditLogs.filter((l) => auditFilter === "all" || (auditFilter === "ui" ? l.action.startsWith("ui_") : l.action === auditFilter)).length === 0 && (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
                             {t("admin.no_audit_logs")}

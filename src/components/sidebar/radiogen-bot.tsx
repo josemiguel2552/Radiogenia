@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { track } from "@/lib/track";
 import { Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -144,7 +145,7 @@ export function RadiogenBot() {
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { track("ui_bot_opened"); setOpen(true); }}
         className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors"
       >
         <span className="text-sm">🧠</span>

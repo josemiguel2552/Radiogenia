@@ -60,6 +60,7 @@ import { OnboardingDialog } from "./onboarding-dialog";
 import { computeEditDistance, computeStructuralCompleteness } from "@/lib/pilot-metrics";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
+import { track } from "@/lib/track";
 import { AutoGrowTextarea } from "@/components/ui/autogrow-textarea";
 
 export function DashboardContent() {
@@ -1122,6 +1123,7 @@ export function DashboardContent() {
   }
 
   async function handleDetectSystems() {
+    track("ui_classify_clicked");
     if (!conclusion.trim() || detectingSystems) return;
     setDetectingSystems(true);
     setDetectedSystems(null);
@@ -1258,6 +1260,7 @@ export function DashboardContent() {
 
   async function handleClinicalCheck() {
     if (clinicalCheckRunning || (!findings.trim() && !conclusion.trim())) return;
+    track("ui_clinical_check_clicked");
     setClinicalCheckRunning(true);
     setClinicalSuggestions(null);
     setClinicalAnswers({});
@@ -1425,6 +1428,7 @@ export function DashboardContent() {
 
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
     copyText(text, id);
+    track("ui_copy_report", { mode });
 
     logCorrectionIfNeeded();
     flushCorrections().catch(() => {});
@@ -1609,6 +1613,7 @@ export function DashboardContent() {
   }
 
   function startNewReport() {
+    track("ui_new_report");
     logCorrectionIfNeeded();
     if (findings) {
       previousReportRef.current = {
@@ -1828,7 +1833,7 @@ export function DashboardContent() {
                       <li key={tpl.id} role="option" aria-selected={selectedTemplateId === tpl.id}>
                         <button
                           type="button"
-                          onClick={() => { setSelectedTemplateId(tpl.id); setSelectedModality(tpl.modality); setTemplateSearch(""); }}
+                          onClick={() => { setSelectedTemplateId(tpl.id); setSelectedModality(tpl.modality); setTemplateSearch(""); track("ui_template_selected", { template: tpl.name, modality: tpl.modality }); }}
                           className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedTemplateId === tpl.id ? "bg-brand-soft text-brand font-medium" : ""}`}
                         >
                           <span className="font-medium">{tplName(tpl.name)}</span>
@@ -2107,7 +2112,7 @@ export function DashboardContent() {
                   size="icon"
                   className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
                   style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
-                  onClick={toggleRecording}
+                  onClick={() => { if (!isRecording) track("ui_dictation_start"); toggleRecording(); }}
                 >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>

@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
 import { copyToClipboard } from "@/lib/copy-text";
+import { track } from "@/lib/track";
 
 interface Props {
   conclusionText: string;
@@ -377,7 +378,10 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id); else {
+        next.add(id);
+        track("ui_rec_selected", { rec: id });
+      }
       return next;
     });
   }, []);
@@ -402,6 +406,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     const selectedRecs = allRecs.filter((r) => selected.has(r.id));
     const texts = selectedRecs.map((r) => "- " + (r.text[outputLanguage] || r.text.es));
     copyToClipboard(texts.join("\n"));
+    track("ui_rec_copied", { count: selectedRecs.length });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
 
@@ -453,7 +458,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     <div className={`border rounded-xl overflow-hidden bg-[hsl(var(--card))] transition-shadow ${open ? "border-brand/20 shadow-sm" : "border-[hsl(var(--border))]"}`}>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => { if (!open) track("ui_rec_panel_open"); setOpen(!open); }}
         className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
       >
         <span className="h-7 w-7 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">

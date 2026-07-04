@@ -12,7 +12,15 @@ export async function POST(req: NextRequest) {
     const { action, report_id, provider, model, duration_ms, had_corrections, metadata } = body;
 
     const validActions = ["generate_findings", "generate_conclusion", "save_report", "report_error", "correction_logged"];
-    if (!action || !validActions.includes(action)) {
+    // UI product-analytics events: which tools/buttons users interact with.
+    const UI_ACTIONS = new Set([
+      "ui_view_templates", "ui_view_calculators", "ui_view_recommendations", "ui_view_account",
+      "ui_copy_report", "ui_new_report", "ui_dictation_start",
+      "ui_template_selected", "ui_calculator_opened",
+      "ui_rec_panel_open", "ui_rec_selected", "ui_rec_copied",
+      "ui_bot_opened", "ui_classify_clicked", "ui_clinical_check_clicked",
+    ]);
+    if (!action || (!validActions.includes(action) && !UI_ACTIONS.has(action))) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 

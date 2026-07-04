@@ -46,6 +46,7 @@ import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs, SKINS } from "@/lib/ui-prefs";
 import type { UILanguage } from "@/lib/ui-prefs";
 import { setUnifiedLanguage } from "@/lib/set-language";
+import { track } from "@/lib/track";
 import { LANGUAGES } from "@/lib/types";
 import type { Signature } from "@/lib/types";
 import { useT } from "@/lib/i18n";
@@ -177,6 +178,7 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const [visitedViews, setVisitedViews] = useState<Set<ActiveView>>(new Set(["dashboard"]));
   useEffect(() => {
     setVisitedViews((prev) => (prev.has(activeView) ? prev : new Set(prev).add(activeView)));
+    if (activeView !== "dashboard") track(`ui_view_${activeView}`);
   }, [activeView]);
   const { prefs, update } = useUIPrefs();
   const t = useT();
