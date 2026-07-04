@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
       .insert(row);
 
     if (error) {
+      // Never break the UI over telemetry, but leave a trace in server logs —
+      // a silent swallow here hid a stale DB constraint once already.
+      console.error(`[audit-logs] insert failed for action="${action}": ${error.message}`);
       if (error.message?.includes("audit_logs")) {
         return NextResponse.json({ ok: true, skipped: true });
       }
