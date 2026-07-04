@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
 import { track } from "@/lib/track";
 
@@ -5539,10 +5540,604 @@ function HeartScoreCalc() {
 }
 
 /* ═══════════════════════════════════════════
+   Generic data-driven TNM staging engine
+   (AJCC 8th ed. unless noted). Each cancer is a
+   config of T/N/M option lists + a stage()
+   function. Labels are trilingual inline.
+   ═══════════════════════════════════════════ */
+
+type TL = { es: string; en: string; pt: string };
+type TNMOpt = { code: string; label: TL };
+type TNMExtra = { id: string; label: TL; options: TNMOpt[] };
+type StageColor = "green" | "blue" | "yellow" | "red" | "gray";
+type StageResult = { stage: string; color: StageColor } | null;
+
+type TNMConfig = {
+  edition: string;
+  t: TNMOpt[];
+  n: TNMOpt[];
+  m: TNMOpt[];
+  extras?: TNMExtra[];
+  // sel is keyed by "T", "N", "M" and each extra.id — values are codes.
+  stage: (sel: Record<string, string>) => StageResult;
+};
+
+const TNM_HEADERS: { t: TL; n: TL; m: TL } = {
+  t: { es: "T — Tumor primario", en: "T — Primary tumor", pt: "T — Tumor primário" },
+  n: { es: "N — Ganglios", en: "N — Regional nodes", pt: "N — Linfonodos" },
+  m: { es: "M — Metástasis", en: "M — Metastasis", pt: "M — Metástase" },
+};
+
+function TNMStager({ config }: { config: TNMConfig }) {
+  const t = useT();
+  const { prefs } = useUIPrefs();
+  const lang = (prefs.uiLanguage || "es") as "es" | "en" | "pt";
+  const pick = (l: TL) => l[lang] ?? l.es;
+
+  const [sel, setSel] = useState<Record<string, string>>({});
+  const setDim = (dim: string, code: string) =>
+    setSel((prev) => ({ ...prev, [dim]: code }));
+
+  const toOpts = (opts: TNMOpt[]) => opts.map((o) => ({ key: o.code, label: pick(o.label) }));
+
+  const result = config.stage(sel);
+  const tnmStr = [sel.T, sel.N, sel.M].filter(Boolean).join(" ");
+  const copyText = result
+    ? `${tnmStr} — ${t("calc.stage")} ${result.stage}`
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">{config.edition}</p>
+        <ResetButton onClick={() => setSel({})} />
+      </div>
+
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{pick(TNM_HEADERS.t)}</Label>
+        <OptionPills options={toOpts(config.t)} value={sel.T || ""} onChange={(v) => setDim("T", v)} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{pick(TNM_HEADERS.n)}</Label>
+        <OptionPills options={toOpts(config.n)} value={sel.N || ""} onChange={(v) => setDim("N", v)} />
+      </div>
+      <div>
+        <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{pick(TNM_HEADERS.m)}</Label>
+        <OptionPills options={toOpts(config.m)} value={sel.M || ""} onChange={(v) => setDim("M", v)} />
+      </div>
+      {config.extras?.map((ex) => (
+        <div key={ex.id}>
+          <Label className="text-[11px] text-gray-500 dark:text-gray-400 mb-1 block">{pick(ex.label)}</Label>
+          <OptionPills options={toOpts(ex.options)} value={sel[ex.id] || ""} onChange={(v) => setDim(ex.id, v)} />
+        </div>
+      ))}
+
+      {sel.T && <p className="text-[10px] text-gray-500 font-medium">T → {sel.T}</p>}
+      {sel.N && <p className="text-[10px] text-gray-500 font-medium">N → {sel.N}</p>}
+      {sel.M && <p className="text-[10px] text-gray-500 font-medium">M → {sel.M}</p>}
+
+      {result && (
+        <ResultBox
+          label={t("calc.stage")}
+          value={`${t("calc.stage")} ${result.stage}`}
+          interpretation={tnmStr}
+          color={result.color}
+        />
+      )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+// Helper: category from a detailed code, e.g. "T4b" → "T4", "N1a" → "N1".
+function baseCat(code: string): string {
+  const m = code.match(/^([A-Za-z]+\d+)/);
+  return m ? m[1] : code;
+}
+
+/* ── 1. Breast (AJCC 8th, anatomic stage group) ── */
+const BREAST_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Breast (anatomic)",
+  t: [
+    { code: "Tis", label: { es: "Tis (in situ)", en: "Tis (in situ)", pt: "Tis (in situ)" } },
+    { code: "T1mi", label: { es: "T1mi (≤1 mm)", en: "T1mi (≤1 mm)", pt: "T1mi (≤1 mm)" } },
+    { code: "T1a", label: { es: "T1a (>1–5 mm)", en: "T1a (>1–5 mm)", pt: "T1a (>1–5 mm)" } },
+    { code: "T1b", label: { es: "T1b (>5–10 mm)", en: "T1b (>5–10 mm)", pt: "T1b (>5–10 mm)" } },
+    { code: "T1c", label: { es: "T1c (>10–20 mm)", en: "T1c (>10–20 mm)", pt: "T1c (>10–20 mm)" } },
+    { code: "T2", label: { es: "T2 (>20–50 mm)", en: "T2 (>20–50 mm)", pt: "T2 (>20–50 mm)" } },
+    { code: "T3", label: { es: "T3 (>50 mm)", en: "T3 (>50 mm)", pt: "T3 (>50 mm)" } },
+    { code: "T4a", label: { es: "T4a (pared torácica)", en: "T4a (chest wall)", pt: "T4a (parede torácica)" } },
+    { code: "T4b", label: { es: "T4b (piel)", en: "T4b (skin)", pt: "T4b (pele)" } },
+    { code: "T4c", label: { es: "T4c (ambos)", en: "T4c (both)", pt: "T4c (ambos)" } },
+    { code: "T4d", label: { es: "T4d (inflamatorio)", en: "T4d (inflammatory)", pt: "T4d (inflamatório)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1mi", label: { es: "N1mi (micromtx)", en: "N1mi (micromets)", pt: "N1mi (micromtx)" } },
+    { code: "N1", label: { es: "N1 (axilar móvil)", en: "N1 (mobile axillary)", pt: "N1 (axilar móvel)" } },
+    { code: "N2a", label: { es: "N2a (axilar fijo)", en: "N2a (fixed axillary)", pt: "N2a (axilar fixo)" } },
+    { code: "N2b", label: { es: "N2b (mamaria int.)", en: "N2b (internal mammary)", pt: "N2b (mamária int.)" } },
+    { code: "N3a", label: { es: "N3a (infraclavicular)", en: "N3a (infraclavicular)", pt: "N3a (infraclavicular)" } },
+    { code: "N3b", label: { es: "N3b (axilar + mam. int.)", en: "N3b (axillary + IM)", pt: "N3b (axilar + mam. int.)" } },
+    { code: "N3c", label: { es: "N3c (supraclavicular)", en: "N3c (supraclavicular)", pt: "N3c (supraclavicular)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IV", color: "red" };
+    const tc = T === "Tis" ? "Tis" : baseCat(T); // T1mi/T1a.. -> T1, T4a.. -> T4
+    const t1 = tc === "T1"; const t2 = tc === "T2"; const t3 = tc === "T3"; const t4 = tc === "T4";
+    const nc = baseCat(N); // N1mi stays N1mi (no digit-only issue) -> baseCat("N1mi") = "N1"
+    const isN1mi = N === "N1mi";
+    const isN3 = nc === "N3"; const isN2 = nc === "N2";
+    const isN1 = N === "N1";
+    if (tc === "Tis" && N === "N0") return { stage: "0", color: "green" };
+    if (isN3) return { stage: "IIIC", color: "red" };
+    if (t4) return { stage: "IIIB", color: "red" };
+    if (isN2) return { stage: "IIIA", color: "red" };
+    if (t3 && isN1) return { stage: "IIIA", color: "red" };
+    if (t1 && N === "N0") return { stage: "IA", color: "green" };
+    if (t1 && isN1mi) return { stage: "IB", color: "blue" };
+    // T2/T3 with N1mi behaves like N1
+    const nEff = isN1mi ? "N1" : (N === "N0" ? "N0" : isN1 ? "N1" : "");
+    if (nEff === "N0") {
+      if (t2) return { stage: "IIA", color: "yellow" };
+      if (t3) return { stage: "IIB", color: "yellow" };
+    }
+    if (nEff === "N1") {
+      if (t1) return { stage: "IIA", color: "yellow" };
+      if (t2) return { stage: "IIB", color: "yellow" };
+    }
+    return null;
+  },
+};
+
+/* ── 2. Colorectal (AJCC 8th) ── */
+const COLORECTAL_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Colon & rectum",
+  t: [
+    { code: "Tis", label: { es: "Tis (in situ)", en: "Tis (in situ)", pt: "Tis (in situ)" } },
+    { code: "T1", label: { es: "T1 (submucosa)", en: "T1 (submucosa)", pt: "T1 (submucosa)" } },
+    { code: "T2", label: { es: "T2 (muscular propia)", en: "T2 (muscularis propria)", pt: "T2 (muscular própria)" } },
+    { code: "T3", label: { es: "T3 (perirrectal/cólica)", en: "T3 (pericolorectal)", pt: "T3 (pericolorretal)" } },
+    { code: "T4a", label: { es: "T4a (peritoneo visceral)", en: "T4a (visceral peritoneum)", pt: "T4a (peritônio visceral)" } },
+    { code: "T4b", label: { es: "T4b (otros órganos)", en: "T4b (other organs)", pt: "T4b (outros órgãos)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1a", label: { es: "N1a (1 ganglio)", en: "N1a (1 node)", pt: "N1a (1 linfonodo)" } },
+    { code: "N1b", label: { es: "N1b (2–3 ganglios)", en: "N1b (2–3 nodes)", pt: "N1b (2–3 linfonodos)" } },
+    { code: "N1c", label: { es: "N1c (depósitos tumorales)", en: "N1c (tumor deposits)", pt: "N1c (depósitos tumorais)" } },
+    { code: "N2a", label: { es: "N2a (4–6 ganglios)", en: "N2a (4–6 nodes)", pt: "N2a (4–6 linfonodos)" } },
+    { code: "N2b", label: { es: "N2b (≥7 ganglios)", en: "N2b (≥7 nodes)", pt: "N2b (≥7 linfonodos)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1a", label: { es: "M1a (1 órgano)", en: "M1a (1 organ)", pt: "M1a (1 órgão)" } },
+    { code: "M1b", label: { es: "M1b (>1 órgano)", en: "M1b (>1 organ)", pt: "M1b (>1 órgão)" } },
+    { code: "M1c", label: { es: "M1c (peritoneo)", en: "M1c (peritoneum)", pt: "M1c (peritônio)" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1a") return { stage: "IVA", color: "red" };
+    if (M === "M1b") return { stage: "IVB", color: "red" };
+    if (M === "M1c") return { stage: "IVC", color: "red" };
+    const isN1 = N === "N1a" || N === "N1b" || N === "N1c";
+    if (N === "N0") {
+      if (T === "Tis") return { stage: "0", color: "green" };
+      if (T === "T1" || T === "T2") return { stage: "I", color: "green" };
+      if (T === "T3") return { stage: "IIA", color: "yellow" };
+      if (T === "T4a") return { stage: "IIB", color: "yellow" };
+      if (T === "T4b") return { stage: "IIC", color: "yellow" };
+    }
+    if (isN1) {
+      if (T === "T1" || T === "T2") return { stage: "IIIA", color: "red" };
+      if (T === "T3" || T === "T4a") return { stage: "IIIB", color: "red" };
+      if (T === "T4b") return { stage: "IIIC", color: "red" };
+    }
+    if (N === "N2a") {
+      if (T === "T1") return { stage: "IIIA", color: "red" };
+      if (T === "T2" || T === "T3") return { stage: "IIIB", color: "red" };
+      if (T === "T4a" || T === "T4b") return { stage: "IIIC", color: "red" };
+    }
+    if (N === "N2b") {
+      if (T === "T1" || T === "T2") return { stage: "IIIB", color: "red" };
+      if (T === "T3" || T === "T4a" || T === "T4b") return { stage: "IIIC", color: "red" };
+    }
+    return null;
+  },
+};
+
+/* ── 3. Gastric (AJCC 8th, pathologic) ── */
+const GASTRIC_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Stomach (pathologic)",
+  t: [
+    { code: "Tis", label: { es: "Tis (in situ)", en: "Tis (in situ)", pt: "Tis (in situ)" } },
+    { code: "T1a", label: { es: "T1a (lámina propia)", en: "T1a (lamina propria)", pt: "T1a (lâmina própria)" } },
+    { code: "T1b", label: { es: "T1b (submucosa)", en: "T1b (submucosa)", pt: "T1b (submucosa)" } },
+    { code: "T2", label: { es: "T2 (muscular propia)", en: "T2 (muscularis propria)", pt: "T2 (muscular própria)" } },
+    { code: "T3", label: { es: "T3 (subserosa)", en: "T3 (subserosa)", pt: "T3 (subserosa)" } },
+    { code: "T4a", label: { es: "T4a (serosa)", en: "T4a (serosa)", pt: "T4a (serosa)" } },
+    { code: "T4b", label: { es: "T4b (estructuras adyac.)", en: "T4b (adjacent structures)", pt: "T4b (estruturas adjac.)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (1–2)", en: "N1 (1–2)", pt: "N1 (1–2)" } },
+    { code: "N2", label: { es: "N2 (3–6)", en: "N2 (3–6)", pt: "N2 (3–6)" } },
+    { code: "N3a", label: { es: "N3a (7–15)", en: "N3a (7–15)", pt: "N3a (7–15)" } },
+    { code: "N3b", label: { es: "N3b (≥16)", en: "N3b (≥16)", pt: "N3b (≥16)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IV", color: "red" };
+    const tc = T === "Tis" ? "Tis" : (T === "T1a" || T === "T1b") ? "T1" : T;
+    const key = `${tc} ${N}`;
+    const map: Record<string, { stage: string; color: StageColor }> = {
+      "Tis N0": { stage: "0", color: "green" },
+      "T1 N0": { stage: "IA", color: "green" },
+      "T1 N1": { stage: "IB", color: "blue" }, "T2 N0": { stage: "IB", color: "blue" },
+      "T1 N2": { stage: "IIA", color: "yellow" }, "T2 N1": { stage: "IIA", color: "yellow" }, "T3 N0": { stage: "IIA", color: "yellow" },
+      "T1 N3a": { stage: "IIB", color: "yellow" }, "T2 N2": { stage: "IIB", color: "yellow" }, "T3 N1": { stage: "IIB", color: "yellow" }, "T4a N0": { stage: "IIB", color: "yellow" },
+      "T2 N3a": { stage: "IIIA", color: "red" }, "T3 N2": { stage: "IIIA", color: "red" }, "T4a N1": { stage: "IIIA", color: "red" }, "T4a N2": { stage: "IIIA", color: "red" }, "T4b N0": { stage: "IIIA", color: "red" },
+      "T1 N3b": { stage: "IIIB", color: "red" }, "T2 N3b": { stage: "IIIB", color: "red" }, "T3 N3a": { stage: "IIIB", color: "red" }, "T4a N3a": { stage: "IIIB", color: "red" }, "T4b N1": { stage: "IIIB", color: "red" }, "T4b N2": { stage: "IIIB", color: "red" },
+      "T3 N3b": { stage: "IIIC", color: "red" }, "T4a N3b": { stage: "IIIC", color: "red" }, "T4b N3a": { stage: "IIIC", color: "red" }, "T4b N3b": { stage: "IIIC", color: "red" },
+    };
+    return map[key] || null;
+  },
+};
+
+/* ── 4. Renal cell carcinoma (AJCC 8th) ── */
+const RCC_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Kidney (RCC)",
+  t: [
+    { code: "T1a", label: { es: "T1a (≤4 cm)", en: "T1a (≤4 cm)", pt: "T1a (≤4 cm)" } },
+    { code: "T1b", label: { es: "T1b (>4–7 cm)", en: "T1b (>4–7 cm)", pt: "T1b (>4–7 cm)" } },
+    { code: "T2a", label: { es: "T2a (>7–10 cm)", en: "T2a (>7–10 cm)", pt: "T2a (>7–10 cm)" } },
+    { code: "T2b", label: { es: "T2b (>10 cm, renal)", en: "T2b (>10 cm, kidney)", pt: "T2b (>10 cm, renal)" } },
+    { code: "T3a", label: { es: "T3a (vena renal/grasa)", en: "T3a (renal vein/fat)", pt: "T3a (veia renal/gordura)" } },
+    { code: "T3b", label: { es: "T3b (VCI infradiafr.)", en: "T3b (IVC below diaphragm)", pt: "T3b (VCI infradiafr.)" } },
+    { code: "T3c", label: { es: "T3c (VCI supradiafr./pared)", en: "T3c (IVC above diaphragm/wall)", pt: "T3c (VCI supradiafr./parede)" } },
+    { code: "T4", label: { es: "T4 (>Gerota/suprarrenal)", en: "T4 (beyond Gerota/adrenal)", pt: "T4 (>Gerota/suprarrenal)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (regional)", en: "N1 (regional)", pt: "N1 (regional)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IV", color: "red" };
+    const tc = baseCat(T); // T1a->T1, etc.
+    if (tc === "T4") return { stage: "IV", color: "red" };
+    if (N === "N1") return { stage: "III", color: "red" }; // T1–T3 N1
+    if (tc === "T1") return { stage: "I", color: "green" };
+    if (tc === "T2") return { stage: "II", color: "blue" };
+    if (tc === "T3") return { stage: "III", color: "red" };
+    return null;
+  },
+};
+
+/* ── 5. Bladder (urothelial, AJCC 8th) ── */
+const BLADDER_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Bladder (urothelial)",
+  t: [
+    { code: "Ta", label: { es: "Ta (papilar no invasivo)", en: "Ta (non-invasive papillary)", pt: "Ta (papilar não invasivo)" } },
+    { code: "Tis", label: { es: "Tis (in situ)", en: "Tis (in situ)", pt: "Tis (in situ)" } },
+    { code: "T1", label: { es: "T1 (lámina propia)", en: "T1 (lamina propria)", pt: "T1 (lâmina própria)" } },
+    { code: "T2a", label: { es: "T2a (muscular superficial)", en: "T2a (inner muscle)", pt: "T2a (muscular superficial)" } },
+    { code: "T2b", label: { es: "T2b (muscular profunda)", en: "T2b (outer muscle)", pt: "T2b (muscular profunda)" } },
+    { code: "T3a", label: { es: "T3a (perivesical micro)", en: "T3a (perivesical micro)", pt: "T3a (perivesical micro)" } },
+    { code: "T3b", label: { es: "T3b (perivesical macro)", en: "T3b (perivesical macro)", pt: "T3b (perivesical macro)" } },
+    { code: "T4a", label: { es: "T4a (próstata/útero/vagina)", en: "T4a (prostate/uterus/vagina)", pt: "T4a (próstata/útero/vagina)" } },
+    { code: "T4b", label: { es: "T4b (pared pélvica/abdom.)", en: "T4b (pelvic/abdominal wall)", pt: "T4b (parede pélvica/abdom.)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (1 ganglio pélvico)", en: "N1 (single pelvic node)", pt: "N1 (1 linfonodo pélvico)" } },
+    { code: "N2", label: { es: "N2 (múltiples pélvicos)", en: "N2 (multiple pelvic)", pt: "N2 (múltiplos pélvicos)" } },
+    { code: "N3", label: { es: "N3 (ilíaco común)", en: "N3 (common iliac)", pt: "N3 (ilíaco comum)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1a", label: { es: "M1a (ganglios no regionales)", en: "M1a (non-regional nodes)", pt: "M1a (linfonodos não regionais)" } },
+    { code: "M1b", label: { es: "M1b (metástasis a distancia)", en: "M1b (distant metastasis)", pt: "M1b (metástase à distância)" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1b") return { stage: "IVB", color: "red" };
+    if (M === "M1a") return { stage: "IVA", color: "red" };
+    if (T === "T4b") return { stage: "IVA", color: "red" };
+    if (N === "N2" || N === "N3") return { stage: "IIIB", color: "red" };
+    if (N === "N1") return { stage: "IIIA", color: "red" };
+    // N0
+    if (T === "Ta") return { stage: "0a", color: "green" };
+    if (T === "Tis") return { stage: "0is", color: "green" };
+    if (T === "T1") return { stage: "I", color: "green" };
+    if (T === "T2a" || T === "T2b") return { stage: "II", color: "blue" };
+    if (T === "T3a" || T === "T3b" || T === "T4a") return { stage: "IIIA", color: "yellow" };
+    return null;
+  },
+};
+
+/* ── 6. Prostate (AJCC 8th, needs PSA + Grade Group) ── */
+const PROSTATE_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Prostate (needs PSA + Grade Group)",
+  t: [
+    { code: "T1", label: { es: "T1 (no palpable)", en: "T1 (not palpable)", pt: "T1 (não palpável)" } },
+    { code: "T2a", label: { es: "T2a (≤½ un lóbulo)", en: "T2a (≤½ one lobe)", pt: "T2a (≤½ um lobo)" } },
+    { code: "T2b", label: { es: "T2b (>½ un lóbulo)", en: "T2b (>½ one lobe)", pt: "T2b (>½ um lobo)" } },
+    { code: "T2c", label: { es: "T2c (ambos lóbulos)", en: "T2c (both lobes)", pt: "T2c (ambos lobos)" } },
+    { code: "T3a", label: { es: "T3a (extracapsular)", en: "T3a (extracapsular)", pt: "T3a (extracapsular)" } },
+    { code: "T3b", label: { es: "T3b (vesículas seminales)", en: "T3b (seminal vesicles)", pt: "T3b (vesículas seminais)" } },
+    { code: "T4", label: { es: "T4 (órganos adyacentes)", en: "T4 (adjacent organs)", pt: "T4 (órgãos adjacentes)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (ganglios regionales)", en: "N1 (regional nodes)", pt: "N1 (linfonodos regionais)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  extras: [
+    {
+      id: "PSA",
+      label: { es: "PSA (ng/mL)", en: "PSA (ng/mL)", pt: "PSA (ng/mL)" },
+      options: [
+        { code: "lt10", label: { es: "<10", en: "<10", pt: "<10" } },
+        { code: "10to20", label: { es: "10 – <20", en: "10 – <20", pt: "10 – <20" } },
+        { code: "ge20", label: { es: "≥20", en: "≥20", pt: "≥20" } },
+      ],
+    },
+    {
+      id: "GG",
+      label: { es: "Grupo de grado (ISUP)", en: "Grade Group (ISUP)", pt: "Grupo de grau (ISUP)" },
+      options: [
+        { code: "1", label: { es: "GG1", en: "GG1", pt: "GG1" } },
+        { code: "2", label: { es: "GG2", en: "GG2", pt: "GG2" } },
+        { code: "3", label: { es: "GG3", en: "GG3", pt: "GG3" } },
+        { code: "4", label: { es: "GG4", en: "GG4", pt: "GG4" } },
+        { code: "5", label: { es: "GG5", en: "GG5", pt: "GG5" } },
+      ],
+    },
+  ],
+  stage: (s) => {
+    const { T, N, M, PSA, GG } = s;
+    if (!T || !N || !M || !PSA || !GG) return null;
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (N === "N1") return { stage: "IVA", color: "red" };
+    // N0 M0
+    const gg = parseInt(GG, 10);
+    const tc = baseCat(T); // T2a/b/c -> T2, T3a/b -> T3
+    const t34 = tc === "T3" || tc === "T4";
+    if (gg === 5) return { stage: "IIIC", color: "red" };
+    if (t34) return { stage: "IIIB", color: "red" };
+    // T1–T2 N0 M0, GG 1–4
+    if (PSA === "ge20") return { stage: "IIIA", color: "yellow" };
+    // PSA <20
+    if (gg >= 3) return { stage: "IIC", color: "yellow" };
+    if (gg === 2) return { stage: "IIB", color: "blue" };
+    // GG1, PSA <20
+    const t1_2a = T === "T1" || T === "T2a";
+    if (t1_2a && PSA === "lt10") return { stage: "I", color: "green" };
+    // T1–T2a PSA 10–<20, or T2b/T2c PSA <20, GG1
+    return { stage: "IIA", color: "blue" };
+  },
+};
+
+/* ── 7. Pancreas (AJCC 8th) ── */
+const PANCREAS_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Pancreas (exocrine)",
+  t: [
+    { code: "Tis", label: { es: "Tis (in situ)", en: "Tis (in situ)", pt: "Tis (in situ)" } },
+    { code: "T1", label: { es: "T1 (≤2 cm)", en: "T1 (≤2 cm)", pt: "T1 (≤2 cm)" } },
+    { code: "T2", label: { es: "T2 (>2–4 cm)", en: "T2 (>2–4 cm)", pt: "T2 (>2–4 cm)" } },
+    { code: "T3", label: { es: "T3 (>4 cm)", en: "T3 (>4 cm)", pt: "T3 (>4 cm)" } },
+    { code: "T4", label: { es: "T4 (tronco celíaco/AMS/AHC)", en: "T4 (celiac/SMA/CHA)", pt: "T4 (tronco celíaco/AMS/AHC)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (1–3 ganglios)", en: "N1 (1–3 nodes)", pt: "N1 (1–3 linfonodos)" } },
+    { code: "N2", label: { es: "N2 (≥4 ganglios)", en: "N2 (≥4 nodes)", pt: "N2 (≥4 linfonodos)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IV", color: "red" };
+    if (T === "T4") return { stage: "III", color: "red" };
+    if (N === "N2") return { stage: "III", color: "red" };
+    if (N === "N1") return { stage: "IIB", color: "yellow" }; // T1–T3 N1
+    // N0
+    if (T === "Tis") return { stage: "0", color: "green" };
+    if (T === "T1") return { stage: "IA", color: "green" };
+    if (T === "T2") return { stage: "IB", color: "green" };
+    if (T === "T3") return { stage: "IIA", color: "yellow" };
+    return null;
+  },
+};
+
+/* ── 8. Hepatocellular carcinoma (AJCC 8th) ── */
+const HCC_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Liver (HCC)",
+  t: [
+    { code: "T1a", label: { es: "T1a (solitario ≤2 cm)", en: "T1a (solitary ≤2 cm)", pt: "T1a (solitário ≤2 cm)" } },
+    { code: "T1b", label: { es: "T1b (solitario >2 cm, sin invasión vascular)", en: "T1b (solitary >2 cm, no vascular invasion)", pt: "T1b (solitário >2 cm, sem invasão vascular)" } },
+    { code: "T2", label: { es: "T2 (solitario >2 cm c/invasión vascular, o múltiples ≤5 cm)", en: "T2 (solitary >2 cm w/ vascular invasion, or multiple ≤5 cm)", pt: "T2 (solitário >2 cm c/invasão vascular, ou múltiplos ≤5 cm)" } },
+    { code: "T3", label: { es: "T3 (múltiples, alguno >5 cm)", en: "T3 (multiple, any >5 cm)", pt: "T3 (múltiplos, algum >5 cm)" } },
+    { code: "T4", label: { es: "T4 (rama mayor porta/hepática o invasión de órgano)", en: "T4 (major vein branch or organ invasion)", pt: "T4 (ramo maior porta/hepática ou invasão de órgão)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (regional)", en: "N1 (regional)", pt: "N1 (regional)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (N === "N1") return { stage: "IVA", color: "red" };
+    if (T === "T1a") return { stage: "IA", color: "green" };
+    if (T === "T1b") return { stage: "IB", color: "green" };
+    if (T === "T2") return { stage: "II", color: "blue" };
+    if (T === "T3") return { stage: "IIIA", color: "yellow" };
+    if (T === "T4") return { stage: "IIIB", color: "red" };
+    return null;
+  },
+};
+
+/* ── 9. Esophagus (adenocarcinoma, clinical cTNM, AJCC 8th) ── */
+const ESOPHAGUS_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Esophagus (adenocarcinoma, clinical)",
+  t: [
+    { code: "Tis", label: { es: "Tis (displasia alto grado)", en: "Tis (high-grade dysplasia)", pt: "Tis (displasia alto grau)" } },
+    { code: "T1", label: { es: "T1 (lámina propia/submucosa)", en: "T1 (lamina propria/submucosa)", pt: "T1 (lâmina própria/submucosa)" } },
+    { code: "T2", label: { es: "T2 (muscular propia)", en: "T2 (muscularis propria)", pt: "T2 (muscular própria)" } },
+    { code: "T3", label: { es: "T3 (adventicia)", en: "T3 (adventitia)", pt: "T3 (adventícia)" } },
+    { code: "T4a", label: { es: "T4a (pleura/pericardio/diafragma)", en: "T4a (pleura/pericardium/diaphragm)", pt: "T4a (pleura/pericárdio/diafragma)" } },
+    { code: "T4b", label: { es: "T4b (aorta/vía aérea/vértebra)", en: "T4b (aorta/airway/vertebra)", pt: "T4b (aorta/via aérea/vértebra)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (1–2 ganglios)", en: "N1 (1–2 nodes)", pt: "N1 (1–2 linfonodos)" } },
+    { code: "N2", label: { es: "N2 (3–6 ganglios)", en: "N2 (3–6 nodes)", pt: "N2 (3–6 linfonodos)" } },
+    { code: "N3", label: { es: "N3 (≥7 ganglios)", en: "N3 (≥7 nodes)", pt: "N3 (≥7 linfonodos)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (N === "N3") return { stage: "IVA", color: "red" };
+    if (T === "T4b") return { stage: "IVA", color: "red" };
+    if (N === "N2") return { stage: "IVA", color: "red" };
+    // N0–N1, T up to T4a, M0
+    if (T === "Tis" && N === "N0") return { stage: "0", color: "green" };
+    if (T === "T1" && N === "N0") return { stage: "I", color: "green" };
+    if (T === "T1" && N === "N1") return { stage: "IIA", color: "yellow" };
+    if (T === "T2" && N === "N0") return { stage: "IIB", color: "yellow" };
+    // T2 N1, T3 N0–1, T4a N0–1 → III
+    if ((T === "T2" && N === "N1") || (T === "T3" && (N === "N0" || N === "N1")) || (T === "T4a" && (N === "N0" || N === "N1"))) {
+      return { stage: "III", color: "red" };
+    }
+    return null;
+  },
+};
+
+/* ── 10. Gallbladder (AJCC 8th) ── */
+const GALLBLADDER_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Gallbladder",
+  t: [
+    { code: "Tis", label: { es: "Tis (in situ)", en: "Tis (in situ)", pt: "Tis (in situ)" } },
+    { code: "T1a", label: { es: "T1a (lámina propia)", en: "T1a (lamina propria)", pt: "T1a (lâmina própria)" } },
+    { code: "T1b", label: { es: "T1b (muscular)", en: "T1b (muscular)", pt: "T1b (muscular)" } },
+    { code: "T2a", label: { es: "T2a (lado peritoneal)", en: "T2a (peritoneal side)", pt: "T2a (lado peritoneal)" } },
+    { code: "T2b", label: { es: "T2b (lado hepático)", en: "T2b (hepatic side)", pt: "T2b (lado hepático)" } },
+    { code: "T3", label: { es: "T3 (serosa/hígado/1 órgano)", en: "T3 (serosa/liver/1 organ)", pt: "T3 (serosa/fígado/1 órgão)" } },
+    { code: "T4", label: { es: "T4 (porta/AHC/≥2 órganos)", en: "T4 (portal/CHA/≥2 organs)", pt: "T4 (porta/AHC/≥2 órgãos)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (1–3 ganglios)", en: "N1 (1–3 nodes)", pt: "N1 (1–3 linfonodos)" } },
+    { code: "N2", label: { es: "N2 (≥4 ganglios)", en: "N2 (≥4 nodes)", pt: "N2 (≥4 linfonodos)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  stage: (s) => {
+    const { T, N, M } = s;
+    if (!T || !N || !M) return null;
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (N === "N2") return { stage: "IVB", color: "red" };
+    const tc = T === "T1a" || T === "T1b" ? "T1" : T;
+    if (tc === "T4") return { stage: "IVA", color: "red" }; // T4 N0–N1
+    if (N === "N1") return { stage: "IIIB", color: "red" }; // T1–T3 N1
+    // N0
+    if (T === "Tis") return { stage: "0", color: "green" };
+    if (tc === "T1") return { stage: "I", color: "green" };
+    if (T === "T2a") return { stage: "IIA", color: "blue" };
+    if (T === "T2b") return { stage: "IIB", color: "blue" };
+    if (T === "T3") return { stage: "IIIA", color: "yellow" };
+    return null;
+  },
+};
+
+/* ── 11. Differentiated thyroid carcinoma (AJCC 8th, age-based) ── */
+const THYROID_DTC_TNM: TNMConfig = {
+  edition: "AJCC 8th ed. — Differentiated thyroid (age-based)",
+  t: [
+    { code: "T1", label: { es: "T1 (≤2 cm)", en: "T1 (≤2 cm)", pt: "T1 (≤2 cm)" } },
+    { code: "T2", label: { es: "T2 (>2–4 cm)", en: "T2 (>2–4 cm)", pt: "T2 (>2–4 cm)" } },
+    { code: "T3a", label: { es: "T3a (>4 cm, intratiroideo)", en: "T3a (>4 cm, intrathyroidal)", pt: "T3a (>4 cm, intratireoideo)" } },
+    { code: "T3b", label: { es: "T3b (invasión músculos pretiroideos)", en: "T3b (strap muscle invasion)", pt: "T3b (invasão músculos pré-tireoideos)" } },
+    { code: "T4a", label: { es: "T4a (extratiroideo, órganos vecinos)", en: "T4a (gross extrathyroidal)", pt: "T4a (extratireoideo, órgãos vizinhos)" } },
+    { code: "T4b", label: { es: "T4b (fascia prevertebral/vasos)", en: "T4b (prevertebral fascia/vessels)", pt: "T4b (fáscia pré-vertebral/vasos)" } },
+  ],
+  n: [
+    { code: "N0", label: { es: "N0", en: "N0", pt: "N0" } },
+    { code: "N1", label: { es: "N1 (regional)", en: "N1 (regional)", pt: "N1 (regional)" } },
+  ],
+  m: [
+    { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
+    { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
+  ],
+  extras: [
+    {
+      id: "AGE",
+      label: { es: "Edad al diagnóstico", en: "Age at diagnosis", pt: "Idade ao diagnóstico" },
+      options: [
+        { code: "lt55", label: { es: "<55 años", en: "<55 y", pt: "<55 anos" } },
+        { code: "ge55", label: { es: "≥55 años", en: "≥55 y", pt: "≥55 anos" } },
+      ],
+    },
+  ],
+  stage: (s) => {
+    const { T, N, M, AGE } = s;
+    if (!T || !N || !M || !AGE) return null;
+    if (AGE === "lt55") {
+      return M === "M1" ? { stage: "II", color: "blue" } : { stage: "I", color: "green" };
+    }
+    // ≥55
+    if (M === "M1") return { stage: "IVB", color: "red" };
+    if (T === "T4b") return { stage: "IVA", color: "red" };
+    if (T === "T4a") return { stage: "III", color: "red" };
+    if (T === "T3a" || T === "T3b") return { stage: "II", color: "blue" };
+    // T1–T2
+    if (N === "N1") return { stage: "II", color: "blue" };
+    return { stage: "I", color: "green" };
+  },
+};
+
+/* ═══════════════════════════════════════════
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol" | "breast_tnm" | "colorectal_tnm" | "gastric_tnm" | "rcc_tnm" | "bladder_tnm" | "prostate_tnm" | "pancreas_tnm" | "hcc_tnm" | "esophagus_tnm" | "gallbladder_tnm" | "thyroid_dtc_tnm";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -5564,10 +6159,41 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "orads", emoji: "🥚" },
   { id: "lungrads", emoji: "🫁" },
   { id: "renal_vol", emoji: "📐" },
+  { id: "breast_tnm", emoji: "🎗️" },
+  { id: "colorectal_tnm", emoji: "🧫" },
+  { id: "gastric_tnm", emoji: "🍽️" },
+  { id: "rcc_tnm", emoji: "🫘" },
+  { id: "bladder_tnm", emoji: "🚻" },
+  { id: "prostate_tnm", emoji: "♂️" },
+  { id: "pancreas_tnm", emoji: "🧡" },
+  { id: "hcc_tnm", emoji: "🫀" },
+  { id: "esophagus_tnm", emoji: "🌭" },
+  { id: "gallbladder_tnm", emoji: "🫧" },
+  { id: "thyroid_dtc_tnm", emoji: "🦋" },
 ];
+
+const TNM_TITLES: Partial<Record<CalcId, TL>> = {
+  breast_tnm: { es: "TNM Mama", en: "Breast TNM", pt: "TNM Mama" },
+  colorectal_tnm: { es: "TNM Colorrectal", en: "Colorectal TNM", pt: "TNM Colorretal" },
+  gastric_tnm: { es: "TNM Gástrico", en: "Gastric TNM", pt: "TNM Gástrico" },
+  rcc_tnm: { es: "TNM Renal (CCR)", en: "Renal (RCC) TNM", pt: "TNM Renal (CCR)" },
+  bladder_tnm: { es: "TNM Vejiga", en: "Bladder TNM", pt: "TNM Bexiga" },
+  prostate_tnm: { es: "TNM Próstata", en: "Prostate TNM", pt: "TNM Próstata" },
+  pancreas_tnm: { es: "TNM Páncreas", en: "Pancreas TNM", pt: "TNM Pâncreas" },
+  hcc_tnm: { es: "TNM Hígado (CHC)", en: "Liver (HCC) TNM", pt: "TNM Fígado (CHC)" },
+  esophagus_tnm: { es: "TNM Esófago", en: "Esophagus TNM", pt: "TNM Esôfago" },
+  gallbladder_tnm: { es: "TNM Vesícula biliar", en: "Gallbladder TNM", pt: "TNM Vesícula biliar" },
+  thyroid_dtc_tnm: { es: "TNM Tiroides (CDT)", en: "Thyroid (DTC) TNM", pt: "TNM Tireoide (CDT)" },
+};
 
 export function CalculatorsTab() {
   const t = useT();
+  const { prefs } = useUIPrefs();
+  const tnmLang = (prefs.uiLanguage || "es") as "es" | "en" | "pt";
+  const tnmTitle = (id: CalcId) => {
+    const l = TNM_TITLES[id];
+    return l ? (l[tnmLang] ?? l.es) : id;
+  };
   const [openCalc, setOpenCalc] = useState<CalcId | null>(null);
   const [openCrit, setOpenCrit] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -5592,6 +6218,17 @@ export function CalculatorsTab() {
     orads: "O-RADS MRI",
     lungrads: "Lung-RADS v2022",
     renal_vol: t("crit.renal_vol_title"),
+    breast_tnm: tnmTitle("breast_tnm"),
+    colorectal_tnm: tnmTitle("colorectal_tnm"),
+    gastric_tnm: tnmTitle("gastric_tnm"),
+    rcc_tnm: tnmTitle("rcc_tnm"),
+    bladder_tnm: tnmTitle("bladder_tnm"),
+    prostate_tnm: tnmTitle("prostate_tnm"),
+    pancreas_tnm: tnmTitle("pancreas_tnm"),
+    hcc_tnm: tnmTitle("hcc_tnm"),
+    esophagus_tnm: tnmTitle("esophagus_tnm"),
+    gallbladder_tnm: tnmTitle("gallbladder_tnm"),
+    thyroid_dtc_tnm: tnmTitle("thyroid_dtc_tnm"),
   };
 
   const q = search.toLowerCase();
@@ -5847,6 +6484,17 @@ export function CalculatorsTab() {
                               {c.id === "orads" && <OradsCalc />}
                               {c.id === "lungrads" && <LungRadsCalc />}
                               {c.id === "renal_vol" && <RenalVolumeTKVCalc />}
+                              {c.id === "breast_tnm" && <TNMStager config={BREAST_TNM} />}
+                              {c.id === "colorectal_tnm" && <TNMStager config={COLORECTAL_TNM} />}
+                              {c.id === "gastric_tnm" && <TNMStager config={GASTRIC_TNM} />}
+                              {c.id === "rcc_tnm" && <TNMStager config={RCC_TNM} />}
+                              {c.id === "bladder_tnm" && <TNMStager config={BLADDER_TNM} />}
+                              {c.id === "prostate_tnm" && <TNMStager config={PROSTATE_TNM} />}
+                              {c.id === "pancreas_tnm" && <TNMStager config={PANCREAS_TNM} />}
+                              {c.id === "hcc_tnm" && <TNMStager config={HCC_TNM} />}
+                              {c.id === "esophagus_tnm" && <TNMStager config={ESOPHAGUS_TNM} />}
+                              {c.id === "gallbladder_tnm" && <TNMStager config={GALLBLADDER_TNM} />}
+                              {c.id === "thyroid_dtc_tnm" && <TNMStager config={THYROID_DTC_TNM} />}
                             </div>
                           )}
                         </div>
