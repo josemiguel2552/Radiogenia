@@ -308,79 +308,115 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
 // ---------------------------------------------------------------------------
 
 const onboardingI18n: Record<EmailLang, {
-  subject: string;
-  headline: string; intro: string;
-  tools: { emoji: string; name: string; line: string }[];
+  subject: string; headline: string; intro: string;
+  normLabel: string; normField: string; normPhrase: string;
+  tplLabel: string; tplTitle: string; tplField1: string; tplVal1: string; tplField2: string; tplVal2: string;
+  recLabel: string; recCount: string;
+  calcLabel: string; calcSize: string; calcStage: string;
+  classLabel: string; classFrom: string; classResult: string;
+  botLabel: string; botQ: string; botA: string;
   btn: string; unsub: string;
   textTpl: (g: string, url: string) => string;
 }> = {
   es: {
-    subject: "6 herramientas para informes más rápidos ⚡",
-    headline: "6 herramientas para informes más rápidos",
-    intro: "Muchas pasan desapercibidas. Esto es lo que ya puedes usar:",
-    tools: [
-      { emoji: "📝", name: "Frases de normalidad", line: "Inserta descripciones normales con un solo clic." },
-      { emoji: "📋", name: "Plantillas", line: "Crea plantillas por tipo de estudio con ayuda de la IA." },
-      { emoji: "🔎", name: "Recomendaciones", line: "Sugerencias de seguimiento listas para insertar." },
-      { emoji: "🧮", name: "Calculadoras", line: "Estadiaje y scores: TNM, BI-RADS, TI-RADS y muchos más." },
-      { emoji: "🏷️", name: "Clasificación", line: "Estadifica los hallazgos de tu informe automáticamente." },
-      { emoji: "🤖", name: "Radiogen bot", line: "Un asistente que resuelve tus dudas al momento." },
-    ],
+    subject: "Mira lo que ya puedes hacer en Radiogen.AI 👀",
+    headline: "Todo esto ya está en tu cuenta",
+    intro: "Un vistazo rápido a tus herramientas, con ejemplos reales:",
+    normLabel: "📝 Frases de normalidad",
+    normField: "Pleura y diafragma:", normPhrase: "Sin derrame pleural ni neumotórax.",
+    tplLabel: "📋 Plantillas",
+    tplTitle: "TC tórax · Hallazgos",
+    tplField1: "Parénquima pulmonar:", tplVal1: "Masa de 43 mm en LSI",
+    tplField2: "Ganglios mediastínicos:", tplVal2: "Adenopatía supraclavicular izq.",
+    recLabel: "🔎 Recomendaciones", recCount: "recomendaciones",
+    calcLabel: "🧮 Calculadoras", calcSize: "Tamaño tumoral", calcStage: "Estadio",
+    classLabel: "🏷️ Clasificación",
+    classFrom: "De tu informe, automáticamente:", classResult: "TNM Pulmón · Estadio IVA",
+    botLabel: "🤖 Radiogen bot",
+    botQ: "¿Seguimiento de un quiste pancreático de 2 cm?",
+    botA: "Según Fukuoka 2017: control con RM a los 12 meses; si permanece estable, cada 2 años.",
     btn: "Abrir Radiogen.AI",
     unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI.",
-    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}6 herramientas para escribir informes más rápido:\n\n📝 Frases de normalidad — inserta descripciones normales con un clic.\n📋 Plantillas — créalas por tipo de estudio con ayuda de la IA.\n🔎 Recomendaciones — sugerencias de seguimiento listas para insertar.\n🧮 Calculadoras — estadiaje y scores: TNM, BI-RADS, TI-RADS y más.\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — un asistente que resuelve tus dudas al momento.\n\nAbrir: ${url}`,
+    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Esto es lo que ya puedes hacer en Radiogen.AI:\n\n📝 Frases de normalidad — inserta descripciones normales con un clic.\n📋 Plantillas — por tipo de estudio, creadas con ayuda de la IA.\n🔎 Recomendaciones — seguimiento de ACR, Fukuoka, Bosniak… listo para insertar.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS y más.\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — respuestas basadas en guías clínicas, sin inventar.\n\nAbrir: ${url}`,
   },
   en: {
-    subject: "6 tools for faster reports ⚡",
-    headline: "6 tools for faster reports",
-    intro: "Many go unnoticed. Here's what you can already use:",
-    tools: [
-      { emoji: "📝", name: "Normality phrases", line: "Insert normal-finding descriptions with a single click." },
-      { emoji: "📋", name: "Templates", line: "Build per-study templates with AI help." },
-      { emoji: "🔎", name: "Recommendations", line: "Ready-to-insert follow-up suggestions." },
-      { emoji: "🧮", name: "Calculators", line: "Staging and scores: TNM, BI-RADS, TI-RADS and many more." },
-      { emoji: "🏷️", name: "Classification", line: "Automatically stage the findings in your report." },
-      { emoji: "🤖", name: "Radiogen bot", line: "An assistant that answers your questions instantly." },
-    ],
+    subject: "See what you can already do in Radiogen.AI 👀",
+    headline: "This is all already in your account",
+    intro: "A quick look at your tools, with real examples:",
+    normLabel: "📝 Normality phrases",
+    normField: "Pleura and diaphragm:", normPhrase: "No pleural effusion or pneumothorax.",
+    tplLabel: "📋 Templates",
+    tplTitle: "Chest CT · Findings",
+    tplField1: "Lung parenchyma:", tplVal1: "43 mm mass in LUL",
+    tplField2: "Mediastinal nodes:", tplVal2: "Left supraclavicular adenopathy",
+    recLabel: "🔎 Recommendations", recCount: "recommendations",
+    calcLabel: "🧮 Calculators", calcSize: "Tumor size", calcStage: "Stage",
+    classLabel: "🏷️ Classification",
+    classFrom: "From your report, automatically:", classResult: "Lung TNM · Stage IVA",
+    botLabel: "🤖 Radiogen bot",
+    botQ: "Follow-up for a 2 cm pancreatic cyst?",
+    botA: "Per Fukuoka 2017: MRI at 12 months; if it stays stable, every 2 years.",
     btn: "Open Radiogen.AI",
     unsub: "You received this email because you created a Radiogen.AI account.",
-    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}6 tools for faster reports:\n\n📝 Normality phrases — insert normal descriptions with one click.\n📋 Templates — build per-study templates with AI help.\n🔎 Recommendations — ready-to-insert follow-up suggestions.\n🧮 Calculators — staging and scores: TNM, BI-RADS, TI-RADS and more.\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — an assistant that answers your questions instantly.\n\nOpen: ${url}`,
+    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Here's what you can already do in Radiogen.AI:\n\n📝 Normality phrases — insert normal descriptions with one click.\n📋 Templates — per study type, built with AI help.\n🔎 Recommendations — ACR, Fukuoka, Bosniak follow-up, ready to insert.\n🧮 Calculators — 19 systems: TNM, BI-RADS, TI-RADS, LI-RADS and more.\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — answers grounded in clinical guidelines, no making things up.\n\nOpen: ${url}`,
   },
   pt: {
-    subject: "6 ferramentas para laudos mais rápidos ⚡",
-    headline: "6 ferramentas para laudos mais rápidos",
-    intro: "Muitas passam despercebidas. Veja o que já pode usar:",
-    tools: [
-      { emoji: "📝", name: "Frases de normalidade", line: "Insira descrições normais com um único clique." },
-      { emoji: "📋", name: "Modelos", line: "Crie modelos por tipo de exame com ajuda da IA." },
-      { emoji: "🔎", name: "Recomendações", line: "Sugestões de seguimento prontas para inserir." },
-      { emoji: "🧮", name: "Calculadoras", line: "Estadiamento e scores: TNM, BI-RADS, TI-RADS e muito mais." },
-      { emoji: "🏷️", name: "Classificação", line: "Estadie automaticamente os achados do seu laudo." },
-      { emoji: "🤖", name: "Radiogen bot", line: "Um assistente que tira suas dúvidas na hora." },
-    ],
+    subject: "Veja o que já pode fazer no Radiogen.AI 👀",
+    headline: "Tudo isto já está na sua conta",
+    intro: "Uma olhada rápida nas suas ferramentas, com exemplos reais:",
+    normLabel: "📝 Frases de normalidade",
+    normField: "Pleura e diafragma:", normPhrase: "Sem derrame pleural ou pneumotórax.",
+    tplLabel: "📋 Modelos",
+    tplTitle: "TC tórax · Achados",
+    tplField1: "Parênquima pulmonar:", tplVal1: "Massa de 43 mm no LSE",
+    tplField2: "Linfonodos mediastinais:", tplVal2: "Adenopatia supraclavicular esq.",
+    recLabel: "🔎 Recomendações", recCount: "recomendações",
+    calcLabel: "🧮 Calculadoras", calcSize: "Tamanho tumoral", calcStage: "Estádio",
+    classLabel: "🏷️ Classificação",
+    classFrom: "Do seu laudo, automaticamente:", classResult: "TNM Pulmão · Estádio IVA",
+    botLabel: "🤖 Radiogen bot",
+    botQ: "Seguimento de um cisto pancreático de 2 cm?",
+    botA: "Segundo Fukuoka 2017: RM aos 12 meses; se permanecer estável, a cada 2 anos.",
     btn: "Abrir o Radiogen.AI",
     unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI.",
-    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}6 ferramentas para laudos mais rápidos:\n\n📝 Frases de normalidade — insira descrições normais com um clique.\n📋 Modelos — crie por tipo de exame com ajuda da IA.\n🔎 Recomendações — sugestões de seguimento prontas para inserir.\n🧮 Calculadoras — estadiamento e scores: TNM, BI-RADS, TI-RADS e mais.\n🏷️ Classificação — estadie automaticamente seus achados.\n🤖 Radiogen bot — um assistente que tira suas dúvidas na hora.\n\nAbrir: ${url}`,
+    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}Veja o que já pode fazer no Radiogen.AI:\n\n📝 Frases de normalidade — insira descrições normais com um clique.\n📋 Modelos — por tipo de exame, criados com ajuda da IA.\n🔎 Recomendações — seguimento de ACR, Fukuoka, Bosniak… pronto para inserir.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS e mais.\n🏷️ Classificação — estadie automaticamente seus achados.\n🤖 Radiogen bot — respostas baseadas em diretrizes clínicas, sem inventar.\n\nAbrir: ${url}`,
   },
 };
 
-// One visual tool row: icon chip on the left, name + one-line benefit on the right.
-function toolRowCard(tool: { emoji: string; name: string; line: string }): string {
-  return `<tr><td style="padding:0 28px 8px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1a2234;border:1px solid rgba(124,58,237,0.15);border-radius:12px;">
-      <tr>
-        <td width="66" style="padding:14px 0 14px 14px;vertical-align:middle;">
-          <div style="width:46px;height:46px;border-radius:12px;background:rgba(124,58,237,0.16);text-align:center;line-height:46px;">
-            <span style="font-size:23px;">${tool.emoji}</span>
-          </div>
-        </td>
-        <td style="padding:12px 16px 12px 12px;vertical-align:middle;">
-          <div style="color:#ffffff;font-size:14px;font-weight:700;line-height:1.3;">${tool.name}</div>
-          <div style="color:#9aa4b2;font-size:12px;line-height:1.45;margin-top:2px;">${tool.line}</div>
-        </td>
-      </tr>
+// A tool block: a small violet label + a light "screenshot" card that shows a
+// real example of the tool (rendered in HTML so it always displays — no images).
+function mockCard(label: string, inner: string): string {
+  return `<tr><td style="padding:0 26px 18px;">
+    <div style="color:#a78bfa;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 8px;">${label}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;border-radius:12px;">
+      <tr><td style="padding:15px 16px;">${inner}</td></tr>
     </table>
   </td></tr>`;
+}
+
+function pill(label: string, selected: boolean): string {
+  return selected
+    ? `<span style="display:inline-block;background:#2563eb;color:#fff;font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;margin:0 3px 3px 0;">${label}</span>`
+    : `<span style="display:inline-block;background:#fff;color:#4b5563;font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid #e5e7eb;margin:0 3px 3px 0;">${label}</span>`;
+}
+
+function chip(label: string): string {
+  return `<span style="display:inline-block;background:#ede9fe;color:#6d28d9;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;margin:0 4px 0 0;">${label}</span>`;
+}
+
+function recRow(color: string, name: string, count: string): string {
+  return `<tr>
+    <td width="38" style="padding:5px 0;vertical-align:middle;">
+      <div style="width:28px;height:28px;border-radius:7px;background:${color};text-align:center;line-height:28px;">
+        <span style="font-size:14px;">📖</span>
+      </div>
+    </td>
+    <td style="padding:5px 0 5px 4px;vertical-align:middle;">
+      <div style="color:#111827;font-size:12px;font-weight:700;">${name}</div>
+      <div style="color:#6b7280;font-size:11px;">${count}</div>
+    </td>
+    <td width="16" style="color:#9ca3af;font-size:14px;text-align:right;vertical-align:middle;">›</td>
+  </tr>`;
 }
 
 export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang = "es"): { subject: string; html: string; text: string } {
@@ -388,21 +424,64 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = `${APP_URL}/dashboard`;
 
-  const rows = t.tools.map(toolRowCard).join("");
+  // 1) Normality phrases — a findings line with an inserted normal phrase.
+  const normMock = `<div style="font-size:13px;color:#111827;line-height:1.6;">
+      <span style="color:#6b7280;">${t.normField}</span>
+      <span style="background:#ede9fe;color:#6d28d9;font-weight:600;padding:2px 8px;border-radius:6px;">${t.normPhrase}</span>
+    </div>`;
+
+  // 2) Templates — a mini template with highlighted findings.
+  const tplMock = `<div style="color:#6b7280;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
+    <div style="font-size:12px;color:#111827;line-height:2;">
+      <span style="color:#6b7280;">${t.tplField1}</span> <span style="background:#e0e7ff;color:#3730a3;padding:2px 7px;border-radius:5px;">${t.tplVal1}</span><br>
+      <span style="color:#6b7280;">${t.tplField2}</span> <span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;">${t.tplVal2}</span>
+    </div>`;
+
+  // 3) Recommendations — guideline rows with counts.
+  const recMock = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${recRow("#0d9488", "ACR Incidental Findings 2017", `5 ${t.recCount}`)}
+      ${recRow("#d97706", "Bosniak 2019", `5 ${t.recCount}`)}
+    </table>`;
+
+  // 4) Calculators — TNM size pills + derived stage result.
+  const calcMock = `<div style="color:#6b7280;font-size:11px;margin:0 0 6px;">${t.calcSize}</div>
+    <div style="margin:0 0 10px;">${pill("≤1 cm", false)}${pill("2–3 cm", false)}${pill("5–7 cm", true)}${pill(">7 cm", false)}</div>
+    <div style="font-size:11px;color:#6b7280;margin:0 0 10px;">T &#8594; <strong style="color:#111827;">T3</strong>&nbsp;&nbsp; N &#8594; <strong style="color:#111827;">N3</strong>&nbsp;&nbsp; M &#8594; <strong style="color:#111827;">M1a</strong></div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
+      <tr><td style="padding:9px 13px;">
+        <div style="color:#b91c1c;font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">${t.calcStage}</div>
+        <div style="color:#b91c1c;font-size:15px;font-weight:800;">${t.calcStage} IVA <span style="color:#ef4444;font-size:12px;font-weight:600;">· T3 N3 M1a</span></div>
+      </td></tr>
+    </table>`;
+
+  // 5) Classification — auto-derived from the report text.
+  const classMock = `<div style="color:#6b7280;font-size:11px;margin:0 0 8px;">${t.classFrom}</div>
+    <div style="color:#111827;font-size:13px;font-weight:700;margin:0 0 9px;">${t.classResult}</div>
+    <div>${chip("T3")}${chip("N3")}${chip("M1a")}</div>`;
+
+  // 6) Radiogen bot — a chat exchange.
+  const botMock = `<div style="text-align:right;margin:0 0 9px;">
+      <span style="display:inline-block;background:#7c3aed;color:#fff;font-size:12px;line-height:1.5;padding:8px 12px;border-radius:12px 12px 3px 12px;max-width:82%;text-align:left;">${t.botQ}</span>
+    </div>
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px 12px 12px 3px;padding:10px 13px;font-size:12px;color:#111827;line-height:1.55;">${t.botA}</div>`;
 
   const html = emailShell(`
-        <tr><td style="padding:0 30px 8px;text-align:center;">
+        <tr><td style="padding:0 30px 10px;text-align:center;">
           <div style="width:52px;height:52px;border-radius:15px;background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.22);margin:0 auto 14px;text-align:center;line-height:52px;">
             <span style="font-size:26px;">&#9889;</span>
           </div>
           <h1 style="color:#fff;font-size:22px;font-weight:700;margin:0 0 10px;letter-spacing:-0.3px;line-height:1.25;">
             ${t.headline}
           </h1>
-          <p style="color:#9aa4b2;font-size:13px;line-height:1.5;margin:0 0 6px;">${t.intro}</p>
+          <p style="color:#9aa4b2;font-size:13px;line-height:1.5;margin:0 0 4px;">${t.intro}</p>
         </td></tr>
-        <tr><td style="height:8px;"></td></tr>
-        ${rows}
-        <tr><td style="height:8px;"></td></tr>
+        <tr><td style="height:12px;"></td></tr>
+        ${mockCard(t.normLabel, normMock)}
+        ${mockCard(t.tplLabel, tplMock)}
+        ${mockCard(t.recLabel, recMock)}
+        ${mockCard(t.calcLabel, calcMock)}
+        ${mockCard(t.classLabel, classMock)}
+        ${mockCard(t.botLabel, botMock)}
         ${cta(dashUrl, t.btn)}`, t.unsub, lang);
 
   const text = t.textTpl(greeting, dashUrl);
