@@ -338,3 +338,15 @@
   background: hsl(var(--primary));
   animation: blink-cursor 1s steps(2) infinite;
 }
+
+/* Brief highlight when a tool is opened via an onboarding-email deep-link. */
+@keyframes rg-arrive-flash {
+  0%   { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  20%  { box-shadow: 0 0 0 3px hsl(var(--primary) / 0.55); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+}
+.rg-arrive-flash {
+  animation: rg-arrive-flash 1.8s ease-out 1;
+  border-radius: 14px;
+  scroll-margin-top: 16px;
+}

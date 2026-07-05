@@ -136,6 +136,14 @@ export function TemplatesTab() {
   useEffect(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tool") === "normality") {
       setShowNormality(true);
+      window.setTimeout(() => {
+        const el = document.getElementById("rg-normality-section");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          el.classList.add("rg-arrive-flash");
+          window.setTimeout(() => el.classList.remove("rg-arrive-flash"), 2000);
+        }
+      }, 300);
     }
   }, []);
 
@@ -1137,7 +1145,7 @@ export function TemplatesTab() {
       </Dialog>
 
       {/* ── Normality Phrases — inline expandable ── */}
-      <div className="mt-6 border border-[hsl(var(--border))] rounded-lg overflow-hidden bg-[hsl(var(--card))]">
+      <div id="rg-normality-section" className="mt-6 border border-[hsl(var(--border))] rounded-lg overflow-hidden bg-[hsl(var(--card))]">
         <button
           type="button"
           onClick={() => setShowNormality(!showNormality)}

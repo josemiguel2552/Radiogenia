@@ -189,10 +189,27 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     if (typeof window === "undefined") return;
     const tool = new URLSearchParams(window.location.search).get("tool");
     if (!tool) return;
+    // Scroll a just-opened view into view and briefly highlight it. The tab
+    // mounts a tick after the view switch, so we retry a couple of times.
+    const scrollFlash = (id: string) => {
+      let tries = 0;
+      const attempt = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          el.classList.add("rg-arrive-flash");
+          window.setTimeout(() => el.classList.remove("rg-arrive-flash"), 2000);
+        } else if (tries++ < 8) {
+          window.setTimeout(attempt, 120);
+        }
+      };
+      window.setTimeout(attempt, 200);
+    };
     if (tool === "templates" || tool === "calculators" || tool === "recommendations" || tool === "account") {
       setActiveView(tool as ActiveView);
+      scrollFlash(`rg-view-${tool}`);
     } else if (tool === "normality") {
-      setActiveView("templates");
+      setActiveView("templates"); // templates-tab scrolls to & highlights the section
     } else if (tool === "bot") {
       setActiveView("dashboard");
       window.dispatchEvent(new CustomEvent("radiogenai:open-bot"));
@@ -375,10 +392,10 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
   const mainContent = (
     <>
       <div className={activeView === "dashboard" ? "" : "hidden"}>{children}</div>
-      {visitedViews.has("templates") && <div className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}><TemplatesTab /></div>}
-      {visitedViews.has("calculators") && <div className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}><CalculatorsTab /></div>}
-      {visitedViews.has("recommendations") && <div className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}><RecommendationsTab /></div>}
-      {visitedViews.has("account") && <div className={activeView === "account" ? "max-w-2xl mx-auto" : "hidden"}><AccountTab /></div>}
+      {visitedViews.has("templates") && <div id="rg-view-templates" className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}><TemplatesTab /></div>}
+      {visitedViews.has("calculators") && <div id="rg-view-calculators" className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}><CalculatorsTab /></div>}
+      {visitedViews.has("recommendations") && <div id="rg-view-recommendations" className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}><RecommendationsTab /></div>}
+      {visitedViews.has("account") && <div id="rg-view-account" className={activeView === "account" ? "max-w-2xl mx-auto" : "hidden"}><AccountTab /></div>}
     </>
   );
 
