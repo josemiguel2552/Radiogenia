@@ -315,7 +315,7 @@ const onboardingI18n: Record<EmailLang, {
   calcLabel: string; calcSize: string; calcStage: string;
   classLabel: string; classFrom: string; classResult: string;
   botLabel: string; botQ: string; botA: string;
-  btn: string; unsub: string;
+  tryNow: string; btn: string; unsub: string;
   textTpl: (g: string, url: string) => string;
 }> = {
   es: {
@@ -335,6 +335,7 @@ const onboardingI18n: Record<EmailLang, {
     botLabel: "🤖 Radiogen bot",
     botQ: "¿Seguimiento de un quiste pancreático de 2 cm?",
     botA: "Según Fukuoka 2017: control con RM a los 12 meses; si permanece estable, cada 2 años.",
+    tryNow: "Probar ahora",
     btn: "Abrir Radiogen.AI",
     unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI.",
     textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Esto es lo que ya puedes hacer en Radiogen.AI:\n\n📝 Frases de normalidad — inserta descripciones normales con un clic.\n📋 Plantillas — por tipo de estudio, creadas con ayuda de la IA.\n🔎 Recomendaciones — seguimiento de ACR, Fukuoka, Bosniak… listo para insertar.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS y más.\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — respuestas basadas en guías clínicas, sin inventar.\n\nAbrir: ${url}`,
@@ -356,6 +357,7 @@ const onboardingI18n: Record<EmailLang, {
     botLabel: "🤖 Radiogen bot",
     botQ: "Follow-up for a 2 cm pancreatic cyst?",
     botA: "Per Fukuoka 2017: MRI at 12 months; if it stays stable, every 2 years.",
+    tryNow: "Try it now",
     btn: "Open Radiogen.AI",
     unsub: "You received this email because you created a Radiogen.AI account.",
     textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Here's what you can already do in Radiogen.AI:\n\n📝 Normality phrases — insert normal descriptions with one click.\n📋 Templates — per study type, built with AI help.\n🔎 Recommendations — ACR, Fukuoka, Bosniak follow-up, ready to insert.\n🧮 Calculators — 19 systems: TNM, BI-RADS, TI-RADS, LI-RADS and more.\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — answers grounded in clinical guidelines, no making things up.\n\nOpen: ${url}`,
@@ -377,6 +379,7 @@ const onboardingI18n: Record<EmailLang, {
     botLabel: "🤖 Radiogen bot",
     botQ: "Seguimento de um cisto pancreático de 2 cm?",
     botA: "Segundo Fukuoka 2017: RM aos 12 meses; se permanecer estável, a cada 2 anos.",
+    tryNow: "Testar agora",
     btn: "Abrir o Radiogen.AI",
     unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI.",
     textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}Veja o que já pode fazer no Radiogen.AI:\n\n📝 Frases de normalidade — insira descrições normais com um clique.\n📋 Modelos — por tipo de exame, criados com ajuda da IA.\n🔎 Recomendações — seguimento de ACR, Fukuoka, Bosniak… pronto para inserir.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS e mais.\n🏷️ Classificação — estadie automaticamente seus achados.\n🤖 Radiogen bot — respostas baseadas em diretrizes clínicas, sem inventar.\n\nAbrir: ${url}`,
@@ -384,13 +387,17 @@ const onboardingI18n: Record<EmailLang, {
 };
 
 // A tool block: a small violet label + a light "screenshot" card that shows a
-// real example of the tool (rendered in HTML so it always displays — no images).
-function mockCard(label: string, inner: string): string {
+// real example of the tool (rendered in HTML so it always displays — no images),
+// with a "try it now" deep-link that opens that exact tool inside the account.
+function mockCard(label: string, inner: string, href: string, tryNow: string): string {
   return `<tr><td style="padding:0 26px 18px;">
     <div style="color:#a78bfa;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 8px;">${label}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;border-radius:12px;">
       <tr><td style="padding:15px 16px;">${inner}</td></tr>
     </table>
+    <div style="text-align:right;margin:7px 2px 0;">
+      <a href="${href}" style="color:#a78bfa;font-size:12px;font-weight:700;text-decoration:none;">${tryNow} &rarr;</a>
+    </div>
   </td></tr>`;
 }
 
@@ -423,6 +430,8 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
   const t = onboardingI18n[lang];
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = `${APP_URL}/dashboard`;
+  // Deep-link each tool: /dashboard?tool=<id> opens that exact tool in-account.
+  const toolUrl = (id: string) => `${dashUrl}?tool=${id}`;
 
   // 1) Normality phrases — a findings line with an inserted normal phrase.
   const normMock = `<div style="font-size:13px;color:#111827;line-height:1.6;">
@@ -476,12 +485,12 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
           <p style="color:#9aa4b2;font-size:13px;line-height:1.5;margin:0 0 4px;">${t.intro}</p>
         </td></tr>
         <tr><td style="height:12px;"></td></tr>
-        ${mockCard(t.normLabel, normMock)}
-        ${mockCard(t.tplLabel, tplMock)}
-        ${mockCard(t.recLabel, recMock)}
-        ${mockCard(t.calcLabel, calcMock)}
-        ${mockCard(t.classLabel, classMock)}
-        ${mockCard(t.botLabel, botMock)}
+        ${mockCard(t.normLabel, normMock, toolUrl("normality"), t.tryNow)}
+        ${mockCard(t.tplLabel, tplMock, toolUrl("templates"), t.tryNow)}
+        ${mockCard(t.recLabel, recMock, toolUrl("recommendations"), t.tryNow)}
+        ${mockCard(t.calcLabel, calcMock, toolUrl("calculators"), t.tryNow)}
+        ${mockCard(t.classLabel, classMock, toolUrl("classify"), t.tryNow)}
+        ${mockCard(t.botLabel, botMock, toolUrl("bot"), t.tryNow)}
         ${cta(dashUrl, t.btn)}`, t.unsub, lang);
 
   const text = t.textTpl(greeting, dashUrl);
