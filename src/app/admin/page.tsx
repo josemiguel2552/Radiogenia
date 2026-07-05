@@ -27,6 +27,7 @@ import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
 import { AdminMarketingTab } from "@/components/admin/admin-marketing-tab";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
+import { AdminEngagementTab } from "@/components/admin/admin-engagement-tab";
 import { AdminManualDownload } from "@/components/admin/admin-manual-download";
 
 interface GlobalConfig {
@@ -102,7 +103,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "waitlist" | "costs" | "marketing" | "pilot";
+type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "marketing" | "pilot";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -705,6 +706,7 @@ export default function AdminPage() {
     { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-4 w-4" /> },
     { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
     { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
+    { key: "engagement", label: t("admin.tab_engagement"), icon: <TrendingUp className="h-4 w-4" /> },
     { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
     { key: "marketing", label: "Marketing", icon: <Megaphone className="h-4 w-4" /> },
     { key: "pilot", label: t("admin.tab_pilot"), icon: <FlaskConical className="h-4 w-4" /> },
@@ -1891,6 +1893,9 @@ export default function AdminPage() {
         {/* ═══ MARKETING ═══ */}
         {tab === "marketing" && <AdminMarketingTab />}
         {tab === "pilot" && <AdminPilotTab />}
+
+        {/* ═══ SUBSCRIBER ENGAGEMENT ═══ */}
+        {tab === "engagement" && <AdminEngagementTab />}
 
         {/* ═══ AUDIT LOGS ═══ */}
         {tab === "audit" && (
