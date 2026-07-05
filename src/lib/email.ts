@@ -309,74 +309,78 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
 
 const onboardingI18n: Record<EmailLang, {
   subject: string;
-  headline: string; subhead: string;
-  tools: { emoji: string; name: string; micro: string }[];
+  headline: string; intro: string;
+  tools: { emoji: string; name: string; line: string }[];
   btn: string; unsub: string;
   textTpl: (g: string, url: string) => string;
 }> = {
   es: {
     subject: "6 herramientas para informes más rápidos ⚡",
     headline: "6 herramientas para informes más rápidos",
-    subhead: "Todo en tu panel, listo para usar 👇",
+    intro: "Muchas pasan desapercibidas. Esto es lo que ya puedes usar:",
     tools: [
-      { emoji: "📝", name: "Frases de normalidad", micro: "Normalidad en 1 clic" },
-      { emoji: "📋", name: "Plantillas", micro: "Créalas con ayuda de IA" },
-      { emoji: "🔎", name: "Recomendaciones", micro: "Seguimiento al instante" },
-      { emoji: "🧮", name: "Calculadoras", micro: "TNM, BI-RADS y más" },
-      { emoji: "🏷️", name: "Clasificación", micro: "Estadiaje automático" },
-      { emoji: "🤖", name: "Radiogen bot", micro: "Resuelve tus dudas" },
+      { emoji: "📝", name: "Frases de normalidad", line: "Inserta descripciones normales con un solo clic." },
+      { emoji: "📋", name: "Plantillas", line: "Crea plantillas por tipo de estudio con ayuda de la IA." },
+      { emoji: "🔎", name: "Recomendaciones", line: "Sugerencias de seguimiento listas para insertar." },
+      { emoji: "🧮", name: "Calculadoras", line: "Estadiaje y scores: TNM, BI-RADS, TI-RADS y muchos más." },
+      { emoji: "🏷️", name: "Clasificación", line: "Estadifica los hallazgos de tu informe automáticamente." },
+      { emoji: "🤖", name: "Radiogen bot", line: "Un asistente que resuelve tus dudas al momento." },
     ],
     btn: "Abrir Radiogen.AI",
     unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI.",
-    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}6 herramientas para informes más rápidos:\n\n📝 Frases de normalidad — normalidad en 1 clic\n📋 Plantillas — créalas con ayuda de IA\n🔎 Recomendaciones — seguimiento al instante\n🧮 Calculadoras — TNM, BI-RADS y más\n🏷️ Clasificación — estadiaje automático\n🤖 Radiogen bot — resuelve tus dudas\n\nAbrir: ${url}`,
+    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}6 herramientas para escribir informes más rápido:\n\n📝 Frases de normalidad — inserta descripciones normales con un clic.\n📋 Plantillas — créalas por tipo de estudio con ayuda de la IA.\n🔎 Recomendaciones — sugerencias de seguimiento listas para insertar.\n🧮 Calculadoras — estadiaje y scores: TNM, BI-RADS, TI-RADS y más.\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — un asistente que resuelve tus dudas al momento.\n\nAbrir: ${url}`,
   },
   en: {
     subject: "6 tools for faster reports ⚡",
     headline: "6 tools for faster reports",
-    subhead: "All in your dashboard, ready to use 👇",
+    intro: "Many go unnoticed. Here's what you can already use:",
     tools: [
-      { emoji: "📝", name: "Normality phrases", micro: "One-click normals" },
-      { emoji: "📋", name: "Templates", micro: "Built with AI" },
-      { emoji: "🔎", name: "Recommendations", micro: "Follow-up, instantly" },
-      { emoji: "🧮", name: "Calculators", micro: "TNM, BI-RADS & more" },
-      { emoji: "🏷️", name: "Classification", micro: "Auto-staging" },
-      { emoji: "🤖", name: "Radiogen bot", micro: "Answers your questions" },
+      { emoji: "📝", name: "Normality phrases", line: "Insert normal-finding descriptions with a single click." },
+      { emoji: "📋", name: "Templates", line: "Build per-study templates with AI help." },
+      { emoji: "🔎", name: "Recommendations", line: "Ready-to-insert follow-up suggestions." },
+      { emoji: "🧮", name: "Calculators", line: "Staging and scores: TNM, BI-RADS, TI-RADS and many more." },
+      { emoji: "🏷️", name: "Classification", line: "Automatically stage the findings in your report." },
+      { emoji: "🤖", name: "Radiogen bot", line: "An assistant that answers your questions instantly." },
     ],
     btn: "Open Radiogen.AI",
     unsub: "You received this email because you created a Radiogen.AI account.",
-    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}6 tools for faster reports:\n\n📝 Normality phrases — one-click normals\n📋 Templates — built with AI\n🔎 Recommendations — follow-up, instantly\n🧮 Calculators — TNM, BI-RADS & more\n🏷️ Classification — auto-staging\n🤖 Radiogen bot — answers your questions\n\nOpen: ${url}`,
+    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}6 tools for faster reports:\n\n📝 Normality phrases — insert normal descriptions with one click.\n📋 Templates — build per-study templates with AI help.\n🔎 Recommendations — ready-to-insert follow-up suggestions.\n🧮 Calculators — staging and scores: TNM, BI-RADS, TI-RADS and more.\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — an assistant that answers your questions instantly.\n\nOpen: ${url}`,
   },
   pt: {
     subject: "6 ferramentas para laudos mais rápidos ⚡",
     headline: "6 ferramentas para laudos mais rápidos",
-    subhead: "Tudo no seu painel, pronto para usar 👇",
+    intro: "Muitas passam despercebidas. Veja o que já pode usar:",
     tools: [
-      { emoji: "📝", name: "Frases de normalidade", micro: "Normalidade em 1 clique" },
-      { emoji: "📋", name: "Modelos", micro: "Criados com IA" },
-      { emoji: "🔎", name: "Recomendações", micro: "Seguimento na hora" },
-      { emoji: "🧮", name: "Calculadoras", micro: "TNM, BI-RADS e mais" },
-      { emoji: "🏷️", name: "Classificação", micro: "Estadiamento automático" },
-      { emoji: "🤖", name: "Radiogen bot", micro: "Tira suas dúvidas" },
+      { emoji: "📝", name: "Frases de normalidade", line: "Insira descrições normais com um único clique." },
+      { emoji: "📋", name: "Modelos", line: "Crie modelos por tipo de exame com ajuda da IA." },
+      { emoji: "🔎", name: "Recomendações", line: "Sugestões de seguimento prontas para inserir." },
+      { emoji: "🧮", name: "Calculadoras", line: "Estadiamento e scores: TNM, BI-RADS, TI-RADS e muito mais." },
+      { emoji: "🏷️", name: "Classificação", line: "Estadie automaticamente os achados do seu laudo." },
+      { emoji: "🤖", name: "Radiogen bot", line: "Um assistente que tira suas dúvidas na hora." },
     ],
     btn: "Abrir o Radiogen.AI",
     unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI.",
-    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}6 ferramentas para laudos mais rápidos:\n\n📝 Frases de normalidade — normalidade em 1 clique\n📋 Modelos — criados com IA\n🔎 Recomendações — seguimento na hora\n🧮 Calculadoras — TNM, BI-RADS e mais\n🏷️ Classificação — estadiamento automático\n🤖 Radiogen bot — tira suas dúvidas\n\nAbrir: ${url}`,
+    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}6 ferramentas para laudos mais rápidos:\n\n📝 Frases de normalidade — insira descrições normais com um clique.\n📋 Modelos — crie por tipo de exame com ajuda da IA.\n🔎 Recomendações — sugestões de seguimento prontas para inserir.\n🧮 Calculadoras — estadiamento e scores: TNM, BI-RADS, TI-RADS e mais.\n🏷️ Classificação — estadie automaticamente seus achados.\n🤖 Radiogen bot — um assistente que tira suas dúvidas na hora.\n\nAbrir: ${url}`,
   },
 };
 
-// One visual tool card (icon chip + name + micro-benefit), rendered 2-per-row.
-function toolCard(tool: { emoji: string; name: string; micro: string }): string {
-  return `<td width="50%" valign="top" style="padding:5px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1a2234;border:1px solid rgba(124,58,237,0.18);border-radius:14px;">
-      <tr><td style="padding:18px 8px;text-align:center;">
-        <div style="width:50px;height:50px;border-radius:14px;background:rgba(124,58,237,0.16);text-align:center;line-height:50px;margin:0 auto 10px;">
-          <span style="font-size:26px;">${tool.emoji}</span>
-        </div>
-        <div style="color:#ffffff;font-size:13px;font-weight:700;line-height:1.3;">${tool.name}</div>
-        <div style="color:#94a3b8;font-size:11px;line-height:1.35;margin-top:4px;">${tool.micro}</div>
-      </td></tr>
+// One visual tool row: icon chip on the left, name + one-line benefit on the right.
+function toolRowCard(tool: { emoji: string; name: string; line: string }): string {
+  return `<tr><td style="padding:0 28px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1a2234;border:1px solid rgba(124,58,237,0.15);border-radius:12px;">
+      <tr>
+        <td width="66" style="padding:14px 0 14px 14px;vertical-align:middle;">
+          <div style="width:46px;height:46px;border-radius:12px;background:rgba(124,58,237,0.16);text-align:center;line-height:46px;">
+            <span style="font-size:23px;">${tool.emoji}</span>
+          </div>
+        </td>
+        <td style="padding:12px 16px 12px 12px;vertical-align:middle;">
+          <div style="color:#ffffff;font-size:14px;font-weight:700;line-height:1.3;">${tool.name}</div>
+          <div style="color:#9aa4b2;font-size:12px;line-height:1.45;margin-top:2px;">${tool.line}</div>
+        </td>
+      </tr>
     </table>
-  </td>`;
+  </td></tr>`;
 }
 
 export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang = "es"): { subject: string; html: string; text: string } {
@@ -384,28 +388,21 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = `${APP_URL}/dashboard`;
 
-  let grid = "";
-  for (let i = 0; i < t.tools.length; i += 2) {
-    const a = toolCard(t.tools[i]);
-    const b = t.tools[i + 1] ? toolCard(t.tools[i + 1]) : `<td width="50%"></td>`;
-    grid += `<tr>${a}${b}</tr>`;
-  }
+  const rows = t.tools.map(toolRowCard).join("");
 
   const html = emailShell(`
-        <tr><td style="padding:0 30px 6px;text-align:center;">
+        <tr><td style="padding:0 30px 8px;text-align:center;">
           <div style="width:52px;height:52px;border-radius:15px;background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.22);margin:0 auto 14px;text-align:center;line-height:52px;">
             <span style="font-size:26px;">&#9889;</span>
           </div>
-          <h1 style="color:#fff;font-size:22px;font-weight:700;margin:0 0 8px;letter-spacing:-0.3px;line-height:1.25;">
+          <h1 style="color:#fff;font-size:22px;font-weight:700;margin:0 0 10px;letter-spacing:-0.3px;line-height:1.25;">
             ${t.headline}
           </h1>
-          <p style="color:#94a3b8;font-size:13px;margin:0;">${t.subhead}</p>
+          <p style="color:#9aa4b2;font-size:13px;line-height:1.5;margin:0 0 6px;">${t.intro}</p>
         </td></tr>
-        <tr><td style="padding:14px 25px 6px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            ${grid}
-          </table>
-        </td></tr>
+        <tr><td style="height:8px;"></td></tr>
+        ${rows}
+        <tr><td style="height:8px;"></td></tr>
         ${cta(dashUrl, t.btn)}`, t.unsub, lang);
 
   const text = t.textTpl(greeting, dashUrl);
