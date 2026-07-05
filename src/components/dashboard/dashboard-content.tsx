@@ -142,6 +142,7 @@ export function DashboardContent() {
   // Report output language is unified with the platform UI language.
   const outputLanguage = uiPrefs.uiLanguage;
   const handleGenerateRef = useRef<(mode?: ReportMode, langOverride?: string) => void>(() => {});
+  const detectSystemsRef = useRef<() => void>(() => {});
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
@@ -671,13 +672,17 @@ export function DashboardContent() {
         handleGenerateRef.current(undefined, lang);
       }
     };
+    // Onboarding email deep-link (/dashboard?tool=classify): run classification.
+    const handleOpenClassify = () => detectSystemsRef.current();
     window.addEventListener("radiogenai:templates-changed", handleTemplatesChanged);
     window.addEventListener("radiogenai:config-changed", handleConfigChanged);
     window.addEventListener("radiogenai:output-lang-changed", handleLangChanged);
+    window.addEventListener("radiogenai:open-classify", handleOpenClassify);
     return () => {
       window.removeEventListener("radiogenai:templates-changed", handleTemplatesChanged);
       window.removeEventListener("radiogenai:config-changed", handleConfigChanged);
       window.removeEventListener("radiogenai:output-lang-changed", handleLangChanged);
+      window.removeEventListener("radiogenai:open-classify", handleOpenClassify);
     };
   }, []);
 
@@ -1122,6 +1127,7 @@ export function DashboardContent() {
     toast(t("toast.generation_stopped"));
   }
 
+  detectSystemsRef.current = () => { handleDetectSystems(); };
   async function handleDetectSystems() {
     track("ui_classify_clicked");
     if (!conclusion.trim() || detectingSystems) return;

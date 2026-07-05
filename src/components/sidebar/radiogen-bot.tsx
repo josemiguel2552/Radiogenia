@@ -67,6 +67,13 @@ export function RadiogenBot() {
     }
   }, [open]);
 
+  // Opened via the onboarding email deep-link (/dashboard?tool=bot).
+  useEffect(() => {
+    const openBot = () => setOpen(true);
+    window.addEventListener("radiogenai:open-bot", openBot);
+    return () => window.removeEventListener("radiogenai:open-bot", openBot);
+  }, []);
+
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || loading) return;

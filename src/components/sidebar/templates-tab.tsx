@@ -131,6 +131,14 @@ export function TemplatesTab() {
   const [normalitySearch, setNormalitySearch] = useState("");
   const [savingNormPhrase, setSavingNormPhrase] = useState<string | null>(null);
 
+  // Onboarding email deep-link (/dashboard?tool=normality): this tab mounts when
+  // the shell switches to the templates view; expand the normality section.
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tool") === "normality") {
+      setShowNormality(true);
+    }
+  }, []);
+
   async function load() {
     setLoading(true);
     const res = await fetch("/api/templates");

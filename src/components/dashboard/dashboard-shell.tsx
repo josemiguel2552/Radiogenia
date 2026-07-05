@@ -180,6 +180,28 @@ function DashboardShellInner({ children, user, role }: { children: React.ReactNo
     setVisitedViews((prev) => (prev.has(activeView) ? prev : new Set(prev).add(activeView)));
     if (activeView !== "dashboard") track(`ui_view_${activeView}`);
   }, [activeView]);
+
+  // Deep-link support: /dashboard?tool=<id> opens a specific tool (used by the
+  // onboarding email). Views switch directly; bot/classify/normality live inside
+  // already-mounted children, opened via a window event they listen for. The
+  // param is left in the URL so lazily-mounted tabs (templates) can self-read it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const tool = new URLSearchParams(window.location.search).get("tool");
+    if (!tool) return;
+    if (tool === "templates" || tool === "calculators" || tool === "recommendations" || tool === "account") {
+      setActiveView(tool as ActiveView);
+    } else if (tool === "normality") {
+      setActiveView("templates");
+    } else if (tool === "bot") {
+      setActiveView("dashboard");
+      window.dispatchEvent(new CustomEvent("radiogenai:open-bot"));
+    } else if (tool === "classify") {
+      setActiveView("dashboard");
+      window.dispatchEvent(new CustomEvent("radiogenai:open-classify"));
+    }
+  }, []);
+
   const { prefs, update } = useUIPrefs();
   const t = useT();
 
