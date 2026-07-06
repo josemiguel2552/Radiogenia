@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2, TrendingUp, TrendingDown, RefreshCw, Users, Calendar,
-  AlertTriangle, Sparkles, ArrowRight, Mail, Send,
+  AlertTriangle, Sparkles, ArrowRight, Mail, Send, Clock, Check, ClipboardList,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -141,6 +141,39 @@ export function AdminEngagementTab() {
       setRvMsg(res.ok ? `${t("eng.rv_sent")} ${d.sent ?? 0}` : (d.error || t("eng.rv_error")));
     } catch { setRvMsg(t("eng.rv_error")); }
     setRvBusy(false);
+  };
+
+  // Per-user email log (which lifecycle emails each user has received).
+  interface LogUser {
+    id: string; email: string; name: string; signup: string;
+    verified: boolean; approved: boolean;
+    sent: { tools: string | null; report_types: string | null; guidelines: string | null };
+  }
+  const [logUsers, setLogUsers] = useState<LogUser[] | null>(null);
+  const [logLoading, setLogLoading] = useState(false);
+  const [sendingKey, setSendingKey] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(0); // captured at load time (avoids Date.now() in render)
+  const loadLog = useCallback(async () => {
+    setLogLoading(true);
+    try {
+      const res = await fetch("/api/admin/email-log");
+      if (res.ok) { const d = await res.json(); setLogUsers(d.users || []); setNowMs(Date.now()); }
+    } catch { /* ignore */ }
+    setLogLoading(false);
+  }, []);
+  useEffect(() => { loadLog(); }, [loadLog]);
+  const sendOne = async (userId: string, type: "tools" | "report_types" | "guidelines") => {
+    setSendingKey(`${userId}-${type}`);
+    try {
+      const res = await fetch("/api/admin/send-lifecycle-email", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, type }),
+      });
+      if (res.ok) {
+        setLogUsers((prev) => prev ? prev.map((u) => u.id === userId ? { ...u, sent: { ...u.sent, [type]: new Date().toISOString() } } : u) : prev);
+      }
+    } catch { /* ignore */ }
+    setSendingKey(null);
   };
 
   const load = useCallback(async (d: number) => {
@@ -290,6 +323,89 @@ export function AdminEngagementTab() {
     </div>
   );
 
+  /* ── Email log (which lifecycle emails each user has received) ── */
+  const EMAIL_COLS = [
+    { key: "tools" as const, hours: 24, label: "24h" },
+    { key: "report_types" as const, hours: 48, label: "48h" },
+    { key: "guidelines" as const, hours: 120, label: "5d" },
+  ];
+  const emailCell = (u: LogUser, col: (typeof EMAIL_COLS)[number]) => {
+    const sentAt = u.sent[col.key];
+    if (sentAt) {
+      return <span className="inline-flex items-center gap-0.5 text-green-600 dark:text-green-400" title={new Date(sentAt).toLocaleString()}><Check className="h-3 w-3" />{fmtDate(sentAt)}</span>;
+    }
+    if (!u.verified || !u.approved) {
+      return <span className="text-gray-300 dark:text-gray-600" title={t("eng.log_na")}>—</span>;
+    }
+    const dueMs = Date.parse(u.signup) + col.hours * 3600 * 1000;
+    if (nowMs >= dueMs) {
+      const k = `${u.id}-${col.key}`;
+      return (
+        <button
+          type="button"
+          disabled={sendingKey !== null}
+          onClick={() => sendOne(u.id, col.key)}
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30 disabled:opacity-50 transition-colors"
+          title={t("eng.log_missing")}
+        >
+          {sendingKey === k ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Send className="h-2.5 w-2.5" />{t("eng.log_send")}</>}
+        </button>
+      );
+    }
+    return <span className="inline-flex items-center gap-0.5 text-gray-400" title={new Date(dueMs).toLocaleString()}><Clock className="h-3 w-3" /></span>;
+  };
+  const emailLogSection = (
+    <Card className="p-0 overflow-hidden">
+      <div className="flex items-center justify-between px-5 pt-5 pb-1 gap-2">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-violet-500" /> {t("eng.log_title")}
+          </h3>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">{t("eng.log_hint")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={loadLog}
+          className="p-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-violet-600 hover:border-violet-400 transition-colors shrink-0"
+          title={t("eng.refresh")}
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${logLoading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+      <div className="flex items-center gap-3 px-5 pb-2 text-[10px] text-gray-400">
+        <span className="inline-flex items-center gap-0.5"><Check className="h-3 w-3 text-green-500" />{t("eng.log_sent")}</span>
+        <span className="inline-flex items-center gap-0.5"><Clock className="h-3 w-3" />{t("eng.log_pending")}</span>
+        <span className="inline-flex items-center gap-0.5"><Send className="h-2.5 w-2.5 text-amber-500" />{t("eng.log_missing")}</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[11px]">
+          <thead>
+            <tr className="border-y border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-left">
+              <th className="px-4 py-2 font-medium">{t("eng.log_col_user")}</th>
+              <th className="px-3 py-2 font-medium">{t("eng.log_col_signup")}</th>
+              {EMAIL_COLS.map((c) => <th key={c.key} className="px-3 py-2 font-medium text-center">{c.label}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {(logUsers || []).map((u) => (
+              <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                <td className="px-4 py-2">
+                  <span className="text-gray-800 dark:text-gray-200 truncate max-w-[200px] inline-block align-middle">{u.email}</span>
+                  {!u.verified && <span className="text-amber-500 ml-1" title={t("eng.fr_unverified")}>●</span>}
+                </td>
+                <td className="px-3 py-2 text-gray-500">{fmtDate(u.signup)}</td>
+                {EMAIL_COLS.map((c) => <td key={c.key} className="px-3 py-2 text-center">{emailCell(u, c)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {(!logUsers || logUsers.length === 0) && (
+          <p className="text-center text-xs text-gray-400 py-8">{logLoading ? t("eng.loading") : t("eng.log_empty")}</p>
+        )}
+      </div>
+    </Card>
+  );
+
   if (loading && !data) {
     return (
       <div className="space-y-4">
@@ -306,6 +422,7 @@ export function AdminEngagementTab() {
       <div className="space-y-4">
         {header}
         <Card className="p-8 text-center text-sm text-gray-400">{t("eng.empty")}</Card>
+        {emailLogSection}
       </div>
     );
   }
@@ -579,6 +696,8 @@ export function AdminEngagementTab() {
           </table>
         </div>
       </Card>
+
+      {emailLogSection}
     </div>
   );
 }
