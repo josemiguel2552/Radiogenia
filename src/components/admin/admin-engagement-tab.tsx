@@ -58,7 +58,7 @@ export function AdminEngagementTab() {
   const [testMsg, setTestMsg] = useState<string | null>(null);
   const [testTo, setTestTo] = useState("");
 
-  const sendTest = async (lang: "es" | "en" | "pt", type: "tools" | "report_types") => {
+  const sendTest = async (lang: "es" | "en" | "pt", type: "tools" | "report_types" | "guidelines") => {
     setTesting(`${type}-${lang}`);
     setTestMsg(null);
     try {
@@ -180,9 +180,9 @@ export function AdminEngagementTab() {
         placeholder={t("eng.test_to_ph")}
         className="ml-5 w-[calc(100%-1.25rem)] max-w-xs px-2 py-1 text-[11px] rounded-md border border-violet-200 dark:border-violet-900/50 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200"
       />
-      {(["tools", "report_types"] as const).map((type) => (
+      {(["tools", "report_types", "guidelines"] as const).map((type) => (
         <div key={type} className="flex flex-wrap items-center gap-1.5 pl-5">
-          <span className="text-[11px] text-gray-500 dark:text-gray-400 w-32">{t(type === "tools" ? "eng.test_tools" : "eng.test_types")}</span>
+          <span className="text-[11px] text-gray-500 dark:text-gray-400 w-32">{t(type === "tools" ? "eng.test_tools" : type === "report_types" ? "eng.test_types" : "eng.test_guidelines")}</span>
           {(["es", "en", "pt"] as const).map((lang) => (
             <button
               key={lang}

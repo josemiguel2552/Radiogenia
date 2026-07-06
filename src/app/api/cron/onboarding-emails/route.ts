@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
-import { sendOnboardingToolsEmail, sendReportTypesEmail } from "@/lib/email";
+import { sendOnboardingToolsEmail, sendReportTypesEmail, sendGuidelinesEmail } from "@/lib/email";
 import { toErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,7 @@ export const maxDuration = 60;
  * Lifecycle emails, driven by a daily Vercel Cron (see vercel.json):
  *   - ~24h after signup: the "here are your tools" onboarding email.
  *   - ~48h after signup: the "report types" email.
+ *   - ~5 days after signup: the "extract recommendations from guidelines" email.
  *
  * Vercel attaches `Authorization: Bearer ${CRON_SECRET}` to cron invocations,
  * which we verify. An authenticated admin can also call it (e.g. ?dryRun=1 to
@@ -117,8 +118,11 @@ export async function GET(req: NextRequest) {
     const reportTypes = await processLifecycleEmail(supabase, {
       flagColumn: "report_types_email_sent_at", minAgeHours: 48, send: sendReportTypesEmail, dryRun,
     });
+    const guidelines = await processLifecycleEmail(supabase, {
+      flagColumn: "guidelines_email_sent_at", minAgeHours: 120, send: sendGuidelinesEmail, dryRun,
+    });
 
-    return NextResponse.json({ ok: true, onboarding, reportTypes });
+    return NextResponse.json({ ok: true, onboarding, reportTypes, guidelines });
   } catch (error) {
     return toErrorResponse(error);
   }

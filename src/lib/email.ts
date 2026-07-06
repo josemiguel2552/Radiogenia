@@ -675,6 +675,94 @@ export async function sendReportTypesEmail(to: string, name: string | null, lang
 }
 
 // ---------------------------------------------------------------------------
+// 1d) Guideline-extraction email — sent ~5 days after signup
+// ---------------------------------------------------------------------------
+
+const guidelinesI18n: Record<EmailLang, {
+  subject: string; headline: string; intro: string;
+  step1: string; gSource: string; gText: string;
+  step2: string; r1t: string; r1x: string; r2t: string; r2x: string;
+  btn: string; unsub: string;
+  textTpl: (g: string, url: string) => string;
+}> = {
+  es: {
+    subject: "Convierte tus guías clínicas en recomendaciones",
+    headline: "Extrae recomendaciones de cualquier guía",
+    intro: "Pega el texto de una guía clínica y la IA extrae las recomendaciones, listas para insertar en tus informes.",
+    step1: "1 · Pegas el texto de la guía", gSource: "Fleischner 2017",
+    gText: "Nódulo sólido de 6-8 mm en paciente de bajo riesgo: TC de control a los 6-12 meses; si permanece estable, considerar seguimiento a los 18-24 meses…",
+    step2: "2 · La IA extrae las recomendaciones",
+    r1t: "Nódulo sólido 6-8 mm · bajo riesgo", r1x: "TC de control a los 6-12 meses; si estable, considerar 18-24 meses.",
+    r2t: "Nódulo sólido > 8 mm", r2x: "Considerar TC a los 3 meses, PET-TC o biopsia según probabilidad.",
+    btn: "Probar ahora",
+    unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI.",
+    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}¿Sabías que puedes convertir tus guías clínicas en recomendaciones?\n\nEn la sección de Recomendaciones, pega el texto de una guía (Fleischner, ACR, Bosniak…) y la IA extrae las recomendaciones concretas, listas para insertar en tus informes con un clic.\n\nProbar ahora: ${url}`,
+  },
+  en: {
+    subject: "Turn your clinical guidelines into recommendations",
+    headline: "Extract recommendations from any guideline",
+    intro: "Paste a clinical guideline's text and the AI extracts the recommendations, ready to insert in your reports.",
+    step1: "1 · You paste the guideline text", gSource: "Fleischner 2017",
+    gText: "Solid 6-8 mm nodule in a low-risk patient: follow-up CT at 6-12 months; if stable, consider follow-up at 18-24 months…",
+    step2: "2 · The AI extracts the recommendations",
+    r1t: "Solid nodule 6-8 mm · low risk", r1x: "Follow-up CT at 6-12 months; if stable, consider 18-24 months.",
+    r2t: "Solid nodule > 8 mm", r2x: "Consider CT at 3 months, PET-CT or biopsy depending on probability.",
+    btn: "Try it now",
+    unsub: "You received this email because you created a Radiogen.AI account.",
+    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Did you know you can turn your clinical guidelines into recommendations?\n\nIn the Recommendations section, paste a guideline's text (Fleischner, ACR, Bosniak…) and the AI extracts the concrete recommendations, ready to insert in your reports with one click.\n\nTry it now: ${url}`,
+  },
+  pt: {
+    subject: "Transforme suas diretrizes clínicas em recomendações",
+    headline: "Extraia recomendações de qualquer diretriz",
+    intro: "Cole o texto de uma diretriz clínica e a IA extrai as recomendações, prontas para inserir nos seus laudos.",
+    step1: "1 · Você cola o texto da diretriz", gSource: "Fleischner 2017",
+    gText: "Nódulo sólido de 6-8 mm em paciente de baixo risco: TC de controle em 6-12 meses; se permanecer estável, considerar seguimento em 18-24 meses…",
+    step2: "2 · A IA extrai as recomendações",
+    r1t: "Nódulo sólido 6-8 mm · baixo risco", r1x: "TC de controle em 6-12 meses; se estável, considerar 18-24 meses.",
+    r2t: "Nódulo sólido > 8 mm", r2x: "Considerar TC em 3 meses, PET-TC ou biópsia conforme a probabilidade.",
+    btn: "Testar agora",
+    unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI.",
+    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}Você sabia que pode transformar suas diretrizes clínicas em recomendações?\n\nNa seção de Recomendações, cole o texto de uma diretriz (Fleischner, ACR, Bosniak…) e a IA extrai as recomendações concretas, prontas para inserir nos seus laudos com um clique.\n\nTestar agora: ${url}`,
+  },
+};
+
+export function renderGuidelinesEmail(name: string | null, lang: EmailLang = "es"): { subject: string; html: string; text: string } {
+  const t = guidelinesI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+  const recUrl = `${APP_URL}/dashboard?tool=recommendations`;
+
+  const pasteMock = `<div style="color:#6b7280;font-size:11px;font-weight:700;margin:0 0 7px;">&#128203; ${t.gSource}</div>
+    <div style="font-size:12px;color:#374151;line-height:1.6;font-style:italic;background:#eef1f6;border-radius:8px;padding:10px 12px;">${t.gText}</div>`;
+
+  const recItem = (title: string, text: string, last = false) =>
+    `<div style="padding:2px 0 ${last ? "0" : "9px"};${last ? "" : "border-bottom:1px solid #ececf1;margin-bottom:9px;"}">
+      <div style="font-size:12px;font-weight:700;color:#111827;">${title}</div>
+      <div style="font-size:11px;color:#6b7280;line-height:1.5;margin-top:2px;">${text}</div>
+    </div>`;
+  const extractMock = `${recItem(t.r1t, t.r1x)}${recItem(t.r2t, t.r2x, true)}`;
+
+  const inner = `${emailHeader("&#128214;", t.headline, t.intro)}
+        ${mockCard(t.step1, pasteMock)}
+        ${mockCard(t.step2, extractMock)}
+        ${lightCta(recUrl, t.btn)}`;
+
+  const html = lightEmailShell(inner, t.unsub, lang);
+  const text = t.textTpl(greeting, recUrl);
+  return { subject: t.subject, html, text };
+}
+
+export async function sendGuidelinesEmail(to: string, name: string | null, lang: EmailLang = "es") {
+  const { subject, html, text } = renderGuidelinesEmail(name, lang);
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject, html, text,
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `guidelines-${Date.now()}`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // 2) Pending approval email — non-LATAM users
 // ---------------------------------------------------------------------------
 
