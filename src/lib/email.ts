@@ -386,113 +386,149 @@ const onboardingI18n: Record<EmailLang, {
   },
 };
 
-// A tool block: a small violet label + a light "screenshot" card that shows a
-// real example of the tool (rendered in HTML so it always displays — no images),
-// with a "try it now" deep-link that opens that exact tool inside the account.
-// Dark-themed cards (matching the email) so dark-mode clients like Outlook don't
-// invert light backgrounds and mangle the colors.
+// LIGHT email cards. This email uses its own light shell (not the shared dark
+// emailShell) so it renders light in light mode and doesn't get mangled by
+// dark-mode clients the way a dark email with light cards did.
 function mockCard(label: string, inner: string, href: string, tryNow: string): string {
   return `<tr><td style="padding:0 26px 18px;">
-    <div style="color:#a78bfa;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 8px;">${label}</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1e293b;border:1px solid rgba(148,163,184,0.16);border-radius:12px;">
+    <div style="color:#6d28d9;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 8px;">${label}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f7f8fa" style="background:#f7f8fa;border:1px solid #ececf1;border-radius:12px;">
       <tr><td style="padding:15px 16px;">${inner}</td></tr>
     </table>
     <div style="text-align:right;margin:7px 2px 0;">
-      <a href="${href}" style="color:#a78bfa;font-size:12px;font-weight:700;text-decoration:none;">${tryNow} &rarr;</a>
+      <a href="${href}" style="color:#7c3aed;font-size:12px;font-weight:700;text-decoration:none;">${tryNow} &rarr;</a>
     </div>
   </td></tr>`;
 }
 
 function pill(label: string, selected: boolean): string {
   return selected
-    ? `<span style="display:inline-block;background:#2563eb;color:#fff;font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;margin:0 3px 3px 0;">${label}</span>`
-    : `<span style="display:inline-block;background:#0f1729;color:#cbd5e1;font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid rgba(148,163,184,0.28);margin:0 3px 3px 0;">${label}</span>`;
+    ? `<span style="display:inline-block;background:#2563eb;color:#ffffff;font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;margin:0 3px 3px 0;">${label}</span>`
+    : `<span style="display:inline-block;background:#ffffff;color:#4b5563;font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid #e5e7eb;margin:0 3px 3px 0;">${label}</span>`;
 }
 
 function chip(label: string): string {
-  return `<span style="display:inline-block;background:rgba(124,58,237,0.3);color:#c4b5fd;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;margin:0 4px 0 0;">${label}</span>`;
+  return `<span style="display:inline-block;background:#ede9fe;color:#6d28d9;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;margin:0 4px 0 0;">${label}</span>`;
 }
 
 function recRow(color: string, name: string, count: string): string {
   return `<tr>
     <td width="38" style="padding:5px 0;vertical-align:middle;">
-      <div style="width:28px;height:28px;border-radius:7px;background:${color};text-align:center;line-height:28px;">
-        <span style="font-size:14px;">📖</span>
-      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td width="28" height="28" bgcolor="${color}" style="border-radius:7px;text-align:center;font-size:14px;">📖</td>
+      </tr></table>
     </td>
-    <td style="padding:5px 0 5px 4px;vertical-align:middle;">
-      <div style="color:#e2e8f0;font-size:12px;font-weight:700;">${name}</div>
-      <div style="color:#94a3b8;font-size:11px;">${count}</div>
+    <td style="padding:5px 0 5px 6px;vertical-align:middle;">
+      <div style="color:#111827;font-size:12px;font-weight:700;">${name}</div>
+      <div style="color:#6b7280;font-size:11px;">${count}</div>
     </td>
-    <td width="16" style="color:#64748b;font-size:14px;text-align:right;vertical-align:middle;">›</td>
+    <td width="16" style="color:#9ca3af;font-size:14px;text-align:right;vertical-align:middle;">›</td>
   </tr>`;
+}
+
+// Robust logo: solid-color "R" tile (bgcolor renders where gradients get stripped).
+function lightLogo(): string {
+  return `<tr><td style="padding:30px 32px 6px;text-align:center;">
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+      <td style="vertical-align:middle;padding-right:8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td width="34" height="34" bgcolor="#7c3aed" style="border-radius:8px;text-align:center;color:#ffffff;font-size:18px;font-weight:800;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">R</td>
+        </tr></table>
+      </td>
+      <td style="vertical-align:middle;font-size:22px;font-weight:700;letter-spacing:-0.3px;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+        <span style="color:#111827;">Radiogen</span><span style="color:#7c3aed;">.AI</span>
+      </td>
+    </tr></table>
+  </td></tr>`;
 }
 
 export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang = "es"): { subject: string; html: string; text: string } {
   const t = onboardingI18n[lang];
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = `${APP_URL}/dashboard`;
-  // Deep-link each tool: /dashboard?tool=<id> opens that exact tool in-account.
   const toolUrl = (id: string) => `${dashUrl}?tool=${id}`;
+  const ft = footerText[lang];
 
-  // 1) Templates (with normality phrases folded in — they go hand in hand):
-  // a mini template with highlighted findings + an inserted normality phrase.
-  const tplMock = `<div style="color:#94a3b8;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
-    <div style="font-size:12px;color:#e2e8f0;line-height:2;">
-      <span style="color:#94a3b8;">${t.tplField1}</span> <span style="background:rgba(99,102,241,0.3);color:#c7d2fe;padding:2px 7px;border-radius:5px;">${t.tplVal1}</span><br>
-      <span style="color:#94a3b8;">${t.tplField2}</span> <span style="background:rgba(16,185,129,0.26);color:#6ee7b7;padding:2px 7px;border-radius:5px;">${t.tplVal2}</span>
+  // 1) Templates (+ normality phrases folded in — they go hand in hand).
+  const tplMock = `<div style="color:#6b7280;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
+    <div style="font-size:12px;color:#111827;line-height:2;">
+      <span style="color:#6b7280;">${t.tplField1}</span> <span style="background:#e0e7ff;color:#3730a3;padding:2px 7px;border-radius:5px;">${t.tplVal1}</span><br>
+      <span style="color:#6b7280;">${t.tplField2}</span> <span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;">${t.tplVal2}</span>
     </div>
-    <div style="border-top:1px solid rgba(148,163,184,0.18);margin:12px 0 10px;"></div>
-    <div style="color:#a78bfa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;">${t.normTag}</div>
-    <div style="font-size:12px;color:#e2e8f0;line-height:1.6;">
-      <span style="color:#94a3b8;">${t.normField}</span> <span style="background:rgba(124,58,237,0.32);color:#c4b5fd;font-weight:600;padding:2px 7px;border-radius:5px;">${t.normPhrase}</span>
+    <div style="border-top:1px solid #e5e7eb;margin:12px 0 10px;"></div>
+    <div style="color:#6d28d9;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;">${t.normTag}</div>
+    <div style="font-size:12px;color:#111827;line-height:1.6;">
+      <span style="color:#6b7280;">${t.normField}</span> <span style="background:#ede9fe;color:#6d28d9;font-weight:600;padding:2px 7px;border-radius:5px;">${t.normPhrase}</span>
     </div>`;
 
-  // 3) Recommendations — guideline rows with counts.
   const recMock = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       ${recRow("#0d9488", "ACR Incidental Findings 2017", `5 ${t.recCount}`)}
       ${recRow("#d97706", "Bosniak 2019", `5 ${t.recCount}`)}
     </table>`;
 
-  // 4) Calculators — TNM size pills + derived stage result.
-  const calcMock = `<div style="color:#94a3b8;font-size:11px;margin:0 0 6px;">${t.calcSize}</div>
+  const calcMock = `<div style="color:#6b7280;font-size:11px;margin:0 0 6px;">${t.calcSize}</div>
     <div style="margin:0 0 10px;">${pill("≤1 cm", false)}${pill("2–3 cm", false)}${pill("5–7 cm", true)}${pill(">7 cm", false)}</div>
-    <div style="font-size:11px;color:#94a3b8;margin:0 0 10px;">T &#8594; <strong style="color:#f1f5f9;">T3</strong>&nbsp;&nbsp; N &#8594; <strong style="color:#f1f5f9;">N3</strong>&nbsp;&nbsp; M &#8594; <strong style="color:#f1f5f9;">M1a</strong></div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.38);border-radius:8px;">
+    <div style="font-size:11px;color:#6b7280;margin:0 0 10px;">T &#8594; <strong style="color:#111827;">T3</strong>&nbsp;&nbsp; N &#8594; <strong style="color:#111827;">N3</strong>&nbsp;&nbsp; M &#8594; <strong style="color:#111827;">M1a</strong></div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#fef2f2" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
       <tr><td style="padding:9px 13px;">
-        <div style="color:#fca5a5;font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">${t.calcStage}</div>
-        <div style="color:#fca5a5;font-size:15px;font-weight:800;">${t.calcStage} IVA <span style="color:#f87171;font-size:12px;font-weight:600;">· T3 N3 M1a</span></div>
+        <div style="color:#b91c1c;font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">${t.calcStage}</div>
+        <div style="color:#b91c1c;font-size:15px;font-weight:800;">${t.calcStage} IVA <span style="color:#ef4444;font-size:12px;font-weight:600;">· T3 N3 M1a</span></div>
       </td></tr>
     </table>`;
 
-  // 5) Classification — auto-derived from the report text.
-  const classMock = `<div style="color:#94a3b8;font-size:11px;margin:0 0 8px;">${t.classFrom}</div>
-    <div style="color:#f1f5f9;font-size:13px;font-weight:700;margin:0 0 9px;">${t.classResult}</div>
+  const classMock = `<div style="color:#6b7280;font-size:11px;margin:0 0 8px;">${t.classFrom}</div>
+    <div style="color:#111827;font-size:13px;font-weight:700;margin:0 0 9px;">${t.classResult}</div>
     <div>${chip("T3")}${chip("N3")}${chip("M1a")}</div>`;
 
-  // 6) Radiogen bot — a chat exchange.
   const botMock = `<div style="text-align:right;margin:0 0 9px;">
-      <span style="display:inline-block;background:#7c3aed;color:#fff;font-size:12px;line-height:1.5;padding:8px 12px;border-radius:12px 12px 3px 12px;max-width:82%;text-align:left;">${t.botQ}</span>
+      <span style="display:inline-block;background:#7c3aed;color:#ffffff;font-size:12px;line-height:1.5;padding:8px 12px;border-radius:12px 12px 3px 12px;max-width:82%;text-align:left;">${t.botQ}</span>
     </div>
-    <div style="background:#0f1729;border:1px solid rgba(148,163,184,0.22);border-radius:12px 12px 12px 3px;padding:10px 13px;font-size:12px;color:#e2e8f0;line-height:1.55;">${t.botA}</div>`;
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px 12px 12px 3px;padding:10px 13px;font-size:12px;color:#111827;line-height:1.55;">${t.botA}</div>`;
 
-  const html = emailShell(`
-        <tr><td style="padding:0 30px 10px;text-align:center;">
-          <div style="width:52px;height:52px;border-radius:15px;background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.22);margin:0 auto 14px;text-align:center;line-height:52px;">
-            <span style="font-size:26px;">&#9889;</span>
-          </div>
-          <h1 style="color:#fff;font-size:22px;font-weight:700;margin:0 0 10px;letter-spacing:-0.3px;line-height:1.25;">
-            ${t.headline}
-          </h1>
-          <p style="color:#9aa4b2;font-size:13px;line-height:1.5;margin:0 0 4px;">${t.intro}</p>
+  const ctaBtn = `<tr><td style="padding:6px 32px 30px;text-align:center;">
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+      <td bgcolor="#7c3aed" style="border-radius:10px;">
+        <a href="${dashUrl}" style="display:inline-block;padding:14px 44px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">${t.btn}</a>
+      </td>
+    </tr></table>
+  </td></tr>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
+<body style="margin:0;padding:0;background:#eef1f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#eef1f6" style="background:#eef1f6;padding:36px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+        <tr><td height="4" bgcolor="#7c3aed" style="height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+        ${lightLogo()}
+        <tr><td style="padding:8px 30px 8px;text-align:center;">
+          <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+            <td width="52" height="52" bgcolor="#f3f0ff" style="border-radius:15px;text-align:center;font-size:26px;">&#9889;</td>
+          </tr></table>
+          <h1 style="color:#111827;font-size:22px;font-weight:700;margin:14px 0 10px;letter-spacing:-0.3px;line-height:1.25;">${t.headline}</h1>
+          <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0 0 4px;">${t.intro}</p>
         </td></tr>
-        <tr><td style="height:12px;"></td></tr>
+        <tr><td style="height:14px;"></td></tr>
         ${mockCard(t.tplLabel, tplMock, toolUrl("templates"), t.tryNow)}
         ${mockCard(t.classLabel, classMock, toolUrl("classify"), t.tryNow)}
         ${mockCard(t.botLabel, botMock, toolUrl("bot"), t.tryNow)}
         ${mockCard(t.recLabel, recMock, toolUrl("recommendations"), t.tryNow)}
         ${mockCard(t.calcLabel, calcMock, toolUrl("calculators"), t.tryNow)}
-        ${cta(dashUrl, t.btn)}`, t.unsub, lang);
+        ${ctaBtn}
+        <tr><td style="padding:20px 32px 26px;border-top:1px solid #eef0f3;">
+          <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0 0 8px;line-height:1.5;">${ft.tagline}</p>
+          <p style="color:#b0b6bf;font-size:10px;text-align:center;margin:0 0 10px;line-height:1.5;">${ft.disclaimer}</p>
+          <p style="color:#b0b6bf;font-size:10px;text-align:center;margin:0;line-height:1.4;">${t.unsub} &middot; <a href="${APP_URL}/support" style="color:#9ca3af;text-decoration:underline;">${ft.support}</a></p>
+        </td></tr>
+      </table>
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+        <tr><td style="text-align:center;padding:16px 20px 0;">
+          <p style="color:#c1c6cd;font-size:10px;margin:0;">&copy; ${new Date().getFullYear()} Radiogen.AI &middot; <a href="${APP_URL}/legal" style="color:#9ca3af;text-decoration:underline;">Legal</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 
   const text = t.textTpl(greeting, dashUrl);
   return { subject: t.subject, html, text };
