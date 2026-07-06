@@ -85,7 +85,9 @@ export function DashboardContent() {
 
   // Clinical info state
   const [clinicalInfo, setClinicalInfo] = useState("");
-  const [clinicalOpen, setClinicalOpen] = useState(false);
+  // Start open but thin: a visible hint of where clinical context goes (so it
+  // isn't typed into the findings box). The textarea auto-grows with content.
+  const [clinicalOpen, setClinicalOpen] = useState(true);
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
@@ -2070,7 +2072,7 @@ export function DashboardContent() {
                     value={clinicalInfo}
                     onChange={(e) => setClinicalInfo(e.target.value)}
                     className="mt-2 text-xs"
-                    minHeight={88}
+                    minHeight={38}
                   />
                 )}
               </div>
