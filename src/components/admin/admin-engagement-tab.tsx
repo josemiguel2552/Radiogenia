@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2, TrendingUp, TrendingDown, RefreshCw, Users, Calendar,
-  AlertTriangle, Sparkles, ArrowRight,
+  AlertTriangle, Sparkles, ArrowRight, Mail,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -54,6 +54,25 @@ export function AdminEngagementTab() {
   const [data, setData] = useState<EngData | null>(null);
   const [loading, setLoading] = useState(false);
   const [days, setDays] = useState(30);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testMsg, setTestMsg] = useState<string | null>(null);
+
+  const sendTest = async (lang: "es" | "en" | "pt") => {
+    setTesting(lang);
+    setTestMsg(null);
+    try {
+      const res = await fetch("/api/admin/onboarding-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang }),
+      });
+      const d = await res.json().catch(() => ({}));
+      setTestMsg(res.ok ? `${t("eng.test_sent")} ${d.sentTo || ""}` : (d.error || t("eng.test_error")));
+    } catch {
+      setTestMsg(t("eng.test_error"));
+    }
+    setTesting(null);
+  };
 
   const load = useCallback(async (d: number) => {
     setLoading(true);
@@ -74,6 +93,7 @@ export function AdminEngagementTab() {
 
   /* ── Header (always shown) ── */
   const header = (
+    <div className="space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -105,6 +125,27 @@ export function AdminEngagementTab() {
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
+    </div>
+
+    {/* Send the onboarding email to your own inbox to preview it for real. */}
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20 px-3 py-2">
+      <Mail className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+      <span className="text-[11px] text-gray-600 dark:text-gray-300 flex-1 min-w-[180px]">{t("eng.test_hint")}</span>
+      <div className="flex items-center gap-1.5">
+        {(["es", "en", "pt"] as const).map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            disabled={testing !== null}
+            onClick={() => sendTest(lang)}
+            className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/40 disabled:opacity-50 transition-colors"
+          >
+            {testing === lang ? t("eng.test_sending") : `${t("eng.test_send")} · ${lang.toUpperCase()}`}
+          </button>
+        ))}
+      </div>
+      {testMsg && <span className="text-[11px] text-green-600 dark:text-green-400 w-full">{testMsg}</span>}
+    </div>
     </div>
   );
 
