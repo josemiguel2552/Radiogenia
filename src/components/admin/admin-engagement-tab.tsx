@@ -56,6 +56,7 @@ export function AdminEngagementTab() {
   const [days, setDays] = useState(30);
   const [testing, setTesting] = useState<string | null>(null);
   const [testMsg, setTestMsg] = useState<string | null>(null);
+  const [testTo, setTestTo] = useState("");
 
   const sendTest = async (lang: "es" | "en" | "pt", type: "tools" | "report_types") => {
     setTesting(`${type}-${lang}`);
@@ -64,7 +65,7 @@ export function AdminEngagementTab() {
       const res = await fetch("/api/admin/onboarding-test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, type }),
+        body: JSON.stringify({ lang, type, to: testTo.trim() || undefined }),
       });
       const d = await res.json().catch(() => ({}));
       setTestMsg(res.ok ? `${t("eng.test_sent")} ${d.sentTo || ""}` : (d.error || t("eng.test_error")));
@@ -172,6 +173,13 @@ export function AdminEngagementTab() {
         <Mail className="h-3.5 w-3.5 text-violet-500 shrink-0" />
         <span className="text-[11px] text-gray-600 dark:text-gray-300">{t("eng.test_hint")}</span>
       </div>
+      <input
+        type="email"
+        value={testTo}
+        onChange={(e) => setTestTo(e.target.value)}
+        placeholder={t("eng.test_to_ph")}
+        className="ml-5 w-[calc(100%-1.25rem)] max-w-xs px-2 py-1 text-[11px] rounded-md border border-violet-200 dark:border-violet-900/50 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200"
+      />
       {(["tools", "report_types"] as const).map((type) => (
         <div key={type} className="flex flex-wrap items-center gap-1.5 pl-5">
           <span className="text-[11px] text-gray-500 dark:text-gray-400 w-32">{t(type === "tools" ? "eng.test_tools" : "eng.test_types")}</span>

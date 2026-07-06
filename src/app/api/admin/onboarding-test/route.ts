@@ -25,6 +25,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const lang = (body?.lang === "en" || body?.lang === "pt") ? body.lang : "es";
     const type = body?.type === "report_types" ? "report_types" : "tools";
+    // Optional recipient override (admin-only), e.g. to send to mail-tester.com
+    // for a deliverability score. Falls back to the admin's own inbox.
+    const toOverride = typeof body?.to === "string" && /^\S+@\S+\.\S+$/.test(body.to.trim())
+      ? body.to.trim()
+      : null;
+    const recipient = toOverride || user.email;
 
     const service = createServiceClient();
     const { data: profile } = await service
@@ -34,11 +40,11 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (type === "report_types") {
-      await sendReportTypesEmail(user.email, profile?.name ?? null, lang);
+      await sendReportTypesEmail(recipient, profile?.name ?? null, lang);
     } else {
-      await sendOnboardingToolsEmail(user.email, profile?.name ?? null, lang);
+      await sendOnboardingToolsEmail(recipient, profile?.name ?? null, lang);
     }
-    return NextResponse.json({ ok: true, sentTo: user.email });
+    return NextResponse.json({ ok: true, sentTo: recipient });
   } catch (error) {
     return toErrorResponse(error);
   }
