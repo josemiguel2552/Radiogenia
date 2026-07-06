@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
-import { sendOnboardingToolsEmail } from "@/lib/email";
+import { sendOnboardingToolsEmail, sendReportTypesEmail } from "@/lib/email";
 import { toErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const lang = (body?.lang === "en" || body?.lang === "pt") ? body.lang : "es";
+    const type = body?.type === "report_types" ? "report_types" : "tools";
 
     const service = createServiceClient();
     const { data: profile } = await service
@@ -32,7 +33,11 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    await sendOnboardingToolsEmail(user.email, profile?.name ?? null, lang);
+    if (type === "report_types") {
+      await sendReportTypesEmail(user.email, profile?.name ?? null, lang);
+    } else {
+      await sendOnboardingToolsEmail(user.email, profile?.name ?? null, lang);
+    }
     return NextResponse.json({ ok: true, sentTo: user.email });
   } catch (error) {
     return toErrorResponse(error);

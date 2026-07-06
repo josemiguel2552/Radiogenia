@@ -389,16 +389,66 @@ const onboardingI18n: Record<EmailLang, {
 // LIGHT email cards. This email uses its own light shell (not the shared dark
 // emailShell) so it renders light in light mode and doesn't get mangled by
 // dark-mode clients the way a dark email with light cards did.
-function mockCard(label: string, inner: string, href: string, tryNow: string): string {
+function mockCard(label: string, inner: string, href?: string, tryNow?: string): string {
+  const link = href && tryNow
+    ? `<div style="text-align:right;margin:7px 2px 0;"><a href="${href}" style="color:#7c3aed;font-size:12px;font-weight:700;text-decoration:none;">${tryNow} &rarr;</a></div>`
+    : "";
   return `<tr><td style="padding:0 26px 18px;">
     <div style="color:#6d28d9;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 8px;">${label}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f7f8fa" style="background:#f7f8fa;border:1px solid #ececf1;border-radius:12px;">
       <tr><td style="padding:15px 16px;">${inner}</td></tr>
     </table>
-    <div style="text-align:right;margin:7px 2px 0;">
-      <a href="${href}" style="color:#7c3aed;font-size:12px;font-weight:700;text-decoration:none;">${tryNow} &rarr;</a>
-    </div>
+    ${link}
   </td></tr>`;
+}
+
+// Shared light-email chrome (used by the onboarding + report-types emails).
+function emailHeader(icon: string, headline: string, intro: string): string {
+  return `<tr><td style="padding:8px 30px 8px;text-align:center;">
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+        <td width="52" height="52" bgcolor="#f3f0ff" style="border-radius:15px;text-align:center;font-size:26px;">${icon}</td>
+      </tr></table>
+      <h1 style="color:#111827;font-size:22px;font-weight:700;margin:14px 0 10px;letter-spacing:-0.3px;line-height:1.25;">${headline}</h1>
+      <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0 0 4px;">${intro}</p>
+    </td></tr>
+    <tr><td style="height:14px;"></td></tr>`;
+}
+
+function lightCta(url: string, label: string): string {
+  return `<tr><td style="padding:6px 32px 30px;text-align:center;">
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+      <td bgcolor="#7c3aed" style="border-radius:10px;">
+        <a href="${url}" style="display:inline-block;padding:14px 44px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">${label}</a>
+      </td>
+    </tr></table>
+  </td></tr>`;
+}
+
+function lightEmailShell(inner: string, unsub: string, lang: EmailLang): string {
+  const ft = footerText[lang];
+  return `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
+<body style="margin:0;padding:0;background:#eef1f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#eef1f6" style="background:#eef1f6;padding:36px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+        <tr><td height="4" bgcolor="#7c3aed" style="height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+        ${lightLogo()}
+        ${inner}
+        <tr><td style="padding:20px 32px 26px;border-top:1px solid #eef0f3;">
+          <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0 0 8px;line-height:1.5;">${ft.tagline}</p>
+          <p style="color:#b0b6bf;font-size:10px;text-align:center;margin:0 0 10px;line-height:1.5;">${ft.disclaimer}</p>
+          <p style="color:#b0b6bf;font-size:10px;text-align:center;margin:0;line-height:1.4;">${unsub} &middot; <a href="${APP_URL}/support" style="color:#9ca3af;text-decoration:underline;">${ft.support}</a></p>
+        </td></tr>
+      </table>
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+        <tr><td style="text-align:center;padding:16px 20px 0;">
+          <p style="color:#c1c6cd;font-size:10px;margin:0;">&copy; ${new Date().getFullYear()} Radiogen.AI &middot; <a href="${APP_URL}/legal" style="color:#9ca3af;text-decoration:underline;">Legal</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 }
 
 function pill(label: string, selected: boolean): string {
@@ -447,7 +497,6 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = `${APP_URL}/dashboard`;
   const toolUrl = (id: string) => `${dashUrl}?tool=${id}`;
-  const ft = footerText[lang];
 
   // 1) Templates (+ normality phrases folded in — they go hand in hand).
   const tplMock = `<div style="color:#6b7280;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
@@ -485,51 +534,15 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
     </div>
     <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px 12px 12px 3px;padding:10px 13px;font-size:12px;color:#111827;line-height:1.55;">${t.botA}</div>`;
 
-  const ctaBtn = `<tr><td style="padding:6px 32px 30px;text-align:center;">
-    <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
-      <td bgcolor="#7c3aed" style="border-radius:10px;">
-        <a href="${dashUrl}" style="display:inline-block;padding:14px 44px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">${t.btn}</a>
-      </td>
-    </tr></table>
-  </td></tr>`;
-
-  const html = `<!DOCTYPE html>
-<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
-<body style="margin:0;padding:0;background:#eef1f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#eef1f6" style="background:#eef1f6;padding:36px 20px;">
-    <tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
-        <tr><td height="4" bgcolor="#7c3aed" style="height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
-        ${lightLogo()}
-        <tr><td style="padding:8px 30px 8px;text-align:center;">
-          <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
-            <td width="52" height="52" bgcolor="#f3f0ff" style="border-radius:15px;text-align:center;font-size:26px;">&#9889;</td>
-          </tr></table>
-          <h1 style="color:#111827;font-size:22px;font-weight:700;margin:14px 0 10px;letter-spacing:-0.3px;line-height:1.25;">${t.headline}</h1>
-          <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:0 0 4px;">${t.intro}</p>
-        </td></tr>
-        <tr><td style="height:14px;"></td></tr>
+  const inner = `${emailHeader("&#9889;", t.headline, t.intro)}
         ${mockCard(t.tplLabel, tplMock, toolUrl("templates"), t.tryNow)}
         ${mockCard(t.classLabel, classMock, toolUrl("classify"), t.tryNow)}
         ${mockCard(t.botLabel, botMock, toolUrl("bot"), t.tryNow)}
         ${mockCard(t.recLabel, recMock, toolUrl("recommendations"), t.tryNow)}
         ${mockCard(t.calcLabel, calcMock, toolUrl("calculators"), t.tryNow)}
-        ${ctaBtn}
-        <tr><td style="padding:20px 32px 26px;border-top:1px solid #eef0f3;">
-          <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0 0 8px;line-height:1.5;">${ft.tagline}</p>
-          <p style="color:#b0b6bf;font-size:10px;text-align:center;margin:0 0 10px;line-height:1.5;">${ft.disclaimer}</p>
-          <p style="color:#b0b6bf;font-size:10px;text-align:center;margin:0;line-height:1.4;">${t.unsub} &middot; <a href="${APP_URL}/support" style="color:#9ca3af;text-decoration:underline;">${ft.support}</a></p>
-        </td></tr>
-      </table>
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
-        <tr><td style="text-align:center;padding:16px 20px 0;">
-          <p style="color:#c1c6cd;font-size:10px;margin:0;">&copy; ${new Date().getFullYear()} Radiogen.AI &middot; <a href="${APP_URL}/legal" style="color:#9ca3af;text-decoration:underline;">Legal</a></p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+        ${lightCta(dashUrl, t.btn)}`;
 
+  const html = lightEmailShell(inner, t.unsub, lang);
   const text = t.textTpl(greeting, dashUrl);
   return { subject: t.subject, html, text };
 }
@@ -541,6 +554,122 @@ export async function sendOnboardingToolsEmail(to: string, name: string | null, 
     headers: {
       "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
       "X-Entity-Ref-ID": `onboarding-${Date.now()}`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 1c) Report-types email — sent ~48h after signup
+// ---------------------------------------------------------------------------
+
+type RTSample = {
+  secParenq: string; secMed: string; secPleura: string; secOseo: string;
+  find1: string; find2: string; normalPleura: string; normalOseo: string;
+  restNormal: string; prose: string;
+};
+
+const reportTypesI18n: Record<EmailLang, {
+  subject: string; headline: string; intro: string;
+  n1: string; d1: string; n2: string; d2: string; n3: string; d3: string; n4: string; d4: string;
+  sample: RTSample; btn: string; unsub: string;
+  textTpl: (g: string, url: string) => string;
+}> = {
+  es: {
+    subject: "4 formas de crear tus informes en Radiogen.AI",
+    headline: "Elige cómo redactar cada informe",
+    intro: "Según lo que dictes, Radiogen.AI genera el informe en 4 formatos. Cámbialo con un clic en el selector de tipo de informe:",
+    n1: "📋 Estructurado", d1: "Informe completo con todas las secciones de la plantilla. Las no mencionadas se rellenan con normalidad.",
+    n2: "🎯 Solo hallazgos", d2: "Solo las secciones con hallazgos + un párrafo final que resume que el resto es normal.",
+    n3: "🎙️ Solo dictado", d3: "Solo lo que has dictado. No añade normalidad ni campos no mencionados.",
+    n4: "📝 No estructurado", d4: "Hallazgos en texto narrativo ordenados por importancia clínica, sin encabezados de sección.",
+    sample: {
+      secParenq: "PARÉNQUIMA", secMed: "MEDIASTINO", secPleura: "PLEURA", secOseo: "ÓSEO",
+      find1: "Masa de 43 mm en LSI.", find2: "Adenopatía supraclavicular izq.",
+      normalPleura: "Sin derrame pleural.", normalOseo: "Sin lesiones óseas.",
+      restNormal: "El resto de estructuras evaluadas sin alteraciones.",
+      prose: "Masa pulmonar de 43 mm en lóbulo superior izquierdo, con adenopatía supraclavicular izquierda asociada. No se observa derrame pleural.",
+    },
+    btn: "Crear un informe",
+    unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI.",
+    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Radiogen.AI puede generar tu informe en 4 formatos:\n\n📋 Estructurado — completo, con todas las secciones; las no mencionadas se rellenan con normalidad.\n🎯 Solo hallazgos — solo secciones con hallazgos + un párrafo final resumiendo que el resto es normal.\n🎙️ Solo dictado — solo lo que has dictado, sin añadir normalidad.\n📝 No estructurado — hallazgos en texto narrativo, sin encabezados de sección.\n\nCámbialo en el selector de tipo de informe.\n\nCrear un informe: ${url}`,
+  },
+  en: {
+    subject: "4 ways to write your reports in Radiogen.AI",
+    headline: "Choose how to write each report",
+    intro: "Depending on what you dictate, Radiogen.AI generates the report in 4 formats. Switch with one click in the report-type selector:",
+    n1: "📋 Structured", d1: "Full report with every template section. Unmentioned sections are filled with radiological normality.",
+    n2: "🎯 Findings only", d2: "Only the sections with findings + a final paragraph summarizing that the rest is normal.",
+    n3: "🎙️ Dictation only", d3: "Only what you dictated. No normality or unmentioned fields are added.",
+    n4: "📝 Unstructured", d4: "Narrative findings ordered by clinical importance, without section headings.",
+    sample: {
+      secParenq: "PARENCHYMA", secMed: "MEDIASTINUM", secPleura: "PLEURA", secOseo: "BONES",
+      find1: "43 mm mass in LUL.", find2: "Left supraclavicular adenopathy.",
+      normalPleura: "No pleural effusion.", normalOseo: "No bone lesions.",
+      restNormal: "The remaining evaluated structures show no abnormalities.",
+      prose: "43 mm pulmonary mass in the left upper lobe, with associated left supraclavicular adenopathy. No pleural effusion is seen.",
+    },
+    btn: "Create a report",
+    unsub: "You received this email because you created a Radiogen.AI account.",
+    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Radiogen.AI can generate your report in 4 formats:\n\n📋 Structured — full, with every section; unmentioned ones filled with normality.\n🎯 Findings only — only sections with findings + a final paragraph summarizing the rest is normal.\n🎙️ Dictation only — only what you dictated, no normality added.\n📝 Unstructured — narrative findings, without section headings.\n\nSwitch it in the report-type selector.\n\nCreate a report: ${url}`,
+  },
+  pt: {
+    subject: "4 formas de criar seus laudos no Radiogen.AI",
+    headline: "Escolha como redigir cada laudo",
+    intro: "Conforme o que você ditar, o Radiogen.AI gera o laudo em 4 formatos. Troque com um clique no seletor de tipo de laudo:",
+    n1: "📋 Estruturado", d1: "Laudo completo com todas as seções do modelo. As não mencionadas são preenchidas com normalidade.",
+    n2: "🎯 Apenas achados", d2: "Apenas as seções com achados + um parágrafo final resumindo que o restante é normal.",
+    n3: "🎙️ Apenas ditado", d3: "Apenas o que você ditou. Não adiciona normalidade nem campos não mencionados.",
+    n4: "📝 Não estruturado", d4: "Achados em texto narrativo ordenados por importância clínica, sem cabeçalhos de seção.",
+    sample: {
+      secParenq: "PARÊNQUIMA", secMed: "MEDIASTINO", secPleura: "PLEURA", secOseo: "ÓSSEO",
+      find1: "Massa de 43 mm no LSE.", find2: "Adenopatia supraclavicular esq.",
+      normalPleura: "Sem derrame pleural.", normalOseo: "Sem lesões ósseas.",
+      restNormal: "As demais estruturas avaliadas sem alterações.",
+      prose: "Massa pulmonar de 43 mm no lobo superior esquerdo, com adenopatia supraclavicular esquerda associada. Sem derrame pleural.",
+    },
+    btn: "Criar um laudo",
+    unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI.",
+    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}O Radiogen.AI pode gerar seu laudo em 4 formatos:\n\n📋 Estruturado — completo, com todas as seções; as não mencionadas preenchidas com normalidade.\n🎯 Apenas achados — apenas seções com achados + um parágrafo final resumindo que o restante é normal.\n🎙️ Apenas ditado — apenas o que você ditou, sem adicionar normalidade.\n📝 Não estruturado — achados em texto narrativo, sem cabeçalhos de seção.\n\nTroque no seletor de tipo de laudo.\n\nCriar um laudo: ${url}`,
+  },
+};
+
+export function renderReportTypesEmail(name: string | null, lang: EmailLang = "es"): { subject: string; html: string; text: string } {
+  const t = reportTypesI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+  const dashUrl = `${APP_URL}/dashboard`;
+  const s = t.sample;
+  const sec = (label: string, val: string, muted = false) =>
+    `<span style="color:#6b7280;font-weight:700;">${label}:</span> <span style="color:${muted ? "#9ca3af" : "#111827"};">${val}</span>`;
+  const desc = (d: string) => `<div style="color:#6b7280;font-size:11px;line-height:1.5;margin:0 0 11px;">${d}</div>`;
+
+  const structuredMock = `${desc(t.d1)}<div style="font-size:12px;line-height:1.95;">
+      ${sec(s.secParenq, s.find1)}<br>${sec(s.secMed, s.find2)}<br>${sec(s.secPleura, s.normalPleura, true)}<br>${sec(s.secOseo, s.normalOseo, true)}
+    </div>`;
+  const compactMock = `${desc(t.d2)}<div style="font-size:12px;line-height:1.95;">
+      ${sec(s.secParenq, s.find1)}<br>${sec(s.secMed, s.find2)}<br><span style="color:#9ca3af;font-style:italic;">${s.restNormal}</span>
+    </div>`;
+  const dictationMock = `${desc(t.d3)}<div style="font-size:12px;line-height:1.9;color:#111827;">${s.find1}<br>${s.find2}</div>`;
+  const unstructuredMock = `${desc(t.d4)}<div style="font-size:12px;line-height:1.7;color:#111827;">${s.prose}</div>`;
+
+  const inner = `${emailHeader("&#128196;", t.headline, t.intro)}
+        ${mockCard(t.n1, structuredMock)}
+        ${mockCard(t.n2, compactMock)}
+        ${mockCard(t.n3, dictationMock)}
+        ${mockCard(t.n4, unstructuredMock)}
+        ${lightCta(dashUrl, t.btn)}`;
+
+  const html = lightEmailShell(inner, t.unsub, lang);
+  const text = t.textTpl(greeting, dashUrl);
+  return { subject: t.subject, html, text };
+}
+
+export async function sendReportTypesEmail(to: string, name: string | null, lang: EmailLang = "es") {
+  const { subject, html, text } = renderReportTypesEmail(name, lang);
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject, html, text,
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `reporttypes-${Date.now()}`,
     },
   });
 }

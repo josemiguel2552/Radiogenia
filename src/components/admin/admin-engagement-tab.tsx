@@ -57,14 +57,14 @@ export function AdminEngagementTab() {
   const [testing, setTesting] = useState<string | null>(null);
   const [testMsg, setTestMsg] = useState<string | null>(null);
 
-  const sendTest = async (lang: "es" | "en" | "pt") => {
-    setTesting(lang);
+  const sendTest = async (lang: "es" | "en" | "pt", type: "tools" | "report_types") => {
+    setTesting(`${type}-${lang}`);
     setTestMsg(null);
     try {
       const res = await fetch("/api/admin/onboarding-test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang }),
+        body: JSON.stringify({ lang, type }),
       });
       const d = await res.json().catch(() => ({}));
       setTestMsg(res.ok ? `${t("eng.test_sent")} ${d.sentTo || ""}` : (d.error || t("eng.test_error")));
@@ -166,24 +166,29 @@ export function AdminEngagementTab() {
       </div>
     </div>
 
-    {/* Send the onboarding email to your own inbox to preview it for real. */}
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20 px-3 py-2">
-      <Mail className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-      <span className="text-[11px] text-gray-600 dark:text-gray-300 flex-1 min-w-[180px]">{t("eng.test_hint")}</span>
-      <div className="flex items-center gap-1.5">
-        {(["es", "en", "pt"] as const).map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            disabled={testing !== null}
-            onClick={() => sendTest(lang)}
-            className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/40 disabled:opacity-50 transition-colors"
-          >
-            {testing === lang ? t("eng.test_sending") : `${t("eng.test_send")} · ${lang.toUpperCase()}`}
-          </button>
-        ))}
+    {/* Send the automatic emails to your own inbox to preview them for real. */}
+    <div className="rounded-lg border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20 px-3 py-2.5 space-y-2">
+      <div className="flex items-center gap-2">
+        <Mail className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+        <span className="text-[11px] text-gray-600 dark:text-gray-300">{t("eng.test_hint")}</span>
       </div>
-      {testMsg && <span className="text-[11px] text-green-600 dark:text-green-400 w-full">{testMsg}</span>}
+      {(["tools", "report_types"] as const).map((type) => (
+        <div key={type} className="flex flex-wrap items-center gap-1.5 pl-5">
+          <span className="text-[11px] text-gray-500 dark:text-gray-400 w-32">{t(type === "tools" ? "eng.test_tools" : "eng.test_types")}</span>
+          {(["es", "en", "pt"] as const).map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              disabled={testing !== null}
+              onClick={() => sendTest(lang, type)}
+              className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/40 disabled:opacity-50 transition-colors"
+            >
+              {testing === `${type}-${lang}` ? t("eng.test_sending") : lang.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      ))}
+      {testMsg && <span className="text-[11px] text-green-600 dark:text-green-400 block pl-5">{testMsg}</span>}
     </div>
 
     {/* One-time broadcast to already-registered users. */}
