@@ -309,7 +309,7 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
 
 const onboardingI18n: Record<EmailLang, {
   subject: string; headline: string; intro: string;
-  normLabel: string; normField: string; normPhrase: string;
+  normTag: string; normField: string; normPhrase: string;
   tplLabel: string; tplTitle: string; tplField1: string; tplVal1: string; tplField2: string; tplVal2: string;
   recLabel: string; recCount: string;
   calcLabel: string; calcSize: string; calcStage: string;
@@ -322,9 +322,9 @@ const onboardingI18n: Record<EmailLang, {
     subject: "Mira lo que ya puedes hacer en Radiogen.AI 👀",
     headline: "Todo esto ya está en tu cuenta",
     intro: "Un vistazo rápido a tus herramientas, con ejemplos reales:",
-    normLabel: "📝 Frases de normalidad",
+    normTag: "Frases de normalidad",
     normField: "Pleura y diafragma:", normPhrase: "Sin derrame pleural ni neumotórax.",
-    tplLabel: "📋 Plantillas",
+    tplLabel: "📋 Plantillas personalizables",
     tplTitle: "TC tórax · Hallazgos",
     tplField1: "Parénquima pulmonar:", tplVal1: "Masa de 43 mm en LSI",
     tplField2: "Ganglios mediastínicos:", tplVal2: "Adenopatía supraclavicular izq.",
@@ -338,15 +338,15 @@ const onboardingI18n: Record<EmailLang, {
     tryNow: "Probar ahora",
     btn: "Abrir Radiogen.AI",
     unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI.",
-    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Esto es lo que ya puedes hacer en Radiogen.AI:\n\n📝 Frases de normalidad — inserta descripciones normales con un clic.\n📋 Plantillas — por tipo de estudio, creadas con ayuda de la IA.\n🔎 Recomendaciones — seguimiento de ACR, Fukuoka, Bosniak… listo para insertar.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS y más.\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — respuestas basadas en guías clínicas, sin inventar.\n\nAbrir: ${url}`,
+    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Esto es lo que ya puedes hacer en Radiogen.AI:\n\n📋 Plantillas personalizables — por tipo de estudio, con ayuda de la IA. Incluyen las frases de normalidad (van de la mano).\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — respuestas basadas en guías clínicas, sin inventar.\n🔎 Recomendaciones — seguimiento de ACR, Fukuoka, Bosniak… listo para insertar.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS y más.\n\nAbrir: ${url}`,
   },
   en: {
     subject: "See what you can already do in Radiogen.AI 👀",
     headline: "This is all already in your account",
     intro: "A quick look at your tools, with real examples:",
-    normLabel: "📝 Normality phrases",
+    normTag: "Normality phrases",
     normField: "Pleura and diaphragm:", normPhrase: "No pleural effusion or pneumothorax.",
-    tplLabel: "📋 Templates",
+    tplLabel: "📋 Customizable templates",
     tplTitle: "Chest CT · Findings",
     tplField1: "Lung parenchyma:", tplVal1: "43 mm mass in LUL",
     tplField2: "Mediastinal nodes:", tplVal2: "Left supraclavicular adenopathy",
@@ -360,15 +360,15 @@ const onboardingI18n: Record<EmailLang, {
     tryNow: "Try it now",
     btn: "Open Radiogen.AI",
     unsub: "You received this email because you created a Radiogen.AI account.",
-    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Here's what you can already do in Radiogen.AI:\n\n📝 Normality phrases — insert normal descriptions with one click.\n📋 Templates — per study type, built with AI help.\n🔎 Recommendations — ACR, Fukuoka, Bosniak follow-up, ready to insert.\n🧮 Calculators — 19 systems: TNM, BI-RADS, TI-RADS, LI-RADS and more.\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — answers grounded in clinical guidelines, no making things up.\n\nOpen: ${url}`,
+    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Here's what you can already do in Radiogen.AI:\n\n📋 Customizable templates — per study type, with AI help. They include the normality phrases (they go hand in hand).\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — answers grounded in clinical guidelines, no making things up.\n🔎 Recommendations — ACR, Fukuoka, Bosniak follow-up, ready to insert.\n🧮 Calculators — 19 systems: TNM, BI-RADS, TI-RADS, LI-RADS and more.\n\nOpen: ${url}`,
   },
   pt: {
     subject: "Veja o que já pode fazer no Radiogen.AI 👀",
     headline: "Tudo isto já está na sua conta",
     intro: "Uma olhada rápida nas suas ferramentas, com exemplos reais:",
-    normLabel: "📝 Frases de normalidade",
+    normTag: "Frases de normalidade",
     normField: "Pleura e diafragma:", normPhrase: "Sem derrame pleural ou pneumotórax.",
-    tplLabel: "📋 Modelos",
+    tplLabel: "📋 Modelos personalizáveis",
     tplTitle: "TC tórax · Achados",
     tplField1: "Parênquima pulmonar:", tplVal1: "Massa de 43 mm no LSE",
     tplField2: "Linfonodos mediastinais:", tplVal2: "Adenopatia supraclavicular esq.",
@@ -382,7 +382,7 @@ const onboardingI18n: Record<EmailLang, {
     tryNow: "Testar agora",
     btn: "Abrir o Radiogen.AI",
     unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI.",
-    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}Veja o que já pode fazer no Radiogen.AI:\n\n📝 Frases de normalidade — insira descrições normais com um clique.\n📋 Modelos — por tipo de exame, criados com ajuda da IA.\n🔎 Recomendações — seguimento de ACR, Fukuoka, Bosniak… pronto para inserir.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS e mais.\n🏷️ Classificação — estadie automaticamente seus achados.\n🤖 Radiogen bot — respostas baseadas em diretrizes clínicas, sem inventar.\n\nAbrir: ${url}`,
+    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}Veja o que já pode fazer no Radiogen.AI:\n\n📋 Modelos personalizáveis — por tipo de exame, com ajuda da IA. Incluem as frases de normalidade (andam juntas).\n🏷️ Classificação — estadie automaticamente seus achados.\n🤖 Radiogen bot — respostas baseadas em diretrizes clínicas, sem inventar.\n🔎 Recomendações — seguimento de ACR, Fukuoka, Bosniak… pronto para inserir.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS e mais.\n\nAbrir: ${url}`,
   },
 };
 
@@ -433,17 +433,17 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
   // Deep-link each tool: /dashboard?tool=<id> opens that exact tool in-account.
   const toolUrl = (id: string) => `${dashUrl}?tool=${id}`;
 
-  // 1) Normality phrases — a findings line with an inserted normal phrase.
-  const normMock = `<div style="font-size:13px;color:#111827;line-height:1.6;">
-      <span style="color:#6b7280;">${t.normField}</span>
-      <span style="background:#ede9fe;color:#6d28d9;font-weight:600;padding:2px 8px;border-radius:6px;">${t.normPhrase}</span>
-    </div>`;
-
-  // 2) Templates — a mini template with highlighted findings.
+  // 1) Templates (with normality phrases folded in — they go hand in hand):
+  // a mini template with highlighted findings + an inserted normality phrase.
   const tplMock = `<div style="color:#6b7280;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
     <div style="font-size:12px;color:#111827;line-height:2;">
       <span style="color:#6b7280;">${t.tplField1}</span> <span style="background:#e0e7ff;color:#3730a3;padding:2px 7px;border-radius:5px;">${t.tplVal1}</span><br>
       <span style="color:#6b7280;">${t.tplField2}</span> <span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;">${t.tplVal2}</span>
+    </div>
+    <div style="border-top:1px solid #e5e7eb;margin:12px 0 10px;"></div>
+    <div style="color:#7c3aed;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;">${t.normTag}</div>
+    <div style="font-size:12px;color:#111827;line-height:1.6;">
+      <span style="color:#6b7280;">${t.normField}</span> <span style="background:#ede9fe;color:#6d28d9;font-weight:600;padding:2px 7px;border-radius:5px;">${t.normPhrase}</span>
     </div>`;
 
   // 3) Recommendations — guideline rows with counts.
@@ -485,12 +485,11 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
           <p style="color:#9aa4b2;font-size:13px;line-height:1.5;margin:0 0 4px;">${t.intro}</p>
         </td></tr>
         <tr><td style="height:12px;"></td></tr>
-        ${mockCard(t.normLabel, normMock, toolUrl("normality"), t.tryNow)}
         ${mockCard(t.tplLabel, tplMock, toolUrl("templates"), t.tryNow)}
-        ${mockCard(t.recLabel, recMock, toolUrl("recommendations"), t.tryNow)}
-        ${mockCard(t.calcLabel, calcMock, toolUrl("calculators"), t.tryNow)}
         ${mockCard(t.classLabel, classMock, toolUrl("classify"), t.tryNow)}
         ${mockCard(t.botLabel, botMock, toolUrl("bot"), t.tryNow)}
+        ${mockCard(t.recLabel, recMock, toolUrl("recommendations"), t.tryNow)}
+        ${mockCard(t.calcLabel, calcMock, toolUrl("calculators"), t.tryNow)}
         ${cta(dashUrl, t.btn)}`, t.unsub, lang);
 
   const text = t.textTpl(greeting, dashUrl);
