@@ -319,7 +319,7 @@ const onboardingI18n: Record<EmailLang, {
   textTpl: (g: string, url: string) => string;
 }> = {
   es: {
-    subject: "Mira lo que ya puedes hacer en Radiogen.AI 👀",
+    subject: "Todo lo que ya puedes hacer en Radiogen.AI",
     headline: "Todo esto ya está en tu cuenta",
     intro: "Un vistazo rápido a tus herramientas, con ejemplos reales:",
     normTag: "Frases de normalidad",
@@ -341,7 +341,7 @@ const onboardingI18n: Record<EmailLang, {
     textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Esto es lo que ya puedes hacer en Radiogen.AI:\n\n📋 Plantillas personalizables — por tipo de estudio, con ayuda de la IA. Incluyen las frases de normalidad (van de la mano).\n🏷️ Clasificación — estadifica tus hallazgos automáticamente.\n🤖 Radiogen bot — respuestas basadas en guías clínicas, sin inventar.\n🔎 Recomendaciones — seguimiento de ACR, Fukuoka, Bosniak… listo para insertar.\n🧮 Calculadoras — 19 sistemas: TNM, BI-RADS, TI-RADS, LI-RADS y más.\n\nAbrir: ${url}`,
   },
   en: {
-    subject: "See what you can already do in Radiogen.AI 👀",
+    subject: "Everything you can already do in Radiogen.AI",
     headline: "This is all already in your account",
     intro: "A quick look at your tools, with real examples:",
     normTag: "Normality phrases",
@@ -363,7 +363,7 @@ const onboardingI18n: Record<EmailLang, {
     textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}Here's what you can already do in Radiogen.AI:\n\n📋 Customizable templates — per study type, with AI help. They include the normality phrases (they go hand in hand).\n🏷️ Classification — automatically stage your findings.\n🤖 Radiogen bot — answers grounded in clinical guidelines, no making things up.\n🔎 Recommendations — ACR, Fukuoka, Bosniak follow-up, ready to insert.\n🧮 Calculators — 19 systems: TNM, BI-RADS, TI-RADS, LI-RADS and more.\n\nOpen: ${url}`,
   },
   pt: {
-    subject: "Veja o que já pode fazer no Radiogen.AI 👀",
+    subject: "Tudo o que você já pode fazer no Radiogen.AI",
     headline: "Tudo isto já está na sua conta",
     intro: "Uma olhada rápida nas suas ferramentas, com exemplos reais:",
     normTag: "Frases de normalidade",
@@ -389,10 +389,12 @@ const onboardingI18n: Record<EmailLang, {
 // A tool block: a small violet label + a light "screenshot" card that shows a
 // real example of the tool (rendered in HTML so it always displays — no images),
 // with a "try it now" deep-link that opens that exact tool inside the account.
+// Dark-themed cards (matching the email) so dark-mode clients like Outlook don't
+// invert light backgrounds and mangle the colors.
 function mockCard(label: string, inner: string, href: string, tryNow: string): string {
   return `<tr><td style="padding:0 26px 18px;">
     <div style="color:#a78bfa;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 8px;">${label}</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;border-radius:12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1e293b;border:1px solid rgba(148,163,184,0.16);border-radius:12px;">
       <tr><td style="padding:15px 16px;">${inner}</td></tr>
     </table>
     <div style="text-align:right;margin:7px 2px 0;">
@@ -404,11 +406,11 @@ function mockCard(label: string, inner: string, href: string, tryNow: string): s
 function pill(label: string, selected: boolean): string {
   return selected
     ? `<span style="display:inline-block;background:#2563eb;color:#fff;font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;margin:0 3px 3px 0;">${label}</span>`
-    : `<span style="display:inline-block;background:#fff;color:#4b5563;font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid #e5e7eb;margin:0 3px 3px 0;">${label}</span>`;
+    : `<span style="display:inline-block;background:#0f1729;color:#cbd5e1;font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid rgba(148,163,184,0.28);margin:0 3px 3px 0;">${label}</span>`;
 }
 
 function chip(label: string): string {
-  return `<span style="display:inline-block;background:#ede9fe;color:#6d28d9;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;margin:0 4px 0 0;">${label}</span>`;
+  return `<span style="display:inline-block;background:rgba(124,58,237,0.3);color:#c4b5fd;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;margin:0 4px 0 0;">${label}</span>`;
 }
 
 function recRow(color: string, name: string, count: string): string {
@@ -419,10 +421,10 @@ function recRow(color: string, name: string, count: string): string {
       </div>
     </td>
     <td style="padding:5px 0 5px 4px;vertical-align:middle;">
-      <div style="color:#111827;font-size:12px;font-weight:700;">${name}</div>
-      <div style="color:#6b7280;font-size:11px;">${count}</div>
+      <div style="color:#e2e8f0;font-size:12px;font-weight:700;">${name}</div>
+      <div style="color:#94a3b8;font-size:11px;">${count}</div>
     </td>
-    <td width="16" style="color:#9ca3af;font-size:14px;text-align:right;vertical-align:middle;">›</td>
+    <td width="16" style="color:#64748b;font-size:14px;text-align:right;vertical-align:middle;">›</td>
   </tr>`;
 }
 
@@ -435,15 +437,15 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
 
   // 1) Templates (with normality phrases folded in — they go hand in hand):
   // a mini template with highlighted findings + an inserted normality phrase.
-  const tplMock = `<div style="color:#6b7280;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
-    <div style="font-size:12px;color:#111827;line-height:2;">
-      <span style="color:#6b7280;">${t.tplField1}</span> <span style="background:#e0e7ff;color:#3730a3;padding:2px 7px;border-radius:5px;">${t.tplVal1}</span><br>
-      <span style="color:#6b7280;">${t.tplField2}</span> <span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;">${t.tplVal2}</span>
+  const tplMock = `<div style="color:#94a3b8;font-size:11px;font-weight:700;margin:0 0 9px;">&#128196; ${t.tplTitle}</div>
+    <div style="font-size:12px;color:#e2e8f0;line-height:2;">
+      <span style="color:#94a3b8;">${t.tplField1}</span> <span style="background:rgba(99,102,241,0.3);color:#c7d2fe;padding:2px 7px;border-radius:5px;">${t.tplVal1}</span><br>
+      <span style="color:#94a3b8;">${t.tplField2}</span> <span style="background:rgba(16,185,129,0.26);color:#6ee7b7;padding:2px 7px;border-radius:5px;">${t.tplVal2}</span>
     </div>
-    <div style="border-top:1px solid #e5e7eb;margin:12px 0 10px;"></div>
-    <div style="color:#7c3aed;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;">${t.normTag}</div>
-    <div style="font-size:12px;color:#111827;line-height:1.6;">
-      <span style="color:#6b7280;">${t.normField}</span> <span style="background:#ede9fe;color:#6d28d9;font-weight:600;padding:2px 7px;border-radius:5px;">${t.normPhrase}</span>
+    <div style="border-top:1px solid rgba(148,163,184,0.18);margin:12px 0 10px;"></div>
+    <div style="color:#a78bfa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;">${t.normTag}</div>
+    <div style="font-size:12px;color:#e2e8f0;line-height:1.6;">
+      <span style="color:#94a3b8;">${t.normField}</span> <span style="background:rgba(124,58,237,0.32);color:#c4b5fd;font-weight:600;padding:2px 7px;border-radius:5px;">${t.normPhrase}</span>
     </div>`;
 
   // 3) Recommendations — guideline rows with counts.
@@ -453,26 +455,26 @@ export function renderOnboardingToolsEmail(name: string | null, lang: EmailLang 
     </table>`;
 
   // 4) Calculators — TNM size pills + derived stage result.
-  const calcMock = `<div style="color:#6b7280;font-size:11px;margin:0 0 6px;">${t.calcSize}</div>
+  const calcMock = `<div style="color:#94a3b8;font-size:11px;margin:0 0 6px;">${t.calcSize}</div>
     <div style="margin:0 0 10px;">${pill("≤1 cm", false)}${pill("2–3 cm", false)}${pill("5–7 cm", true)}${pill(">7 cm", false)}</div>
-    <div style="font-size:11px;color:#6b7280;margin:0 0 10px;">T &#8594; <strong style="color:#111827;">T3</strong>&nbsp;&nbsp; N &#8594; <strong style="color:#111827;">N3</strong>&nbsp;&nbsp; M &#8594; <strong style="color:#111827;">M1a</strong></div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
+    <div style="font-size:11px;color:#94a3b8;margin:0 0 10px;">T &#8594; <strong style="color:#f1f5f9;">T3</strong>&nbsp;&nbsp; N &#8594; <strong style="color:#f1f5f9;">N3</strong>&nbsp;&nbsp; M &#8594; <strong style="color:#f1f5f9;">M1a</strong></div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.38);border-radius:8px;">
       <tr><td style="padding:9px 13px;">
-        <div style="color:#b91c1c;font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">${t.calcStage}</div>
-        <div style="color:#b91c1c;font-size:15px;font-weight:800;">${t.calcStage} IVA <span style="color:#ef4444;font-size:12px;font-weight:600;">· T3 N3 M1a</span></div>
+        <div style="color:#fca5a5;font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">${t.calcStage}</div>
+        <div style="color:#fca5a5;font-size:15px;font-weight:800;">${t.calcStage} IVA <span style="color:#f87171;font-size:12px;font-weight:600;">· T3 N3 M1a</span></div>
       </td></tr>
     </table>`;
 
   // 5) Classification — auto-derived from the report text.
-  const classMock = `<div style="color:#6b7280;font-size:11px;margin:0 0 8px;">${t.classFrom}</div>
-    <div style="color:#111827;font-size:13px;font-weight:700;margin:0 0 9px;">${t.classResult}</div>
+  const classMock = `<div style="color:#94a3b8;font-size:11px;margin:0 0 8px;">${t.classFrom}</div>
+    <div style="color:#f1f5f9;font-size:13px;font-weight:700;margin:0 0 9px;">${t.classResult}</div>
     <div>${chip("T3")}${chip("N3")}${chip("M1a")}</div>`;
 
   // 6) Radiogen bot — a chat exchange.
   const botMock = `<div style="text-align:right;margin:0 0 9px;">
       <span style="display:inline-block;background:#7c3aed;color:#fff;font-size:12px;line-height:1.5;padding:8px 12px;border-radius:12px 12px 3px 12px;max-width:82%;text-align:left;">${t.botQ}</span>
     </div>
-    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px 12px 12px 3px;padding:10px 13px;font-size:12px;color:#111827;line-height:1.55;">${t.botA}</div>`;
+    <div style="background:#0f1729;border:1px solid rgba(148,163,184,0.22);border-radius:12px 12px 12px 3px;padding:10px 13px;font-size:12px;color:#e2e8f0;line-height:1.55;">${t.botA}</div>`;
 
   const html = emailShell(`
         <tr><td style="padding:0 30px 10px;text-align:center;">
@@ -500,7 +502,10 @@ export async function sendOnboardingToolsEmail(to: string, name: string | null, 
   const { subject, html, text } = renderOnboardingToolsEmail(name, lang);
   await sendWithRetry({
     from: FROM, replyTo: REPLY_TO, to, subject, html, text,
-    headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `onboarding-${Date.now()}` },
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `onboarding-${Date.now()}`,
+    },
   });
 }
 
