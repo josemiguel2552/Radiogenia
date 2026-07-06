@@ -104,6 +104,15 @@ export function RecommendationsTab() {
   const [formModality, setFormModality] = useState("all");
   const [formSource, setFormSource] = useState("");
 
+  // AI extraction of recommendations from pasted guideline text.
+  const [extractOpen, setExtractOpen] = useState(false);
+  const [extractText, setExtractText] = useState("");
+  const [extractSource, setExtractSource] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractResults, setExtractResults] = useState<{ title: string; text: string; selected: boolean }[] | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractSaved, setExtractSaved] = useState<number | null>(null);
+
   const [hasOrg, setHasOrg] = useState(false);
   const [canManageOrg, setCanManageOrg] = useState(false);
   const [orgSections, setOrgSections] = useState<{ id: string; name: string }[]>([]);
@@ -383,6 +392,58 @@ export function RecommendationsTab() {
     setDialogOpen(false);
   }, [editingRec, editingIsSystem, formTitle, formText, formCategory, formModality, formSource, customRecs, t]);
 
+  const runExtract = useCallback(async () => {
+    if (extractText.trim().length < 40 || extracting) return;
+    setExtracting(true); setExtractError(null); setExtractResults(null);
+    try {
+      const res = await fetch("/api/recommendations/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: extractText, language: lang }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(d.recommendations)) {
+        setExtractResults((d.recommendations as { title: string; text: string }[]).map((r) => ({ title: r.title, text: r.text, selected: true })));
+      } else {
+        setExtractError(t("mrec.extract_error"));
+      }
+    } catch {
+      setExtractError(t("mrec.extract_error"));
+    }
+    setExtracting(false);
+  }, [extractText, extracting, lang, t]);
+
+  const saveExtracted = useCallback(() => {
+    const chosen = (extractResults || []).filter((r) => r.selected);
+    if (!chosen.length) return;
+    const src = extractSource.trim() || t("mrec.custom_source");
+    const stamp = Date.now();
+    const newRecs: ManualRecommendation[] = chosen.map((r, i) => ({
+      id: `custom_${stamp}_${i}`,
+      category: "all",
+      modality: "all",
+      title: { es: r.title, en: r.title, pt: r.title },
+      text: { es: r.text, en: r.text, pt: r.text },
+      tags: tokenize(r.title + " " + r.text),
+      source: src,
+      scope: "user",
+    }));
+    const updated = [...customRecs, ...newRecs];
+    setCustomRecs(updated);
+    saveCustomLocal(updated);
+    for (const rec of newRecs) {
+      fetch("/api/recommendations/custom", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: rec.category, modality: rec.modality, title: rec.title.es, text: rec.text.es, tags: rec.tags }),
+      }).catch(() => {});
+    }
+    setExtractSaved(chosen.length);
+    setExtractResults(null);
+    setExtractText("");
+    setExtractSource("");
+  }, [extractResults, extractSource, customRecs, t]);
+
   const handleDelete = useCallback((rec: ManualRecommendation) => {
     if (rec.scope === "system") {
       const newHidden = [...hiddenIds, rec.id];
@@ -577,10 +638,21 @@ export function RecommendationsTab() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("mrec.manage_title")}</h2>
         {recSubTab === "all" && (
-          <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}>
-            <Plus className="h-3.5 w-3.5" />
-            {t("mrec.add_new")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => { setExtractOpen(true); setExtractResults(null); setExtractError(null); setExtractSaved(null); }}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              {t("mrec.extract_btn")}
+            </Button>
+            <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}>
+              <Plus className="h-3.5 w-3.5" />
+              {t("mrec.add_new")}
+            </Button>
+          </div>
         )}
         {recSubTab === "hospital" && canManageOrg && (
           <Button size="sm" className="gap-1.5 text-xs" onClick={openOrgAdd}>
@@ -980,6 +1052,82 @@ export function RecommendationsTab() {
               {editingRec ? t("save") : t("mrec.add_new")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extract recommendations from a guideline */}
+      <Dialog open={extractOpen} onOpenChange={(o) => { setExtractOpen(o); if (!o) { setExtractResults(null); setExtractError(null); setExtractSaved(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-1.5">
+              <BookOpen className="h-4 w-4 text-brand" />
+              {t("mrec.extract_title")}
+            </DialogTitle>
+          </DialogHeader>
+
+          {extractSaved != null ? (
+            <div className="py-4 text-center space-y-3">
+              <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                ✓ {extractSaved} {t("mrec.extract_saved")}
+              </p>
+              <DialogClose asChild>
+                <Button size="sm" className="text-xs">{t("close")}</Button>
+              </DialogClose>
+            </div>
+          ) : !extractResults ? (
+            <div className="space-y-3">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">{t("mrec.extract_hint")}</p>
+              <textarea
+                value={extractText}
+                onChange={(e) => setExtractText(e.target.value)}
+                className="w-full h-40 text-xs p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 resize-none"
+                placeholder={t("mrec.extract_text_ph")}
+              />
+              <Input value={extractSource} onChange={(e) => setExtractSource(e.target.value)} className="h-8 text-xs" placeholder={t("mrec.extract_source_ph")} />
+              {extractError && <p className="text-[11px] text-red-500">{extractError}</p>}
+              <DialogFooter className="gap-2">
+                <DialogClose asChild>
+                  <Button variant="ghost" size="sm" className="text-xs">{t("cancel")}</Button>
+                </DialogClose>
+                <Button size="sm" className="text-xs gap-1.5" onClick={runExtract} disabled={extracting || extractText.trim().length < 40}>
+                  {extracting ? <><Loader2 className="h-3 w-3 animate-spin" />{t("mrec.extract_extracting")}</> : t("mrec.extract_run")}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : extractResults.length === 0 ? (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("mrec.extract_none")}</p>
+              <DialogFooter>
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setExtractResults(null)}>{t("mrec.extract_back")}</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">{extractResults.length} {t("mrec.extract_found")}</p>
+              <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+                {extractResults.map((r, i) => (
+                  <label key={i} className="flex gap-2 items-start p-2 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <input
+                      type="checkbox"
+                      checked={r.selected}
+                      onChange={() => setExtractResults((prev) => prev ? prev.map((x, idx) => idx === i ? { ...x, selected: !x.selected } : x) : prev)}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-gray-800 dark:text-gray-100">{r.title}</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">{r.text}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setExtractResults(null)}>{t("mrec.extract_back")}</Button>
+                <Button size="sm" className="text-xs" onClick={saveExtracted} disabled={!extractResults.some((r) => r.selected)}>
+                  {t("mrec.extract_save")} ({extractResults.filter((r) => r.selected).length})
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

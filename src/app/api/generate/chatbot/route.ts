@@ -22,7 +22,7 @@ function buildSystemPrompt(lang: UILanguage, knowledgeBase: string): string {
 REGLA CRÍTICA DE SEGURIDAD — FUENTE DE DATOS:
 - Tu ÚNICO conocimiento es el texto entre "--- KNOWLEDGE BASE ---" y "--- END KNOWLEDGE BASE ---".
 - Inventar, inferir o completar información médica que no esté en la base de conocimiento puede causar daño clínico. NO lo hagas NUNCA.
-- Si después de buscar exhaustivamente NO encuentras NADA relacionado, responde: "No tengo esa información en mis datos actuales. Puedes subir la guía clínica correspondiente en la sección de recomendaciones y podré ayudarte."
+- Si después de buscar exhaustivamente NO encuentras NADA relacionado, responde: "No tengo esa información en mis datos actuales. Puedes pegar el texto de esa guía clínica en la sección de Recomendaciones y la IA extraerá sus recomendaciones para que las uses en tus informes."
 
 INTERPRETACIÓN FLEXIBLE DE PREGUNTAS — MUY IMPORTANTE:
 - Sé FLEXIBLE al vincular la pregunta del usuario con la KB, pero ESTRICTO en responder solo con datos de la KB.
@@ -110,7 +110,7 @@ ESTILO DE RESPUESTA (solo cuando SÍ hay datos en la base de conocimiento):
 CRITICAL SAFETY RULE — DATA SOURCE:
 - Your ONLY knowledge is the text between "--- KNOWLEDGE BASE ---" and "--- END KNOWLEDGE BASE ---".
 - Fabricating, inferring, or completing medical information not in the knowledge base can cause clinical harm. NEVER do this.
-- If after exhaustive search you find NOTHING related, respond: "I don't have that information in my current data. You can upload the corresponding clinical guide in the recommendations section and I'll be able to help you."
+- If after exhaustive search you find NOTHING related, respond: "I don't have that information in my current data. You can paste that clinical guideline's text in the Recommendations section and the AI will extract its recommendations for you to use in your reports."
 
 FLEXIBLE QUESTION INTERPRETATION — VERY IMPORTANT:
 - Be FLEXIBLE when matching the user's question to the KB, but STRICT about only responding with KB data.
@@ -198,7 +198,7 @@ RESPONSE STYLE (only when data IS found in the knowledge base):
 REGRA CRÍTICA DE SEGURANÇA — FONTE DE DADOS:
 - Seu ÚNICO conhecimento é o texto entre "--- KNOWLEDGE BASE ---" e "--- END KNOWLEDGE BASE ---".
 - Fabricar, inferir ou completar informação médica que não esteja na base de conhecimento pode causar dano clínico. NUNCA faça isso.
-- Se após busca exaustiva NÃO encontrar NADA relacionado, responda: "Não tenho essa informação nos meus dados atuais. Você pode carregar o guia clínico correspondente na seção de recomendações e poderei ajudá-lo."
+- Se após busca exaustiva NÃO encontrar NADA relacionado, responda: "Não tenho essa informação nos meus dados atuais. Você pode colar o texto dessa diretriz clínica na seção de Recomendações e a IA extrairá suas recomendações para você usar nos seus laudos."
 
 INTERPRETAÇÃO FLEXÍVEL DE PERGUNTAS — MUITO IMPORTANTE:
 - Seja FLEXÍVEL ao vincular a pergunta do usuário com a KB, mas ESTRITO em responder somente com dados da KB.
@@ -283,9 +283,9 @@ ESTILO DE RESPOSTA (somente quando SIM há dados na base de conhecimento):
   };
 
   const reminder: Record<UILanguage, string> = {
-    es: "RECORDATORIO FINAL: Si la información solicitada NO aparece en la base de conocimiento de arriba, indica que no dispones de esa información y que el usuario puede subir la guía clínica correspondiente en la sección de recomendaciones. Responde este mensaje en el MISMO IDIOMA en que el usuario hizo la pregunta. NO inventes NI uses conocimiento externo bajo NINGUNA circunstancia.",
-    en: "FINAL REMINDER: If the requested information does NOT appear in the knowledge base above, indicate that you don't have that information and that the user can upload the corresponding clinical guide in the recommendations section. Respond this message in the SAME LANGUAGE the user asked the question in. Do NOT fabricate or use external knowledge under ANY circumstance.",
-    pt: "LEMBRETE FINAL: Se a informação solicitada NÃO aparece na base de conhecimento acima, indique que não possui essa informação e que o usuário pode carregar o guia clínico correspondente na seção de recomendações. Responda esta mensagem no MESMO IDIOMA em que o usuário fez a pergunta. NÃO fabrique NEM use conhecimento externo sob NENHUMA circunstância.",
+    es: "RECORDATORIO FINAL: Si la información solicitada NO aparece en la base de conocimiento de arriba, indica que no dispones de esa información y que el usuario puede pegar el texto de su guía clínica en la sección de Recomendaciones para extraer sus recomendaciones. Responde este mensaje en el MISMO IDIOMA en que el usuario hizo la pregunta. NO inventes NI uses conocimiento externo bajo NINGUNA circunstancia.",
+    en: "FINAL REMINDER: If the requested information does NOT appear in the knowledge base above, indicate that you don't have that information and that the user can paste their clinical guideline's text in the Recommendations section to extract its recommendations. Respond this message in the SAME LANGUAGE the user asked the question in. Do NOT fabricate or use external knowledge under ANY circumstance.",
+    pt: "LEMBRETE FINAL: Se a informação solicitada NÃO aparece na base de conhecimento acima, indique que não possui essa informação e que o usuário pode colar o texto de sua diretriz clínica na seção de Recomendações para extrair suas recomendações. Responda esta mensagem no MESMO IDIOMA em que o usuário fez a pergunta. NÃO fabrique NEM use conhecimento externo sob NENHUMA circunstância.",
   };
 
   return `${instructions[lang] || instructions.en}\n\n--- KNOWLEDGE BASE ---\n${knowledgeBase}\n--- END KNOWLEDGE BASE ---\n\n${reminder[lang] || reminder.en}`;
