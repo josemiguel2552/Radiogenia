@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { track } from "@/lib/track";
-import { Send, X, Loader2 } from "lucide-react";
+import { Send, X, Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useT } from "@/lib/i18n";
@@ -50,6 +50,7 @@ export function RadiogenBot() {
 
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [feedback, setFeedback] = useState<Record<number, "up" | "down">>({});
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -200,6 +201,31 @@ export function RadiogenBot() {
                 {msg.content ? (
                   <div className="px-3 py-2 text-[11px] leading-relaxed text-gray-700 dark:text-gray-200">
                     <BotMessage content={msg.content} />
+                    {!(loading && i === messages.length - 1) && (
+                      <div className="flex items-center gap-1 mt-1.5 -mb-0.5">
+                        {(["up", "down"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => {
+                              if (feedback[i]) return;
+                              setFeedback((prev) => ({ ...prev, [i]: v }));
+                              track("ui_bot_feedback", { verdict: v });
+                            }}
+                            className={`p-0.5 rounded transition-colors ${
+                              feedback[i] === v
+                                ? "text-violet-500"
+                                : feedback[i]
+                                  ? "text-gray-200 dark:text-gray-700"
+                                  : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400"
+                            }`}
+                            aria-label={v === "up" ? "helpful" : "not helpful"}
+                          >
+                            {v === "up" ? <ThumbsUp className="h-3 w-3" /> : <ThumbsDown className="h-3 w-3" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : loading && i === messages.length - 1 ? (
                   <div className="px-3 py-2">

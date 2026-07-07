@@ -17,7 +17,19 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`auth-register:${ip}`, RATE_LIMITS.auth);
     if (!rl.allowed) return rl.errorResponse!;
 
-    const { email, password, firstName, lastName, country, hospital, role, plan } = await req.json();
+    const { email, password, firstName, lastName, country, hospital, role, plan, utm } = await req.json();
+
+    // Sanitized traffic attribution (which channel/campaign brought this user).
+    const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "gclid", "referrer"];
+    let signupUtm: Record<string, string> | null = null;
+    if (utm && typeof utm === "object" && !Array.isArray(utm)) {
+      const clean: Record<string, string> = {};
+      for (const k of UTM_KEYS) {
+        const v = (utm as Record<string, unknown>)[k];
+        if (typeof v === "string" && v) clean[k] = v.slice(0, 300);
+      }
+      if (Object.keys(clean).length > 0) signupUtm = clean;
+    }
 
     if (!email || !password) {
       return NextResponse.json({ error: "email_password_required" }, { status: 400 });
@@ -70,6 +82,12 @@ export async function POST(req: NextRequest) {
       ...(pendingPlan ? { pending_checkout_plan: pendingPlan } : {}),
     });
 
+    // Best-effort attribution stamp (separate update: must never break signup,
+    // e.g. if the migration adding the column hasn't been applied yet).
+    if (signupUtm) {
+      try { await service.from("profiles").update({ signup_utm: signupUtm }).eq("id", userId); } catch { /* ignore */ }
+    }
+
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
 
     let confirmUrl: string | null = null;
@@ -92,6 +110,9 @@ export async function POST(req: NextRequest) {
     try {
       if (autoApprove) {
         await sendWelcomeEmail(normalizedEmail, fullName, "es", confirmUrl, pendingPlan);
+        if (confirmUrl) {
+          try { await service.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", userId); } catch { /* ignore */ }
+        }
       } else {
         await sendPendingApprovalEmail(normalizedEmail, fullName, "es");
       }

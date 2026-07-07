@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Globe, Clock, AlertTriangle, Mail, ExternalLink, RefreshCw, Check } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
+import { readUtm } from "@/lib/utm";
 import { PLANS } from "@/lib/types";
 
 const COUNTRIES = [
@@ -79,7 +80,7 @@ function RegisterForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password, country, hospital, role, plan: selectedPlan || undefined }),
+        body: JSON.stringify({ firstName, lastName, email, password, country, hospital, role, plan: selectedPlan || undefined, utm: readUtm() }),
       });
       const data = await res.json();
       if (!res.ok) {

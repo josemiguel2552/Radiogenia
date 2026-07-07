@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         if (linkData?.properties?.hashed_token) {
           const confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink`;
           await sendWelcomeEmail(p.email as string, p.name, langById.get(p.id) || "es", confirmUrl, null);
+          try { await supabase.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", p.id); } catch { /* ignore */ }
           sent += 1;
         } else {
           errors.push(`${p.email}: no link`);

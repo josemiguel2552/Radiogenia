@@ -27,6 +27,8 @@ import {
   Pencil,
   CheckCheck,
   Wand2,
+  ThumbsUp,
+  ThumbsDown,
   AlignLeft,
   List,
   X,
@@ -110,6 +112,16 @@ export function DashboardContent() {
     try { localStorage.setItem("rg_ftu_done", "1"); } catch { /* ignore */ }
     setIsFirstTime(false);
   };
+
+  // One-time 👍/👎 after the first dictation session, to learn why users who
+  // try dictation don't come back (perceived transcription quality).
+  const [dictFeedback, setDictFeedback] = useState<"hidden" | "show" | "done">("hidden");
+  const rateDictation = (verdict: "up" | "down") => {
+    track("ui_dictation_feedback", { verdict });
+    try { localStorage.setItem("rg_dict_fb_done", "1"); } catch { /* ignore */ }
+    setDictFeedback("done");
+    window.setTimeout(() => setDictFeedback("hidden"), 2500);
+  };
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
@@ -167,6 +179,19 @@ export function DashboardContent() {
   const outputLanguage = uiPrefs.uiLanguage;
   const handleGenerateRef = useRef<(mode?: ReportMode, langOverride?: string) => void>(() => {});
   const detectSystemsRef = useRef<() => void>(() => {});
+  // Post-generation auto-save (called via ref so it sees fresh state) and
+  // abandonment tracking (generated but never copied when leaving the page).
+  const saveReportQuietlyRef = useRef<() => Promise<void>>(async () => {});
+  const abandonRef = useRef({ generated: false, copied: false });
+  useEffect(() => {
+    const onPageHide = () => {
+      if (abandonRef.current.generated && !abandonRef.current.copied) {
+        track("ui_abandon_after_generate");
+      }
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
@@ -472,6 +497,17 @@ export function DashboardContent() {
       whisperDictationStartRef.current = -1;
       whisperSkipRef.current = false;
     }
+  }, [isRecording]);
+
+  // Show the one-time dictation feedback prompt when a recording session ends.
+  const prevRecordingRef = useRef(false);
+  useEffect(() => {
+    if (prevRecordingRef.current && !isRecording && dictationRef.current.trim()) {
+      try {
+        if (localStorage.getItem("rg_dict_fb_done") !== "1") setDictFeedback("show");
+      } catch { /* ignore */ }
+    }
+    prevRecordingRef.current = isRecording;
   }, [isRecording]);
 
   useEffect(() => { dictationRef.current = dictation; }, [dictation]);
@@ -1042,6 +1078,13 @@ export function DashboardContent() {
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
 
+    // Auto-save the generated report as a draft so nothing is lost if the user
+    // closes the tab without copying (via ref: the closure state is stale here).
+    if (!signal.aborted) {
+      abandonRef.current = { generated: true, copied: false };
+      window.setTimeout(() => { saveReportQuietlyRef.current().catch(() => {}); }, 1000);
+    }
+
     // One-time (first report ever): point the user to the classify tool while
     // they're looking at their first generated result.
     if (firstGen && !signal.aborted) {
@@ -1493,9 +1536,12 @@ export function DashboardContent() {
     const id = mode === "findings" ? "f" : mode === "findings_conclusion" ? "fc" : "all";
     copyText(text, id);
     track("ui_copy_report", { mode });
+    abandonRef.current.copied = true;
 
     logCorrectionIfNeeded();
-    flushCorrections().catch(() => {});
+    // Persist on copy too, in case the post-generation auto-save failed.
+    if (!lastSavedReportId) saveReportQuietly(true).catch(() => {});
+    else flushCorrections().catch(() => {});
 
     // Update pilot metrics with final edit distance + final texts
     if (lastSavedReportId && initialFindings) {
@@ -1567,7 +1613,7 @@ export function DashboardContent() {
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
 
-  async function saveReportQuietly() {
+  async function saveReportQuietly(auto = false) {
     if (!selectedTemplate || !findings) return;
     if (lastSavedReportId) return;
 
@@ -1604,7 +1650,7 @@ export function DashboardContent() {
         if (saved?.id) {
           setLastSavedReportId(saved.id);
           reportDirtyRef.current = false;
-          toast.success(t("toast.report_saved"));
+          toast.success(t(auto ? "toast.report_autosaved" : "toast.report_saved"));
           fetch("/api/audit-logs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1654,6 +1700,8 @@ export function DashboardContent() {
     }).catch(() => {});
   }
 
+  saveReportQuietlyRef.current = () => saveReportQuietly(true);
+
   async function flushCorrections() {
     if (!lastSavedReportId || !reportDirtyRef.current) return;
 
@@ -1678,6 +1726,7 @@ export function DashboardContent() {
 
   function startNewReport() {
     track("ui_new_report");
+    abandonRef.current = { generated: false, copied: false };
     logCorrectionIfNeeded();
     if (findings) {
       previousReportRef.current = {
@@ -2220,6 +2269,23 @@ export function DashboardContent() {
                 </div>
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
+              {dictFeedback !== "hidden" && (
+                <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                  {dictFeedback === "done" ? (
+                    <span className="text-green-600 dark:text-green-400">{t("dash.dict_fb_thanks")}</span>
+                  ) : (
+                    <>
+                      <span>{t("dash.dict_fb_q")}</span>
+                      <button type="button" onClick={() => rateDictation("up")} className="p-1 rounded text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors" aria-label="good">
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" onClick={() => rateDictation("down")} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" aria-label="bad">
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {piiWarningBanner}
               <div className="flex items-center gap-1.5">
                 <Select value={reportMode} onValueChange={(v) => setReportMode(v as ReportMode)}>

@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
           const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
           const confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink`;
           await sendWelcomeEmail(normalizedEmail, profile.name, "es", confirmUrl, null);
+          try { await service.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", profile.id); } catch { /* ignore */ }
         }
       } catch (err) {
         console.error(`[resend-confirmation] error: ${err instanceof Error ? err.message : err}`);

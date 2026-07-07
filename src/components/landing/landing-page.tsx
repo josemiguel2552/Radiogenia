@@ -12,6 +12,7 @@ import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
+import { captureUtm } from "@/lib/utm";
 
 /* ─── Hooks ─── */
 
@@ -224,6 +225,8 @@ export function LandingPage() {
   const { lang, setLang, t } = usePublicLang();
   useMouseGlow(heroRef);
   useScrollReveal();
+  // First-touch attribution: remember which campaign/channel brought the visitor.
+  useEffect(() => { captureUtm(); }, []);
 
   useEffect(() => {
     const onScroll = () => {
