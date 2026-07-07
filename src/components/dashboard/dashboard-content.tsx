@@ -87,6 +87,29 @@ export function DashboardContent() {
   // Start open but thin: a visible hint of where clinical context goes (so it
   // isn't typed into the findings box). The textarea auto-grows with content.
   const [clinicalOpen, setClinicalOpen] = useState(true);
+
+  // First-time user (never generated a report): shows the "try an example"
+  // button and the one-time post-generation classify nudge. Verified against
+  // the server (report count) and then remembered locally.
+  const [isFirstTime, setIsFirstTime] = useState(false);
+  useEffect(() => {
+    try { if (localStorage.getItem("rg_ftu_done") === "1") return; } catch { return; }
+    fetch("/api/reports?count_only=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        if ((d.count || 0) > 0) {
+          try { localStorage.setItem("rg_ftu_done", "1"); } catch { /* ignore */ }
+        } else {
+          setIsFirstTime(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+  const markFirstUseDone = () => {
+    try { localStorage.setItem("rg_ftu_done", "1"); } catch { /* ignore */ }
+    setIsFirstTime(false);
+  };
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const [lightParaphrase, setLightParaphrase] = useState(false);
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
@@ -754,10 +777,37 @@ export function DashboardContent() {
   // Voice recording is handled by useVoiceDictation hook above
 
   // Generate report
+  // First-time helper: fill a realistic sample case (chest CT) so a new user
+  // can press Generate and see the product working without a real case at hand.
+  function loadExampleCase() {
+    track("ui_try_example");
+    const samples: Record<string, string> = {
+      es: "Masa pulmonar de 43 milímetros en el lóbulo superior izquierdo, de bordes espiculados. Adenopatía supraclavicular izquierda de 15 milímetros. Pequeño derrame pleural derecho. Resto sin alteraciones significativas.",
+      en: "43 millimeter pulmonary mass in the left upper lobe with spiculated margins. 15 millimeter left supraclavicular adenopathy. Small right pleural effusion. No other significant findings.",
+      pt: "Massa pulmonar de 43 milímetros no lobo superior esquerdo, com margens espiculadas. Adenopatia supraclavicular esquerda de 15 milímetros. Pequeno derrame pleural direito. Restante sem alterações significativas.",
+    };
+    const tpl =
+      templates.find((tp) => tp.modality === "CT" && /t[oó]rax|chest/i.test(tp.name)) ||
+      templates.find((tp) => tp.modality === "CT") ||
+      templates[0];
+    if (tpl) {
+      setSelectedModality(tpl.modality);
+      if (tpl.structure?.section) setSelectedSection(tpl.structure.section);
+      setSelectedTemplateId(tpl.id);
+    }
+    setDictation(samples[outputLanguage] || samples.es);
+    correctedLenRef.current = 0;
+    setTraceData(null);
+    if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now();
+    toast(t("dash.example_loaded"), { duration: 8000 });
+  }
+
   type ReportMode = "structured" | "compact" | "dictation_only" | "unstructured";
   async function handleGenerate(mode: ReportMode = "structured", langOverride?: string) {
     const effectiveLang = langOverride ?? outputLanguage;
     if (!selectedTemplate || !dictation.trim()) return;
+    // First generation ever → after it completes, nudge toward the classify tool.
+    const firstGen = isFirstTime;
 
     // Log any pending corrections from the previous report before starting a new generation
     logCorrectionIfNeeded();
@@ -991,6 +1041,13 @@ export function DashboardContent() {
     await Promise.all([tracePromise, conclusionPromise]);
     const durationMs = Date.now() - generateStartRef.current;
     setGenerationDurationMs(durationMs);
+
+    // One-time (first report ever): point the user to the classify tool while
+    // they're looking at their first generated result.
+    if (firstGen && !signal.aborted) {
+      markFirstUseDone();
+      window.setTimeout(() => toast(t("dash.first_gen_nudge"), { duration: 12000 }), 1500);
+    }
 
     // Log trace quality metrics — include dictation + generated text so admin can review
     if (traceStats.mappings > 0 || traceStats.unmatched > 0 || traceStats.hallucinations > 0) {
@@ -2115,6 +2172,16 @@ export function DashboardContent() {
                   minHeight={140}
                 />
                 <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
+                {isFirstTime && !dictation.trim() && !isRecording && !isTranscribing && (
+                  <button
+                    type="button"
+                    onClick={loadExampleCase}
+                    className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {t("dash.try_example")}
+                  </button>
+                )}
                 <Button
                   variant={isRecording ? "destructive" : "secondary"}
                   size="icon"

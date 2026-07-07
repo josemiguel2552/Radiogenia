@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       "ui_template_selected", "ui_calculator_opened",
       "ui_rec_panel_open", "ui_rec_selected", "ui_rec_copied",
       "ui_bot_opened", "ui_classify_clicked", "ui_clinical_check_clicked",
+      "ui_try_example",
     ]);
     if (!action || (!validActions.includes(action) && !UI_ACTIONS.has(action))) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
