@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -2099,7 +2098,7 @@ export function DashboardContent() {
                 </Select>
               </div>
               <div className="relative">
-                <Textarea
+                <AutoGrowTextarea
                   ref={dictTextareaRef}
                   placeholder={t("dash.dictation_placeholder")}
                   value={dictation}
@@ -2112,7 +2111,8 @@ export function DashboardContent() {
                       setDictSelRange(null);
                     }
                   }}
-                  className="text-sm pr-14 resize-none min-h-[140px]"
+                  className="text-sm pr-14"
+                  minHeight={140}
                 />
                 <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
                 <Button

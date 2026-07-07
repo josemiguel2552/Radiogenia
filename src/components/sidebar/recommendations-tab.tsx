@@ -29,6 +29,7 @@ import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import { MODALITIES, SECTIONS } from "@/lib/types";
 import type { ManualRecommendation, OutputLanguage } from "@/lib/types";
 import { RadiogenBot } from "./radiogen-bot";
+import { SectionHint } from "@/components/ui/section-hint";
 
 const CUSTOM_KEY = "radiogenai_rec_custom";
 const HIDDEN_KEY = "radiogenai_rec_hidden";
@@ -661,6 +662,8 @@ export function RecommendationsTab() {
           </Button>
         )}
       </div>
+
+      {recSubTab === "all" && <SectionHint id="rec_create" text={t("mrec.hint_create")} />}
 
       {hasOrg ? (
         <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">

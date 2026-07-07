@@ -35,6 +35,7 @@ import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 import { SectionEditor, parseTemplateSections, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
 import type { TemplateField } from "@/components/shared/template-section-editor";
 import { TemplateBot } from "./template-bot";
+import { SectionHint } from "@/components/ui/section-hint";
 import { useUIPrefs } from "@/lib/ui-prefs";
 
 interface ExtractedTemplate {
@@ -496,6 +497,8 @@ export function TemplatesTab() {
         </div>
         <TemplateBot templates={templates} />
       </div>
+
+      <SectionHint id="tpl_bot" text={t("tpl.hint_bot")} />
 
       {/* Sub-tabs: All / Hospital */}
       {hasOrg && (
