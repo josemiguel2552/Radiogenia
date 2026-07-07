@@ -25,6 +25,23 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+
+  async function resendVerification() {
+    if (resendState !== "idle" || !email.trim()) return;
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      setResendState("sent");
+    } catch {
+      setResendState("idle");
+    }
+  }
 
 
   useEffect(() => {
@@ -33,6 +50,7 @@ function LoginContent() {
       const mapped: Record<string, string> = {
         email_not_confirmed: t("auth.email_not_confirmed"),
       };
+      setUnconfirmed(callbackError === "email_not_confirmed");
       setError(mapped[callbackError] || callbackError);
     }
   }, [searchParams, t]);
@@ -52,6 +70,7 @@ function LoginContent() {
         const errorMap: Record<string, string> = {
           email_not_confirmed: t("auth.email_not_confirmed"),
         };
+        setUnconfirmed(data.error === "email_not_confirmed");
         setError(errorMap[data.error] || data.error || t("auth.login_failed"));
         setLoading(false);
       } else {
@@ -137,7 +156,19 @@ function LoginContent() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{error}</p>
+              <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg space-y-2">
+                <p>{error}</p>
+                {unconfirmed && (
+                  <button
+                    type="button"
+                    disabled={resendState !== "idle"}
+                    onClick={resendVerification}
+                    className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline disabled:opacity-60 disabled:no-underline"
+                  >
+                    {resendState === "sent" ? t("verify.sent") : resendState === "sending" ? t("verify.sending") : t("verify.resend")}
+                  </button>
+                )}
+              </div>
             )}
 
             <Button

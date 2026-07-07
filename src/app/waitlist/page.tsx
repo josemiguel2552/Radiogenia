@@ -97,6 +97,22 @@ function RegisterForm() {
       }
 
       if (data.approved) {
+        // Deferred verification: free-plan users go straight into the app
+        // (7-day grace; a dashboard banner asks them to verify). Paid plans
+        // keep the email-link flow, which chains into checkout.
+        if (!selectedPlan || selectedPlan === "free") {
+          try {
+            const loginRes = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            });
+            if (loginRes.ok) {
+              window.location.href = "/dashboard";
+              return;
+            }
+          } catch { /* fall back to the check-your-email screen */ }
+        }
         setSubmitted("approved");
       } else {
         setSubmitted("pending");

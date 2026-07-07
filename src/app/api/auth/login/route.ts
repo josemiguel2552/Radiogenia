@@ -51,13 +51,20 @@ export async function POST(req: NextRequest) {
       const service = createServiceClient();
       const { data: profile } = await service
         .from("profiles")
-        .select("email_verified")
+        .select("email_verified, created_at")
         .eq("id", signInData.user.id)
         .single();
 
+      // Deferred verification: unverified users keep full access during a
+      // 7-day grace window from signup (a persistent dashboard banner asks
+      // them to verify). After the window, login requires verification.
       if (profile && profile.email_verified === false) {
-        await supabase.auth.signOut();
-        return NextResponse.json({ error: "email_not_confirmed" }, { status: 403 });
+        const GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+        const age = Date.now() - Date.parse(profile.created_at || "");
+        if (!(age >= 0 && age < GRACE_MS)) {
+          await supabase.auth.signOut();
+          return NextResponse.json({ error: "email_not_confirmed" }, { status: 403 });
+        }
       }
     }
 

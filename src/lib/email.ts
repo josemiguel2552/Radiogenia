@@ -266,6 +266,11 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
   const greeting = name ? name.split(" ")[0] : "";
   const dashUrl = confirmUrl || `${APP_URL}/dashboard`;
   const btnLabel = confirmUrl ? (lang === "es" ? "Confirmar mi cuenta" : lang === "pt" ? "Confirmar minha conta" : "Confirm my account") : t.btn;
+  // When this email carries the verification link, say so in the subject —
+  // "Welcome" subjects get skimmed past; an explicit action does better.
+  const subject = confirmUrl
+    ? (lang === "es" ? "Confirma tu email — Radiogen.AI" : lang === "pt" ? "Confirme seu e-mail — Radiogen.AI" : "Confirm your email — Radiogen.AI")
+    : t.subject;
   const feat1 = welcomeFeat1(plan, lang);
 
   const html = emailShell(`
@@ -298,7 +303,7 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
   const text = t.textTpl(greeting, dashUrl).replace(/✓ \d+ (?:informes|reports|laudos).*(?:gratuito|free plan|plano gratuito)/, `✓ ${textFeat1}`);
 
   await sendWithRetry({
-    from: FROM, replyTo: REPLY_TO, to, subject: t.subject, html, text,
+    from: FROM, replyTo: REPLY_TO, to, subject, html, text,
     headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `welcome-${Date.now()}` },
   });
 }

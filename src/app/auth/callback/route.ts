@@ -32,8 +32,9 @@ export async function GET(request: Request) {
       const service = createServiceClient();
       await service
         .from("profiles")
-        .update({ email_verified: true })
-        .eq("id", data.user.id);
+        .update({ email_verified: true, email_verified_at: new Date().toISOString() })
+        .eq("id", data.user.id)
+        .eq("email_verified", false); // keep the original verification timestamp
     }
 
     const plan = searchParams.get("plan");
@@ -69,8 +70,9 @@ export async function GET(request: Request) {
       const service = createServiceClient();
       await service
         .from("profiles")
-        .update({ email_verified: true })
-        .eq("id", user.id);
+        .update({ email_verified: true, email_verified_at: new Date().toISOString() })
+        .eq("id", user.id)
+        .is("email_verified_at", null);
     }
   }
 
