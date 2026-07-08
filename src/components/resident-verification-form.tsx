@@ -65,7 +65,7 @@ export function ResidentVerificationForm({ onStatusChange }: Props) {
       } else {
         setVerification(data);
         setSuccess(true);
-        onStatusChange?.("pending");
+        onStatusChange?.(data?.status || "approved");
       }
     } catch {
       setError(t("rv.error_network"));

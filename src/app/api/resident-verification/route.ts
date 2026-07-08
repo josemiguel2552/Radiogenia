@@ -7,10 +7,10 @@ import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
-  .split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
+// Where the uploaded residency certificate is archived (silently — the
+// resident is never told this happens). Access is no longer gated on a human
+// reviewing it; this is a record-keeping copy only.
+const RESIDENT_DOCS_EMAIL = process.env.RESIDENT_DOCS_EMAIL || "info@radiogen.ai";
 
 export async function GET() {
   try {
@@ -104,8 +104,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to store the document" }, { status: 500 });
     }
 
-    // 2) Create the verification request the admin reviews in the dashboard.
-    const { error: insertError } = await service
+    // 2) Auto-approve on upload: access no longer waits on a human review —
+    // the resident can pay and get access immediately. The document is kept
+    // (in storage + emailed below) purely for record-keeping.
+    const now = new Date().toISOString();
+    const { data: inserted, error: insertError } = await service
       .from("resident_verifications")
       .insert({
         user_id: user.id,
@@ -113,34 +116,41 @@ export async function POST(req: NextRequest) {
         institution_name: institutionName,
         residency_start: residencyStart,
         residency_end: residencyEnd,
-        status: "pending",
-      });
-    if (insertError) {
-      console.error("[resident-verification] insert error:", insertError.message);
+        status: "approved",
+        reviewed_at: now,
+        admin_notes: "Auto-approved on upload; certificate archived by email.",
+      })
+      .select("id, status, institution_name, residency_start, residency_end, admin_notes, created_at")
+      .single();
+    if (insertError || !inserted) {
+      console.error("[resident-verification] insert error:", insertError?.message);
       return NextResponse.json({ error: "Failed to create the verification request" }, { status: 500 });
     }
 
-    // 3) Notify the admin (best-effort — the dashboard is the source of truth).
-    if (ADMIN_EMAILS.length > 0 && process.env.RESEND_API_KEY) {
+    // 3) Archive the certificate by email (silent — never surfaced to the
+    // resident). Best-effort: must never block the user's access.
+    if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || `certificado.${ext}`;
       resend.emails.send({
         from: process.env.EMAIL_FROM || "Radiogen.AI <noreply@radiogen.ai>",
-        to: ADMIN_EMAILS,
-        subject: `Verificación de residente: ${userName} (${userEmail})`,
+        to: RESIDENT_DOCS_EMAIL,
+        subject: `Certificado de residente: ${userName} (${userEmail})`,
         html: `
-          <h2>Nueva solicitud de verificación de residente</h2>
+          <h2>Certificado de residencia subido (acceso auto-concedido)</h2>
           <table style="border-collapse:collapse;">
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Usuario:</td><td>${userName}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${userEmail}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Institución:</td><td>${institutionName || "—"}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Periodo:</td><td>${residencyStart} → ${residencyEnd}</td></tr>
           </table>
-          <p>Revísala en el panel de admin → pestaña Residentes (ver documento y aprobar/rechazar).</p>
+          <p>El acceso al plan residente se concede automáticamente en cuanto pague. Certificado adjunto para archivo.</p>
         `,
-      }).catch((err) => console.error("[resident-verification] email error:", err instanceof Error ? err.message : err));
+        attachments: [{ filename: safeName, content: buffer, contentType: file.type || "application/octet-stream" }],
+      }).catch((err) => console.error("[resident-verification] archive email error:", err instanceof Error ? err.message : err));
     }
 
-    return NextResponse.json({ status: "pending" });
+    return NextResponse.json({ ...inserted, plan_active: false });
   } catch (error) {
     return toErrorResponse(error);
   }
