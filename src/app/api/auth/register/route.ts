@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
-import { sendWelcomeEmail, sendPendingApprovalEmail } from "@/lib/email";
-
-const LATAM_COUNTRIES = new Set([
-  "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
-  "Ecuador", "El Salvador", "Guatemala", "Honduras", "México",
-  "Nicaragua", "Panamá", "Paraguay", "Perú", "Puerto Rico",
-  "República Dominicana", "Uruguay", "Venezuela",
-]);
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,8 +54,11 @@ export async function POST(req: NextRequest) {
     const userId = authData.user.id;
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
 
-    const autoApprove = LATAM_COUNTRIES.has(country || "") && role !== "resident";
-
+    // Every signup gets immediate access, regardless of country or plan.
+    // Email verification is deferred (7-day grace, enforced at login) rather
+    // than gating access up front. The resident PLAN (discounted pricing)
+    // still requires certificate verification — a separate, justified check
+    // handled downstream via pending_checkout_plan → /auth/verify-resident.
     const pendingPlan = plan && plan !== "free" ? plan : null;
 
     await service.from("profiles").upsert({
@@ -70,7 +66,7 @@ export async function POST(req: NextRequest) {
       email: normalizedEmail,
       role: "radiologist",
       subscription_plan: "free",
-      approved: autoApprove,
+      approved: true,
       email_verified: false,
       billing_period_start: new Date().toISOString(),
       reports_used_this_month: 0,
@@ -91,36 +87,30 @@ export async function POST(req: NextRequest) {
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
 
     let confirmUrl: string | null = null;
-    if (autoApprove) {
-      try {
-        const { data: linkData } = await service.auth.admin.generateLink({
-          type: "magiclink",
-          email: normalizedEmail,
-        });
-        if (linkData?.properties?.hashed_token) {
-          const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-          const planParam = plan && plan !== "free" ? `&plan=${plan}` : "";
-          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink${planParam}`;
-        }
-      } catch (err) {
-        console.error(`[register] confirm link error: ${err}`);
+    try {
+      const { data: linkData } = await service.auth.admin.generateLink({
+        type: "magiclink",
+        email: normalizedEmail,
+      });
+      if (linkData?.properties?.hashed_token) {
+        const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
+        const planParam = plan && plan !== "free" ? `&plan=${plan}` : "";
+        confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink${planParam}`;
       }
+    } catch (err) {
+      console.error(`[register] confirm link error: ${err}`);
     }
 
     try {
-      if (autoApprove) {
-        await sendWelcomeEmail(normalizedEmail, fullName, "es", confirmUrl, pendingPlan);
-        if (confirmUrl) {
-          try { await service.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", userId); } catch { /* ignore */ }
-        }
-      } else {
-        await sendPendingApprovalEmail(normalizedEmail, fullName, "es");
+      await sendWelcomeEmail(normalizedEmail, fullName, "es", confirmUrl, pendingPlan);
+      if (confirmUrl) {
+        try { await service.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", userId); } catch { /* ignore */ }
       }
     } catch (err) {
       console.error(`[register] email error: ${err}`);
     }
 
-    return NextResponse.json({ ok: true, approved: autoApprove });
+    return NextResponse.json({ ok: true, approved: true });
   } catch (error) {
     return toErrorResponse(error);
   }
