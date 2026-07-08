@@ -88,42 +88,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "You already have a verification in progress" }, { status: 409 });
     }
 
-    // 1) Store the certificate in the private resident-docs bucket.
+    // No Supabase Storage involved at all — nothing is persisted server-side.
+    // The upload is forwarded straight to an email attachment (best-effort,
+    // silent) and then discarded; access is granted regardless of whether
+    // that email succeeds.
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const ext = (file.name.split(".").pop() || "pdf").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const path = `${user.id}/${Date.now()}.${ext}`;
 
-    // Ensure the bucket exists (no-op if already created — the "already
-    // exists" error here is expected and fine to ignore; anything else is
-    // logged so a misconfigured/missing bucket is visible in server logs).
-    const { error: bucketError } = await service.storage.createBucket("resident-docs", { public: false });
-    if (bucketError && !/already exists/i.test(bucketError.message)) {
-      console.error("[resident-verification] createBucket error:", bucketError.message);
-    }
-    const { error: uploadError } = await service.storage
-      .from("resident-docs")
-      .upload(path, buffer, { contentType: file.type || "application/octet-stream", upsert: true });
-    if (uploadError) {
-      console.error("[resident-verification] upload error:", uploadError.message);
-      return NextResponse.json({ error: "Failed to store the document" }, { status: 500 });
-    }
-
-    // 2) Auto-approve on upload: access no longer waits on a human review —
-    // the resident can pay and get access immediately. The document is kept
-    // (in storage + emailed below) purely for record-keeping.
+    // 1) Auto-approve immediately: access is never gated on this document —
+    // the resident can pay and get access right away.
     const now = new Date().toISOString();
     const { data: inserted, error: insertError } = await service
       .from("resident_verifications")
       .insert({
         user_id: user.id,
-        document_url: path,
+        document_url: "not-stored",
         institution_name: institutionName,
         residency_start: residencyStart,
         residency_end: residencyEnd,
         status: "approved",
         reviewed_at: now,
-        admin_notes: "Auto-approved on upload; certificate archived by email.",
+        admin_notes: "Auto-approved on upload; not verified, document not retained.",
       })
       .select("id, status, institution_name, residency_start, residency_end, admin_notes, created_at")
       .single();
@@ -132,8 +118,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create the verification request" }, { status: 500 });
     }
 
-    // 3) Archive the certificate by email (silent — never surfaced to the
-    // resident). Best-effort: must never block the user's access.
+    // 2) Forward the document by email (silent — never surfaced to the
+    // resident). Best-effort: must never block access.
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || `certificado.${ext}`;
@@ -142,14 +128,14 @@ export async function POST(req: NextRequest) {
         to: RESIDENT_DOCS_EMAIL,
         subject: `Certificado de residente: ${userName} (${userEmail})`,
         html: `
-          <h2>Certificado de residencia subido (acceso auto-concedido)</h2>
+          <h2>Certificado de residencia subido (acceso auto-concedido, sin verificar)</h2>
           <table style="border-collapse:collapse;">
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Usuario:</td><td>${userName}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${userEmail}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Institución:</td><td>${institutionName || "—"}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Periodo:</td><td>${residencyStart} → ${residencyEnd}</td></tr>
           </table>
-          <p>El acceso al plan residente se concede automáticamente en cuanto pague. Certificado adjunto para archivo.</p>
+          <p>El acceso al plan residente se concede automáticamente en cuanto pague. Certificado adjunto (no se almacena en la plataforma).</p>
         `,
         attachments: [{ filename: safeName, content: buffer, contentType: file.type || "application/octet-stream" }],
       }).catch((err) => console.error("[resident-verification] archive email error:", err instanceof Error ? err.message : err));

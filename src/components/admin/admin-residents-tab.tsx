@@ -151,24 +151,26 @@ export function AdminResidentsTab() {
                           </div>
                         </div>
 
-                        <div>
-                          <span className="text-xs text-gray-500 block mb-1">{t("admin.residents.document")}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1"
-                            onClick={async () => {
-                              const res = await fetch(`/api/admin/resident-verifications/document?path=${encodeURIComponent(v.document_url)}`);
-                              if (res.ok) {
-                                const { url } = await res.json();
-                                window.open(url, "_blank");
-                              }
-                            }}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            {t("admin.residents.view_document")}
-                          </Button>
-                        </div>
+                        {v.document_url !== "not-stored" && (
+                          <div>
+                            <span className="text-xs text-gray-500 block mb-1">{t("admin.residents.document")}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={async () => {
+                                const res = await fetch(`/api/admin/resident-verifications/document?path=${encodeURIComponent(v.document_url)}`);
+                                if (res.ok) {
+                                  const { url } = await res.json();
+                                  window.open(url, "_blank");
+                                }
+                              }}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {t("admin.residents.view_document")}
+                            </Button>
+                          </div>
+                        )}
 
                         {v.status === "pending" && (
                           <div className="space-y-2">
