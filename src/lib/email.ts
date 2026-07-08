@@ -768,6 +768,113 @@ export async function sendGuidelinesEmail(to: string, name: string | null, lang:
 }
 
 // ---------------------------------------------------------------------------
+// 1e) Limit-reached email — sent once per billing cycle when a user runs out
+// of monthly reports (the moment they're most ready to upgrade).
+// ---------------------------------------------------------------------------
+
+const limitI18n: Record<EmailLang, {
+  subject: string; headline: string;
+  intro: (limit: string, plan: string, renewal: string) => string;
+  usageLabel: string; nextTitle: string;
+  nextLine: (reports: string, minutes: string) => string;
+  nextNote: string; btnUpgrade: string;
+  extraTitle: string; extraLine: string; btnExtra: string;
+  unsub: string;
+  textTpl: (g: string, limit: string, plan: string, renewal: string, url: string) => string;
+}> = {
+  es: {
+    subject: "Te has quedado sin informes este mes",
+    headline: "Has usado todos tus informes del mes",
+    intro: (limit, plan, renewal) => `Has generado los ${limit} informes que incluye tu plan ${plan}. Tu cupo se renueva el ${renewal}.`,
+    usageLabel: "informes usados",
+    nextTitle: "¿No puedes esperar? Sube de plan y sigue ahora mismo",
+    nextLine: (reports, minutes) => `${reports} informes al mes + ${minutes} min de dictado`,
+    nextNote: "El cambio es inmediato: sigues informando en 1 minuto.",
+    btnUpgrade: "Mejorar mi plan",
+    extraTitle: "¿Necesitas más este mes?",
+    extraLine: "Puedes añadir un paquete de 100 informes extra desde tu cuenta.",
+    btnExtra: "Añadir informes extra",
+    unsub: "Recibes este correo porque tienes una cuenta en Radiogen.AI.",
+    textTpl: (g, limit, plan, renewal, url) => `${g ? `Hola, ${g}. ` : ""}Has usado los ${limit} informes de tu plan ${plan} este mes. Tu cupo se renueva el ${renewal}.\n\nSi no quieres esperar, mejora tu plan y sigue informando ahora mismo (el cambio es inmediato):\n${url}`,
+  },
+  en: {
+    subject: "You've run out of reports this month",
+    headline: "You've used all your reports for the month",
+    intro: (limit, plan, renewal) => `You've generated the ${limit} reports included in your ${plan} plan. Your quota renews on ${renewal}.`,
+    usageLabel: "reports used",
+    nextTitle: "Can't wait? Upgrade and keep going right now",
+    nextLine: (reports, minutes) => `${reports} reports/month + ${minutes} min of dictation`,
+    nextNote: "The change is immediate: you're back to reporting in 1 minute.",
+    btnUpgrade: "Upgrade my plan",
+    extraTitle: "Need more this month?",
+    extraLine: "You can add a 100-report extra pack from your account.",
+    btnExtra: "Add extra reports",
+    unsub: "You received this email because you have a Radiogen.AI account.",
+    textTpl: (g, limit, plan, renewal, url) => `${g ? `Hi, ${g}. ` : ""}You've used the ${limit} reports of your ${plan} plan this month. Your quota renews on ${renewal}.\n\nIf you don't want to wait, upgrade and keep reporting right now (the change is immediate):\n${url}`,
+  },
+  pt: {
+    subject: "Seus laudos deste mês acabaram",
+    headline: "Você usou todos os seus laudos do mês",
+    intro: (limit, plan, renewal) => `Você gerou os ${limit} laudos incluídos no seu plano ${plan}. Sua cota renova em ${renewal}.`,
+    usageLabel: "laudos usados",
+    nextTitle: "Não pode esperar? Faça upgrade e continue agora mesmo",
+    nextLine: (reports, minutes) => `${reports} laudos/mês + ${minutes} min de ditado`,
+    nextNote: "A mudança é imediata: você volta a laudar em 1 minuto.",
+    btnUpgrade: "Melhorar meu plano",
+    extraTitle: "Precisa de mais este mês?",
+    extraLine: "Você pode adicionar um pacote de 100 laudos extras na sua conta.",
+    btnExtra: "Adicionar laudos extras",
+    unsub: "Você recebeu este e-mail porque tem uma conta no Radiogen.AI.",
+    textTpl: (g, limit, plan, renewal, url) => `${g ? `Olá, ${g}. ` : ""}Você usou os ${limit} laudos do seu plano ${plan} este mês. Sua cota renova em ${renewal}.\n\nSe não quiser esperar, melhore seu plano e continue laudando agora mesmo (a mudança é imediata):\n${url}`,
+  },
+};
+
+export type LimitEmailOpts = {
+  planLabel: string;
+  used: number;
+  limit: number;
+  renewalDate: string; // pre-formatted, in the user's language
+  nextPlan: { label: string; reports: number; dictationMinutes: number; price: number } | null;
+};
+
+export function renderLimitReachedEmail(name: string | null, lang: EmailLang, o: LimitEmailOpts): { subject: string; html: string; text: string } {
+  const t = limitI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+  const accountUrl = `${APP_URL}/dashboard?tool=account`;
+
+  const usageMock = `<div style="font-size:12px;color:#6b7280;margin:0 0 8px;"><strong style="color:#b91c1c;font-size:16px;">${o.used} / ${o.limit}</strong> ${t.usageLabel}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#fee2e2" style="background:#fee2e2;border-radius:6px;">
+      <tr><td height="8" bgcolor="#ef4444" style="border-radius:6px;font-size:0;line-height:0;">&nbsp;</td></tr>
+    </table>`;
+
+  const offerMock = o.nextPlan
+    ? `<div style="font-size:13px;font-weight:700;color:#111827;margin:0 0 4px;">${o.nextPlan.label} — $${o.nextPlan.price}/mes</div>
+       <div style="font-size:12px;color:#374151;margin:0 0 6px;">${t.nextLine(String(o.nextPlan.reports), String(o.nextPlan.dictationMinutes))}</div>
+       <div style="font-size:11px;color:#059669;">✓ ${t.nextNote}</div>`
+    : `<div style="font-size:12px;color:#374151;">${t.extraLine}</div>`;
+
+  const inner = `${emailHeader("&#128200;", t.headline, t.intro(String(o.limit), o.planLabel, o.renewalDate))}
+        ${mockCard(t.usageLabel, usageMock)}
+        ${mockCard(o.nextPlan ? t.nextTitle : t.extraTitle, offerMock)}
+        ${lightCta(accountUrl, o.nextPlan ? t.btnUpgrade : t.btnExtra)}`;
+
+  const html = lightEmailShell(inner, t.unsub, lang);
+  const text = t.textTpl(greeting, String(o.limit), o.planLabel, o.renewalDate, accountUrl);
+  return { subject: t.subject, html, text };
+}
+
+export async function sendLimitReachedEmail(to: string, name: string | null, lang: EmailLang, opts: LimitEmailOpts) {
+  const { subject, html, text } = renderLimitReachedEmail(name, lang, opts);
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject, html, text,
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `limit-${Date.now()}`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // 2) Pending approval email — non-LATAM users
 // ---------------------------------------------------------------------------
 

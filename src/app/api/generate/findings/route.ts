@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, checkReportLimit, incrementReportUsage } from "@/lib/auth-helpers";
+import { maybeSendLimitEmail } from "@/lib/limit-email";
 import { generateAIStreamWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildFindingsPrompt } from "@/lib/prompts";
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
     ]);
 
     if (!quota.allowed) {
+      // First hit of the cycle → send the upgrade email (deduped internally).
+      await maybeSendLimitEmail(user.id, quota.used, quota.limit);
       return NextResponse.json({
         error: `Monthly report limit reached (${quota.used}/${quota.limit}). Upgrade your plan for more reports.`,
         code: "LIMIT_REACHED",
