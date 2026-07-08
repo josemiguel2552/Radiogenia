@@ -94,8 +94,13 @@ export async function POST(req: NextRequest) {
     const ext = (file.name.split(".").pop() || "pdf").toLowerCase().replace(/[^a-z0-9]/g, "");
     const path = `${user.id}/${Date.now()}.${ext}`;
 
-    // Ensure the bucket exists (no-op if already created).
-    await service.storage.createBucket("resident-docs", { public: false }).catch(() => {});
+    // Ensure the bucket exists (no-op if already created — the "already
+    // exists" error here is expected and fine to ignore; anything else is
+    // logged so a misconfigured/missing bucket is visible in server logs).
+    const { error: bucketError } = await service.storage.createBucket("resident-docs", { public: false });
+    if (bucketError && !/already exists/i.test(bucketError.message)) {
+      console.error("[resident-verification] createBucket error:", bucketError.message);
+    }
     const { error: uploadError } = await service.storage
       .from("resident-docs")
       .upload(path, buffer, { contentType: file.type || "application/octet-stream", upsert: true });
