@@ -50,15 +50,20 @@ export async function ensureProfile(userId: string, email: string): Promise<stri
   }
 }
 
+// Whether the account was approved for access (admin/manual approval, or
+// auto-approved at signup). Email verification is a SEPARATE, deferred concern
+// — see dashboard/layout.tsx's 7-day grace period — and must not gate here,
+// otherwise every unverified user gets bounced to /auth/not-approved before
+// the grace period logic ever runs.
 export async function isUserApproved(userId: string): Promise<boolean> {
   try {
     const supabase = createServiceClient();
     const { data } = await supabase
       .from("profiles")
-      .select("approved, email_verified")
+      .select("approved")
       .eq("id", userId)
       .single();
-    return data?.approved === true && data?.email_verified !== false;
+    return data?.approved === true;
   } catch {
     return false;
   }
