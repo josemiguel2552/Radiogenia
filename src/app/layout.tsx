@@ -43,6 +43,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://radiogen.ai",
   },
+  applicationName: "Radiogen.AI",
+  // Nicer "Add to Dock"/"Add to Home Screen" on Safari (macOS/iOS), which
+  // doesn't use the web manifest for these bits.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Radiogen.AI",
+  },
 };
 
 export const viewport: Viewport = {
@@ -50,6 +58,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
+  themeColor: "#0a0a1a",
 };
 
 export default function RootLayout({
