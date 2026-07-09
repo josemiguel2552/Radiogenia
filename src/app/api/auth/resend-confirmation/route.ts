@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendVerificationReminderEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,13 +19,15 @@ export async function POST(req: NextRequest) {
     const service = createServiceClient();
     const { data: profile } = await service
       .from("profiles")
-      .select("id, name, email_verified, approved")
+      .select("id, name, email_verified")
       .eq("email", normalizedEmail)
       .maybeSingle();
 
-    // Only resend for existing, approved, still-unverified accounts — but
-    // always answer ok to avoid leaking whether an email is registered.
-    if (profile && profile.approved && !profile.email_verified) {
+    // Only resend for existing, still-unverified accounts — but always answer
+    // ok to avoid leaking whether an email is registered. Approval is no
+    // longer a gate (every signup gets immediate access), so it's not checked
+    // here — only whether the email itself was confirmed.
+    if (profile && !profile.email_verified) {
       try {
         const { data: linkData } = await service.auth.admin.generateLink({
           type: "magiclink",
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
         if (linkData?.properties?.hashed_token) {
           const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
           const confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink`;
-          await sendWelcomeEmail(normalizedEmail, profile.name, "es", confirmUrl, null);
+          await sendVerificationReminderEmail(normalizedEmail, profile.name, "es", confirmUrl);
           try { await service.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", profile.id); } catch { /* ignore */ }
         }
       } catch (err) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendVerificationReminderEmail } from "@/lib/email";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +10,10 @@ export const maxDuration = 60;
 /**
  * Admin: resend the verification (magic-link) email to users who signed up but
  * never confirmed their email. Mirrors /api/auth/resend-confirmation but in bulk
- * and admin-triggered. Targets individual, approved, still-unverified accounts
- * with a valid email. ?dryRun previews the count without sending.
+ * and admin-triggered. Targets individual, still-unverified accounts with a
+ * valid email — approval is no longer a gate, so it's not filtered on here
+ * (this count is what "how many to contact" should mean). ?dryRun previews
+ * the count without sending.
  */
 
 type EmailLang = "es" | "en" | "pt";
@@ -32,7 +34,6 @@ export async function POST(req: NextRequest) {
       .from("profiles")
       .select("id, email, name")
       .eq("email_verified", false)
-      .eq("approved", true)
       .is("org_id", null)
       .neq("role", "admin")
       .not("email", "is", null)
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
         });
         if (linkData?.properties?.hashed_token) {
           const confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink`;
-          await sendWelcomeEmail(p.email as string, p.name, langById.get(p.id) || "es", confirmUrl, null);
+          await sendVerificationReminderEmail(p.email as string, p.name, langById.get(p.id) || "es", confirmUrl);
           try { await supabase.from("profiles").update({ verification_email_sent_at: new Date().toISOString() }).eq("id", p.id); } catch { /* ignore */ }
           sent += 1;
         } else {

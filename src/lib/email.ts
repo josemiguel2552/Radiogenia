@@ -309,6 +309,73 @@ export async function sendWelcomeEmail(to: string, name: string | null, lang: Em
 }
 
 // ---------------------------------------------------------------------------
+// 1a2) Verification-reminder email — sent when RE-sending the confirmation
+// link (self-serve resend, or admin bulk resend) to someone who signed up but
+// never verified. Explicit about the situation, with a direct-access link
+// (the magic link both signs them in AND marks the account verified).
+// ---------------------------------------------------------------------------
+
+const reminderI18n: Record<EmailLang, {
+  subject: string; headline: string; intro: string;
+  note: string; btn: string; unsub: string;
+  textTpl: (g: string, url: string) => string;
+}> = {
+  es: {
+    subject: "Aún no has verificado tu cuenta — entra directo",
+    headline: "Tu cuenta te está esperando",
+    intro: "Vimos que te registraste en Radiogen.AI pero todavía no verificaste tu email. No hace falta que busques aquel primer correo: usa este enlace para entrar directamente a tu cuenta ahora mismo.",
+    note: "Al pulsar el botón, tu cuenta queda verificada automáticamente y entras directo al panel — sin pasos adicionales.",
+    btn: "Entrar a mi cuenta",
+    unsub: "Recibes este correo porque tienes una cuenta sin verificar en Radiogen.AI.",
+    textTpl: (g, url) => `${g ? `Hola, ${g}. ` : ""}Vimos que te registraste en Radiogen.AI pero no verificaste tu email todavía.\n\nUsa este enlace para entrar directamente a tu cuenta (queda verificada automáticamente):\n${url}`,
+  },
+  en: {
+    subject: "You haven't verified your account yet — get in directly",
+    headline: "Your account is waiting for you",
+    intro: "We noticed you signed up for Radiogen.AI but never verified your email. No need to hunt down that first email — use this link to get straight into your account right now.",
+    note: "Clicking the button verifies your account automatically and takes you straight to the dashboard — no extra steps.",
+    btn: "Enter my account",
+    unsub: "You received this email because you have an unverified Radiogen.AI account.",
+    textTpl: (g, url) => `${g ? `Hi, ${g}. ` : ""}We noticed you signed up for Radiogen.AI but haven't verified your email yet.\n\nUse this link to get straight into your account (it verifies automatically):\n${url}`,
+  },
+  pt: {
+    subject: "Você ainda não verificou sua conta — entre direto",
+    headline: "Sua conta está esperando por você",
+    intro: "Vimos que você se cadastrou no Radiogen.AI mas ainda não verificou seu e-mail. Não precisa procurar aquele primeiro e-mail: use este link para entrar direto na sua conta agora mesmo.",
+    note: "Ao clicar no botão, sua conta é verificada automaticamente e você vai direto para o painel — sem passos extras.",
+    btn: "Entrar na minha conta",
+    unsub: "Você recebeu este e-mail porque tem uma conta não verificada no Radiogen.AI.",
+    textTpl: (g, url) => `${g ? `Olá, ${g}. ` : ""}Vimos que você se cadastrou no Radiogen.AI mas ainda não verificou seu e-mail.\n\nUse este link para entrar direto na sua conta (ela é verificada automaticamente):\n${url}`,
+  },
+};
+
+export function renderVerificationReminderEmail(name: string | null, lang: EmailLang, confirmUrl: string): { subject: string; html: string; text: string } {
+  const t = reminderI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+
+  const noteMock = `<div style="font-size:12px;color:#374151;line-height:1.6;">✓ ${t.note}</div>`;
+
+  const inner = `${emailHeader("&#128274;", t.headline, t.intro)}
+        ${mockCard(t.subject, noteMock)}
+        ${lightCta(confirmUrl, t.btn)}`;
+
+  const html = lightEmailShell(inner, t.unsub, lang);
+  const text = t.textTpl(greeting, confirmUrl);
+  return { subject: t.subject, html, text };
+}
+
+export async function sendVerificationReminderEmail(to: string, name: string | null, lang: EmailLang, confirmUrl: string) {
+  const { subject, html, text } = renderVerificationReminderEmail(name, lang, confirmUrl);
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject, html, text,
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `verify-reminder-${Date.now()}`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // 1b) Onboarding "tools" email — sent ~24h after signup
 // ---------------------------------------------------------------------------
 
