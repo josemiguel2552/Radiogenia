@@ -45,8 +45,15 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/webhooks/") ||
     request.nextUrl.pathname.startsWith("/api/health") ||
     request.nextUrl.pathname.startsWith("/api/invite") ||
+    request.nextUrl.pathname.startsWith("/api/enterprise-inquiry") ||
     request.nextUrl.pathname.startsWith("/invite") ||
     request.nextUrl.pathname.startsWith("/legal") ||
+    request.nextUrl.pathname.startsWith("/guide") ||
+    request.nextUrl.pathname.startsWith("/hospitals") ||
+    request.nextUrl.pathname === "/manifest.webmanifest" ||
+    request.nextUrl.pathname === "/sitemap.xml" ||
+    request.nextUrl.pathname === "/icon-192" ||
+    request.nextUrl.pathname === "/icon-512" ||
     request.nextUrl.pathname === "/";
 
   if (!user && !isPublic) {
