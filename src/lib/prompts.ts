@@ -1419,6 +1419,8 @@ PASO 3 — DATOS EXACTOS: Verifica que cada medida (mm, cm), número, lateralida
 
 PASO 4 — SECCIÓN ANATÓMICA CORRECTA: Para CADA hallazgo, pregúntate: "¿la estructura anatómica que describe este hallazgo ES la estructura que nombra esta sección?" Si NO, MUÉVELO. Errores típicos: hallazgos vasculares en secciones de parénquima o vía aérea, hallazgos pleurales en "Pulmón", hallazgos tiroideos en "Tráquea", hallazgos de vesícula en "Hígado", adenopatías en la sección de un órgano adyacente. Si no hay sección correcta, manda el hallazgo a "Otros hallazgos:".
 
+PASO 5 — PRIVACIDAD: Si el dictado contiene el nombre de una persona (paciente, familiar o médico) o cualquier identificador personal (DNI, teléfono, número de historia, email, dirección), NO lo reproduzcas en el informe. Sustituye nombres por [NOMBRE] e identificadores por [ID]. Los marcadores tipo [NOMBRE], [DNI], [NHC] que ya vengan en el dictado se mantienen tal cual, sin inventar datos que los reemplacen.
+
 Si detectas un error en cualquier paso, CORRÍGELO antes de responder.`,
     en: `
 
@@ -1432,6 +1434,8 @@ STEP 3 — EXACT DATA: Verify that every measurement (mm, cm), number, lateralit
 
 STEP 4 — CORRECT ANATOMICAL SECTION: For EACH finding, ask yourself: "is the anatomical structure this finding describes THE structure that this section names?" If NOT, MOVE it. Common errors: vascular findings in parenchyma or airway sections, pleural findings in "Lung", thyroid findings in "Trachea", gallbladder findings in "Liver", lymphadenopathy in the section of an adjacent organ. If no correct section exists, send the finding to "Additional findings:".
 
+STEP 5 — PRIVACY: If the dictation contains a person's name (patient, relative, or physician) or any personal identifier (ID number, phone, medical record number, email, address), do NOT reproduce it in the report. Replace names with [NOMBRE] and identifiers with [ID]. Placeholders like [NOMBRE], [DNI], [NHC] already present in the dictation must be kept as-is — never invent data to replace them.
+
 If you detect an error in any step, CORRECT it before responding.`,
     pt: `
 
@@ -1444,6 +1448,8 @@ PASSO 2 — ANTI-ALUCINAÇÃO: Revise cada frase do seu laudo que descreve um ac
 PASSO 3 — DADOS EXATOS: Verifique que cada medida (mm, cm), número, lateralidade (direita/esquerda) e localização anatômica coincide EXATAMENTE com o ditado. Não arredonde, não troque lateralidade, não mova achados para seções incorretas.
 
 PASSO 4 — SEÇÃO ANATÔMICA CORRETA: Para CADA achado, pergunte-se: "a estrutura anatômica que este achado descreve É a estrutura que esta seção nomeia?" Se NÃO, MOVA-O. Erros típicos: achados vasculares em seções de parênquima ou via aérea, achados pleurais em "Pulmão", achados tireoidianos em "Traqueia", achados de vesícula em "Fígado", linfonodomegalias na seção de um órgão adjacente. Se não há seção correta, mande o achado para "Outros achados:".
+
+PASSO 5 — PRIVACIDADE: Se o ditado contiver o nome de uma pessoa (paciente, familiar ou médico) ou qualquer identificador pessoal (documento, telefone, número de prontuário, email, endereço), NÃO o reproduza no laudo. Substitua nomes por [NOMBRE] e identificadores por [ID]. Marcadores como [NOMBRE], [DNI], [NHC] já presentes no ditado devem ser mantidos como estão — nunca invente dados para substituí-los.
 
 Se detectar um erro em qualquer passo, CORRIJA antes de responder.`,
   };
@@ -1655,6 +1661,7 @@ Relee CADA punto que has escrito y pásalo por este filtro, palabra por palabra.
 2. INFERENCIA: ¿contiene "compatible con", "sugestivo/sugerente de", "sugiere", "en relación con", "en probable relación", "probable", "posible", "indicativo de", "consistente con", "concordante con", "secundario a", "en el contexto de", "de aspecto (benigno/maligno/típico)"? → Elimina la inferencia; deja SOLO la descripción objetiva.
 3. NATURALEZA / PRONÓSTICO: ¿asigna malignidad, benignidad, etiología, causa o pronóstico? → Elimínalo.
 4. RECOMENDACIÓN / CLASIFICACIÓN: ¿incluye una recomendación, seguimiento, correlación clínica o clasificación por escalas (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM)? → Elimínalo.
+5. PRIVACIDAD: ¿contiene el nombre de una persona o un identificador personal (DNI, teléfono, número de historia, email)? → Sustitúyelo por [NOMBRE] o [ID]. Los marcadores tipo [NOMBRE] o [DNI] ya presentes en los hallazgos se mantienen tal cual.
 REGLA DE ORO: ante la duda de si algo es un diagnóstico o una interpretación, NO lo escribas — describe el hallazgo. Solo entrega la respuesta cuando TODOS los puntos sean descripciones puras de hallazgos, sin diagnósticos, inferencias, juicios ni recomendaciones. La ÚNICA excepción es la terminología que el radiólogo ya usó textualmente en los hallazgos dictados.`;
   } else {
     const styleBlock = lang === "pt" ? STYLE_BLOCK_PT[style] : STYLE_BLOCK_EN[style];
@@ -1768,6 +1775,7 @@ Re-read EACH point you wrote and run it through this filter, word by word. If a 
 2. INFERENCE: does it contain "consistent with", "suggestive of", "suggests", "in keeping with", "related to", "likely", "possible", "indicative of", "compatible with", "secondary to", "in the context of", "X-appearing (benign/malignant/typical)"? → Remove the inference; keep ONLY the objective description.
 3. NATURE / PROGNOSIS: does it assign malignancy, benignity, etiology, cause, or prognosis? → Remove it.
 4. RECOMMENDATION / CLASSIFICATION: does it include a recommendation, follow-up, clinical correlation, or scale classification (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM)? → Remove it.
+5. PRIVACY: does it contain a person's name or a personal identifier (ID number, phone, medical record number, email)? → Replace it with [NOMBRE] or [ID]. Placeholders like [NOMBRE] or [DNI] already present in the findings must be kept as-is.
 GOLDEN RULE: when in doubt whether something is a diagnosis or an interpretation, do NOT write it — describe the finding instead. Only deliver the response when ALL points are pure descriptions of findings, with no diagnoses, inferences, judgments, or recommendations. The ONLY exception is terminology the radiologist already used verbatim in the dictated findings.`;
   }
 

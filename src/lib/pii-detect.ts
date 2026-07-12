@@ -473,7 +473,18 @@ function detectNhc(text: string): PiiMatch[] {
 // ---------------------------------------------------------------------------
 // Person names (expanded for LATAM)
 // ---------------------------------------------------------------------------
-const SPANISH_NAMES = new Set([
+// Stores every word both as-is and accent-stripped, so lookups succeed whether
+// the transcription preserved diacritics or not ("Adrián" and "Adrian").
+function buildNormalizedSet(words: string[]): Set<string> {
+  const set = new Set<string>();
+  for (const w of words) {
+    set.add(w);
+    set.add(normalizeForLookup(w));
+  }
+  return set;
+}
+
+const SPANISH_NAMES = buildNormalizedSet([
   "abel","abraham","ada","adela","adrián","adriana","agustín","agustina","aída",
   "alba","alberto","alejandra","alejandro","alejo","alfonso","alfredo","alicia",
   "alma","almudena","alonso","álvaro","amalia","amanda","amparo","ana","andrea",
@@ -562,7 +573,7 @@ function isKnownName(word: string): boolean {
 // ---------------------------------------------------------------------------
 // Common surnames (Spanish / LATAM + English) to strengthen full-name detection
 // ---------------------------------------------------------------------------
-const SURNAMES = new Set([
+const SURNAMES = buildNormalizedSet([
   // Spanish / LATAM surnames
   "garcía","garcia","rodríguez","rodriguez","gonzález","gonzalez","fernández",
   "fernandez","lópez","lopez","martínez","martinez","sánchez","sanchez","pérez",
@@ -610,7 +621,7 @@ function isKnownSurname(word: string): boolean {
 
 // Words that, when they follow a capitalized term, signal a medical eponym
 // ("Down syndrome", "Smith fracture", "Murphy sign") rather than a person name.
-const EPONYM_FOLLOWERS = new Set([
+const EPONYM_FOLLOWERS = buildNormalizedSet([
   "sign","signo","sinal","syndrome","sindrome","síndrome","disease","enfermedad",
   "doenca","doença","fracture","fractura","fratura","cyst","quiste","cisto",
   "ligament","ligamento","maneuver","maniobra","manobra","test","prueba","teste",
@@ -630,11 +641,18 @@ function followedByEponymTerm(text: string, end: number): boolean {
   return !!after && EPONYM_FOLLOWERS.has(normalizeForLookup(after[1]));
 }
 
-const CAPITALIZED_WORD = /[A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ][a-záéíóúñàèìòùüçâêîôûãõ]+/;
-const CONNECTORS = /^(?:de|del|da|das|dos|la|las|los|y|e|do)$/;
+// Capitalized word, allowing internal apostrophes (O'Brien, D'Angelo) and
+// hyphenated compounds (Jean-Pierre, García-López).
+const CAPITALIZED_WORD =
+  /[A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ](?:['’][A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ])?[a-záéíóúñàèìòùüçâêîôûãõ]+(?:[-'’][A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ]?[a-záéíóúñàèìòùüçâêîôûãõ]+)*/;
+// Fully uppercase word (RIS/HIS headers: "GARCIA LOPEZ, MARIA"), min 2 letters.
+const UPPER_WORD =
+  /[A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ]{2,}(?:[-'’][A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ]{2,})*/;
+const NAME_WORD = `(?:${CAPITALIZED_WORD.source}|${UPPER_WORD.source})`;
+const CONNECTORS = /^(?:de|del|da|das|dos|la|las|los|y|e|do)$/i;
 
 // Common radiology/anatomy terms that start with uppercase but are NOT names
-const ANATOMY_TERMS = new Set([
+const ANATOMY_TERMS = buildNormalizedSet([
   "arteria","aorta","bazo","bronquio","cabeza","cardíaco","cavidad","cerebro",
   "cervical","cisura","colon","columna","corazón","costilla","cráneo","cuello",
   "diafragma","dorsal","duodeno","esófago","esplénico","estómago","fémur",
@@ -644,6 +662,8 @@ const ANATOMY_TERMS = new Set([
   "pleural","próstata","pulmón","pulmonar","recto","renal","riñón","sacro",
   "sigmoide","suprarrenal","temporal","tiroides","tórax","torácico","tráquea",
   "uréter","uretra","útero","vagina","vejiga","ventrículo","vértebra","vesícula",
+  "abdomen","abdome","hombro","rodilla","cadera","codo","tobillo","muñeca",
+  "mama","axila","ingle","escápula","clavícula","esternón","tibia","peroné",
   // Portuguese anatomy
   "fígado","rim","pulmão","coração","estômago","intestino","cérebro","osso",
   // Common radiology terms and context words
@@ -656,6 +676,170 @@ const ANATOMY_TERMS = new Set([
 
 function isAnatomyTerm(word: string): boolean {
   return ANATOMY_TERMS.has(normalizeForLookup(word));
+}
+
+// ---------------------------------------------------------------------------
+// Words that can follow a name trigger ("paciente X", "PACIENTE: X") but are
+// clinical/demographic vocabulary, never part of a person's name.
+// ---------------------------------------------------------------------------
+const NON_NAME_WORDS = buildNormalizedSet([
+  // demographics / clinical adjectives
+  "femenino","femenina","masculino","masculina","varón","mujer","hombre","niño",
+  "niña","adulto","adulta","joven","mayor","anciano","anciana","pediátrico",
+  "pediátrica","geriátrico","geriátrica","embarazada","gestante","lactante",
+  "estable","inestable","ambulatorio","ambulatoria","hospitalizado","hospitalizada",
+  "ingresado","ingresada","remitido","remitida","derivado","derivada","conocido",
+  "conocida","diabético","diabética","hipertenso","hipertensa","oncológico",
+  "oncológica","fumador","fumadora","exfumador","exfumadora","intervenido",
+  "intervenida","operado","operada","postoperado","postoperada","trasplantado",
+  "trasplantada","portador","portadora","encamado","encamada","politraumatizado",
+  "politraumatizada","inmunodeprimido","inmunodeprimida","alérgico","alérgica",
+  // verbs / connectives seen right after "paciente"
+  "acude","presenta","refiere","consulta","valorado","valorada","explorado",
+  "explorada","estudiado","estudiada","según","tras","para","con","sin","por",
+  "ante","sobre","entre","que","quien","cuya","cuyo",
+  // study / header vocabulary (also covers ALL-CAPS RIS/HIS lines)
+  "estudio","exploración","prueba","petición","solicitante","procedencia",
+  "destino","observaciones","informe","hallazgos","conclusión","técnica",
+  "indicación","comparación","motivo","urgente","urgencia","urgencias",
+  "preferente","control","seguimiento","completo","completa","simple",
+  "contrastado","contrastada","servicio","hospital","clínica","centro","unidad",
+  "planta","sala","cama","fecha","edad","sexo","doctor","doctora","dímero",
+  "tc","tac","rm","rmn","rx","eco","ecografía","radiografía","resonancia",
+  "tomografía","mamografía","densitometría","angiografía","gammagrafía","pet",
+  // identifier labels (so "…Martínez, CURP GARC…" stops before the label)
+  "curp","rfc","dni","nie","nhc","nss","ssn","cpf","rut","cc","id","mrn",
+  "expediente","folio","registro","historia",
+  // common disease abbreviations dictated after "paciente"
+  "covid","epoc","sida","vih","tbc","tep","tvp","hta","dm","iam","acv","avc",
+  "eii","ela","epi","erc","irc","ic","fa","crohn","parkinson","alzheimer",
+  // English equivalents
+  "male","female","adult","elderly","pregnant","stable","outpatient","inpatient",
+  "referred","known","presents","attends","reports","study","exam","examination",
+  "report","findings","conclusion","impression","technique","indication",
+  "comparison","history","date","age","sex","ward","room","service","department",
+  "emergency","record","number","chart","with","without","for","who","the",
+]);
+
+function isNonNameWord(word: string): boolean {
+  return NON_NAME_WORDS.has(normalizeForLookup(word));
+}
+
+// ---------------------------------------------------------------------------
+// Context-anchored name detection
+// ---------------------------------------------------------------------------
+// Instead of asking "is this word a known name?", these detectors ask "is this
+// word in a position where patient names appear?" — after labels ("Paciente:",
+// "NOMBRE:"), honorifics (Sr./Dra.), or presentation verbs ("se presenta").
+// Any capitalized or ALL-CAPS sequence in those slots is treated as a name,
+// regardless of origin (Ahmed Hassan, Wei Zhang, Chidi Okafor), so coverage
+// does not depend on the dictionaries above.
+
+interface ContextTrigger {
+  re: RegExp;
+  minWords: number;
+}
+
+const CONTEXT_TRIGGERS: ContextTrigger[] = [
+  // Labels with a separator: "Paciente:", "NOMBRE:", "Patient -", "Apellidos:"
+  { re: /(?<![A-Za-zÀ-ÿ])(?:paciente|patient|nombre|name|apellidos?)\s*[:\-–]\s*/gi, minWords: 1 },
+  // Bare label: "Paciente X", "pte. X", "PACIENTE MARIA…"
+  { re: /(?<![A-Za-zÀ-ÿ])(?:paciente|pte\.?|pac\.?|patient)\s+/gi, minWords: 1 },
+  // Presentation verbs — require 2+ words to stay conservative
+  { re: /(?<![A-Za-zÀ-ÿ])(?:se\s+presenta(?:\s+(?:el|la))?|acude(?:\s+(?:el|la))?)\s+/gi, minWords: 2 },
+  // Honorifics (also strips referring-physician names, which are PII too)
+  { re: /(?<![A-Za-zÀ-ÿ])(?:Sr\.?|Sra\.?|Srta\.?|Dr\.?|Dra\.?|Dña\.?|Don|Doña|Mr\.?|Mrs\.?|Ms\.?|Miss|SR\.?|SRA\.?|DR\.?|DRA\.?|DON|DOÑA|D\.)\s+/g, minWords: 1 },
+];
+
+const CAP_WORD_EXACT = new RegExp(`^(?:${CAPITALIZED_WORD.source})$`);
+const UPPER_WORD_EXACT = new RegExp(`^(?:${UPPER_WORD.source})$`);
+const LOWER_WORD_EXACT = /^[a-záéíóúñàèìòùüçâêîôûãõ'’-]+$/;
+
+// Walks forward from `from`, consuming words that plausibly form a name.
+// Capitalized/ALL-CAPS words are accepted unless they are anatomy or clinical
+// vocabulary; lowercase words only if they are dictionary-known names/surnames
+// (covers all-lowercase dictation transcripts). Stops at anything else.
+function scanNameAfter(
+  text: string,
+  from: number,
+  minWords: number,
+): { value: string; index: number } | null {
+  const windowEnd = Math.min(text.length, from + 90);
+  const window = text.slice(from, windowEnd);
+  const tokenRe = /[A-Za-zÀ-ÿ'’-]+|,/g;
+
+  let expected = from;
+  let nameWords = 0;
+  let firstStart = -1;
+  let lastEnd = -1;
+  let commaUsed = false;
+
+  let m: RegExpExecArray | null;
+  while ((m = tokenRe.exec(window)) !== null) {
+    const tok = m[0];
+    const absStart = from + m.index;
+    const absEnd = absStart + tok.length;
+
+    // Only plain spaces may separate tokens; a newline, digit or other
+    // punctuation ends the name span.
+    const gap = text.slice(expected, absStart);
+    if (!/^ *$/.test(gap)) break;
+
+    if (tok === ",") {
+      // Allow a single comma inside the span ("GARCIA LOPEZ, MARIA").
+      if (nameWords === 0 || commaUsed) break;
+      commaUsed = true;
+      expected = absEnd;
+      continue;
+    }
+
+    if (CONNECTORS.test(tok)) {
+      if (nameWords === 0) break;
+      expected = absEnd;
+      continue;
+    }
+
+    let accept = false;
+    if (CAP_WORD_EXACT.test(tok) || UPPER_WORD_EXACT.test(tok)) {
+      accept = !isAnatomyTerm(tok) && !isNonNameWord(tok);
+    } else if (LOWER_WORD_EXACT.test(tok)) {
+      accept =
+        (isKnownName(tok) || isKnownSurname(tok)) &&
+        !isAnatomyTerm(tok) &&
+        !isNonNameWord(tok);
+    }
+    if (!accept) break;
+
+    if (firstStart === -1) firstStart = absStart;
+    lastEnd = absEnd;
+    nameWords++;
+    expected = absEnd;
+    if (nameWords >= 6) break;
+  }
+
+  if (firstStart === -1 || nameWords < minWords) return null;
+  if (followedByEponymTerm(text, lastEnd)) return null;
+  return { value: text.slice(firstStart, lastEnd), index: firstStart };
+}
+
+function detectContextNames(text: string): PiiMatch[] {
+  const results: PiiMatch[] = [];
+  for (const trigger of CONTEXT_TRIGGERS) {
+    trigger.re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = trigger.re.exec(text)) !== null) {
+      const found = scanNameAfter(text, m.index + m[0].length, trigger.minWords);
+      if (!found) continue;
+      const overlaps = results.some(
+        (r) =>
+          (found.index >= r.index && found.index < r.index + r.value.length) ||
+          (r.index >= found.index && r.index < found.index + found.value.length),
+      );
+      if (overlaps) continue;
+      results.push({ type: "name", value: found.value, index: found.index });
+    }
+  }
+  return results;
 }
 
 function detectNames(text: string): PiiMatch[] {
@@ -701,27 +885,8 @@ function detectNames(text: string): PiiMatch[] {
     results.push({ type: "name", value: nameStr, index: nameIndex });
   }
 
-  // Pattern: "paciente" / "pte" / "pac" followed by a name
-  const patientPrefix =
-    /(?:[Pp]aciente|[Pp]te\.?|[Pp]ac\.?)\s+([A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ][a-záéíóúñàèìòùüçâêîôûãõ]+(?:\s+(?:de(?:l)?|da|dos|la|las|los|y|e)\s+|\s+)[A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ][a-záéíóúñàèìòùüçâêîôûãõ]+(?:\s+[A-ZÁÉÍÓÚÑÀÈÌÒÙÜÂÊÎÔÛÃÕÇ][a-záéíóúñàèìòùüçâêîôûãõ]+)*)/g;
-
-  while ((m = patientPrefix.exec(text)) !== null) {
-    const nameValue = m[1];
-    const idx = m.index;
-    // Skip if it's all anatomy terms
-    const nameWords = nameValue.split(/\s+/).filter(w => !CONNECTORS.test(w.toLowerCase()));
-    const allAnatomy = nameWords.every(w => isAnatomyTerm(w));
-    if (allAnatomy) continue;
-
-    const overlaps = results.some(
-      (r) => r.type === "name" &&
-        ((idx >= r.index && idx < r.index + r.value.length) ||
-          (r.index >= idx && r.index < idx + m![0].length)),
-    );
-    if (overlaps) continue;
-
-    results.push({ type: "name", value: m[0], index: idx });
-  }
+  // Note: "paciente X" / label / honorific patterns live in detectContextNames,
+  // which handles ALL-CAPS, lowercase transcripts and non-Western names.
 
   return results;
 }
@@ -732,15 +897,15 @@ function detectNames(text: string): PiiMatch[] {
 function detectSurnameNames(text: string): PiiMatch[] {
   const results: PiiMatch[] = [];
 
-  // Pattern A: "Apellido, Nombre" / "Apellido Apellido, Nombre Nombre"
+  // Pattern A: "Apellido, Nombre" / "APELLIDO APELLIDO, NOMBRE" (mixed or caps)
   const comma = new RegExp(
-    `(?<![A-Za-zÀ-ÿ])(${CAPITALIZED_WORD.source}(?:\\s+${CAPITALIZED_WORD.source})?)\\s*,\\s*(${CAPITALIZED_WORD.source}(?:\\s+${CAPITALIZED_WORD.source})?)`,
+    `(?<![A-Za-zÀ-ÿ])(${NAME_WORD}(?:\\s+${NAME_WORD})?)\\s*,\\s*(${NAME_WORD}(?:\\s+${NAME_WORD})?)`,
     "g",
   );
   let m: RegExpExecArray | null;
   while ((m = comma.exec(text)) !== null) {
     const tokens = [...m[1].split(/\s+/), ...m[2].split(/\s+/)];
-    if (tokens.some((w) => isAnatomyTerm(w))) continue;
+    if (tokens.some((w) => isAnatomyTerm(w) || isNonNameWord(w))) continue;
     const known = tokens.some((w) => isKnownName(w) || isKnownSurname(w));
     if (!known) continue;
     results.push({ type: "name", value: m[0].trim(), index: m.index });
@@ -756,7 +921,7 @@ function detectSurnameNames(text: string): PiiMatch[] {
   while ((m = seq.exec(text)) !== null) {
     const full = m[0].trim();
     const words = full.split(/\s+/);
-    if (words.some((w) => isAnatomyTerm(w))) continue;
+    if (words.some((w) => isAnatomyTerm(w) || isNonNameWord(w))) continue;
     if (followedByEponymTerm(text, m.index + m[0].length)) continue;
 
     const knownCount = words.filter(
@@ -815,6 +980,7 @@ export function detectPii(text: string): PiiMatch[] {
     ...detectNhc(text),
     ...detectNames(text),
     ...detectSurnameNames(text),
+    ...detectContextNames(text),
   ];
 
   // Resolve overlaps: keep the earliest, longest match and drop anything that

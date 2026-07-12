@@ -397,6 +397,109 @@ describe("detectPii", () => {
     });
   });
 
+  // ── Context-anchored detection (names of any origin, ALL-CAPS, lowercase) ──
+  describe("context-anchored name detection", () => {
+    it("detects non-Western name after 'se presenta'", () => {
+      const matches = detectPii("Se presenta Ahmed Hassan para TC de tórax.");
+      expect(matches.some((m) => m.type === "name" && m.value.includes("Ahmed Hassan"))).toBe(true);
+    });
+
+    it("detects non-Western name after 'acude'", () => {
+      const matches = detectPii("Acude Chidi Okafor para radiografía de tórax.");
+      expect(matches.some((m) => m.type === "name" && m.value.includes("Chidi Okafor"))).toBe(true);
+    });
+
+    it("detects ALL-CAPS name after 'PACIENTE:' label", () => {
+      const result = stripPii("PACIENTE: GARCIA LOPEZ, MARIA. Estudio de TC abdomen.");
+      expect(result.cleaned).not.toContain("GARCIA");
+      expect(result.cleaned).not.toContain("MARIA");
+      expect(result.cleaned).toContain("Estudio de TC abdomen");
+    });
+
+    it("detects ALL-CAPS name without colon, stopping at clinical words", () => {
+      const result = stripPii("PACIENTE MARIA GARCIA LOPEZ ACUDE A CONSULTA.");
+      expect(result.cleaned).not.toContain("MARIA GARCIA LOPEZ");
+      expect(result.cleaned).toContain("ACUDE A CONSULTA");
+    });
+
+    it("detects single first name after 'Paciente'", () => {
+      const matches = detectPii("Paciente Fernando acude a consulta hoy.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects hyphenated name", () => {
+      const matches = detectPii("Paciente Jean-Pierre Dubois acude a consulta.");
+      expect(matches.some((m) => m.type === "name" && m.value.includes("Jean-Pierre"))).toBe(true);
+    });
+
+    it("detects apostrophe surname after 'Patient'", () => {
+      const matches = detectPii("Patient O'Brien referred for chest CT.");
+      expect(matches.some((m) => m.type === "name" && m.value.includes("O'Brien"))).toBe(true);
+    });
+
+    it("detects lowercase dictation transcript names (dictionary-known)", () => {
+      const result = stripPii("paciente juan garcía acude a consulta.");
+      expect(result.cleaned).not.toContain("juan garcía");
+      expect(result.cleaned).toContain("acude a consulta");
+    });
+
+    it("detects name after honorific Sr.", () => {
+      const matches = detectPii("Sr. Ahmed Hassan, control de nódulo pulmonar.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("detects name after Dña.", () => {
+      const matches = detectPii("Dña. Wei Zhang, ecografía abdominal.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("stops before identifier labels", () => {
+      const result = stripPii("Paciente Guadalupe Hernández, CURP HERG900215MDFRRL05.");
+      expect(result.cleaned).not.toContain("Guadalupe");
+      expect(result.cleaned).not.toContain("HERG900215");
+      expect(result.cleaned).toContain("[CURP]");
+    });
+
+    it("does NOT flag clinical adjectives after 'paciente'", () => {
+      const texts = [
+        "Paciente estable, sin cambios significativos.",
+        "La paciente refiere dolor abdominal.",
+        "Paciente con antecedentes de EPOC.",
+        "Paciente EPOC reagudizado.",
+        "PACIENTE ACUDE A CONSULTA SIN HALLAZGOS.",
+        "Paciente Femenina de 45 años.",
+        "Patient with known COPD, stable.",
+      ];
+      for (const text of texts) {
+        const matches = detectPii(text);
+        expect(matches.filter((m) => m.type === "name"), text).toHaveLength(0);
+      }
+    });
+
+    it("does NOT flag anatomy after presentation verbs", () => {
+      const matches = detectPii("Se presenta derrame pleural bilateral. Acude a Urgencias.");
+      expect(matches.filter((m) => m.type === "name")).toHaveLength(0);
+    });
+
+    it("still ignores medical eponyms", () => {
+      const matches = detectPii("Paciente con signo de Murphy positivo. Fractura de Smith derecha.");
+      expect(matches.filter((m) => m.type === "name")).toHaveLength(0);
+    });
+  });
+
+  // ── Accent-insensitive dictionary lookups ──
+  describe("accent-insensitive matching", () => {
+    it("detects accented name written without accents", () => {
+      const matches = detectPii("Se presenta Adrian Gonzalez para estudio.");
+      expect(matches.some((m) => m.type === "name")).toBe(true);
+    });
+
+    it("does not flag unaccented anatomy as name", () => {
+      const matches = detectPii("Torax y abdomen sin alteraciones. Higado normal.");
+      expect(matches.filter((m) => m.type === "name")).toHaveLength(0);
+    });
+  });
+
   describe("hasPii", () => {
     it("returns true when PII exists", () => {
       expect(hasPii("Email: test@example.com")).toBe(true);
