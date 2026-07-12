@@ -1876,6 +1876,12 @@ export function DashboardContent() {
     >
       {/* ── Input column: setup + dictation ── */}
       <div className="flex flex-col gap-3 md:gap-4 min-w-0">
+      {sbs && (
+        <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] px-1 -mb-1">
+          <Mic className="h-3 w-3" />
+          {t("dash.col_dictation")}
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3 md:gap-4">
       {setupCollapsed ? (
           <div
@@ -2380,7 +2386,13 @@ export function DashboardContent() {
 
       {/* ── Output column ── */}
       {(hasOutput || sbs) && (
-        <div className="min-w-0">
+        <div className="min-w-0 flex flex-col gap-2">
+          {sbs && (
+            <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-brand px-1">
+              <FileText className="h-3 w-3" />
+              {t("dash.col_report")}
+            </div>
+          )}
           {!hasOutput && sbs && (
             <div className="hidden lg:flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[hsl(var(--border))] min-h-[300px] text-center px-6">
               <FileText className="h-8 w-8 text-[hsl(var(--muted-foreground))] opacity-40" />
@@ -2411,8 +2423,9 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
-            {/* Unified report card: findings + conclusion in one box, tools on the bottom edge */}
-            <Card>
+            {/* Unified report card: findings + conclusion in one box, tools on the bottom edge.
+                Slight brand tint + accent border so the final report reads as a distinct document. */}
+            <Card className="border-brand-soft shadow-md bg-[hsl(var(--primary)/0.02)] dark:bg-[hsl(var(--primary)/0.05)]">
             {getStudyTitle() && (
               <div className="px-4 pt-3 -mb-1.5">
                 <p className="text-sm font-bold uppercase tracking-wide text-[hsl(var(--foreground))]">
