@@ -272,6 +272,7 @@ export function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
             <a href="#features" className="hover:text-white transition-colors">{t("nav.features")}</a>
             <a href="#pricing" className="hover:text-white transition-colors">{t("nav.pricing")}</a>
+            <Link href="/hospitals" className="hover:text-white transition-colors">{t("nav.hospitals")}</Link>
           </div>
           <div className="flex items-center gap-3">
             <LangToggle lang={lang} setLang={setLang} />
@@ -619,6 +620,7 @@ export function LandingPage() {
           <div className="flex items-center gap-6 text-xs text-gray-500">
             <a href="#features" className="hover:text-gray-300 transition-colors">{t("nav.features")}</a>
             <a href="#pricing" className="hover:text-gray-300 transition-colors">{t("nav.pricing")}</a>
+            <Link href="/hospitals" className="hover:text-gray-300 transition-colors">{t("nav.hospitals")}</Link>
             <Link href="/guide" className="hover:text-gray-300 transition-colors">{t("footer.guide")}</Link>
             <Link href="/legal" className="hover:text-gray-300 transition-colors">{t("footer.legal")}</Link>
             <Link href="/auth/login" className="hover:text-gray-300 transition-colors">{t("nav.signin")}</Link>
