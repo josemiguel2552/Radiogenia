@@ -1864,9 +1864,18 @@ export function DashboardContent() {
     </div>
   ) : null;
 
+  const sbs = uiPrefs.layout === "side-by-side";
+
   return (
-    <div className="flex flex-col gap-3 md:gap-4">
-      {/* ── Setup + Dictation (responsive grid) ── */}
+    <div
+      className={
+        sbs
+          ? "grid grid-cols-1 lg:grid-cols-[minmax(0,4fr)_minmax(0,5fr)] gap-3 md:gap-4 items-start"
+          : "flex flex-col gap-3 md:gap-4"
+      }
+    >
+      {/* ── Input column: setup + dictation ── */}
+      <div className="flex flex-col gap-3 md:gap-4 min-w-0">
       <div className="grid grid-cols-1 gap-3 md:gap-4">
       {setupCollapsed ? (
           <div
@@ -2373,10 +2382,19 @@ export function DashboardContent() {
       <div className="flex justify-end">
         <RadiogenBot />
       </div>
+      </div>
 
-      {/* ── Output ── */}
-      {hasOutput && (
-          <div className="space-y-3">
+      {/* ── Output column ── */}
+      {(hasOutput || sbs) && (
+        <div className="min-w-0">
+          {!hasOutput && sbs && (
+            <div className="hidden lg:flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[hsl(var(--border))] min-h-[300px] text-center px-6">
+              <FileText className="h-8 w-8 text-[hsl(var(--muted-foreground))] opacity-40" />
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">{t("dash.report_placeholder")}</p>
+            </div>
+          )}
+          {hasOutput && (
+          <div className="space-y-2">
             {isGenerating && !findings && !conclusion && (
               <Card><CardContent className="p-0"><AnatomyLoader /></CardContent></Card>
             )}
@@ -2399,8 +2417,8 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
-            {/* SBS / Compact: findings + conclusion stacked */}
-            <div className="grid grid-cols-1 gap-2 md:gap-3">
+            {/* Findings + conclusion, tightly stacked so the report reads as one flow */}
+            <div className="grid grid-cols-1 gap-1.5 md:gap-2">
             <OutputCard
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
@@ -2708,7 +2726,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
           </div>
-        )}
+          )}
+        </div>
+      )}
 
       <NpsSurvey open={showNpsSurvey} onClose={() => setShowNpsSurvey(false)} />
       <OnboardingDialog />

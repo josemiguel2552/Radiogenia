@@ -29,6 +29,9 @@ import {
   Globe,
   MailWarning,
   BookOpen,
+  Columns2,
+  Rows3,
+  HelpCircle,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -117,6 +120,104 @@ function ThemePicker() {
               );
             })}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Layout toggle (vertical stack vs side-by-side columns) ────── */
+
+function LayoutToggle() {
+  const { prefs, update } = useUIPrefs();
+  const t = useT();
+  const sbs = prefs.layout === "side-by-side";
+  return (
+    <button
+      type="button"
+      onClick={() => update({ layout: sbs ? "classic" : "side-by-side" })}
+      className="hidden lg:flex items-center px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+      title={sbs ? t("nav.layout_vertical") : t("nav.layout_columns")}
+    >
+      {sbs ? <Rows3 className="h-3.5 w-3.5" /> : <Columns2 className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
+/* ── Bottom-left rail menu (profile, guide, help, sign out) ────── */
+
+function RailMenuItem({ icon: Icon, label, danger = false, onClick }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  danger?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors cursor-pointer ${
+        danger
+          ? "text-red-500 hover:bg-red-500/10"
+          : "text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+      }`}
+    >
+      <Icon className="h-4 w-4 opacity-70" />
+      {label}
+    </button>
+  );
+}
+
+function RailMenu({ userName, initials, showAccount, showSupport, onAccount, onLogout }: {
+  userName: string;
+  initials: string;
+  showAccount: boolean;
+  showSupport: boolean;
+  onAccount: () => void;
+  onLogout: () => void;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useClickOutside(ref, open, close);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="h-8 w-8 rounded-full bg-brand flex items-center justify-center text-white text-[10px] font-semibold ring-2 ring-gray-800 cursor-pointer hover:ring-gray-500 transition-all"
+        title={userName}
+      >
+        {initials}
+      </button>
+      {open && (
+        <div className="absolute left-full bottom-0 ml-3 w-56 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xl z-50 py-1.5 animate-in fade-in-0 zoom-in-95 duration-150">
+          <p className="px-3 py-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))] truncate">{userName}</p>
+          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          {showAccount && (
+            <RailMenuItem icon={UserIcon} label={t("nav.account")} onClick={() => { onAccount(); close(); }} />
+          )}
+          <RailMenuItem
+            icon={BookOpen}
+            label={t("nav.full_guide")}
+            onClick={() => { window.open("/guide", "_blank", "noopener,noreferrer"); close(); }}
+          />
+          <RailMenuItem
+            icon={HelpCircle}
+            label={t("nav.help")}
+            onClick={() => { window.dispatchEvent(new Event("radiogenai:open-help")); close(); }}
+          />
+          {showSupport && (
+            <RailMenuItem
+              icon={MessageSquare}
+              label={t("nav.support")}
+              onClick={() => { window.location.href = "/support"; }}
+            />
+          )}
+          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <RailMenuItem icon={LogOut} label={t("nav.sign_out")} danger onClick={onLogout} />
         </div>
       )}
     </div>
@@ -479,35 +580,23 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
           </Link>
         )}
         <div className="flex-1" />
-        {orgInfo?.isMember && (
-          <Link href="/support" className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9 transition-colors" title={t("nav.support")}>
-            <MessageSquare className="h-4.5 w-4.5" />
-          </Link>
-        )}
-        <a
-          href="/guide"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9 transition-colors"
-          title={t("nav.full_guide")}
-        >
-          <BookOpen className="h-4.5 w-4.5" />
-        </a>
-        <HelpDialog />
+        <HelpDialog showTrigger={false} />
         <Separator className="bg-gray-800 w-8" />
-        <div className="h-8 w-8 rounded-full bg-brand flex items-center justify-center text-white text-[10px] font-semibold ring-2 ring-gray-800" title={userName}>
-          {initials}
-        </div>
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-red-400 rounded-lg h-9 w-9" onClick={handleLogout} title={t("nav.sign_out")}>
-          <LogOut className="h-4.5 w-4.5" />
-        </Button>
+        <RailMenu
+          userName={userName}
+          initials={initials}
+          showAccount={!isOrgUser}
+          showSupport={!!orgInfo?.isMember}
+          onAccount={() => setActiveView("account")}
+          onLogout={handleLogout}
+        />
       </aside>
 
       {/* ── Main area ── */}
       <main className="flex-1 min-w-0 overflow-auto pb-16 md:pb-0">
         {/* ── Header bar ── */}
         <header className="sticky top-0 z-10 bg-[hsl(var(--card)/0.9)] backdrop-blur-xl border-b border-[hsl(var(--border))]">
-          <div className="max-w-6xl mx-auto px-4 md:px-6 h-11 flex items-center gap-5">
+          <div className={`${prefs.layout === "side-by-side" ? "max-w-[100rem]" : "max-w-6xl"} mx-auto px-4 md:px-6 h-11 flex items-center gap-5`}>
             {/* Left: logo (mobile) / usage stats */}
             <div className="flex items-center gap-2 md:hidden flex-shrink-0">
               <Logo size="sm" variant="icon" />
@@ -531,6 +620,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
 
             {/* Right: controls (desktop) */}
             <div className="hidden md:flex items-center gap-2">
+              <LayoutToggle />
               <ThemePicker />
 
               <button
@@ -565,7 +655,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
           </div>
         </header>
 
-        <div className="p-3 md:p-6 max-w-6xl mx-auto">{mainContent}</div>
+        <div className={`p-3 md:p-6 ${prefs.layout === "side-by-side" ? "max-w-[100rem]" : "max-w-6xl"} mx-auto`}>{mainContent}</div>
       </main>
 
       {/* ── Mobile bottom nav ── */}

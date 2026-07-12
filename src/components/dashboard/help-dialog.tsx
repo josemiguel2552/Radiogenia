@@ -27,7 +27,7 @@ const SHORTCUTS = [
   { keys: ["?"], labelKey: "help.shortcut_cheatsheet" },
 ];
 
-export function HelpDialog() {
+export function HelpDialog({ showTrigger = true }: { showTrigger?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
 
@@ -52,11 +52,13 @@ export function HelpDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" title={t("nav.help")}>
-          <HelpCircle className="h-4.5 w-4.5" />
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9" title={t("nav.help")}>
+            <HelpCircle className="h-4.5 w-4.5" />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg">{t("help.title")}</DialogTitle>
