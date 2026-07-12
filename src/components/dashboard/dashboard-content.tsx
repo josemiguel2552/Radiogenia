@@ -1901,8 +1901,8 @@ export function DashboardContent() {
           </div>
       ) : (
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Stethoscope className="h-3.5 w-3.5 text-brand" />
                   {t("dash.study_setup")}
@@ -1914,7 +1914,7 @@ export function DashboardContent() {
                   <button
                     type="button"
                     onClick={() => setSetupCollapsed(true)}
-                    className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded lg:hidden"
+                    className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded"
                     aria-label={t("dash.collapse_setup")}
                   >
                     <ChevronDown className="h-3.5 w-3.5 rotate-90" />
@@ -1928,14 +1928,14 @@ export function DashboardContent() {
               )}
 
               {/* Template search */}
-              <div className="relative mb-3">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden="true" />
+              <div className="relative mb-2">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden="true" />
                 <Input
                   type="search"
                   placeholder={t("dash.search_template")}
                   value={templateSearch}
                   onChange={(e) => setTemplateSearch(e.target.value)}
-                  className="pl-8 h-9 text-xs"
+                  className="pl-8 h-8 text-xs"
                   readOnly={templateSearchReadOnly}
                   onPointerDown={() => setTemplateSearchReadOnly(false)}
                   onFocus={() => setTemplateSearchReadOnly(false)}
@@ -1968,15 +1968,15 @@ export function DashboardContent() {
               </div>
 
               {/* Modality chips */}
-              <fieldset className="mb-3">
+              <fieldset className="mb-2">
                 <legend className="sr-only">{t("dash.modality")}</legend>
-                <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("dash.modality")}>
+                <div className="flex flex-wrap gap-1" role="group" aria-label={t("dash.modality")}>
                   {MODALITIES.map((mod) => (
                     <Button
                       key={mod}
                       variant={selectedModality === mod ? "default" : "outline"}
                       size="sm"
-                      className="h-7 px-2.5 text-[11px]"
+                      className="h-6 px-2 text-[10px]"
                       aria-pressed={selectedModality === mod}
                       onClick={() => {
                         setSelectedModality(selectedModality === mod ? "" : mod);
@@ -1991,9 +1991,9 @@ export function DashboardContent() {
               </fieldset>
 
               {/* Region + Template + Contrast */}
-              <div className="grid gap-3 mb-3 grid-cols-1 sm:grid-cols-3">
+              <div className="grid gap-2 mb-2 grid-cols-1 sm:grid-cols-3">
                 <Select value={selectedSection} onValueChange={(v) => { setSelectedSection(v); setSelectedTemplateId(""); }}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("dash.any_region")} /></SelectTrigger>
                   <SelectContent>
                     {(filteredSections.length > 0 ? filteredSections : SECTIONS.map(String)).map((s) => (
                       <SelectItem key={s} value={s}>{sec(s)}</SelectItem>
@@ -2002,7 +2002,7 @@ export function DashboardContent() {
                 </Select>
 
                 <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder={filteredTemplates.length === 0 ? t("dash.no_templates") : t("dash.select_template")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -2059,7 +2059,7 @@ export function DashboardContent() {
                       type="button"
                       aria-pressed={contrastOption === opt.v}
                       onClick={() => setContrastOption(opt.v)}
-                      className={`flex-1 px-2 py-1.5 text-xs rounded-md transition-colors ${
+                      className={`flex-1 px-2 py-1 text-xs rounded-md transition-colors ${
                         contrastOption === opt.v
                           ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
                           : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -2227,7 +2227,7 @@ export function DashboardContent() {
                     }
                   }}
                   className="text-sm pr-14"
-                  minHeight={140}
+                  minHeight={230}
                 />
                 <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
                 {isFirstTime && !dictation.trim() && !isRecording && !isTranscribing && (
@@ -2359,22 +2359,16 @@ export function DashboardContent() {
             </CardContent>
           </Card>
 
-          {/* ── Template watermark ── */}
+          {/* ── Template watermark (discreet one-liner) ── */}
           {!hasOutput && selectedTemplate && templateFieldLabels.length > 0 && (
-            <Card className="mt-3">
-              <CardContent className="px-4 py-3">
-                <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                  {t("dash.template_fields")}
-                </p>
-                <ul className="space-y-0.5">
-                  {templateFieldLabels.map((label) => (
-                    <li key={label} className="text-xs text-gray-300 dark:text-gray-600">
-                      {label}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="mt-2 px-3 py-1.5 rounded-lg border border-dashed border-[hsl(var(--border))]">
+              <p className="text-[10px] leading-relaxed text-gray-300 dark:text-gray-600">
+                <span className="font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1.5">
+                  {t("dash.template_fields")}:
+                </span>
+                {templateFieldLabels.join(" · ")}
+              </p>
+            </div>
           )}
       </div>
       </div>
@@ -2417,9 +2411,10 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
-            {/* Findings + conclusion, tightly stacked so the report reads as one flow */}
-            <div className="grid grid-cols-1 gap-1.5 md:gap-2">
+            {/* Unified report card: findings + conclusion in one box, tools on the bottom edge */}
+            <Card>
             <OutputCard
+              bare
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
               loading={loadingFindings}
@@ -2431,7 +2426,53 @@ export function DashboardContent() {
               traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
               traceLocked={loadingTrace}
               isDark={isDark}
-              footerExtra={findings.trim() ? (
+            />
+
+            <div className="mx-4 border-t border-dashed border-[hsl(var(--border))]" />
+
+            <OutputCard
+              bare
+              title={t("dash.conclusion")}
+              icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
+              loading={loadingConcStyles[conclusionStyle] ?? false}
+              loadingLabel={conclusionStyle === "grouped" ? t("gen.phase_conclusion_refine") : t("gen.phase_conclusion")}
+              value={conclusion}
+              onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
+              minHeight={110}
+              headerExtra={
+                <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
+                  {(["concise", "grouped"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setConclusionStyle(s);
+                        fetch("/api/model-config", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ conclusion_style: s }),
+                        }).catch(() => {});
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        conclusionStyle === s
+                          ? "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] shadow-sm"
+                          : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
+                          : conclusionVersions[s] ? "text-green-600 dark:text-violet-400 hover:text-green-700 dark:hover:text-green-300"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      {loadingConcStyles[s] && s !== conclusionStyle ? <LoadingDots size="xs" className="inline-flex mr-0.5" /> : null}
+                      {t(`dash.conclusion_${s}`)}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
+
+            {/* Report tools: review + classification on the bottom edge of the unified card */}
+            {(findings.trim() || conclusion.trim()) && (
+            <div className="border-t border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] rounded-b-[inherit] px-4 py-2.5 space-y-2">
+              {findings.trim() ? (
                 clinicalSuggestions ? (
                   <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 p-2.5">
                     <div className="flex items-center justify-between mb-1.5">
@@ -2502,46 +2543,8 @@ export function DashboardContent() {
                     </button>
                   </div>
                 )
-              ) : undefined}
-            />
-
-            <OutputCard
-              title={t("dash.conclusion")}
-              icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
-              loading={loadingConcStyles[conclusionStyle] ?? false}
-              loadingLabel={conclusionStyle === "grouped" ? t("gen.phase_conclusion_refine") : t("gen.phase_conclusion")}
-              value={conclusion}
-              onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
-              minHeight={110}
-              headerExtra={
-                <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
-                  {(["concise", "grouped"] as const).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => {
-                        setConclusionStyle(s);
-                        fetch("/api/model-config", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ conclusion_style: s }),
-                        }).catch(() => {});
-                      }}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        conclusionStyle === s
-                          ? "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] shadow-sm"
-                          : loadingConcStyles[s] ? "text-gray-400 dark:text-gray-500"
-                          : conclusionVersions[s] ? "text-green-600 dark:text-violet-400 hover:text-green-700 dark:hover:text-green-300"
-                          : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                      }`}
-                    >
-                      {loadingConcStyles[s] && s !== conclusionStyle ? <LoadingDots size="xs" className="inline-flex mr-0.5" /> : null}
-                      {t(`dash.conclusion_${s}`)}
-                    </button>
-                  ))}
-                </div>
-              }
-              footerExtra={conclusion.trim() ? (
+              ) : null}
+              {conclusion.trim() ? (
                 classifyResult ? (
                   <div className="border border-violet-200 dark:border-violet-800 rounded-lg bg-violet-50/50 dark:bg-violet-950/20 p-2.5">
                     <p className="text-[10px] font-medium text-violet-700 dark:text-violet-300 mb-1.5">{t("classify.preview_title")}</p>
@@ -2668,9 +2671,10 @@ export function DashboardContent() {
                     </button>
                   </div>
                 )
-              ) : undefined}
-            />
+              ) : null}
             </div>
+            )}
+            </Card>
 
             <RecommendationPanel
               conclusionText={conclusion}
@@ -2846,6 +2850,7 @@ function OutputCard({
   traceLocked,
   isDark,
   loadingLabel,
+  bare = false,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -2860,6 +2865,7 @@ function OutputCard({
   traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
   traceLocked?: boolean;
   isDark?: boolean;
+  bare?: boolean;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -2869,8 +2875,9 @@ function OutputCard({
     if (!showTrace) setEditing(false);
   }, [showTrace]);
 
+  const Wrapper = bare ? "div" : Card;
   return (
-    <Card>
+    <Wrapper>
       <div className="flex items-center justify-between px-4 pt-3 pb-1.5 gap-2">
         <h3 className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 shrink-0">
           {icon}
@@ -2933,7 +2940,7 @@ function OutputCard({
         )}
         {footerExtra && <div className="mt-1.5">{footerExtra}</div>}
       </CardContent>
-    </Card>
+    </Wrapper>
   );
 }
 

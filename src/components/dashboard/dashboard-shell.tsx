@@ -136,10 +136,11 @@ function LayoutToggle() {
     <button
       type="button"
       onClick={() => update({ layout: sbs ? "classic" : "side-by-side" })}
-      className="hidden lg:flex items-center px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+      className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
       title={sbs ? t("nav.layout_vertical") : t("nav.layout_columns")}
     >
       {sbs ? <Rows3 className="h-3.5 w-3.5" /> : <Columns2 className="h-3.5 w-3.5" />}
+      <span>{t("nav.layout_label")}</span>
     </button>
   );
 }
@@ -244,6 +245,7 @@ function LanguagePicker({ lang, onLangChange }: {
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer"
       >
         <Globe className="h-3.5 w-3.5" />
+        <span>{t("nav.language_label")}</span>
         <span className="font-semibold">{lang.toUpperCase()}</span>
       </button>
       {open && (
@@ -538,45 +540,39 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
   return (
     <div className="flex h-dvh w-screen max-w-[100vw] overflow-hidden bg-[hsl(var(--background))]">
       {/* ── Desktop left rail ── */}
-      <aside className="hidden md:flex w-14 bg-gray-900 dark:bg-black flex-col items-center py-4 gap-3 border-r border-gray-800 shrink-0">
+      <aside className="hidden md:flex w-[4.25rem] bg-gray-900 dark:bg-black flex-col items-center py-4 gap-2 border-r border-gray-800 shrink-0">
         <Logo size="sm" variant="icon" />
         <Separator className="bg-gray-800 w-8" />
 
-        <Button variant="ghost" size="icon"
-          className={`rounded-lg h-9 w-9 ${activeView === "dashboard" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-          onClick={() => setActiveView("dashboard")} title={t("nav.reports")}>
-          <LayoutDashboard className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon"
-          className={`rounded-lg h-9 w-9 ${activeView === "templates" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-          onClick={() => setActiveView("templates")} title={t("nav.templates")}>
-          <FileText className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon"
-          className={`rounded-lg h-9 w-9 ${activeView === "calculators" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-          onClick={() => setActiveView("calculators")} title={t("nav.calculators")}>
-          <Calculator className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon"
-          className={`rounded-lg h-9 w-9 ${activeView === "recommendations" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-          onClick={() => setActiveView("recommendations")} title={t("nav.recommendations")}>
-          <ClipboardList className="h-5 w-5" />
-        </Button>
-        {!isOrgUser && (
-          <Button variant="ghost" size="icon"
-            className={`rounded-lg h-9 w-9 ${activeView === "account" ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"}`}
-            onClick={() => setActiveView("account")} title={t("nav.account")}>
-            <UserIcon className="h-5 w-5" />
-          </Button>
-        )}
+        {([
+          { view: "dashboard" as ActiveView, icon: LayoutDashboard, label: t("nav.rail_reports"), show: true },
+          { view: "templates" as ActiveView, icon: FileText, label: t("nav.rail_templates"), show: true },
+          { view: "calculators" as ActiveView, icon: Calculator, label: t("nav.rail_calculators"), show: true },
+          { view: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.rail_recommendations"), show: true },
+          { view: "account" as ActiveView, icon: UserIcon, label: t("nav.rail_account"), show: !isOrgUser },
+        ]).filter((item) => item.show).map((item) => (
+          <button
+            key={item.view}
+            type="button"
+            onClick={() => setActiveView(item.view)}
+            className={`flex flex-col items-center gap-1 w-14 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              activeView === item.view ? "text-brand bg-gray-800" : "text-gray-500 hover:bg-gray-800 hover:text-white"
+            }`}
+          >
+            <item.icon className="h-[18px] w-[18px]" />
+            <span className="text-[9px] font-medium leading-none max-w-full truncate px-0.5">{item.label}</span>
+          </button>
+        ))}
         {role === "admin" && (
-          <Link href="/admin" className="inline-flex items-center justify-center text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg h-9 w-9 transition-colors" title={t("nav.admin")}>
-            <Shield className="h-5 w-5" />
+          <Link href="/admin" className="flex flex-col items-center gap-1 w-14 py-1.5 text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg transition-colors" title={t("nav.admin")}>
+            <Shield className="h-[18px] w-[18px]" />
+            <span className="text-[9px] font-medium leading-none">Admin</span>
           </Link>
         )}
         {orgInfo?.isChief && (
-          <Link href="/org" className="inline-flex items-center justify-center text-blue-400 hover:bg-gray-800 hover:text-blue-300 rounded-lg h-9 w-9 transition-colors" title={t("nav.hospital")}>
-            <Building2 className="h-5 w-5" />
+          <Link href="/org" className="flex flex-col items-center gap-1 w-14 py-1.5 text-blue-400 hover:bg-gray-800 hover:text-blue-300 rounded-lg transition-colors" title={t("nav.hospital")}>
+            <Building2 className="h-[18px] w-[18px]" />
+            <span className="text-[9px] font-medium leading-none max-w-full truncate px-0.5">{t("nav.hospital")}</span>
           </Link>
         )}
         <div className="flex-1" />
@@ -634,6 +630,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
                 title={t("sig.title")}
               >
                 <PenLine className="h-3.5 w-3.5" />
+                <span>{t("nav.signature_label")}</span>
                 {hasActiveSig && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
               </button>
 
