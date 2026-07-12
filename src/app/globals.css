@@ -322,6 +322,12 @@
   to { opacity: 1; }
 }
 
+/* Report format swap (landing mockup) */
+@keyframes format-swap {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Streaming text cursor */
 @keyframes blink-cursor {
   0%, 100% { opacity: 1; }

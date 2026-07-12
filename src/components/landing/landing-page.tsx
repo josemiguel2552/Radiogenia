@@ -781,38 +781,109 @@ function DictateVisual({ text }: { text: string }) {
   );
 }
 
+const REPORT_FORMATS: Record<
+  PublicLang,
+  {
+    tabs: [string, string, string];
+    sections: { label: string; text: string }[];
+    narrative: string;
+    findingsLabel: string;
+    findings: string;
+  }
+> = {
+  es: {
+    tabs: ["Estructurado", "No estructurado", "Solo hallazgos"],
+    sections: [
+      { label: "TÉCNICA", text: "TC de tórax con contraste intravenoso." },
+      { label: "HALLAZGOS", text: "Nódulo espiculado de 28 mm en lóbulo superior izquierdo. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo de 18 mm. Pequeño derrame pleural derecho." },
+      { label: "CONCLUSIÓN", text: "Masa pulmonar con adenopatía y nódulo adrenal sospechosos de neoplasia pulmonar con diseminación a distancia." },
+    ],
+    narrative:
+      "Nódulo espiculado de 28 mm en el lóbulo superior izquierdo, asociado a adenopatía supraclavicular derecha de 15 mm y nódulo adrenal izquierdo de 18 mm, sospechosos de neoplasia pulmonar con diseminación a distancia. Se acompaña de pequeño derrame pleural derecho.",
+    findingsLabel: "HALLAZGOS",
+    findings:
+      "Nódulo espiculado de 28 mm en lóbulo superior izquierdo. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo de 18 mm. Pequeño derrame pleural derecho.",
+  },
+  en: {
+    tabs: ["Structured", "Unstructured", "Findings only"],
+    sections: [
+      { label: "TECHNIQUE", text: "Contrast-enhanced chest CT." },
+      { label: "FINDINGS", text: "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy (15 mm). New 18 mm left adrenal nodule. Small right pleural effusion." },
+      { label: "CONCLUSION", text: "Lung mass with lymphadenopathy and adrenal nodule suspicious for pulmonary neoplasia with distant spread." },
+    ],
+    narrative:
+      "28 mm spiculated nodule in the left upper lobe, associated with right supraclavicular lymphadenopathy (15 mm) and an 18 mm left adrenal nodule, suspicious for pulmonary neoplasia with distant spread. Accompanied by a small right pleural effusion.",
+    findingsLabel: "FINDINGS",
+    findings:
+      "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy (15 mm). New 18 mm left adrenal nodule. Small right pleural effusion.",
+  },
+  pt: {
+    tabs: ["Estruturado", "Não estruturado", "Só achados"],
+    sections: [
+      { label: "TÉCNICA", text: "TC de tórax com contraste intravenoso." },
+      { label: "ACHADOS", text: "Nódulo espiculado de 28 mm no lobo superior esquerdo. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo de 18 mm. Pequeno derrame pleural direito." },
+      { label: "CONCLUSÃO", text: "Massa pulmonar com linfonodomegalia e nódulo adrenal suspeitos de neoplasia pulmonar com disseminação à distância." },
+    ],
+    narrative:
+      "Nódulo espiculado de 28 mm no lobo superior esquerdo, associado a linfonodomegalia supraclavicular direita de 15 mm e nódulo adrenal esquerdo de 18 mm, suspeitos de neoplasia pulmonar com disseminação à distância. Acompanha-se de pequeno derrame pleural direito.",
+    findingsLabel: "ACHADOS",
+    findings:
+      "Nódulo espiculado de 28 mm no lobo superior esquerdo. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo de 18 mm. Pequeno derrame pleural direito.",
+  },
+};
+
 function ReportVisual({ lang }: { lang: PublicLang }) {
-  const sections = lang === "es"
-    ? [
-        { label: "TÉCNICA", text: "TC de tórax con contraste intravenoso." },
-        { label: "HALLAZGOS", text: "Nódulo espiculado de 28 mm en lóbulo superior izquierdo. Adenopatía supraclavicular derecha de 15 mm. Nódulo adrenal izquierdo de 18 mm. Pequeño derrame pleural derecho." },
-        { label: "CONCLUSIÓN", text: "Masa pulmonar con adenopatía y nódulo adrenal sospechosos de neoplasia pulmonar con diseminación a distancia." },
-      ]
-    : lang === "pt"
-    ? [
-        { label: "TÉCNICA", text: "TC de tórax com contraste intravenoso." },
-        { label: "ACHADOS", text: "Nódulo espiculado de 28 mm no lobo superior esquerdo. Linfonodomegalia supraclavicular direita de 15 mm. Nódulo adrenal esquerdo de 18 mm. Pequeno derrame pleural direito." },
-        { label: "CONCLUSÃO", text: "Massa pulmonar com linfonodomegalia e nódulo adrenal suspeitos de neoplasia pulmonar com disseminação à distância." },
-      ]
-    : [
-        { label: "TECHNIQUE", text: "Contrast-enhanced chest CT." },
-        { label: "FINDINGS", text: "28 mm spiculated nodule in the left upper lobe. Right supraclavicular lymphadenopathy (15 mm). New 18 mm left adrenal nodule. Small right pleural effusion." },
-        { label: "CONCLUSION", text: "Lung mass with lymphadenopathy and adrenal nodule suspicious for pulmonary neoplasia with distant spread." },
-      ];
+  const data = REPORT_FORMATS[lang];
+  const [mode, setMode] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setMode((m) => (m + 1) % 3), 3800);
+    return () => clearInterval(id);
+  }, []);
+
+  const sectionBlock = (label: string, text: string, key: string) => (
+    <div key={key}>
+      <div className="flex items-center gap-2 mb-1">
+        <div className="h-px flex-1 max-w-5 bg-purple-500/30" />
+        <span className="text-[9px] font-bold tracking-widest text-purple-400">{label}</span>
+      </div>
+      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+        <p className="text-xs text-gray-300 leading-relaxed">{text}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col justify-center gap-2.5 w-full">
-      {sections.map((s, i) => (
-        <div key={i}>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-px flex-1 max-w-5 bg-purple-500/30" />
-            <span className="text-[9px] font-bold tracking-widest text-purple-400">{s.label}</span>
+    <div className="flex flex-col justify-start gap-3 w-full">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {data.tabs.map((tab, i) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setMode(i)}
+            className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all duration-300 ${
+              mode === i
+                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
+                : "bg-white/[0.04] border border-white/10 text-gray-500"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      <div
+        key={mode}
+        className="flex flex-col gap-2.5 min-h-[220px]"
+        style={{ animation: "format-swap 0.45s ease" }}
+      >
+        {mode === 0 && data.sections.map((s) => sectionBlock(s.label, s.text, s.label))}
+        {mode === 1 && (
+          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
+            <p className="text-xs text-gray-300 leading-relaxed">{data.narrative}</p>
           </div>
-          <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
-            <p className="text-xs text-gray-300 leading-relaxed">{s.text}</p>
-          </div>
-        </div>
-      ))}
+        )}
+        {mode === 2 && sectionBlock(data.findingsLabel, data.findings, "findings-only")}
+      </div>
     </div>
   );
 }
