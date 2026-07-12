@@ -1870,18 +1870,12 @@ export function DashboardContent() {
     <div
       className={
         sbs
-          ? "grid grid-cols-1 lg:grid-cols-[minmax(0,4fr)_minmax(0,5fr)] gap-3 md:gap-4 items-start"
+          ? "grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-3 md:gap-4 items-start"
           : "flex flex-col gap-3 md:gap-4"
       }
     >
       {/* ── Input column: setup + dictation ── */}
       <div className="flex flex-col gap-3 md:gap-4 min-w-0">
-      {sbs && (
-        <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] px-1 -mb-1">
-          <Mic className="h-3 w-3" />
-          {t("dash.col_dictation")}
-        </div>
-      )}
       <div className="grid grid-cols-1 gap-3 md:gap-4">
       {setupCollapsed ? (
           <div
@@ -1906,7 +1900,7 @@ export function DashboardContent() {
             <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
           </div>
       ) : (
-          <Card>
+          <Card className="border-[hsl(var(--border)/0.55)] shadow-none">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
@@ -2202,7 +2196,7 @@ export function DashboardContent() {
 
       {/* ── Dictation ── */}
       <div>
-          <Card>
+          <Card className="border-[hsl(var(--border)/0.55)] shadow-none">
             <CardContent className="space-y-3 p-4">
               {/* Language selector */}
               <div className="flex items-center gap-1.5">
@@ -2367,7 +2361,7 @@ export function DashboardContent() {
 
           {/* ── Template watermark (discreet one-liner) ── */}
           {!hasOutput && selectedTemplate && templateFieldLabels.length > 0 && (
-            <div className="mt-2 px-3 py-1.5 rounded-lg border border-dashed border-[hsl(var(--border))]">
+            <div className="mt-2 px-3 py-1.5 rounded-lg border border-dashed border-[hsl(var(--border)/0.5)]">
               <p className="text-[10px] leading-relaxed text-gray-300 dark:text-gray-600">
                 <span className="font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1.5">
                   {t("dash.template_fields")}:
@@ -2387,12 +2381,6 @@ export function DashboardContent() {
       {/* ── Output column ── */}
       {(hasOutput || sbs) && (
         <div className="min-w-0 flex flex-col gap-2">
-          {sbs && (
-            <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-brand px-1">
-              <FileText className="h-3 w-3" />
-              {t("dash.col_report")}
-            </div>
-          )}
           {!hasOutput && sbs && (
             <div className="hidden lg:flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[hsl(var(--border))] min-h-[300px] text-center px-6">
               <FileText className="h-8 w-8 text-[hsl(var(--muted-foreground))] opacity-40" />
@@ -2490,7 +2478,7 @@ export function DashboardContent() {
 
             {/* Report tools: review + classification on the bottom edge of the unified card */}
             {(findings.trim() || conclusion.trim()) && (
-            <div className="border-t border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] rounded-b-[inherit] px-4 py-2.5 space-y-2">
+            <div className="border-t border-[hsl(var(--border)/0.5)] bg-[hsl(var(--muted)/0.25)] rounded-b-[inherit] px-4 py-2.5 space-y-2">
               {findings.trim() && clinicalSuggestions && (
                   <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 p-2.5">
                     <div className="flex items-center justify-between mb-1.5">

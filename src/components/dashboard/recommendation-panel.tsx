@@ -453,7 +453,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
   if (!visible) return null;
 
   return (
-    <div className={`border rounded-xl overflow-hidden bg-[hsl(var(--card))] transition-shadow ${open ? "border-brand/20 shadow-sm" : "border-[hsl(var(--border))]"}`}>
+    <div className={`border rounded-xl overflow-hidden bg-[hsl(var(--card))] transition-shadow ${open ? "border-brand/20 shadow-sm" : "border-[hsl(var(--border)/0.55)]"}`}>
       <button
         type="button"
         onClick={() => { if (!open) track("ui_rec_panel_open"); setOpen(!open); }}
