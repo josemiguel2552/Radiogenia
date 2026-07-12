@@ -619,6 +619,7 @@ export function LandingPage() {
           <div className="flex items-center gap-6 text-xs text-gray-500">
             <a href="#features" className="hover:text-gray-300 transition-colors">{t("nav.features")}</a>
             <a href="#pricing" className="hover:text-gray-300 transition-colors">{t("nav.pricing")}</a>
+            <Link href="/guide" className="hover:text-gray-300 transition-colors">{t("footer.guide")}</Link>
             <Link href="/legal" className="hover:text-gray-300 transition-colors">{t("footer.legal")}</Link>
             <Link href="/auth/login" className="hover:text-gray-300 transition-colors">{t("nav.signin")}</Link>
           </div>

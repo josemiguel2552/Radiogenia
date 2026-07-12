@@ -28,6 +28,7 @@ import {
   Loader2,
   Globe,
   MailWarning,
+  BookOpen,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -483,6 +484,15 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
             <MessageSquare className="h-4.5 w-4.5" />
           </Link>
         )}
+        <a
+          href="/guide"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-gray-200 rounded-lg h-9 w-9 transition-colors"
+          title={t("nav.full_guide")}
+        >
+          <BookOpen className="h-4.5 w-4.5" />
+        </a>
         <HelpDialog />
         <Separator className="bg-gray-800 w-8" />
         <div className="h-8 w-8 rounded-full bg-brand flex items-center justify-center text-white text-[10px] font-semibold ring-2 ring-gray-800" title={userName}>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Mic, Sparkles, PenLine, Save, Wrench, ChevronRight, ChevronLeft, Rocket } from "lucide-react";
+import { Stethoscope, Mic, Sparkles, PenLine, Save, Wrench, ChevronRight, ChevronLeft, Rocket, BookOpen } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const STORAGE_KEY = "radiogenai_onboarding_done";
@@ -58,6 +58,16 @@ export function OnboardingDialog() {
             </div>
           </div>
         </div>
+
+        <a
+          href="/guide"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-brand transition-colors mb-3"
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          {t("onboarding.full_guide")}
+        </a>
 
         <div className="flex items-center justify-between">
           <div className="flex gap-1">

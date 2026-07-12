@@ -237,6 +237,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.sign_out": "Cerrar sesión",
     "nav.hospital": "Hospital",
     "nav.support": "Soporte",
+    "nav.full_guide": "Guía completa",
     "nav.drag_resize": "Arrastrar para redimensionar",
     "nav.tools": "Herramientas",
     "nav.help": "Ayuda",
@@ -278,6 +279,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "onboarding.next": "Siguiente",
     "onboarding.prev": "Anterior",
     "onboarding.start": "Empezar",
+    "onboarding.full_guide": "Ver guía completa",
     // Top navigation tabs
     "nav.reports": "Informes",
     "nav.templates": "Plantillas",
@@ -3389,6 +3391,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.sign_out": "Sign out",
     "nav.hospital": "Hospital",
     "nav.support": "Support",
+    "nav.full_guide": "Full guide",
     "nav.drag_resize": "Drag to resize",
     "nav.tools": "Tools",
     "nav.help": "Help",
@@ -3430,6 +3433,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "onboarding.next": "Next",
     "onboarding.prev": "Back",
     "onboarding.start": "Get started",
+    "onboarding.full_guide": "See full guide",
     // Top navigation tabs
     "nav.reports": "Reports",
     "nav.templates": "Templates",
@@ -6506,6 +6510,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.sign_out": "Sair",
     "nav.hospital": "Hospital",
     "nav.support": "Suporte",
+    "nav.full_guide": "Guia completo",
     "nav.drag_resize": "Arrastar para redimensionar",
     "nav.tools": "Ferramentas",
     "nav.help": "Ajuda",
@@ -6547,6 +6552,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "onboarding.next": "Próximo",
     "onboarding.prev": "Anterior",
     "onboarding.start": "Começar",
+    "onboarding.full_guide": "Ver guia completo",
     // Top navigation tabs
     "nav.reports": "Laudos",
     "nav.templates": "Templates",

@@ -127,6 +127,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "cta.subtitle": "Únete a los radiólogos que ahorran horas cada semana estructurando sus informes de forma más rápida.",
     "cta.button": "Empieza gratis",
     // Footer
+    "footer.guide": "Guía",
     "footer.legal": "Legal",
     "footer.rights": "Todos los derechos reservados.",
     "footer.contact": "Contacto",
@@ -393,6 +394,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "cta.subtitle": "Join the radiologists saving hours every week by structuring their reports faster.",
     "cta.button": "Start free",
     // Footer
+    "footer.guide": "Guide",
     "footer.legal": "Legal",
     "footer.disclaimer": "Radiogen.ai is a radiology report documentation and drafting tool. It is not a medical device or a diagnostic tool: it does not interpret medical images, issue diagnoses or therapeutic recommendations, and does not replace professional judgment. The radiologist is solely responsible for reviewing, validating, and signing every report.",
     "footer.rights": "All rights reserved.",
@@ -659,6 +661,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "cta.subtitle": "Junte-se aos radiologistas que economizam horas por semana estruturando seus laudos mais rapidamente.",
     "cta.button": "Comece grátis",
     // Footer
+    "footer.guide": "Guia",
     "footer.legal": "Termos legais",
     "footer.disclaimer": "O Radiogen.ai é uma ferramenta de documentação e redação de laudos radiológicos. Não é um produto médico nem uma ferramenta de diagnóstico: não interpreta imagens médicas, não emite diagnósticos ou recomendações terapêuticas e não substitui o julgamento profissional. O radiologista é o único responsável por revisar, validar e assinar cada laudo.",
     "footer.rights": "Todos os direitos reservados.",
