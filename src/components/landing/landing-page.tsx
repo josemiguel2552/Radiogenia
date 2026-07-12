@@ -6,13 +6,14 @@ import {
   Mic, FileText, Brain, Sparkles, Layout, Shield, MessageCircle,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
-  BookOpen, Tags,
+  BookOpen, Tags, Building2, Loader2, Send,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import { Logo } from "@/components/ui/logo";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
 import { captureUtm } from "@/lib/utm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /* ─── Hooks ─── */
 
@@ -497,6 +498,10 @@ export function LandingPage() {
                 <PricingCard key={key} plan={plan} planKey={key} t={t} lang={lang} index={i} />
               );
             })}
+          </div>
+
+          <div className="mt-5">
+            <EnterprisePricingCard t={t} lang={lang} index={PLAN_ORDER.length} />
           </div>
 
           <div className="mt-12 text-center">
@@ -1088,6 +1093,160 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
           : <>{t("pricing.subscribe_cta")} — {CURRENCY}{plan.price}{t("pricing.per_month")}</>}
       </Link>
     </div>
+    </div>
+  );
+}
+
+/* ─── Enterprise plan — custom quote, opens a contact dialog ─── */
+
+const ENTERPRISE_FEATURE_KEYS = [
+  "pricing.enterprise_feat_all_pro",
+  "pricing.enterprise_feat_team_licenses",
+  "pricing.enterprise_feat_institutional_templates",
+  "pricing.enterprise_feat_preferential_config",
+  "pricing.enterprise_feat_onboarding",
+  "pricing.enterprise_feat_workflow_adaptation",
+  "pricing.enterprise_feat_priority_support",
+  "pricing.enterprise_feat_institutional_billing",
+];
+
+function EnterprisePricingCard({ t, lang, index = 0 }: {
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  lang: PublicLang;
+  index?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) return;
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/enterprise-inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), message: message.trim(), lang }),
+      });
+      if (res.ok) {
+        setSent(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || t("pricing.enterprise_error"));
+      }
+    } catch {
+      setError(t("pricing.enterprise_error"));
+    }
+    setSending(false);
+  }
+
+  function handleOpenChange(v: boolean) {
+    setOpen(v);
+    if (!v) {
+      // Reset a beat after the close animation so the form doesn't flash empty.
+      setTimeout(() => { setSent(false); setName(""); setEmail(""); setMessage(""); setError(""); }, 200);
+    }
+  }
+
+  return (
+    <div data-reveal style={revealDelay(index * 90)}>
+      <div className="relative p-6 md:p-8 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-6">
+        <div className="flex items-start gap-4 flex-1">
+          <div className="hidden md:flex h-11 w-11 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/10 items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold mb-1">{t("pricing.enterprise_title")}</h3>
+            <p className="text-sm text-gray-400 mb-3">{t("pricing.enterprise_subtitle")}</p>
+            <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+              {ENTERPRISE_FEATURE_KEYS.map((f) => (
+                <li key={f} className="flex items-start gap-2 text-xs text-gray-300">
+                  <Check className="h-3.5 w-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  {t(f)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="shrink-0 text-center md:text-right">
+          <p className="text-2xl font-bold mb-3">{t("pricing.enterprise_price")}</p>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-block text-center text-sm font-semibold py-3 px-6 rounded-full bg-gradient-to-r from-blue-500/70 to-purple-600/70 hover:from-blue-500 hover:to-purple-600 shadow-md shadow-purple-500/10 transition-all"
+          >
+            {t("pricing.enterprise_cta")}
+          </button>
+        </div>
+      </div>
+
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-md bg-[#0f0f23] border-white/10 text-white">
+          {sent ? (
+            <div className="py-4 text-center space-y-3">
+              <div className="mx-auto w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                <Check className="h-5 w-5 text-blue-400" />
+              </div>
+              <p className="text-sm font-medium">{t("pricing.enterprise_success")}</p>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white">{t("pricing.enterprise_dialog_title")}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">{t("pricing.enterprise_field_name")}</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">{t("pricing.enterprise_field_email")}</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">{t("pricing.enterprise_field_message")}</label>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    required
+                    rows={4}
+                    placeholder={t("pricing.enterprise_field_message_ph")}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-blue-500 outline-none resize-none"
+                  />
+                </div>
+                {error && <p className="text-xs text-red-400">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold py-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20 transition-all disabled:opacity-60"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  {t("pricing.enterprise_submit")}
+                </button>
+              </form>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

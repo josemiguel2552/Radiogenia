@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Trash2, Search, Download, ClipboardList, GraduationCap, Stethoscope } from "lucide-react";
+import { Loader2, Trash2, Search, Download, ClipboardList, GraduationCap, Stethoscope, Building2, Mail } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 interface WaitlistEntry {
@@ -19,12 +19,26 @@ interface WaitlistEntry {
   created_at: string;
 }
 
+interface EnterpriseInquiry {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
+
 export function AdminWaitlistTab() {
   const t = useT();
+  const [subTab, setSubTab] = useState<"waitlist" | "enterprise">("waitlist");
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  const [inquiries, setInquiries] = useState<EnterpriseInquiry[]>([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(true);
+  const [deletingInquiry, setDeletingInquiry] = useState<string | null>(null);
+  const [expandedInquiry, setExpandedInquiry] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/waitlist")
@@ -32,7 +46,26 @@ export function AdminWaitlistTab() {
       .then((d) => { if (Array.isArray(d)) setEntries(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch("/api/admin/enterprise-inquiries")
+      .then((r) => r.ok ? r.json() : [])
+      .then((d) => { if (Array.isArray(d)) setInquiries(d); })
+      .catch(() => {})
+      .finally(() => setInquiriesLoading(false));
   }, []);
+
+  async function handleDeleteInquiry(id: string) {
+    setDeletingInquiry(id);
+    try {
+      const res = await fetch("/api/admin/enterprise-inquiries", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) setInquiries((prev) => prev.filter((e) => e.id !== id));
+    } catch { /* ignore */ }
+    setDeletingInquiry(null);
+  }
 
   async function handleDelete(id: string) {
     setDeleting(id);
@@ -85,6 +118,93 @@ export function AdminWaitlistTab() {
 
   return (
     <div className="space-y-4">
+      {/* Sub-tabs */}
+      <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">
+        <button
+          type="button"
+          onClick={() => setSubTab("waitlist")}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${subTab === "waitlist" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"}`}
+        >
+          {t("admin.waitlist.tab_waitlist")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubTab("enterprise")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${subTab === "enterprise" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"}`}
+        >
+          <Building2 className="h-3 w-3" />
+          {t("admin.waitlist.tab_enterprise")}
+          {inquiries.length > 0 && (
+            <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{inquiries.length}</Badge>
+          )}
+        </button>
+      </div>
+
+      {subTab === "enterprise" ? (
+        inquiriesLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-4">
+              {inquiries.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">{t("admin.waitlist.enterprise_empty")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {inquiries.map((inq) => {
+                    const isOpen = expandedInquiry === inq.id;
+                    return (
+                      <div key={inq.id} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedInquiry(isOpen ? null : inq.id)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
+                        >
+                          <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                            <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{inq.name}</p>
+                            <p className="text-xs text-gray-500 truncate">{inq.email}</p>
+                          </div>
+                          <span className="text-[11px] text-gray-400 shrink-0">{new Date(inq.created_at).toLocaleDateString()}</span>
+                        </button>
+                        {isOpen && (
+                          <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                            <div>
+                              <p className="text-[11px] text-gray-500 mb-1">{t("admin.waitlist.col_message")}</p>
+                              <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{inq.message}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" asChild>
+                                <a href={`mailto:${inq.email}`}>
+                                  <Mail className="h-3 w-3" />
+                                  {t("admin.waitlist.reply_by_email")}
+                                </a>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs gap-1.5 text-gray-400 hover:text-red-500"
+                                onClick={() => handleDeleteInquiry(inq.id)}
+                                disabled={deletingInquiry === inq.id}
+                              >
+                                {deletingInquiry === inq.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )
+      ) : (
+      <>
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <Card>
@@ -195,6 +315,8 @@ export function AdminWaitlistTab() {
           )}
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }

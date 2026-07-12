@@ -942,6 +942,82 @@ export async function sendLimitReachedEmail(to: string, name: string | null, lan
 }
 
 // ---------------------------------------------------------------------------
+// 1f) Enterprise-inquiry emails — landing page pricing → "Solicitar cotización"
+// ---------------------------------------------------------------------------
+
+const ENTERPRISE_LEAD_EMAIL = process.env.ENTERPRISE_LEAD_EMAIL || "info@radiogen.ai";
+
+// Internal alert (silent to the visitor): sent the moment someone submits the
+// Enterprise contact form, so a high-value lead gets a fast reply instead of
+// waiting to be spotted in the admin panel.
+export async function sendEnterpriseInquiryNotification(name: string, email: string, message: string) {
+  if (!process.env.RESEND_API_KEY) return;
+  await sendWithRetry({
+    from: FROM, replyTo: email, to: ENTERPRISE_LEAD_EMAIL,
+    subject: `Solicitud Enterprise: ${name} (${email})`,
+    html: `
+      <h2>Nueva solicitud de plan Enterprise</h2>
+      <table style="border-collapse:collapse;">
+        <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Nombre:</td><td>${name}</td></tr>
+        <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email:</td><td>${email}</td></tr>
+      </table>
+      <p style="font-weight:bold;margin-top:14px;">Mensaje:</p>
+      <p style="white-space:pre-wrap;">${message}</p>
+      <p style="color:#6b7280;font-size:12px;margin-top:16px;">También queda registrada en el panel de admin → Lista de espera → Enterprise.</p>
+    `,
+    text: `Nueva solicitud de plan Enterprise\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`,
+  }).catch((err) => console.error("[enterprise-inquiry] notification error:", err instanceof Error ? err.message : err));
+}
+
+const enterpriseAckI18n: Record<EmailLang, { subject: string; headline: string; intro: string; note: string; unsub: string; textTpl: (g: string) => string }> = {
+  es: {
+    subject: "Hemos recibido tu solicitud — Radiogen.AI",
+    headline: "Gracias por tu interés",
+    intro: "Hemos recibido tu solicitud sobre el plan Enterprise de Radiogen.AI. Nuestro equipo la revisará y se pondrá en contacto contigo a la mayor brevedad para preparar una propuesta a medida.",
+    note: "Si mientras tanto tienes alguna pregunta, puedes responder directamente a este correo.",
+    unsub: "Recibes este correo porque solicitaste información sobre Radiogen.AI Enterprise.",
+    textTpl: (g) => `${g ? `Hola, ${g}. ` : ""}Hemos recibido tu solicitud sobre el plan Enterprise de Radiogen.AI. Nuestro equipo se pondrá en contacto contigo pronto.\n\nSi tienes alguna pregunta mientras tanto, responde directamente a este correo.`,
+  },
+  en: {
+    subject: "We've received your request — Radiogen.AI",
+    headline: "Thanks for your interest",
+    intro: "We've received your Radiogen.AI Enterprise inquiry. Our team will review it and get back to you shortly to put together a tailored proposal.",
+    note: "If you have any questions in the meantime, just reply to this email.",
+    unsub: "You received this email because you requested information about Radiogen.AI Enterprise.",
+    textTpl: (g) => `${g ? `Hi, ${g}. ` : ""}We've received your Radiogen.AI Enterprise inquiry. Our team will get back to you shortly.\n\nIf you have any questions in the meantime, just reply to this email.`,
+  },
+  pt: {
+    subject: "Recebemos sua solicitação — Radiogen.AI",
+    headline: "Obrigado pelo seu interesse",
+    intro: "Recebemos sua solicitação sobre o plano Enterprise do Radiogen.AI. Nossa equipe vai analisá-la e entrar em contato em breve para preparar uma proposta sob medida.",
+    note: "Se tiver alguma dúvida nesse meio tempo, é só responder este e-mail.",
+    unsub: "Você recebeu este e-mail porque solicitou informações sobre o Radiogen.AI Enterprise.",
+    textTpl: (g) => `${g ? `Olá, ${g}. ` : ""}Recebemos sua solicitação sobre o plano Enterprise do Radiogen.AI. Nossa equipe entrará em contato em breve.\n\nSe tiver alguma dúvida nesse meio tempo, é só responder este e-mail.`,
+  },
+};
+
+export async function sendEnterpriseInquiryAck(to: string, name: string | null, lang: EmailLang = "es") {
+  const t = enterpriseAckI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+
+  const inner = `${emailHeader("&#127970;", t.headline, t.intro)}
+        <tr><td style="padding:0 32px 24px;">
+          <p style="color:#6b7280;font-size:12px;line-height:1.6;margin:0;">${t.note}</p>
+        </td></tr>`;
+
+  const html = lightEmailShell(inner, t.unsub, lang);
+  const text = t.textTpl(greeting);
+
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject: t.subject, html, text,
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `enterprise-ack-${Date.now()}`,
+    },
+  }).catch((err) => console.error("[enterprise-inquiry] ack email error:", err instanceof Error ? err.message : err));
+}
+
+// ---------------------------------------------------------------------------
 // 2) Pending approval email — non-LATAM users
 // ---------------------------------------------------------------------------
 
