@@ -655,19 +655,19 @@ const DEMO_TEXTS: Record<PublicLang, string> = {
 const STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
   es: [
     { title: "Dicta tu informe", desc: "Habla naturalmente y tu voz se transcribe en tiempo real con máxima precisión" },
-    { title: "Informe estructurado", desc: "La IA analiza tu dictado y genera un informe completo con hallazgos, técnica y conclusión en segundos" },
+    { title: "Informe en tu formato", desc: "La IA analiza tu dictado y genera el informe completo en segundos, en el formato que tú elijas: estructurado por secciones, narrativo no estructurado o solo hallazgos" },
     { title: "Clasificación automática", desc: "Estadifica y clasifica los hallazgos automáticamente usando sistemas estándar: TNM, BI-RADS, TI-RADS y más" },
     { title: "Radiogen Bot", desc: "Consulta clasificaciones, valores de referencia o criterios de seguimiento sin salir de tu informe" },
   ],
   en: [
     { title: "Dictate your report", desc: "Speak naturally and your voice is transcribed in real time with maximum accuracy" },
-    { title: "Structured report", desc: "AI analyzes your dictation and generates a complete report with findings, technique, and conclusion in seconds" },
+    { title: "Your report, your format", desc: "AI analyzes your dictation and generates the complete report in seconds, in the format you choose: structured into sections, unstructured narrative, or findings only" },
     { title: "Automatic classification", desc: "Automatically stage and classify findings using standard systems: TNM, BI-RADS, TI-RADS and more" },
     { title: "Radiogen Bot", desc: "Look up classifications, reference values, or follow-up criteria without leaving your report" },
   ],
   pt: [
     { title: "Dite seu laudo", desc: "Fale naturalmente e sua voz é transcrita em tempo real com máxima precisão" },
-    { title: "Laudo estruturado", desc: "A IA analisa seu ditado e gera um laudo completo com achados, técnica e conclusão em segundos" },
+    { title: "Laudo no seu formato", desc: "A IA analisa seu ditado e gera o laudo completo em segundos, no formato que você escolher: estruturado em seções, narrativo não estruturado ou só achados" },
     { title: "Classificação automática", desc: "Estadie e classifique os achados automaticamente usando sistemas padrão: TNM, BI-RADS, TI-RADS e mais" },
     { title: "Radiogen Bot", desc: "Consulte classificações, valores de referência ou critérios de seguimento sem sair do laudo" },
   ],
