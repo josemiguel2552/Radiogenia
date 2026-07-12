@@ -55,7 +55,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "how.step1.title": "Dicta",
     "how.step1.desc": "Habla tus hallazgos de forma natural o escríbelos. La IA transcribe en tiempo real.",
     "how.step2.title": "Genera",
-    "how.step2.desc": "La plataforma estructura y organiza tu dictado en las secciones de hallazgos y conclusión usando tu plantilla preferida.",
+    "how.step2.desc": "La plataforma convierte tu dictado en un informe con el formato que tú elijas: estructurado por secciones según tu plantilla, narrativo no estructurado o solo hallazgos.",
     "how.step3.title": "Revisa y guarda",
     "how.step3.desc": "Edita lo que necesites y guarda. La plataforma aprende tu estilo para la próxima vez.",
     // Pricing
@@ -322,7 +322,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "how.step1.title": "Dictate",
     "how.step1.desc": "Speak your findings naturally or type them. The AI transcribes in real time.",
     "how.step2.title": "Generate",
-    "how.step2.desc": "The platform structures and organizes your dictation into findings and conclusion sections using your preferred template.",
+    "how.step2.desc": "The platform turns your dictation into a report in the format you choose: structured into sections from your template, unstructured narrative, or findings only.",
     "how.step3.title": "Review & Save",
     "how.step3.desc": "Edit anything, save. The platform learns your style for next time.",
     // Pricing
@@ -589,7 +589,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "how.step1.title": "Dite",
     "how.step1.desc": "Fale seus achados de forma natural ou digite-os. A IA transcreve em tempo real.",
     "how.step2.title": "Gere",
-    "how.step2.desc": "A plataforma estrutura e organiza seu ditado nas seções de achados e conclusão usando seu modelo preferido.",
+    "how.step2.desc": "A plataforma transforma seu ditado em um laudo no formato que você escolher: estruturado em seções conforme seu modelo, narrativo não estruturado ou só achados.",
     "how.step3.title": "Revise e salve",
     "how.step3.desc": "Edite o que precisar e salve. A plataforma aprende seu estilo para a próxima vez.",
     // Pricing
