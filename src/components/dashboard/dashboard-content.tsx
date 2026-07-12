@@ -1583,7 +1583,7 @@ export function DashboardContent() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.shiftKey && e.code === "Space") {
         e.preventDefault();
-        copyFormattedRef.current?.("findings_conclusion");
+        copyFormattedRef.current?.("full");
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
@@ -2413,8 +2413,16 @@ export function DashboardContent() {
 
             {/* Unified report card: findings + conclusion in one box, tools on the bottom edge */}
             <Card>
+            {getStudyTitle() && (
+              <div className="px-4 pt-3 -mb-1.5">
+                <p className="text-sm font-bold uppercase tracking-wide text-[hsl(var(--foreground))]">
+                  {getStudyTitle()}
+                </p>
+              </div>
+            )}
             <OutputCard
               bare
+              airy
               title={t("dash.findings")}
               icon={<FileText className="h-3.5 w-3.5 text-brand" />}
               loading={loadingFindings}
@@ -2427,8 +2435,6 @@ export function DashboardContent() {
               traceLocked={loadingTrace}
               isDark={isDark}
             />
-
-            <div className="mx-4 border-t border-dashed border-[hsl(var(--border))]" />
 
             <OutputCard
               bare
@@ -2472,8 +2478,7 @@ export function DashboardContent() {
             {/* Report tools: review + classification on the bottom edge of the unified card */}
             {(findings.trim() || conclusion.trim()) && (
             <div className="border-t border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] rounded-b-[inherit] px-4 py-2.5 space-y-2">
-              {findings.trim() ? (
-                clinicalSuggestions ? (
+              {findings.trim() && clinicalSuggestions && (
                   <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 p-2.5">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
@@ -2526,25 +2531,8 @@ export function DashboardContent() {
                       )}
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-end gap-1">
-                    {clinicalEmpty && (
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("clinical_check.no_suggestions")}</span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleClinicalCheck}
-                      disabled={clinicalCheckRunning}
-                      className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium transition-colors disabled:opacity-50"
-                    >
-                      {clinicalCheckRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <ClipboardCheck className="h-3 w-3" />}
-                      {clinicalCheckRunning ? t("clinical_check.running") : clinicalEmpty ? t("clinical_check.recheck") : t("clinical_check.button")}
-                      <span className="text-[8px] px-1 py-0 rounded bg-amber-100/60 dark:bg-amber-800/30 text-amber-500 dark:text-amber-400 font-medium ml-0.5">{t("clinical_check.beta")}</span>
-                    </button>
-                  </div>
-                )
-              ) : null}
-              {conclusion.trim() ? (
+              )}
+              {conclusion.trim() && (
                 classifyResult ? (
                   <div className="border border-violet-200 dark:border-violet-800 rounded-lg bg-violet-50/50 dark:bg-violet-950/20 p-2.5">
                     <p className="text-[10px] font-medium text-violet-700 dark:text-violet-300 mb-1.5">{t("classify.preview_title")}</p>
@@ -2655,23 +2643,57 @@ export function DashboardContent() {
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-end gap-1">
-                    {classifyEmpty && (
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("classify.none_detected")}</span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleDetectSystems}
-                      disabled={classifying || detectingSystems || checkingPreflight}
-                      className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium transition-colors disabled:opacity-50"
-                    >
-                      {(classifying || detectingSystems || checkingPreflight) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
-                      {detectingSystems ? t("classify.detecting") : checkingPreflight ? t("classify.checking_data") : classifyEmpty ? t("classify.recheck") : t("classify.button")}
-                    </button>
-                  </div>
-                )
-              ) : null}
+                ) : null
+              )}
+
+              {/* Bottom row: copy full report (left) + review/classify tools (right) */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => copyFormatted("full")}
+                  disabled={!findings}
+                  className="gap-1.5 text-xs h-8 md:h-7 bg-brand text-brand-fg hover:opacity-90"
+                >
+                  {copied === "all" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {t("dash.copy_report")}
+                  <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-white/20 text-[9px] font-mono leading-none">⇧ Space</kbd>
+                </Button>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {findings.trim() && !clinicalSuggestions && (
+                    <div className="flex items-center gap-1.5">
+                      {clinicalEmpty && (
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("clinical_check.no_suggestions")}</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleClinicalCheck}
+                        disabled={clinicalCheckRunning}
+                        className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium transition-colors disabled:opacity-50"
+                      >
+                        {clinicalCheckRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <ClipboardCheck className="h-3 w-3" />}
+                        {clinicalCheckRunning ? t("clinical_check.running") : clinicalEmpty ? t("clinical_check.recheck") : t("clinical_check.button")}
+                        <span className="text-[8px] px-1 py-0 rounded bg-amber-100/60 dark:bg-amber-800/30 text-amber-500 dark:text-amber-400 font-medium ml-0.5">{t("clinical_check.beta")}</span>
+                      </button>
+                    </div>
+                  )}
+                  {conclusion.trim() && !classifyResult && !detectedSystems && !preflightQuestions && (
+                    <div className="flex items-center gap-1.5">
+                      {classifyEmpty && (
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("classify.none_detected")}</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleDetectSystems}
+                        disabled={classifying || detectingSystems || checkingPreflight}
+                        className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 font-medium transition-colors disabled:opacity-50"
+                      >
+                        {(classifying || detectingSystems || checkingPreflight) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Tags className="h-3 w-3" />}
+                        {detectingSystems ? t("classify.detecting") : checkingPreflight ? t("classify.checking_data") : classifyEmpty ? t("classify.recheck") : t("classify.button")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             )}
             </Card>
@@ -2690,18 +2712,16 @@ export function DashboardContent() {
               <CardContent className="p-2 md:p-2.5">
                 <div className="flex flex-wrap items-center gap-1.5 justify-between">
                   <div className="flex flex-wrap gap-1">
-                    <Button variant="outline" size="sm" onClick={() => copyFormatted("findings")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
-                      {copied === "f" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                      {t("dash.findings")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => copyFormatted("findings_conclusion")} disabled={!findings || !conclusion} className="gap-1 text-xs h-8 md:h-7">
-                      {copied === "fc" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                      {t("dash.plus_conclusion")}
-                      <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[9px] text-gray-400 font-mono leading-none">⇧ Space</kbd>
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => copyFormatted("full")} disabled={!findings} className="gap-1 text-xs h-8 md:h-7">
-                      {copied === "all" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                      {t("dash.full_report")}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyText(selectedRecTexts.map((r) => "- " + r).join("\n"), "recs")}
+                      disabled={selectedRecTexts.length === 0}
+                      className="gap-1 text-xs h-8 md:h-7"
+                    >
+                      {copied === "recs" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                      {t("dash.copy_recommendation")}
+                      {selectedRecTexts.length > 0 && <span className="text-[10px] text-gray-400">({selectedRecTexts.length})</span>}
                     </Button>
                     <Button
                       variant="ghost"
@@ -2851,6 +2871,7 @@ function OutputCard({
   isDark,
   loadingLabel,
   bare = false,
+  airy = false,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -2866,6 +2887,8 @@ function OutputCard({
   traceLocked?: boolean;
   isDark?: boolean;
   bare?: boolean;
+  /** Extra line spacing on screen only — the copied text keeps its own line breaks. */
+  airy?: boolean;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -2923,7 +2946,9 @@ function OutputCard({
           </div>
         ) : loading && value ? (
           <div
-            className="streaming-cursor whitespace-pre-wrap text-sm leading-relaxed p-3 border rounded-md bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 animate-[fade-in_0.15s_ease-out]"
+            className={`streaming-cursor whitespace-pre-wrap text-sm ${airy ? "leading-loose" : "leading-relaxed"} text-gray-900 dark:text-gray-100 animate-[fade-in_0.15s_ease-out] ${
+              bare ? "py-2" : "p-3 border rounded-md bg-white dark:bg-gray-950"
+            }`}
             style={{ minHeight }}
           >
             {value}
@@ -2934,7 +2959,9 @@ function OutputCard({
           <AutoGrowTextarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="text-sm leading-relaxed"
+            className={`text-sm ${airy ? "leading-loose" : "leading-relaxed"} ${
+              bare ? "border-0 bg-transparent px-0 shadow-none focus-visible:ring-0" : ""
+            }`}
             minHeight={minHeight}
           />
         )}

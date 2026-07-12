@@ -273,9 +273,7 @@ export function RecommendationPanel({ conclusionText, modality, section, outputL
     });
   }, []);
 
-  useEffect(() => {
-    if (visible && conclusionText) setOpen(true);
-  }, [visible, conclusionText]);
+  // Starts collapsed on purpose — the panel only opens when the user clicks it.
 
   useEffect(() => {
     if (open && section) {
