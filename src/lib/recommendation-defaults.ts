@@ -451,7 +451,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano simples <5 cm em paciente pré-menopausa. Achado fisiológico (O-RADS 1). Não requer seguimento (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "funcional", "functional", "premenopáusica", "fisiológico"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -465,7 +465,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Pólipo de vesícula biliar <6 mm. Não requer seguimento na ausência de fatores de risco (diretrizes ESGAR 2017).",
     },
     tags: ["pólipo", "polyp", "vesícula", "gallbladder", "biliar"],
-    source: "ESGAR/EAES Guidelines 2017",
+    source: "Joint ESGAR/EAES/EFISDS/ESGE Guidelines (Wiles R et al., Eur Radiol 2017)",
     scope: "system",
   },
   {
@@ -479,7 +479,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Pólipo de vesícula biliar de 6-9 mm. Ecografia de controle em 6 meses, depois anual por 2 anos recomendada (ESGAR 2017).",
     },
     tags: ["pólipo", "polyp", "vesícula", "gallbladder", "biliar"],
-    source: "ESGAR/EAES Guidelines 2017",
+    source: "Joint ESGAR/EAES/EFISDS/ESGE Guidelines (Wiles R et al., Eur Radiol 2017)",
     scope: "system",
   },
   {
@@ -493,7 +493,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Pólipo de vesícula biliar ≥10 mm. Avaliação cirúrgica (colecistectomia) recomendada dado o risco de malignidade (ESGAR 2017).",
     },
     tags: ["pólipo", "polyp", "vesícula", "gallbladder", "biliar", "colecistectomía"],
-    source: "ESGAR/EAES Guidelines 2017",
+    source: "Joint ESGAR/EAES/EFISDS/ESGE Guidelines (Wiles R et al., Eur Radiol 2017)",
     scope: "system",
   },
 
@@ -837,7 +837,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano simples de 5-7 cm em paciente pré-menopausa. Ecografia de controle em 8-12 semanas para confirmar resolução recomendada (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "premenopáusica", "premenopausal"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -851,7 +851,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano simples >7 cm em paciente pré-menopausa. RM pélvica para melhor caracterização recomendada (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "premenopáusica", "premenopausal", "RM", "MRI"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -865,7 +865,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano hemorrágico típico em paciente pré-menopausa. Ecografia de controle em 6-12 semanas para confirmar resolução recomendada (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "hemorrágico", "hemorrhagic", "funcional"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -879,7 +879,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano simples <3 cm em paciente pós-menopausa. Provavelmente benigno. Ecografia de controle anual recomendada (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "postmenopáusica", "postmenopausal"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -893,7 +893,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano simples de 3-7 cm em paciente pós-menopausa. Ecografia de controle em 6-12 semanas, depois seguimento anual se estável, recomendado (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "postmenopáusica", "postmenopausal"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -907,7 +907,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Cisto ovariano >7 cm em paciente pós-menopausa. RM pélvica e avaliação ginecológica recomendadas (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "quiste", "cyst", "postmenopáusica", "postmenopausal", "RM", "MRI"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
   {
@@ -921,7 +921,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Massa anexial com componente sólido ou características complexas. RM pélvica com protocolo O-RADS e avaliação ginecológica recomendadas (ACR 2020).",
     },
     tags: ["ovario", "ovarian", "anexial", "adnexal", "masa", "mass", "sólido", "solid", "complejo", "complex"],
-    source: "ACR O-RADS US 2020 (Patel et al., JACR 2020)",
+    source: "ACR O-RADS US (Andreotti RF et al., Radiology 2020)",
     scope: "system",
   },
 
@@ -939,7 +939,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Massa anexial O-RADS MRI 3 (risco intermediário de malignidade). Seguimento com RM em 6-12 semanas ou avaliação ginecológica recomendado (ACR O-RADS MRI 2022).",
     },
     tags: ["O-RADS", "ovario", "ovarian", "anexial", "adnexal", "RM", "MRI"],
-    source: "ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)",
+    source: "ACR O-RADS MRI 2022 (Sadowski EA et al., Radiology 2022)",
     scope: "system",
   },
   {
@@ -953,7 +953,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Massa anexial O-RADS MRI 4 (alto risco de malignidade). Avaliação cirúrgica com ginecologia oncológica recomendada (ACR O-RADS MRI 2022).",
     },
     tags: ["O-RADS", "ovario", "ovarian", "anexial", "adnexal", "maligno", "cirugía"],
-    source: "ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)",
+    source: "ACR O-RADS MRI 2022 (Sadowski EA et al., Radiology 2022)",
     scope: "system",
   },
   {
@@ -967,7 +967,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "Massa anexial O-RADS MRI 5 (risco muito alto de malignidade). Encaminhamento urgente para ginecologia oncológica para avaliação cirúrgica recomendado (ACR O-RADS MRI 2022).",
     },
     tags: ["O-RADS", "ovario", "ovarian", "anexial", "adnexal", "maligno", "malignant", "cirugía", "urgente"],
-    source: "ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)",
+    source: "ACR O-RADS MRI 2022 (Sadowski EA et al., Radiology 2022)",
     scope: "system",
   },
 
@@ -1635,7 +1635,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "O-RADS 1 (achado fisiológico/normal): folículos ovarianos normais ou corpo lúteo. Risco de malignidade ~0%. Não requer seguimento adicional (ACR O-RADS US v2022).",
     },
     tags: ["O-RADS", "ovario", "ovary", "normal", "fisiológico", "physiologic", "folículo", "cuerpo lúteo"],
-    source: "ACR O-RADS US v2022 (Andreotti RF et al., JACR 2020)",
+    source: "ACR O-RADS US v2022 (Strachowski LM et al., Radiology 2023)",
     scope: "system",
   },
   {
@@ -1649,7 +1649,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "O-RADS 2 (quase certamente benigno): cisto simples, cisto hemorrágico típico, endometrioma típico, teratoma cístico maduro, cisto paraovárico. Risco de malignidade <1%. Seguimento ecográfico opcional em 8-12 semanas em pré-menopáusicas; em pós-menopáusicas, ecografia de controle anual (ACR O-RADS US v2022).",
     },
     tags: ["O-RADS", "ovario", "ovary", "benigno", "benign", "quiste", "cyst", "endometrioma", "teratoma"],
-    source: "ACR O-RADS US v2022 (Andreotti RF et al., JACR 2020)",
+    source: "ACR O-RADS US v2022 (Strachowski LM et al., Radiology 2023)",
     scope: "system",
   },
 
@@ -1667,7 +1667,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "PI-RADS 1 (probabilidade muito baixa de câncer clinicamente significativo). RM prostática sem achados anômalos. Biópsia dirigida por imagem não recomendada. Seguimento conforme critérios clínicos e PSA (ACR PI-RADS v2.1, 2019).",
     },
     tags: ["PI-RADS", "próstata", "prostate", "RM", "MRI", "PSA", "muy bajo", "very low"],
-    source: "ACR PI-RADS v2.1 (Turkbey B et al., AJR 2019)",
+    source: "ACR PI-RADS v2.1 (Turkbey B et al., Eur Urol 2019)",
     scope: "system",
   },
   {
@@ -1681,7 +1681,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "PI-RADS 2 (probabilidade baixa de câncer clinicamente significativo). Achados provavelmente benignos (ex. HPB, prostatite, atrofia). Biópsia dirigida por imagem não recomendada. Seguimento clínico e de PSA (ACR PI-RADS v2.1, 2019).",
     },
     tags: ["PI-RADS", "próstata", "prostate", "RM", "MRI", "bajo", "low", "HBP", "BPH", "PSA"],
-    source: "ACR PI-RADS v2.1 (Turkbey B et al., AJR 2019)",
+    source: "ACR PI-RADS v2.1 (Turkbey B et al., Eur Urol 2019)",
     scope: "system",
   },
   {
@@ -1695,7 +1695,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "PI-RADS 3 (probabilidade intermediária/equívoca de câncer clinicamente significativo). Achados equívocos que não permitem classificar como benigno nem suspeito. Correlação com densidade de PSA, história clínica e fatores de risco recomendada; considerar biópsia dirigida ou vigilância conforme contexto (ACR PI-RADS v2.1, 2019).",
     },
     tags: ["PI-RADS", "próstata", "prostate", "RM", "MRI", "intermedio", "intermediate", "equívoco", "equivocal", "PSA"],
-    source: "ACR PI-RADS v2.1 (Turkbey B et al., AJR 2019)",
+    source: "ACR PI-RADS v2.1 (Turkbey B et al., Eur Urol 2019)",
     scope: "system",
   },
   {
@@ -1709,7 +1709,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "PI-RADS 4 (probabilidade alta de câncer clinicamente significativo). Lesão focal com características suspeitas (restrição à difusão marcada, realce precoce). Biópsia dirigida por fusão RM/ecografia ou biópsia cognitiva recomendada (ACR PI-RADS v2.1, 2019).",
     },
     tags: ["PI-RADS", "próstata", "prostate", "RM", "MRI", "alto", "high", "biopsia", "biopsy", "fusión", "fusion"],
-    source: "ACR PI-RADS v2.1 (Turkbey B et al., AJR 2019)",
+    source: "ACR PI-RADS v2.1 (Turkbey B et al., Eur Urol 2019)",
     scope: "system",
   },
   {
@@ -1723,7 +1723,7 @@ export const DEFAULT_RECOMMENDATIONS: ManualRecommendation[] = [
       pt: "PI-RADS 5 (probabilidade muito alta de câncer clinicamente significativo). Lesão focal ≥1.5 cm com critérios maiores de malignidade ou extensão extraprostática. Biópsia dirigida e estadiamento recomendados. Avaliar invasão capsular, vesículas seminais e linfonodos (ACR PI-RADS v2.1, 2019).",
     },
     tags: ["PI-RADS", "próstata", "prostate", "RM", "MRI", "muy alto", "very high", "biopsia", "biopsy", "estadificación", "staging"],
-    source: "ACR PI-RADS v2.1 (Turkbey B et al., AJR 2019)",
+    source: "ACR PI-RADS v2.1 (Turkbey B et al., Eur Urol 2019)",
     scope: "system",
   },
 ];

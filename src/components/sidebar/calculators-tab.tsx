@@ -1651,7 +1651,7 @@ function TesticularTorsionSheet() {
 function OradsSheet() {
   const t = useT();
   return (
-    <CheatSheet title="O-RADS" source="ACR O-RADS MRI 2022 (Thomassin-Naggara et al., Radiology 2022)">
+    <CheatSheet title="O-RADS" source="ACR O-RADS MRI 2022 (Sadowski EA et al., Radiology 2022)">
       <SheetTable
         headers={[t("calc.score"), t("calc.risk_level"), t("calc.recommendation")]}
         rows={[
@@ -1753,7 +1753,7 @@ function BtsNodulesSheet() {
 function OvarianIncidentalSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.ovarian_title")} source="ACR Incidental Findings Committee (Patel et al., JACR 2020)">
+    <CheatSheet title={t("calc.ovarian_title")} source="ACR O-RADS US (Andreotti RF et al., Radiology 2020)">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.premenopausal")}</p>
       <SheetTable
         headers={[t("calc.finding"), t("calc.size"), t("calc.recommendation")]}
@@ -1783,7 +1783,7 @@ function OvarianIncidentalSheet() {
 function GallbladderPolypSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.gb_polyp_title")} source="Wiles et al., Radiology 2017 / Joint ESG-ESGAR Guideline 2022">
+    <CheatSheet title={t("calc.gb_polyp_title")} source="Wiles R et al., Joint ESGAR/EAES/EFISDS/ESGE guidelines, Eur Radiol 2017">
       <SheetTable
         headers={[t("calc.size"), t("calc.risk_factors"), t("calc.recommendation")]}
         rows={[
@@ -1855,7 +1855,7 @@ function SpineNomenclatureSheet() {
 function ForaminalStenosisSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.foraminal_title")} source="Lee et al., AJNR 1988 / Wildermuth et al., Radiology 1998">
+    <CheatSheet title={t("calc.foraminal_title")} source="Lee CK et al., Spine 1988 / Wildermuth et al., Radiology 1998">
       <SheetTable
         headers={[t("calc.grade"), t("calc.description"), t("calc.foraminal_fat")]}
         rows={[
@@ -2176,7 +2176,7 @@ function MRIKneeSheet() {
 function MRIAnkleSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.mri_ankle_title")} source="Rosenberg ZS et al., MRI of the Ankle and Foot; Stoller DW">
+    <CheatSheet title={t("calc.mri_ankle_title")} source="Rosenberg ZS et al., RadioGraphics 2000; Stoller DW, MRI in Orthopaedics & Sports Medicine, 3rd ed.">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.mri_ankle_tendons")}</p>
       <AnkleAxial />
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.mri_ankle_ligaments")}</p>
@@ -2189,7 +2189,7 @@ function MRIAnkleSheet() {
 function RotatorCuffSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.rc_title")} source="Ellman classification (Ellman, Clin Orthop 1990) / Snyder arthroscopic (Snyder et al., Arthroscopy 1991)">
+    <CheatSheet title={t("calc.rc_title")} source="Ellman classification (Ellman, Clin Orthop 1990) / Snyder arthroscopic (Snyder et al., Arthroscopy 1990)">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.rc_partial")}</p>
       <SheetTable
         headers={[t("calc.grade"), t("calc.description"), t("calc.rc_thickness")]}
@@ -2547,7 +2547,7 @@ function AorticDissectionSheet() {
 function WholeAortaCTASheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.whole_aorta_title")} source="ACC/AHA 2022 (Isselbacher et al.) / ESC 2024 / Rogers et al., JCCT 2016">
+    <CheatSheet title={t("calc.whole_aorta_title")} source="ACC/AHA 2022 (Isselbacher et al.) / ESC 2024 / Rogers IS et al., Am J Cardiol 2013">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.aorta_normal_diameters")}</p>
       <SheetTable
         headers={[t("calc.segment"), t("calc.male_cm"), t("calc.female_cm"), t("calc.aneurysm_threshold")]}
@@ -3172,7 +3172,7 @@ function OradsCalc() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] text-gray-400">Thomassin-Naggara et al., Radiology 2022</p>
+        <p className="text-[10px] text-gray-400">Sadowski EA et al., Radiology 2022</p>
         <ResetButton onClick={resetAll} />
       </div>
       <div>
@@ -3868,7 +3868,7 @@ function TransplantUSSheet() {
 function CadRadsSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.cadrads_title")} source="Cury RC et al., CAD-RADS 2.0. Radiology 2022;305(3):209-221">
+    <CheatSheet title={t("calc.cadrads_title")} source="Cury RC et al., CAD-RADS 2.0. J Cardiovasc Comput Tomogr 2022;16(6):536-557">
       <SheetTable
         headers={[t("calc.cadrads_grade"), t("calc.cadrads_stenosis"), t("calc.cadrads_interpretation"), t("calc.cadrads_management")]}
         rows={[
@@ -5115,7 +5115,7 @@ function NeckAnatomySheet() {
 function ComplexInfarctSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.infarct_title")} source="Brazis PW, Localization in Clinical Neurology 8th ed; Caplan LR, Stroke 2019; Goyal M, Neuroradiology 2000">
+    <CheatSheet title={t("calc.infarct_title")} source="Brazis PW, Localization in Clinical Neurology 8th ed; Caplan LR, Caplan's Stroke 5th ed (2016); Tatu L et al., Neurology 1998">
       <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.infarct_brainstem")}</p>
       <SheetTable
         headers={[t("calc.syndrome"), t("calc.vascular_territory"), t("calc.structures"), t("calc.clinical_key")]}
@@ -5157,7 +5157,7 @@ function ComplexInfarctSheet() {
 function DemyelinatingSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.demyel_title")} source="Thompson AJ, Lancet Neurol 2025 (McDonald 2024); Wingerchuk DM, Neurology 2015; Banwell B, Lancet Neurol 2023">
+    <CheatSheet title={t("calc.demyel_title")} source="Montalban X et al., Lancet Neurol 2025 (McDonald 2024 revisions); Wingerchuk DM, Neurology 2015; Banwell B, Lancet Neurol 2023">
       <SheetTable
         headers={[t("calc.disease"), t("calc.key_mri_findings"), t("calc.distribution"), t("calc.ddx_clue")]}
         rows={[
@@ -5191,7 +5191,7 @@ function DemyelinatingSheet() {
 function DegenerativeSheet() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.degen_title")} source="Defined imaging signs per Harper L, JNNP 2015; Quattrone A, Radiology 2008; Collie DA, AJNR 2003">
+    <CheatSheet title={t("calc.degen_title")} source="Defined imaging signs per Massey LA et al., Neurology 2013; Quattrone A, Radiology 2008; Collie DA, AJNR 2003">
       <SheetTable
         headers={[t("calc.disease"), t("calc.key_mri_sign"), t("calc.atrophy_pattern"), t("calc.ddx_clue")]}
         rows={[
