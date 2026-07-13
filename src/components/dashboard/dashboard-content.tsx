@@ -2279,7 +2279,7 @@ export function DashboardContent() {
               )}
               {voiceError && <p className="text-xs text-red-500 dark:text-red-400">{voiceError}</p>}
               {dictFeedback !== "hidden" && (
-                <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
                   {dictFeedback === "done" ? (
                     <span className="text-green-600 dark:text-green-400">{t("dash.dict_fb_thanks")}</span>
                   ) : (
@@ -2291,6 +2291,9 @@ export function DashboardContent() {
                       <button type="button" onClick={() => rateDictation("down")} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" aria-label="bad">
                         <ThumbsDown className="h-3.5 w-3.5" />
                       </button>
+                      <span className="text-[10px] italic text-gray-400 dark:text-gray-500">
+                        {t("dash.dict_fb_hint")}
+                      </span>
                     </>
                   )}
                 </div>
