@@ -148,10 +148,14 @@ export async function POST(req: NextRequest) {
       logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.mapper.provider, model: comboUsage.mapper.model, inputTokens: comboUsage.mapper.usage.inputTokens, outputTokens: comboUsage.mapper.usage.outputTokens });
       logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.validator.provider, model: comboUsage.validator.model, inputTokens: comboUsage.validator.usage.inputTokens, outputTokens: comboUsage.validator.usage.outputTokens });
 
+      // Safety net: translate any English section label that slipped through
+      // the combo mapper, so a non-English report never shows English headers.
+      const comboFinal = outLang !== "en" ? enforceOutputLanguage(comboText, outLang) : comboText;
+
       const encoder = new TextEncoder();
       const body = new ReadableStream({
         start(controller) {
-          controller.enqueue(encoder.encode(comboText));
+          controller.enqueue(encoder.encode(comboFinal));
           controller.close();
         },
       });

@@ -5,7 +5,9 @@ import {
   translateSectionLabel,
   translateTemplate,
   translateLabelInLine,
+  hasSectionTranslation,
 } from "../section-translate";
+import { DEFAULT_TEMPLATES } from "../templates";
 
 describe("enforcePeriodSeparation", () => {
   it("converts semicolons to periods in section descriptions", () => {
@@ -74,6 +76,43 @@ describe("translateSectionLabel", () => {
   it("returns original for unknown labels", () => {
     expect(translateSectionLabel("Unknown Label XYZ", "es")).toBe("Unknown Label XYZ");
     expect(translateSectionLabel("Unknown Label XYZ", "pt")).toBe("Unknown Label XYZ");
+  });
+
+  it("translates the AngioTC lower-limb labels that leaked in production", () => {
+    for (const label of [
+      "Common and superficial femoral arteries left",
+      "Popliteal artery left",
+      "Tibial and peroneal arteries left",
+      "Distal arteries of the foot left",
+      "Left lower limb",
+      "Right lower limb",
+      "Intraabdominal organs",
+      "Bone structures and soft tissues",
+    ]) {
+      expect(translateSectionLabel(label, "es"), label).not.toBe(label);
+    }
+  });
+
+  // Regression guard: every ENGLISH built-in template label must have an
+  // explicit Spanish dictionary entry, so a Spanish report never shows English
+  // section headers (the AngioTC lower-limb bug). Labels that are already
+  // Spanish or structural (FINDINGS/CONCLUSION, RECIST targets, study titles)
+  // are language-agnostic by design and skipped.
+  it("has a Spanish dictionary entry for every English template label", () => {
+    const isAlreadySpanishOrStructural = (l: string) =>
+      /[áéíóúñ¿¡]/i.test(l) ||
+      /^(FINDINGS|CONCLUSION|Comparación|Información clínica|Hallazgos adicionales)$/.test(l) ||
+      /^Lesi(ón|ones)/.test(l) ||
+      /^(AngioTC|TC|RM|Eco|Radiografía)\b/.test(l);
+    const missing = new Set<string>();
+    for (const tpl of DEFAULT_TEMPLATES) {
+      for (const m of tpl.template.matchAll(/\*{2,3}([^*]+)\*{2,3}/g)) {
+        const label = m[1].trim();
+        if (isAlreadySpanishOrStructural(label)) continue;
+        if (!hasSectionTranslation(label, "es")) missing.add(label);
+      }
+    }
+    expect([...missing].sort(), `Untranslated (ES): ${[...missing].join(", ")}`).toEqual([]);
   });
 });
 
