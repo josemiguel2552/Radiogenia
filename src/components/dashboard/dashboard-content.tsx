@@ -2050,7 +2050,7 @@ export function DashboardContent() {
                 {/* Contrast toggle */}
                 <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800">
                   {[
-                    { v: "default", l: t("dash.default") },
+                    { v: "default", l: t("dash.contrast_auto") },
                     { v: "con_contraste", l: "C+" },
                     { v: "sin_contraste", l: "C−" },
                   ].map((opt) => (
@@ -2059,7 +2059,7 @@ export function DashboardContent() {
                       type="button"
                       aria-pressed={contrastOption === opt.v}
                       onClick={() => setContrastOption(opt.v)}
-                      className={`flex-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                      className={`flex-1 px-1.5 py-1 text-[11px] whitespace-nowrap rounded-md transition-colors ${
                         contrastOption === opt.v
                           ? "bg-[hsl(var(--card))] text-brand shadow-sm font-medium"
                           : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
