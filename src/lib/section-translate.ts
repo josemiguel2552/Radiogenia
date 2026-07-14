@@ -1812,6 +1812,44 @@ export function mergeDuplicateSections(text: string): string {
   return result.join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Safety net: fill or strip unfilled template placeholders
+// ---------------------------------------------------------------------------
+// Template fields are injected as "**Label**: {label lowercased}". If the model
+// leaves a placeholder unfilled it must NEVER reach the report as a raw
+// "{trachea and bronchi}" token. This replaces a whole-line placeholder value
+// with the section's normality phrase (matched by the English placeholder
+// token), falling back to a generic normal statement, and strips any stray
+// leftover token.
+const GENERIC_NORMAL: Record<OutputLanguage, string> = {
+  es: "Sin alteraciones significativas.",
+  en: "No significant abnormality.",
+  pt: "Sem alterações significativas.",
+};
+
+export function fillTemplatePlaceholders(
+  text: string,
+  normalByToken: Map<string, string>,
+  lang: OutputLanguage,
+): string {
+  if (!text || text.indexOf("{") === -1) return text;
+  const fallback = GENERIC_NORMAL[lang] || GENERIC_NORMAL.en;
+
+  // "Label: {token}"  (the whole value is a bare placeholder)
+  let result = text.replace(
+    /^([^\n:]+):[ \t]*\{([^{}\n]+)\}[ \t]*$/gm,
+    (_m, label: string, token: string) => {
+      const phrase = normalByToken.get(token.trim().toLowerCase());
+      return `${label}: ${phrase || fallback}`;
+    },
+  );
+
+  // Any remaining stray placeholder token anywhere → remove it.
+  result = result.replace(/\{[^{}\n]+\}/g, "").replace(/[ \t]+$/gm, "");
+
+  return result;
+}
+
 export function enforceOutputLanguage(text: string, lang: OutputLanguage): string {
   if (lang === "en" || !text) return text;
 

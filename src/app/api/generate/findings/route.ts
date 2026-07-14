@@ -10,7 +10,7 @@ import { logAICost } from "@/lib/log-ai-cost";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
 import { getDefaultsForModality, type NormalityLang } from "@/lib/normality-defaults";
-import { translateSectionLabel, translateTemplate, enforceOutputLanguage, enforcePeriodSeparation } from "@/lib/section-translate";
+import { translateSectionLabel, translateTemplate, enforceOutputLanguage, enforcePeriodSeparation, fillTemplatePlaceholders } from "@/lib/section-translate";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import { logPiiStrip } from "@/lib/pii-log";
@@ -84,30 +84,40 @@ export async function POST(req: NextRequest) {
     const outLang = safeConfig.output_language as OutputLanguage;
 
     let preferredNormalPhrases: PreferredNormalPhrase[] | undefined;
-    if (safeConfig.style_learning_enabled) {
+    // Maps the English placeholder token (e.g. "trachea and bronchi") to its
+    // normality phrase, so any unfilled "{token}" left by the model can be
+    // repaired post-generation. Built even when style learning is off.
+    const normalByToken = new Map<string, string>();
+    try {
+      const mod = modality || "CT";
+      const normalityLang: NormalityLang = outLang === "es" ? "es" : "en";
+      const defaults = getDefaultsForModality(mod, normalityLang);
+      const defaultKeys = new Set(defaults.map((d) => d.section_label));
+
+      let overrides: { section_label: string; phrase: string }[] = [];
       try {
-        const mod = modality || "CT";
-        const normalityLang: NormalityLang = outLang === "es" ? "es" : "en";
-        const defaults = getDefaultsForModality(mod, normalityLang);
-        const defaultKeys = new Set(defaults.map((d) => d.section_label));
+        const { data } = await supabase
+          .from("normality_phrases")
+          .select("section_label, phrase")
+          .eq("user_id", user.id)
+          .eq("modality", mod);
+        overrides = data || [];
+      } catch { /* table may not exist */ }
 
-        let overrides: { section_label: string; phrase: string }[] = [];
-        try {
-          const { data } = await supabase
-            .from("normality_phrases")
-            .select("section_label, phrase")
-            .eq("user_id", user.id)
-            .eq("modality", mod);
-          overrides = data || [];
-        } catch { /* table may not exist */ }
+      const overrideMap = new Map(overrides.map((o) => [o.section_label, o.phrase]));
 
-        const overrideMap = new Map(overrides.map((o) => [o.section_label, o.phrase]));
+      for (const d of defaults) {
+        normalByToken.set(d.section_label.toLowerCase(), overrideMap.get(d.section_label) ?? d.phrase);
+      }
+      for (const o of overrides) {
+        normalByToken.set(o.section_label.toLowerCase(), o.phrase);
+      }
 
+      if (safeConfig.style_learning_enabled) {
         preferredNormalPhrases = defaults.map((d) => ({
           label: translateSectionLabel(d.section_label, outLang),
           phrase: overrideMap.get(d.section_label) ?? d.phrase,
         }));
-
         for (const o of overrides) {
           if (!defaultKeys.has(o.section_label)) {
             preferredNormalPhrases.push({
@@ -116,8 +126,8 @@ export async function POST(req: NextRequest) {
             });
           }
         }
-      } catch { /* ignore */ }
-    }
+      }
+    } catch { /* ignore */ }
 
     const translatedTemplate = translateTemplate(template, outLang);
 
@@ -149,8 +159,13 @@ export async function POST(req: NextRequest) {
       logAICost({ userId: user.id, action: "generate_findings", provider: comboUsage.validator.provider, model: comboUsage.validator.model, inputTokens: comboUsage.validator.usage.inputTokens, outputTokens: comboUsage.validator.usage.outputTokens });
 
       // Safety net: translate any English section label that slipped through
-      // the combo mapper, so a non-English report never shows English headers.
-      const comboFinal = outLang !== "en" ? enforceOutputLanguage(comboText, outLang) : comboText;
+      // the combo mapper, then repair any unfilled "{placeholder}" token so a
+      // report never shows raw template tokens.
+      const comboFinal = fillTemplatePlaceholders(
+        outLang !== "en" ? enforceOutputLanguage(comboText, outLang) : comboText,
+        normalByToken,
+        outLang,
+      );
 
       const encoder = new TextEncoder();
       const body = new ReadableStream({
@@ -226,14 +241,16 @@ export async function POST(req: NextRequest) {
             if (lastNewline !== -1) {
               const ready = buffer.slice(0, lastNewline + 1);
               buffer = buffer.slice(lastNewline + 1);
-              const processed = needsEnforce ? enforceOutputLanguage(ready, outLang) : enforcePeriodSeparation(ready);
+              const enforced = needsEnforce ? enforceOutputLanguage(ready, outLang) : enforcePeriodSeparation(ready);
+              const processed = fillTemplatePlaceholders(enforced, normalByToken, outLang);
               controller.enqueue(encoder.encode(processed));
             }
           }
 
           if (buffer) {
             buffer += decoder.decode();
-            const processed = needsEnforce ? enforceOutputLanguage(buffer, outLang) : enforcePeriodSeparation(buffer);
+            const enforced = needsEnforce ? enforceOutputLanguage(buffer, outLang) : enforcePeriodSeparation(buffer);
+            const processed = fillTemplatePlaceholders(enforced, normalByToken, outLang);
             controller.enqueue(encoder.encode(processed));
           }
         } finally {

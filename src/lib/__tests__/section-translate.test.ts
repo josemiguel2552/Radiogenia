@@ -6,6 +6,7 @@ import {
   translateTemplate,
   translateLabelInLine,
   hasSectionTranslation,
+  fillTemplatePlaceholders,
 } from "../section-translate";
 import { DEFAULT_TEMPLATES } from "../templates";
 
@@ -54,6 +55,47 @@ describe("enforcePeriodSeparation", () => {
     const input = "Hígado: Normal; sin lesiones.\nBazo: Homogéneo; tamaño normal.";
     const result = enforcePeriodSeparation(input);
     expect(result).toBe("Hígado: Normal. sin lesiones.\nBazo: Homogéneo. tamaño normal.");
+  });
+});
+
+describe("fillTemplatePlaceholders", () => {
+  const map = new Map<string, string>([
+    ["trachea and bronchi", "Trachea and main bronchi are patent."],
+    ["esophagus", "Esophagus without wall thickening."],
+  ]);
+
+  it("fills an unfilled placeholder with its normality phrase", () => {
+    const input = "Trachea and bronchi: {trachea and bronchi}\nEsophagus: {esophagus}";
+    const out = fillTemplatePlaceholders(input, map, "en");
+    expect(out).toContain("Trachea and bronchi: Trachea and main bronchi are patent.");
+    expect(out).toContain("Esophagus: Esophagus without wall thickening.");
+    expect(out).not.toContain("{");
+  });
+
+  it("uses a generic normal fallback when no phrase is known", () => {
+    const input = "Bone structures: {bone structures}";
+    const out = fillTemplatePlaceholders(input, map, "en");
+    expect(out).toBe("Bone structures: No significant abnormality.");
+    expect(out).not.toContain("{");
+  });
+
+  it("uses the language-specific fallback", () => {
+    expect(fillTemplatePlaceholders("Estructuras óseas: {bone structures}", map, "es"))
+      .toBe("Estructuras óseas: Sin alteraciones significativas.");
+    expect(fillTemplatePlaceholders("Estruturas ósseas: {bone structures}", map, "pt"))
+      .toBe("Estruturas ósseas: Sem alterações significativas.");
+  });
+
+  it("strips any stray placeholder token and leaves real content untouched", () => {
+    const input = "Lung parenchyma: No consolidation. No nodules.\nDiaphragm: {diaphragm}";
+    const out = fillTemplatePlaceholders(input, map, "en");
+    expect(out).toContain("Lung parenchyma: No consolidation. No nodules.");
+    expect(out).not.toContain("{diaphragm}");
+  });
+
+  it("is a no-op when there are no placeholders", () => {
+    const input = "Lung parenchyma: Clear lungs.";
+    expect(fillTemplatePlaceholders(input, map, "en")).toBe(input);
   });
 });
 
