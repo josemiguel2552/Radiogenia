@@ -14,18 +14,16 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  Building2, MessageSquare, DollarSign, Megaphone, FlaskConical, Sparkles, ShieldAlert, Plus,
+  MessageSquare, DollarSign, FlaskConical, Sparkles, ShieldAlert, Plus,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
 import { useT } from "@/lib/i18n";
 import { Logo } from "@/components/ui/logo";
-import { AdminOrganizationsTab } from "@/components/admin/admin-organizations-tab";
 import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
-import { AdminMarketingTab } from "@/components/admin/admin-marketing-tab";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 import { AdminEngagementTab } from "@/components/admin/admin-engagement-tab";
 import { AdminManualDownload } from "@/components/admin/admin-manual-download";
@@ -103,7 +101,7 @@ interface Stats {
   modalityCounts: Record<string, number>;
 }
 
-type Tab = "overview" | "users" | "ai" | "plans" | "orgs" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "marketing" | "pilot";
+type Tab = "overview" | "users" | "ai" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "pilot";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -700,15 +698,12 @@ export default function AdminPage() {
     { key: "overview", label: t("admin.tab_overview"), icon: <BarChart3 className="h-4 w-4" /> },
     { key: "users", label: t("admin.tab_users"), icon: <Users className="h-4 w-4" /> },
     { key: "ai", label: t("admin.tab_ai_config"), icon: <Plug className="h-4 w-4" /> },
-    { key: "plans", label: t("admin.tab_plans"), icon: <CreditCard className="h-4 w-4" /> },
-    { key: "orgs", label: t("admin.tab_hospitals"), icon: <Building2 className="h-4 w-4" /> },
     { key: "residents", label: t("admin.tab_residents"), icon: <GraduationCap className="h-4 w-4" /> },
     { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-4 w-4" /> },
     { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
     { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
     { key: "engagement", label: t("admin.tab_engagement"), icon: <TrendingUp className="h-4 w-4" /> },
     { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
-    { key: "marketing", label: "Marketing", icon: <Megaphone className="h-4 w-4" /> },
     { key: "pilot", label: t("admin.tab_pilot"), icon: <FlaskConical className="h-4 w-4" /> },
   ];
 
@@ -1802,82 +1797,6 @@ export default function AdminPage() {
         )}
 
         {/* ═══ PLANS ═══ */}
-        {tab === "plans" && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              {(["free", "starter", "professional"] as const).map((key) => {
-                const plan = PLANS[key];
-                const count = stats?.planCounts?.[key] ?? 0;
-                const revenue = key === "free" ? 0 : count * plan.price;
-                return (
-                  <Card key={key} className={plan.highlight ? "ring-2 ring-blue-500/30" : ""}>
-                    <CardContent className="p-5 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{plan.label}</h3>
-                        <Badge variant="secondary" className="text-xs">{count} {t("admin.users_count")}</Badge>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        {plan.price === 0 ? (
-                          <span className="text-2xl font-bold text-gray-900 dark:text-white">{t("admin.free")}</span>
-                        ) : (
-                          <>
-                            <span className="text-2xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
-                            <span className="text-xs text-gray-500">/{t("admin.month")}</span>
-                          </>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <p>{plan.reports} {t("admin.reports_per_month")}</p>
-                        <p>~{plan.tokensPerReport.toLocaleString()} {t("admin.tokens_per_report")}</p>
-                        <p>{t("admin.cost_per_report")}: ~$0.005</p>
-                      </div>
-                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-500">{t("admin.revenue")}</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">${revenue.toFixed(2)}/mo</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs mt-1">
-                          <span className="text-gray-500">{t("admin.ai_cost")}</span>
-                          <span className="text-gray-600 dark:text-gray-400">~${(count * plan.reports * 0.005).toFixed(2)}/mo max</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            <Card>
-              <CardContent className="p-5">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t("admin.token_economics")}</h3>
-                <div className="grid md:grid-cols-3 gap-4 text-xs text-gray-600 dark:text-gray-400">
-                  <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.per_report")}</p>
-                    <p>~8,000 {t("admin.input_tokens")}</p>
-                    <p>~2,000 {t("admin.output_tokens")}</p>
-                    <p>{t("admin.total")}: ~10,000 tokens</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.deepseek_pricing")}</p>
-                    <p>{t("admin.input")}: $0.27/M tokens</p>
-                    <p>{t("admin.output")}: $1.10/M tokens</p>
-                    <p>{t("admin.per_report")}: ~$0.004-0.005</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white">{t("admin.margins")}</p>
-                    <p>Free: {t("admin.marketing_cost")} (~$0.03/{t("admin.user_mo")})</p>
-                    <p>Starter: ~87% {t("admin.margin")}</p>
-                    <p>Professional: ~75% {t("admin.margin")}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* ═══ HOSPITALS ═══ */}
-        {tab === "orgs" && <AdminOrganizationsTab />}
-
         {/* ═══ RESIDENTS ═══ */}
         {tab === "residents" && <AdminResidentsTab />}
 
@@ -1890,8 +1809,6 @@ export default function AdminPage() {
         {/* ═══ COSTS ═══ */}
         {tab === "costs" && <AdminCostsTab />}
 
-        {/* ═══ MARKETING ═══ */}
-        {tab === "marketing" && <AdminMarketingTab />}
         {tab === "pilot" && <AdminPilotTab />}
 
         {/* ═══ SUBSCRIBER ENGAGEMENT ═══ */}
