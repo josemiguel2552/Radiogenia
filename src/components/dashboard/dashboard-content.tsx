@@ -2291,13 +2291,16 @@ export function DashboardContent() {
                       <button type="button" onClick={() => rateDictation("down")} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" aria-label="bad">
                         <ThumbsDown className="h-3.5 w-3.5" />
                       </button>
-                      <span className="text-[10px] italic text-gray-400 dark:text-gray-500">
-                        {t("dash.dict_fb_hint")}
-                      </span>
                     </>
                   )}
                 </div>
               )}
+              <div className="flex items-start gap-1.5 px-2.5 py-1.5 rounded-md bg-brand-soft border border-brand-soft">
+                <Sparkles className="h-3.5 w-3.5 text-brand shrink-0 mt-0.5" />
+                <span className="text-[11px] leading-snug text-brand font-medium">
+                  {t("dash.dict_fb_hint")}
+                </span>
+              </div>
               {piiWarningBanner}
               <div className="flex items-center gap-1.5">
                 <Select value={reportMode} onValueChange={(v) => setReportMode(v as ReportMode)}>
