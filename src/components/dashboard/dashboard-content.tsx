@@ -50,6 +50,7 @@ import { AnatomyLoader } from "./anatomy-loader";
 // FloatingDictation removed — dictation is inline only
 import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
 import { detectPii, stripPii, type PiiMatch } from "@/lib/pii-detect";
+import { addRecentReport, LOAD_RECENT_EVENT, type RecentReport } from "@/lib/recent-reports";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { RecommendationPanel } from "./recommendation-panel";
@@ -175,6 +176,9 @@ export function DashboardContent() {
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
+  // When a report is restored from the browser-only recent list, its study
+  // title is shown as-is (there's no template selected to derive it from).
+  const [restoredTitle, setRestoredTitle] = useState<string | null>(null);
   // Report output language is unified with the platform UI language.
   const outputLanguage = uiPrefs.uiLanguage;
   const handleGenerateRef = useRef<(mode?: ReportMode, langOverride?: string) => void>(() => {});
@@ -182,6 +186,9 @@ export function DashboardContent() {
   // Post-generation auto-save (called via ref so it sees fresh state) and
   // abandonment tracking (generated but never copied when leaving the page).
   const saveReportQuietlyRef = useRef<() => Promise<void>>(async () => {});
+  // Snapshot the finished report into the browser-only recent list (ref so it
+  // reads fresh state at completion time).
+  const pushRecentRef = useRef<() => void>(() => {});
   const abandonRef = useRef({ generated: false, copied: false });
   useEffect(() => {
     const onPageHide = () => {
@@ -861,6 +868,7 @@ export function DashboardContent() {
     generateStartRef.current = Date.now();
     setGenerationDurationMs(null);
     setLastSavedReportId(null);
+    setRestoredTitle(null);
     correctionLoggedRef.current = false;
     setErrorReported(false);
     setLoadingFindings(true);
@@ -1083,6 +1091,8 @@ export function DashboardContent() {
     if (!signal.aborted) {
       abandonRef.current = { generated: true, copied: false };
       window.setTimeout(() => { saveReportQuietlyRef.current().catch(() => {}); }, 1000);
+      // Snapshot into the browser-only recent list once state has settled.
+      window.setTimeout(() => { pushRecentRef.current(); }, 1200);
     }
 
     // One-time (first report ever): point the user to the classify tool while
@@ -1497,6 +1507,7 @@ export function DashboardContent() {
   };
 
   function getStudyTitle(): string {
+    if (restoredTitle) return restoredTitle;
     if (!selectedTemplate) return "";
     let title = tplName(selectedTemplate.name);
     const cl = CONTRAST_LABELS[outputLanguage] || CONTRAST_LABELS.es;
@@ -1504,6 +1515,27 @@ export function DashboardContent() {
     else if (contrastOption === "sin_contraste") title += " " + cl.without;
     return title.toUpperCase();
   }
+
+  // Keep the "save to recent" snapshot pointing at the freshest report state.
+  pushRecentRef.current = () => {
+    if (!findings.trim()) return;
+    addRecentReport({ title: getStudyTitle(), findings, conclusion });
+  };
+
+  // Restore a report picked from the browser-only recent list into the workspace.
+  useEffect(() => {
+    function onLoadRecent(e: Event) {
+      const r = (e as CustomEvent<RecentReport>).detail;
+      if (!r) return;
+      setRestoredTitle(r.title || null);
+      setFindings(r.findings);
+      setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: r.conclusion }));
+      reportDirtyRef.current = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    window.addEventListener(LOAD_RECENT_EVENT, onLoadRecent as EventListener);
+    return () => window.removeEventListener(LOAD_RECENT_EVENT, onLoadRecent as EventListener);
+  }, [conclusionStyle]);
 
   const copyFormattedRef = useRef<(mode: "findings" | "findings_conclusion" | "full") => void>(null as unknown as (mode: "findings" | "findings_conclusion" | "full") => void);
 
