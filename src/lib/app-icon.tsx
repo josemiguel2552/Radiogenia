@@ -1,6 +1,13 @@
 import { ImageResponse } from "next/og";
 
-/** Renders the "R" gradient mark (same design as src/app/icon.tsx) at any size. */
+/**
+ * Renders the Radiogen.AI app icon at any size.
+ *
+ * Uses a real bold "R" glyph rather than a stroked SVG <path>: the next/og
+ * rendering engine (Satori) renders text crisply but mangles stroked vector
+ * paths (they came out as a white blob), which is why the favicon looked
+ * broken. Background gradient + accent dot mirror the in-app Logo mark.
+ */
 export function renderAppIcon(size: number) {
   const scale = size / 32;
   return new ImageResponse(
@@ -17,27 +24,24 @@ export function renderAppIcon(size: number) {
           position: "relative",
         }}
       >
-        <svg
-          width={22 * scale}
-          height={22 * scale}
-          viewBox="0 0 22 22"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          style={{
+            display: "flex",
+            color: "white",
+            fontSize: 21 * scale,
+            fontWeight: 800,
+            fontFamily: "sans-serif",
+            lineHeight: 1,
+            letterSpacing: -0.5 * scale,
+          }}
         >
-          <path
-            d="M4 3h7a5 5 0 0 1 0 10h-3l5 6"
-            stroke="white"
-            strokeWidth={2.6 * scale}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        </svg>
+          R
+        </div>
         <div
           style={{
             position: "absolute",
-            bottom: 4 * scale,
-            right: 4 * scale,
+            bottom: 5 * scale,
+            right: 5 * scale,
             width: 5 * scale,
             height: 5 * scale,
             borderRadius: "50%",
