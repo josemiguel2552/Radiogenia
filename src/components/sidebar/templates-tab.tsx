@@ -1165,17 +1165,30 @@ export function TemplatesTab() {
         {!showNormality && (
           <div className="px-3 pb-2.5 -mt-1">
             <p className="text-[10px] text-gray-400 dark:text-gray-500">
-              {normUiLang === "en"
-                ? "Text used when a section has no abnormal findings"
-                : "Texto que se usa cuando una sección no tiene hallazgos anormales"}
+              {t("norm.subtitle")}
             </p>
           </div>
         )}
 
         {showNormality && (
           <div className="border-t border-gray-100 dark:border-gray-800">
+            {/* Self-explaining intro with a concrete example */}
+            <div className="mx-3 mt-3 mb-1 rounded-lg bg-violet-50/70 dark:bg-violet-950/25 border border-violet-100 dark:border-violet-900/40 p-3">
+              <p className="text-[11px] leading-relaxed text-gray-600 dark:text-gray-300">
+                {t("norm.explainer")}
+              </p>
+              <div className="mt-2 flex items-start gap-1.5">
+                <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 shrink-0 mt-px">{t("norm.example_intro")}</span>
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {t("norm.example_body")}{" "}
+                  <span className="italic text-gray-700 dark:text-gray-200">&ldquo;{t("norm.example_phrase")}&rdquo;</span>
+                </span>
+              </div>
+            </div>
+
             {/* Modality pills */}
-            <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-2 overflow-x-auto">
+            <p className="px-3 pt-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">{t("norm.pick_modality")}</p>
+            <div className="flex items-center gap-1.5 px-3 pt-1.5 pb-2 overflow-x-auto">
               {MODALITIES.filter((m) => m !== "Procedures").map((m) => {
                 const abbrev = MODALITY_CARDS[m]?.abbrev || m.slice(0, 2);
                 const isActive = normSelectedModality === m;
@@ -1264,8 +1277,11 @@ function NormPhraseRowComp({ row, saving, onSave, onReset, translateLabel }: {
 
   if (editing) {
     return (
-      <div className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 space-y-1.5 bg-gray-50 dark:bg-gray-800">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{translateLabel(row.section_label)}</span>
+      <div className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-600 space-y-1.5 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-semibold text-gray-800 dark:text-gray-200">{translateLabel(row.section_label)}</span>
+          <span className="text-[9px] text-gray-400 dark:text-gray-500">— {t("norm.edit_hint")}</span>
+        </div>
         <textarea
           ref={inputRef}
           value={draft}
@@ -1290,22 +1306,33 @@ function NormPhraseRowComp({ row, saving, onSave, onReset, translateLabel }: {
   }
 
   return (
-    <div className={`flex items-start gap-2 p-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-violet-500" : ""}`}>
+    <div className={`group flex items-start gap-2 p-2.5 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.is_customized ? "border-l-2 border-l-violet-500 bg-violet-50/30 dark:bg-violet-950/15" : ""}`}>
       <div className="flex-1 min-w-0">
-        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 block">{translateLabel(row.section_label)}</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">{row.phrase}</span>
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-[11px] font-semibold text-gray-800 dark:text-gray-200">{translateLabel(row.section_label)}</span>
+          <span className={`text-[8px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
+            row.is_customized
+              ? "bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-300"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
+          }`}>
+            {row.is_customized ? t("norm.badge_custom") : t("norm.badge_default")}
+          </span>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed italic">
+          &ldquo;{row.phrase}&rdquo;
+        </p>
       </div>
       <div className="flex items-center gap-0.5 flex-shrink-0 pt-0.5">
         {saving ? (
           <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
         ) : (
           <>
-            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-brand" onClick={() => setEditing(true)} title={t("edit")}>
-              <Pencil className="h-2.5 w-2.5" />
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 dark:text-gray-500 hover:text-brand" onClick={() => setEditing(true)} title={t("norm.edit_hint")}>
+              <Pencil className="h-3 w-3" />
             </Button>
             {row.is_customized && (
-              <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-amber-500" onClick={onReset} title={t("reset")}>
-                <RotateCcw className="h-2.5 w-2.5" />
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 dark:text-gray-500 hover:text-amber-500" onClick={onReset} title={t("reset")}>
+                <RotateCcw className="h-3 w-3" />
               </Button>
             )}
           </>
