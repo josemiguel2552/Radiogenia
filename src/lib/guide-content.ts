@@ -578,7 +578,7 @@ Para mais detalhes, consulte o aviso legal e a política de privacidade completa
 **La generación tarda más de lo normal**
 - Comprueba tu conexión a internet.
 - Los dictados muy largos tardan proporcionalmente más.
-- Si persiste, escríbenos a soporte@radiogen.ai.
+- Si persiste, escríbenos a info@radiogen.ai.
 
 **El correo de verificación no llega**
 - Revisa la carpeta de spam/correo no deseado.
@@ -594,7 +594,7 @@ Para mais detalhes, consulte o aviso legal e a política de privacidade completa
 **Generation takes longer than usual**
 - Check your internet connection.
 - Very long dictations take proportionally longer.
-- If it persists, email us at soporte@radiogen.ai.
+- If it persists, email us at info@radiogen.ai.
 
 **The verification email isn't arriving**
 - Check your spam folder.
@@ -610,7 +610,7 @@ Para mais detalhes, consulte o aviso legal e a política de privacidade completa
 **A geração demora mais que o normal**
 - Verifique sua conexão à internet.
 - Ditados muito longos demoram proporcionalmente mais.
-- Se persistir, escreva para soporte@radiogen.ai.
+- Se persistir, escreva para info@radiogen.ai.
 
 **O e-mail de verificação não chega**
 - Verifique a pasta de spam.

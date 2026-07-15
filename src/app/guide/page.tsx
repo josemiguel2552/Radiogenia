@@ -198,11 +198,11 @@ export default function GuidePage() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 w-40 shrink-0">{contact.support}</span>
-                <a href="mailto:soporte@radiogen.ai" className="text-blue-400 hover:text-blue-300">soporte@radiogen.ai</a>
+                <a href="mailto:info@radiogen.ai" className="text-blue-400 hover:text-blue-300">info@radiogen.ai</a>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 w-40 shrink-0">{contact.general}</span>
-                <a href="mailto:hola@radiogen.ai" className="text-blue-400 hover:text-blue-300">hola@radiogen.ai</a>
+                <a href="mailto:info@radiogen.ai" className="text-blue-400 hover:text-blue-300">info@radiogen.ai</a>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 w-40 shrink-0">{contact.site}</span>
