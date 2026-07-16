@@ -20,12 +20,18 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data, error: verifyError } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: type as "signup" | "email" | "magiclink",
+      type: type as "signup" | "email" | "magiclink" | "recovery",
     });
     if (verifyError) {
       return NextResponse.redirect(
         `${origin}/auth/login?error=${encodeURIComponent(verifyError.message)}`
       );
+    }
+
+    // Password recovery: session is now established; send the user to set a new
+    // password (no email_verified side effects).
+    if (type === "recovery") {
+      return NextResponse.redirect(`${origin}/auth/reset-password`);
     }
 
     if (data.user) {

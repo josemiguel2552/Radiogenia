@@ -55,7 +55,11 @@ export default function ForgotPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim(),
-          redirectTo: `${window.location.origin}/auth/reset-password`,
+          // Route through /auth/callback so the recovery code is exchanged for a
+          // session before the user lands on the reset form (the reset page
+          // itself does not exchange the code). Callback then forwards to
+          // /auth/reset-password.
+          redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
         }),
       });
 
