@@ -1517,6 +1517,33 @@ function LiverIncidentalSheet() {
   );
 }
 
+function AASTLiverSheet() {
+  const t = useT();
+  return (
+    <CheatSheet
+      title={t("calc.aast_liver_title")}
+      source="AAST-OIS 2018 (Kozar RA et al., J Trauma Acute Care Surg 2018;85(6):1119-1122)"
+    >
+      <SheetTable
+        headers={[t("calc.aast_grade"), t("calc.aast_hematoma"), t("calc.aast_laceration"), t("calc.aast_vascular")]}
+        rows={[
+          ["I", t("calc.aast_i_hem"), t("calc.aast_i_lac"), "—"],
+          ["II", t("calc.aast_ii_hem"), t("calc.aast_ii_lac"), "—"],
+          ["III", t("calc.aast_iii_hem"), t("calc.aast_iii_lac"), t("calc.aast_iii_vasc")],
+          ["IV", "—", t("calc.aast_iv_lac"), t("calc.aast_iv_vasc")],
+          ["V", "—", t("calc.aast_v_lac"), t("calc.aast_v_vasc")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed mt-1">{t("calc.aast_note")}</p>
+      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-2">{t("calc.aast_def_title")}</p>
+      <ul className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed space-y-1 list-disc pl-4">
+        <li>{t("calc.aast_def_vascular")}</li>
+        <li>{t("calc.aast_def_bleeding")}</li>
+      </ul>
+    </CheatSheet>
+  );
+}
+
 function AdrenalIncidentalSheet() {
   const t = useT();
   return (
@@ -6340,6 +6367,7 @@ export function CalculatorsTab() {
     {
       key: "abdomen", label: t("calc.section_abdomen"), icon: "🩻",
       sheets: [
+        { id: "aast_liver", component: <AASTLiverSheet />, label: t("calc.aast_liver_title") },
         { id: "adrenal_inc", component: <AdrenalIncidentalSheet />, label: t("calc.adrenal_incidental_title") },
         { id: "diverticulitis", component: <DiverticulitisSheet />, label: t("calc.divert_title") },
         { id: "gb_polyp", component: <GallbladderPolypSheet />, label: t("calc.gb_polyp_title") },
