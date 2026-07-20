@@ -100,6 +100,7 @@ interface Stats {
   totalDictationMinutes: number;
   reportsPerDay: Record<string, number>;
   modalityCounts: Record<string, number>;
+  dictationFeedback?: { up: number; down: number };
 }
 
 type Tab = "overview" | "users" | "ai" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "pilot";
@@ -248,6 +249,7 @@ export default function AdminPage() {
   const [ftDataPreview, setFtDataPreview] = useState<FtPreview | null>(null);
   const [ftDataLoading, setFtDataLoading] = useState(false);
   const [ftDataModality, setFtDataModality] = useState<string>("all");
+  const [ftCorrectionsOnly, setFtCorrectionsOnly] = useState(false);
   const [ftDataError, setFtDataError] = useState<string | null>(null);
   const [ftExporting, setFtExporting] = useState(false);
   const [ftGenerating, setFtGenerating] = useState(false);
@@ -597,6 +599,7 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams({ preview: "true" });
       if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      if (ftCorrectionsOnly) params.set("corrections_only", "true");
       const res = await fetch(`/api/admin/training-data/openai?${params}`);
       const d = await res.json();
       if (!res.ok) { setFtDataError(d.error); return; }
@@ -613,6 +616,7 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams();
       if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      if (ftCorrectionsOnly) params.set("corrections_only", "true");
       const res = await fetch(`/api/admin/training-data/openai?${params}`);
       if (res.ok) {
         const blob = await res.blob();
@@ -634,6 +638,7 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams();
       if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      if (ftCorrectionsOnly) params.set("corrections_only", "true");
       const res = await fetch(`/api/admin/training-data/openai?${params}`);
       if (!res.ok) { setFtError("Failed to generate training data"); return; }
       const blob = await res.blob();
@@ -660,6 +665,7 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams();
       if (ftDataModality !== "all") params.set("modality", ftDataModality);
+      if (ftCorrectionsOnly) params.set("corrections_only", "true");
       const res = await fetch(`/api/admin/training-data/openai?${params}`);
       if (!res.ok) { setFtDataError("Failed to fetch training data"); setFtAugmenting(false); return; }
       const jsonlText = await res.text();
@@ -1872,15 +1878,10 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* Voice dictation satisfaction: 👍 vs 👎 from ui_dictation_feedback */}
+            {/* Voice dictation satisfaction: 👍 vs 👎, counted server-side over all logs */}
             {(() => {
-              let up = 0, down = 0;
-              for (const l of auditLogs) {
-                if (l.action !== "ui_dictation_feedback") continue;
-                const v = (l.metadata as Record<string, unknown>)?.verdict;
-                if (v === "up") up += 1;
-                else if (v === "down") down += 1;
-              }
+              const up = stats?.dictationFeedback?.up ?? 0;
+              const down = stats?.dictationFeedback?.down ?? 0;
               const total = up + down;
               const satisfaction = total > 0 ? Math.round((up / total) * 100) : 0;
               return (
@@ -2204,6 +2205,18 @@ export default function AdminPage() {
                       <SelectItem value="Mammography">Mammography</SelectItem>
                     </SelectContent>
                   </Select>
+                  <button
+                    type="button"
+                    onClick={() => setFtCorrectionsOnly((v) => !v)}
+                    className={`h-7 px-2.5 text-xs rounded-md border transition-colors ${
+                      ftCorrectionsOnly
+                        ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 font-medium"
+                        : "border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                    title={t("admin.ft_corrections_only_hint")}
+                  >
+                    {t("admin.ft_corrections_only")}
+                  </button>
                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadFtDataPreview} disabled={ftDataLoading}>
                     {ftDataLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                     {t("admin.load")}

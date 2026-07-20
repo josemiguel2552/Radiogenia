@@ -38,31 +38,51 @@ interface AuditRow {
 
 // ── Data sources ──
 
+// Supabase caps a single response at ~1000 rows, so fetch in pages to get the
+// FULL history rather than only the most recent batch.
+const PAGE_SIZE = 1000;
+const MAX_ROWS = 50000;
+
+function isModified(r: ReportRow): boolean {
+  const f0 = (r.initial_findings_text || "").trim();
+  const c0 = (r.initial_conclusion_text || "").trim();
+  const f1 = (r.findings_text || "").trim();
+  const c1 = (r.conclusion_text || "").trim();
+  // A report counts as "modified" when the radiologist edited the AI output.
+  return (!!f0 && f0 !== f1) || (!!c0 && c0 !== c1);
+}
+
 async function fromReportsTable(
   supabase: ReturnType<typeof createServiceClient>,
   modality: string | null,
-  limit: number,
+  correctionsOnly: boolean,
 ): Promise<{ examples: TrainingExample[]; modalities: string[] }> {
-  let query = supabase
-    .from("reports")
-    .select(
-      "id, study_type, modality, clinical_context, " +
-      "findings_text, conclusion_text, " +
-      "initial_findings_text, initial_conclusion_text"
-    )
-    .not("conclusion_text", "is", null)
-    .not("findings_text", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const rows: ReportRow[] = [];
+  for (let from = 0; from < MAX_ROWS; from += PAGE_SIZE) {
+    let query = supabase
+      .from("reports")
+      .select(
+        "id, study_type, modality, clinical_context, " +
+        "findings_text, conclusion_text, " +
+        "initial_findings_text, initial_conclusion_text"
+      )
+      .not("conclusion_text", "is", null)
+      .not("findings_text", "is", null)
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
 
-  if (modality && modality !== "all") query = query.eq("modality", modality);
+    if (modality && modality !== "all") query = query.eq("modality", modality);
 
-  const { data, error } = await query;
-  if (error) return { examples: [], modalities: [] };
+    const { data, error } = await query;
+    if (error) return { examples: [], modalities: [] };
+    const batch = (data || []) as unknown as ReportRow[];
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) break; // last page reached
+  }
 
-  const rows = (data || []) as unknown as ReportRow[];
+  const filtered = correctionsOnly ? rows.filter(isModified) : rows;
 
-  const examples: TrainingExample[] = rows
+  const examples: TrainingExample[] = filtered
     .filter((r) => {
       const findings = r.findings_text?.trim();
       const conclusion = r.conclusion_text?.trim();
@@ -86,27 +106,28 @@ async function fromReportsTable(
       };
     });
 
-  const modalities = [...new Set(rows.map((r) => r.modality))];
+  const modalities = [...new Set(filtered.map((r) => r.modality))];
   return { examples, modalities };
 }
 
 async function fromAuditLogs(
   supabase: ReturnType<typeof createServiceClient>,
   modality: string | null,
-  limit: number,
 ): Promise<{ examples: TrainingExample[]; modalities: string[] }> {
-  const query = supabase
-    .from("audit_logs")
-    .select("report_id, metadata")
-    .eq("action", "correction_logged")
-    .eq("had_corrections", true)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  const { data, error } = await query;
-  if (error) return { examples: [], modalities: [] };
-
-  const rows = (data || []) as unknown as AuditRow[];
+  const rows: AuditRow[] = [];
+  for (let from = 0; from < MAX_ROWS; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("audit_logs")
+      .select("report_id, metadata")
+      .eq("action", "correction_logged")
+      .eq("had_corrections", true)
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) return { examples: [], modalities: [] };
+    const batch = (data || []) as unknown as AuditRow[];
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+  }
   const modalities = new Set<string>();
   const examples: TrainingExample[] = [];
 
@@ -139,7 +160,7 @@ async function fromAuditLogs(
     });
   }
 
-  return { examples: examples.slice(0, limit), modalities: [...modalities] };
+  return { examples, modalities: [...modalities] };
 }
 
 // ── Handler ──
@@ -151,13 +172,13 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const modality = url.searchParams.get("modality");
-    const limit = Math.min(Number(url.searchParams.get("limit")) || 500, 2000);
+    const correctionsOnly = url.searchParams.get("corrections_only") === "true";
     const preview = url.searchParams.get("preview") === "true";
 
-    let { examples, modalities } = await fromReportsTable(supabase, modality, limit);
+    let { examples, modalities } = await fromReportsTable(supabase, modality, correctionsOnly);
 
     if (examples.length === 0) {
-      ({ examples, modalities } = await fromAuditLogs(supabase, modality, limit));
+      ({ examples, modalities } = await fromAuditLogs(supabase, modality));
     }
 
     // Deduplicate by assistant content

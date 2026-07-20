@@ -66,6 +66,18 @@ export async function GET() {
       }
     }
 
+    // Voice dictation satisfaction — counted over ALL audit logs, server-side.
+    let dictationFeedback = { up: 0, down: 0 };
+    try {
+      const [{ count: up }, { count: down }] = await Promise.all([
+        supabase.from("audit_logs").select("id", { count: "exact", head: true })
+          .eq("action", "ui_dictation_feedback").eq("metadata->>verdict", "up"),
+        supabase.from("audit_logs").select("id", { count: "exact", head: true })
+          .eq("action", "ui_dictation_feedback").eq("metadata->>verdict", "down"),
+      ]);
+      dictationFeedback = { up: up || 0, down: down || 0 };
+    } catch { /* audit_logs table may not exist */ }
+
     return NextResponse.json({
       totalUsers,
       totalReports,
@@ -77,6 +89,7 @@ export async function GET() {
       reportsPerDay,
       modalityCounts,
       usersPerDay,
+      dictationFeedback,
     });
   } catch (error) {
     return toErrorResponse(error);
