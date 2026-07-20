@@ -15,6 +15,7 @@ import {
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
   MessageSquare, DollarSign, FlaskConical, Sparkles, ShieldAlert, Plus,
+  ThumbsUp, ThumbsDown,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
@@ -1870,6 +1871,58 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Voice dictation satisfaction: 👍 vs 👎 from ui_dictation_feedback */}
+            {(() => {
+              let up = 0, down = 0;
+              for (const l of auditLogs) {
+                if (l.action !== "ui_dictation_feedback") continue;
+                const v = (l.metadata as Record<string, unknown>)?.verdict;
+                if (v === "up") up += 1;
+                else if (v === "down") down += 1;
+              }
+              const total = up + down;
+              const satisfaction = total > 0 ? Math.round((up / total) * 100) : 0;
+              return (
+                <Card>
+                  <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                    <Mic className="h-4 w-4 text-violet-500" />
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.dict_fb_title")}</h2>
+                    <span className="text-[10px] text-gray-400">{t("admin.dict_fb_hint")}</span>
+                  </div>
+                  <CardContent className="pt-0">
+                    {total === 0 ? (
+                      <p className="text-xs text-gray-400 py-2">{t("admin.dict_fb_none")}</p>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-center">
+                            <p className="text-xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-1.5">
+                              <ThumbsUp className="h-4 w-4" /> {up}
+                            </p>
+                            <p className="text-[10px] text-green-600 dark:text-green-400 mt-0.5">{t("admin.dict_fb_positive")}</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-center">
+                            <p className="text-xl font-bold text-red-700 dark:text-red-300 flex items-center justify-center gap-1.5">
+                              <ThumbsDown className="h-4 w-4" /> {down}
+                            </p>
+                            <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">{t("admin.dict_fb_negative")}</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
+                            <p className="text-xl font-bold text-violet-700 dark:text-violet-300">{satisfaction}%</p>
+                            <p className="text-[10px] text-violet-600 dark:text-violet-400 mt-0.5">{t("admin.dict_fb_satisfaction")}</p>
+                          </div>
+                        </div>
+                        <div className="flex h-2 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+                          <div className="h-full bg-green-400/80" style={{ width: `${satisfaction}%` }} />
+                          <div className="h-full bg-red-400/70" style={{ width: `${100 - satisfaction}%` }} />
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {/* Tool-usage summary: which features users actually touch */}
             <Card>
