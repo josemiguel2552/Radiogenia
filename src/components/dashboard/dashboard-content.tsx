@@ -2294,6 +2294,12 @@ export function DashboardContent() {
                   </div>
                 )}
               </div>
+              {isRecording && (
+                <div className="flex items-center justify-center gap-1.5 rounded-lg bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse mr-1" />
+                  <VoiceWaveform level={audioLevel} />
+                </div>
+              )}
               {dictSelRange && dictSelRange.start !== dictSelRange.end && (
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                   <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
@@ -2894,6 +2900,32 @@ export function DashboardContent() {
 }
 
 /* ────────── Helper components ────────── */
+
+// Voice-reactive waveform shown while recording. Driven purely by the already
+// -computed audioLevel (0–1) from the dictation hook — no extra audio work, no
+// latency, no effect on report generation. The level is curve-boosted so quiet
+// speech still moves the bars, giving the radiologist clear "I'm hearing you".
+const WAVE_BARS = 28;
+function VoiceWaveform({ level }: { level: number }) {
+  const boosted = Math.pow(Math.min(1, Math.max(0, level)), 0.5); // sensitivity
+  return (
+    <div className="flex items-end justify-center gap-[2px] h-6" aria-hidden="true">
+      {Array.from({ length: WAVE_BARS }).map((_, i) => {
+        // Symmetric bell weighting so the centre reacts most, like a real meter.
+        const dist = Math.abs(i - (WAVE_BARS - 1) / 2) / ((WAVE_BARS - 1) / 2);
+        const weight = 0.35 + 0.65 * (1 - dist * dist);
+        const h = 14 + boosted * 86 * weight;
+        return (
+          <span
+            key={i}
+            className="voice-bar w-[2.5px] rounded-full bg-gradient-to-t from-red-500/70 to-red-400"
+            style={{ height: `${h}%`, animationDelay: `${(i % 7) * 0.09}s` }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 function OutputCard({
   title,
