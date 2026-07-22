@@ -27,21 +27,21 @@ export async function GET(req: NextRequest) {
       ? await service.from("profiles").select("id, email, name, subspecialties, avg_reports_month, reports_used_this_month, dictation_seconds_used, billing_period_start").in("id", userIds)
       : { data: [] };
 
-    // Report counts this calendar month, per member.
-    const monthStart = new Date();
-    monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0);
-    const { data: reportRows } = userIds.length > 0
-      ? await service.from("reports").select("user_id, created_at").in("user_id", userIds).gte("created_at", monthStart.toISOString())
-      : { data: [] };
-    const reportCount = new Map<string, number>();
-    for (const r of reportRows || []) reportCount.set(r.user_id, (reportCount.get(r.user_id) || 0) + 1);
-
     const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
+    // Counters renew on the 1st of the calendar month for hospital members.
+    const now = new Date();
+    const isStale = (start: string | null | undefined) => {
+      if (!start) return true;
+      const p = new Date(start);
+      return p.getUTCFullYear() !== now.getUTCFullYear() || p.getUTCMonth() !== now.getUTCMonth();
+    };
 
     const mapped = (data || []).map((m) => {
       const profile = profileMap.get(m.user_id) as Record<string, unknown> | undefined;
       const section = m.org_sections as { name: string } | null;
       const { org_sections: _s, ...rest } = m;
+      const stale = isStale(profile?.billing_period_start as string);
       return {
         ...rest,
         user_email: (profile?.email as string) ?? null,
@@ -49,8 +49,9 @@ export async function GET(req: NextRequest) {
         section_name: section?.name ?? null,
         subspecialties: (profile?.subspecialties as string[]) ?? [],
         avg_reports_month: (profile?.avg_reports_month as number) ?? null,
-        reports_this_month: reportCount.get(m.user_id) || 0,
-        dictation_minutes: Math.round(((profile?.dictation_seconds_used as number) || 0) / 60),
+        // Every generated report (not just saved ones) — the profile counter.
+        reports_this_month: stale ? 0 : ((profile?.reports_used_this_month as number) || 0),
+        dictation_minutes: stale ? 0 : Math.round(((profile?.dictation_seconds_used as number) || 0) / 60),
       };
     });
 
