@@ -24,20 +24,33 @@ export async function GET(req: NextRequest) {
 
     const userIds = (data || []).map((m) => m.user_id as string);
     const { data: profiles } = userIds.length > 0
-      ? await service.from("profiles").select("id, email, name").in("id", userIds)
+      ? await service.from("profiles").select("id, email, name, subspecialties, avg_reports_month, reports_used_this_month, dictation_seconds_used, billing_period_start").in("id", userIds)
       : { data: [] };
+
+    // Report counts this calendar month, per member.
+    const monthStart = new Date();
+    monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0);
+    const { data: reportRows } = userIds.length > 0
+      ? await service.from("reports").select("user_id, created_at").in("user_id", userIds).gte("created_at", monthStart.toISOString())
+      : { data: [] };
+    const reportCount = new Map<string, number>();
+    for (const r of reportRows || []) reportCount.set(r.user_id, (reportCount.get(r.user_id) || 0) + 1);
 
     const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
 
     const mapped = (data || []).map((m) => {
-      const profile = profileMap.get(m.user_id);
+      const profile = profileMap.get(m.user_id) as Record<string, unknown> | undefined;
       const section = m.org_sections as { name: string } | null;
       const { org_sections: _s, ...rest } = m;
       return {
         ...rest,
-        user_email: profile?.email ?? null,
-        user_name: profile?.name ?? null,
+        user_email: (profile?.email as string) ?? null,
+        user_name: (profile?.name as string) ?? null,
         section_name: section?.name ?? null,
+        subspecialties: (profile?.subspecialties as string[]) ?? [],
+        avg_reports_month: (profile?.avg_reports_month as number) ?? null,
+        reports_this_month: reportCount.get(m.user_id) || 0,
+        dictation_minutes: Math.round(((profile?.dictation_seconds_used as number) || 0) / 60),
       };
     });
 

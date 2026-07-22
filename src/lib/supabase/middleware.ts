@@ -46,6 +46,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/health") ||
     request.nextUrl.pathname.startsWith("/api/invite") ||
     request.nextUrl.pathname.startsWith("/api/enterprise-inquiry") ||
+    request.nextUrl.pathname.startsWith("/api/hospital-signup") ||
+    request.nextUrl.pathname.startsWith("/hospital-signup") ||
     request.nextUrl.pathname.startsWith("/invite") ||
     request.nextUrl.pathname.startsWith("/legal") ||
     request.nextUrl.pathname.startsWith("/guide") ||

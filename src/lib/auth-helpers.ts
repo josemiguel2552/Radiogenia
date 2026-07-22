@@ -166,7 +166,9 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   }
 
   if (profile?.org_id) {
-    return { allowed: true, used: profile.reports_used_this_month || 0, limit: 999999, plan: "professional" };
+    // Hospital members: unlimited, counter renews on the 1st of the month.
+    const used = isCalendarMonthStale(profile.billing_period_start) ? 0 : (profile.reports_used_this_month || 0);
+    return { allowed: true, used, limit: 999999, plan: "professional" };
   }
 
   let plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
@@ -227,7 +229,8 @@ export async function checkDictationLimit(userId: string): Promise<{
   }
 
   if (profile?.org_id) {
-    return { allowed: true, usedSeconds: profile.dictation_seconds_used || 0, limitSeconds: 999999 * 60, plan: "professional" };
+    const usedSeconds = isCalendarMonthStale(profile.billing_period_start) ? 0 : (profile.dictation_seconds_used || 0);
+    return { allowed: true, usedSeconds, limitSeconds: 999999 * 60, plan: "professional" };
   }
 
   let plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
@@ -276,17 +279,30 @@ function isBillingPeriodStale(periodStart: string | null): boolean {
   return next.getTime() <= Date.now();
 }
 
+// Hospital (org) members reset their usage counters on a fixed CALENDAR month
+// (renews on the 1st), unlike individual users whose window rolls from their
+// own billing_period_start. The counter is display/metrics only for org
+// members — access is unlimited — but the reset cadence must be the 1st.
+function isCalendarMonthStale(periodStart: string | null): boolean {
+  if (!periodStart) return true;
+  const p = new Date(periodStart);
+  const now = new Date();
+  return p.getUTCFullYear() !== now.getUTCFullYear() || p.getUTCMonth() !== now.getUTCMonth();
+}
+
 export async function incrementReportUsage(userId: string): Promise<void> {
   const service = createServiceClient();
   const { data } = await service
     .from("profiles")
-    .select("reports_used_this_month, dictation_seconds_used, billing_period_start")
+    .select("reports_used_this_month, dictation_seconds_used, billing_period_start, org_id")
     .eq("id", userId)
     .single();
 
   if (!data) return;
 
-  const stale = isBillingPeriodStale(data.billing_period_start);
+  const stale = data.org_id
+    ? isCalendarMonthStale(data.billing_period_start)
+    : isBillingPeriodStale(data.billing_period_start);
   const { error } = await service
     .from("profiles")
     .update({
@@ -302,13 +318,15 @@ export async function incrementDictationUsage(userId: string, seconds: number): 
   const service = createServiceClient();
   const { data } = await service
     .from("profiles")
-    .select("dictation_seconds_used, reports_used_this_month, billing_period_start")
+    .select("dictation_seconds_used, reports_used_this_month, billing_period_start, org_id")
     .eq("id", userId)
     .single();
 
   if (!data) return seconds;
 
-  const stale = isBillingPeriodStale(data.billing_period_start);
+  const stale = data.org_id
+    ? isCalendarMonthStale(data.billing_period_start)
+    : isBillingPeriodStale(data.billing_period_start);
   const newUsed = stale ? seconds : (data.dictation_seconds_used ?? 0) + seconds;
   const { error } = await service
     .from("profiles")
