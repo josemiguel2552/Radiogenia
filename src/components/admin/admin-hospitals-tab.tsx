@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Building2, Plus, Loader2, Copy, Check, KeyRound, UserPlus, Link as LinkIcon,
-  ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic,
+  ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic, Send,
 } from "lucide-react";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 
@@ -178,10 +178,39 @@ Te damos acceso a Radiogen.AI, la plataforma de informes radiológicos con IA, c
 Para crear tu cuenta (informes y dictado ilimitados), entra en este enlace y completa tus datos:
 ${inviteLink}
 
-Tendrás acceso inmediato al terminar. Cualquier duda, escríbenos a info@radiogen.ai.
+Tendrás acceso inmediato al terminar.
+
+AVISO IMPORTANTE: Radiogen.AI es una herramienta de apoyo para redactar y organizar el informe radiológico. No sustituye el juicio clínico, no emite diagnósticos ni recomendaciones de forma autónoma. El radiólogo es responsable de revisar y validar el informe final. Al darte de alta aceptas estas condiciones.
+
+Dentro de tu perfil tienes acceso a la guía de usuario. Para cualquier duda sobre la aplicación, escríbenos a info@radiogen.ai.
 
 Un saludo,
 Equipo Radiogen.AI`;
+
+  const [recipients, setRecipients] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendResults, setSendResults] = useState<{ email: string; sent: boolean }[] | null>(null);
+
+  async function sendInvites(emails: string[]) {
+    if (emails.length === 0) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/hospital-invite", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ org_id: hospital.id, emails }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.results) setSendResults(d.results);
+      else setSendResults(emails.map((email) => ({ email, sent: false })));
+    } catch {
+      setSendResults(emails.map((email) => ({ email, sent: false })));
+    }
+    setSending(false);
+  }
+
+  function parseRecipients(): string[] {
+    return [...new Set(recipients.split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter((e) => /^\S+@\S+\.\S+$/.test(e)))];
+  }
 
   const loadMembers = useCallback(async () => {
     setLoading(true);
@@ -269,16 +298,54 @@ Equipo Radiogen.AI`;
         <AdminPilotTab fixedOrgId={hospital.id} />
       ) : (
         <>
-          {/* Invite link + email */}
+          {/* Send invitations */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><LinkIcon className="h-3.5 w-3.5" /> Enlace de invitación</p>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Enviar invitación por correo</p>
+              <p className="text-[11px] text-gray-500">Se envía desde info@radiogen.ai con el aviso legal incluido. Escribe uno o varios correos (separados por coma, espacio o salto de línea).</p>
+              <textarea
+                value={recipients}
+                onChange={(e) => setRecipients(e.target.value)}
+                rows={2}
+                placeholder="radiologo1@hospital.com, radiologo2@hospital.com"
+                className="w-full text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 resize-none focus:outline-none focus:ring-1 ring-brand"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-gray-400">{parseRecipients().length} destinatario(s) válido(s)</span>
+                <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => sendInvites(parseRecipients())} disabled={sending || parseRecipients().length === 0}>
+                  {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  Enviar
+                </Button>
+              </div>
+              {sendResults && (
+                <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-2.5 space-y-1">
+                  {sendResults.map((r) => (
+                    <div key={r.email} className="flex items-center justify-between text-[11px]">
+                      <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                        {r.sent ? <Check className="h-3 w-3 text-green-600" /> : <Ban className="h-3 w-3 text-red-500" />}
+                        {r.email}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className={r.sent ? "text-green-600" : "text-red-500"}>{r.sent ? "Enviado" : "Falló"}</span>
+                        <button type="button" onClick={() => sendInvites([r.email])} className="text-brand hover:underline">Reenviar</button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Invite link + copyable email */}
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><LinkIcon className="h-3.5 w-3.5" /> Enlace de invitación (por si lo envías tú mismo)</p>
               <div className="flex items-center gap-2">
                 <Input readOnly value={inviteLink} className="h-8 text-[11px] font-mono flex-1" />
                 <CopyButton text={inviteLink} small />
               </div>
-              <p className="text-[11px] text-gray-500 flex items-center gap-1.5"><Mail className="h-3 w-3" /> Correo listo para enviar a los radiólogos:</p>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-2.5">
+              <p className="text-[11px] text-gray-500 flex items-center gap-1.5"><Mail className="h-3 w-3" /> Texto del correo (copiable):</p>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-2.5 max-h-48 overflow-y-auto">
                 <pre className="text-[10.5px] text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-sans leading-relaxed">{inviteEmail}</pre>
               </div>
               <div className="flex justify-end"><CopyButton text={inviteEmail} small /></div>

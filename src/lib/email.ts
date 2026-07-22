@@ -376,6 +376,85 @@ export async function sendVerificationReminderEmail(to: string, name: string | n
 }
 
 // ---------------------------------------------------------------------------
+// 1c) Hospital invite email — sent from info@radiogen.ai to a hospital's
+// radiologists so they self-register via the hospital signup link. Includes a
+// short legal notice + guide/contact pointer. Sent by the admin from the
+// Hospitals tab (single or bulk, with resend).
+// ---------------------------------------------------------------------------
+
+const hospitalInviteI18n: Record<EmailLang, {
+  subject: (h: string) => string; headline: string; intro: (h: string) => string;
+  btn: string; legalTitle: string; legal: string; help: string; unsub: string;
+  textTpl: (h: string, url: string) => string;
+}> = {
+  es: {
+    subject: (h) => `Acceso a Radiogen.AI — ${h}`,
+    headline: "Te damos acceso a Radiogen.AI",
+    intro: (h) => `Formas parte del equipo de <b>${h}</b>. Crea tu cuenta (informes y dictado ilimitados) en un minuto: pulsa el botón, completa tus datos y tendrás acceso inmediato.`,
+    btn: "Crear mi cuenta",
+    legalTitle: "Aviso importante",
+    legal: "Radiogen.AI es una herramienta de apoyo para redactar y organizar el informe radiológico. No sustituye el juicio clínico, no emite diagnósticos ni recomendaciones de forma autónoma. El radiólogo es responsable de revisar y validar el informe final. Al darte de alta aceptas estas condiciones.",
+    help: "Dentro de tu perfil tienes acceso a la guía de usuario. Para cualquier duda sobre la aplicación, escríbenos a info@radiogen.ai.",
+    unsub: "Recibes este correo porque tu hospital te ha dado acceso a Radiogen.AI.",
+    textTpl: (h, url) => `Formas parte del equipo de ${h}. Crea tu cuenta de Radiogen.AI (informes y dictado ilimitados) aquí:\n${url}\n\nAVISO IMPORTANTE: Radiogen.AI es una herramienta de apoyo para redactar y organizar el informe radiológico. No sustituye el juicio clínico, no emite diagnósticos ni recomendaciones de forma autónoma. El radiólogo es responsable de revisar y validar el informe final. Al darte de alta aceptas estas condiciones.\n\nDentro de tu perfil tienes la guía de usuario. Dudas: info@radiogen.ai.`,
+  },
+  en: {
+    subject: (h) => `Access to Radiogen.AI — ${h}`,
+    headline: "Your access to Radiogen.AI",
+    intro: (h) => `You're part of the <b>${h}</b> team. Create your account (unlimited reports and dictation) in a minute: click the button, fill in your details, and get immediate access.`,
+    btn: "Create my account",
+    legalTitle: "Important notice",
+    legal: "Radiogen.AI is a support tool for drafting and organizing the radiology report. It does not replace clinical judgment and does not issue diagnoses or recommendations autonomously. The radiologist is responsible for reviewing and validating the final report. By signing up you accept these terms.",
+    help: "Inside your profile you have access to the user guide. For any question about the app, email us at info@radiogen.ai.",
+    unsub: "You received this email because your hospital granted you access to Radiogen.AI.",
+    textTpl: (h, url) => `You're part of the ${h} team. Create your Radiogen.AI account (unlimited reports and dictation) here:\n${url}\n\nIMPORTANT NOTICE: Radiogen.AI is a support tool for drafting and organizing the radiology report. It does not replace clinical judgment and does not issue diagnoses or recommendations autonomously. The radiologist is responsible for reviewing and validating the final report. By signing up you accept these terms.\n\nInside your profile you have the user guide. Questions: info@radiogen.ai.`,
+  },
+  pt: {
+    subject: (h) => `Acesso ao Radiogen.AI — ${h}`,
+    headline: "Seu acesso ao Radiogen.AI",
+    intro: (h) => `Você faz parte da equipe de <b>${h}</b>. Crie sua conta (laudos e ditado ilimitados) em um minuto: clique no botão, preencha seus dados e tenha acesso imediato.`,
+    btn: "Criar minha conta",
+    legalTitle: "Aviso importante",
+    legal: "O Radiogen.AI é uma ferramenta de apoio para redigir e organizar o laudo radiológico. Não substitui o juízo clínico e não emite diagnósticos nem recomendações de forma autônoma. O radiologista é responsável por revisar e validar o laudo final. Ao se cadastrar você aceita estas condições.",
+    help: "Dentro do seu perfil você tem acesso ao guia do usuário. Para qualquer dúvida sobre o aplicativo, escreva para info@radiogen.ai.",
+    unsub: "Você recebeu este e-mail porque seu hospital concedeu acesso ao Radiogen.AI.",
+    textTpl: (h, url) => `Você faz parte da equipe de ${h}. Crie sua conta Radiogen.AI (laudos e ditado ilimitados) aqui:\n${url}\n\nAVISO IMPORTANTE: O Radiogen.AI é uma ferramenta de apoio para redigir e organizar o laudo radiológico. Não substitui o juízo clínico e não emite diagnósticos nem recomendações de forma autônoma. O radiologista é responsável por revisar e validar o laudo final. Ao se cadastrar você aceita estas condições.\n\nDentro do seu perfil você tem o guia do usuário. Dúvidas: info@radiogen.ai.`,
+  },
+};
+
+export async function sendHospitalInviteEmail(to: string, hospitalName: string, inviteUrl: string, lang: EmailLang = "es") {
+  const t = hospitalInviteI18n[lang] || hospitalInviteI18n.es;
+  const legalBox = `<tr><td style="padding:0 32px 8px;">
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;">
+      <p style="margin:0 0 6px;color:#111827;font-size:12px;font-weight:700;">${t.legalTitle}</p>
+      <p style="margin:0;color:#4b5563;font-size:12px;line-height:1.6;">${t.legal}</p>
+    </div>
+  </td></tr>
+  <tr><td style="padding:12px 32px 24px;">
+    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.6;">${t.help}</p>
+  </td></tr>`;
+
+  const inner = `${emailHeader("&#127973;", t.headline, t.intro(hospitalName))}
+        ${lightCta(inviteUrl, t.btn)}
+        ${legalBox}`;
+  const html = lightEmailShell(inner, t.unsub, lang);
+  const text = t.textTpl(hospitalName, inviteUrl);
+
+  await sendWithRetry({
+    from: "Radiogen.AI <info@radiogen.ai>",
+    replyTo: REPLY_TO,
+    to,
+    subject: t.subject(hospitalName),
+    html,
+    text,
+    headers: {
+      "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${APP_URL}/support>`,
+      "X-Entity-Ref-ID": `hospital-invite-${Date.now()}`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // 1b) Onboarding "tools" email — sent ~24h after signup
 // ---------------------------------------------------------------------------
 
