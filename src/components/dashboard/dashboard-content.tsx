@@ -124,7 +124,8 @@ export function DashboardContent() {
     window.setTimeout(() => setDictFeedback("hidden"), 2500);
   };
   const [setupCollapsed, setSetupCollapsed] = useState(false);
-  const [lightParaphrase, setLightParaphrase] = useState(false);
+  // "Refinar" is ON by default; the radiologist can turn it off per session.
+  const [lightParaphrase, setLightParaphrase] = useState(true);
   const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
   const [classifying, setClassifying] = useState(false);
   const [classifyResult, setClassifyResult] = useState<string | null>(null);
