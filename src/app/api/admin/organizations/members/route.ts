@@ -223,3 +223,25 @@ export async function PATCH(req: NextRequest) {
     return toErrorResponse(error);
   }
 }
+
+// DELETE — permanently remove a radiologist's account (?user_id=...).
+// Deletes the auth user, which cascades to their profile and org_members row.
+export async function DELETE(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const service = createServiceClient();
+
+    const userId = new URL(req.url).searchParams.get("user_id");
+    if (!userId) return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+
+    // Remove the membership first (in case the auth cascade is disabled), then
+    // delete the auth user.
+    await service.from("org_members").delete().eq("user_id", userId);
+    const { error } = await service.auth.admin.deleteUser(userId);
+    if (error) return dbErrorResponse(error);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return toErrorResponse(error);
+  }
+}

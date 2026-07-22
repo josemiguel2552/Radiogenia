@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Building2, Plus, Loader2, Copy, Check, KeyRound, UserPlus, Link as LinkIcon, X,
-  ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic, Send,
+  ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic, Send, Trash2,
 } from "lucide-react";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 
@@ -269,6 +269,17 @@ Equipo Radiogen.AI`;
     setBusy(false);
   }
 
+  async function deleteMember(m: Member) {
+    if (!window.confirm(`¿Eliminar definitivamente la cuenta de ${m.user_name || m.user_email}? Esta acción no se puede deshacer.`)) return;
+    setBusy(true); setNotice(null);
+    try {
+      const res = await fetch(`/api/admin/organizations/members?user_id=${m.user_id}`, { method: "DELETE" });
+      if (res.ok) { setNotice(`Cuenta eliminada: ${m.user_email}`); await loadMembers(); }
+      else setNotice("No se pudo eliminar la cuenta.");
+    } catch { setNotice("Error de red."); }
+    setBusy(false);
+  }
+
   return (
     <div className="space-y-4">
       <button onClick={onBack} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
@@ -402,7 +413,7 @@ Equipo Radiogen.AI`;
                         <KeyRound className="h-3.5 w-3.5" />
                       </Button>
                       {m.is_active ? (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-amber-500" title="Quitar acceso" onClick={() => toggleActive(m)} disabled={busy}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-amber-500" title="Quitar acceso (reversible)" onClick={() => toggleActive(m)} disabled={busy}>
                           <Ban className="h-3.5 w-3.5" />
                         </Button>
                       ) : (
@@ -410,6 +421,9 @@ Equipo Radiogen.AI`;
                           <RotateCcw className="h-3.5 w-3.5" />
                         </Button>
                       )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-red-600" title="Eliminar definitivamente" onClick={() => deleteMember(m)} disabled={busy}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
