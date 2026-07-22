@@ -191,8 +191,17 @@ export async function PUT(req: NextRequest) {
       update.deactivated_at = is_active ? null : new Date().toISOString();
     }
 
-    const { error } = await service.from("org_members").update(update).eq("id", id);
+    const { data: updated, error } = await service.from("org_members").update(update).eq("id", id).select("user_id").maybeSingle();
     if (error) return dbErrorResponse(error);
+
+    // Revoking access must actually block the account, not just remove the
+    // unlimited (org) bypass — otherwise the deactivated radiologist keeps a
+    // free account. Toggle profiles.approved with is_active. (The org_id itself
+    // is cleared/restored by the sync_profile_org_id trigger.)
+    if (is_active !== undefined && updated?.user_id) {
+      await service.from("profiles").update({ approved: is_active }).eq("id", updated.user_id);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     return toErrorResponse(error);

@@ -155,7 +155,7 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan, reports_used_this_month, billing_period_start, org_id, referral_bonus_expires_at, stripe_subscription_id")
+    .select("role, email, subscription_plan, reports_used_this_month, billing_period_start, org_id, approved, referral_bonus_expires_at, stripe_subscription_id")
     .eq("id", userId)
     .single();
 
@@ -163,6 +163,12 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
     || (profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase()));
   if (isAdmin) {
     return { allowed: true, used: 0, limit: 999999, plan: "professional" };
+  }
+
+  // Revoked/blocked accounts (e.g. a deactivated hospital radiologist) cannot
+  // generate at all — enforced server-side, not just via the UI redirect.
+  if (profile && profile.approved === false) {
+    return { allowed: false, used: 0, limit: 0, plan: "free" };
   }
 
   if (profile?.org_id) {
@@ -218,7 +224,7 @@ export async function checkDictationLimit(userId: string): Promise<{
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("role, email, subscription_plan, dictation_seconds_used, billing_period_start, org_id, referral_bonus_expires_at, stripe_subscription_id")
+    .select("role, email, subscription_plan, dictation_seconds_used, billing_period_start, org_id, approved, referral_bonus_expires_at, stripe_subscription_id")
     .eq("id", userId)
     .single();
 
@@ -226,6 +232,10 @@ export async function checkDictationLimit(userId: string): Promise<{
     || (profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase()));
   if (isAdmin) {
     return { allowed: true, usedSeconds: 0, limitSeconds: 999999 * 60, plan: "professional" };
+  }
+
+  if (profile && profile.approved === false) {
+    return { allowed: false, usedSeconds: 0, limitSeconds: 0, plan: "free" };
   }
 
   if (profile?.org_id) {
