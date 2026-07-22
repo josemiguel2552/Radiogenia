@@ -570,7 +570,11 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
     return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
   }
 
-  const noPilotOrgs = pilotOrgs.length === 0;
+  // When embedded for a specific hospital (fixedOrgId), we intentionally don't
+  // load the pilot-orgs list — so an empty pilotOrgs must NOT be treated as
+  // "no org selected", or the render would force the zeroed empty state even
+  // when metrics have loaded.
+  const noPilotOrgs = !fixedOrgId && pilotOrgs.length === 0;
 
   return (
     <div className="space-y-6">
