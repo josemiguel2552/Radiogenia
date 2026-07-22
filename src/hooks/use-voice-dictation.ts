@@ -21,6 +21,7 @@ interface UseVoiceDictationOptions {
   onError?: (error: string) => void;
   onQuotaUpdate?: (quota: DictationQuota) => void;
   onRecordingDone?: () => void;
+  onMaxDuration?: () => void;
   onWhisperRefine?: (whisperText: string, deepgramText: string) => void;
   templateSections?: string;
   studyContext?: string;
@@ -37,6 +38,11 @@ interface CachedToken {
 // Token valid for 4 minutes (keys don't rotate often)
 const TOKEN_TTL_MS = 4 * 60 * 1000;
 
+// Hard cap on a single dictation session. It auto-stops and transcribes what
+// was captured; the user can click dictate again to continue. Keeps long
+// unlimited (hospital) sessions bounded.
+const MAX_DICTATION_MS = 6 * 60 * 1000;
+
 export function useVoiceDictation({
   language,
   onTranscript,
@@ -44,6 +50,7 @@ export function useVoiceDictation({
   onError,
   onQuotaUpdate,
   onRecordingDone,
+  onMaxDuration,
   onWhisperRefine,
   templateSections,
   studyContext,
@@ -65,6 +72,11 @@ export function useVoiceDictation({
   const lastLevelUpdateRef = useRef(0);
   const interimTextRef = useRef("");
   const drainingRef = useRef(false);
+  // 6-minute auto-stop
+  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopRecordingRef = useRef<(() => void) | null>(null);
+  const onMaxDurationRef = useRef(onMaxDuration);
+  onMaxDurationRef.current = onMaxDuration;
 
   // Stable refs so WS onmessage always calls the latest callbacks
   const onTranscriptRef = useRef(onTranscript);
@@ -196,6 +208,7 @@ export function useVoiceDictation({
   const cleanup = useCallback(() => {
     activeRef.current = false;
 
+    if (maxDurationTimerRef.current) { clearTimeout(maxDurationTimerRef.current); maxDurationTimerRef.current = null; }
     if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null; }
     if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
 
@@ -407,6 +420,16 @@ export function useVoiceDictation({
     setIsRecording(true);
     animFrameRef.current = requestAnimationFrame(runLevelMeter);
 
+    // Hard 6-minute cap: auto-stop + transcribe what was captured.
+    if (maxDurationTimerRef.current) clearTimeout(maxDurationTimerRef.current);
+    maxDurationTimerRef.current = setTimeout(() => {
+      maxDurationTimerRef.current = null;
+      if (activeRef.current) {
+        onMaxDurationRef.current?.();
+        stopRecordingRef.current?.();
+      }
+    }, MAX_DICTATION_MS);
+
     connectWs(apiKey, skipKeywords);
   }, [initAudio, runLevelMeter, connectWs]);
 
@@ -466,6 +489,7 @@ export function useVoiceDictation({
   }, [fetchToken, startDeepgram, onError, onQuotaUpdate]);
 
   const stopRecording = useCallback(() => {
+    if (maxDurationTimerRef.current) { clearTimeout(maxDurationTimerRef.current); maxDurationTimerRef.current = null; }
     const durationSec = dgStartRef.current > 0 ? (Date.now() - dgStartRef.current) / 1000 : 0;
     reportStreamingUsage();
 
@@ -528,6 +552,8 @@ export function useVoiceDictation({
       }
     }, 250);
   }, [cleanup, reportStreamingUsage, onRecordingDone, sendWhisperRefinement]);
+
+  stopRecordingRef.current = stopRecording;
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {

@@ -463,6 +463,9 @@ export function DashboardContent() {
       }
       setVoiceError(err);
     },
+    onMaxDuration: () => {
+      toast.info(t("dash.dict_max_reached"));
+    },
     onRecordingDone: () => {
       stopCorrectionLoop.current();
       if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
