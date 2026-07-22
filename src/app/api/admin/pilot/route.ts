@@ -30,7 +30,13 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     if (from) query = query.gte("created_at", from);
-    if (to) query = query.lte("created_at", to);
+    // A bare YYYY-MM-DD "to" parses as midnight, which would EXCLUDE that
+    // whole day (e.g. picking today as the end hid all of today's reports).
+    // Expand plain dates to end-of-day.
+    if (to) {
+      const toEnd = /^\d{4}-\d{2}-\d{2}$/.test(to) ? `${to}T23:59:59.999Z` : to;
+      query = query.lte("created_at", toEnd);
+    }
 
     const { data: metrics } = await query;
 

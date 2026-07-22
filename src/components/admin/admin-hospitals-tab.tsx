@@ -307,7 +307,28 @@ Equipo Radiogen.AI`;
       )}
 
       {subView === "metrics" ? (
-        <AdminPilotTab fixedOrgId={hospital.id} />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-3 py-2">
+            <p className="text-[11px] text-gray-500">¿Faltan informes ya generados? Sincroniza para incorporarlos a las métricas.</p>
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" disabled={busy} onClick={async () => {
+              setBusy(true); setNotice(null);
+              try {
+                const res = await fetch("/api/admin/pilot/backfill", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ org_id: hospital.id }),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (res.ok) setNotice(`Sincronizado: ${d.created ?? 0} informe(s) incorporado(s)${d.errors?.length ? ` · error: ${d.errors[0]}` : ""}`);
+                else setNotice(`No se pudo sincronizar: ${d.error || "error"}`);
+              } catch { setNotice("Error de red al sincronizar."); }
+              setBusy(false);
+            }}>
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+              Sincronizar informes previos
+            </Button>
+          </div>
+          <AdminPilotTab key={notice || "metrics"} fixedOrgId={hospital.id} />
+        </div>
       ) : (
         <>
           {/* Send invitations — one box per email */}

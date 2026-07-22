@@ -304,9 +304,16 @@ export async function POST(req: NextRequest) {
             final_conclusion_text: body.conclusion_text || "",
           };
           const { error: mErr } = await service.from("report_metrics").insert(fullRow);
-          if (mErr) await service.from("report_metrics").insert(baseRow); // fallback if text cols not migrated
+          if (mErr) {
+            console.error("[report_metrics] full insert failed:", mErr.message);
+            const { error: bErr } = await service.from("report_metrics").insert(baseRow); // fallback if text cols not migrated
+            if (bErr) console.error("[report_metrics] base insert failed:", bErr.message);
+          }
         }
-      } catch { /* metrics are non-critical to the save */ }
+      } catch (e) {
+        // Metrics are non-critical to the save, but the failure must be visible.
+        console.error("[report_metrics] unexpected:", e instanceof Error ? e.message : e);
+      }
     }
 
     let learnedPhrases = 0;
