@@ -14,8 +14,8 @@ import {
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
-  MessageSquare, DollarSign, FlaskConical, Sparkles, ShieldAlert, Plus,
-  ThumbsUp, ThumbsDown,
+  MessageSquare, DollarSign, Sparkles, ShieldAlert, Plus,
+  ThumbsUp, ThumbsDown, Building2,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
@@ -25,7 +25,7 @@ import { AdminSupportTab } from "@/components/admin/admin-support-tab";
 import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
 import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
 import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
-import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
+import { AdminHospitalsTab } from "@/components/admin/admin-hospitals-tab";
 import { AdminEngagementTab } from "@/components/admin/admin-engagement-tab";
 import { AdminManualDownload } from "@/components/admin/admin-manual-download";
 
@@ -103,7 +103,7 @@ interface Stats {
   dictationFeedback?: { up: number; down: number };
 }
 
-type Tab = "overview" | "users" | "ai" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "pilot";
+type Tab = "overview" | "users" | "ai" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "hospitals";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -711,7 +711,7 @@ export default function AdminPage() {
     { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
     { key: "engagement", label: t("admin.tab_engagement"), icon: <TrendingUp className="h-4 w-4" /> },
     { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
-    { key: "pilot", label: t("admin.tab_pilot"), icon: <FlaskConical className="h-4 w-4" /> },
+    { key: "hospitals", label: "Hospitales", icon: <Building2 className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -1816,7 +1816,7 @@ export default function AdminPage() {
         {/* ═══ COSTS ═══ */}
         {tab === "costs" && <AdminCostsTab />}
 
-        {tab === "pilot" && <AdminPilotTab />}
+        {tab === "hospitals" && <AdminHospitalsTab />}
 
         {/* ═══ SUBSCRIBER ENGAGEMENT ═══ */}
         {tab === "engagement" && <AdminEngagementTab />}

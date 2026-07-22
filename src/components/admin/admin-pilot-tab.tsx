@@ -59,10 +59,10 @@ interface SurveyRow {
   created_at: string;
 }
 
-export function AdminPilotTab() {
+export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
   const t = useT();
   const [pilotOrgs, setPilotOrgs] = useState<PilotOrg[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState("");
+  const [selectedOrgId, setSelectedOrgId] = useState(fixedOrgId || "");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
@@ -72,6 +72,8 @@ export function AdminPilotTab() {
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
 
   useEffect(() => {
+    // Embedded in the Hospitals tab: lock to one hospital, skip the org picker.
+    if (fixedOrgId) { setSelectedOrgId(fixedOrgId); setInitialLoading(false); return; }
     fetch("/api/admin/pilot")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -82,7 +84,7 @@ export function AdminPilotTab() {
       })
       .catch(() => {})
       .finally(() => setInitialLoading(false));
-  }, []);
+  }, [fixedOrgId]);
 
   const loadMetrics = useCallback(async () => {
     if (!selectedOrgId) return;
@@ -572,14 +574,14 @@ export function AdminPilotTab() {
 
   return (
     <div className="space-y-6">
-      {noPilotOrgs && (
+      {noPilotOrgs && !fixedOrgId && (
         <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 p-3">
           <p className="text-xs text-amber-700 dark:text-amber-400">{t("pilot.no_pilot_orgs")} — {t("pilot.mark_pilot_hint")}</p>
         </div>
       )}
 
       {/* Downloadable pilot guides */}
-      <div className="rounded-lg border border-white/10 bg-white/5 dark:bg-gray-900/50 p-3">
+      <div className={`rounded-lg border border-white/10 bg-white/5 dark:bg-gray-900/50 p-3 ${fixedOrgId ? "hidden" : ""}`}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t("pilot.guides")}:</span>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={downloadRadiologistGuide}>
@@ -595,8 +597,9 @@ export function AdminPilotTab() {
       </div>
 
       {/* Controls */}
-      {!noPilotOrgs && (
+      {(!noPilotOrgs || fixedOrgId) && (
         <div className="flex flex-wrap gap-3 items-end">
+          {!fixedOrgId && (
           <div className="min-w-[200px]">
             <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.select_org")}</label>
             <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
@@ -606,6 +609,7 @@ export function AdminPilotTab() {
               </SelectContent>
             </Select>
           </div>
+          )}
           <div>
             <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.from")}</label>
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 text-xs w-[140px]" />
