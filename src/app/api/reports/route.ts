@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getOrgMembership } from "@/lib/auth-helpers";
 import { extractConclusionStyle } from "@/lib/style-learning";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
@@ -269,6 +271,43 @@ export async function POST(req: NextRequest) {
     }
 
     if (error) return dbErrorResponse(error);
+
+    // Reliable server-side pilot metric: create it HERE (not only via the
+    // fragile client /api/metrics call) so hospital dashboards always reflect
+    // every generated report, with org_id resolved server-side. Deduped by
+    // report_id; resilient to un-applied optional columns.
+    if (data?.id) {
+      try {
+        const service = createServiceClient();
+        const { data: existingMetric } = await service
+          .from("report_metrics").select("id").eq("report_id", data.id).limit(1).maybeSingle();
+        if (!existingMetric) {
+          const membership = await getOrgMembership(user.id);
+          const draftLen = (body.findings_text || "").length + (body.conclusion_text || "").length;
+          const baseRow: Record<string, unknown> = {
+            user_id: user.id,
+            org_id: membership?.org_id || null,
+            report_id: data.id,
+            report_start_at: body.report_start_at || null,
+            report_end_at: body.report_end_at || new Date().toISOString(),
+            duration_seconds: body.duration_seconds
+              ?? (body.generation_duration_ms ? Math.round(body.generation_duration_ms / 1000) : 0),
+            ai_draft_length: draftLen,
+            final_length: draftLen,
+          };
+          const fullRow = {
+            ...baseRow,
+            study_type: body.study_type || "",
+            ai_findings_text: body.initial_findings_text || body.findings_text || "",
+            ai_conclusion_text: body.initial_conclusion_text || body.conclusion_text || "",
+            final_findings_text: body.findings_text || "",
+            final_conclusion_text: body.conclusion_text || "",
+          };
+          const { error: mErr } = await service.from("report_metrics").insert(fullRow);
+          if (mErr) await service.from("report_metrics").insert(baseRow); // fallback if text cols not migrated
+        }
+      } catch { /* metrics are non-critical to the save */ }
+    }
 
     let learnedPhrases = 0;
 

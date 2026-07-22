@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       ? Math.round((endAt.getTime() - startAt.getTime()) / 1000)
       : (body.duration_seconds || 0);
 
-    await service.from("report_metrics").insert({
+    const row = {
       user_id: user.id,
       org_id: membership?.org_id || null,
       report_id: body.report_id || null,
@@ -58,11 +58,23 @@ export async function POST(req: NextRequest) {
       edit_distance: body.edit_distance || 0,
       ai_findings_text: body.ai_findings_text || "",
       ai_conclusion_text: body.ai_conclusion_text || "",
-      final_findings_text: "",
-      final_conclusion_text: "",
-      recommendations_text: "",
       study_type: body.study_type || "",
-    });
+    };
+
+    // The report save (/api/reports) already creates the metric row server-side.
+    // If it exists for this report, enrich it; otherwise insert. Prevents
+    // duplicate rows double-counting in the hospital dashboard.
+    let existing: { id: string } | null = null;
+    if (body.report_id) {
+      const { data: found } = await service
+        .from("report_metrics").select("id").eq("report_id", body.report_id).limit(1).maybeSingle();
+      existing = found;
+    }
+    if (existing) {
+      await service.from("report_metrics").update(row).eq("id", existing.id);
+    } else {
+      await service.from("report_metrics").insert(row);
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
