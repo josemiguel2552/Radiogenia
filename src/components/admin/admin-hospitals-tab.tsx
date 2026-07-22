@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Building2, Plus, Loader2, Copy, Check, KeyRound, UserPlus, Link as LinkIcon,
+  Building2, Plus, Loader2, Copy, Check, KeyRound, UserPlus, Link as LinkIcon, X,
   ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic, Send,
 } from "lucide-react";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
@@ -187,29 +187,30 @@ Dentro de tu perfil tienes acceso a la guía de usuario. Para cualquier duda sob
 Un saludo,
 Equipo Radiogen.AI`;
 
-  const [recipients, setRecipients] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sendResults, setSendResults] = useState<{ email: string; sent: boolean }[] | null>(null);
+  type Row = { email: string; status: "idle" | "sending" | "sent" | "failed" };
+  const [rows, setRows] = useState<Row[]>([{ email: "", status: "idle" }, { email: "", status: "idle" }, { email: "", status: "idle" }]);
 
-  async function sendInvites(emails: string[]) {
-    if (emails.length === 0) return;
-    setSending(true);
+  function setRowEmail(i: number, v: string) {
+    setRows((r) => r.map((row, idx) => idx === i ? { email: v, status: "idle" } : row));
+  }
+  function addRow() { setRows((r) => [...r, { email: "", status: "idle" }]); }
+  function removeRow(i: number) { setRows((r) => r.length > 1 ? r.filter((_, idx) => idx !== i) : r); }
+
+  async function sendOne(i: number) {
+    const email = rows[i].email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return;
+    setRows((r) => r.map((row, idx) => idx === i ? { ...row, status: "sending" } : row));
     try {
       const res = await fetch("/api/admin/hospital-invite", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ org_id: hospital.id, emails }),
+        body: JSON.stringify({ org_id: hospital.id, emails: [email] }),
       });
       const d = await res.json().catch(() => ({}));
-      if (res.ok && d.results) setSendResults(d.results);
-      else setSendResults(emails.map((email) => ({ email, sent: false })));
+      const ok = res.ok && d.results?.[0]?.sent;
+      setRows((r) => r.map((row, idx) => idx === i ? { ...row, status: ok ? "sent" : "failed" } : row));
     } catch {
-      setSendResults(emails.map((email) => ({ email, sent: false })));
+      setRows((r) => r.map((row, idx) => idx === i ? { ...row, status: "failed" } : row));
     }
-    setSending(false);
-  }
-
-  function parseRecipients(): string[] {
-    return [...new Set(recipients.split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter((e) => /^\S+@\S+\.\S+$/.test(e)))];
   }
 
   const loadMembers = useCallback(async () => {
@@ -298,41 +299,54 @@ Equipo Radiogen.AI`;
         <AdminPilotTab fixedOrgId={hospital.id} />
       ) : (
         <>
-          {/* Send invitations */}
+          {/* Send invitations — one box per email */}
           <Card>
             <CardContent className="p-4 space-y-3">
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Enviar invitación por correo</p>
-              <p className="text-[11px] text-gray-500">Se envía desde info@radiogen.ai con el aviso legal incluido. Escribe uno o varios correos (separados por coma, espacio o salto de línea).</p>
-              <textarea
-                value={recipients}
-                onChange={(e) => setRecipients(e.target.value)}
-                rows={2}
-                placeholder="radiologo1@hospital.com, radiologo2@hospital.com"
-                className="w-full text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 resize-none focus:outline-none focus:ring-1 ring-brand"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-gray-400">{parseRecipients().length} destinatario(s) válido(s)</span>
-                <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => sendInvites(parseRecipients())} disabled={sending || parseRecipients().length === 0}>
-                  {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                  Enviar
-                </Button>
-              </div>
-              {sendResults && (
-                <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-2.5 space-y-1">
-                  {sendResults.map((r) => (
-                    <div key={r.email} className="flex items-center justify-between text-[11px]">
-                      <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                        {r.sent ? <Check className="h-3 w-3 text-green-600" /> : <Ban className="h-3 w-3 text-red-500" />}
-                        {r.email}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className={r.sent ? "text-green-600" : "text-red-500"}>{r.sent ? "Enviado" : "Falló"}</span>
-                        <button type="button" onClick={() => sendInvites([r.email])} className="text-brand hover:underline">Reenviar</button>
-                      </span>
+              <p className="text-[11px] text-gray-500">Se envía desde info@radiogen.ai con el aviso legal incluido. Un correo por casilla; pulsa el botón de enviar de cada uno.</p>
+
+              <div className="space-y-2">
+                {rows.map((row, i) => {
+                  const valid = /^\S+@\S+\.\S+$/.test(row.email.trim());
+                  const sent = row.status === "sent";
+                  const failed = row.status === "failed";
+                  return (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        type="email"
+                        value={row.email}
+                        onChange={(e) => setRowEmail(i, e.target.value)}
+                        placeholder="radiologo@hospital.com"
+                        className={`h-9 text-xs flex-1 ${sent ? "border-green-400 dark:border-green-700" : failed ? "border-red-400 dark:border-red-700" : ""}`}
+                      />
+                      <Button
+                        size="icon"
+                        variant={sent ? "default" : "outline"}
+                        onClick={() => sendOne(i)}
+                        disabled={!valid || row.status === "sending"}
+                        title={sent ? "Enviado — reenviar" : "Enviar invitación"}
+                        className={`h-9 w-9 flex-shrink-0 ${sent ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : failed ? "border-red-400 text-red-500" : ""}`}
+                      >
+                        {row.status === "sending" ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : sent ? <Check className="h-4 w-4" />
+                          : <Send className="h-4 w-4" />}
+                      </Button>
+                      {rows.length > 1 && (
+                        <button type="button" onClick={() => removeRow(i)} className="text-gray-400 hover:text-red-500 flex-shrink-0" title="Quitar">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <button type="button" onClick={addRow} className="flex items-center gap-1 text-[11px] text-brand hover:underline">
+                  <Plus className="h-3 w-3" /> Añadir otro correo
+                </button>
+                <span className="text-[10px] text-gray-400">{rows.filter((r) => r.status === "sent").length} enviado(s)</span>
+              </div>
             </CardContent>
           </Card>
 
