@@ -172,6 +172,9 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   }
 
   if (profile?.org_id) {
+    if (await isExpiredTrialAccount(profile.email, profile.org_id)) {
+      return { allowed: false, used: 0, limit: 0, plan: "free" };
+    }
     // Hospital members: unlimited, counter renews on the 1st of the month.
     const used = isCalendarMonthStale(profile.billing_period_start) ? 0 : (profile.reports_used_this_month || 0);
     return { allowed: true, used, limit: 999999, plan: "professional" };
@@ -239,6 +242,9 @@ export async function checkDictationLimit(userId: string): Promise<{
   }
 
   if (profile?.org_id) {
+    if (await isExpiredTrialAccount(profile.email, profile.org_id)) {
+      return { allowed: false, usedSeconds: 0, limitSeconds: 0, plan: "free" };
+    }
     const usedSeconds = isCalendarMonthStale(profile.billing_period_start) ? 0 : (profile.dictation_seconds_used || 0);
     return { allowed: true, usedSeconds, limitSeconds: 999999 * 60, plan: "professional" };
   }
@@ -287,6 +293,21 @@ function isBillingPeriodStale(periodStart: string | null): boolean {
   const next = new Date(periodStart);
   next.setMonth(next.getMonth() + 1);
   return next.getTime() <= Date.now();
+}
+
+// Hospital trial accounts (shared demo login, email trial-<org>@radiogen.ai)
+// are unlimited like org members but must stop working when the hospital's
+// 30-day trial window ends — even if a browser session is still alive.
+async function isExpiredTrialAccount(email: string | null | undefined, orgId: string | null | undefined): Promise<boolean> {
+  if (!email || !orgId) return false;
+  if (!email.startsWith("trial-") || !email.endsWith("@radiogen.ai")) return false;
+  try {
+    const service = createServiceClient();
+    const { data } = await service.from("organizations").select("trial_expires_at").eq("id", orgId).maybeSingle();
+    return !!data?.trial_expires_at && new Date(data.trial_expires_at).getTime() < Date.now();
+  } catch {
+    return false;
+  }
 }
 
 // Hospital (org) members reset their usage counters on a fixed CALENDAR month

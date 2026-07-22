@@ -16,6 +16,8 @@ interface Hospital {
   id: string; name: string; slug: string; billing_email: string | null;
   max_seats: number; is_active: boolean; is_pilot: boolean; active_members: number;
   signup_token: string;
+  trial_token?: string | null;
+  trial_expires_at?: string | null;
 }
 interface Member {
   id: string; user_id: string; is_active: boolean;
@@ -331,6 +333,28 @@ Equipo Radiogen.AI`;
         </div>
       ) : (
         <>
+          {/* Trial link — direct access, no registration, 30 days */}
+          {hospital.trial_token && (
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <LinkIcon className="h-3.5 w-3.5 text-amber-500" /> Enlace de prueba (sin registro)
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  Quien abra este enlace entra directamente a la plataforma, sin registrarse, con todas las herramientas sin límite.
+                  {hospital.trial_expires_at && (
+                    <> Válido hasta el <span className="font-semibold text-gray-700 dark:text-gray-300">{new Date(hospital.trial_expires_at).toLocaleDateString()}</span>.</>
+                  )}
+                  {" "}En cada ordenador nuevo se muestra el asistente de bienvenida y el acceso a la guía.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input readOnly value={`${origin}/hospital-trial?token=${hospital.trial_token}`} className="h-8 text-[11px] font-mono flex-1" />
+                  <CopyButton text={`${origin}/hospital-trial?token=${hospital.trial_token}`} small />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Send invitations — one box per email */}
           <Card>
             <CardContent className="p-4 space-y-3">
