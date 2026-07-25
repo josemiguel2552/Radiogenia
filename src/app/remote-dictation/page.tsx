@@ -3,8 +3,10 @@
 /* Phone-as-dictaphone page. Opened by scanning the QR shown on the desktop.
    The phone runs the exact same dictation pipeline (Deepgram + Whisper refine),
    authenticated by the signed pairing token, and streams the resulting TEXT to
-   the desktop over a Supabase Realtime channel. No audio ever travels between
-   devices, and this page grants no access to reports or account data. */
+   the desktop over a Supabase Realtime channel. The transcript is deliberately
+   NOT shown here — the phone is just the microphone; the text lives on the
+   desktop. No audio ever travels between devices, and this page grants no
+   access to reports or account data. */
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -24,6 +26,35 @@ interface DesktopSettings {
   studyType?: string;
 }
 
+/* Siri-style symmetric bar profile: tall center, tapered edges, slight
+   per-bar variation so the wave feels organic. Deterministic on purpose. */
+const BAR_COUNT = 26;
+const BAR_FACTORS = Array.from({ length: BAR_COUNT }, (_, i) => {
+  const center = (BAR_COUNT - 1) / 2;
+  const envelope = 1 - Math.abs(i - center) / (center + 1.5);
+  const ripple = 0.72 + 0.28 * Math.abs(Math.sin(i * 2.4 + 0.9));
+  return Math.max(0.12, envelope * ripple);
+});
+
+function Waveform({ level, active }: { level: number; active: boolean }) {
+  return (
+    <div className="flex items-center justify-center gap-[3px] h-20 w-full max-w-xs mx-auto" aria-hidden>
+      {BAR_FACTORS.map((f, i) => {
+        const h = active ? Math.min(100, 8 + level * 165 * f) : 8;
+        return (
+          <span
+            key={i}
+            className={`w-[5px] rounded-full transition-all duration-100 ${
+              active ? "bg-gradient-to-t from-violet-500 to-fuchsia-400" : "bg-white/15"
+            }`}
+            style={{ height: `${Math.max(6, h)}%` }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function RemoteDictationInner() {
   const params = useSearchParams();
   const token = params.get("t") || "";
@@ -36,14 +67,10 @@ function RemoteDictationInner() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [desktopPresent, setDesktopPresent] = useState(false);
   const [settings, setSettings] = useState<DesktopSettings>({});
-  const [transcript, setTranscript] = useState("");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const settingsRef = useRef<DesktopSettings>({});
-  settingsRef.current = settings;
-  const recStartLenRef = useRef(0);
 
   const send = useCallback((payload: Record<string, unknown>) => {
     channelRef.current?.send({ type: "broadcast", event: "msg", payload }).catch(() => {});
@@ -53,7 +80,6 @@ function RemoteDictationInner() {
     isRecording,
     isRefining,
     audioLevel,
-    interimText,
     toggleRecording,
     stopRecording,
   } = useVoiceDictation({
@@ -64,20 +90,11 @@ function RemoteDictationInner() {
     modality: settings.modality,
     studyType: settings.studyType,
     onTranscript: (text) => {
-      setTranscript((prev) => {
-        const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
-        return prev + sep + text;
-      });
       setVoiceError(null);
       send({ type: "final", text });
     },
     onError: (err) => setVoiceError(err),
     onWhisperRefine: (whisperText) => {
-      setTranscript((prev) => {
-        const before = prev.slice(0, recStartLenRef.current);
-        const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
-        return before + sep + whisperText;
-      });
       send({ type: "refine", text: whisperText });
     },
   });
@@ -148,14 +165,12 @@ function RemoteDictationInner() {
   const prevRecRef = useRef(false);
   useEffect(() => {
     if (isRecording && !prevRecRef.current) {
-      recStartLenRef.current = transcript.length;
       setElapsed(0);
       send({ type: "rec-start" });
     } else if (!isRecording && prevRecRef.current) {
       send({ type: "rec-stop" });
     }
     prevRecRef.current = isRecording;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording, send]);
 
   useEffect(() => {
@@ -187,27 +202,20 @@ function RemoteDictationInner() {
     };
   }, []);
 
-  /* ── Auto-scroll the transcript ── */
-  const transcriptRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const el = transcriptRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [transcript, interimText]);
-
-  const mmss = `${String(Math.floor(elapsed / 60)).padStart(1, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+  const mmss = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`;
 
   /* ── Terminal screens ── */
   if (phase === "loading" || phase === "invalid" || phase === "ended") {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-8 text-center bg-gray-50 dark:bg-gray-950">
-        <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Radiogen<span className="text-violet-600">.ai</span></span>
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-5 px-8 text-center bg-[#0e0b22]">
+        <span className="text-xl font-bold tracking-tight text-white">Radiogen<span className="text-violet-400">.ai</span></span>
         {phase === "loading" ? (
           <>
-            <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t("rdp.connecting")}</p>
+            <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
+            <p className="text-sm text-white/60">{t("rdp.connecting")}</p>
           </>
         ) : (
-          <p className="text-sm text-gray-600 dark:text-gray-300 max-w-xs">
+          <p className="text-sm text-white/70 max-w-xs leading-relaxed">
             {phase === "ended" ? t("rdp.ended") : t("rdp.invalid")}
           </p>
         )}
@@ -216,86 +224,97 @@ function RemoteDictationInner() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-gray-50 dark:bg-gray-950">
+    <div className="relative min-h-dvh flex flex-col overflow-hidden bg-[#0e0b22] text-white">
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full blur-3xl transition-opacity duration-700"
+        style={{
+          background: "radial-gradient(circle, rgba(139,92,246,0.35), transparent 70%)",
+          opacity: isRecording ? 0.55 + audioLevel * 0.45 : 0.3,
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full blur-3xl"
+        style={{ background: "radial-gradient(circle, rgba(217,70,239,0.18), transparent 70%)" }}
+      />
+
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">Radiogen<span className="text-violet-600">.ai</span></span>
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+      <div className="relative flex items-center justify-between px-5 pt-5">
+        <div>
+          <span className="text-lg font-bold tracking-tight">Radiogen<span className="text-violet-400">.ai</span></span>
+          <p className="text-[11px] text-white/40 -mt-0.5">{t("rdp.title")}</p>
+        </div>
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium backdrop-blur ${
           desktopPresent
-            ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+            ? "bg-green-500/15 text-green-300 border-green-500/30"
+            : "bg-amber-500/15 text-amber-300 border-amber-500/30"
         }`}>
           {desktopPresent ? <MonitorCheck className="h-3.5 w-3.5" /> : <MonitorX className="h-3.5 w-3.5" />}
           {desktopPresent ? t("rdp.connected") : t("rdp.connecting")}
         </span>
       </div>
-      <p className="px-4 pb-1 text-[11px] text-gray-400 dark:text-gray-500">{t("rdp.title")}</p>
 
-      {/* Transcript */}
-      <div
-        ref={transcriptRef}
-        className="flex-1 overflow-y-auto mx-4 my-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4"
-      >
-        {transcript || interimText ? (
-          <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
-            {transcript}
-            {interimText && <span className="text-gray-400 dark:text-gray-500 italic"> {interimText}</span>}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-400 dark:text-gray-500 italic">{t("rdp.placeholder")}</p>
-        )}
-      </div>
+      {/* Center stage: waveform + timer */}
+      <div className="relative flex-1 flex flex-col items-center justify-center gap-6 px-6">
+        <Waveform level={audioLevel} active={isRecording} />
 
-      {/* Status line */}
-      <div className="px-4 min-h-6 flex items-center justify-center gap-2">
-        {isRefining && (
-          <span className="inline-flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-300">
-            <Wand2 className="h-3 w-3" /> {t("rdp.refining")}
-          </span>
-        )}
-        {voiceError && <span className="text-[11px] text-red-500 text-center">{voiceError}</span>}
-        {!desktopPresent && !voiceError && (
-          <span className="text-[11px] text-amber-600 dark:text-amber-400 text-center">{t("rdp.no_desktop")}</span>
-        )}
-      </div>
+        <div className="h-10 flex items-center justify-center">
+          {isRecording ? (
+            <p className="text-3xl font-mono tabular-nums font-light tracking-wider">
+              {mmss}<span className="text-white/30 text-lg"> / 6:00</span>
+            </p>
+          ) : isRefining ? (
+            <span className="inline-flex items-center gap-2 text-sm text-violet-300">
+              <Wand2 className="h-4 w-4" /> {t("rdp.refining")}
+            </span>
+          ) : (
+            <p className="text-sm text-white/50">{t("rdp.text_on_desktop")}</p>
+          )}
+        </div>
 
-      {/* Waveform + timer */}
-      <div className="h-10 flex items-center justify-center gap-2">
-        {isRecording && (
-          <>
-            <div className="flex items-end gap-[3px] h-6">
-              {[0.5, 0.9, 0.7, 1, 0.6, 0.85, 0.45].map((f, i) => (
-                <span
-                  key={i}
-                  className="w-[4px] rounded-full bg-red-500 transition-all duration-75"
-                  style={{ height: `${Math.max(15, Math.min(100, audioLevel * 100 * f + 12))}%` }}
-                />
-              ))}
-            </div>
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{mmss} / 6:00</span>
-          </>
-        )}
+        <div className="h-5">
+          {voiceError ? (
+            <p className="text-[11px] text-red-400 text-center max-w-xs">{voiceError}</p>
+          ) : !desktopPresent ? (
+            <p className="text-[11px] text-amber-300/90 text-center max-w-xs">{t("rdp.no_desktop")}</p>
+          ) : isRecording ? (
+            <p className="text-[11px] text-white/40">{t("rdp.listening")} · {t("rdp.text_on_desktop")}</p>
+          ) : null}
+        </div>
       </div>
 
       {/* Mic button */}
-      <div className="flex flex-col items-center gap-3 pb-8 pt-1 px-4">
-        <button
-          type="button"
-          onClick={toggleRecording}
-          aria-label={isRecording ? t("rdp.tap_stop") : t("rdp.tap_start")}
-          className={`h-24 w-24 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${
-            isRecording
-              ? "bg-red-500 text-white"
-              : "bg-violet-600 text-white hover:bg-violet-700"
-          }`}
-          style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 22)}px rgba(239,68,68,0.18)` } : undefined}
-        >
-          {isRecording ? <Square className="h-9 w-9 fill-current" /> : <Mic className="h-10 w-10" />}
-        </button>
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+      <div className="relative flex flex-col items-center gap-4 pb-10 px-6">
+        <div className="relative">
+          {isRecording && (
+            <>
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-red-500/30 transition-transform duration-100"
+                style={{ transform: `scale(${1.15 + audioLevel * 0.9})` }}
+              />
+              <span aria-hidden className="absolute inset-0 rounded-full bg-red-500/20 animate-ping [animation-duration:2s]" />
+            </>
+          )}
+          <button
+            type="button"
+            onClick={toggleRecording}
+            aria-label={isRecording ? t("rdp.tap_stop") : t("rdp.tap_start")}
+            className={`relative h-24 w-24 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 ${
+              isRecording
+                ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-900/50"
+                : "bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-violet-900/50 hover:brightness-110"
+            }`}
+          >
+            {isRecording ? <Square className="h-8 w-8 fill-white text-white" /> : <Mic className="h-10 w-10 text-white" />}
+          </button>
+        </div>
+        <p className="text-sm font-medium text-white/80">
           {isRecording ? t("rdp.tap_stop") : t("rdp.tap_start")}
         </p>
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">{t("rdp.keep_open")}</p>
+        <p className="text-[11px] text-white/30">{t("rdp.keep_open")}</p>
       </div>
     </div>
   );
@@ -305,8 +324,8 @@ export default function RemoteDictationPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-          <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
+        <div className="min-h-dvh flex items-center justify-center bg-[#0e0b22]">
+          <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
         </div>
       }
     >
