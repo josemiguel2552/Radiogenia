@@ -1333,6 +1333,42 @@ RULES:
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response.`;
 }
 
+/* The dictation reaches the model via speech-to-text and may carry phonetic
+   mis-transcriptions that survived upstream correction. Example-heavy and
+   tightly guarded so fast models apply it without overcorrecting. */
+const STT_CORRECTION_BLOCK: Record<string, string> = {
+  es: `DICTADO POR VOZ — CORRECCIÓN DE ERRORES DE TRANSCRIPCIÓN:
+El dictado proviene de reconocimiento de voz y puede contener términos mal transcritos fonéticamente. Antes de redactar, revisa cada término del dictado: si NO tiene sentido clínico en su contexto, sustitúyelo por el término radiológico fonéticamente cercano que SÍ lo tiene. Ejemplos típicos:
+- "adenopatías biliares/iliares/miliares" descritas en hilios, mediastino o tórax → "adenopatías hiliares"
+- "no dura/nodura" → "nódulo"; "laburo/lavuro" → "lóbulo"; "floral/plural" → "pleural"; "iliar" → "hilar"; "supra colicular" → "supraclavicular"
+- Prefijos separados por error: "hipo denso" → "hipodenso", "hiper intenso" → "hiperintenso", "neumo tórax" → "neumotórax", "hepato megalia" → "hepatomegalia", "retro peritoneal" → "retroperitoneal"
+REGLAS DE SEGURIDAD (obligatorias):
+- Corrige SOLO cuando el término transcrito es clínicamente incoherente en su contexto Y existe una alternativa fonéticamente cercana obvia.
+- NUNCA "corrijas" un término que ya es válido en su contexto (ej: "adenopatías axilares" en un estudio de mama es correcto; "vía biliar" en abdomen es correcto).
+- NUNCA cambies medidas, números ni lateralidad.
+- Si dudas entre dos interpretaciones, transcribe literalmente lo dictado.`,
+  en: `VOICE DICTATION — TRANSCRIPTION ERROR CORRECTION:
+The dictation comes from speech recognition and may contain phonetically mis-transcribed terms. Before writing, check each dictated term: if it makes NO clinical sense in its context, replace it with the phonetically close radiology term that DOES. Typical examples:
+- "biliary/ciliary/miliary adenopathy" described at the hila, mediastinum, or chest → "hilar adenopathy"
+- "consultative" → "consolidative"; "internal increase" → "interval increase"; "plural" → "pleural"; "high laryn pharynopathy" → "hilar lymphadenopathy"
+- Wrongly split prefixes: "hypo dense" → "hypodense", "hyper intense" → "hyperintense", "pneumo thorax" → "pneumothorax"
+SAFETY RULES (mandatory):
+- Correct ONLY when the transcribed term is clinically incoherent in its context AND an obvious phonetically close alternative exists.
+- NEVER "correct" a term that is already valid in its context (e.g. "axillary adenopathy" in a breast study is correct; "bile ducts" in abdomen is correct).
+- NEVER change measurements, numbers, or laterality.
+- If torn between two interpretations, transcribe the dictation literally.`,
+  pt: `DITADO POR VOZ — CORREÇÃO DE ERROS DE TRANSCRIÇÃO:
+O ditado vem de reconhecimento de voz e pode conter termos mal transcritos foneticamente. Antes de redigir, revise cada termo do ditado: se NÃO fizer sentido clínico no seu contexto, substitua-o pelo termo radiológico foneticamente próximo que FAZ sentido. Exemplos típicos:
+- "linfonodomegalias biliares/iliares/miliares" descritas nos hilos, mediastino ou tórax → "linfonodomegalias hilares"
+- "plural" → "pleural"; "iliar" → "hilar"
+- Prefixos separados por erro: "hipo denso" → "hipodenso", "hiper intenso" → "hiperintenso", "pneumo tórax" → "pneumotórax", "hepato megalia" → "hepatomegalia"
+REGRAS DE SEGURANÇA (obrigatórias):
+- Corrija SOMENTE quando o termo transcrito é clinicamente incoerente no seu contexto E existe uma alternativa foneticamente próxima óbvia.
+- NUNCA "corrija" um termo que já é válido no seu contexto (ex: "linfonodomegalia axilar" em estudo de mama é correto; "via biliar" em abdome é correto).
+- NUNCA altere medidas, números nem lateralidade.
+- Em caso de dúvida entre duas interpretações, transcreva literalmente o ditado.`,
+};
+
 export function buildFindingsPrompt(params: {
   template: string;
   dictation: string;
@@ -1356,6 +1392,8 @@ export function buildFindingsPrompt(params: {
     : params.dictationOnly
       ? dictationOnlySystemPrompt(lang, params.modality)
       : findingsSystemPrompt(lang, params.modality);
+
+  system += `\n\n${STT_CORRECTION_BLOCK[lang] || STT_CORRECTION_BLOCK.en}`;
 
   system += `\n\n${modalityTerminology(params.modality, lang)}
 
