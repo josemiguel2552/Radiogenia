@@ -117,7 +117,7 @@ export default function AdminPage() {
   // Config
   const [config, setConfig] = useState<GlobalConfig | null>(null);
   const [provider, setProvider] = useState("deepseek");
-  const [modelName, setModelName] = useState("deepseek-chat");
+  const [modelName, setModelName] = useState("deepseek-v4-pro");
   const [apiKey, setApiKey] = useState("");
   const [whisperKey, setWhisperKey] = useState("");
   const [customUrl, setCustomUrl] = useState("");
@@ -274,7 +274,7 @@ export default function AdminPage() {
       const d = await configRes.json();
       setConfig(d);
       setProvider(d.provider || "deepseek");
-      setModelName(d.model_name || "deepseek-chat");
+      setModelName(d.model_name || "deepseek-v4-pro");
       setApiKey(d.api_key_encrypted || "");
       setWhisperKey(d.whisper_api_key_encrypted || "");
       setAnthropicKey(d.anthropic_api_key_encrypted || "");

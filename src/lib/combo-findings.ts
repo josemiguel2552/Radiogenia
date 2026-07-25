@@ -313,7 +313,7 @@ export async function runComboFindings(
 
   const validatorAI = await generateAIWithUsage({
     provider: "deepseek",
-    modelName: "deepseek-chat",
+    modelName: "deepseek-v4-pro",
     apiKey: deepseekKey,
     system: validator.system,
     user: validator.user,
@@ -353,7 +353,7 @@ export async function runComboFindings(
     text: params.outputLanguage === "en" ? enforcePeriodSeparation(translated) : translated,
     comboUsage: {
       mapper: { provider: "openai", model: "gpt-4o-mini", usage: mapperResult.usage },
-      validator: { provider: "deepseek", model: "deepseek-chat", usage: validatorAI.usage },
+      validator: { provider: "deepseek", model: "deepseek-v4-pro", usage: validatorAI.usage },
     },
   };
 }

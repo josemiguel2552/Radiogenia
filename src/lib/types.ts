@@ -243,7 +243,7 @@ export const SECTIONS = [
 export const PROVIDERS: { value: AIProvider; label: string; models: string[] }[] = [
   { value: "claude", label: "Claude (Anthropic)", models: ["claude-sonnet-4-6-20250514", "claude-haiku-4-5-20251001"] },
   { value: "openai", label: "GPT (OpenAI)", models: ["gpt-4o", "gpt-4o-mini"] },
-  { value: "deepseek", label: "DeepSeek", models: ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"] },
+  { value: "deepseek", label: "DeepSeek", models: ["deepseek-v4-pro", "deepseek-v4-flash"] },
   { value: "gemini", label: "Gemini (Google)", models: ["gemini-1.5-pro", "gemini-2.0-flash"] },
   { value: "openrouter", label: "OpenRouter", models: ["qwen/qwen-2.5-72b-instruct", "qwen/qwen-2.5-32b-instruct", "meta-llama/llama-3.3-70b-instruct", "mistralai/mistral-small-24b-instruct-2501", "deepseek/deepseek-chat"] },
   { value: "custom", label: "Custom Endpoint", models: [] },

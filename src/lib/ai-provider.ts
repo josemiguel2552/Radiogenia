@@ -102,7 +102,10 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           "Content-Type": "application/json",
         },
         buildBody: (model, system, user, maxTokens) => ({
-          model,
+          // DeepSeek retired the legacy model names (the API now only accepts
+          // deepseek-v4-pro / deepseek-v4-flash). Remap stale names from stored
+          // configs so every call path keeps working after their catalog change.
+          model: model === "deepseek-chat" || model === "deepseek-reasoner" ? "deepseek-v4-pro" : model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
