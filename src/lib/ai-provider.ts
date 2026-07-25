@@ -101,20 +101,29 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user, maxTokens) => ({
+        buildBody: (model, system, user, maxTokens) => {
           // DeepSeek retired the legacy model names on 2026-07-24 (the API now
           // only accepts deepseek-v4-pro / deepseek-v4-flash). Since April 2026
           // "deepseek-chat" was already an alias FOR v4-flash, so remapping to
           // v4-flash preserves the exact model (and cost) previously in use;
           // the thinking-mode "deepseek-reasoner" maps to the advanced v4-pro.
-          model: model === "deepseek-chat" ? "deepseek-v4-flash" : model === "deepseek-reasoner" ? "deepseek-v4-pro" : model,
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
-          ],
-          max_tokens: maxTokens,
-          temperature: 0,
-        }),
+          const resolved =
+            model === "deepseek-chat" ? "deepseek-v4-flash" : model === "deepseek-reasoner" ? "deepseek-v4-pro" : model;
+          return {
+            model: resolved,
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: user },
+            ],
+            max_tokens: maxTokens,
+            temperature: 0,
+            // V4 models default to thinking mode when called by their new names,
+            // which adds latency and changes prose. The old "deepseek-chat" was
+            // v4-flash with thinking OFF, so disable it to match that behavior;
+            // v4-pro keeps thinking on (that was "deepseek-reasoner"'s behavior).
+            ...(resolved === "deepseek-v4-flash" ? { thinking: { type: "disabled" } } : {}),
+          };
+        },
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
           return d.choices?.[0]?.message?.content || "";
