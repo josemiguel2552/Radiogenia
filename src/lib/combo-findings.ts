@@ -313,7 +313,9 @@ export async function runComboFindings(
 
   const validatorAI = await generateAIWithUsage({
     provider: "deepseek",
-    modelName: "deepseek-v4-pro",
+    // v4-flash is what the retired "deepseek-chat" alias had pointed to since
+    // April 2026 — same model and cost as the validator always used.
+    modelName: "deepseek-v4-flash",
     apiKey: deepseekKey,
     system: validator.system,
     user: validator.user,
@@ -353,7 +355,7 @@ export async function runComboFindings(
     text: params.outputLanguage === "en" ? enforcePeriodSeparation(translated) : translated,
     comboUsage: {
       mapper: { provider: "openai", model: "gpt-4o-mini", usage: mapperResult.usage },
-      validator: { provider: "deepseek", model: "deepseek-v4-pro", usage: validatorAI.usage },
+      validator: { provider: "deepseek", model: "deepseek-v4-flash", usage: validatorAI.usage },
     },
   };
 }
