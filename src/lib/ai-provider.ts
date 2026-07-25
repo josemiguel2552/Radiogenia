@@ -167,7 +167,9 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           "Content-Type": "application/json",
         },
         buildBody: (model, system, user, maxTokens) => ({
-          model,
+          // OpenRouter's Qwen 32B id has no hyphen after "qwen" (unlike the
+          // 72B's "qwen-2.5"), so heal configs saved with the hyphenated form.
+          model: model === "qwen/qwen-2.5-32b-instruct" ? "qwen/qwen2.5-32b-instruct" : model,
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
