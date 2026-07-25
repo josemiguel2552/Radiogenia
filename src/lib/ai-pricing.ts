@@ -17,6 +17,8 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
   "deepseek-v4-flash": { inputPer1M: 0.14, outputPer1M: 0.28 },
   "deepseek-chat": { inputPer1M: 0.14, outputPer1M: 0.28 },
   "deepseek-reasoner": { inputPer1M: 0.55, outputPer1M: 2.19 },
+  // DeepSeek V3 via OpenRouter (legacy "deepseek-chat" retired on DeepSeek's own API)
+  "deepseek/deepseek-chat": { inputPer1M: 0.20, outputPer1M: 0.80 },
   // Google
   "gemini-1.5-pro": { inputPer1M: 1.25, outputPer1M: 5 },
   "gemini-2.0-flash": { inputPer1M: 0.10, outputPer1M: 0.40 },
