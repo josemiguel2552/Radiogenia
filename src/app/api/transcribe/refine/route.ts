@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     // ── Step 2: Correction with gpt-4o-mini (fast, Whisper text is already high quality) ──
     const taskModel = globalConfig.taskOverrides?.dictation_correction;
     const effectiveProvider = taskModel?.provider || "openai";
-    const effectiveModel = "gpt-4o-mini";
+    const effectiveModel = taskModel?.modelName || "gpt-4o-mini";
     const apiKey = resolveApiKey(globalConfig, effectiveProvider);
 
     const isEs = !language || language.startsWith("es");
