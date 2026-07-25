@@ -3,6 +3,7 @@ export const maxDuration = 45;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGlobalAIConfig, resolveApiKey, checkDictationLimit, incrementDictationUsage } from "@/lib/auth-helpers";
+import { verifyRemoteDictationToken, REMOTE_DICTATION_HEADER } from "@/lib/remote-dictation";
 import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { postprocessWhisper } from "@/lib/whisper-postprocess";
 import { generateAIWithUsage } from "@/lib/ai-provider";
@@ -57,9 +58,11 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = user?.id
+      || verifyRemoteDictationToken(req.headers.get(REMOTE_DICTATION_HEADER))?.userId;
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const rl = rateLimit(`transcribe:${user.id}`, RATE_LIMITS.transcribe);
+    const rl = rateLimit(`transcribe:${userId}`, RATE_LIMITS.transcribe);
     if (!rl.allowed) return rl.errorResponse!;
 
     const globalConfig = await getGlobalAIConfig();
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No audio file" }, { status: 400 });
     }
 
-    const quota = await checkDictationLimit(user.id);
+    const quota = await checkDictationLimit(userId);
     if (!quota.allowed) {
       return NextResponse.json({ error: "Dictation limit reached" }, { status: 429 });
     }
@@ -132,8 +135,8 @@ export async function POST(req: NextRequest) {
     let newUsedSeconds = quota.usedSeconds;
     if (durationSeconds > 0) {
       const roundedSeconds = Math.ceil(durationSeconds);
-      newUsedSeconds = await incrementDictationUsage(user.id, roundedSeconds);
-      logAudioCost({ userId: user.id, action: "transcription", provider: "openai", model: "whisper-1", durationSeconds: roundedSeconds });
+      newUsedSeconds = await incrementDictationUsage(userId, roundedSeconds);
+      logAudioCost({ userId, action: "transcription", provider: "openai", model: "whisper-1", durationSeconds: roundedSeconds });
     }
 
     const rawText = await whisperRes.text();
@@ -162,7 +165,7 @@ export async function POST(req: NextRequest) {
         maxTokens: Math.max(512, Math.ceil(whisperText.length * 1.2)),
       });
 
-      logAICost({ userId: user.id, action: "refine_correction", provider: effectiveProvider, model: effectiveModel, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
+      logAICost({ userId, action: "refine_correction", provider: effectiveProvider, model: effectiveModel, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
 
       const correctedText = result.text.trim();
       return NextResponse.json({

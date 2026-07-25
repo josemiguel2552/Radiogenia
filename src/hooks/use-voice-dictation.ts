@@ -27,6 +27,8 @@ interface UseVoiceDictationOptions {
   studyContext?: string;
   modality?: string;
   studyType?: string;
+  /** Phone-as-dictaphone pairing token; sent instead of session cookies. */
+  remoteToken?: string;
 }
 
 interface CachedToken {
@@ -56,7 +58,10 @@ export function useVoiceDictation({
   studyContext,
   modality,
   studyType,
+  remoteToken,
 }: UseVoiceDictationOptions) {
+  const remoteTokenRef = useRef(remoteToken);
+  remoteTokenRef.current = remoteToken;
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
@@ -118,7 +123,10 @@ export function useVoiceDictation({
     if (cached && Date.now() - cached.ts < TOKEN_TTL_MS) return cached;
 
     try {
-      const res = await fetch("/api/transcribe/token", { method: "POST" });
+      const res = await fetch("/api/transcribe/token", {
+        method: "POST",
+        headers: remoteTokenRef.current ? { "x-remote-dictation": remoteTokenRef.current } : undefined,
+      });
       if (res.status === 429) {
         const data = await res.json();
         if (!silent) onError?.(data?.error || "Dictation limit reached");
@@ -249,7 +257,10 @@ export function useVoiceDictation({
 
     fetch("/api/transcribe/usage", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(remoteTokenRef.current ? { "x-remote-dictation": remoteTokenRef.current } : {}),
+      },
       body: JSON.stringify({ seconds }),
     }).then((r) => r.ok ? r.json() : null).then((data) => {
       if (data?.dictation && onQuotaUpdate) {
@@ -458,7 +469,11 @@ export function useVoiceDictation({
       if (modalityRef.current) form.append("modality", modalityRef.current);
       if (studyTypeRef.current) form.append("study_type", studyTypeRef.current);
 
-      const res = await fetch("/api/transcribe/refine", { method: "POST", body: form });
+      const res = await fetch("/api/transcribe/refine", {
+        method: "POST",
+        headers: remoteTokenRef.current ? { "x-remote-dictation": remoteTokenRef.current } : undefined,
+        body: form,
+      });
       if (whisperSessionRef.current !== sessionId) { setIsRefining(false); return; }
       if (res.ok) {
         const data = await res.json();

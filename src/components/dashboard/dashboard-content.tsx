@@ -45,6 +45,7 @@ import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, ty
 import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { RemotePhoneDictation } from "@/components/dashboard/remote-phone-dictation";
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
 // FloatingDictation removed — dictation is inline only
@@ -413,36 +414,79 @@ export function DashboardContent() {
   const whisperModalityRef = useRef("");
   const whisperStudyTypeRef = useRef("");
 
+  // Shared by local dictation AND phone-as-dictaphone: appends a final
+  // transcript segment to the dictation box through the same pipeline
+  // (voice commands, selection replacement, correction loop).
+  const applyTranscriptText = (rawText: string) => {
+    const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
+    dictationCharsRef.current += text.length;
+    setDictation((prev) => {
+      const sel = dictSelRangeRef.current;
+      if (sel && sel.start !== sel.end) {
+        whisperSkipRef.current = true;
+        const before = prev.slice(0, sel.start);
+        const after = prev.slice(sel.end);
+        setDictSelRange(null);
+        dictSelRangeRef.current = null;
+        return before + text + after;
+      }
+      if (whisperDictationStartRef.current === -1) {
+        whisperDictationStartRef.current = prev.length + (prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? 1 : 0);
+      }
+      const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
+      return prev + sep + text;
+    });
+    setTraceData(null);
+    setVoiceError(null);
+    startCorrectionLoop.current();
+    scheduleDebouncedCorrection.current();
+  };
+
+  // Shared: replaces the current dictation segment with the Whisper-refined text.
+  const applyWhisperRefine = (whisperText: string) => {
+    if (whisperSkipRef.current || whisperDictationStartRef.current === -1) {
+      whisperSkipRef.current = false;
+      return;
+    }
+    const processed = processVoiceCommands(whisperText, resolvedDictLangRef.current || resolvedDictLang);
+    const startIdx = whisperDictationStartRef.current;
+    whisperDictationStartRef.current = -1;
+    setDictation((prev) => {
+      if (startIdx > prev.length) return prev;
+      const before = prev.slice(0, startIdx);
+      const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
+      const updated = before + sep + processed;
+      correctedLenRef.current = updated.length;
+      return updated;
+    });
+    setIsCorrecting(false);
+    setTraceData(null);
+  };
+
+  // Shared: end-of-recording sweep — stop the loop and run a final correction.
+  const finishDictationSegment = () => {
+    stopCorrectionLoop.current();
+    if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
+    const waitAndCorrect = () => {
+      if (correctingRef.current) {
+        setTimeout(waitAndCorrect, 100);
+        return;
+      }
+      const remaining = dictationRef.current.length - correctedLenRef.current;
+      if (remaining > 0) {
+        runCorrection.current(true);
+      }
+    };
+    setTimeout(waitAndCorrect, 250);
+  };
+
   const { isRecording, isTranscribing, isRefining, audioLevel, interimText, toggleRecording } = useVoiceDictation({
     language: resolvedDictLang,
     templateSections: whisperTemplateSectionsRef.current,
     studyContext: whisperStudyContextRef.current,
     modality: whisperModalityRef.current,
     studyType: whisperStudyTypeRef.current,
-    onTranscript: (rawText) => {
-      const text = processVoiceCommands(rawText, resolvedDictLangRef.current || resolvedDictLang);
-      dictationCharsRef.current += text.length;
-      setDictation((prev) => {
-        const sel = dictSelRangeRef.current;
-        if (sel && sel.start !== sel.end) {
-          whisperSkipRef.current = true;
-          const before = prev.slice(0, sel.start);
-          const after = prev.slice(sel.end);
-          setDictSelRange(null);
-          dictSelRangeRef.current = null;
-          return before + text + after;
-        }
-        if (whisperDictationStartRef.current === -1) {
-          whisperDictationStartRef.current = prev.length + (prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? 1 : 0);
-        }
-        const sep = prev && !prev.endsWith(" ") && !prev.endsWith("\n") ? " " : "";
-        return prev + sep + text;
-      });
-      setTraceData(null);
-      setVoiceError(null);
-      startCorrectionLoop.current();
-      scheduleDebouncedCorrection.current();
-    },
+    onTranscript: applyTranscriptText,
     onInterim: () => {},
     onQuotaUpdate: (quota) => {
       setSubDictUsedMin(Math.round(quota.usedSeconds / 60));
@@ -467,40 +511,8 @@ export function DashboardContent() {
     onMaxDuration: () => {
       toast.info(t("dash.dict_max_reached"));
     },
-    onRecordingDone: () => {
-      stopCorrectionLoop.current();
-      if (correctTimerRef.current) { clearTimeout(correctTimerRef.current); correctTimerRef.current = null; }
-      const waitAndCorrect = () => {
-        if (correctingRef.current) {
-          setTimeout(waitAndCorrect, 100);
-          return;
-        }
-        const remaining = dictationRef.current.length - correctedLenRef.current;
-        if (remaining > 0) {
-          runCorrection.current(true);
-        }
-      };
-      setTimeout(waitAndCorrect, 250);
-    },
-    onWhisperRefine: (whisperText, _deepgramText) => {
-      if (whisperSkipRef.current || whisperDictationStartRef.current === -1) {
-        whisperSkipRef.current = false;
-        return;
-      }
-      const processed = processVoiceCommands(whisperText, resolvedDictLangRef.current || resolvedDictLang);
-      const startIdx = whisperDictationStartRef.current;
-      whisperDictationStartRef.current = -1;
-      setDictation((prev) => {
-        if (startIdx > prev.length) return prev;
-        const before = prev.slice(0, startIdx);
-        const sep = before && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
-        const updated = before + sep + processed;
-        correctedLenRef.current = updated.length;
-        return updated;
-      });
-      setIsCorrecting(false);
-      setTraceData(null);
-    },
+    onRecordingDone: finishDictationSegment,
+    onWhisperRefine: (whisperText, _deepgramText) => applyWhisperRefine(whisperText),
   });
 
   useEffect(() => {
@@ -2247,6 +2259,24 @@ export function DashboardContent() {
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="ml-auto">
+                  <RemotePhoneDictation
+                    getContext={() => ({
+                      language: resolvedDictLangRef.current || resolvedDictLang || "es",
+                      templateSections: whisperTemplateSectionsRef.current,
+                      studyContext: whisperStudyContextRef.current,
+                      modality: whisperModalityRef.current,
+                      studyType: whisperStudyTypeRef.current,
+                    })}
+                    onFinal={applyTranscriptText}
+                    onRefine={applyWhisperRefine}
+                    onRecStart={() => {
+                      whisperDictationStartRef.current = -1;
+                      whisperSkipRef.current = false;
+                    }}
+                    onRecStop={finishDictationSegment}
+                  />
+                </div>
               </div>
               <div className="relative">
                 <AutoGrowTextarea

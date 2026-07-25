@@ -47,6 +47,10 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/invite") ||
     request.nextUrl.pathname.startsWith("/api/enterprise-inquiry") ||
     request.nextUrl.pathname.startsWith("/api/hospital-signup") ||
+    // Phone-as-dictaphone: page + APIs authenticate via signed pairing token
+    request.nextUrl.pathname.startsWith("/remote-dictation") ||
+    request.nextUrl.pathname.startsWith("/api/remote-dictation") ||
+    request.nextUrl.pathname.startsWith("/api/transcribe/") ||
     request.nextUrl.pathname.startsWith("/hospital-signup") ||
     request.nextUrl.pathname.startsWith("/hospital-trial") ||
     request.nextUrl.pathname.startsWith("/invite") ||
