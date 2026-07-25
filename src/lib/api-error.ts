@@ -33,10 +33,16 @@ export function toErrorResponse(error: unknown, fallbackStatus = 500) {
   const message = getErrorMessage(error);
   const status = fallbackStatus !== 500 ? fallbackStatus : getErrorStatus(message);
   const safe = isClientSafe(message) ? message : "Internal server error";
+  // The client gets a sanitized message, but the REAL cause must reach the
+  // server logs — otherwise failures are undiagnosable.
+  if (safe !== message) {
+    console.error("[api-error]", message, error instanceof Error ? error.stack : "");
+  }
   return NextResponse.json({ error: safe }, { status });
 }
 
 export function dbErrorResponse(error: { message: string }, status = 500) {
   const safe = isClientSafe(error.message) ? error.message : "Database operation failed";
+  if (safe !== error.message) console.error("[db-error]", error.message);
   return NextResponse.json({ error: safe }, { status });
 }
