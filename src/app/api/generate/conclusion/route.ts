@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
-import { generateAIStreamWithUsage, generateAIWithUsage } from "@/lib/ai-provider";
+import { streamAIWithFallback, generateAIWithUsageFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt, buildConclusionRefinePrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
       stream: ReadableStream<Uint8Array>,
       getUsage: () => { inputTokens: number; outputTokens: number } | null,
       action: string,
+      usedProvider: string,
+      usedModel: string,
     ) => {
       const reader = stream.getReader();
       const passthrough = new ReadableStream({
@@ -123,7 +125,7 @@ export async function POST(req: NextRequest) {
             controller.close();
             const usage = getUsage();
             if (usage) {
-              logAICost({ userId, action, provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+              logAICost({ userId, action, provider: usedProvider, model: usedModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
             }
           }
         },
@@ -140,8 +142,9 @@ export async function POST(req: NextRequest) {
     const shouldRefine = conclusionStyle === "grouped" && !isCardiac && !isRecist;
 
     if (shouldRefine) {
-      // Pass 1 — generate the draft (buffered).
-      const draft = await generateAIWithUsage({
+      // Pass 1 — generate the draft (buffered), with automatic provider fallback.
+      const draft = await generateAIWithUsageFallback({
+        config: globalConfig,
         provider: effectiveProvider,
         modelName: effectiveModel,
         apiKey: effectiveKey,
@@ -151,26 +154,29 @@ export async function POST(req: NextRequest) {
         maxTokens,
       });
       if (draft.usage) {
-        logAICost({ userId, action: "generate_conclusion", provider: effectiveProvider, model: effectiveModel, inputTokens: draft.usage.inputTokens, outputTokens: draft.usage.outputTokens });
+        logAICost({ userId, action: "generate_conclusion", provider: draft.usedProvider, model: draft.usedModel, inputTokens: draft.usage.inputTokens, outputTokens: draft.usage.outputTokens });
       }
       const draftText = (draft.text || "").trim();
       if (!draftText) {
         return new Response("", { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage } });
       }
-      // Pass 2 — polish the wording (streamed).
-      const { stream, getUsage } = await generateAIStreamWithUsage({
-        provider: effectiveProvider,
-        modelName: effectiveModel,
-        apiKey: effectiveKey,
+      // Pass 2 — polish the wording (streamed). If the primary already fell
+      // back in pass 1, start directly with the provider that worked.
+      const pass2 = await streamAIWithFallback({
+        config: globalConfig,
+        provider: draft.usedProvider,
+        modelName: draft.usedModel,
+        apiKey: draft.fellBack ? resolveApiKey(globalConfig, draft.usedProvider) : effectiveKey,
         customBaseUrl: globalConfig.customBaseUrl,
         system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage),
         user: draftText,
         maxTokens,
       });
-      return streamToResponse(stream, getUsage, "conclusion_refine");
+      return streamToResponse(pass2.stream, pass2.getUsage, "conclusion_refine", pass2.usedProvider, pass2.usedModel);
     }
 
-    const { stream, getUsage } = await generateAIStreamWithUsage({
+    const single = await streamAIWithFallback({
+      config: globalConfig,
       provider: effectiveProvider,
       modelName: effectiveModel,
       apiKey: effectiveKey,
@@ -179,7 +185,7 @@ export async function POST(req: NextRequest) {
       user: userPrompt,
       maxTokens,
     });
-    return streamToResponse(stream, getUsage, "generate_conclusion");
+    return streamToResponse(single.stream, single.getUsage, "generate_conclusion", single.usedProvider, single.usedModel);
   } catch (error) {
     return toErrorResponse(error);
   }

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, checkReportLimit, incrementReportUsage } from "@/lib/auth-helpers";
 import { maybeSendLimitEmail } from "@/lib/limit-email";
-import { generateAIStreamWithUsage } from "@/lib/ai-provider";
+import { streamAIWithFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildFindingsPrompt } from "@/lib/prompts";
 import { runComboFindings } from "@/lib/combo-findings";
@@ -211,7 +211,11 @@ export async function POST(req: NextRequest) {
     }
 
 
-    const { stream: rawStream, getUsage } = await generateAIStreamWithUsage({
+    // Automatic provider fallback: the configured model gets two attempts,
+    // then the request hops to every other provider with a configured key
+    // so the user is never left without a report.
+    const { stream: rawStream, getUsage, usedProvider, usedModel } = await streamAIWithFallback({
+      config: globalConfig,
       provider: effectiveProvider,
       modelName: effectiveModel,
       apiKey: effectiveKey,
@@ -257,7 +261,7 @@ export async function POST(req: NextRequest) {
           controller.close();
           const usage = getUsage();
           if (usage) {
-            logAICost({ userId, action: "generate_findings", provider: effectiveProvider, model: effectiveModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
+            logAICost({ userId, action: "generate_findings", provider: usedProvider, model: usedModel, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
           }
         }
       },

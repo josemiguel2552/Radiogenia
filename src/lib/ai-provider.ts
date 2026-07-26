@@ -23,6 +23,8 @@ interface GenerateParams {
   system: string;
   user: string;
   maxTokens?: number;
+  /** Optional abort signal — used by the fallback layer to bound connection setup. */
+  signal?: AbortSignal;
 }
 
 interface ProviderConfig {
@@ -489,6 +491,7 @@ export async function generateAIStreamWithUsage(params: GenerateParams): Promise
     method: "POST",
     headers: config.headers,
     body: JSON.stringify(requestBody),
+    signal: params.signal,
   });
 
   if (!response.ok) {
