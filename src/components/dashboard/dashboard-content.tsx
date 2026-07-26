@@ -208,7 +208,7 @@ export function DashboardContent() {
   const [repairMessage, setRepairMessage] = useState<string | null>(null);
 
   // Hidden templates
-  const [reportMode, setReportModeState] = useState<ReportMode>("structured");
+  const [reportMode, setReportModeState] = useState<ReportMode>("dictation_only");
   const setReportMode = (mode: ReportMode) => {
     setReportModeState(mode);
     try { localStorage.setItem("rg_report_mode", mode); } catch {};
@@ -862,7 +862,7 @@ export function DashboardContent() {
   }
 
   type ReportMode = "structured" | "compact" | "dictation_only" | "unstructured";
-  async function handleGenerate(mode: ReportMode = "structured", langOverride?: string) {
+  async function handleGenerate(mode: ReportMode = "dictation_only", langOverride?: string) {
     const effectiveLang = langOverride ?? outputLanguage;
     if (!selectedTemplate || !dictation.trim()) return;
     // First generation ever → after it completes, nudge toward the classify tool.
@@ -1635,7 +1635,8 @@ export function DashboardContent() {
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
-        handleGenerateRef.current("structured");
+        // No explicit mode: generate with the user's currently selected mode.
+        handleGenerateRef.current();
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
         e.preventDefault();
