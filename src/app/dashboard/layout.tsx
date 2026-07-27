@@ -33,7 +33,7 @@ export default async function DashboardLayout({
     .single();
 
   // Card-first billing: nobody uses the platform without a subscription (or
-  // an active 15-day trial, which Stripe reports as the Starter plan).
+  // an active 7-day trial, which Stripe reports as the Starter plan).
   // Hospital/org members and admins are exempt.
   const needsSubscription =
     role !== "admin" &&

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
 
     // Card-first billing: every signup must activate a plan before using the
-    // platform (15-day Starter trial with card, or Professional charged
+    // platform (7-day Starter trial with card, or Professional charged
     // immediately). Email verification stays deferred (7-day grace), but the
     // dashboard is paywalled until checkout completes.
     const pendingPlan = plan === "professional" ? "professional" : "starter";

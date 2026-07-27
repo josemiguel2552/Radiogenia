@@ -217,7 +217,7 @@ const SECURITY_ITEMS = [
   { icon: BookOpen, key: "flexibility" },
 ] as const;
 
-// Card-first billing: only Starter (with 15-day free trial) and Professional
+// Card-first billing: only Starter (with 7-day free trial) and Professional
 // are offered. "free" and "resident" are legacy-only states, never sold.
 const PLAN_ORDER: SubscriptionPlan[] = ["starter", "professional"];
 
@@ -1112,7 +1112,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
       {planKey === "starter" && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full whitespace-nowrap">
-            {lang === "es" ? "15 días gratis" : lang === "pt" ? "15 dias grátis" : "15 days free"}
+            {lang === "es" ? "7 días gratis" : lang === "pt" ? "7 dias grátis" : "7 days free"}
           </span>
         </div>
       )}
@@ -1127,10 +1127,10 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
           {planKey === "starter" && (
             <p className="text-xs text-blue-300 mt-1">
               {lang === "es"
-                ? "Prueba gratuita de 15 días — sin cargo hoy, cancela cuando quieras"
+                ? "Prueba gratuita de 7 días — sin cargo hoy, cancela cuando quieras"
                 : lang === "pt"
-                ? "Teste grátis de 15 dias — sem cobrança hoje, cancele quando quiser"
-                : "15-day free trial — no charge today, cancel anytime"}
+                ? "Teste grátis de 7 dias — sem cobrança hoje, cancele quando quiser"
+                : "7-day free trial — no charge today, cancel anytime"}
             </p>
           )}
           {plan.price > 0 && <PriceTooltip usd={plan.price} inline />}
@@ -1155,7 +1155,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
         }`}
       >
         {planKey === "starter"
-          ? lang === "es" ? "Probar 15 días gratis" : lang === "pt" ? "Testar 15 dias grátis" : "Try 15 days free"
+          ? lang === "es" ? "Probar 7 días gratis" : lang === "pt" ? "Testar 7 dias grátis" : "Try 7 days free"
           : <>{t("pricing.subscribe_cta")} — {CURRENCY}{plan.price}{t("pricing.per_month")}</>}
       </Link>
     </div>

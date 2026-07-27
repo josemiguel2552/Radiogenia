@@ -1650,7 +1650,7 @@ export async function sendResidentReviewedEmail(to: string, name: string | null,
 }
 
 // ---------------------------------------------------------------------------
-// Trial charge reminder (day 14 of the 15-day trial)
+// Trial charge reminder (day 6 of the 7-day trial)
 // ---------------------------------------------------------------------------
 
 const trialReminderI18n: Record<EmailLang, {
@@ -1665,7 +1665,7 @@ const trialReminderI18n: Record<EmailLang, {
     subject: "Tu prueba gratuita termina pronto — primer cargo en camino",
     titleWith: ", tu prueba gratuita termina pronto",
     titleWithout: "Tu prueba gratuita termina pronto",
-    intro: (date, price) => `Tu prueba gratuita de 15 d&iacute;as de Radiogen.AI finaliza el <strong style="color:#fff;">${date}</strong>. Ese d&iacute;a se realizar&aacute; el primer cargo de <strong style="color:#fff;">${price}/mes</strong> (plan Starter) en la tarjeta registrada.`,
+    intro: (date, price) => `Tu prueba gratuita de 7 d&iacute;as de Radiogen.AI finaliza el <strong style="color:#fff;">${date}</strong>. Ese d&iacute;a se realizar&aacute; el primer cargo de <strong style="color:#fff;">${price}/mes</strong> (plan Starter) en la tarjeta registrada.`,
     keepTitle: "Si quieres continuar",
     keep: "No tienes que hacer nada: tu acceso contin&uacute;a sin interrupciones.",
     cancelTitle: "Si no deseas continuar",
@@ -1679,7 +1679,7 @@ const trialReminderI18n: Record<EmailLang, {
     subject: "Your free trial ends soon — first charge coming up",
     titleWith: ", your free trial ends soon",
     titleWithout: "Your free trial ends soon",
-    intro: (date, price) => `Your 15-day free trial of Radiogen.AI ends on <strong style="color:#fff;">${date}</strong>. On that day the first charge of <strong style="color:#fff;">${price}/mo</strong> (Starter plan) will be made to your registered card.`,
+    intro: (date, price) => `Your 7-day free trial of Radiogen.AI ends on <strong style="color:#fff;">${date}</strong>. On that day the first charge of <strong style="color:#fff;">${price}/mo</strong> (Starter plan) will be made to your registered card.`,
     keepTitle: "If you want to continue",
     keep: "You don&rsquo;t need to do anything &mdash; your access continues uninterrupted.",
     cancelTitle: "If you don&rsquo;t want to continue",
@@ -1693,7 +1693,7 @@ const trialReminderI18n: Record<EmailLang, {
     subject: "Seu teste grátis termina em breve — primeira cobrança a caminho",
     titleWith: ", seu teste grátis termina em breve",
     titleWithout: "Seu teste grátis termina em breve",
-    intro: (date, price) => `Seu teste gr&aacute;tis de 15 dias do Radiogen.AI termina em <strong style="color:#fff;">${date}</strong>. Nesse dia ser&aacute; feita a primeira cobran&ccedil;a de <strong style="color:#fff;">${price}/m&ecirc;s</strong> (plano Starter) no cart&atilde;o registrado.`,
+    intro: (date, price) => `Seu teste gr&aacute;tis de 7 dias do Radiogen.AI termina em <strong style="color:#fff;">${date}</strong>. Nesse dia ser&aacute; feita a primeira cobran&ccedil;a de <strong style="color:#fff;">${price}/m&ecirc;s</strong> (plano Starter) no cart&atilde;o registrado.`,
     keepTitle: "Se quiser continuar",
     keep: "Voc&ecirc; n&atilde;o precisa fazer nada &mdash; seu acesso continua sem interrup&ccedil;&otilde;es.",
     cancelTitle: "Se n&atilde;o quiser continuar",

@@ -1,7 +1,7 @@
 "use client";
 
 /* Card-first activation wall. Every individual account without an active
-   subscription lands here (dashboard layout redirect): choose the 15-day
+   subscription lands here (dashboard layout redirect): choose the 7-day
    Starter trial (card required, first charge on day 15, no refunds) or a
    Professional subscription charged immediately. There is no free escape. */
 
@@ -61,7 +61,7 @@ function PendingPaymentContent() {
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
-          {/* Starter — 15-day trial */}
+          {/* Starter — 7-day trial */}
           <div className="relative p-6 rounded-2xl border-2 border-violet-500/40 bg-gradient-to-b from-violet-500/10 to-blue-500/5 space-y-4">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-violet-500 to-blue-500 rounded-full text-white whitespace-nowrap">
@@ -131,9 +131,9 @@ function PendingPaymentContent() {
 
         <p className="text-[11px] text-gray-500 text-center max-w-lg mx-auto leading-relaxed">
           {tr(
-            `Te enviaremos un recordatorio por correo el día 14, antes del primer cargo. Los pagos no son reembolsables; puedes cancelar la suscripción en cualquier momento y conservarás el acceso hasta el final del periodo pagado.`,
-            `We'll email you a reminder on day 14, before the first charge. Payments are non-refundable; you can cancel your subscription at any time and keep access until the end of the paid period.`,
-            `Enviaremos um lembrete por e-mail no dia 14, antes da primeira cobrança. Os pagamentos não são reembolsáveis; você pode cancelar a assinatura a qualquer momento e manter o acesso até o fim do período pago.`,
+            `Te enviaremos un recordatorio por correo el día 6, antes del primer cargo. Los pagos no son reembolsables; puedes cancelar la suscripción en cualquier momento y conservarás el acceso hasta el final del periodo pagado.`,
+            `We'll email you a reminder on day 6, before the first charge. Payments are non-refundable; you can cancel your subscription at any time and keep access until the end of the paid period.`,
+            `Enviaremos um lembrete por e-mail no dia 6, antes da primeira cobrança. Os pagamentos não são reembolsáveis; você pode cancelar a assinatura a qualquer momento e manter o acesso até o fim do período pago.`,
           )}
         </p>
 

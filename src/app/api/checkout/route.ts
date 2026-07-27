@@ -69,8 +69,8 @@ async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{
       .eq("id", user.id);
   }
 
-  // Starter starts with a 15-day free trial — once per account. The card is
-  // always collected up front; the first charge happens on day 15 unless the
+  // Starter starts with a 7-day free trial — once per account. The card is
+  // always collected up front; the first charge happens on day 7 unless the
   // user cancels. Professional is charged immediately, no trial.
   // (trial_used_at is read best-effort so checkout keeps working even if the
   // trial-billing migration hasn't been applied yet.)

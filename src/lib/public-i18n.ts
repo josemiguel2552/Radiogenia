@@ -57,10 +57,10 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // Hero
     "hero.title": "Informes radiológicos en segundos",
     "hero.subtitle": "Dicta tus hallazgos de forma natural. La plataforma los transcribe, estructura y organiza en las secciones de hallazgos y conclusión — listo para revisar y firmar. Tú decides qué se escribe, la herramienta solo lo organiza.",
-    "hero.cta_primary": "Prueba 15 días gratis",
+    "hero.cta_primary": "Prueba 7 días gratis",
     "hero.cta_secondary": "Ver cómo funciona",
     "hero.badge_no_card": "Sin tarjeta de crédito",
-    "hero.cta_microcopy": "15 días de prueba gratis · Sin cargo hoy · Cancela cuando quieras",
+    "hero.cta_microcopy": "7 días de prueba gratis · Sin cargo hoy · Cancela cuando quieras",
     "hero.badge_hipaa": "Anonimización en origen",
     "hero.badge_encrypt": "Cifrado AES-256",
     // Features
@@ -92,7 +92,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "how.step3.desc": "Edita lo que necesites y guarda. La plataforma aprende tu estilo para la próxima vez.",
     // Pricing
     "pricing.title": "Precios simples y transparentes",
-    "pricing.subtitle": "Prueba gratis durante 15 días. Sin cargo hoy: solo se registra tu tarjeta y puedes cancelar cuando quieras.",
+    "pricing.subtitle": "Prueba gratis durante 7 días. Sin cargo hoy: solo se registra tu tarjeta y puedes cancelar cuando quieras.",
     "pricing.all_features": "Todos los planes incluyen todas las funciones.",
     "pricing.per_month": "/mes",
     "pricing.free_cta": "Empezar gratis",
@@ -157,7 +157,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // CTA
     "cta.title": "¿Listo para informar más rápido?",
     "cta.subtitle": "Únete a los radiólogos que ahorran horas cada semana estructurando sus informes de forma más rápida.",
-    "cta.button": "Prueba 15 días gratis",
+    "cta.button": "Prueba 7 días gratis",
     // Footer
     "footer.guide": "Guía",
     "footer.legal": "Legal",
@@ -195,7 +195,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.create_btn": "Crear cuenta",
     "auth.have_account": "¿Ya tienes cuenta?",
     "auth.signin_link": "Iniciar sesión",
-    "auth.sidebar_free": "Prueba Radiogen.ai gratis durante 15 días. Sin cargo hoy: cancela cuando quieras.",
+    "auth.sidebar_free": "Prueba Radiogen.ai gratis durante 7 días. Sin cargo hoy: cancela cuando quieras.",
     "auth.create_account_link": "Crear cuenta",
     "auth.google_unavailable": "El acceso con Google no está disponible aún",
     "auth.google_unavailable_desc": "Crea tu cuenta con email y contraseña para empezar a usar Radiogen.AI.",
@@ -356,10 +356,10 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // Hero
     "hero.title": "Radiology reports in seconds",
     "hero.subtitle": "Dictate your findings naturally. The platform transcribes, structures, and organizes them into findings and conclusion sections — ready to review and sign. You decide what gets written, the tool just organizes it.",
-    "hero.cta_primary": "Try 15 days free",
+    "hero.cta_primary": "Try 7 days free",
     "hero.cta_secondary": "See how it works",
     "hero.badge_no_card": "No credit card required",
-    "hero.cta_microcopy": "15-day free trial · No charge today · Cancel anytime",
+    "hero.cta_microcopy": "7-day free trial · No charge today · Cancel anytime",
     "hero.badge_hipaa": "Anonymization at source",
     "hero.badge_encrypt": "AES-256 encryption",
     // Features
@@ -391,7 +391,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "how.step3.desc": "Edit anything, save. The platform learns your style for next time.",
     // Pricing
     "pricing.title": "Simple, transparent pricing",
-    "pricing.subtitle": "Try free for 15 days. No charge today: your card is only registered and you can cancel anytime.",
+    "pricing.subtitle": "Try free for 7 days. No charge today: your card is only registered and you can cancel anytime.",
     "pricing.all_features": "Every plan includes all features.",
     "pricing.per_month": "/mo",
     "pricing.free_cta": "Start free",
@@ -456,7 +456,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // CTA
     "cta.title": "Ready to report faster?",
     "cta.subtitle": "Join the radiologists saving hours every week by structuring their reports faster.",
-    "cta.button": "Try 15 days free",
+    "cta.button": "Try 7 days free",
     // Footer
     "footer.guide": "Guide",
     "footer.legal": "Legal",
@@ -494,7 +494,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.create_btn": "Create account",
     "auth.have_account": "Already have an account?",
     "auth.signin_link": "Sign in",
-    "auth.sidebar_free": "Try Radiogen.ai free for 15 days. No charge today: cancel anytime.",
+    "auth.sidebar_free": "Try Radiogen.ai free for 7 days. No charge today: cancel anytime.",
     "auth.create_account_link": "Create account",
     "auth.google_unavailable": "Google sign-in is not available yet",
     "auth.google_unavailable_desc": "Create your account with email and password to start using Radiogen.AI.",
@@ -655,10 +655,10 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // Hero
     "hero.title": "Laudos radiológicos em segundos",
     "hero.subtitle": "Dite seus achados de forma natural. A plataforma transcreve, estrutura e organiza nas seções de achados e conclusão — pronto para revisar e assinar. Você decide o que se escreve, a ferramenta apenas organiza.",
-    "hero.cta_primary": "Teste 15 dias grátis",
+    "hero.cta_primary": "Teste 7 dias grátis",
     "hero.cta_secondary": "Veja como funciona",
     "hero.badge_no_card": "Sem cartão de crédito",
-    "hero.cta_microcopy": "15 dias de teste grátis · Sem cobrança hoje · Cancele quando quiser",
+    "hero.cta_microcopy": "7 dias de teste grátis · Sem cobrança hoje · Cancele quando quiser",
     "hero.badge_hipaa": "Anonimização na origem",
     "hero.badge_encrypt": "Criptografia AES-256",
     // Features
@@ -690,7 +690,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "how.step3.desc": "Edite o que precisar e salve. A plataforma aprende seu estilo para a próxima vez.",
     // Pricing
     "pricing.title": "Preços simples e transparentes",
-    "pricing.subtitle": "Teste grátis por 15 dias. Sem cobrança hoje: seu cartão apenas é registrado e você pode cancelar quando quiser.",
+    "pricing.subtitle": "Teste grátis por 7 dias. Sem cobrança hoje: seu cartão apenas é registrado e você pode cancelar quando quiser.",
     "pricing.all_features": "Todos os planos incluem todos os recursos.",
     "pricing.per_month": "/mês",
     "pricing.free_cta": "Começar grátis",
@@ -755,7 +755,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     // CTA
     "cta.title": "Pronto para laudar mais rápido?",
     "cta.subtitle": "Junte-se aos radiologistas que economizam horas por semana estruturando seus laudos mais rapidamente.",
-    "cta.button": "Teste 15 dias grátis",
+    "cta.button": "Teste 7 dias grátis",
     // Footer
     "footer.guide": "Guia",
     "footer.legal": "Termos legais",
@@ -793,7 +793,7 @@ const dict: Record<PublicLang, Record<string, string>> = {
     "auth.create_btn": "Criar conta",
     "auth.have_account": "Já tem uma conta?",
     "auth.signin_link": "Entrar",
-    "auth.sidebar_free": "Teste o Radiogen.ai grátis por 15 dias. Sem cobrança hoje: cancele quando quiser.",
+    "auth.sidebar_free": "Teste o Radiogen.ai grátis por 7 dias. Sem cobrança hoje: cancele quando quiser.",
     "auth.create_account_link": "Criar conta",
     "auth.google_unavailable": "O acesso com Google ainda não está disponível",
     "auth.google_unavailable_desc": "Crie sua conta com e-mail e senha para começar a usar o Radiogen.AI.",

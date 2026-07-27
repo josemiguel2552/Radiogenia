@@ -31,7 +31,7 @@ function RegisterForm() {
   const { lang, setLang, t } = usePublicLang();
   const searchParams = useSearchParams();
   // Card-first billing: every signup activates a plan. Default is the
-  // 15-day Starter trial; "professional" subscribes immediately.
+  // 7-day Starter trial; "professional" subscribes immediately.
   const selectedPlan = searchParams.get("plan") === "professional" ? "professional" : "starter";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -297,10 +297,10 @@ function RegisterForm() {
               <p className="text-xs text-gray-400">
                 {selectedPlan === "starter"
                   ? lang === "es"
-                    ? "15 días de prueba gratis — sin cargo hoy, solo se registra la tarjeta. Después $7.99/mes salvo que canceles antes."
+                    ? "7 días de prueba gratis — sin cargo hoy, solo se registra la tarjeta. Después $7.99/mes salvo que canceles antes."
                     : lang === "pt"
-                    ? "15 dias de teste grátis — sem cobrança hoje, o cartão apenas é registrado. Depois $7.99/mês salvo cancelamento prévio."
-                    : "15-day free trial — no charge today, your card is only registered. Then $7.99/mo unless you cancel first."
+                    ? "7 dias de teste grátis — sem cobrança hoje, o cartão apenas é registrado. Depois $7.99/mês salvo cancelamento prévio."
+                    : "7-day free trial — no charge today, your card is only registered. Then $7.99/mo unless you cancel first."
                   : lang === "es"
                   ? `$${PLANS.professional.price} USD${t("pricing.per_month")} — se cobrará tras confirmar tu correo`
                   : lang === "pt"
@@ -444,7 +444,7 @@ function RegisterForm() {
               {loading
                 ? <Loader2 className="h-4 w-4 animate-spin" />
                 : selectedPlan === "starter"
-                  ? lang === "es" ? "Crear cuenta — 15 días gratis" : lang === "pt" ? "Criar conta — 15 dias grátis" : "Create account — 15 days free"
+                  ? lang === "es" ? "Crear cuenta — 7 días gratis" : lang === "pt" ? "Criar conta — 7 dias grátis" : "Create account — 7 days free"
                   : lang === "es" ? "Crear cuenta y suscribirse" : lang === "pt" ? "Criar conta e assinar" : "Create account & subscribe"}
             </Button>
           </form>

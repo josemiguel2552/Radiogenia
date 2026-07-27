@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Day-14 trial charge reminder, driven by a daily Vercel Cron (see
- * vercel.json). Users whose 15-day trial ends within the next ~36 hours get
+ * Day-6 trial charge reminder, driven by a daily Vercel Cron (see
+ * vercel.json). Users whose 7-day trial ends within the next ~36 hours get
  * one email reminding them of the upcoming Starter charge, that payments are
  * non-refundable, and how to cancel. Guarded by trial_reminder_sent_at so
  * repeated runs never email anyone twice per trial.
