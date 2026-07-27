@@ -2,7 +2,7 @@
 
 /* Card-first activation wall. Every individual account without an active
    subscription lands here (dashboard layout redirect): choose the 7-day
-   Starter trial (card required, first charge on day 15, no refunds) or a
+   Starter trial (card required, first charge on day 7, no refunds) or a
    Professional subscription charged immediately. There is no free escape. */
 
 import { Suspense } from "react";
