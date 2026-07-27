@@ -43,12 +43,12 @@ export async function GET(request: Request) {
         .eq("email_verified", false); // keep the original verification timestamp
     }
 
+    // Card-first billing: chain email verification straight into Stripe
+    // Checkout. "resident" was retired — legacy links get the Starter trial.
     const plan = searchParams.get("plan");
-    if (plan === "resident") {
-      return NextResponse.redirect(`${origin}/auth/verify-resident`);
-    }
     if (plan && plan !== "free") {
-      return NextResponse.redirect(`${origin}/api/checkout?plan=${encodeURIComponent(plan)}`);
+      const target = plan === "resident" ? "starter" : plan;
+      return NextResponse.redirect(`${origin}/api/checkout?plan=${encodeURIComponent(target)}`);
     }
 
     return NextResponse.redirect(`${origin}/dashboard`);

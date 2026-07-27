@@ -53,6 +53,19 @@ export async function GET() {
       stripeSubId = extra?.stripe_subscription_id ?? null;
     } catch { /* columns may not exist yet */ }
 
+    // Active-trial end date (best-effort: column may predate the migration).
+    let trialEndsAt: string | null = null;
+    try {
+      const { data: trialRow } = await service
+        .from("profiles")
+        .select("trial_ends_at")
+        .eq("id", user.id)
+        .single();
+      if (trialRow?.trial_ends_at && new Date(trialRow.trial_ends_at).getTime() > Date.now()) {
+        trialEndsAt = trialRow.trial_ends_at;
+      }
+    } catch { /* ignore */ }
+
     // Self-healing sync with Stripe: if the user has a Stripe customer but the
     // local plan is "free" (e.g. the checkout webhook never arrived), query
     // Stripe directly for the active subscription and reconcile the DB.
@@ -181,6 +194,7 @@ export async function GET() {
       pendingPlan,
       pendingPlanEffectiveDate: pendingEffective,
       hasStripe: !!profile.stripe_customer_id,
+      trialEndsAt,
       dictation: {
         usedSeconds: displayDictUsed,
         limitSeconds: effectiveDictLimit,

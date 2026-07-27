@@ -9,14 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import {
   Lock, CreditCard, Check, Loader2, AlertTriangle, CalendarClock,
   ExternalLink, X, Zap, FileText, Mic, TrendingUp, User, Download, Receipt,
-  Gift, Copy, CheckCheck, ShieldCheck, Brain, Trash2, GraduationCap,
+  Gift, Copy, CheckCheck, ShieldCheck, Brain, Trash2,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
-import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
+import { PLANS, CURRENCY, PUBLIC_PLANS, type SubscriptionPlan } from "@/lib/types";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { copyToClipboard } from "@/lib/copy-text";
-import { ResidentVerificationForm } from "@/components/resident-verification-form";
 
 interface SubInfo {
   plan: SubscriptionPlan;
@@ -29,6 +28,7 @@ interface SubInfo {
   pendingPlan: SubscriptionPlan | null;
   pendingPlanEffectiveDate: string | null;
   hasStripe: boolean;
+  trialEndsAt?: string | null;
   dictation: {
     usedMinutes: number;
     limitMinutes: number;
@@ -291,7 +291,14 @@ export function AccountTab() {
     setDeleteAccountLoading(false);
   }, []);
 
-  const planKeys = Object.keys(PLANS) as SubscriptionPlan[];
+  // Only the sellable plans are offered; a legacy plan (e.g. resident) stays
+  // visible as the current one so its holder understands what they have.
+  const planKeys = Array.from(
+    new Set<SubscriptionPlan>([
+      ...PUBLIC_PLANS,
+      ...(sub?.plan && sub.plan !== "free" ? [sub.plan as SubscriptionPlan] : []),
+    ]),
+  );
 
   return (
     <div className="space-y-6 pb-8">
@@ -329,7 +336,9 @@ export function AccountTab() {
                       </Badge>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      {sub.pendingPlan === "free"
+                      {sub.trialEndsAt
+                        ? <>{t("account.trial_until")} {formatDate(sub.trialEndsAt)}</>
+                        : sub.pendingPlan === "free"
                         ? <>{t("account.ends_on")}: {formatDate(sub.nextPeriodDate)}</>
                         : <>{t("account.next_renewal")}: {formatDate(sub.nextPeriodDate)}</>}
                     </p>
@@ -345,6 +354,15 @@ export function AccountTab() {
                   {t("account.change_plan")}
                 </Button>
               </div>
+
+              {sub.trialEndsAt && (
+                <div className="mb-4 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <CalendarClock className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-[11px] leading-snug text-amber-700 dark:text-amber-300">
+                    {t("account.trial_until")} <span className="font-semibold">{formatDate(sub.trialEndsAt)}</span>. {t("account.trial_charge_note")}
+                  </p>
+                </div>
+              )}
 
               {/* Usage cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -409,17 +427,6 @@ export function AccountTab() {
               )}
             </CardContent>
           </Card>
-
-          {/* Become a resident (free users): verify certificate → pay → resident */}
-          {sub?.plan === "free" && (
-            <div>
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <GraduationCap className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">{t("rv.become_resident")}</span>
-              </div>
-              <ResidentVerificationForm />
-            </div>
-          )}
 
           {/* Billing & Payment */}
           <Card>

@@ -54,12 +54,11 @@ export async function POST(req: NextRequest) {
     const userId = authData.user.id;
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || null;
 
-    // Every signup gets immediate access, regardless of country or plan.
-    // Email verification is deferred (7-day grace, enforced at login) rather
-    // than gating access up front. The resident PLAN (discounted pricing)
-    // still requires certificate verification — a separate, justified check
-    // handled downstream via pending_checkout_plan → /auth/verify-resident.
-    const pendingPlan = plan && plan !== "free" ? plan : null;
+    // Card-first billing: every signup must activate a plan before using the
+    // platform (15-day Starter trial with card, or Professional charged
+    // immediately). Email verification stays deferred (7-day grace), but the
+    // dashboard is paywalled until checkout completes.
+    const pendingPlan = plan === "professional" ? "professional" : "starter";
 
     await service.from("profiles").upsert({
       id: userId,
@@ -75,7 +74,7 @@ export async function POST(req: NextRequest) {
       ...(country ? { country } : {}),
       ...(hospital ? { hospital } : {}),
       ...(role ? { professional_role: role } : {}),
-      ...(pendingPlan ? { pending_checkout_plan: pendingPlan } : {}),
+      pending_checkout_plan: pendingPlan,
     });
 
     // Best-effort attribution stamp (separate update: must never break signup,
@@ -94,8 +93,7 @@ export async function POST(req: NextRequest) {
       });
       if (linkData?.properties?.hashed_token) {
         const base = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
-        const planParam = plan && plan !== "free" ? `&plan=${plan}` : "";
-        confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink${planParam}`;
+        confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=magiclink&plan=${pendingPlan}`;
       }
     } catch (err) {
       console.error(`[register] confirm link error: ${err}`);

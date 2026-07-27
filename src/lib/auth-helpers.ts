@@ -201,6 +201,12 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
       .eq("id", userId);
   }
 
+  // Card-first billing: without an active subscription (or trial, which the
+  // Stripe webhook maps to its paid plan) there is no free usage at all.
+  if (plan === "free") {
+    return { allowed: false, used: 0, limit: 0, plan: "free" };
+  }
+
   const planConfig = PLANS[plan];
   const periodStart = new Date(profile?.billing_period_start || Date.now());
   const nextPeriod = new Date(periodStart);
@@ -268,6 +274,11 @@ export async function checkDictationLimit(userId: string): Promise<{
         referral_bonus_expires_at: null,
       })
       .eq("id", userId);
+  }
+
+  // Card-first billing: without an active subscription there is no free usage.
+  if (plan === "free") {
+    return { allowed: false, usedSeconds: 0, limitSeconds: 0, plan: "free" };
   }
 
   const planConfig = PLANS[plan];
@@ -395,6 +406,12 @@ export async function checkDocumentLimit(userId: string): Promise<{
   }
 
   const plan = (profile?.subscription_plan || "free") as SubscriptionPlan;
+
+  // Card-first billing: no free usage without an active subscription.
+  if (plan === "free") {
+    return { allowed: false, used: 0, limit: 0, plan: "free" };
+  }
+
   const planConfig = PLANS[plan];
 
   return {

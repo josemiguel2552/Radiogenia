@@ -28,17 +28,23 @@ export default async function DashboardLayout({
   const service = createServiceClient();
   const { data: profile } = await service
     .from("profiles")
-    .select("pending_checkout_plan, email_verified, created_at")
+    .select("pending_checkout_plan, email_verified, created_at, subscription_plan, org_id")
     .eq("id", user.id)
     .single();
 
-  if (profile?.pending_checkout_plan) {
-    const plan = profile.pending_checkout_plan;
-    if (plan === "resident") {
-      redirect("/auth/verify-resident");
-    } else {
-      redirect(`/auth/pending-payment?plan=${encodeURIComponent(plan)}`);
-    }
+  // Card-first billing: nobody uses the platform without a subscription (or
+  // an active 15-day trial, which Stripe reports as the Starter plan).
+  // Hospital/org members and admins are exempt.
+  const needsSubscription =
+    role !== "admin" &&
+    !profile?.org_id &&
+    (profile?.subscription_plan || "free") === "free";
+
+  if (needsSubscription) {
+    const pending = profile?.pending_checkout_plan;
+    // "resident" was retired from the offer — route legacy pendings to the trial.
+    const plan = pending && pending !== "resident" && pending !== "free" ? pending : "starter";
+    redirect(`/auth/pending-payment?plan=${encodeURIComponent(plan)}`);
   }
 
   // Deferred verification: unverified users get in (7-day grace from signup)

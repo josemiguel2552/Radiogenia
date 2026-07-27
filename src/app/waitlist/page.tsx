@@ -19,8 +19,6 @@ const COUNTRIES = [
   "República Dominicana", "United States", "Uruguay", "Venezuela", "Other",
 ];
 
-const PAID_PLANS = new Set(["resident", "starter", "professional"]);
-
 export default function RegisterPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#0a0a1a]" />}>
@@ -32,7 +30,9 @@ export default function RegisterPage() {
 function RegisterForm() {
   const { lang, setLang, t } = usePublicLang();
   const searchParams = useSearchParams();
-  const selectedPlan = searchParams.get("plan") || "";
+  // Card-first billing: every signup activates a plan. Default is the
+  // 15-day Starter trial; "professional" subscribes immediately.
+  const selectedPlan = searchParams.get("plan") === "professional" ? "professional" : "starter";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -98,22 +98,7 @@ function RegisterForm() {
       }
 
       if (data.approved) {
-        // Deferred verification: free-plan users go straight into the app
-        // (7-day grace; a dashboard banner asks them to verify). Paid plans
-        // keep the email-link flow, which chains into checkout.
-        if (!selectedPlan || selectedPlan === "free") {
-          try {
-            const loginRes = await fetch("/api/auth/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, password }),
-            });
-            if (loginRes.ok) {
-              window.location.href = "/dashboard";
-              return;
-            }
-          } catch { /* fall back to the check-your-email screen */ }
-        }
+        // The confirmation email chains into Stripe Checkout (card first).
         setSubmitted("approved");
       } else {
         setSubmitted("pending");
@@ -165,10 +150,10 @@ function RegisterForm() {
               </h1>
               <p className="text-sm text-gray-400 leading-relaxed">
                 {lang === "es"
-                  ? "Tu cuenta fue creada correctamente, pero no pudimos conectar con la pasarela de pago. Puedes intentarlo de nuevo o acceder con el plan gratuito."
+                  ? "Tu cuenta fue creada correctamente, pero no pudimos conectar con la pasarela de pago. Inténtalo de nuevo para activar tu plan."
                   : lang === "pt"
-                  ? "Sua conta foi criada com sucesso, mas não conseguimos conectar ao gateway de pagamento. Você pode tentar novamente ou acessar com o plano gratuito."
-                  : "Your account was created successfully, but we couldn't connect to the payment gateway. You can try again or access with the free plan."}
+                  ? "Sua conta foi criada com sucesso, mas não conseguimos conectar ao gateway de pagamento. Tente novamente para ativar seu plano."
+                  : "Your account was created successfully, but we couldn't connect to the payment gateway. Please try again to activate your plan."}
               </p>
               <div className="flex flex-col gap-3 pt-2">
                 <Button
@@ -178,14 +163,8 @@ function RegisterForm() {
                 >
                   {loading
                     ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : lang === "es" ? "Reintentar pago" : lang === "pt" ? "Tentar pagamento novamente" : "Retry payment"}
+                    : lang === "es" ? "Reintentar" : lang === "pt" ? "Tentar novamente" : "Retry"}
                 </Button>
-                <Link
-                  href="/dashboard"
-                  className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
-                >
-                  {lang === "es" ? "Continuar con plan gratuito →" : lang === "pt" ? "Continuar com plano gratuito →" : "Continue with free plan →"}
-                </Link>
               </div>
             </div>
           </div>
@@ -307,19 +286,29 @@ function RegisterForm() {
             </button>
           </div>
 
-          {PAID_PLANS.has(selectedPlan) && PLANS[selectedPlan as keyof typeof PLANS] && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/20 bg-blue-500/5">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">
-                  {lang === "es" ? "Plan seleccionado:" : lang === "pt" ? "Plano selecionado:" : "Selected plan:"}{" "}
-                  <span className="text-blue-400">{PLANS[selectedPlan as keyof typeof PLANS].label}</span>
-                </p>
-                <p className="text-xs text-gray-400">
-                  ${PLANS[selectedPlan as keyof typeof PLANS].price} USD{t("pricing.per_month")} — {lang === "es" ? "se cobrará después del registro" : lang === "pt" ? "será cobrado após o registro" : "will be charged after registration"}
-                </p>
-              </div>
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${selectedPlan === "starter" ? "border-violet-500/25 bg-violet-500/5" : "border-blue-500/20 bg-blue-500/5"}`}>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">
+                {lang === "es" ? "Plan seleccionado:" : lang === "pt" ? "Plano selecionado:" : "Selected plan:"}{" "}
+                <span className={selectedPlan === "starter" ? "text-violet-400" : "text-blue-400"}>
+                  {PLANS[selectedPlan as keyof typeof PLANS].label}
+                </span>
+              </p>
+              <p className="text-xs text-gray-400">
+                {selectedPlan === "starter"
+                  ? lang === "es"
+                    ? "15 días de prueba gratis — sin cargo hoy, solo se registra la tarjeta. Después $7.99/mes salvo que canceles antes."
+                    : lang === "pt"
+                    ? "15 dias de teste grátis — sem cobrança hoje, o cartão apenas é registrado. Depois $7.99/mês salvo cancelamento prévio."
+                    : "15-day free trial — no charge today, your card is only registered. Then $7.99/mo unless you cancel first."
+                  : lang === "es"
+                  ? `$${PLANS.professional.price} USD${t("pricing.per_month")} — se cobrará tras confirmar tu correo`
+                  : lang === "pt"
+                  ? `$${PLANS.professional.price} USD${t("pricing.per_month")} — será cobrado após confirmar seu e-mail`
+                  : `$${PLANS.professional.price} USD${t("pricing.per_month")} — charged after you confirm your email`}
+              </p>
             </div>
-          )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -454,9 +443,9 @@ function RegisterForm() {
             >
               {loading
                 ? <Loader2 className="h-4 w-4 animate-spin" />
-                : PAID_PLANS.has(selectedPlan)
-                  ? lang === "es" ? "Crear cuenta y suscribirse" : lang === "pt" ? "Criar conta e assinar" : "Create account & subscribe"
-                  : t("waitlist.submit")}
+                : selectedPlan === "starter"
+                  ? lang === "es" ? "Crear cuenta — 15 días gratis" : lang === "pt" ? "Criar conta — 15 dias grátis" : "Create account — 15 days free"
+                  : lang === "es" ? "Crear cuenta y suscribirse" : lang === "pt" ? "Criar conta e assinar" : "Create account & subscribe"}
             </Button>
           </form>
 

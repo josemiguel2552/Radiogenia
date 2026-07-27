@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { PLANS, type SubscriptionPlan } from "@/lib/types";
+import { PLANS, TRIAL_DAYS, type SubscriptionPlan } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
 import Stripe from "stripe";
 
@@ -25,7 +25,10 @@ async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { url: null, error: "Unauthorized", status: 401 };
 
-  if (!plan || !PLANS[plan as SubscriptionPlan] || plan === "free") {
+  // Only Starter and Professional are purchasable. "free" is an internal
+  // state and "resident" was retired from the offer (existing resident
+  // subscribers keep their plan until they cancel).
+  if (!plan || !PLANS[plan as SubscriptionPlan] || plan === "free" || plan === "resident") {
     return { url: null, error: "Invalid plan", status: 400 };
   }
 
@@ -36,19 +39,6 @@ async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{
   }
 
   const service = createServiceClient();
-
-  if (plan === "resident") {
-    const { data: verification } = await service
-      .from("resident_verifications")
-      .select("status")
-      .eq("user_id", user.id)
-      .eq("status", "approved")
-      .limit(1)
-      .maybeSingle();
-    if (!verification) {
-      return { url: null, error: "Resident verification required", status: 403 };
-    }
-  }
 
   const { data: profile } = await service
     .from("profiles")
@@ -79,11 +69,33 @@ async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{
       .eq("id", user.id);
   }
 
+  // Starter starts with a 15-day free trial — once per account. The card is
+  // always collected up front; the first charge happens on day 15 unless the
+  // user cancels. Professional is charged immediately, no trial.
+  // (trial_used_at is read best-effort so checkout keeps working even if the
+  // trial-billing migration hasn't been applied yet.)
+  let trialEligible = plan === "starter";
+  if (trialEligible) {
+    try {
+      const { data: trialRow, error: trialErr } = await service
+        .from("profiles")
+        .select("trial_used_at")
+        .eq("id", user.id)
+        .single();
+      if (!trialErr && trialRow?.trial_used_at) trialEligible = false;
+    } catch { /* column may not exist yet */ }
+  }
+
   const origin = process.env.NEXT_PUBLIC_APP_URL || "https://radiogen.ai";
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
+    payment_method_collection: "always",
+    subscription_data: {
+      ...(trialEligible ? { trial_period_days: TRIAL_DAYS } : {}),
+      metadata: { supabase_user_id: user.id },
+    },
     success_url: `${origin}/dashboard?checkout=success`,
     cancel_url: `${origin}/dashboard?checkout=cancel`,
     metadata: { supabase_user_id: user.id },

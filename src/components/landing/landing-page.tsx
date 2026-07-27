@@ -217,7 +217,9 @@ const SECURITY_ITEMS = [
   { icon: BookOpen, key: "flexibility" },
 ] as const;
 
-const PLAN_ORDER: SubscriptionPlan[] = ["free", "resident", "starter", "professional"];
+// Card-first billing: only Starter (with 15-day free trial) and Professional
+// are offered. "free" and "resident" are legacy-only states, never sold.
+const PLAN_ORDER: SubscriptionPlan[] = ["starter", "professional"];
 
 export function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -492,7 +494,7 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-5 items-start">
+          <div className="grid md:grid-cols-2 gap-5 items-start max-w-3xl mx-auto">
             {PLAN_ORDER.map((key, i) => {
               const plan = PLANS[key];
               return (
@@ -501,7 +503,7 @@ export function LandingPage() {
             })}
           </div>
 
-          <div className="mt-5">
+          <div className="mt-5 max-w-3xl mx-auto">
             <EnterprisePricingCard t={t} lang={lang} index={PLAN_ORDER.length} />
           </div>
 
@@ -1107,17 +1109,10 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
           : "bg-white/[0.02] border border-white/5 hover:border-white/10"
       }`}
     >
-      {isHighlight && (
+      {planKey === "starter" && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
-            {t("pricing.most_popular")}
-          </span>
-        </div>
-      )}
-      {planKey === "resident" && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-violet-500 to-violet-600 rounded-full">
-            {lang === "es" ? "Residentes" : lang === "pt" ? "Residentes" : "Residents"}
+          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full whitespace-nowrap">
+            {lang === "es" ? "15 días gratis" : lang === "pt" ? "15 dias grátis" : "15 days free"}
           </span>
         </div>
       )}
@@ -1126,15 +1121,18 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
         <h3 className="text-lg font-semibold mb-1">{plan.label}</h3>
         <div>
           <div className="flex items-baseline gap-1">
-            {plan.price === 0 ? (
-              <span className="text-4xl font-bold">{lang === "es" ? "Gratis" : lang === "pt" ? "Grátis" : "Free"}</span>
-            ) : (
-              <>
-                <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
-                <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
-              </>
-            )}
+            <span className="text-4xl font-bold">{CURRENCY}{plan.price}</span>
+            <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
           </div>
+          {planKey === "starter" && (
+            <p className="text-xs text-blue-300 mt-1">
+              {lang === "es"
+                ? "Prueba gratuita de 15 días — sin cargo hoy, cancela cuando quieras"
+                : lang === "pt"
+                ? "Teste grátis de 15 dias — sem cobrança hoje, cancele quando quiser"
+                : "15-day free trial — no charge today, cancel anytime"}
+            </p>
+          )}
           {plan.price > 0 && <PriceTooltip usd={plan.price} inline />}
         </div>
       </div>
@@ -1149,21 +1147,15 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
       </ul>
 
       <Link
-        href={plan.price === 0 ? "/waitlist" : `/waitlist?plan=${planKey}`}
+        href={`/waitlist?plan=${planKey}`}
         className={`block text-center text-sm font-semibold py-3 rounded-full transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
-            : planKey === "resident"
-            ? "bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 shadow-lg shadow-violet-500/20"
-            : plan.price === 0
-            ? "bg-white/5 hover:bg-white/10 border border-white/10"
             : "bg-gradient-to-r from-blue-500/70 to-purple-600/70 hover:from-blue-500 hover:to-purple-600 shadow-md shadow-purple-500/10"
         }`}
       >
-        {plan.price === 0
-          ? t("pricing.free_cta")
-          : planKey === "resident"
-          ? lang === "es" ? "Verificar y suscribirse" : lang === "pt" ? "Verificar e assinar" : "Verify & subscribe"
+        {planKey === "starter"
+          ? lang === "es" ? "Probar 15 días gratis" : lang === "pt" ? "Testar 15 dias grátis" : "Try 15 days free"
           : <>{t("pricing.subscribe_cta")} — {CURRENCY}{plan.price}{t("pricing.per_month")}</>}
       </Link>
     </div>

@@ -90,7 +90,20 @@ export async function POST(req: NextRequest) {
                 update.reports_used_this_month = 0;
                 update.dictation_seconds_used = 0;
               }
-              console.log(`[stripe-webhook] checkout.session.completed: user=${session.metadata.supabase_user_id}, plan=${plan}`);
+              // Trial bookkeeping (best-effort: columns may predate migration).
+              if (sub.status === "trialing" && sub.trial_end) {
+                try {
+                  await service
+                    .from("profiles")
+                    .update({
+                      trial_used_at: new Date().toISOString(),
+                      trial_ends_at: new Date(sub.trial_end * 1000).toISOString(),
+                      trial_reminder_sent_at: null,
+                    })
+                    .eq("id", session.metadata.supabase_user_id);
+                } catch { /* ignore */ }
+              }
+              console.log(`[stripe-webhook] checkout.session.completed: user=${session.metadata.supabase_user_id}, plan=${plan}, status=${sub.status}`);
             } catch (err) {
               console.error("[stripe-webhook] checkout.session.completed: failed to retrieve subscription:", err instanceof Error ? err.message : err);
             }
@@ -162,6 +175,20 @@ export async function POST(req: NextRequest) {
           .from("profiles")
           .update(update)
           .eq("stripe_customer_id", customerId);
+
+        // Trial bookkeeping (best-effort: columns may predate migration).
+        if (subscription.status === "trialing" && subscription.trial_end) {
+          try {
+            await service
+              .from("profiles")
+              .update({
+                trial_used_at: new Date().toISOString(),
+                trial_ends_at: new Date(subscription.trial_end * 1000).toISOString(),
+              })
+              .eq("stripe_customer_id", customerId)
+              .is("trial_used_at", null);
+          } catch { /* ignore */ }
+        }
 
         if (event.type === "customer.subscription.updated" && previousPlan !== resolvedPlan) {
           const { data: profile } = await service

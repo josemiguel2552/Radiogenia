@@ -1648,3 +1648,112 @@ export async function sendResidentReviewedEmail(to: string, name: string | null,
     headers: { "X-Entity-Ref-ID": `resident-reviewed-${Date.now()}` },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Trial charge reminder (day 14 of the 15-day trial)
+// ---------------------------------------------------------------------------
+
+const trialReminderI18n: Record<EmailLang, {
+  subject: string; titleWith: string; titleWithout: string;
+  intro: (date: string, price: string) => string;
+  keepTitle: string; keep: string; cancelTitle: string;
+  cancelHow: (date: string) => string; noRefund: string;
+  btn: string; unsub: string;
+  textTpl: (g: string, date: string, price: string, url: string) => string;
+}> = {
+  es: {
+    subject: "Tu prueba gratuita termina pronto — primer cargo en camino",
+    titleWith: ", tu prueba gratuita termina pronto",
+    titleWithout: "Tu prueba gratuita termina pronto",
+    intro: (date, price) => `Tu prueba gratuita de 15 d&iacute;as de Radiogen.AI finaliza el <strong style="color:#fff;">${date}</strong>. Ese d&iacute;a se realizar&aacute; el primer cargo de <strong style="color:#fff;">${price}/mes</strong> (plan Starter) en la tarjeta registrada.`,
+    keepTitle: "Si quieres continuar",
+    keep: "No tienes que hacer nada: tu acceso contin&uacute;a sin interrupciones.",
+    cancelTitle: "Si no deseas continuar",
+    cancelHow: (date) => `Cancela la suscripci&oacute;n antes del ${date} desde tu cuenta (Cuenta &rarr; Cancelar suscripci&oacute;n) y no se realizar&aacute; ning&uacute;n cargo.`,
+    noRefund: "Importante: los pagos no son reembolsables. Si no cancelas antes de esa fecha, el cargo del mes no se devuelve, aunque conservar&aacute;s el acceso durante todo el periodo pagado.",
+    btn: "Gestionar mi suscripci&oacute;n",
+    unsub: "Recibes este correo porque tu periodo de prueba en Radiogen.AI está por finalizar.",
+    textTpl: (g, date, price, url) => `${g ? `${g}, t` : "T"}u prueba gratuita de Radiogen.AI finaliza el ${date}.\n\nEse día se realizará el primer cargo de ${price}/mes (plan Starter) en tu tarjeta.\n\n- Si quieres continuar, no tienes que hacer nada.\n- Si no deseas continuar, cancela antes del ${date} desde tu cuenta (Cuenta → Cancelar suscripción).\n\nImportante: los pagos no son reembolsables.\n\nGestionar mi suscripción: ${url}`,
+  },
+  en: {
+    subject: "Your free trial ends soon — first charge coming up",
+    titleWith: ", your free trial ends soon",
+    titleWithout: "Your free trial ends soon",
+    intro: (date, price) => `Your 15-day free trial of Radiogen.AI ends on <strong style="color:#fff;">${date}</strong>. On that day the first charge of <strong style="color:#fff;">${price}/mo</strong> (Starter plan) will be made to your registered card.`,
+    keepTitle: "If you want to continue",
+    keep: "You don&rsquo;t need to do anything &mdash; your access continues uninterrupted.",
+    cancelTitle: "If you don&rsquo;t want to continue",
+    cancelHow: (date) => `Cancel your subscription before ${date} from your account (Account &rarr; Cancel subscription) and no charge will be made.`,
+    noRefund: "Important: payments are non-refundable. If you don&rsquo;t cancel before that date, the month&rsquo;s charge is not returned, although you keep access for the entire paid period.",
+    btn: "Manage my subscription",
+    unsub: "You received this email because your Radiogen.AI trial period is about to end.",
+    textTpl: (g, date, price, url) => `${g ? `${g}, y` : "Y"}our Radiogen.AI free trial ends on ${date}.\n\nOn that day the first charge of ${price}/mo (Starter plan) will be made to your card.\n\n- If you want to continue, you don't need to do anything.\n- If you don't want to continue, cancel before ${date} from your account (Account → Cancel subscription).\n\nImportant: payments are non-refundable.\n\nManage my subscription: ${url}`,
+  },
+  pt: {
+    subject: "Seu teste grátis termina em breve — primeira cobrança a caminho",
+    titleWith: ", seu teste grátis termina em breve",
+    titleWithout: "Seu teste grátis termina em breve",
+    intro: (date, price) => `Seu teste gr&aacute;tis de 15 dias do Radiogen.AI termina em <strong style="color:#fff;">${date}</strong>. Nesse dia ser&aacute; feita a primeira cobran&ccedil;a de <strong style="color:#fff;">${price}/m&ecirc;s</strong> (plano Starter) no cart&atilde;o registrado.`,
+    keepTitle: "Se quiser continuar",
+    keep: "Voc&ecirc; n&atilde;o precisa fazer nada &mdash; seu acesso continua sem interrup&ccedil;&otilde;es.",
+    cancelTitle: "Se n&atilde;o quiser continuar",
+    cancelHow: (date) => `Cancele a assinatura antes de ${date} na sua conta (Conta &rarr; Cancelar assinatura) e nenhuma cobran&ccedil;a ser&aacute; feita.`,
+    noRefund: "Importante: os pagamentos n&atilde;o s&atilde;o reembols&aacute;veis. Se n&atilde;o cancelar antes dessa data, a cobran&ccedil;a do m&ecirc;s n&atilde;o &eacute; devolvida, embora voc&ecirc; mantenha o acesso durante todo o per&iacute;odo pago.",
+    btn: "Gerenciar minha assinatura",
+    unsub: "Você recebeu este e-mail porque seu período de teste no Radiogen.AI está prestes a terminar.",
+    textTpl: (g, date, price, url) => `${g ? `${g}, s` : "S"}eu teste grátis do Radiogen.AI termina em ${date}.\n\nNesse dia será feita a primeira cobrança de ${price}/mês (plano Starter) no seu cartão.\n\n- Se quiser continuar, não precisa fazer nada.\n- Se não quiser continuar, cancele antes de ${date} na sua conta (Conta → Cancelar assinatura).\n\nImportante: os pagamentos não são reembolsáveis.\n\nGerenciar minha assinatura: ${url}`,
+  },
+};
+
+const TRIAL_LOCALE: Record<EmailLang, string> = { es: "es-ES", en: "en-US", pt: "pt-BR" };
+
+export async function sendTrialReminderEmail(
+  to: string,
+  name: string | null,
+  lang: EmailLang = "es",
+  trialEndsAt: string | Date = new Date(),
+  monthlyPrice = 7.99,
+) {
+  const t = trialReminderI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+  const date = new Date(trialEndsAt).toLocaleDateString(TRIAL_LOCALE[lang], { day: "numeric", month: "long", year: "numeric" });
+  const price = `$${monthlyPrice}`;
+  const portalUrl = `${APP_URL}/dashboard`;
+
+  const html = emailShell(`
+        <tr><td style="padding:0 32px;">
+          <div style="width:56px;height:56px;border-radius:16px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);margin:0 auto 16px;text-align:center;line-height:56px;">
+            <span style="font-size:28px;">&#9200;</span>
+          </div>
+          <h1 style="color:#fff;font-size:22px;font-weight:700;text-align:center;margin:0 0 14px;letter-spacing:-0.3px;">
+            ${greeting ? `${greeting}${t.titleWith}` : t.titleWithout}
+          </h1>
+          <p style="color:#c9d1d9;font-size:14px;line-height:1.75;text-align:center;margin:0 0 24px;">
+            ${t.intro(date, price)}
+          </p>
+        </td></tr>
+        <tr><td style="padding:0 32px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;">
+            <tr><td>
+              <p style="color:#e2e8f0;font-size:13px;font-weight:600;margin:0 0 6px;">${t.keepTitle}</p>
+              <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0 0 14px;">${t.keep}</p>
+              <p style="color:#e2e8f0;font-size:13px;font-weight:600;margin:0 0 6px;">${t.cancelTitle}</p>
+              <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${t.cancelHow(date)}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 32px 20px;">
+          <p style="color:#fbbf24;font-size:12px;line-height:1.7;text-align:center;margin:0;">
+            ${t.noRefund}
+          </p>
+        </td></tr>
+        ${cta(portalUrl, t.btn)}`,
+    t.unsub, lang);
+
+  const text = t.textTpl(greeting, date, price, portalUrl);
+
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject: t.subject, html, text,
+    headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `trial-reminder-${Date.now()}` },
+  });
+}

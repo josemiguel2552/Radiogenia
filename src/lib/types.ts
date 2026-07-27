@@ -3,6 +3,13 @@ export type SubscriptionPlan = "free" | "resident" | "starter" | "professional";
 
 export const CURRENCY = "$";
 
+/** Card-first trial: 15 free days, then the Starter charge unless canceled. */
+export const TRIAL_DAYS = 15;
+
+/** Plans offered to individual users. "free" is only an internal state
+    (no active subscription → paywalled) and "resident" is legacy-only. */
+export const PUBLIC_PLANS: SubscriptionPlan[] = ["starter", "professional"];
+
 export interface PlanConfig {
   name: string;
   label: string;
