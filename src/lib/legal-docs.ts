@@ -19,7 +19,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
   es: {
     terms_of_use: {
       title: "Términos de Uso",
-      updated: "Última actualización: junio 2026",
+      updated: "Última actualización: julio 2026",
       sections: [
         {
           title: "1. Naturaleza del Servicio",
@@ -78,11 +78,13 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "9. Planes y Facturación",
           content: [
-            "Los planes de suscripción y sus límites se detallan en la sección de precios. Los periodos de facturación se renuevan automáticamente cada 30 días. El usuario puede solicitar la baja o cambio de plan en cualquier momento desde la configuración de su cuenta.",
+            "Los planes de suscripción y sus límites se detallan en la sección de precios. El alta en la plataforma requiere registrar una tarjeta de pago válida. Los periodos de facturación se renuevan automáticamente cada 30 días. El usuario puede solicitar la baja o cambio de plan en cualquier momento desde la configuración de su cuenta.",
+            "Periodo de prueba: los nuevos usuarios disponen de un periodo de prueba gratuito de 7 días del plan Starter, que requiere registrar una tarjeta de pago. Al finalizar el periodo de prueba se realiza automáticamente el primer cargo mensual, salvo que el usuario cancele la suscripción antes de esa fecha. Radiogen.AI envía un recordatorio por correo electrónico antes del primer cargo. Cada cuenta puede disfrutar de un único periodo de prueba.",
             "Mejora de plan (upgrade): al mejorar a un plan superior, se cobra de inmediato el precio completo del nuevo plan y se inicia un nuevo ciclo de facturación de 30 días desde ese momento. No se aplica prorrateo ni se reembolsa el tiempo restante del plan anterior.",
             "Transferencia de uso en mejora de plan: los informes y minutos de dictado no utilizados del plan anterior se acumulan al nuevo plan durante el primer mes tras la mejora. Una vez finalizado ese primer ciclo de facturación del nuevo plan, el uso acumulado desaparece y los límites se restablecen a los valores normales del nuevo plan.",
             "Reducción de plan (downgrade): al cambiar a un plan inferior, el plan actual permanece activo con todas sus prestaciones hasta el final del periodo de facturación en curso. Una vez finalizado dicho periodo, la cuenta cambia automáticamente al plan inferior seleccionado.",
-            "Cancelación: al cancelar la suscripción, el usuario conserva el acceso completo al plan contratado hasta que finalice el periodo de facturación en curso. Transcurrido ese periodo, la cuenta pasa automáticamente al plan gratuito.",
+            "Cancelación: al cancelar la suscripción, el usuario conserva el acceso completo al plan contratado hasta que finalice el periodo de facturación en curso (o el periodo de prueba, en su caso). Transcurrido ese periodo, la cuenta pierde el acceso a la plataforma.",
+            "Conservación de datos tras la baja: las plantillas, informes y configuración del usuario se conservan durante 90 días desde el fin del acceso, de modo que pueda reactivar su suscripción y recuperarlos íntegramente. Transcurrido ese plazo, la cuenta y sus datos se eliminan de forma definitiva.",
           ],
         },
         {
@@ -310,7 +312,7 @@ export const LEGAL_DOCS: Record<string, Docs> = {
   en: {
     terms_of_use: {
       title: "Terms of Use",
-      updated: "Last updated: June 2026",
+      updated: "Last updated: July 2026",
       sections: [
         {
           title: "1. Nature of the Service",
@@ -369,11 +371,13 @@ export const LEGAL_DOCS: Record<string, Docs> = {
         {
           title: "9. Plans and Billing",
           content: [
-            "Subscription plans and their limits are detailed in the pricing section. Billing periods renew automatically every 30 days. Users may request cancellation or plan changes at any time from their account settings.",
+            "Subscription plans and their limits are detailed in the pricing section. Signing up requires registering a valid payment card. Billing periods renew automatically every 30 days. Users may request cancellation or plan changes at any time from their account settings.",
+            "Trial period: new users receive a 7-day free trial of the Starter plan, which requires registering a payment card. When the trial ends, the first monthly charge is made automatically unless the user cancels the subscription before that date. Radiogen.AI sends an email reminder before the first charge. Each account may use a single trial period.",
             "Plan upgrade: when upgrading to a higher plan, the full price of the new plan is charged immediately and a new 30-day billing cycle begins from that moment. No proration is applied and the remaining time on the previous plan is not refunded.",
             "Usage carryover on upgrade: unused reports and dictation minutes from the previous plan carry over into the new plan for the first month after the upgrade. Once that first billing cycle of the new plan ends, the carried-over usage expires and limits reset to the new plan's standard allowances.",
             "Plan downgrade: when switching to a lower plan, the current plan remains active with all its features until the end of the current billing period. Once that period ends, the account automatically switches to the selected lower plan.",
-            "Cancellation: when a subscription is cancelled, the user retains full access to the subscribed plan until the end of the current billing period. After that period, the account automatically switches to the free plan.",
+            "Cancellation: when a subscription is cancelled, the user retains full access to the subscribed plan until the end of the current billing period (or of the trial period, where applicable). After that period, the account loses access to the platform.",
+            "Data retention after cancellation: the user's templates, reports and settings are kept for 90 days from the end of access, so the subscription can be reactivated and everything fully recovered. After that period, the account and its data are permanently deleted.",
           ],
         },
         {
@@ -511,18 +515,20 @@ export const LEGAL_DOCS: Record<string, Docs> = {
     },
   },
   pt: {
-    terms_of_use: { title: "Termos de Uso", updated: "Última atualização: junho 2026", sections: [
+    terms_of_use: { title: "Termos de Uso", updated: "Última atualização: julho 2026", sections: [
       { title: "1. Natureza do Serviço", content: ["Radiogen.AI é uma ferramenta de estruturação de laudos radiológicos projetada exclusivamente para radiologistas licenciados e profissionais médicos qualificados. A plataforma organiza e estrutura as informações ditadas pelo radiologista nas seções de achados e conclusão do laudo. O radiologista decide quais informações são incluídas; a plataforma apenas as organiza.", "Radiogen.AI NÃO é uma ferramenta de diagnóstico. Não realiza análise de imagens, não interpreta imagens médicas, não gera diagnósticos clínicos autônomos, não emite recomendações terapêuticas e não adiciona informações não fornecidas pelo radiologista. A ferramenta limita-se a estruturar e organizar o conteúdo ditado pelo profissional.", "Radiogen.AI NÃO é um produto médico nem um dispositivo médico. Não se destina, nem deve ser usado, para fins de diagnóstico, prevenção, monitoramento, predição, prognóstico, tratamento ou alívio de doenças. É uma ferramenta administrativa de documentação e redação de laudos; o resultado clínico depende exclusivamente do julgamento do profissional."] },
       { title: "2. Aceitação dos Termos", content: ["Ao acessar e utilizar o Radiogen.AI, o usuário aceita integralmente estes Termos de Uso."] },
       { title: "3. Limitação de Responsabilidade", content: ["Todo o conteúdo clínico estruturado pelo Radiogen.AI é derivado exclusivamente do ditado do radiologista. A plataforma não adiciona achados clínicos, diagnósticos, recomendações nem avaliações patológicas não ditadas pelo usuário. O radiologista é o único responsável por revisar, validar e aprovar cada laudo antes de seu uso clínico.", "O Radiogen.AI e seus operadores não assumem responsabilidade alguma por decisões clínicas, erros diagnósticos ou qualquer resultado adverso decorrente do uso de laudos estruturados com esta ferramenta."] },
       { title: "4. Responsabilidade Profissional", content: ["Ao utilizar o Radiogen.AI, o radiologista confirma que revisará cada laudo gerado por IA em sua totalidade antes de assiná-lo e que entende que a IA é um assistente de redação."] },
       { title: "5. Usos Proibidos", content: ["É proibido usar o Radiogen.AI como substituto da avaliação radiológica profissional, incluir dados identificáveis de pacientes, ou distribuir laudos sem revisão prévia."] },
       { title: "6. Planos e Faturamento", content: [
-        "Os planos de assinatura e seus limites estão detalhados na seção de preços. Os períodos de faturamento são renovados automaticamente a cada 30 dias. O usuário pode solicitar cancelamento ou alteração de plano a qualquer momento nas configurações da conta.",
+        "Os planos de assinatura e seus limites estão detalhados na seção de preços. O cadastro na plataforma exige o registro de um cartão de pagamento válido. Os períodos de faturamento são renovados automaticamente a cada 30 dias. O usuário pode solicitar cancelamento ou alteração de plano a qualquer momento nas configurações da conta.",
+        "Período de teste: novos usuários recebem um período de teste grátis de 7 dias do plano Starter, que exige o registro de um cartão de pagamento. Ao final do teste, a primeira cobrança mensal é feita automaticamente, salvo se o usuário cancelar a assinatura antes dessa data. O Radiogen.AI envia um lembrete por e-mail antes da primeira cobrança. Cada conta pode usar um único período de teste.",
         "Upgrade de plano: ao fazer upgrade para um plano superior, o preço completo do novo plano é cobrado imediatamente e um novo ciclo de faturamento de 30 dias começa a partir desse momento. Não há rateio e o tempo restante do plano anterior não é reembolsado.",
         "Transferência de uso no upgrade: os laudos e minutos de ditado não utilizados do plano anterior são transferidos para o novo plano durante o primeiro mês após o upgrade. Ao final desse primeiro ciclo de faturamento do novo plano, o uso transferido expira e os limites são redefinidos para os valores padrão do novo plano.",
         "Downgrade de plano: ao mudar para um plano inferior, o plano atual permanece ativo com todos os seus recursos até o final do período de faturamento em curso. Após esse período, a conta muda automaticamente para o plano inferior selecionado.",
-        "Cancelamento: ao cancelar a assinatura, o usuário mantém o acesso completo ao plano contratado até o final do período de faturamento atual. Após esse período, a conta passa automaticamente para o plano gratuito.",
+        "Cancelamento: ao cancelar a assinatura, o usuário mantém o acesso completo ao plano contratado até o final do período de faturamento atual (ou do período de teste, quando aplicável). Após esse período, a conta perde o acesso à plataforma.",
+        "Retenção de dados após o cancelamento: os modelos, laudos e configurações do usuário são mantidos por 90 dias a partir do fim do acesso, para que a assinatura possa ser reativada e tudo seja totalmente recuperado. Após esse prazo, a conta e seus dados são excluídos definitivamente.",
       ] },
       { title: "7. Política de Reembolso", content: ["O Radiogen.AI não emite reembolsos sob nenhuma circunstância, incluindo, sem limitação, upgrades de plano, downgrades de plano, cancelamentos, tempo não utilizado dentro de um período de faturamento, insatisfação com o serviço ou qualquer outro motivo. Todas as assinaturas são cobradas mensalmente e o acesso é mantido até o final do período pago.", "O usuário pode cancelar sua assinatura a qualquer momento nas configurações da conta. Nenhuma cobrança adicional será realizada após o cancelamento."] },
       { title: "8. Contato", content: ["Para dúvidas ou questões legais: info@radiogen.ai."] },

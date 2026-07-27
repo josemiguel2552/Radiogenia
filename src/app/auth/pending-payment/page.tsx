@@ -5,7 +5,7 @@
    Starter trial (card required, first charge on day 7, no refunds) or a
    Professional subscription charged immediately. There is no free escape. */
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -27,6 +27,32 @@ function PendingPaymentContent() {
   const professional = PLANS.professional;
 
   const tr = (es: string, en: string, pt: string) => (lang === "es" ? es : lang === "pt" ? pt : en);
+
+  // After returning from Stripe Checkout the webhook may lag a few seconds
+  // behind; without this the dashboard would bounce a freshly-paid user back
+  // here. Poll the subscription (which self-heals from Stripe) and enter the
+  // dashboard as soon as the plan is active.
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const check = async () => {
+      if (cancelled || attempts >= 15) return;
+      attempts += 1;
+      try {
+        const res = await fetch("/api/subscription");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.plan && data.plan !== "free") {
+            window.location.replace("/dashboard");
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+      if (!cancelled) setTimeout(check, 3000);
+    };
+    check();
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
