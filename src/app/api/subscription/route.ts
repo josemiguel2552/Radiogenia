@@ -53,17 +53,20 @@ export async function GET() {
       stripeSubId = extra?.stripe_subscription_id ?? null;
     } catch { /* columns may not exist yet */ }
 
-    // Active-trial end date (best-effort: column may predate the migration).
+    // Active-trial end date + whether this account already used its one trial
+    // (best-effort: columns may predate the migration).
     let trialEndsAt: string | null = null;
+    let trialUsed = false;
     try {
       const { data: trialRow } = await service
         .from("profiles")
-        .select("trial_ends_at")
+        .select("trial_ends_at, trial_used_at")
         .eq("id", user.id)
         .single();
       if (trialRow?.trial_ends_at && new Date(trialRow.trial_ends_at).getTime() > Date.now()) {
         trialEndsAt = trialRow.trial_ends_at;
       }
+      trialUsed = !!trialRow?.trial_used_at;
     } catch { /* ignore */ }
 
     // Self-healing sync with Stripe: if the user has a Stripe customer but the
@@ -219,6 +222,7 @@ export async function GET() {
       pendingPlanEffectiveDate: pendingEffective,
       hasStripe: !!profile.stripe_customer_id,
       trialEndsAt,
+      trialUsed,
       dictation: {
         usedSeconds: displayDictUsed,
         limitSeconds: effectiveDictLimit,
@@ -334,10 +338,19 @@ export async function PUT(req: NextRequest) {
           items: [{ id: itemId, price: newPriceId }],
           proration_behavior: "none",
           billing_cycle_anchor: "now",
+          // Upgrading during the trial ends it: higher plans have no trial,
+          // so the new price is charged immediately.
+          ...(sub.status === "trialing" ? { trial_end: "now" as const } : {}),
           // A previously scheduled cancellation must not survive an upgrade —
           // the user is paying for the new plan going forward.
           cancel_at_period_end: false,
         });
+        if (sub.status === "trialing") {
+          // Best-effort: stop showing "trial until ..." for the upgraded plan.
+          try {
+            await service.from("profiles").update({ trial_ends_at: null }).eq("id", user.id);
+          } catch { /* column may predate migration */ }
+        }
       }
 
       const oldLimits = PLANS[currentPlan];

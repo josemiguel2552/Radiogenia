@@ -5,7 +5,7 @@
    Starter trial (card required, first charge on day 7, no refunds) or a
    Professional subscription charged immediately. There is no free escape. */
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -28,6 +28,10 @@ function PendingPaymentContent() {
 
   const tr = (es: string, en: string, pt: string) => (lang === "es" ? es : lang === "pt" ? pt : en);
 
+  // One trial per account: returning users (trial spent or cancelled) must
+  // not be promised "no charge today" — Stripe will charge them immediately.
+  const [trialAvailable, setTrialAvailable] = useState(true);
+
   // After returning from Stripe Checkout the webhook may lag a few seconds
   // behind; without this the dashboard would bounce a freshly-paid user back
   // here. Poll the subscription (which self-heals from Stripe) and enter the
@@ -46,6 +50,7 @@ function PendingPaymentContent() {
             window.location.replace("/dashboard");
             return;
           }
+          if (data.trialUsed) setTrialAvailable(false);
         }
       } catch { /* ignore */ }
       if (!cancelled) setTimeout(check, 3000);
@@ -78,38 +83,61 @@ function PendingPaymentContent() {
             {tr("Activa tu cuenta", "Activate your account", "Ative sua conta")}
           </h1>
           <p className="text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
-            {tr(
-              `Para usar Radiogen.ai necesitas activar un plan. Empieza con ${TRIAL_DAYS} días de prueba gratis.`,
-              `To use Radiogen.ai you need an active plan. Start with a ${TRIAL_DAYS}-day free trial.`,
-              `Para usar o Radiogen.ai você precisa de um plano ativo. Comece com ${TRIAL_DAYS} dias de teste grátis.`,
-            )}
+            {trialAvailable
+              ? tr(
+                  `Para usar Radiogen.ai necesitas activar un plan. Empieza con ${TRIAL_DAYS} días de prueba gratis.`,
+                  `To use Radiogen.ai you need an active plan. Start with a ${TRIAL_DAYS}-day free trial.`,
+                  `Para usar o Radiogen.ai você precisa de um plano ativo. Comece com ${TRIAL_DAYS} dias de teste grátis.`,
+                )
+              : tr(
+                  "Para usar Radiogen.ai necesitas activar un plan. Tu periodo de prueba ya fue utilizado, por lo que la suscripción se cobra desde hoy.",
+                  "To use Radiogen.ai you need an active plan. Your trial period was already used, so the subscription is charged starting today.",
+                  "Para usar o Radiogen.ai você precisa de um plano ativo. Seu período de teste já foi utilizado, então a assinatura é cobrada a partir de hoje.",
+                )}
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           {/* Starter — 7-day trial */}
           <div className="relative p-6 rounded-2xl border-2 border-violet-500/40 bg-gradient-to-b from-violet-500/10 to-blue-500/5 space-y-4">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-violet-500 to-blue-500 rounded-full text-white whitespace-nowrap">
-                {tr(`${TRIAL_DAYS} días gratis`, `${TRIAL_DAYS} days free`, `${TRIAL_DAYS} dias grátis`)}
-              </span>
-            </div>
+            {trialAvailable && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-violet-500 to-blue-500 rounded-full text-white whitespace-nowrap">
+                  {tr(`${TRIAL_DAYS} días gratis`, `${TRIAL_DAYS} days free`, `${TRIAL_DAYS} dias grátis`)}
+                </span>
+              </div>
+            )}
             <div className="pt-1">
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-violet-400" /> {starter.label}
               </h2>
               <p className="text-2xl font-bold text-white mt-1">
-                {tr("Gratis hoy", "Free today", "Grátis hoje")}
-                <span className="text-sm font-normal text-gray-400"> · {CURRENCY}{starter.price}
-                  {tr("/mes después", "/mo after", "/mês depois")}
-                </span>
+                {trialAvailable ? (
+                  <>
+                    {tr("Gratis hoy", "Free today", "Grátis hoje")}
+                    <span className="text-sm font-normal text-gray-400"> · {CURRENCY}{starter.price}
+                      {tr("/mes después", "/mo after", "/mês depois")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {CURRENCY}{starter.price}
+                    <span className="text-sm font-normal text-gray-400">{tr("/mes", "/mo", "/mês")}</span>
+                  </>
+                )}
               </p>
             </div>
             <ul className="space-y-2 text-[13px] text-gray-300">
               {[
                 tr(`${starter.reports} informes + ${starter.dictationMinutes} min de dictado al mes`, `${starter.reports} reports + ${starter.dictationMinutes} min dictation per month`, `${starter.reports} laudos + ${starter.dictationMinutes} min de ditado por mês`),
-                tr("Sin cargo hoy — solo se registra la tarjeta", "No charge today — card is only registered", "Sem cobrança hoje — o cartão apenas é registrado"),
-                tr(`El día ${TRIAL_DAYS} se cobra ${CURRENCY}${starter.price}/mes salvo que canceles antes`, `On day ${TRIAL_DAYS} you're charged ${CURRENCY}${starter.price}/mo unless you cancel first`, `No dia ${TRIAL_DAYS} é cobrado ${CURRENCY}${starter.price}/mês salvo cancelamento prévio`),
+                ...(trialAvailable
+                  ? [
+                      tr("Sin cargo hoy — solo se registra la tarjeta", "No charge today — card is only registered", "Sem cobrança hoje — o cartão apenas é registrado"),
+                      tr(`El día ${TRIAL_DAYS} se cobra ${CURRENCY}${starter.price}/mes salvo que canceles antes`, `On day ${TRIAL_DAYS} you're charged ${CURRENCY}${starter.price}/mo unless you cancel first`, `No dia ${TRIAL_DAYS} é cobrado ${CURRENCY}${starter.price}/mês salvo cancelamento prévio`),
+                    ]
+                  : [
+                      tr("Cargo inmediato — tu prueba ya fue utilizada", "Charged today — your trial was already used", "Cobrança imediata — seu teste já foi utilizado"),
+                    ]),
                 tr("Cancela en cualquier momento desde tu cuenta", "Cancel anytime from your account", "Cancele a qualquer momento na sua conta"),
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2">
@@ -119,7 +147,9 @@ function PendingPaymentContent() {
             </ul>
             <a href="/api/checkout?plan=starter" className="block">
               <Button className="w-full h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 font-semibold shadow-lg shadow-violet-500/20">
-                {tr(`Empezar prueba de ${TRIAL_DAYS} días`, `Start ${TRIAL_DAYS}-day trial`, `Começar teste de ${TRIAL_DAYS} dias`)}
+                {trialAvailable
+                  ? tr(`Empezar prueba de ${TRIAL_DAYS} días`, `Start ${TRIAL_DAYS}-day trial`, `Começar teste de ${TRIAL_DAYS} dias`)
+                  : tr("Suscribirse a Starter", "Subscribe to Starter", "Assinar o Starter")}
               </Button>
             </a>
           </div>
@@ -156,11 +186,17 @@ function PendingPaymentContent() {
         </div>
 
         <p className="text-[11px] text-gray-500 text-center max-w-lg mx-auto leading-relaxed">
-          {tr(
-            `Te enviaremos un recordatorio por correo el día 6, antes del primer cargo. Los pagos no son reembolsables; puedes cancelar la suscripción en cualquier momento y conservarás el acceso hasta el final del periodo pagado.`,
-            `We'll email you a reminder on day 6, before the first charge. Payments are non-refundable; you can cancel your subscription at any time and keep access until the end of the paid period.`,
-            `Enviaremos um lembrete por e-mail no dia 6, antes da primeira cobrança. Os pagamentos não são reembolsáveis; você pode cancelar a assinatura a qualquer momento e manter o acesso até o fim do período pago.`,
-          )}
+          {trialAvailable
+            ? tr(
+                `Te enviaremos un recordatorio por correo el día 6, antes del primer cargo. Los pagos no son reembolsables; puedes cancelar la suscripción en cualquier momento y conservarás el acceso hasta el final del periodo pagado.`,
+                `We'll email you a reminder on day 6, before the first charge. Payments are non-refundable; you can cancel your subscription at any time and keep access until the end of the paid period.`,
+                `Enviaremos um lembrete por e-mail no dia 6, antes da primeira cobrança. Os pagamentos não são reembolsáveis; você pode cancelar a assinatura a qualquer momento e manter o acesso até o fim do período pago.`,
+              )
+            : tr(
+                "Los pagos no son reembolsables; puedes cancelar la suscripción en cualquier momento y conservarás el acceso hasta el final del periodo pagado.",
+                "Payments are non-refundable; you can cancel your subscription at any time and keep access until the end of the paid period.",
+                "Os pagamentos não são reembolsáveis; você pode cancelar a assinatura a qualquer momento e manter o acesso até o fim do período pago.",
+              )}
         </p>
 
         <div className="flex justify-center">

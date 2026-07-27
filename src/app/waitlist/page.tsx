@@ -297,10 +297,10 @@ function RegisterForm() {
               <p className="text-xs text-gray-400">
                 {selectedPlan === "starter"
                   ? lang === "es"
-                    ? "7 días de prueba gratis — sin cargo hoy, solo se registra la tarjeta. Después $7.99/mes salvo que canceles antes."
+                    ? `7 días de prueba gratis — sin cargo hoy, solo se registra la tarjeta. Después $${PLANS.starter.price}/mes salvo que canceles antes.`
                     : lang === "pt"
-                    ? "7 dias de teste grátis — sem cobrança hoje, o cartão apenas é registrado. Depois $7.99/mês salvo cancelamento prévio."
-                    : "7-day free trial — no charge today, your card is only registered. Then $7.99/mo unless you cancel first."
+                    ? `7 dias de teste grátis — sem cobrança hoje, o cartão apenas é registrado. Depois $${PLANS.starter.price}/mês salvo cancelamento prévio.`
+                    : `7-day free trial — no charge today, your card is only registered. Then $${PLANS.starter.price}/mo unless you cancel first.`
                   : lang === "es"
                   ? `$${PLANS.professional.price} USD${t("pricing.per_month")} — se cobrará tras confirmar tu correo`
                   : lang === "pt"

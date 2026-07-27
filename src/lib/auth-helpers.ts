@@ -299,6 +299,14 @@ export async function checkDictationLimit(userId: string): Promise<{
   };
 }
 
+/** Card-first billing: whether the account may use AI features at all
+    (any active plan, an org membership, or admin). Blocks unpaid accounts
+    from calling AI endpoints directly even with a live session. */
+export async function hasPlatformAccess(userId: string): Promise<boolean> {
+  const res = await checkReportLimit(userId);
+  return res.plan !== "free";
+}
+
 function isBillingPeriodStale(periodStart: string | null): boolean {
   if (!periodStart) return true;
   const next = new Date(periodStart);

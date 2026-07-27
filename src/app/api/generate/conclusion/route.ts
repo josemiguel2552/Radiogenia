@@ -3,7 +3,7 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
 import { streamAIWithFallback, generateAIWithUsageFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt, buildConclusionRefinePrompt } from "@/lib/prompts";
@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
 
     const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
+
+    // Card-first billing: no AI usage without an active subscription, even
+    // via direct API calls with a live session.
+    if (!(await hasPlatformAccess(user.id))) {
+      return NextResponse.json({ error: "Subscription required", code: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
+    }
+
 
     const service = createServiceClient();
 

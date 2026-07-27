@@ -3,7 +3,7 @@ export const maxDuration = 30;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
 import { generateAIWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -161,6 +161,13 @@ export async function POST(req: NextRequest) {
 
     const rl = rateLimit(`clinical-check:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
+
+    // Card-first billing: no AI usage without an active subscription, even
+    // via direct API calls with a live session.
+    if (!(await hasPlatformAccess(user.id))) {
+      return NextResponse.json({ error: "Subscription required", code: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
+    }
+
 
     const { findings, conclusion, language } = (await req.json()) as {
       findings: string;
