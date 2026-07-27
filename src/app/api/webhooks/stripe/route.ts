@@ -89,6 +89,13 @@ export async function POST(req: NextRequest) {
                 update.billing_period_start = new Date().toISOString();
                 update.reports_used_this_month = 0;
                 update.dictation_seconds_used = 0;
+                // Reactivation ends any running data-retention countdown.
+                try {
+                  await service
+                    .from("profiles")
+                    .update({ subscription_ended_at: null })
+                    .eq("id", session.metadata.supabase_user_id);
+                } catch { /* column may predate migration */ }
               }
               // Trial bookkeeping (best-effort: columns may predate migration).
               if (sub.status === "trialing" && sub.trial_end) {
@@ -176,6 +183,17 @@ export async function POST(req: NextRequest) {
           .update(update)
           .eq("stripe_customer_id", customerId);
 
+        // Reactivation ends any running data-retention countdown (best-effort).
+        if (isActive) {
+          try {
+            await service
+              .from("profiles")
+              .update({ subscription_ended_at: null })
+              .eq("stripe_customer_id", customerId)
+              .not("subscription_ended_at", "is", null);
+          } catch { /* column may predate migration */ }
+        }
+
         // Trial bookkeeping (best-effort: columns may predate migration).
         if (subscription.status === "trialing" && subscription.trial_end) {
           try {
@@ -234,6 +252,15 @@ export async function POST(req: NextRequest) {
             pending_plan_effective_date: null,
           })
           .eq("stripe_customer_id", customerId);
+
+        // Start the 90-day data-retention window (best-effort: the column
+        // may predate the retention migration).
+        try {
+          await service
+            .from("profiles")
+            .update({ subscription_ended_at: new Date().toISOString() })
+            .eq("stripe_customer_id", customerId);
+        } catch { /* ignore */ }
 
         console.log(`[stripe-webhook] subscription.deleted: customer=${customerId} → free`);
         break;
