@@ -143,6 +143,30 @@ export async function GET() {
       profile.billing_period_start = new Date().toISOString();
     }
 
+    // Self-heal a stale scheduled-cancellation date: Stripe is authoritative
+    // about when access really ends (during a trial that's the trial end, not
+    // billing_period_start + 1 month).
+    let pendingEffectiveOverride: string | null = null;
+    if (profile.pending_plan === "free" && stripeSubId) {
+      const stripe = getStripe();
+      if (stripe) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(stripeSubId);
+          const endTs = sub.cancel_at || sub.trial_end || sub.items.data[0]?.current_period_end || null;
+          if (endTs) {
+            const real = new Date(endTs * 1000).toISOString();
+            if (profile.pending_plan_effective_date !== real) {
+              pendingEffectiveOverride = real;
+              await service
+                .from("profiles")
+                .update({ pending_plan_effective_date: real })
+                .eq("id", user.id);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
     const periodStart = profile.billing_period_start || new Date().toISOString();
     const nextPeriod = getNextPeriodDate(periodStart);
     const needsReset = nextPeriod.getTime() <= Date.now();
@@ -151,7 +175,7 @@ export async function GET() {
     let used = profile.reports_used_this_month ?? 0;
     let dictationSecondsUsed = profile.dictation_seconds_used ?? 0;
     let pendingPlan = profile.pending_plan as SubscriptionPlan | null;
-    let pendingEffective = profile.pending_plan_effective_date;
+    let pendingEffective = pendingEffectiveOverride ?? profile.pending_plan_effective_date;
 
     if (needsReset) {
       if (pendingPlan && PLANS[pendingPlan]) {
@@ -340,7 +364,7 @@ export async function PUT(req: NextRequest) {
     // Write the deferred plan BEFORE touching Stripe: the subscription.updated
     // webhook checks pending_plan to avoid applying the lower price
     // immediately, so it must be visible before Stripe fires the event.
-    const effectiveDate = getNextPeriodDate(profile.billing_period_start || new Date().toISOString());
+    let effectiveDate = getNextPeriodDate(profile.billing_period_start || new Date().toISOString());
     await service
       .from("profiles")
       .update({
@@ -354,9 +378,24 @@ export async function PUT(req: NextRequest) {
       if (stripe) {
         try {
           if (plan === "free") {
-            await stripe.subscriptions.update(profile.stripe_subscription_id, {
+            const updated = await stripe.subscriptions.update(profile.stripe_subscription_id, {
               cancel_at_period_end: true,
             });
+            // Stripe decides the real end of access: the trial end while
+            // trialing, otherwise the end of the paid period. Our provisional
+            // billing_period_start+1mo estimate can be wrong (e.g. a month out
+            // for a trial cancelled on day 1) — store the authoritative date.
+            const endTs = updated.cancel_at
+              || updated.trial_end
+              || updated.items.data[0]?.current_period_end
+              || null;
+            if (endTs) {
+              effectiveDate = new Date(endTs * 1000);
+              await service
+                .from("profiles")
+                .update({ pending_plan_effective_date: effectiveDate.toISOString() })
+                .eq("id", user.id);
+            }
           } else {
             const envKey = PLAN_PRICE_ENV[plan];
             const newPriceId = envKey ? process.env[envKey] : null;

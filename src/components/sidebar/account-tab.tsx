@@ -336,10 +336,10 @@ export function AccountTab() {
                       </Badge>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      {sub.trialEndsAt
+                      {sub.pendingPlan === "free"
+                        ? <>{t("account.ends_on")}: {formatDate(sub.pendingPlanEffectiveDate || sub.nextPeriodDate)}</>
+                        : sub.trialEndsAt
                         ? <>{t("account.trial_until")} {formatDate(sub.trialEndsAt)}</>
-                        : sub.pendingPlan === "free"
-                        ? <>{t("account.ends_on")}: {formatDate(sub.nextPeriodDate)}</>
                         : <>{t("account.next_renewal")}: {formatDate(sub.nextPeriodDate)}</>}
                     </p>
                   </div>
@@ -356,12 +356,21 @@ export function AccountTab() {
               </div>
 
               {sub.trialEndsAt && (
-                <div className="mb-4 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <CalendarClock className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                  <p className="text-[11px] leading-snug text-amber-700 dark:text-amber-300">
-                    {t("account.trial_until")} <span className="font-semibold">{formatDate(sub.trialEndsAt)}</span>. {t("account.trial_charge_note")}
-                  </p>
-                </div>
+                sub.pendingPlan === "free" ? (
+                  <div className="mb-4 flex items-start gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                    <CalendarClock className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                    <p className="text-[11px] leading-snug text-gray-600 dark:text-gray-300">
+                      {t("account.trial_until")} <span className="font-semibold">{formatDate(sub.trialEndsAt)}</span>. {t("account.trial_cancelled_note")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mb-4 flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <CalendarClock className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                    <p className="text-[11px] leading-snug text-amber-700 dark:text-amber-300">
+                      {t("account.trial_until")} <span className="font-semibold">{formatDate(sub.trialEndsAt)}</span>. {t("account.trial_charge_note")}
+                    </p>
+                  </div>
+                )
               )}
 
               {/* Usage cards */}
@@ -400,11 +409,14 @@ export function AccountTab() {
                     <CalendarClock className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-amber-800 dark:text-amber-300">
-                        {t("account.pending_change")}:{" "}
-                        <span className="font-semibold">{PLANS[sub.pendingPlan]?.label}</span>
+                        {sub.pendingPlan === "free"
+                          ? <span className="font-semibold">{t("account.pending_cancellation")}</span>
+                          : <>{t("account.pending_change")}:{" "}<span className="font-semibold">{PLANS[sub.pendingPlan]?.label}</span></>}
                       </p>
                       <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
-                        {t("account.effective_date")}: {formatDate(sub.pendingPlanEffectiveDate)}
+                        {sub.pendingPlan === "free"
+                          ? <>{t("account.access_until")}: {formatDate(sub.pendingPlanEffectiveDate)}</>
+                          : <>{t("account.effective_date")}: {formatDate(sub.pendingPlanEffectiveDate)}</>}
                       </p>
                     </div>
                     <button
