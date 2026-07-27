@@ -363,9 +363,29 @@ function LanguagePicker({ lang, onLangChange }: {
 
 /* ── Main shell ────────────────────────────────────────────────── */
 
-function DashboardShellInner({ children, user, role, verifyDaysLeft }: { children: React.ReactNode; user: User; role: string; verifyDaysLeft?: number | null }) {
+function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancelledDaysLeft }: { children: React.ReactNode; user: User; role: string; verifyDaysLeft?: number | null; trialCancelledDaysLeft?: number | null }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+
+  // Cancelled-trial banner: "X days left — click to keep your subscription".
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(trialCancelledDaysLeft ?? null);
+  const [trialReactivating, setTrialReactivating] = useState(false);
+  const [trialReactivated, setTrialReactivated] = useState(false);
+  const reactivateTrial = useCallback(async () => {
+    setTrialReactivating(true);
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cancelPending: true }),
+      });
+      if (res.ok) {
+        setTrialReactivated(true);
+        setTimeout(() => setTrialDaysLeft(null), 6000);
+      }
+    } catch { /* keep the banner so the user can retry */ }
+    setTrialReactivating(false);
+  }, []);
   // Views the user has opened at least once: mount lazily, then keep mounted.
   const [visitedViews, setVisitedViews] = useState<Set<ActiveView>>(new Set(["dashboard"]));
   useEffect(() => {
@@ -601,6 +621,28 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft }: { childre
 
   const mainContent = (
     <>
+      {trialDaysLeft != null && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 px-3 py-2">
+          <Clock className="h-4 w-4 text-violet-500 shrink-0" />
+          {trialReactivated ? (
+            <span className="text-xs text-green-700 dark:text-green-300 flex-1">{t("trial.reactivated")}</span>
+          ) : (
+            <>
+              <span className="text-xs text-violet-800 dark:text-violet-200 flex-1 min-w-[200px]">
+                {(trialDaysLeft === 1 ? t("trial.cancelled_banner_one") : t("trial.cancelled_banner")).replace("{0}", String(trialDaysLeft))}
+              </span>
+              <button
+                type="button"
+                disabled={trialReactivating}
+                onClick={reactivateTrial}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60 transition-colors"
+              >
+                {trialReactivating ? <Loader2 className="h-3 w-3 animate-spin" /> : t("trial.reactivate")}
+              </button>
+            </>
+          )}
+        </div>
+      )}
       {verifyDaysLeft != null && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
           <MailWarning className="h-4 w-4 text-amber-500 shrink-0" />
@@ -975,10 +1017,10 @@ function ThemePickerStatic() {
   );
 }
 
-export function DashboardShell({ children, user, role = "radiologist", verifyDaysLeft = null }: { children: React.ReactNode; user: User; role?: string; verifyDaysLeft?: number | null }) {
+export function DashboardShell({ children, user, role = "radiologist", verifyDaysLeft = null, trialCancelledDaysLeft = null }: { children: React.ReactNode; user: User; role?: string; verifyDaysLeft?: number | null; trialCancelledDaysLeft?: number | null }) {
   return (
     <UIPrefsProvider>
-      <DashboardShellInner user={user} role={role} verifyDaysLeft={verifyDaysLeft}>
+      <DashboardShellInner user={user} role={role} verifyDaysLeft={verifyDaysLeft} trialCancelledDaysLeft={trialCancelledDaysLeft}>
         {children}
       </DashboardShellInner>
     </UIPrefsProvider>

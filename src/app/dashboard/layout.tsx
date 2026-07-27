@@ -11,6 +11,13 @@ function graceDaysLeft(createdAt: string): number {
   return Math.max(0, Math.ceil((GRACE_MS - elapsed) / (24 * 60 * 60 * 1000)));
 }
 
+// Days left on a still-running trial; null once the end date has passed.
+function trialDaysRemaining(endsAt: string): number | null {
+  const msLeft = Date.parse(endsAt) - Date.now();
+  if (!Number.isFinite(msLeft) || msLeft <= 0) return null;
+  return Math.max(1, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+}
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -53,8 +60,23 @@ export default async function DashboardLayout({
     ? graceDaysLeft(profile.created_at || "")
     : null;
 
+  // Cancelled-during-trial: the shell shows a subtle "X days left — click to
+  // keep your subscription" banner. Best-effort: trial_ends_at may predate
+  // the trial-billing migration.
+  let trialCancelledDaysLeft: number | null = null;
+  try {
+    const { data: trialRow } = await service
+      .from("profiles")
+      .select("pending_plan, trial_ends_at")
+      .eq("id", user.id)
+      .single();
+    if (trialRow?.pending_plan === "free" && trialRow.trial_ends_at) {
+      trialCancelledDaysLeft = trialDaysRemaining(trialRow.trial_ends_at);
+    }
+  } catch { /* ignore */ }
+
   return (
-    <DashboardShell user={user} role={role} verifyDaysLeft={verifyDaysLeft}>
+    <DashboardShell user={user} role={role} verifyDaysLeft={verifyDaysLeft} trialCancelledDaysLeft={trialCancelledDaysLeft}>
       {children}
     </DashboardShell>
   );
