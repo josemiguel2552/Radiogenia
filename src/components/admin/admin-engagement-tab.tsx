@@ -1,180 +1,62 @@
 "use client";
 
+/* Subscriber CONVERSION tab (card-first billing model). The old
+   tool-adoption analytics were retired: what matters now is whether
+   signups end up paying — and whether they cancel. */
+
 import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Loader2, TrendingUp, TrendingDown, RefreshCw, Users, Calendar,
-  AlertTriangle, Sparkles, ArrowRight, Mail, Send, Clock, Check, ClipboardList,
-} from "lucide-react";
+import { Loader2, RefreshCw, TrendingUp, ArrowRight, CreditCard, Users, CalendarClock } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
-/* ── Types (mirror /api/admin/subscriber-analytics) ── */
+type ConvState =
+  | "unverified" | "no_card" | "trialing" | "trial_cancelled"
+  | "paying" | "cancel_scheduled" | "lapsed" | "bonus";
 
-interface EngUser {
-  id: string; email: string; name: string; signup: string; plan: string; paying: boolean;
-  emailVerified: boolean; approved: boolean; events: number; generations: number;
-  reportsSaved: number; copied: number; reports: number; activeDays: number;
-  features: string[]; featureCount: number; errors: number; corrections: number;
-  lastSeen: string | null; ttfrMinutes: number | null; returned: boolean;
-  segment: "bounced" | "one_and_done" | "engaged" | "champion"; score: number;
-}
-interface EngData {
-  days: number; cohortSize: number; empty?: boolean; totalEvents: number;
-  planCounts: Record<string, number>; paying: number; unverified: number; unapproved: number;
-  funnel: { registered: number; activated: number; started: number; generated: number; completed: number; exploredTool: number; returned: number };
-  segments: { bounced: number; one_and_done: number; engaged: number; champion: number };
-  retention: { day0: number; d1_7: number; d8plus: number };
-  returnedRate: number;
-  ttfr: { median: number | null; count: number };
-  featureAdoption: { feature: string; users: number; pct: number; returnedRateAmong: number; retentionLift: number | null }[];
-  friction: { abandoned: number; errorUsers: number; errorEvents: number; correctionUsers: number; notActivated: number };
-  topCalculators: { calc: string; users: number }[];
-  topTemplates: { template: string; users: number }[];
-  users: EngUser[];
+interface ConvUser {
+  id: string; email: string; name: string; signup: string; country: string | null;
+  plan: string; state: ConvState; emailVerified: boolean;
+  trialStartedAt: string | null; trialEndsAt: string | null;
+  cancelledAt: string | null; accessUntil: string | null; endedAt: string | null;
+  reportsThisMonth: number;
 }
 
-const SEGMENT_STYLE: Record<string, { bar: string; badge: string }> = {
-  bounced: { bar: "bg-gray-400", badge: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
-  one_and_done: { bar: "bg-amber-400", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-  engaged: { bar: "bg-blue-500", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-  champion: { bar: "bg-violet-500", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+interface ConvData {
+  days: number; cohortSize: number; empty?: boolean;
+  funnel: { registered: number; verified: number; cardAdded: number; paying: number };
+  states: Record<ConvState, number>;
+  payingByPlan: Record<string, number>;
+  trialCancellations: number;
+  trialConversion: { finished: number; paid: number };
+  timeline: { day: string; signups: number; cards: number }[];
+  users: ConvUser[];
+}
+
+const STATE_STYLE: Record<ConvState, string> = {
+  unverified: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300",
+  no_card: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  trialing: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+  trial_cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  paying: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  cancel_scheduled: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  lapsed: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  bonus: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
 };
 
-function prettyId(s: string): string {
-  return s.replace(/_/g, " ");
+function fmtD(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
-function pct(n: number): string {
-  return `${Math.round(n * 100)}%`;
+function pctOf(n: number, of: number): string {
+  return of > 0 ? `${Math.round((n / of) * 100)}%` : "—";
 }
 
 export function AdminEngagementTab() {
   const t = useT();
-  const [data, setData] = useState<EngData | null>(null);
+  const [data, setData] = useState<ConvData | null>(null);
   const [loading, setLoading] = useState(false);
   const [days, setDays] = useState(30);
-  const [testing, setTesting] = useState<string | null>(null);
-  const [testMsg, setTestMsg] = useState<string | null>(null);
-  const [testTo, setTestTo] = useState("");
-
-  const sendTest = async (lang: "es" | "en" | "pt", type: "tools" | "report_types" | "guidelines" | "limit") => {
-    setTesting(`${type}-${lang}`);
-    setTestMsg(null);
-    try {
-      const res = await fetch("/api/admin/onboarding-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, type, to: testTo.trim() || undefined }),
-      });
-      const d = await res.json().catch(() => ({}));
-      setTestMsg(res.ok ? `${t("eng.test_sent")} ${d.sentTo || ""}` : (d.error || t("eng.test_error")));
-    } catch {
-      setTestMsg(t("eng.test_error"));
-    }
-    setTesting(null);
-  };
-
-  // One-time broadcast to already-registered users.
-  const [bcCount, setBcCount] = useState<number | null>(null);
-  const [bcBusy, setBcBusy] = useState(false);
-  const [bcMsg, setBcMsg] = useState<string | null>(null);
-
-  const bcPreview = async () => {
-    setBcBusy(true); setBcMsg(null);
-    try {
-      const res = await fetch("/api/admin/onboarding-broadcast", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dryRun: true }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (res.ok) { setBcCount(d.wouldSend ?? 0); setBcMsg(`${t("eng.bc_would")} ${d.wouldSend ?? 0} ${t("eng.bc_users")}`); }
-      else setBcMsg(d.error || t("eng.bc_error"));
-    } catch { setBcMsg(t("eng.bc_error")); }
-    setBcBusy(false);
-  };
-
-  const bcSend = async () => {
-    if (!window.confirm(t("eng.bc_confirm"))) return;
-    setBcBusy(true); setBcMsg(t("eng.bc_sending"));
-    try {
-      const res = await fetch("/api/admin/onboarding-broadcast", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: 100 }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (res.ok) {
-        const remaining = d.remaining ?? 0;
-        setBcCount(remaining);
-        setBcMsg(remaining > 0
-          ? `${t("eng.bc_sent")}: ${d.sent} · ${t("eng.bc_remaining")}: ${remaining}`
-          : `${t("eng.bc_done")} (${t("eng.bc_sent")}: ${d.sent})`);
-      } else setBcMsg(d.error || t("eng.bc_error"));
-    } catch { setBcMsg(t("eng.bc_error")); }
-    setBcBusy(false);
-  };
-
-  // Resend verification email to unverified users.
-  const [rvBusy, setRvBusy] = useState(false);
-  const [rvMsg, setRvMsg] = useState<string | null>(null);
-  const rvPreview = async () => {
-    setRvBusy(true); setRvMsg(null);
-    try {
-      const res = await fetch("/api/admin/resend-verification", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dryRun: true }),
-      });
-      const d = await res.json().catch(() => ({}));
-      setRvMsg(res.ok ? `${t("eng.rv_would")} ${d.unverified ?? 0}` : (d.error || t("eng.rv_error")));
-    } catch { setRvMsg(t("eng.rv_error")); }
-    setRvBusy(false);
-  };
-  const rvSend = async () => {
-    if (!window.confirm(t("eng.rv_confirm"))) return;
-    setRvBusy(true); setRvMsg(t("eng.rv_sending"));
-    try {
-      const res = await fetch("/api/admin/resend-verification", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const d = await res.json().catch(() => ({}));
-      setRvMsg(res.ok ? `${t("eng.rv_sent")} ${d.sent ?? 0}` : (d.error || t("eng.rv_error")));
-    } catch { setRvMsg(t("eng.rv_error")); }
-    setRvBusy(false);
-  };
-
-  // Per-user email log (which lifecycle emails each user has received).
-  interface LogUser {
-    id: string; email: string; name: string; signup: string;
-    verified: boolean; approved: boolean;
-    sent: { tools: string | null; report_types: string | null; guidelines: string | null };
-  }
-  const [logUsers, setLogUsers] = useState<LogUser[] | null>(null);
-  const [logLoading, setLogLoading] = useState(false);
-  const [sendingKey, setSendingKey] = useState<string | null>(null);
-  const [nowMs, setNowMs] = useState(0); // captured at load time (avoids Date.now() in render)
-  const loadLog = useCallback(async () => {
-    setLogLoading(true);
-    try {
-      const res = await fetch("/api/admin/email-log");
-      if (res.ok) { const d = await res.json(); setLogUsers(d.users || []); setNowMs(Date.now()); }
-    } catch { /* ignore */ }
-    setLogLoading(false);
-  }, []);
-  useEffect(() => { loadLog(); }, [loadLog]);
-  const sendOne = async (userId: string, type: "tools" | "report_types" | "guidelines") => {
-    setSendingKey(`${userId}-${type}`);
-    try {
-      const res = await fetch("/api/admin/send-lifecycle-email", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, type }),
-      });
-      if (res.ok) {
-        setLogUsers((prev) => prev ? prev.map((u) => u.id === userId ? { ...u, sent: { ...u.sent, [type]: new Date().toISOString() } } : u) : prev);
-      }
-    } catch { /* ignore */ }
-    setSendingKey(null);
-  };
 
   const load = useCallback(async (d: number) => {
     setLoading(true);
@@ -185,519 +67,217 @@ export function AdminEngagementTab() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(days); }, [days, load]);
+  useEffect(() => { load(days); }, [load, days]);
 
-  const fmtDate = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short" }) : t("eng.never");
-
-  const segLabel = (s: string) => t(`eng.seg_${s}`);
-  const featLabel = (f: string) => t(`eng.feat_${f}`);
-
-  /* ── Header (always shown) ── */
-  const header = (
-    <div className="space-y-3">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-violet-500" /> {t("eng.title")}
-        </h2>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400">{t("eng.subtitle")}</p>
-      </div>
-      <div className="flex items-center gap-1.5">
-        {[7, 30, 90].map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => setDays(d)}
-            className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-              days === d
-                ? "bg-violet-600 text-white border-violet-600"
-                : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-violet-400"
-            }`}
-          >
-            {d}{t("eng.days").charAt(0)}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => load(days)}
-          className="p-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-violet-600 hover:border-violet-400 transition-colors"
-          title={t("eng.refresh")}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-        </button>
-      </div>
-    </div>
-
-    {/* Send the automatic emails to your own inbox to preview them for real. */}
-    <div className="rounded-lg border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20 px-3 py-2.5 space-y-2">
-      <div className="flex items-center gap-2">
-        <Mail className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-        <span className="text-[11px] text-gray-600 dark:text-gray-300">{t("eng.test_hint")}</span>
-      </div>
-      <input
-        type="email"
-        value={testTo}
-        onChange={(e) => setTestTo(e.target.value)}
-        placeholder={t("eng.test_to_ph")}
-        className="ml-5 w-[calc(100%-1.25rem)] max-w-xs px-2 py-1 text-[11px] rounded-md border border-violet-200 dark:border-violet-900/50 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200"
-      />
-      {(["tools", "report_types", "guidelines", "limit"] as const).map((type) => (
-        <div key={type} className="flex flex-wrap items-center gap-1.5 pl-5">
-          <span className="text-[11px] text-gray-500 dark:text-gray-400 w-32">{t(type === "tools" ? "eng.test_tools" : type === "report_types" ? "eng.test_types" : type === "guidelines" ? "eng.test_guidelines" : "eng.test_limit")}</span>
-          {(["es", "en", "pt"] as const).map((lang) => (
-            <button
-              key={lang}
-              type="button"
-              disabled={testing !== null}
-              onClick={() => sendTest(lang, type)}
-              className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/40 disabled:opacity-50 transition-colors"
-            >
-              {testing === `${type}-${lang}` ? t("eng.test_sending") : lang.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      ))}
-      {testMsg && <span className="text-[11px] text-green-600 dark:text-green-400 block pl-5">{testMsg}</span>}
-    </div>
-
-    {/* One-time broadcast to already-registered users. */}
-    <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2.5">
-      <div className="flex items-start gap-2">
-        <Send className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-gray-800 dark:text-gray-100">{t("eng.bc_title")}</p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{t("eng.bc_hint")}</p>
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 mt-2 pl-5">
-        <button
-          type="button"
-          disabled={bcBusy}
-          onClick={bcPreview}
-          className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
-        >
-          {t("eng.bc_preview")}
-        </button>
-        <button
-          type="button"
-          disabled={bcBusy}
-          onClick={bcSend}
-          className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
-        >
-          {bcBusy ? t("eng.bc_sending") : (bcCount && bcCount > 0 ? `${t("eng.bc_continue")} (${bcCount})` : t("eng.bc_send"))}
-        </button>
-        {bcMsg && <span className="text-[11px] text-amber-700 dark:text-amber-300">{bcMsg}</span>}
-      </div>
-    </div>
-
-    {/* Resend verification email to unverified users. */}
-    <div className="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 px-3 py-2.5">
-      <div className="flex items-start gap-2">
-        <Mail className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-gray-800 dark:text-gray-100">{t("eng.rv_title")}</p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{t("eng.rv_hint")}</p>
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 mt-2 pl-5">
-        <button
-          type="button"
-          disabled={rvBusy}
-          onClick={rvPreview}
-          className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
-        >
-          {t("eng.rv_preview")}
-        </button>
-        <button
-          type="button"
-          disabled={rvBusy}
-          onClick={rvSend}
-          className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition-colors"
-        >
-          {rvBusy ? t("eng.rv_sending") : t("eng.rv_send")}
-        </button>
-        {rvMsg && <span className="text-[11px] text-blue-700 dark:text-blue-300">{rvMsg}</span>}
-      </div>
-    </div>
-    </div>
-  );
-
-  /* ── Email log (which lifecycle emails each user has received) ── */
-  const EMAIL_COLS = [
-    { key: "tools" as const, hours: 24, label: "24h" },
-    { key: "report_types" as const, hours: 48, label: "48h" },
-    { key: "guidelines" as const, hours: 120, label: "5d" },
-  ];
-  const emailCell = (u: LogUser, col: (typeof EMAIL_COLS)[number]) => {
-    const sentAt = u.sent[col.key];
-    if (sentAt) {
-      return <span className="inline-flex items-center gap-0.5 text-green-600 dark:text-green-400" title={new Date(sentAt).toLocaleString()}><Check className="h-3 w-3" />{fmtDate(sentAt)}</span>;
+  const stateLabel = (s: ConvState): string => {
+    switch (s) {
+      case "unverified": return t("conv.s_unverified");
+      case "no_card": return t("conv.s_no_card");
+      case "trialing": return t("admin.bill_trial");
+      case "trial_cancelled": return t("admin.bill_trial_cancelled");
+      case "paying": return t("admin.bill_paying");
+      case "cancel_scheduled": return t("admin.bill_cancelled");
+      case "lapsed": return t("conv.s_lapsed");
+      case "bonus": return t("admin.bill_bonus");
     }
-    if (!u.verified || !u.approved) {
-      return <span className="text-gray-300 dark:text-gray-600" title={t("eng.log_na")}>—</span>;
-    }
-    const dueMs = Date.parse(u.signup) + col.hours * 3600 * 1000;
-    if (nowMs >= dueMs) {
-      const k = `${u.id}-${col.key}`;
-      return (
-        <button
-          type="button"
-          disabled={sendingKey !== null}
-          onClick={() => sendOne(u.id, col.key)}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30 disabled:opacity-50 transition-colors"
-          title={t("eng.log_missing")}
-        >
-          {sendingKey === k ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Send className="h-2.5 w-2.5" />{t("eng.log_send")}</>}
-        </button>
-      );
-    }
-    return <span className="inline-flex items-center gap-0.5 text-gray-400" title={new Date(dueMs).toLocaleString()}><Clock className="h-3 w-3" /></span>;
   };
-  const emailLogSection = (
-    <Card className="p-0 overflow-hidden">
-      <div className="flex items-center justify-between px-5 pt-5 pb-1 gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-violet-500" /> {t("eng.log_title")}
-          </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">{t("eng.log_hint")}</p>
-        </div>
-        <button
-          type="button"
-          onClick={loadLog}
-          className="p-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-violet-600 hover:border-violet-400 transition-colors shrink-0"
-          title={t("eng.refresh")}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${logLoading ? "animate-spin" : ""}`} />
-        </button>
-      </div>
-      <div className="flex items-center gap-3 px-5 pb-2 text-[10px] text-gray-400">
-        <span className="inline-flex items-center gap-0.5"><Check className="h-3 w-3 text-green-500" />{t("eng.log_sent")}</span>
-        <span className="inline-flex items-center gap-0.5"><Clock className="h-3 w-3" />{t("eng.log_pending")}</span>
-        <span className="inline-flex items-center gap-0.5"><Send className="h-2.5 w-2.5 text-amber-500" />{t("eng.log_missing")}</span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[11px]">
-          <thead>
-            <tr className="border-y border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-left">
-              <th className="px-4 py-2 font-medium">{t("eng.log_col_user")}</th>
-              <th className="px-3 py-2 font-medium">{t("eng.log_col_signup")}</th>
-              {EMAIL_COLS.map((c) => <th key={c.key} className="px-3 py-2 font-medium text-center">{c.label}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {(logUsers || []).map((u) => (
-              <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                <td className="px-4 py-2">
-                  <span className="text-gray-800 dark:text-gray-200 truncate max-w-[200px] inline-block align-middle">{u.email}</span>
-                  {!u.verified && <span className="text-amber-500 ml-1" title={t("eng.fr_unverified")}>●</span>}
-                </td>
-                <td className="px-3 py-2 text-gray-500">{fmtDate(u.signup)}</td>
-                {EMAIL_COLS.map((c) => <td key={c.key} className="px-3 py-2 text-center">{emailCell(u, c)}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {(!logUsers || logUsers.length === 0) && (
-          <p className="text-center text-xs text-gray-400 py-8">{logLoading ? t("eng.loading") : t("eng.log_empty")}</p>
-        )}
-      </div>
-    </Card>
-  );
 
-  if (loading && !data) {
-    return (
-      <div className="space-y-4">
-        {header}
-        <div className="flex items-center justify-center py-16 text-gray-400 text-sm gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> {t("eng.loading")}
-        </div>
-      </div>
-    );
-  }
+  const userDates = (u: ConvUser): string[] => {
+    const out: string[] = [];
+    if (u.trialStartedAt && u.trialEndsAt) out.push(`${t("conv.trial_lbl")} ${fmtD(u.trialStartedAt)} → ${fmtD(u.trialEndsAt)}`);
+    if (u.cancelledAt) out.push(`${t("admin.bill_cancelled_on")} ${fmtD(u.cancelledAt)}`);
+    if (u.accessUntil) out.push(`${t("admin.bill_access_until")} ${fmtD(u.accessUntil)}`);
+    if (u.endedAt) out.push(`${t("admin.bill_ended_on")} ${fmtD(u.endedAt)}`);
+    return out;
+  };
 
-  if (!data || data.empty || data.cohortSize === 0) {
-    return (
-      <div className="space-y-4">
-        {header}
-        <Card className="p-8 text-center text-sm text-gray-400">{t("eng.empty")}</Card>
-        {emailLogSection}
-      </div>
-    );
-  }
+  const f = data?.funnel;
+  const funnelSteps = f
+    ? [
+        { label: t("conv.f_registered"), value: f.registered, prev: f.registered },
+        { label: t("conv.f_verified"), value: f.verified, prev: f.registered },
+        { label: t("conv.f_card"), value: f.cardAdded, prev: f.verified },
+        { label: t("conv.f_paying"), value: f.paying, prev: f.cardAdded },
+      ]
+    : [];
 
-  /* ── Funnel ── */
-  const f = data.funnel;
-  const funnelSteps: { key: string; value: number }[] = [
-    { key: "registered", value: f.registered },
-    { key: "activated", value: f.activated },
-    { key: "started", value: f.started },
-    { key: "generated", value: f.generated },
-    { key: "completed", value: f.completed },
-    { key: "explored", value: f.exploredTool },
-    { key: "returned", value: f.returned },
-  ];
-  // Biggest consecutive drop.
-  let dropIdx = -1; let dropAmt = -1;
-  for (let i = 1; i < funnelSteps.length; i++) {
-    const d = funnelSteps[i - 1].value - funnelSteps[i].value;
-    if (d > dropAmt) { dropAmt = d; dropIdx = i; }
-  }
-
-  const seg = data.segments;
-  const segTotal = seg.bounced + seg.one_and_done + seg.engaged + seg.champion || 1;
-
-  const frictionItems = [
-    { key: "fr_abandoned", value: data.friction.abandoned, icon: AlertTriangle },
-    { key: "fr_errors", value: data.friction.errorUsers, icon: AlertTriangle },
-    { key: "fr_corrections", value: data.friction.correctionUsers, icon: AlertTriangle },
-    { key: "fr_not_activated", value: data.friction.notActivated, icon: AlertTriangle },
-    { key: "fr_unverified", value: data.unverified, icon: AlertTriangle },
-  ];
+  const maxDayBar = data ? Math.max(1, ...data.timeline.map((d) => Math.max(d.signups, d.cards))) : 1;
 
   return (
-    <div className="space-y-4">
-      {header}
-
-      {/* Summary chips */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/40">
-          <Users className="h-3.5 w-3.5 text-violet-500" />
-          <span className="text-sm font-bold text-violet-700 dark:text-violet-300">{data.cohortSize}</span>
-          <span className="text-[11px] text-violet-600/80 dark:text-violet-400/80">{t("eng.cohort")} · {t("eng.in_days")} {data.days} {t("eng.days")}</span>
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
-          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{data.totalEvents}</span>
-          <span className="text-[11px] text-gray-500">{t("eng.events")}</span>
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900/40">
-          <span className="text-sm font-bold text-green-700 dark:text-green-300">{data.paying}</span>
-          <span className="text-[11px] text-green-600/80 dark:text-green-400/80">{t("eng.paying_users")}</span>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-violet-500" />
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.tab_engagement")}</h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{t("conv.subtitle")}</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          {[7, 30, 90].map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                days === d
+                  ? "bg-violet-600 text-white border-violet-600"
+                  : "text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              {d} {t("conv.days_label")}
+            </button>
+          ))}
+          <button
+            onClick={() => load(days)}
+            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            title={t("conv.refresh")}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
-      {/* ── Activation funnel ── */}
-      <Card className="p-5">
-        <div className="mb-1 flex items-center gap-2">
-          <ArrowRight className="h-4 w-4 text-violet-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("eng.funnel_title")}</h3>
-        </div>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3">{t("eng.funnel_hint")}</p>
-        <div className="space-y-1.5">
-          {funnelSteps.map((s, i) => {
-            const p = f.registered ? s.value / f.registered : 0;
-            const isDrop = i === dropIdx;
-            return (
-              <div key={s.key}>
-                <div className="flex items-center justify-between text-[11px] mb-0.5">
-                  <span className="text-gray-600 dark:text-gray-300">{t(`eng.step_${s.key}`)}</span>
-                  <span className="font-medium text-gray-700 dark:text-gray-200">{s.value} · {pct(p)}</span>
-                </div>
-                <div className="h-4 rounded bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                  <div
-                    className={`h-full rounded ${isDrop ? "bg-amber-400" : "bg-violet-500"}`}
-                    style={{ width: `${Math.max(p * 100, s.value > 0 ? 2 : 0)}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        {dropIdx > 0 && dropAmt > 0 && (
-          <p className="mt-3 text-[11px] text-amber-700 dark:text-amber-400 flex items-center gap-1">
-            <TrendingDown className="h-3.5 w-3.5" />
-            {t("eng.insight_dropoff")} «{t(`eng.step_${funnelSteps[dropIdx - 1].key}`)}» {t("eng.and")} «{t(`eng.step_${funnelSteps[dropIdx].key}`)}» (−{dropAmt}).
-          </p>
-        )}
-      </Card>
-
-      {/* ── Engagement segments ── */}
-      <Card className="p-5">
-        <div className="mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-violet-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("eng.segments_title")}</h3>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {(["bounced", "one_and_done", "engaged", "champion"] as const).map((k) => {
-            const v = seg[k];
-            const style = SEGMENT_STYLE[k];
-            return (
-              <div key={k} className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">{v}</span>
-                  <Badge variant="secondary" className={`text-[10px] ${style.badge}`}>{pct(v / segTotal)}</Badge>
-                </div>
-                <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                  <div className={`h-full ${style.bar}`} style={{ width: `${(v / segTotal) * 100}%` }} />
-                </div>
-                <p className="mt-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-200">{segLabel(k)}</p>
-                <p className="text-[10px] text-gray-400 leading-tight">{t(`eng.seg_${k}_desc`)}</p>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* ── Retention & activation ── */}
-      <Card className="p-5">
-        <div className="mb-3 flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-violet-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("eng.retention_title")}</h3>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: t("eng.ret_day0"), value: `${data.retention.day0}` },
-            { label: t("eng.ret_d1_7"), value: `${data.retention.d1_7}` },
-            { label: t("eng.ret_d8"), value: `${data.retention.d8plus}` },
-            { label: t("eng.ttfr"), value: data.ttfr.median != null ? `${data.ttfr.median} ${t("eng.minutes")}` : "—" },
-          ].map((s, i) => (
-            <div key={i} className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{s.value}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">{s.label}</p>
+      {loading && !data ? (
+        <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+      ) : !data || data.empty ? (
+        <p className="text-sm text-gray-500 py-8 text-center">{t("conv.empty")}</p>
+      ) : (
+        <>
+          {/* Funnel */}
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="h-3.5 w-3.5 text-violet-500" />
+              <span className="text-xs font-semibold text-gray-900 dark:text-white">{t("conv.funnel_title")}</span>
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* ── Feature adoption ── */}
-      <Card className="p-5">
-        <div className="mb-1 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-violet-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("eng.features_title")}</h3>
-        </div>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3">{t("eng.features_hint")}</p>
-        <div className="space-y-2">
-          {data.featureAdoption.map((fa) => {
-            const lift = fa.retentionLift;
-            const better = lift != null && lift >= 1.15;
-            const worse = lift != null && lift <= 0.85;
-            return (
-              <div key={fa.feature} className="flex items-center gap-2">
-                <span className="text-[11px] text-gray-600 dark:text-gray-300 w-28 shrink-0">{featLabel(fa.feature)}</span>
-                <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                  <div className="h-full rounded bg-violet-400" style={{ width: `${Math.max(fa.pct * 100, fa.users > 0 ? 2 : 0)}%` }} />
+            <div className="flex flex-col sm:flex-row gap-2">
+              {funnelSteps.map((s, i) => (
+                <div key={s.label} className="flex-1 flex items-center gap-2">
+                  <div className="flex-1 p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/40">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{s.label}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{s.value}</p>
+                    <div className="mt-1.5 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-500"
+                        style={{ width: f && f.registered > 0 ? `${Math.round((s.value / f.registered) * 100)}%` : "0%" }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {i === 0 ? " " : `${pctOf(s.value, s.prev)} ${t("conv.of_prev")}`}
+                    </p>
+                  </div>
+                  {i < funnelSteps.length - 1 && <ArrowRight className="h-3.5 w-3.5 text-gray-300 shrink-0 hidden sm:block" />}
                 </div>
-                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-200 w-16 text-right">{fa.users} · {pct(fa.pct)}</span>
-                <span className="w-24 text-right">
-                  {(better || worse) && (
-                    <span className={`text-[10px] inline-flex items-center gap-0.5 ${better ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                      {better ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {better ? t("eng.retain_better") : t("eng.retain_worse")}
-                    </span>
-                  )}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* ── What attracts them ── */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t("eng.top_calculators")}</h3>
-          {data.topCalculators.length === 0 ? (
-            <p className="text-[11px] text-gray-400">{t("eng.no_data")}</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {data.topCalculators.map((c) => (
-                <li key={c.calc} className="flex items-center justify-between text-[11px]">
-                  <span className="text-gray-700 dark:text-gray-200">{prettyId(c.calc)}</span>
-                  <span className="text-gray-500">{c.users} {t("eng.by_users")}</span>
-                </li>
               ))}
-            </ul>
-          )}
-        </Card>
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{t("eng.top_templates")}</h3>
-          {data.topTemplates.length === 0 ? (
-            <p className="text-[11px] text-gray-400">{t("eng.no_data")}</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {data.topTemplates.map((c) => (
-                <li key={c.template} className="flex items-center justify-between text-[11px]">
-                  <span className="text-gray-700 dark:text-gray-200 truncate pr-2">{prettyId(c.template)}</span>
-                  <span className="text-gray-500 shrink-0">{c.users} {t("eng.by_users")}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-
-      {/* ── Friction signals ── */}
-      <Card className="p-5">
-        <div className="mb-3 flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("eng.friction_title")}</h3>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          {frictionItems.map((fi) => (
-            <div key={fi.key} className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-              <p className={`text-lg font-bold ${fi.value > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400"}`}>{fi.value}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">{t(`eng.${fi.key}`)}</p>
             </div>
-          ))}
-        </div>
-      </Card>
+          </Card>
 
-      {/* ── Per-user table ── */}
-      <Card className="p-0 overflow-hidden">
-        <div className="px-5 pt-5 pb-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("eng.users_title")}</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11px]">
-            <thead>
-              <tr className="border-y border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-left">
-                <th className="px-3 py-2 font-medium">{t("eng.col_user")}</th>
-                <th className="px-3 py-2 font-medium">{t("eng.col_signup")}</th>
-                <th className="px-3 py-2 font-medium">{t("eng.col_plan")}</th>
-                <th className="px-3 py-2 font-medium text-center">{t("eng.col_reports")}</th>
-                <th className="px-3 py-2 font-medium text-center">{t("eng.col_days")}</th>
-                <th className="px-3 py-2 font-medium text-center">{t("eng.col_tools")}</th>
-                <th className="px-3 py-2 font-medium">{t("eng.col_lastseen")}</th>
-                <th className="px-3 py-2 font-medium">{t("eng.col_segment")}</th>
-                <th className="px-3 py-2 font-medium text-right">{t("eng.col_score")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.users.map((u) => (
-                <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-800 dark:text-gray-200 truncate max-w-[180px]">{u.email}</span>
-                      {u.paying && <Badge variant="secondary" className="text-[9px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">$</Badge>}
-                      {!u.emailVerified && <span className="text-amber-500" title={t("eng.fr_unverified")}>●</span>}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-gray-500">{fmtDate(u.signup)}</td>
-                  <td className="px-3 py-2 text-gray-500">{u.plan}</td>
-                  <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200">{u.reports}</td>
-                  <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200">{u.activeDays}</td>
-                  <td className="px-3 py-2 text-center text-gray-500" title={u.features.join(", ")}>{u.featureCount}</td>
-                  <td className="px-3 py-2 text-gray-500">{fmtDate(u.lastSeen)}</td>
-                  <td className="px-3 py-2">
-                    <Badge variant="secondary" className={`text-[9px] ${SEGMENT_STYLE[u.segment].badge}`}>{segLabel(u.segment)}</Badge>
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <div className="w-10 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                        <div className="h-full bg-violet-500" style={{ width: `${u.score}%` }} />
-                      </div>
-                      <span className="text-gray-500 w-6 text-right">{u.score}</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+          {/* Trials + current states */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Card className="p-4 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">{t("conv.trial_title")}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                  <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{data.states.trialing}</p>
+                  <p className="text-[10px] text-gray-500">{t("conv.t_active")}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                  <p className="text-lg font-bold text-gray-700 dark:text-gray-300">{data.trialCancellations}</p>
+                  <p className="text-[10px] text-gray-500">{t("conv.t_cancelled")}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-950/30">
+                  <p className="text-lg font-bold text-green-700 dark:text-green-300">
+                    {data.trialConversion.paid}/{data.trialConversion.finished}
+                  </p>
+                  <p className="text-[10px] text-gray-500">{t("conv.t_conversion")}</p>
+                </div>
+              </div>
+            </Card>
 
-      {emailLogSection}
+            <Card className="p-4 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">{t("conv.states_title")}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(data.states) as ConvState[])
+                  .filter((s) => data.states[s] > 0)
+                  .map((s) => (
+                    <Badge key={s} className={`text-[10px] ${STATE_STYLE[s]}`}>
+                      {stateLabel(s)}: {data.states[s]}
+                      {s === "paying" && Object.keys(data.payingByPlan).length > 0 && (
+                        <span className="ml-1 opacity-75">
+                          ({Object.entries(data.payingByPlan).map(([p, n]) => `${p} ${n}`).join(" · ")})
+                        </span>
+                      )}
+                    </Badge>
+                  ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Per-day timeline */}
+          {data.timeline.length > 0 && (
+            <Card className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">{t("conv.timeline_title")}</span>
+                <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="h-2 w-2 rounded-sm bg-blue-400" /> {t("conv.tl_signups")}</span>
+                <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="h-2 w-2 rounded-sm bg-violet-500" /> {t("conv.tl_cards")}</span>
+              </div>
+              <div className="flex items-end gap-1 h-24 overflow-x-auto pb-1">
+                {data.timeline.map((d) => (
+                  <div key={d.day} className="flex flex-col items-center gap-0.5 min-w-[26px]" title={`${d.day}: ${d.signups}/${d.cards}`}>
+                    <div className="flex items-end gap-[2px] h-16">
+                      <div className="w-2 rounded-t bg-blue-400" style={{ height: `${Math.max(6, (d.signups / maxDayBar) * 100)}%`, opacity: d.signups ? 1 : 0.15 }} />
+                      <div className="w-2 rounded-t bg-violet-500" style={{ height: `${Math.max(6, (d.cards / maxDayBar) * 100)}%`, opacity: d.cards ? 1 : 0.15 }} />
+                    </div>
+                    <span className="text-[8px] text-gray-400">{d.day.slice(5)}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Users table */}
+          <Card className="p-4">
+            <p className="text-xs font-semibold text-gray-900 dark:text-white mb-3">
+              {t("conv.users_title")} ({data.users.length})
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_user")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_joined")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_status")}</th>
+                    <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("conv.th_dates")}</th>
+                    <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("conv.th_reports")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.users.map((u) => (
+                    <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                      <td className="py-2.5 px-2">
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{u.name !== "—" ? u.name : u.email}</p>
+                        <p className="text-[10px] text-gray-500">{u.email}{u.country ? ` · ${u.country}` : ""}</p>
+                      </td>
+                      <td className="py-2.5 px-2 text-xs text-gray-500 whitespace-nowrap">{fmtD(u.signup)}</td>
+                      <td className="py-2.5 px-2">
+                        <Badge className={`text-[10px] ${STATE_STYLE[u.state]}`}>{stateLabel(u.state)}</Badge>
+                      </td>
+                      <td className="py-2.5 px-2 hidden md:table-cell">
+                        {userDates(u).map((l) => (
+                          <p key={l} className="text-[10px] text-gray-500 whitespace-nowrap">{l}</p>
+                        ))}
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-xs text-gray-600 dark:text-gray-300">{u.reportsThisMonth}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
