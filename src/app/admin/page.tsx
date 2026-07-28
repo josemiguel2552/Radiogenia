@@ -300,6 +300,68 @@ export default function AdminPage() {
   const [activationSent, setActivationSent] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [createOpen, setCreateOpen] = useState(false);
 
+  /* ── Legacy purge (accounts from before the card-first cutover) ── */
+  interface PurgeCandidate {
+    id: string; email: string | null; name: string | null; created_at: string;
+    country: string | null; hospital: string | null; plan: string;
+    email_verified: boolean | null; report_count: number;
+  }
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgeLoading, setPurgeLoading] = useState(false);
+  const [purgeCandidates, setPurgeCandidates] = useState<PurgeCandidate[]>([]);
+  const [purgeSelected, setPurgeSelected] = useState<Set<string>>(new Set());
+  const [purgeRunning, setPurgeRunning] = useState(false);
+  const [purgeResult, setPurgeResult] = useState<string | null>(null);
+
+  async function openPurgeDialog() {
+    setPurgeOpen(true);
+    setPurgeLoading(true);
+    setPurgeResult(null);
+    try {
+      const res = await fetch("/api/admin/purge-legacy-users");
+      if (res.ok) {
+        const d = await res.json();
+        const cands: PurgeCandidate[] = d.candidates || [];
+        setPurgeCandidates(cands);
+        setPurgeSelected(new Set(cands.map((c) => c.id)));
+      }
+    } catch { /* dialog shows empty */ }
+    setPurgeLoading(false);
+  }
+
+  function togglePurgeUser(id: string) {
+    setPurgeSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function runPurge() {
+    if (purgeSelected.size === 0) return;
+    setPurgeRunning(true);
+    setPurgeResult(null);
+    try {
+      const res = await fetch("/api/admin/purge-legacy-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: Array.from(purgeSelected) }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setPurgeResult(t("admin.purge_done").replace("{n}", String(d.deleted)));
+        setPurgeCandidates((prev) => prev.filter((c) => !purgeSelected.has(c.id)));
+        setPurgeSelected(new Set());
+        loadAll();
+      } else {
+        setPurgeResult(d.error || "Error");
+      }
+    } catch {
+      setPurgeResult("Error");
+    }
+    setPurgeRunning(false);
+  }
+
   async function sendActivationReminder(userId: string) {
     setActivationSent((p) => ({ ...p, [userId]: "sending" }));
     try {
@@ -1146,7 +1208,16 @@ export default function AdminPage() {
               )}
               <Button
                 size="sm"
-                className="ml-auto gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                variant="outline"
+                className="ml-auto gap-1.5 h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
+                onClick={openPurgeDialog}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("admin.purge_btn")}
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5 h-8 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white"
                 onClick={() => { setCreateOpen(true); setCreateError(""); }}
               >
                 <UserPlus className="h-3.5 w-3.5" />
@@ -2485,6 +2556,63 @@ export default function AdminPage() {
       </Dialog>
 
       {/* Delete confirm dialog */}
+      <Dialog open={purgeOpen} onOpenChange={(o) => { if (!purgeRunning) setPurgeOpen(o); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-red-500" />
+              {t("admin.purge_title")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t("admin.purge_desc")}</p>
+            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">{t("admin.purge_review")}</p>
+            {purgeLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+            ) : purgeCandidates.length === 0 ? (
+              <p className="text-sm text-gray-500 py-4 text-center">{t("admin.purge_empty")}</p>
+            ) : (
+              <div className="max-h-72 overflow-y-auto border border-gray-200 dark:border-gray-800 rounded-lg divide-y divide-gray-100 dark:divide-gray-800">
+                {purgeCandidates.map((c) => (
+                  <label key={c.id} className="flex items-start gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                    <input
+                      type="checkbox"
+                      checked={purgeSelected.has(c.id)}
+                      onChange={() => togglePurgeUser(c.id)}
+                      className="mt-0.5 accent-red-500"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{c.email}</p>
+                      <p className="text-[10px] text-gray-500">
+                        {new Date(c.created_at).toLocaleDateString()} · {[c.country, c.hospital].filter(Boolean).join(" · ") || "—"}
+                        {c.report_count > 0 && <span className="text-amber-600 dark:text-amber-400"> · {c.report_count} inf.</span>}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+            {purgeResult && (
+              <p className="text-xs font-medium text-green-600 dark:text-green-400">{purgeResult}</p>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" size="sm" className="text-xs" disabled={purgeRunning} onClick={() => setPurgeOpen(false)}>
+                {t("cancel")}
+              </Button>
+              <Button
+                size="sm"
+                className="text-xs bg-red-600 hover:bg-red-700 text-white gap-1.5"
+                disabled={purgeRunning || purgeSelected.size === 0}
+                onClick={runPurge}
+              >
+                {purgeRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {t("admin.purge_confirm").replace("{n}", String(purgeSelected.size))}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
