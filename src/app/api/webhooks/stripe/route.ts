@@ -183,7 +183,9 @@ export async function POST(req: NextRequest) {
           .update(update)
           .eq("stripe_customer_id", customerId);
 
-        // Reactivation ends any running data-retention countdown (best-effort).
+        // Reactivation ends any running data-retention countdown, and a live
+        // non-cancelling subscription wipes the cancellation timestamp
+        // (best-effort: columns may predate migrations).
         if (isActive) {
           try {
             await service
@@ -191,7 +193,16 @@ export async function POST(req: NextRequest) {
               .update({ subscription_ended_at: null })
               .eq("stripe_customer_id", customerId)
               .not("subscription_ended_at", "is", null);
-          } catch { /* column may predate migration */ }
+          } catch { /* ignore */ }
+          if (!subscription.cancel_at_period_end) {
+            try {
+              await service
+                .from("profiles")
+                .update({ subscription_cancelled_at: null })
+                .eq("stripe_customer_id", customerId)
+                .not("subscription_cancelled_at", "is", null);
+            } catch { /* ignore */ }
+          }
         }
 
         // Trial bookkeeping (best-effort: columns may predate migration).

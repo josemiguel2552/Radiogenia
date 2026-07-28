@@ -14,7 +14,7 @@ export async function GET() {
     const [{ data: profiles, error }, { data: reportCounts }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role")
+        .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role, org_id, stripe_subscription_id, pending_plan, pending_plan_effective_date")
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase
@@ -27,6 +27,25 @@ export async function GET() {
       return dbErrorResponse(error);
     }
 
+    // Trial/retention/cancellation columns are best-effort: they arrive with
+    // the trial-billing migrations and the users list must not break without.
+    const trialById = new Map<string, Record<string, unknown>>();
+    const selects = [
+      "id, trial_used_at, trial_ends_at, subscription_ended_at, subscription_cancelled_at",
+      "id, trial_used_at, trial_ends_at, subscription_ended_at",
+      "id, trial_used_at, trial_ends_at",
+    ];
+    for (const sel of selects) {
+      const { data: trialRows, error: trialErr } = await supabase
+        .from("profiles")
+        .select(sel)
+        .limit(1000);
+      if (!trialErr) {
+        for (const r of (trialRows || []) as unknown as { id: string }[]) trialById.set(r.id, r);
+        break;
+      }
+    }
+
     const countMap = new Map<string, number>();
     for (const r of reportCounts || []) {
       countMap.set(r.user_id, (countMap.get(r.user_id) || 0) + 1);
@@ -34,6 +53,7 @@ export async function GET() {
 
     const users = (profiles || []).map((p) => ({
       ...p,
+      ...(trialById.get(p.id) || {}),
       report_count: countMap.get(p.id) || 0,
     }));
 

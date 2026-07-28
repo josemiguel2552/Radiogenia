@@ -21,13 +21,23 @@ import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
 import { useT } from "@/lib/i18n";
 import { Logo } from "@/components/ui/logo";
-import { AdminSupportTab } from "@/components/admin/admin-support-tab";
-import { AdminResidentsTab } from "@/components/admin/admin-residents-tab";
-import { AdminWaitlistTab } from "@/components/admin/admin-waitlist-tab";
-import { AdminCostsTab } from "@/components/admin/admin-costs-tab";
-import { AdminHospitalsTab } from "@/components/admin/admin-hospitals-tab";
-import { AdminEngagementTab } from "@/components/admin/admin-engagement-tab";
-import { AdminManualDownload } from "@/components/admin/admin-manual-download";
+import nextDynamic from "next/dynamic";
+
+// Admin tabs are code-split: each one's JS (charts libraries included)
+// downloads only when its tab is first opened, keeping the initial
+// admin load light.
+const adminTabLoading = () => (
+  <div className="py-16 flex justify-center">
+    <div className="h-5 w-5 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+  </div>
+);
+const AdminSupportTab = nextDynamic(() => import("@/components/admin/admin-support-tab").then((m) => m.AdminSupportTab), { ssr: false, loading: adminTabLoading });
+const AdminResidentsTab = nextDynamic(() => import("@/components/admin/admin-residents-tab").then((m) => m.AdminResidentsTab), { ssr: false, loading: adminTabLoading });
+const AdminWaitlistTab = nextDynamic(() => import("@/components/admin/admin-waitlist-tab").then((m) => m.AdminWaitlistTab), { ssr: false, loading: adminTabLoading });
+const AdminCostsTab = nextDynamic(() => import("@/components/admin/admin-costs-tab").then((m) => m.AdminCostsTab), { ssr: false, loading: adminTabLoading });
+const AdminHospitalsTab = nextDynamic(() => import("@/components/admin/admin-hospitals-tab").then((m) => m.AdminHospitalsTab), { ssr: false, loading: adminTabLoading });
+const AdminEngagementTab = nextDynamic(() => import("@/components/admin/admin-engagement-tab").then((m) => m.AdminEngagementTab), { ssr: false, loading: adminTabLoading });
+const AdminManualDownload = nextDynamic(() => import("@/components/admin/admin-manual-download").then((m) => m.AdminManualDownload), { ssr: false, loading: adminTabLoading });
 
 interface GlobalConfig {
   id: string;
@@ -88,6 +98,77 @@ interface UserRow {
   country?: string;
   hospital?: string;
   professional_role?: string;
+  org_id?: string | null;
+  stripe_subscription_id?: string | null;
+  pending_plan?: string | null;
+  pending_plan_effective_date?: string | null;
+  billing_period_start?: string | null;
+  trial_used_at?: string | null;
+  trial_ends_at?: string | null;
+  subscription_ended_at?: string | null;
+  subscription_cancelled_at?: string | null;
+}
+
+/* ── Billing status per user (card-first model) ─────────────────
+   Derives who is actually paying, who is on trial (and when the first
+   charge lands), who cancelled (and when), and who never activated. */
+function fmtShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls: string; lines: string[] } | null {
+  if (u.role === "admin") return null;
+  if (u.org_id) {
+    return { label: t("admin.bill_hospital"), cls: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300", lines: [] };
+  }
+  const trialActive = !!u.trial_ends_at && Date.parse(u.trial_ends_at) > Date.now();
+  const cancelPending = u.pending_plan === "free";
+  const cancelledLine = u.subscription_cancelled_at ? `${t("admin.bill_cancelled_on")} ${fmtShortDate(u.subscription_cancelled_at)}` : null;
+
+  if (trialActive && !cancelPending) {
+    return {
+      label: t("admin.bill_trial"),
+      cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+      lines: [`${t("admin.bill_charge_on")} ${fmtShortDate(u.trial_ends_at!)}`],
+    };
+  }
+  if (trialActive && cancelPending) {
+    return {
+      label: t("admin.bill_trial_cancelled"),
+      cls: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+      lines: [cancelledLine, `${t("admin.bill_access_until")} ${fmtShortDate(u.trial_ends_at!)}`].filter(Boolean) as string[],
+    };
+  }
+  if (u.subscription_plan && u.subscription_plan !== "free" && u.stripe_subscription_id) {
+    if (cancelPending) {
+      return {
+        label: t("admin.bill_cancelled"),
+        cls: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+        lines: [cancelledLine, u.pending_plan_effective_date ? `${t("admin.bill_access_until")} ${fmtShortDate(u.pending_plan_effective_date)}` : null].filter(Boolean) as string[],
+      };
+    }
+    const renews = u.billing_period_start ? new Date(u.billing_period_start) : null;
+    if (renews) renews.setMonth(renews.getMonth() + 1);
+    return {
+      label: t("admin.bill_paying"),
+      cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+      lines: [
+        u.trial_used_at ? `${t("admin.bill_since")} ${fmtShortDate(u.trial_used_at)}` : null,
+        renews ? `${t("admin.bill_renews")} ${fmtShortDate(renews.toISOString())}` : null,
+      ].filter(Boolean) as string[],
+    };
+  }
+  if (u.subscription_plan && u.subscription_plan !== "free") {
+    return { label: t("admin.bill_bonus"), cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", lines: [] };
+  }
+  return {
+    label: t("admin.bill_none"),
+    cls: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300",
+    lines: [
+      u.trial_used_at ? t("admin.bill_trial_used") : null,
+      u.subscription_ended_at ? `${t("admin.bill_ended_on")} ${fmtShortDate(u.subscription_ended_at)}` : null,
+    ].filter(Boolean) as string[],
+  };
 }
 
 interface Stats {
@@ -1061,6 +1142,7 @@ export default function AdminPage() {
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 hidden sm:table-cell">{t("admin.th_role")}</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_status")}</th>
                       <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_plan")}</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_billing")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_reports_mo")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500">{t("admin.th_dictation_mo")}</th>
                       <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 hidden md:table-cell">{t("admin.th_joined")}</th>
@@ -1140,6 +1222,20 @@ export default function AdminPage() {
                                 {planConfig.label}
                               </Badge>
                             )}
+                          </td>
+                          <td className="py-3 px-2">
+                            {(() => {
+                              const bi = billingInfo(u, t);
+                              if (!bi) return null;
+                              return (
+                                <div className="space-y-0.5">
+                                  <Badge className={`text-[10px] ${bi.cls}`}>{bi.label}</Badge>
+                                  {bi.lines.map((l) => (
+                                    <p key={l} className="text-[10px] text-gray-500 whitespace-nowrap">{l}</p>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="py-3 px-2 text-right hidden md:table-cell">
                             {u.role !== "admin" && (

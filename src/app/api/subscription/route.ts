@@ -281,6 +281,13 @@ export async function PUT(req: NextRequest) {
         .from("profiles")
         .update({ pending_plan: null, pending_plan_effective_date: null })
         .eq("id", user.id);
+      // Reactivation wipes the cancellation timestamp (admin visibility).
+      try {
+        await service
+          .from("profiles")
+          .update({ subscription_cancelled_at: null })
+          .eq("id", user.id);
+      } catch { /* column may predate migration */ }
       return NextResponse.json({ ok: true, cancelled: true });
     }
 
@@ -409,6 +416,13 @@ export async function PUT(req: NextRequest) {
                 .update({ pending_plan_effective_date: effectiveDate.toISOString() })
                 .eq("id", user.id);
             }
+            // Record when the cancellation was requested (admin visibility).
+            try {
+              await service
+                .from("profiles")
+                .update({ subscription_cancelled_at: new Date().toISOString() })
+                .eq("id", user.id);
+            } catch { /* column may predate migration */ }
           } else {
             const envKey = PLAN_PRICE_ENV[plan];
             const newPriceId = envKey ? process.env[envKey] : null;
