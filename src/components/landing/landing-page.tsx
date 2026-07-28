@@ -656,19 +656,19 @@ const DEMO_TEXTS: Record<PublicLang, string> = {
 
 const STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
   es: [
-    { title: "Dicta tu informe", desc: "Habla naturalmente y tu voz se transcribe en tiempo real con máxima precisión" },
+    { title: "Dicta tu informe", desc: "Habla naturalmente y tu voz se transcribe en tiempo real con máxima precisión. ¿Sin micrófono en la estación de trabajo? Escanea un código y dicta desde tu móvil" },
     { title: "Informe en tu formato", desc: "La IA analiza tu dictado y genera el informe completo en segundos, en el formato que tú elijas: estructurado por secciones, narrativo no estructurado o solo hallazgos" },
     { title: "Clasificación automática", desc: "Estadifica y clasifica los hallazgos automáticamente usando sistemas estándar: TNM, BI-RADS, TI-RADS y más" },
     { title: "Radiogen Bot", desc: "Consulta clasificaciones, valores de referencia o criterios de seguimiento sin salir de tu informe" },
   ],
   en: [
-    { title: "Dictate your report", desc: "Speak naturally and your voice is transcribed in real time with maximum accuracy" },
+    { title: "Dictate your report", desc: "Speak naturally and your voice is transcribed in real time with maximum accuracy. No microphone at your workstation? Scan a code and dictate from your phone" },
     { title: "Your report, your format", desc: "AI analyzes your dictation and generates the complete report in seconds, in the format you choose: structured into sections, unstructured narrative, or findings only" },
     { title: "Automatic classification", desc: "Automatically stage and classify findings using standard systems: TNM, BI-RADS, TI-RADS and more" },
     { title: "Radiogen Bot", desc: "Look up classifications, reference values, or follow-up criteria without leaving your report" },
   ],
   pt: [
-    { title: "Dite seu laudo", desc: "Fale naturalmente e sua voz é transcrita em tempo real com máxima precisão" },
+    { title: "Dite seu laudo", desc: "Fale naturalmente e sua voz é transcrita em tempo real com máxima precisão. Sem microfone na estação de trabalho? Escaneie um código e dite do seu celular" },
     { title: "Laudo no seu formato", desc: "A IA analisa seu ditado e gera o laudo completo em segundos, no formato que você escolher: estruturado em seções, narrativo não estruturado ou só achados" },
     { title: "Classificação automática", desc: "Estadie e classifique os achados automaticamente usando sistemas padrão: TNM, BI-RADS, TI-RADS e mais" },
     { title: "Radiogen Bot", desc: "Consulte classificações, valores de referência ou critérios de seguimento sem sair do laudo" },
@@ -764,7 +764,41 @@ function MockScreen({ children }: { children: React.ReactNode }) {
 
 function DictateVisual({ text }: { text: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-5 w-full">
+    <div className="relative flex flex-col items-center justify-center gap-5 w-full">
+      {/* Subtle phone-as-dictaphone: a small handset recording in the corner,
+          its signal flowing toward the workstation mic. */}
+      <div className="absolute -top-1 right-0 flex items-end gap-1.5">
+        <div className="flex flex-col gap-[3px] pb-5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="block h-[2px] rounded-full bg-gradient-to-l from-violet-400/60 to-transparent animate-pulse"
+              style={{ width: `${16 - i * 4}px`, animationDelay: `${i * 0.2}s` }}
+            />
+          ))}
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-8 h-[52px] rounded-[7px] border border-violet-400/40 bg-gradient-to-b from-violet-500/15 to-blue-500/10 flex flex-col items-center justify-center gap-1 shadow-lg shadow-violet-900/20">
+            <span className="block w-3 h-[2px] rounded-full bg-violet-300/40" />
+            <span className="relative flex items-center justify-center w-4 h-4">
+              <span className="absolute inline-block w-4 h-4 rounded-full bg-violet-400/25 animate-ping" />
+              <span className="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-500/70">
+                <Mic className="h-2.5 w-2.5 text-white" />
+              </span>
+            </span>
+            <div className="flex items-end gap-[1.5px] h-2">
+              {[0.5, 1, 0.7, 0.9].map((f, i) => (
+                <span
+                  key={i}
+                  className="waveform-bar w-[2px] rounded-full bg-violet-300/80"
+                  style={{ "--bar-delay": `${i * 0.12}s`, minHeight: `${2 + f * 3}px` } as React.CSSProperties}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center relative">
         <Mic className="h-6 w-6 text-blue-400" />
         <div className="absolute inset-0 rounded-full border-2 border-blue-400/40 animate-ping" />
