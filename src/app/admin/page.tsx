@@ -99,6 +99,7 @@ interface UserRow {
   hospital?: string;
   professional_role?: string;
   org_id?: string | null;
+  email_verified?: boolean | null;
   stripe_subscription_id?: string | null;
   pending_plan?: string | null;
   pending_plan_effective_date?: string | null;
@@ -116,7 +117,7 @@ function fmtShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls: string; lines: string[] } | null {
+function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls: string; lines: string[]; kind?: "none" } | null {
   if (u.role === "admin") return null;
   if (u.org_id) {
     return { label: t("admin.bill_hospital"), cls: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300", lines: [] };
@@ -164,7 +165,11 @@ function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls
   return {
     label: t("admin.bill_none"),
     cls: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300",
+    kind: "none",
     lines: [
+      // Why they never activated: email never verified (they never reached
+      // Stripe) vs. verified but abandoned before entering the card.
+      u.email_verified === false ? t("admin.bill_email_unverified") : t("admin.bill_no_payment"),
       u.trial_used_at ? t("admin.bill_trial_used") : null,
       u.subscription_ended_at ? `${t("admin.bill_ended_on")} ${fmtShortDate(u.subscription_ended_at)}` : null,
     ].filter(Boolean) as string[],
@@ -292,7 +297,22 @@ export default function AdminPage() {
   const [editPlan, setEditPlan] = useState("");
   const [savingUser, setSavingUser] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<UserRow | null>(null);
+  const [activationSent, setActivationSent] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [createOpen, setCreateOpen] = useState(false);
+
+  async function sendActivationReminder(userId: string) {
+    setActivationSent((p) => ({ ...p, [userId]: "sending" }));
+    try {
+      const res = await fetch("/api/admin/activation-reminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      setActivationSent((p) => ({ ...p, [userId]: res.ok ? "sent" : "error" }));
+    } catch {
+      setActivationSent((p) => ({ ...p, [userId]: "error" }));
+    }
+  }
   const [createEmail, setCreateEmail] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [createPlan, setCreatePlan] = useState("free");
@@ -1227,12 +1247,29 @@ export default function AdminPage() {
                             {(() => {
                               const bi = billingInfo(u, t);
                               if (!bi) return null;
+                              const sendState = activationSent[u.id];
                               return (
                                 <div className="space-y-0.5">
                                   <Badge className={`text-[10px] ${bi.cls}`}>{bi.label}</Badge>
                                   {bi.lines.map((l) => (
                                     <p key={l} className="text-[10px] text-gray-500 whitespace-nowrap">{l}</p>
                                   ))}
+                                  {bi.kind === "none" && (
+                                    <button
+                                      type="button"
+                                      disabled={sendState === "sending" || sendState === "sent"}
+                                      onClick={() => sendActivationReminder(u.id)}
+                                      className="text-[10px] font-medium text-violet-600 dark:text-violet-400 hover:underline disabled:opacity-60 disabled:no-underline whitespace-nowrap"
+                                    >
+                                      {sendState === "sent"
+                                        ? `✓ ${t("admin.bill_activation_sent")}`
+                                        : sendState === "sending"
+                                        ? "…"
+                                        : sendState === "error"
+                                        ? t("admin.bill_activation_error")
+                                        : t("admin.bill_send_activation")}
+                                    </button>
+                                  )}
                                 </div>
                               );
                             })()}

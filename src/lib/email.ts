@@ -1757,3 +1757,84 @@ export async function sendTrialReminderEmail(
     headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `trial-reminder-${Date.now()}` },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Activation reminder (account created but trial/checkout never completed)
+// ---------------------------------------------------------------------------
+
+const activationI18n: Record<EmailLang, {
+  subject: string; titleWith: string; titleWithout: string;
+  intro: string; b1: string; b2: string; b3: string; btn: string; unsub: string;
+  textTpl: (g: string, url: string) => string;
+}> = {
+  es: {
+    subject: "Tu cuenta de Radiogen.AI está a un paso — activa tus 7 días gratis",
+    titleWith: ", tu cuenta está a un paso",
+    titleWithout: "Tu cuenta está a un paso",
+    intro: "Creaste tu cuenta en Radiogen.AI pero falta el &uacute;ltimo paso: activar tu prueba gratuita de 7 d&iacute;as.",
+    b1: "Sin cargo hoy &mdash; solo se registra la tarjeta.",
+    b2: "7 d&iacute;as de acceso completo: informes estructurados, dictado por voz y plantillas.",
+    b3: "Cancela cuando quieras desde tu cuenta; te recordamos por correo antes del primer cargo.",
+    btn: "Activar mis 7 d&iacute;as gratis",
+    unsub: "Recibes este correo porque creaste una cuenta en Radiogen.AI que aún no ha sido activada.",
+    textTpl: (g, url) => `${g ? `${g}, t` : "T"}u cuenta de Radiogen.AI está a un paso.\n\nFalta el último paso: activar tu prueba gratuita de 7 días.\n\n- Sin cargo hoy — solo se registra la tarjeta.\n- 7 días de acceso completo.\n- Cancela cuando quieras; te recordamos antes del primer cargo.\n\nActivar: ${url}`,
+  },
+  en: {
+    subject: "Your Radiogen.AI account is one step away — activate your 7 free days",
+    titleWith: ", your account is one step away",
+    titleWithout: "Your account is one step away",
+    intro: "You created your Radiogen.AI account but one last step remains: activating your 7-day free trial.",
+    b1: "No charge today &mdash; your card is only registered.",
+    b2: "7 days of full access: structured reports, voice dictation and templates.",
+    b3: "Cancel anytime from your account; we email you a reminder before the first charge.",
+    btn: "Activate my 7 free days",
+    unsub: "You received this email because you created a Radiogen.AI account that has not been activated yet.",
+    textTpl: (g, url) => `${g ? `${g}, y` : "Y"}our Radiogen.AI account is one step away.\n\nOne last step remains: activating your 7-day free trial.\n\n- No charge today — your card is only registered.\n- 7 days of full access.\n- Cancel anytime; we remind you before the first charge.\n\nActivate: ${url}`,
+  },
+  pt: {
+    subject: "Sua conta do Radiogen.AI está a um passo — ative seus 7 dias grátis",
+    titleWith: ", sua conta está a um passo",
+    titleWithout: "Sua conta está a um passo",
+    intro: "Voc&ecirc; criou sua conta no Radiogen.AI mas falta o &uacute;ltimo passo: ativar seu teste gr&aacute;tis de 7 dias.",
+    b1: "Sem cobran&ccedil;a hoje &mdash; o cart&atilde;o apenas &eacute; registrado.",
+    b2: "7 dias de acesso completo: laudos estruturados, ditado por voz e modelos.",
+    b3: "Cancele quando quiser na sua conta; lembramos por e-mail antes da primeira cobran&ccedil;a.",
+    btn: "Ativar meus 7 dias gr&aacute;tis",
+    unsub: "Você recebeu este e-mail porque criou uma conta no Radiogen.AI que ainda não foi ativada.",
+    textTpl: (g, url) => `${g ? `${g}, s` : "S"}ua conta do Radiogen.AI está a um passo.\n\nFalta o último passo: ativar seu teste grátis de 7 dias.\n\n- Sem cobrança hoje — o cartão apenas é registrado.\n- 7 dias de acesso completo.\n- Cancele quando quiser; lembramos antes da primeira cobrança.\n\nAtivar: ${url}`,
+  },
+};
+
+export async function sendActivationReminderEmail(to: string, name: string | null, lang: EmailLang = "es", activateUrl: string) {
+  const t = activationI18n[lang];
+  const greeting = name ? name.split(" ")[0] : "";
+
+  const html = emailShell(`
+        <tr><td style="padding:0 32px;">
+          <div style="width:56px;height:56px;border-radius:16px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);margin:0 auto 16px;text-align:center;line-height:56px;">
+            <span style="font-size:28px;">&#128640;</span>
+          </div>
+          <h1 style="color:#fff;font-size:22px;font-weight:700;text-align:center;margin:0 0 14px;letter-spacing:-0.3px;">
+            ${greeting ? `${greeting}${t.titleWith}` : t.titleWithout}
+          </h1>
+          <p style="color:#c9d1d9;font-size:14px;line-height:1.75;text-align:center;margin:0 0 24px;">
+            ${t.intro}
+          </p>
+        </td></tr>
+        <tr><td style="padding:0 32px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;">
+            <tr><td>
+              <p style="color:#9ca3af;font-size:13px;line-height:1.8;margin:0;">&#10003; ${t.b1}<br/>&#10003; ${t.b2}<br/>&#10003; ${t.b3}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        ${cta(activateUrl, t.btn)}`,
+    t.unsub, lang);
+
+  const text = t.textTpl(greeting, activateUrl);
+
+  await sendWithRetry({
+    from: FROM, replyTo: REPLY_TO, to, subject: t.subject, html, text,
+    headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `activation-reminder-${Date.now()}` },
+  });
+}

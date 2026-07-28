@@ -14,7 +14,7 @@ export async function GET() {
     const [{ data: profiles, error }, { data: reportCounts }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role, org_id, stripe_subscription_id, pending_plan, pending_plan_effective_date")
+        .select("id, email, name, role, subscription_plan, reports_used_this_month, dictation_seconds_used, billing_period_start, created_at, approved, invitation_code, country, hospital, professional_role, org_id, stripe_subscription_id, pending_plan, pending_plan_effective_date, email_verified")
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase
