@@ -768,30 +768,30 @@ function DictateVisual({ text }: { text: string }) {
       {/* Subtle phone-as-dictaphone: a small handset recording in the corner,
           its signal flowing toward the workstation mic. */}
       <div className="absolute -top-1 right-0 flex items-end gap-1.5">
-        <div className="flex flex-col gap-[3px] pb-5">
+        <div className="flex flex-col gap-[4px] pb-7">
           {[0, 1, 2].map((i) => (
             <span
               key={i}
               className="block h-[2px] rounded-full bg-gradient-to-l from-violet-400/60 to-transparent animate-pulse"
-              style={{ width: `${16 - i * 4}px`, animationDelay: `${i * 0.2}s` }}
+              style={{ width: `${20 - i * 5}px`, animationDelay: `${i * 0.2}s` }}
             />
           ))}
         </div>
         <div className="flex flex-col items-center gap-1">
-          <div className="w-8 h-[52px] rounded-[7px] border border-violet-400/40 bg-gradient-to-b from-violet-500/15 to-blue-500/10 flex flex-col items-center justify-center gap-1 shadow-lg shadow-violet-900/20">
-            <span className="block w-3 h-[2px] rounded-full bg-violet-300/40" />
-            <span className="relative flex items-center justify-center w-4 h-4">
-              <span className="absolute inline-block w-4 h-4 rounded-full bg-violet-400/25 animate-ping" />
-              <span className="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-500/70">
-                <Mic className="h-2.5 w-2.5 text-white" />
+          <div className="w-11 h-[72px] rounded-[9px] border border-violet-400/40 bg-gradient-to-b from-violet-500/15 to-blue-500/10 flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-violet-900/20">
+            <span className="block w-4 h-[2px] rounded-full bg-violet-300/40" />
+            <span className="relative flex items-center justify-center w-6 h-6">
+              <span className="absolute inline-block w-6 h-6 rounded-full bg-violet-400/25 animate-ping" />
+              <span className="relative inline-flex items-center justify-center w-6 h-6 rounded-full bg-violet-500/70">
+                <Mic className="h-3.5 w-3.5 text-white" />
               </span>
             </span>
-            <div className="flex items-end gap-[1.5px] h-2">
-              {[0.5, 1, 0.7, 0.9].map((f, i) => (
+            <div className="flex items-end gap-[2px] h-3">
+              {[0.5, 1, 0.7, 0.9, 0.6].map((f, i) => (
                 <span
                   key={i}
-                  className="waveform-bar w-[2px] rounded-full bg-violet-300/80"
-                  style={{ "--bar-delay": `${i * 0.12}s`, minHeight: `${2 + f * 3}px` } as React.CSSProperties}
+                  className="waveform-bar w-[2.5px] rounded-full bg-violet-300/80"
+                  style={{ "--bar-delay": `${i * 0.12}s`, minHeight: `${3 + f * 4}px` } as React.CSSProperties}
                 />
               ))}
             </div>
