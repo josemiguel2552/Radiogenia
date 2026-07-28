@@ -344,10 +344,12 @@ export async function PUT(req: NextRequest) {
         await stripe.subscriptions.update(profile.stripe_subscription_id, {
           items: [{ id: itemId, price: newPriceId }],
           proration_behavior: "none",
-          billing_cycle_anchor: "now",
-          // Upgrading during the trial ends it: higher plans have no trial,
-          // so the new price is charged immediately.
-          ...(sub.status === "trialing" ? { trial_end: "now" as const } : {}),
+          // Upgrading during the trial ends it (higher plans have no trial);
+          // ending the trial resets the billing cycle anchor automatically,
+          // so the new price is invoiced immediately in both branches.
+          ...(sub.status === "trialing"
+            ? { trial_end: "now" as const }
+            : { billing_cycle_anchor: "now" as const }),
           // A previously scheduled cancellation must not survive an upgrade —
           // the user is paying for the new plan going forward.
           cancel_at_period_end: false,
