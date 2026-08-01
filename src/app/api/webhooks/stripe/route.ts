@@ -18,6 +18,7 @@ function buildPriceMap() {
     STRIPE_PRICE_ID_RESIDENT: "resident",
     STRIPE_PRICE_ID_STARTER: "starter",
     STRIPE_PRICE_ID_PROFESSIONAL: "professional",
+    STRIPE_PRICE_ID_UNLIMITED: "unlimited",
   };
   for (const [envKey, plan] of Object.entries(envMap)) {
     const priceId = process.env[envKey];

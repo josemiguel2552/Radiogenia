@@ -239,10 +239,11 @@ const welcomePlanLimits: Record<string, { reports: number; dictation: number }> 
   resident: { reports: 150, dictation: 120 },
   starter: { reports: 150, dictation: 120 },
   professional: { reports: 400, dictation: 300 },
+  unlimited: { reports: 100000, dictation: 100000 },
 };
 
 const welcomePlanNames: Record<string, string> = {
-  free: "Free", starter: "Starter", resident: "Residente", professional: "Professional",
+  free: "Free", starter: "Starter", resident: "Residente", professional: "Professional", unlimited: "Ilimitado",
 };
 
 function welcomeFeat1(plan: string | null | undefined, lang: EmailLang): string {
@@ -1474,6 +1475,7 @@ const planLimits: Record<string, { reports: number; dictation: number }> = {
   resident: { reports: 150, dictation: 120 },
   starter: { reports: 150, dictation: 120 },
   professional: { reports: 400, dictation: 300 },
+  unlimited: { reports: 100000, dictation: 100000 },
 };
 
 const planChangeI18n: Record<EmailLang, {

@@ -15,6 +15,7 @@ const PLAN_PRICE_ENV: Record<string, string> = {
   resident: "STRIPE_PRICE_ID_RESIDENT",
   starter: "STRIPE_PRICE_ID_STARTER",
   professional: "STRIPE_PRICE_ID_PROFESSIONAL",
+  unlimited: "STRIPE_PRICE_ID_UNLIMITED",
 };
 
 async function createCheckoutSession(plan: string, _req: NextRequest): Promise<{ url: string | null; error?: string; status?: number }> {

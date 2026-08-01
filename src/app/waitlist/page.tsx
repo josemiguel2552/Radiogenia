@@ -32,7 +32,8 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   // Card-first billing: every signup activates a plan. Default is the
   // 7-day Starter trial; "professional" subscribes immediately.
-  const selectedPlan = searchParams.get("plan") === "professional" ? "professional" : "starter";
+  const planParam = searchParams.get("plan");
+  const selectedPlan = planParam === "professional" || planParam === "unlimited" ? planParam : "starter";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");

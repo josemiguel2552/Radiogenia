@@ -1302,14 +1302,16 @@ export default function AdminPage() {
                             {u.role !== "admin" && (
                               <Badge
                                 className={`text-[10px] ${
-                                  plan === "professional"
+                                  plan === "unlimited"
+                                    ? "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300"
+                                    : plan === "professional"
                                     ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                                     : plan === "starter"
                                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                     : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                                 }`}
                               >
-                                {plan === "professional" && <Crown className="h-2.5 w-2.5 mr-0.5" />}
+                                {(plan === "professional" || plan === "unlimited") && <Crown className="h-2.5 w-2.5 mr-0.5" />}
                                 {planConfig.label}
                               </Badge>
                             )}

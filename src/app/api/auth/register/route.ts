@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     // platform (7-day Starter trial with card, or Professional charged
     // immediately). Email verification stays deferred (7-day grace), but the
     // dashboard is paywalled until checkout completes.
-    const pendingPlan = plan === "professional" ? "professional" : "starter";
+    const pendingPlan = plan === "professional" || plan === "unlimited" ? plan : "starter";
 
     await service.from("profiles").upsert({
       id: userId,

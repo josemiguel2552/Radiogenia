@@ -278,6 +278,8 @@ export function AccountTab() {
     setDeleteAccountLoading(false);
   }, []);
 
+  const isUnlimited = sub?.plan === "unlimited";
+
   // Only the sellable plans are offered; a legacy plan (e.g. resident) stays
   // visible as the current one so its holder understands what they have.
   const planKeys = Array.from(
@@ -370,9 +372,9 @@ export function AccountTab() {
                   </div>
                   <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-2xl font-bold text-gray-900 dark:text-white">{sub.used}</span>
-                    <span className="text-sm text-gray-400">/ {sub.limit}</span>
+                    <span className="text-sm text-gray-400">/ {isUnlimited ? "∞" : sub.limit}</span>
                   </div>
-                  <UsageBar used={sub.used} total={sub.limit} color="bg-brand" />
+                  {!isUnlimited && <UsageBar used={sub.used} total={sub.limit} color="bg-brand" />}
                 </div>
 
                 {/* Dictation */}
@@ -383,9 +385,9 @@ export function AccountTab() {
                   </div>
                   <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-2xl font-bold text-gray-900 dark:text-white">{sub.dictation.usedMinutes}</span>
-                    <span className="text-sm text-gray-400">/ {sub.dictation.limitMinutes} min</span>
+                    <span className="text-sm text-gray-400">/ {isUnlimited ? "∞" : `${sub.dictation.limitMinutes} min`}</span>
                   </div>
-                  <UsageBar used={sub.dictation.usedMinutes} total={sub.dictation.limitMinutes} color="bg-violet-500" />
+                  {!isUnlimited && <UsageBar used={sub.dictation.usedMinutes} total={sub.dictation.limitMinutes} color="bg-violet-500" />}
                 </div>
               </div>
 

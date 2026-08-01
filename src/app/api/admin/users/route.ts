@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     if (password.length < 6) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
-    const plan = ["free", "starter", "professional"].includes(subscription_plan)
+    const plan = ["free", "starter", "professional", "unlimited"].includes(subscription_plan)
       ? subscription_plan
       : "free";
 
@@ -120,7 +120,7 @@ export async function PUT(req: NextRequest) {
 
     const updates: Record<string, string | boolean | number | null> = {};
     if (role && (role === "admin" || role === "radiologist")) updates.role = role;
-    if (subscription_plan && ["free", "resident", "starter", "professional"].includes(subscription_plan)) {
+    if (subscription_plan && ["free", "resident", "starter", "professional", "unlimited"].includes(subscription_plan)) {
       updates.subscription_plan = subscription_plan;
     }
     if (typeof approved === "boolean") {

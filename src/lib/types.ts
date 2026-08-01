@@ -1,5 +1,5 @@
 export type UserRole = "admin" | "radiologist";
-export type SubscriptionPlan = "free" | "resident" | "starter" | "professional";
+export type SubscriptionPlan = "free" | "resident" | "starter" | "professional" | "unlimited";
 
 export const CURRENCY = "$";
 
@@ -90,6 +90,28 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
       "plan.feat.reports_400",
       "plan.feat.all_modalities",
       "plan.feat.dictation_300",
+      "plan.feat.style_learning",
+      "plan.feat.custom_templates",
+      "plan.feat.guidelines_15",
+      "plan.feat.priority_support",
+      "plan.feat.api_access",
+      "plan.feat.bulk_export",
+    ],
+  },
+  // On-request plan: not shown on the pricing page, sold via direct link.
+  // The high numbers act as "unlimited" for the shared quota machinery.
+  unlimited: {
+    name: "unlimited",
+    label: "Ilimitado",
+    price: 19.90,
+    reports: 100000,
+    tokensPerReport: 10000,
+    dictationMinutes: 100000,
+    guidelineDocuments: 100,
+    features: [
+      "plan.feat.reports_unlimited",
+      "plan.feat.all_modalities",
+      "plan.feat.dictation_unlimited",
       "plan.feat.style_learning",
       "plan.feat.custom_templates",
       "plan.feat.guidelines_15",

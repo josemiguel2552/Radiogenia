@@ -2849,7 +2849,7 @@ export function DashboardContent() {
           {limitInfo && (() => {
             const plan = limitInfo.plan as SubscriptionPlan;
             const planLabel = PLANS[plan]?.label || plan;
-            const nextPlan = plan === "free" ? "starter" : plan === "resident" ? "starter" : plan === "starter" ? "professional" : null;
+            const nextPlan = plan === "free" ? "starter" : plan === "resident" ? "starter" : plan === "starter" ? "professional" : plan === "professional" ? "unlimited" : null;
             const descKey = limitType === "dictation" ? "limit.desc_dictation" : "limit.desc";
             const usedLabel = limitType === "dictation" ? `${limitInfo.used} min` : String(limitInfo.used);
             const limitLabel = limitType === "dictation" ? `${limitInfo.limit} min` : String(limitInfo.limit);
@@ -2889,7 +2889,9 @@ export function DashboardContent() {
                       }}
                     >
                       <Sparkles className="h-4 w-4" />
-                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({PLANS[nextPlan].reports} inf. + {PLANS[nextPlan].dictationMinutes} min) ${PLANS[nextPlan].price}/mo
+                      {t("limit.upgrade")} — {PLANS[nextPlan].label} ({nextPlan === "unlimited"
+                        ? t("limit.unlimited_label")
+                        : `${PLANS[nextPlan].reports} inf. + ${PLANS[nextPlan].dictationMinutes} min`}) ${PLANS[nextPlan].price}/mo
                     </Button>
                   )}
                 </div>
