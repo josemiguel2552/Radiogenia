@@ -8,7 +8,7 @@ export const TRIAL_DAYS = 7;
 
 /** Plans offered to individual users. "free" is only an internal state
     (no active subscription → paywalled) and "resident" is legacy-only. */
-export const PUBLIC_PLANS: SubscriptionPlan[] = ["starter", "professional"];
+export const PUBLIC_PLANS: SubscriptionPlan[] = ["starter", "professional", "unlimited"];
 
 export interface PlanConfig {
   name: string;
@@ -98,11 +98,10 @@ export const PLANS: Record<SubscriptionPlan, PlanConfig> = {
       "plan.feat.bulk_export",
     ],
   },
-  // On-request plan: not shown on the pricing page, sold via direct link.
   // The high numbers act as "unlimited" for the shared quota machinery.
   unlimited: {
     name: "unlimited",
-    label: "Ilimitado",
+    label: "Unlimited",
     price: 19.90,
     reports: 100000,
     tokensPerReport: 10000,

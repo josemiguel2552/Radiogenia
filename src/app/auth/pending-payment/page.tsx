@@ -9,7 +9,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
-import { Globe, LogOut, Check, Sparkles, CreditCard } from "lucide-react";
+import { Globe, LogOut, Check, Sparkles, CreditCard, Infinity } from "lucide-react";
 import { usePublicLang, nextLang, langLabel } from "@/lib/public-i18n";
 import { PLANS, TRIAL_DAYS, CURRENCY } from "@/lib/types";
 
@@ -25,6 +25,7 @@ function PendingPaymentContent() {
   const { lang, setLang } = usePublicLang();
   const starter = PLANS.starter;
   const professional = PLANS.professional;
+  const unlimited = PLANS.unlimited;
 
   const tr = (es: string, en: string, pt: string) => (lang === "es" ? es : lang === "pt" ? pt : en);
 
@@ -66,7 +67,7 @@ function PendingPaymentContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-6">
-      <div className="max-w-2xl w-full space-y-6">
+      <div className="max-w-4xl w-full space-y-6">
         <div className="flex items-center justify-between">
           <Link href="/"><Logo size="md" forceDark /></Link>
           <button
@@ -97,7 +98,7 @@ function PendingPaymentContent() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-3 gap-4">
           {/* Starter — 7-day trial */}
           <div className="relative p-6 rounded-2xl border-2 border-violet-500/40 bg-gradient-to-b from-violet-500/10 to-blue-500/5 space-y-4">
             {trialAvailable && (
@@ -179,6 +180,36 @@ function PendingPaymentContent() {
             </ul>
             <a href="/api/checkout?plan=professional" className="block">
               <Button variant="outline" className="w-full h-11 border-white/20 bg-white/5 text-white hover:bg-white/10 font-semibold">
+                {tr("Suscribirse ahora", "Subscribe now", "Assinar agora")}
+              </Button>
+            </a>
+          </div>
+
+          {/* Unlimited — immediate subscription, no caps */}
+          <div className="p-6 rounded-2xl border border-fuchsia-500/25 bg-gradient-to-b from-fuchsia-500/[0.07] to-transparent space-y-4">
+            <div className="pt-1">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Infinity className="h-4 w-4 text-fuchsia-400" /> {unlimited.label}
+              </h2>
+              <p className="text-2xl font-bold text-white mt-1">
+                {CURRENCY}{unlimited.price}
+                <span className="text-sm font-normal text-gray-400">{tr("/mes", "/mo", "/mês")}</span>
+              </p>
+            </div>
+            <ul className="space-y-2 text-[13px] text-gray-300">
+              {[
+                tr("Informes ilimitados", "Unlimited reports", "Laudos ilimitados"),
+                tr("Dictado por voz ilimitado", "Unlimited voice dictation", "Ditado por voz ilimitado"),
+                tr("Todo lo incluido en Professional", "Everything in Professional", "Tudo o que está no Professional"),
+                tr("Cargo inmediato, sin periodo de prueba", "Charged today, no trial period", "Cobrança imediata, sem período de teste"),
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <Check className="h-3.5 w-3.5 text-fuchsia-400 mt-0.5 shrink-0" /> {f}
+                </li>
+              ))}
+            </ul>
+            <a href="/api/checkout?plan=unlimited" className="block">
+              <Button variant="outline" className="w-full h-11 border-fuchsia-500/30 bg-fuchsia-500/10 text-white hover:bg-fuchsia-500/20 font-semibold">
                 {tr("Suscribirse ahora", "Subscribe now", "Assinar agora")}
               </Button>
             </a>

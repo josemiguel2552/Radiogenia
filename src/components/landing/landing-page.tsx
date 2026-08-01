@@ -217,9 +217,9 @@ const SECURITY_ITEMS = [
   { icon: BookOpen, key: "flexibility" },
 ] as const;
 
-// Card-first billing: only Starter (with 7-day free trial) and Professional
-// are offered. "free" and "resident" are legacy-only states, never sold.
-const PLAN_ORDER: SubscriptionPlan[] = ["starter", "professional"];
+// Card-first billing: Starter (with a 7-day free trial), Professional and
+// Unlimited. "free" and "resident" are legacy-only states, never sold.
+const PLAN_ORDER: SubscriptionPlan[] = ["starter", "professional", "unlimited"];
 
 export function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -494,7 +494,7 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-5 items-start max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5 items-start max-w-5xl mx-auto">
             {PLAN_ORDER.map((key, i) => {
               const plan = PLANS[key];
               return (
@@ -503,7 +503,7 @@ export function LandingPage() {
             })}
           </div>
 
-          <div className="mt-5 max-w-3xl mx-auto">
+          <div className="mt-5 max-w-5xl mx-auto">
             <EnterprisePricingCard t={t} lang={lang} index={PLAN_ORDER.length} />
           </div>
 
@@ -1138,8 +1138,8 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
       className={`relative h-full p-6 rounded-2xl transition-all duration-300 ${
         isHighlight
           ? "bg-gradient-to-b from-blue-500/10 to-purple-500/10 border-2 border-blue-500/30 shadow-xl shadow-blue-500/10 scale-[1.02]"
-          : planKey === "resident"
-          ? "bg-gradient-to-b from-violet-500/10 to-violet-500/10 border-2 border-violet-500/30 shadow-lg shadow-violet-500/10"
+          : planKey === "unlimited"
+          ? "bg-gradient-to-b from-fuchsia-500/10 to-transparent border-2 border-fuchsia-500/25 shadow-lg shadow-fuchsia-500/10"
           : "bg-white/[0.02] border border-white/5 hover:border-white/10"
       }`}
     >
@@ -1147,6 +1147,13 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full whitespace-nowrap">
             {lang === "es" ? "7 días gratis" : lang === "pt" ? "7 dias grátis" : "7 days free"}
+          </span>
+        </div>
+      )}
+      {planKey === "unlimited" && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-fuchsia-500 to-violet-600 rounded-full whitespace-nowrap">
+            {lang === "es" ? "Sin límites" : lang === "pt" ? "Sem limites" : "No limits"}
           </span>
         </div>
       )}
@@ -1185,6 +1192,8 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
         className={`block text-center text-sm font-semibold py-3 rounded-full transition-all ${
           isHighlight
             ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
+            : planKey === "unlimited"
+            ? "bg-gradient-to-r from-fuchsia-500/80 to-violet-600/80 hover:from-fuchsia-500 hover:to-violet-600 shadow-md shadow-fuchsia-500/10"
             : "bg-gradient-to-r from-blue-500/70 to-purple-600/70 hover:from-blue-500 hover:to-purple-600 shadow-md shadow-purple-500/10"
         }`}
       >

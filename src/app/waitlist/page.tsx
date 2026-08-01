@@ -303,10 +303,10 @@ function RegisterForm() {
                     ? `7 dias de teste grátis — sem cobrança hoje, o cartão apenas é registrado. Depois $${PLANS.starter.price}/mês salvo cancelamento prévio.`
                     : `7-day free trial — no charge today, your card is only registered. Then $${PLANS.starter.price}/mo unless you cancel first.`
                   : lang === "es"
-                  ? `$${PLANS.professional.price} USD${t("pricing.per_month")} — se cobrará tras confirmar tu correo`
+                  ? `$${PLANS[selectedPlan as keyof typeof PLANS].price} USD${t("pricing.per_month")} — se cobrará tras confirmar tu correo`
                   : lang === "pt"
-                  ? `$${PLANS.professional.price} USD${t("pricing.per_month")} — será cobrado após confirmar seu e-mail`
-                  : `$${PLANS.professional.price} USD${t("pricing.per_month")} — charged after you confirm your email`}
+                  ? `$${PLANS[selectedPlan as keyof typeof PLANS].price} USD${t("pricing.per_month")} — será cobrado após confirmar seu e-mail`
+                  : `$${PLANS[selectedPlan as keyof typeof PLANS].price} USD${t("pricing.per_month")} — charged after you confirm your email`}
               </p>
             </div>
           </div>
