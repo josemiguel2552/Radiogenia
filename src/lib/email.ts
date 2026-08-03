@@ -1840,3 +1840,114 @@ export async function sendActivationReminderEmail(to: string, name: string | nul
     headers: { "List-Unsubscribe": `<${APP_URL}/support>`, "X-Entity-Ref-ID": `activation-reminder-${Date.now()}` },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Institutional (hospital) seat onboarding
+// ---------------------------------------------------------------------------
+
+/** Bank details for an institution that chose to pay by transfer. */
+export async function sendHospitalTransferInstructions(
+  to: string,
+  orgName: string,
+  seats: number,
+  unitPrice: number,
+) {
+  const total = (seats * unitPrice).toFixed(2);
+  const bank = process.env.BANK_TRANSFER_DETAILS
+    || "Los datos bancarios se enviarán en un correo aparte desde info@radiogen.ai.";
+
+  const html = emailShell(`
+        <tr><td style="padding:0 32px;">
+          <h1 style="color:#fff;font-size:22px;font-weight:700;text-align:center;margin:0 0 14px;letter-spacing:-0.3px;">
+            Datos para la transferencia
+          </h1>
+          <p style="color:#c9d1d9;font-size:14px;line-height:1.75;text-align:center;margin:0 0 24px;">
+            Hemos recibido la solicitud de <strong style="color:#fff;">${orgName}</strong> para
+            <strong style="color:#fff;">${seats} licencias</strong> de Radiogen.AI
+            (${unitPrice.toFixed(2)} &euro; por licencia y mes).
+          </p>
+        </td></tr>
+        <tr><td style="padding:0 32px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;">
+            <tr><td>
+              <p style="color:#e2e8f0;font-size:13px;font-weight:600;margin:0 0 8px;">Importe mensual: ${total} &euro;</p>
+              <p style="color:#9ca3af;font-size:13px;line-height:1.7;margin:0;white-space:pre-line;">${bank}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <p style="color:#9ca3af;font-size:13px;line-height:1.7;text-align:center;margin:0;">
+            En cuanto recibamos el importe habilitaremos los accesos y cada radiólogo recibir&aacute;
+            un correo para crear su contrase&ntilde;a. Indica el nombre de la instituci&oacute;n en el concepto de la transferencia.
+          </p>
+        </td></tr>`,
+    "Recibes este correo porque solicitaste licencias institucionales de Radiogen.AI.", "es");
+
+  const text = `Datos para la transferencia\n\n${orgName} — ${seats} licencias × ${unitPrice.toFixed(2)} € = ${total} €/mes\n\n${bank}\n\nEn cuanto recibamos el importe habilitaremos los accesos.`;
+
+  await sendWithRetry({
+    from: "Radiogen.AI <info@radiogen.ai>", replyTo: REPLY_TO, to,
+    subject: `Datos para la transferencia — ${seats} licencias Radiogen.AI`,
+    html, text,
+    headers: { "X-Entity-Ref-ID": `hospital-transfer-${Date.now()}` },
+  });
+}
+
+/** A radiologist's seat is live: invite them to set their own password. */
+export async function sendHospitalSeatWelcome(to: string, orgName: string, setPasswordUrl: string) {
+  const html = emailShell(`
+        <tr><td style="padding:0 32px;">
+          <h1 style="color:#fff;font-size:22px;font-weight:700;text-align:center;margin:0 0 14px;letter-spacing:-0.3px;">
+            Tu acceso a Radiogen.AI est&aacute; listo
+          </h1>
+          <p style="color:#c9d1d9;font-size:14px;line-height:1.75;text-align:center;margin:0 0 12px;">
+            ${orgName ? `<strong style="color:#fff;">${orgName}</strong> ha activado tu licencia.` : "Tu licencia ha sido activada."}
+            Tienes informes y dictado por voz <strong style="color:#fff;">ilimitados</strong>.
+          </p>
+          <p style="color:#9ca3af;font-size:14px;line-height:1.75;text-align:center;margin:0 0 24px;">
+            Elige tu contrase&ntilde;a con el bot&oacute;n de abajo y entra a la plataforma.
+          </p>
+        </td></tr>
+        ${cta(setPasswordUrl, "Crear mi contrase&ntilde;a")}
+        <tr><td style="padding:0 32px 24px;">
+          <p style="color:#6b7280;font-size:12px;line-height:1.7;text-align:center;margin:0;">
+            Radiogen.AI es una herramienta de apoyo para redactar y organizar el informe radiol&oacute;gico.
+            No sustituye el juicio cl&iacute;nico ni emite diagn&oacute;sticos de forma aut&oacute;noma:
+            el radi&oacute;logo es responsable de revisar y validar el informe final.
+            Dudas: info@radiogen.ai
+          </p>
+        </td></tr>`,
+    "Recibes este correo porque tu institución ha activado tu licencia de Radiogen.AI.", "es");
+
+  const text = `Tu acceso a Radiogen.AI está listo.\n\n${orgName ? `${orgName} ha activado tu licencia. ` : ""}Tienes informes y dictado por voz ilimitados.\n\nCrea tu contraseña aquí:\n${setPasswordUrl}\n\nRadiogen.AI es una herramienta de apoyo para redactar y organizar el informe. No sustituye el juicio clínico. Dudas: info@radiogen.ai`;
+
+  await sendWithRetry({
+    from: "Radiogen.AI <info@radiogen.ai>", replyTo: REPLY_TO, to,
+    subject: "Tu acceso a Radiogen.AI está listo — crea tu contraseña",
+    html, text,
+    headers: { "X-Entity-Ref-ID": `hospital-seat-${Date.now()}` },
+  });
+}
+
+/** Internal heads-up to the owner that an institution placed an order. */
+export async function sendHospitalOrderNotice(
+  orgName: string,
+  seats: number,
+  method: string,
+  contactName: string,
+  contactEmail: string,
+) {
+  const to = process.env.EMAIL_REPLY_TO || "info@radiogen.ai";
+  const label = method === "transfer" ? "TRANSFERENCIA (pendiente de cobro)" : "TARJETA";
+  await sendWithRetry({
+    from: FROM, to,
+    subject: `Nuevo pedido institucional: ${orgName} — ${seats} licencias (${label})`,
+    html: `<h2>Nuevo pedido institucional</h2>
+      <p><b>Institución:</b> ${orgName}<br/>
+      <b>Licencias:</b> ${seats}<br/>
+      <b>Método de pago:</b> ${label}<br/>
+      <b>Contacto:</b> ${contactName} — ${contactEmail}</p>
+      <p>Revísalo en el panel de administración, pestaña Hospitales.</p>`,
+    text: `Nuevo pedido institucional\n\nInstitución: ${orgName}\nLicencias: ${seats}\nMétodo: ${label}\nContacto: ${contactName} — ${contactEmail}`,
+  });
+}

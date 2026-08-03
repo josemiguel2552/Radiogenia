@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendPaymentFailedEmail, sendPlanChangeEmail } from "@/lib/email";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
+import { activateSeatOrder } from "@/lib/activate-seat-order";
 import Stripe from "stripe";
 
 function getStripe(): Stripe | null {
@@ -73,6 +74,26 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
+
+        // Institutional seat order: provision every radiologist seat and
+        // email each of them a link to set their password.
+        const seatOrderId = session.metadata?.seat_order_id;
+        if (seatOrderId) {
+          try {
+            await service
+              .from("org_seat_orders")
+              .update({
+                status: "paid",
+                stripe_subscription_id: subscriptionId || null,
+              })
+              .eq("id", seatOrderId);
+            const res = await activateSeatOrder(seatOrderId);
+            console.log(`[stripe-webhook] seat order ${seatOrderId}: activated ${res.activated} seats`, res.errors);
+          } catch (err) {
+            console.error("[stripe-webhook] seat order activation failed:", err instanceof Error ? err.message : err);
+          }
+          break;
+        }
 
         if (session.metadata?.supabase_user_id) {
           const update: Record<string, unknown> = {

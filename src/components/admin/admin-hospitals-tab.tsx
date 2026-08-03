@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Building2, Plus, Loader2, Copy, Check, KeyRound, UserPlus, Link as LinkIcon, X,
   ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic, Send, Trash2,
+  CreditCard,
 } from "lucide-react";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 
@@ -16,6 +17,7 @@ interface Hospital {
   id: string; name: string; slug: string; billing_email: string | null;
   max_seats: number; is_active: boolean; is_pilot: boolean; active_members: number;
   signup_token: string;
+  onboarding_token?: string | null;
   trial_token?: string | null;
   trial_expires_at?: string | null;
 }
@@ -166,6 +168,38 @@ function HospitalDetail({ hospital, subView, setSubView, onBack }: {
   const [addOpen, setAddOpen] = useState(false);
   const [aName, setAName] = useState(""); const [aEmail, setAEmail] = useState(""); const [aPass, setAPass] = useState(randomPassword());
   const [busy, setBusy] = useState(false);
+  interface SeatOrder {
+    id: string; seats: number; unit_price: number; payment_method: string; status: string;
+    contact_name: string | null; contact_email: string; billing_details: string | null;
+    legal_accepted_at: string | null; legal_version: string | null; created_at: string;
+    invites: { email: string; status: string }[];
+  }
+  const [orders, setOrders] = useState<SeatOrder[] | null>(null);
+  const [activating, setActivating] = useState<string | null>(null);
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/seat-orders?orgId=${hospital.id}`);
+      if (res.ok) { const d = await res.json(); setOrders(d.orders || []); }
+      else setOrders([]);
+    } catch { setOrders([]); }
+  }, [hospital.id]);
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
+
+  async function activateOrder(orderId: string) {
+    setActivating(orderId);
+    try {
+      await fetch("/api/admin/seat-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      await loadOrders();
+    } catch { /* keep the button so it can be retried */ }
+    setActivating(null);
+  }
+
   const [notice, setNotice] = useState<string | null>(null);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://radiogen.ai";
@@ -355,54 +389,81 @@ Equipo Radiogen.AI`;
             </Card>
           )}
 
-          {/* Send invitations — one box per email */}
+          {/* Institutional onboarding link — the hospital orders and pays itself */}
           <Card>
-            <CardContent className="p-4 space-y-3">
-              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Enviar invitación por correo</p>
-              <p className="text-[11px] text-gray-500">Se envía desde info@radiogen.ai con el aviso legal incluido. Un correo por casilla; pulsa el botón de enviar de cada uno.</p>
+            <CardContent className="p-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <LinkIcon className="h-3.5 w-3.5 text-violet-500" /> Enlace de alta institucional
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Envía este enlace al hospital. Desde ahí eligen cuántas licencias quieren (mínimo 2),
+                indican los correos de los radiólogos, firman las condiciones y pagan con tarjeta o
+                solicitan los datos para transferencia. Al cobrarse, cada radiólogo recibe un correo
+                para crear su contraseña.
+              </p>
+              {hospital.onboarding_token ? (
+                <div className="flex items-center gap-2">
+                  <Input readOnly value={`${origin}/hospital-onboarding/${hospital.onboarding_token}`} className="h-8 text-[11px] font-mono flex-1" />
+                  <CopyButton text={`${origin}/hospital-onboarding/${hospital.onboarding_token}`} small />
+                </div>
+              ) : (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  Pendiente de aplicar la migración de pedidos institucionales en Supabase.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                {rows.map((row, i) => {
-                  const valid = /^\S+@\S+\.\S+$/.test(row.email.trim());
-                  const sent = row.status === "sent";
-                  const failed = row.status === "failed";
-                  return (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        type="email"
-                        value={row.email}
-                        onChange={(e) => setRowEmail(i, e.target.value)}
-                        placeholder="radiologo@hospital.com"
-                        className={`h-9 text-xs flex-1 ${sent ? "border-green-400 dark:border-green-700" : failed ? "border-red-400 dark:border-red-700" : ""}`}
-                      />
-                      <Button
-                        size="icon"
-                        variant={sent ? "default" : "outline"}
-                        onClick={() => sendOne(i)}
-                        disabled={!valid || row.status === "sending"}
-                        title={sent ? "Enviado — reenviar" : "Enviar invitación"}
-                        className={`h-9 w-9 flex-shrink-0 ${sent ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : failed ? "border-red-400 text-red-500" : ""}`}
-                      >
-                        {row.status === "sending" ? <Loader2 className="h-4 w-4 animate-spin" />
-                          : sent ? <Check className="h-4 w-4" />
-                          : <Send className="h-4 w-4" />}
-                      </Button>
-                      {rows.length > 1 && (
-                        <button type="button" onClick={() => removeRow(i)} className="text-gray-400 hover:text-red-500 flex-shrink-0" title="Quitar">
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+          {/* Orders placed through the link */}
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <CreditCard className="h-3.5 w-3.5 text-violet-500" /> Pedidos de licencias
+              </p>
+              {orders === null ? (
+                <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></div>
+              ) : orders.length === 0 ? (
+                <p className="text-[11px] text-gray-500">Todavía no hay pedidos desde el enlace.</p>
+              ) : (
+                <div className="space-y-2">
+                  {orders.map((o) => (
+                    <div key={o.id} className="p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`text-[10px] ${
+                          o.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                          : o.status === "paid" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          : o.status === "cancelled" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"}`}>
+                          {o.status === "active" ? "Activo" : o.status === "paid" ? "Pagado" : o.status === "cancelled" ? "Cancelado" : "Pendiente de pago"}
+                        </Badge>
+                        <span className="text-[11px] text-gray-600 dark:text-gray-300">
+                          {o.seats} licencias · {(o.seats * Number(o.unit_price)).toFixed(2)} €/mes · {o.payment_method === "transfer" ? "transferencia" : "tarjeta"}
+                        </span>
+                        <span className="text-[10px] text-gray-400">{new Date(o.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500">
+                        {o.contact_name} — {o.contact_email}
+                        {o.legal_accepted_at && <> · condiciones firmadas el {new Date(o.legal_accepted_at).toLocaleDateString()} (v{o.legal_version})</>}
+                      </p>
+                      {o.billing_details && <p className="text-[10px] text-gray-400 whitespace-pre-line">{o.billing_details}</p>}
+                      <p className="text-[10px] text-gray-500">
+                        {o.invites.map((i) => `${i.email}${i.status === "activated" ? " ✓" : i.status === "failed" ? " ✗" : ""}`).join(" · ")}
+                      </p>
+                      {o.status === "pending" && (
+                        <Button
+                          size="sm"
+                          className="h-7 text-[11px] gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                          disabled={activating === o.id}
+                          onClick={() => activateOrder(o.id)}
+                        >
+                          {activating === o.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                          Confirmar pago y dar acceso
+                        </Button>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <button type="button" onClick={addRow} className="flex items-center gap-1 text-[11px] text-brand hover:underline">
-                  <Plus className="h-3 w-3" /> Añadir otro correo
-                </button>
-                <span className="text-[10px] text-gray-400">{rows.filter((r) => r.status === "sent").length} enviado(s)</span>
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

@@ -14,6 +14,8 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/api/invite") ||
     pathname.startsWith("/api/enterprise-inquiry") ||
     pathname.startsWith("/api/hospital-signup") ||
+    pathname.startsWith("/hospital-onboarding") ||
+    pathname.startsWith("/api/hospital-onboarding") ||
     // Phone-as-dictaphone: page + APIs authenticate via signed pairing token
     pathname.startsWith("/remote-dictation") ||
     pathname.startsWith("/api/remote-dictation") ||
