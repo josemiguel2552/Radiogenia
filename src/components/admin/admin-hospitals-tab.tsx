@@ -200,6 +200,57 @@ function HospitalDetail({ hospital, subView, setSubView, onBack }: {
     setActivating(null);
   }
 
+  interface OrgTemplate { id: string; name: string; modality: string; created_at: string }
+  const [orgTemplates, setOrgTemplates] = useState<OrgTemplate[] | null>(null);
+  const [tplName, setTplName] = useState("");
+  const [tplModality, setTplModality] = useState("Ultrasound");
+  const [tplTechnique, setTplTechnique] = useState("");
+  const [tplBody, setTplBody] = useState("");
+  const [tplSaving, setTplSaving] = useState(false);
+
+  const loadOrgTemplates = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/org-templates?orgId=${hospital.id}`);
+      if (res.ok) { const d = await res.json(); setOrgTemplates(d.templates || []); }
+      else setOrgTemplates([]);
+    } catch { setOrgTemplates([]); }
+  }, [hospital.id]);
+
+  useEffect(() => { loadOrgTemplates(); }, [loadOrgTemplates]);
+
+  async function saveOrgTemplate() {
+    if (!tplName.trim() || !tplBody.trim()) return;
+    setTplSaving(true);
+    try {
+      const res = await fetch("/api/admin/org-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orgId: hospital.id, name: tplName.trim(), modality: tplModality,
+          technique: tplTechnique.trim(), body: tplBody.trim(),
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setNotice(`Plantilla añadida a ${d.pushedTo} perfil(es)`);
+        setTplName(""); setTplTechnique(""); setTplBody("");
+        await loadOrgTemplates();
+      }
+    } catch { /* keep the form so it can be retried */ }
+    setTplSaving(false);
+  }
+
+  async function deleteOrgTemplate(id: string) {
+    try {
+      await fetch("/api/admin/org-templates", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      await loadOrgTemplates();
+    } catch { /* ignore */ }
+  }
+
   const [notice, setNotice] = useState<string | null>(null);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://radiogen.ai";
@@ -464,6 +515,77 @@ Equipo Radiogen.AI`;
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Institutional templates loaded by us on the hospital's behalf */}
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5 text-blue-500" /> Plantillas institucionales
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Las que cargues aquí aparecen automáticamente en la pestaña Plantillas de todos los
+                radiólogos de este hospital, incluidos los que se den de alta más adelante.
+              </p>
+
+              {orgTemplates === null ? (
+                <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></div>
+              ) : orgTemplates.length > 0 && (
+                <div className="space-y-1">
+                  {orgTemplates.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50 dark:bg-gray-900/50">
+                      <span className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 truncate">{t.name}</span>
+                      <Badge variant="secondary" className="text-[10px]">{t.modality}</Badge>
+                      <button onClick={() => deleteOrgTemplate(t.id)} className="text-gray-400 hover:text-red-500" title="Eliminar">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-2 pt-1 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex gap-2">
+                  <Input
+                    value={tplName}
+                    onChange={(e) => setTplName(e.target.value)}
+                    placeholder="Nombre de la plantilla (p. ej. Ecografía abdominal)"
+                    className="h-8 text-xs flex-1"
+                  />
+                  <select
+                    value={tplModality}
+                    onChange={(e) => setTplModality(e.target.value)}
+                    className="h-8 text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-transparent px-2"
+                  >
+                    {["Ultrasound", "CT", "MRI", "XRay", "Mammography", "RECIST", "Procedures"].map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <Input
+                  value={tplTechnique}
+                  onChange={(e) => setTplTechnique(e.target.value)}
+                  placeholder="Técnica (opcional)"
+                  className="h-8 text-xs"
+                />
+                <textarea
+                  value={tplBody}
+                  onChange={(e) => setTplBody(e.target.value)}
+                  rows={6}
+                  placeholder={"Una sección por línea, con su frase de normalidad:\nHígado: De tamaño y morfología normales.\nVesícula biliar: De paredes finas, sin litiasis.\nVía biliar: De calibre normal."}
+                  className="w-full text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-transparent p-2 font-mono"
+                />
+                <Button
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  disabled={tplSaving || !tplName.trim() || !tplBody.trim()}
+                  onClick={saveOrgTemplate}
+                >
+                  {tplSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  Añadir a todos los perfiles
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

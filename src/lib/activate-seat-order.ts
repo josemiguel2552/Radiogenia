@@ -99,6 +99,19 @@ export async function activateSeatOrder(orderId: string): Promise<{ activated: n
 
       await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
 
+      // Hand the new member every institutional template already loaded for
+      // this hospital, so they find them in their Templates tab from day one.
+      try {
+        const { data: orgTemplates } = await service
+          .from("org_templates")
+          .select("id")
+          .eq("org_id", order.org_id);
+        const imports = (orgTemplates || []).map((t) => ({ user_id: userId, org_template_id: t.id }));
+        if (imports.length > 0) {
+          await service.from("user_template_imports").upsert(imports, { onConflict: "user_id,org_template_id" });
+        }
+      } catch { /* org template tables are optional */ }
+
       // Password-setting link (Supabase recovery flow routed through our callback).
       let setPasswordUrl = `${base}/auth/forgot-password`;
       try {
