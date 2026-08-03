@@ -300,6 +300,33 @@ export default function AdminPage() {
   const [activationSent, setActivationSent] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [createOpen, setCreateOpen] = useState(false);
 
+  /* ── Live AI provider balance / spend ── */
+  interface AiBalanceCard {
+    provider: "deepseek" | "openai" | "claude";
+    balance: number | null;
+    balanceCurrency: string | null;
+    providerSpendMtd: number | null;
+    loggedSpendMtd: number;
+    status: "ok" | "no_key" | "unsupported" | "error";
+    detail?: string;
+  }
+  const [aiBalance, setAiBalance] = useState<AiBalanceCard[] | null>(null);
+  const [aiBalanceLoading, setAiBalanceLoading] = useState(false);
+
+  const loadAiBalance = useCallback(async () => {
+    setAiBalanceLoading(true);
+    try {
+      const res = await fetch("/api/admin/ai-balance");
+      if (res.ok) {
+        const d = await res.json();
+        setAiBalance(d.providers || []);
+      }
+    } catch { /* card shows unavailable */ }
+    setAiBalanceLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "overview") loadAiBalance(); }, [tab, loadAiBalance]);
+
   /* ── Legacy purge (accounts from before the card-first cutover) ── */
   interface PurgeCandidate {
     id: string; email: string | null; name: string | null; created_at: string;
@@ -929,6 +956,69 @@ export default function AdminPage() {
         {/* ═══ OVERVIEW ═══ */}
         {tab === "overview" && (
           <div className="space-y-6">
+            {/* Live AI provider balance / month-to-date spend */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+                <Plug className="h-4 w-4 text-emerald-500" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.ai_balance_title")}</h3>
+                <button
+                  onClick={loadAiBalance}
+                  className="ml-auto p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  title={t("conv.refresh")}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${aiBalanceLoading ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+              <CardContent className="pt-0">
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {(aiBalance || []).map((p) => {
+                    const name = p.provider === "deepseek" ? "DeepSeek" : p.provider === "openai" ? "OpenAI" : "Claude";
+                    const low = p.balance != null && p.balance < 5;
+                    return (
+                      <div key={p.provider} className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{name}</p>
+                        {p.balance != null ? (
+                          <>
+                            <p className={`text-2xl font-bold ${low ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"}`}>
+                              {p.balanceCurrency === "USD" ? "$" : ""}{p.balance.toFixed(2)}
+                              {p.balanceCurrency && p.balanceCurrency !== "USD" && (
+                                <span className="text-xs font-normal text-gray-400"> {p.balanceCurrency}</span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-gray-500">{t("admin.ai_balance_label")}</p>
+                          </>
+                        ) : p.providerSpendMtd != null ? (
+                          <>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">${p.providerSpendMtd.toFixed(2)}</p>
+                            <p className="text-[10px] text-gray-500">{t("admin.ai_spend_provider")}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-2xl font-bold text-gray-400">—</p>
+                            <p className="text-[10px] text-gray-500">
+                              {p.status === "unsupported"
+                                ? t("admin.ai_balance_unsupported")
+                                : p.status === "no_key"
+                                ? t("admin.ai_balance_no_key")
+                                : t("admin.ai_balance_error")}
+                            </p>
+                          </>
+                        )}
+                        <p className="text-[10px] text-gray-400 mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-800">
+                          {t("admin.ai_spend_logged")}: ${p.loggedSpendMtd.toFixed(2)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  {!aiBalance && (
+                    <div className="sm:col-span-3 flex justify-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label={t("admin.total_users")} value={stats?.totalUsers ?? radiologists.length} />
               <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label={t("admin.total_reports")} value={stats?.totalReports ?? totalReports} />
