@@ -32,6 +32,14 @@ export async function GET(req: NextRequest) {
     const secret = process.env.CRON_SECRET;
     const hasCronAuth = !!secret && auth === `Bearer ${secret}`;
     if (!hasCronAuth) {
+      // A scheduled run arrives with a Vercel user-agent and no session. If
+      // CRON_SECRET is unset the admin check below rejects it and the job
+      // silently does nothing — make that visible instead of invisible.
+      const isScheduled = (req.headers.get("user-agent") || "").toLowerCase().includes("vercel-cron");
+      if (isScheduled && !secret) {
+        console.error("[cron] CRON_SECRET is not configured — scheduled run rejected, no emails sent");
+        return NextResponse.json({ ok: false, error: "cron_secret_missing" }, { status: 401 });
+      }
       await requireAdmin();
     }
 
