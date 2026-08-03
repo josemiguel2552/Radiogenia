@@ -80,11 +80,55 @@ export async function GET(req: NextRequest) {
     }
 
     if (dryRun) {
+      // When nobody matches, explain WHY: the usual causes are the trial
+      // columns never being stamped (migration applied after the trials
+      // started) or the cron running unauthenticated because CRON_SECRET
+      // is missing in the host environment.
+      const diagnostics: Record<string, unknown> = {
+        now: now.toISOString(),
+        windowEnd: windowEnd.toISOString(),
+        cronSecretConfigured: !!secret,
+      };
+      try {
+        const { count: withTrialEnd } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .not("trial_ends_at", "is", null);
+        const { count: alreadySent } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .not("trial_reminder_sent_at", "is", null);
+        const { count: withSubscription } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .not("stripe_subscription_id", "is", null);
+        diagnostics.profilesWithTrialEndsAt = withTrialEnd ?? null;
+        diagnostics.profilesWithSubscription = withSubscription ?? null;
+        diagnostics.remindersAlreadySent = alreadySent ?? null;
+
+        // The next few upcoming trial ends, whatever their state.
+        const { data: upcoming } = await supabase
+          .from("profiles")
+          .select("email, trial_ends_at, trial_reminder_sent_at, stripe_subscription_id")
+          .not("trial_ends_at", "is", null)
+          .order("trial_ends_at", { ascending: false })
+          .limit(10);
+        diagnostics.recentTrials = (upcoming || []).map((u) => ({
+          email: u.email,
+          trialEndsAt: u.trial_ends_at,
+          reminderSentAt: u.trial_reminder_sent_at,
+          hasSubscription: !!u.stripe_subscription_id,
+        }));
+      } catch (e) {
+        diagnostics.error = e instanceof Error ? e.message : String(e);
+      }
+
       return NextResponse.json({
         ok: true,
         dryRun: true,
         wouldSend: candidates.length,
         users: candidates.map((c) => ({ email: c.email, trialEndsAt: c.trial_ends_at, lang: langById.get(c.id) || "es" })),
+        diagnostics,
       });
     }
 
