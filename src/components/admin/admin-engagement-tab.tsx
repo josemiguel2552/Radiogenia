@@ -19,6 +19,7 @@ interface ConvUser {
   plan: string; state: ConvState; emailVerified: boolean;
   trialStartedAt: string | null; trialEndsAt: string | null;
   cancelledAt: string | null; accessUntil: string | null; endedAt: string | null;
+  lastPaymentAt: string | null; lastPaymentAmount: number | null;
   reportsThisMonth: number;
 }
 
@@ -46,6 +47,14 @@ const STATE_STYLE: Record<ConvState, string> = {
 
 function fmtD(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+/* Billing moments need the hour: Stripe charges at the exact time of day the
+   subscription started, not at midnight. */
+function fmtDT(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
 }
 
 function pctOf(n: number, of: number): string {
@@ -84,9 +93,12 @@ export function AdminEngagementTab() {
 
   const userDates = (u: ConvUser): string[] => {
     const out: string[] = [];
-    if (u.trialStartedAt && u.trialEndsAt) out.push(`${t("conv.trial_lbl")} ${fmtD(u.trialStartedAt)} → ${fmtD(u.trialEndsAt)}`);
-    if (u.cancelledAt) out.push(`${t("admin.bill_cancelled_on")} ${fmtD(u.cancelledAt)}`);
-    if (u.accessUntil) out.push(`${t("admin.bill_access_until")} ${fmtD(u.accessUntil)}`);
+    if (u.lastPaymentAt) {
+      out.push(`✓ ${t("admin.bill_paid_on")} ${fmtDT(u.lastPaymentAt)}${u.lastPaymentAmount != null ? ` · $${Number(u.lastPaymentAmount).toFixed(2)}` : ""}`);
+    }
+    if (u.trialStartedAt && u.trialEndsAt) out.push(`${t("conv.trial_lbl")} ${fmtD(u.trialStartedAt)} → ${fmtDT(u.trialEndsAt)}`);
+    if (u.cancelledAt) out.push(`${t("admin.bill_cancelled_on")} ${fmtDT(u.cancelledAt)}`);
+    if (u.accessUntil) out.push(`${t("admin.bill_access_until")} ${fmtDT(u.accessUntil)}`);
     if (u.endedAt) out.push(`${t("admin.bill_ended_on")} ${fmtD(u.endedAt)}`);
     return out;
   };

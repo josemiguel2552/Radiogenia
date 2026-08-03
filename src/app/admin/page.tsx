@@ -108,6 +108,8 @@ interface UserRow {
   trial_ends_at?: string | null;
   subscription_ended_at?: string | null;
   subscription_cancelled_at?: string | null;
+  last_payment_at?: string | null;
+  last_payment_amount?: number | null;
 }
 
 /* ── Billing status per user (card-first model) ─────────────────
@@ -115,6 +117,14 @@ interface UserRow {
    charge lands), who cancelled (and when), and who never activated. */
 function fmtShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+/* Billing moments need the hour: Stripe charges at the exact time of day the
+   subscription started, not at midnight. */
+function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
 }
 
 function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls: string; lines: string[]; kind?: "none" } | null {
@@ -130,14 +140,14 @@ function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls
     return {
       label: t("admin.bill_trial"),
       cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-      lines: [`${t("admin.bill_charge_on")} ${fmtShortDate(u.trial_ends_at!)}`],
+      lines: [`${t("admin.bill_charge_on")} ${fmtDateTime(u.trial_ends_at!)}`],
     };
   }
   if (trialActive && cancelPending) {
     return {
       label: t("admin.bill_trial_cancelled"),
       cls: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-      lines: [cancelledLine, `${t("admin.bill_access_until")} ${fmtShortDate(u.trial_ends_at!)}`].filter(Boolean) as string[],
+      lines: [cancelledLine, `${t("admin.bill_access_until")} ${fmtDateTime(u.trial_ends_at!)}`].filter(Boolean) as string[],
     };
   }
   if (u.subscription_plan && u.subscription_plan !== "free" && u.stripe_subscription_id) {
@@ -145,7 +155,11 @@ function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls
       return {
         label: t("admin.bill_cancelled"),
         cls: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-        lines: [cancelledLine, u.pending_plan_effective_date ? `${t("admin.bill_access_until")} ${fmtShortDate(u.pending_plan_effective_date)}` : null].filter(Boolean) as string[],
+        lines: [
+          u.last_payment_at ? `✓ ${t("admin.bill_paid_on")} ${fmtDateTime(u.last_payment_at)}${u.last_payment_amount != null ? ` · $${Number(u.last_payment_amount).toFixed(2)}` : ""}` : null,
+          cancelledLine,
+          u.pending_plan_effective_date ? `${t("admin.bill_access_until")} ${fmtDateTime(u.pending_plan_effective_date)}` : null,
+        ].filter(Boolean) as string[],
       };
     }
     const renews = u.billing_period_start ? new Date(u.billing_period_start) : null;
@@ -154,8 +168,11 @@ function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls
       label: t("admin.bill_paying"),
       cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
       lines: [
+        u.last_payment_at
+          ? `✓ ${t("admin.bill_paid_on")} ${fmtDateTime(u.last_payment_at)}${u.last_payment_amount != null ? ` · $${Number(u.last_payment_amount).toFixed(2)}` : ""}`
+          : null,
         u.trial_used_at ? `${t("admin.bill_since")} ${fmtShortDate(u.trial_used_at)}` : null,
-        renews ? `${t("admin.bill_renews")} ${fmtShortDate(renews.toISOString())}` : null,
+        renews ? `${t("admin.bill_renews")} ${fmtDateTime(renews.toISOString())}` : null,
       ].filter(Boolean) as string[],
     };
   }

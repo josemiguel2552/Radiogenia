@@ -284,6 +284,21 @@ export async function POST(req: NextRequest) {
           ? invoice.customer
           : invoice.customer?.id;
 
+        // Payment confirmation for the admin panel: stamp EVERY successful
+        // subscription charge (first one after the trial included), not just
+        // renewals. Best-effort: columns may predate the migration.
+        if (customerId && (invoice.amount_paid ?? 0) > 0) {
+          try {
+            await service
+              .from("profiles")
+              .update({
+                last_payment_at: new Date((invoice.status_transitions?.paid_at ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+                last_payment_amount: (invoice.amount_paid ?? 0) / 100,
+              })
+              .eq("stripe_customer_id", customerId);
+          } catch { /* columns may not exist yet */ }
+        }
+
         if (customerId && invoice.billing_reason === "subscription_cycle") {
           const { data: cycleProfile } = await service
             .from("profiles")

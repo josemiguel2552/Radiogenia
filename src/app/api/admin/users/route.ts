@@ -31,6 +31,7 @@ export async function GET() {
     // the trial-billing migrations and the users list must not break without.
     const trialById = new Map<string, Record<string, unknown>>();
     const selects = [
+      "id, trial_used_at, trial_ends_at, subscription_ended_at, subscription_cancelled_at, last_payment_at, last_payment_amount",
       "id, trial_used_at, trial_ends_at, subscription_ended_at, subscription_cancelled_at",
       "id, trial_used_at, trial_ends_at, subscription_ended_at",
       "id, trial_used_at, trial_ends_at",

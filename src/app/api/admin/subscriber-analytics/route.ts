@@ -35,6 +35,8 @@ type Row = {
   trial_ends_at?: string | null;
   subscription_cancelled_at?: string | null;
   subscription_ended_at?: string | null;
+  last_payment_at?: string | null;
+  last_payment_amount?: number | null;
 };
 
 export type ConvState =
@@ -85,6 +87,7 @@ export async function GET(req: NextRequest) {
     // trial-billing migrations).
     const extraById = new Map<string, Partial<Row>>();
     const extraSelects = [
+      "id, trial_used_at, trial_ends_at, subscription_cancelled_at, subscription_ended_at, last_payment_at, last_payment_amount",
       "id, trial_used_at, trial_ends_at, subscription_cancelled_at, subscription_ended_at",
       "id, trial_used_at, trial_ends_at, subscription_ended_at",
       "id, trial_used_at, trial_ends_at",
@@ -165,6 +168,8 @@ export async function GET(req: NextRequest) {
         cancelledAt: r.subscription_cancelled_at || null,
         accessUntil: r.pending_plan === "free" ? (r.pending_plan_effective_date || r.trial_ends_at || null) : null,
         endedAt: r.subscription_ended_at || null,
+        lastPaymentAt: r.last_payment_at || null,
+        lastPaymentAmount: r.last_payment_amount ?? null,
         reportsThisMonth: Math.max(0, r.reports_used_this_month || 0),
       };
     });
