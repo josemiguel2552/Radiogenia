@@ -418,6 +418,28 @@ export default function AdminPage() {
   }
 
   const [retrying, setRetrying] = useState<Record<string, "sending" | "paid" | "declined" | "error">>({});
+  const [syncingBilling, setSyncingBilling] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  async function syncBilling() {
+    setSyncingBilling(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-billing", { method: "POST" });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSyncResult(t("admin.bill_sync_done")
+          .replace("{checked}", String(d.checked ?? 0))
+          .replace("{failed}", String(d.failuresFound ?? 0)));
+        await loadAll();
+      } else {
+        setSyncResult(d.error || "Error");
+      }
+    } catch {
+      setSyncResult("Error");
+    }
+    setSyncingBilling(false);
+  }
 
   async function retryPayment(userId: string) {
     setRetrying((p) => ({ ...p, [userId]: "sending" }));
@@ -1345,7 +1367,18 @@ export default function AdminPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="ml-auto gap-1.5 h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
+                className="ml-auto gap-1.5 h-8 text-xs"
+                onClick={syncBilling}
+                disabled={syncingBilling}
+                title="Consulta el estado real de cada suscripción en Stripe y corrige el panel"
+              >
+                {syncingBilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {t("admin.bill_sync")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
                 onClick={openPurgeDialog}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -1361,6 +1394,9 @@ export default function AdminPage() {
               </Button>
             </div>
             <CardContent className="pt-0">
+              {syncResult && (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">{syncResult}</p>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
