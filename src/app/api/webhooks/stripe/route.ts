@@ -315,6 +315,8 @@ export async function POST(req: NextRequest) {
               .update({
                 last_payment_at: new Date((invoice.status_transitions?.paid_at ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
                 last_payment_amount: (invoice.amount_paid ?? 0) / 100,
+                last_payment_failed_at: null,
+                last_invoice_url: null,
               })
               .eq("stripe_customer_id", customerId);
           } catch { /* columns may not exist yet */ }
@@ -370,6 +372,17 @@ export async function POST(req: NextRequest) {
               console.error("[stripe-webhook] payment failed email error:", err instanceof Error ? err.message : err);
             });
           }
+          // Record the failure and the payment link so the owner can retry
+          // the charge from the admin panel (best-effort: columns may be new).
+          try {
+            await service
+              .from("profiles")
+              .update({
+                last_payment_failed_at: new Date().toISOString(),
+                last_invoice_url: invoice.hosted_invoice_url || null,
+              })
+              .eq("stripe_customer_id", customerId);
+          } catch { /* columns may predate migration */ }
         }
 
         console.warn(`[stripe-webhook] invoice.payment_failed: customer=${customerId}, invoice=${invoice.id}`);

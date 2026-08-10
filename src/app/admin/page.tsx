@@ -110,6 +110,8 @@ interface UserRow {
   subscription_cancelled_at?: string | null;
   last_payment_at?: string | null;
   last_payment_amount?: number | null;
+  last_payment_failed_at?: string | null;
+  last_invoice_url?: string | null;
 }
 
 /* ── Billing status per user (card-first model) ─────────────────
@@ -127,10 +129,19 @@ function fmtDateTime(iso: string): string {
   });
 }
 
-function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls: string; lines: string[]; kind?: "none" } | null {
+function billingInfo(u: UserRow, t: (k: string) => string): { label: string; cls: string; lines: string[]; kind?: "none" | "failed" } | null {
   if (u.role === "admin") return null;
   if (u.org_id) {
     return { label: t("admin.bill_hospital"), cls: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300", lines: [] };
+  }
+  // An unpaid charge is the most actionable state — surface it first.
+  if (u.last_payment_failed_at) {
+    return {
+      label: t("admin.bill_failed"),
+      cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+      kind: "failed",
+      lines: [`${t("admin.bill_failed_on")} ${fmtDateTime(u.last_payment_failed_at)}`],
+    };
   }
   const trialActive = !!u.trial_ends_at && Date.parse(u.trial_ends_at) > Date.now();
   const cancelPending = u.pending_plan === "free";
@@ -404,6 +415,24 @@ export default function AdminPage() {
       setPurgeResult("Error");
     }
     setPurgeRunning(false);
+  }
+
+  const [retrying, setRetrying] = useState<Record<string, "sending" | "paid" | "declined" | "error">>({});
+
+  async function retryPayment(userId: string) {
+    setRetrying((p) => ({ ...p, [userId]: "sending" }));
+    try {
+      const res = await fetch("/api/admin/retry-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      setRetrying((p) => ({ ...p, [userId]: d.ok ? "paid" : d.declined ? "declined" : "error" }));
+      if (d.ok) loadAll();
+    } catch {
+      setRetrying((p) => ({ ...p, [userId]: "error" }));
+    }
   }
 
   async function sendActivationReminder(userId: string) {
@@ -1434,6 +1463,31 @@ export default function AdminPage() {
                                   {bi.lines.map((l) => (
                                     <p key={l} className="text-[10px] text-gray-500 whitespace-nowrap">{l}</p>
                                   ))}
+                                  {bi.kind === "failed" && (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        disabled={retrying[u.id] === "sending"}
+                                        onClick={() => retryPayment(u.id)}
+                                        className="text-[10px] font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-60 whitespace-nowrap"
+                                      >
+                                        {retrying[u.id] === "sending" ? "…"
+                                          : retrying[u.id] === "paid" ? `✓ ${t("admin.bill_retry_ok")}`
+                                          : retrying[u.id] === "declined" ? t("admin.bill_retry_declined")
+                                          : t("admin.bill_retry")}
+                                      </button>
+                                      {u.last_invoice_url && (
+                                        <a
+                                          href={u.last_invoice_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-[10px] text-gray-500 hover:underline whitespace-nowrap"
+                                        >
+                                          {t("admin.bill_invoice_link")}
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
                                   {bi.kind === "none" && (
                                     <button
                                       type="button"
