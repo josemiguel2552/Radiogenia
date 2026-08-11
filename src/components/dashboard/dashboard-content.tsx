@@ -202,6 +202,18 @@ export function DashboardContent() {
     return () => window.removeEventListener("pagehide", onPageHide);
   }, []);
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
+  // Interpretive features are withheld in regulated regions (EU/US); the
+  // server enforces this too — the UI just avoids offering what would fail.
+  const [regionFeatures, setRegionFeatures] = useState<{
+    classification: boolean; recommendations: boolean; clinicalCheck: boolean; caseAssistant: boolean;
+  }>({ classification: true, recommendations: true, clinicalCheck: true, caseAssistant: true });
+  useEffect(() => {
+    fetch("/api/region")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.features) setRegionFeatures(d.features); })
+      .catch(() => { /* keep the permissive default; the server still decides */ });
+  }, []);
+
   const [traceData, setTraceData] = useState<TraceData | null>(null);
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
@@ -2739,7 +2751,7 @@ export function DashboardContent() {
                   <kbd className="hidden md:inline ml-0.5 px-1 py-0.5 rounded bg-white/20 text-[9px] font-mono leading-none">⇧ Space</kbd>
                 </Button>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                  {findings.trim() && !clinicalSuggestions && (
+                  {regionFeatures.clinicalCheck && findings.trim() && !clinicalSuggestions && (
                     <div className="flex items-center gap-1.5">
                       {clinicalEmpty && (
                         <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("clinical_check.no_suggestions")}</span>
@@ -2756,7 +2768,7 @@ export function DashboardContent() {
                       </button>
                     </div>
                   )}
-                  {conclusion.trim() && !classifyResult && !detectedSystems && !preflightQuestions && (
+                  {regionFeatures.classification && conclusion.trim() && !classifyResult && !detectedSystems && !preflightQuestions && (
                     <div className="flex items-center gap-1.5">
                       {classifyEmpty && (
                         <span className="text-[10px] text-gray-500 dark:text-gray-400 italic">{t("classify.none_detected")}</span>

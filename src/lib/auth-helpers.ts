@@ -1,4 +1,6 @@
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveRegion, regionFeatures, type Region, type RegionFeatures } from "@/lib/region";
 import { createServiceClient } from "@/lib/supabase/service";
 import { decrypt } from "@/lib/encryption";
 import { PLANS, type AIProvider, type UserRole, type SubscriptionPlan, type OrgMembership, type SectionRole, type StaffType } from "@/lib/types";
@@ -482,3 +484,43 @@ export async function requireOrgRole(
   throw new Error("Insufficient org permissions");
 }
 
+
+/* ── Regional feature policy ─────────────────────────────────── */
+
+/**
+ * Resolve the region governing a user's features from their declared account
+ * country, falling back to the connection country only when none was given.
+ */
+export async function getUserRegion(userId: string, connectionCountry?: string | null): Promise<Region> {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("profiles")
+    .select("country")
+    .eq("id", userId)
+    .maybeSingle();
+  return resolveRegion(data?.country, connectionCountry);
+}
+
+/**
+ * Guard for interpretive features (classification, follow-up
+ * recommendations, clinical checks, case assistant): these are clinical
+ * decision support and are not offered where that would make the product a
+ * regulated medical device. Returns null when allowed, or the response to
+ * return when it is not.
+ */
+export async function requireRegionFeature(
+  userId: string,
+  feature: keyof RegionFeatures,
+  connectionCountry?: string | null,
+): Promise<NextResponse | null> {
+  const region = await getUserRegion(userId, connectionCountry);
+  if (regionFeatures(region)[feature]) return null;
+  return NextResponse.json(
+    {
+      error: "This feature is not available in your region",
+      code: "REGION_RESTRICTED",
+      region,
+    },
+    { status: 451 },
+  );
+}

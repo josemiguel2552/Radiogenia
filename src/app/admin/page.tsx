@@ -18,6 +18,7 @@ import {
   ThumbsUp, ThumbsDown, Building2,
 } from "lucide-react";
 import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
+import { resolveRegion } from "@/lib/region";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
 import { useT } from "@/lib/i18n";
 import { Logo } from "@/components/ui/logo";
@@ -1427,7 +1428,17 @@ export default function AdminPage() {
                               <p className="text-gray-900 dark:text-white font-medium text-xs">{u.name || "—"}</p>
                               <p className="text-[11px] text-gray-500">{u.email}</p>
                               {(u.hospital || u.country) && (
-                                <p className="text-[10px] text-gray-400">{[u.hospital, u.country].filter(Boolean).join(" · ")}</p>
+                                <p className="text-[10px] text-gray-400">
+                                  {[u.hospital, u.country].filter(Boolean).join(" · ")}
+                                  {(() => {
+                                    const r = resolveRegion(u.country);
+                                    return r !== "open" ? (
+                                      <span className="ml-1 px-1 rounded bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 font-medium uppercase">
+                                        {r}
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                </p>
                               )}
                             </div>
                           </td>

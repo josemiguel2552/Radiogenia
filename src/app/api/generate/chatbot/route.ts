@@ -2,7 +2,7 @@ export const maxDuration = 60;
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess, requireRegionFeature } from "@/lib/auth-helpers";
 import { generateAIStreamWithUsage } from "@/lib/ai-provider";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -311,6 +311,11 @@ export async function POST(req: NextRequest) {
     if (!(await hasPlatformAccess(user.id))) {
       return NextResponse.json({ error: "Subscription required", code: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
     }
+
+    // Interpretive features are clinical decision support and are not offered
+    // where that would qualify the product as a regulated medical device.
+    const regionBlock = await requireRegionFeature(user.id, "caseAssistant", req.headers.get("x-vercel-ip-country"));
+    if (regionBlock) return regionBlock;
 
 
     const body = await req.json();

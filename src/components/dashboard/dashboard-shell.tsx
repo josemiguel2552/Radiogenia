@@ -364,6 +364,16 @@ function LanguagePicker({ lang, onLangChange }: {
 /* ── Main shell ────────────────────────────────────────────────── */
 
 function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancelledDaysLeft }: { children: React.ReactNode; user: User; role: string; verifyDaysLeft?: number | null; trialCancelledDaysLeft?: number | null }) {
+  // Guideline recommendations are clinical decision support and are withheld
+  // in regulated regions (EU/US); the server enforces it too.
+  const [recommendationsAllowed, setRecommendationsAllowed] = useState(true);
+  useEffect(() => {
+    fetch("/api/region")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.features) setRecommendationsAllowed(!!d.features.recommendations); })
+      .catch(() => { /* keep permissive default; the server still decides */ });
+  }, []);
+
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
 
@@ -678,7 +688,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
           { view: "dashboard" as ActiveView, icon: LayoutDashboard, label: t("nav.rail_reports"), show: true },
           { view: "templates" as ActiveView, icon: FileText, label: t("nav.rail_templates"), show: true },
           { view: "calculators" as ActiveView, icon: Calculator, label: t("nav.rail_calculators"), show: true },
-          { view: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.rail_recommendations"), show: true },
+          { view: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.rail_recommendations"), show: recommendationsAllowed },
           { view: "account" as ActiveView, icon: UserIcon, label: t("nav.rail_account"), show: !isOrgUser },
         ]).filter((item) => item.show).map((item) => (
           <button
