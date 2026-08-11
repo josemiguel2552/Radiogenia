@@ -9,6 +9,7 @@ import {
   BookOpen, Tags, Building2, Loader2, Send,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
+import type { Region } from "@/lib/region";
 import { Logo } from "@/components/ui/logo";
 import { PriceTooltip } from "@/components/shared/price-tooltip";
 import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
@@ -197,6 +198,9 @@ function handleTiltReset(e: React.MouseEvent<HTMLDivElement>) {
   e.currentTarget.style.transform = "";
 }
 
+/** Feature cards that describe clinical decision support. */
+const INTERPRETIVE_FEATURES = new Set(["classify", "bot"]);
+
 const FEATURE_KEYS = [
   { icon: Mic, key: "voice", color: "from-blue-500 to-indigo-600" },
   { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
@@ -221,7 +225,10 @@ const SECURITY_ITEMS = [
 // Unlimited. "free" and "resident" are legacy-only states, never sold.
 const PLAN_ORDER: SubscriptionPlan[] = ["starter", "professional", "unlimited"];
 
-export function LandingPage() {
+export function LandingPage({ region = "open" }: { region?: Region }) {
+  // In the EU/EEA/UK and the US the interpretive features are not offered, so
+  // the public page must not advertise them either.
+  const showInterpretive = region === "open";
   const heroRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -378,7 +385,7 @@ export function LandingPage() {
       </section>
 
       {/* ─── Step-by-step showcase ─── */}
-      <StepsShowcase lang={lang} />
+      <StepsShowcase lang={lang} showInterpretive={showInterpretive} />
 
       {/* ─── Stats counter bar ─── */}
       <StatsBar lang={lang} />
@@ -419,7 +426,7 @@ export function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURE_KEYS.map((f, i) => (
+            {FEATURE_KEYS.filter((f) => showInterpretive || !INTERPRETIVE_FEATURES.has(f.key)).map((f, i) => (
               <FeatureCard
                 key={f.key}
                 icon={f.icon}
@@ -507,7 +514,12 @@ export function LandingPage() {
             <EnterprisePricingCard t={t} lang={lang} index={PLAN_ORDER.length} />
           </div>
 
-          <div className="mt-12 text-center">
+          <div className="mt-12 text-center space-y-4">
+            {!showInterpretive && (
+              <p className="text-xs text-gray-400 max-w-2xl mx-auto leading-relaxed border border-white/10 rounded-xl px-4 py-3 bg-white/[0.02]">
+                {t("region.notice")}
+              </p>
+            )}
             <p className="text-xs text-gray-500 max-w-2xl mx-auto leading-relaxed">
               {t("pricing.note")}
             </p>
@@ -683,8 +695,10 @@ const STEP_COLORS = [
   "from-violet-500 to-fuchsia-500",
 ];
 
-function StepsShowcase({ lang }: { lang: PublicLang }) {
-  const steps = STEPS_DATA[lang];
+function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; showInterpretive?: boolean }) {
+  // Steps 3 and 4 (automatic classification and the assistant) are clinical
+  // decision support and are not offered — nor advertised — in the EU/US.
+  const steps = showInterpretive ? STEPS_DATA[lang] : STEPS_DATA[lang].slice(0, 2);
   const dictText = DEMO_TEXTS[lang];
 
   return (

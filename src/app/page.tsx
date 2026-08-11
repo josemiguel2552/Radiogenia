@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { LandingPage } from "@/components/landing/landing-page";
+import { resolveRegion, IP_COUNTRY_HEADER } from "@/lib/region";
 
 export default async function HomePage() {
   // Only hit Supabase when an auth cookie exists — anonymous visitors (the
@@ -17,5 +18,10 @@ export default async function HomePage() {
     if (user) redirect("/dashboard");
   }
 
-  return <LandingPage />;
+  // Anonymous visitors have no account yet, so the connection country is all
+  // we have: EU/US visitors must not be shown features they would not receive.
+  const h = await headers();
+  const region = resolveRegion(null, h.get(IP_COUNTRY_HEADER));
+
+  return <LandingPage region={region} />;
 }
