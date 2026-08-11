@@ -367,11 +367,35 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
   // Guideline recommendations are clinical decision support and are withheld
   // in regulated regions (EU/US); the server enforces it too.
   const [recommendationsAllowed, setRecommendationsAllowed] = useState(true);
-  useEffect(() => {
-    fetch("/api/region")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.features) setRecommendationsAllowed(!!d.features.recommendations); })
-      .catch(() => { /* keep permissive default; the server still decides */ });
+  // Admins can preview either regional interface without losing control of
+  // the unrestricted one; everyone else never sees this.
+  const [regionAdmin, setRegionAdmin] = useState<{ region: string; viewing: string | null } | null>(null);
+  const [switchingRegion, setSwitchingRegion] = useState(false);
+
+  const loadRegion = useCallback(async () => {
+    try {
+      const res = await fetch("/api/region");
+      if (!res.ok) return;
+      const d = await res.json();
+      if (d?.features) setRecommendationsAllowed(!!d.features.recommendations);
+      if (d?.isAdmin) setRegionAdmin({ region: d.region, viewing: d.viewing ?? null });
+    } catch { /* keep permissive default; the server still decides */ }
+  }, []);
+  useEffect(() => { loadRegion(); }, [loadRegion]);
+
+  const switchRegionView = useCallback(async (region: string | null) => {
+    setSwitchingRegion(true);
+    try {
+      await fetch("/api/region", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ region }),
+      });
+      // A full reload is the honest way to re-render every region-gated view.
+      window.location.reload();
+    } catch {
+      setSwitchingRegion(false);
+    }
   }, []);
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -631,6 +655,43 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
 
   const mainContent = (
     <>
+      {regionAdmin && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-sky-200 dark:border-sky-900/50 bg-sky-50 dark:bg-sky-950/30 px-3 py-2">
+          <Globe className="h-4 w-4 text-sky-500 shrink-0" />
+          <span className="text-xs text-sky-800 dark:text-sky-200">{t("region.admin_preview")}</span>
+          <div className="flex items-center gap-1">
+            {([
+              { key: "open", label: t("region.view_open") },
+              { key: "eu", label: t("region.view_eu") },
+              { key: "us", label: t("region.view_us") },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                disabled={switchingRegion}
+                onClick={() => switchRegionView(opt.key)}
+                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors disabled:opacity-60 ${
+                  regionAdmin.region === opt.key
+                    ? "bg-sky-600 text-white"
+                    : "text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/40"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {regionAdmin.viewing && (
+            <button
+              type="button"
+              disabled={switchingRegion}
+              onClick={() => switchRegionView(null)}
+              className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline disabled:opacity-60"
+            >
+              {t("region.view_reset")}
+            </button>
+          )}
+        </div>
+      )}
       {trialDaysLeft != null && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-violet-200 dark:border-violet-900/50 bg-violet-50 dark:bg-violet-950/30 px-3 py-2">
           <Clock className="h-4 w-4 text-violet-500 shrink-0" />

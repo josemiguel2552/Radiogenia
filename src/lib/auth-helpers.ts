@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { resolveRegion, regionFeatures, type Region, type RegionFeatures } from "@/lib/region";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -491,7 +492,20 @@ export async function requireOrgRole(
  * Resolve the region governing a user's features from their declared account
  * country, falling back to the connection country only when none was given.
  */
+export const REGION_VIEW_COOKIE = "rg_region_view";
+
 export async function getUserRegion(userId: string, connectionCountry?: string | null): Promise<Region> {
+  // Admins can preview either interface (see REGION_VIEW_COOKIE). The override
+  // is honoured only after confirming the role server-side, so a forged cookie
+  // cannot unlock restricted features for anyone else.
+  try {
+    const jar = await cookies();
+    const view = jar.get(REGION_VIEW_COOKIE)?.value;
+    if (view === "open" || view === "eu" || view === "us") {
+      if ((await getUserRole(userId)) === "admin") return view;
+    }
+  } catch { /* not in a request context — fall through */ }
+
   const service = createServiceClient();
   const { data } = await service
     .from("profiles")
