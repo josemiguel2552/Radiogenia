@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
       action: string,
       usedProvider: string,
       usedModel: string,
+      extraHeaders?: Record<string, string>,
     ) => {
       const reader = stream.getReader();
       const passthrough = new ReadableStream({
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
         },
       });
       return new Response(passthrough, {
-        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage },
+        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage, ...extraHeaders },
       });
     };
 
@@ -172,6 +173,7 @@ export async function POST(req: NextRequest) {
       // it was built from? Best-effort: a failure here must never block the
       // conclusion, so any error just skips straight to the polish pass.
       let verifyNotes: string | undefined;
+      let verifyRan = false;
       try {
         const verifyTask = globalConfig.taskOverrides?.conclusion_verify;
         const verifyProvider = verifyTask?.provider || draft.usedProvider;
@@ -198,6 +200,7 @@ export async function POST(req: NextRequest) {
           logAICost({ userId, action: "conclusion_verify", provider: verify.usedProvider, model: verify.usedModel, inputTokens: verify.usage.inputTokens, outputTokens: verify.usage.outputTokens });
         }
         const verdict = (verify.text || "").trim();
+        verifyRan = true;
         if (verdict && !/^ok\.?$/i.test(verdict)) {
           verifyNotes = verdict;
         }
@@ -218,7 +221,12 @@ export async function POST(req: NextRequest) {
         user: draftText,
         maxTokens,
       });
-      return streamToResponse(pass2.stream, pass2.getUsage, "conclusion_refine", pass2.usedProvider, pass2.usedModel);
+      const verifyHeaders: Record<string, string> = {};
+      if (verifyRan) {
+        verifyHeaders["X-Conclusion-Verify-Status"] = verifyNotes ? "fixed" : "ok";
+        if (verifyNotes) verifyHeaders["X-Conclusion-Verify-Notes"] = encodeURIComponent(verifyNotes);
+      }
+      return streamToResponse(pass2.stream, pass2.getUsage, "conclusion_refine", pass2.usedProvider, pass2.usedModel, verifyHeaders);
     }
 
     const single = await streamAIWithFallback({

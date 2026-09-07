@@ -170,11 +170,16 @@ export function DashboardContent() {
   const [findings, setFindings] = useState("");
   const emptyConcVersions = { concise: "", grouped: "" };
   const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
+  // Fact-check + triage result for the conclusion (only the "grouped" style
+  // runs the check today) — keyed by style so switching styles doesn't show
+  // a stale badge for a version that was never checked.
+  const [conclusionVerifyByStyle, setConclusionVerifyByStyle] = useState<Record<string, { status: "ok" | "fixed"; notes?: string } | null>>({});
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
   const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, grouped: false });
   const conclusion = conclusionVersions[conclusionStyle] || "";
+  const conclusionVerify = conclusionVerifyByStyle[conclusionStyle] || null;
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -903,6 +908,7 @@ export function DashboardContent() {
     setLoadingConcStyles({ concise: true, grouped: true });
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
+    setConclusionVerifyByStyle({});
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1057,6 +1063,14 @@ export function DashboardContent() {
         });
 
         if (res.ok && res.body) {
+          const verifyStatus = res.headers.get("X-Conclusion-Verify-Status");
+          if (verifyStatus === "ok" || verifyStatus === "fixed") {
+            const notesRaw = res.headers.get("X-Conclusion-Verify-Notes");
+            setConclusionVerifyByStyle((prev) => ({
+              ...prev,
+              [style]: { status: verifyStatus, notes: notesRaw ? decodeURIComponent(notesRaw) : undefined },
+            }));
+          }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let text = "";
@@ -1803,6 +1817,7 @@ export function DashboardContent() {
     setDictation("");
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
+    setConclusionVerifyByStyle({});
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2502,6 +2517,21 @@ export function DashboardContent() {
               <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
             )}
 
+            {conclusionVerify?.status === "fixed" && conclusionVerify.notes && (
+              <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                <span className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">
+                  {t("dash.conclusion_verify_fixed")}: {conclusionVerify.notes}
+                </span>
+              </div>
+            )}
+            {conclusionVerify?.status === "ok" && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-xs text-emerald-700 dark:text-emerald-300">{t("dash.conclusion_verify_ok")}</span>
+              </div>
+            )}
+
             {/* Unified report card: findings + conclusion in one box, tools on the bottom edge.
                 Slight brand tint + accent border so the final report reads as a distinct document. */}
             <Card className="border-brand-soft shadow-md bg-[hsl(var(--primary)/0.02)] dark:bg-[hsl(var(--primary)/0.05)]">
@@ -2535,7 +2565,11 @@ export function DashboardContent() {
               loading={loadingConcStyles[conclusionStyle] ?? false}
               loadingLabel={conclusionStyle === "grouped" ? t("gen.phase_conclusion_refine") : t("gen.phase_conclusion")}
               value={conclusion}
-              onChange={(v) => { setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v })); reportDirtyRef.current = true; }}
+              onChange={(v) => {
+                setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
+                setConclusionVerifyByStyle((prev) => ({ ...prev, [conclusionStyle]: null }));
+                reportDirtyRef.current = true;
+              }}
               minHeight={110}
               headerExtra={
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
