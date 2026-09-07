@@ -1857,9 +1857,18 @@ GOLDEN RULE: when in doubt whether something is a diagnosis or an interpretation
  * Final wording-review pass for an already-generated conclusion.
  * Improves readability/style ONLY — must not lengthen it, change clinical
  * content, or add diagnoses. The user message is the draft conclusion.
+ *
+ * `verifyNotes`, when present, are concrete contradictions the fact-check
+ * pass (buildConclusionVerifyPrompt) found between the draft and the
+ * findings — the only content changes this otherwise wording-only pass is
+ * allowed to make are fixing those.
  */
-export function buildConclusionRefinePrompt(lang: OutputLanguage): string {
+export function buildConclusionRefinePrompt(lang: OutputLanguage, verifyNotes?: string): string {
   const l = LANGUAGE_LABEL[lang];
+  const verifyBlockEs = verifyNotes ? `\n\nCORRECCIONES OBLIGATORIAS (detectadas al comparar con los hallazgos — corrígelas, es la única excepción a "no cambies el contenido"):\n${verifyNotes}` : "";
+  const verifyBlockPt = verifyNotes ? `\n\nCORREÇÕES OBRIGATÓRIAS (detectadas ao comparar com os achados — corrija-as, é a única exceção a "não mude o conteúdo"):\n${verifyNotes}` : "";
+  const verifyBlockEn = verifyNotes ? `\n\nREQUIRED CORRECTIONS (found by comparing against the findings — fix these, the only exception to "do not change the content"):\n${verifyNotes}` : "";
+
   if (lang === "es") {
     return `Eres un editor de estilo radiológico. Recibes la CONCLUSIÓN de un informe ya redactada y tu única tarea es PULIR LA REDACCIÓN.
 
@@ -1875,7 +1884,7 @@ LÍMITES ESTRICTOS (NO NEGOCIABLES):
 - NO añadas ni elimines hallazgos, ni datos, ni medidas, ni lateralidades.
 - NO cambies el significado clínico ni el orden de los puntos.
 - NO añadas diagnósticos, interpretaciones, inferencias ("compatible con", "sugestivo de"…), recomendaciones ni clasificaciones que no estuvieran ya.
-- Mantén el formato: mismos puntos numerados, texto plano, sin markdown, sin encabezado "CONCLUSIÓN".
+- Mantén el formato: mismos puntos numerados, texto plano, sin markdown, sin encabezado "CONCLUSIÓN".${verifyBlockEs}
 
 Si la redacción ya es óptima, devuélvela SIN CAMBIOS. Responde ÚNICAMENTE con la conclusión mejorada, nada más.`;
   }
@@ -1894,7 +1903,7 @@ LIMITES ESTRITOS (NÃO NEGOCIÁVEIS):
 - NÃO adicione nem remova achados, dados, medidas ou lateralidades.
 - NÃO mude o significado clínico nem a ordem dos pontos.
 - NÃO adicione diagnósticos, interpretações, inferências, recomendações nem classificações que já não estivessem.
-- Mantenha o formato: mesmos pontos numerados, texto simples, sem markdown, sem cabeçalho "CONCLUSÃO".
+- Mantenha o formato: mesmos pontos numerados, texto simples, sem markdown, sem cabeçalho "CONCLUSÃO".${verifyBlockPt}
 
 Se a redação já for ótima, devolva-a SEM ALTERAÇÕES. Responda APENAS com a conclusão melhorada.`;
   }
@@ -1912,7 +1921,62 @@ STRICT LIMITS (NON-NEGOTIABLE):
 - Do NOT add or remove findings, data, measurements, or lateralities.
 - Do NOT change the clinical meaning or the order of the points.
 - Do NOT add diagnoses, interpretations, inferences ("consistent with", "suggestive of"…), recommendations, or classifications that were not already there.
-- Keep the format: same numbered points, plain text, no markdown, no "CONCLUSION" heading.
+- Keep the format: same numbered points, plain text, no markdown, no "CONCLUSION" heading.${verifyBlockEn}
 
 If the wording is already optimal, return it UNCHANGED. Respond ONLY with the improved conclusion, nothing else.`;
+}
+
+/**
+ * Fact-check pass (self-consistency check): compares a draft conclusion
+ * against the findings it was built from and flags only concrete,
+ * checkable contradictions — a measurement, laterality, organ, or a
+ * presence/absence that doesn't match. Never flags style, brevity, grouping,
+ * or omission of clinically-irrelevant findings (that's expected). The
+ * result feeds into buildConclusionRefinePrompt so the wording-polish pass
+ * can fix any real issue in the same round-trip, at no extra latency to the
+ * user-visible stream.
+ */
+export function buildConclusionVerifyPrompt(params: {
+  findingsText: string;
+  draftConclusion: string;
+  outputLanguage: OutputLanguage;
+}): { system: string; user: string } {
+  const lang = params.outputLanguage;
+
+  const systemEs = `Eres un verificador de hechos radiológico. Recibes los HALLAZGOS de un informe y un borrador de su CONCLUSIÓN. Tu única tarea es comprobar que cada afirmación concreta de la conclusión (medidas, lateralidad, órgano o localización, presencia o ausencia de un hallazgo, comparación con estudio previo) esté respaldada por los hallazgos.
+
+NO evalúes estilo, redacción ni brevedad — solo hechos.
+NO señales como error que la conclusión agrupe, resuma u omita hallazgos clínicamente irrelevantes — eso es normal y correcto en una conclusión.
+Señala ÚNICAMENTE contradicciones claras y verificables: un dato que no aparece en los hallazgos, una medida distinta, una lateralidad invertida, o un hallazgo negado en la conclusión que sí aparece en los hallazgos (o viceversa).
+
+FORMATO DE RESPUESTA (nada más que esto):
+- Si no hay ninguna contradicción: responde EXACTAMENTE "OK".
+- Si hay contradicciones: como máximo 3, una por línea, cada una una frase breve y concreta indicando qué dice la conclusión frente a qué dicen los hallazgos. Sin preámbulo ni explicaciones.`;
+
+  const systemPt = `Você é um verificador de fatos radiológico. Recebe os ACHADOS de um laudo e um rascunho da sua CONCLUSÃO. Sua única tarefa é conferir se cada afirmação concreta da conclusão (medidas, lateralidade, órgão ou localização, presença ou ausência de um achado, comparação com exame prévio) está respaldada pelos achados.
+
+NÃO avalie estilo, redação ou brevidade — apenas fatos.
+NÃO aponte como erro que a conclusão agrupe, resuma ou omita achados clinicamente irrelevantes — isso é normal e correto em uma conclusão.
+Aponte APENAS contradições claras e verificáveis: um dado que não aparece nos achados, uma medida diferente, uma lateralidade invertida, ou um achado negado na conclusão que aparece nos achados (ou vice-versa).
+
+FORMATO DE RESPOSTA (nada além disso):
+- Se não houver contradição: responda EXATAMENTE "OK".
+- Se houver contradições: no máximo 3, uma por linha, cada uma em frase breve e concreta indicando o que a conclusão diz versus o que os achados dizem. Sem preâmbulo nem explicações.`;
+
+  const systemEn = `You are a radiology fact-checker. You receive the FINDINGS of a report and a draft of its CONCLUSION. Your only task is to check that every concrete claim in the conclusion (measurements, laterality, organ or location, presence or absence of a finding, comparison with a prior study) is supported by the findings.
+
+Do NOT evaluate style, wording, or brevity — facts only.
+Do NOT flag the conclusion grouping, summarizing, or omitting clinically irrelevant findings — that is normal and correct in a conclusion.
+Flag ONLY clear, checkable contradictions: a claim absent from the findings, a different measurement, a flipped laterality, or a finding denied in the conclusion that the findings actually report (or vice versa).
+
+RESPONSE FORMAT (nothing else):
+- If there is no contradiction: respond EXACTLY "OK".
+- If there are contradictions: at most 3, one per line, each a short concrete sentence stating what the conclusion says versus what the findings say. No preamble, no explanations.`;
+
+  const system = lang === "es" ? systemEs : lang === "pt" ? systemPt : systemEn;
+  const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
+  const conclusionLabel = lang === "es" ? "Borrador de conclusión" : lang === "pt" ? "Rascunho da conclusão" : "Draft conclusion";
+  const user = `${findingsLabel}:\n${params.findingsText}\n\n${conclusionLabel}:\n${params.draftConclusion}`;
+
+  return { system, user };
 }

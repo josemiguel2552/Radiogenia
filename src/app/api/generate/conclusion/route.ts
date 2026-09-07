@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
 import { streamAIWithFallback, generateAIWithUsageFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
-import { buildConclusionPrompt, buildConclusionRefinePrompt } from "@/lib/prompts";
+import { buildConclusionPrompt, buildConclusionRefinePrompt, buildConclusionVerifyPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import { logPiiStrip } from "@/lib/pii-log";
@@ -167,15 +167,54 @@ export async function POST(req: NextRequest) {
       if (!draftText) {
         return new Response("", { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage } });
       }
-      // Pass 2 — polish the wording (streamed). If the primary already fell
-      // back in pass 1, start directly with the provider that worked.
+
+      // Pass 1.5 — cheap fact-check: does the draft contradict the findings
+      // it was built from? Best-effort: a failure here must never block the
+      // conclusion, so any error just skips straight to the polish pass.
+      let verifyNotes: string | undefined;
+      try {
+        const verifyTask = globalConfig.taskOverrides?.conclusion_verify;
+        const verifyProvider = verifyTask?.provider || draft.usedProvider;
+        const verifyModel = verifyTask?.modelName || draft.usedModel;
+        const verifyKey = verifyTask?.provider
+          ? resolveApiKey(globalConfig, verifyProvider)
+          : (draft.fellBack ? resolveApiKey(globalConfig, verifyProvider) : effectiveKey);
+        const { system: verifySystem, user: verifyUser } = buildConclusionVerifyPrompt({
+          findingsText,
+          draftConclusion: draftText,
+          outputLanguage: outputLanguage as OutputLanguage,
+        });
+        const verify = await generateAIWithUsageFallback({
+          config: globalConfig,
+          provider: verifyProvider,
+          modelName: verifyModel,
+          apiKey: verifyKey,
+          customBaseUrl: globalConfig.customBaseUrl,
+          system: verifySystem,
+          user: verifyUser,
+          maxTokens: 220,
+        });
+        if (verify.usage) {
+          logAICost({ userId, action: "conclusion_verify", provider: verify.usedProvider, model: verify.usedModel, inputTokens: verify.usage.inputTokens, outputTokens: verify.usage.outputTokens });
+        }
+        const verdict = (verify.text || "").trim();
+        if (verdict && !/^ok\.?$/i.test(verdict)) {
+          verifyNotes = verdict;
+        }
+      } catch (e) {
+        console.error("[conclusion] verify pass failed (non-fatal):", e instanceof Error ? e.message : e);
+      }
+
+      // Pass 2 — polish the wording (streamed), fixing any flagged
+      // contradiction along the way. If the primary already fell back in
+      // pass 1, start directly with the provider that worked.
       const pass2 = await streamAIWithFallback({
         config: globalConfig,
         provider: draft.usedProvider,
         modelName: draft.usedModel,
         apiKey: draft.fellBack ? resolveApiKey(globalConfig, draft.usedProvider) : effectiveKey,
         customBaseUrl: globalConfig.customBaseUrl,
-        system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage),
+        system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage, verifyNotes),
         user: draftText,
         maxTokens,
       });

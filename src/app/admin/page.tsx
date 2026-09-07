@@ -82,7 +82,7 @@ interface FtFileInfo {
   createdAt: number;
 }
 
-type TaskKey = "findings" | "conclusion" | "trace" | "dictation_correction" | "improve_writing" | "data_augmentation" | "classify" | "chatbot";
+type TaskKey = "findings" | "conclusion" | "conclusion_verify" | "trace" | "dictation_correction" | "improve_writing" | "data_augmentation" | "classify" | "chatbot";
 
 interface UserRow {
   id: string;
@@ -253,6 +253,7 @@ export default function AdminPage() {
   const [taskOverrides, setTaskOverrides] = useState<Record<TaskKey, { provider: string; model: string }>>({
     findings: { provider: "", model: "" },
     conclusion: { provider: "", model: "" },
+    conclusion_verify: { provider: "", model: "" },
     trace: { provider: "", model: "" },
     dictation_correction: { provider: "", model: "" },
     improve_writing: { provider: "", model: "" },
@@ -546,6 +547,7 @@ export default function AdminPage() {
       setTaskOverrides({
         findings: isCombo ? { provider: "", model: "" } : { provider: d.findings_provider || "", model: d.findings_model || "" },
         conclusion: { provider: d.conclusion_provider || "", model: d.conclusion_model || "" },
+        conclusion_verify: { provider: d.conclusion_verify_provider || "", model: d.conclusion_verify_model || "" },
         trace: { provider: d.trace_provider || "", model: d.trace_model || "" },
         dictation_correction: { provider: d.dictation_correction_provider || "", model: d.dictation_correction_model || "" },
         improve_writing: { provider: d.improve_writing_provider || "", model: d.improve_writing_model || "" },
@@ -665,7 +667,7 @@ export default function AdminPage() {
       if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
-      for (const task of ["findings", "conclusion", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot"] as TaskKey[]) {
+      for (const task of ["findings", "conclusion", "conclusion_verify", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot"] as TaskKey[]) {
         const o = taskOverrides[task];
         body[`${task}_provider`] = o.provider || "";
         body[`${task}_model`] = o.model || "";
@@ -1759,6 +1761,7 @@ export default function AdminPage() {
                 {([
                   { key: "findings" as TaskKey, label: t("admin.task_findings"), desc: t("admin.task_findings_desc") },
                   { key: "conclusion" as TaskKey, label: t("admin.task_conclusion"), desc: t("admin.task_conclusion_desc") },
+                  { key: "conclusion_verify" as TaskKey, label: t("admin.task_conclusion_verify"), desc: t("admin.task_conclusion_verify_desc") },
                   { key: "trace" as TaskKey, label: t("admin.task_traceability"), desc: t("admin.task_traceability_desc") },
                   { key: "dictation_correction" as TaskKey, label: t("admin.task_dictation_correction"), desc: t("admin.task_dictation_correction_desc") },
                   { key: "improve_writing" as TaskKey, label: t("admin.task_improve_writing"), desc: t("admin.task_improve_writing_desc") },
@@ -1858,7 +1861,7 @@ export default function AdminPage() {
                 {(() => {
                   // Collect all providers in use across task overrides that differ from default
                   const extraProviders = new Set<string>();
-                  for (const task of ["findings", "conclusion", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot"] as TaskKey[]) {
+                  for (const task of ["findings", "conclusion", "conclusion_verify", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot"] as TaskKey[]) {
                     const p = taskOverrides[task].provider;
                     if (p && p !== provider) extraProviders.add(p);
                   }

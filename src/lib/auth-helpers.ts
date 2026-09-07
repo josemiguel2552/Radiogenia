@@ -27,6 +27,7 @@ export interface GlobalAIConfig {
   taskOverrides?: {
     findings?: TaskModelOverride;
     conclusion?: TaskModelOverride;
+    conclusion_verify?: TaskModelOverride;
     trace?: TaskModelOverride;
     dictation_correction?: TaskModelOverride;
     improve_writing?: TaskModelOverride;
@@ -97,6 +98,9 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
   if (data.conclusion_provider && data.conclusion_model) {
     taskOverrides.conclusion = { provider: data.conclusion_provider as AIProvider, modelName: data.conclusion_model };
+  }
+  if (data.conclusion_verify_provider && data.conclusion_verify_model) {
+    taskOverrides.conclusion_verify = { provider: data.conclusion_verify_provider as AIProvider, modelName: data.conclusion_verify_model };
   }
   if (data.trace_provider && data.trace_model) {
     taskOverrides.trace = { provider: data.trace_provider as AIProvider, modelName: data.trace_model };

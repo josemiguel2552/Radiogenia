@@ -74,15 +74,19 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        buildBody: (model, system, user, maxTokens) => ({
-          model,
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
-          ],
-          max_tokens: maxTokens,
-          temperature: 0,
-        }),
+        buildBody: (model, system, user, maxTokens) => {
+          // GPT-5.x reasoning-capable models reject "max_tokens" (must be
+          // "max_completion_tokens") and only accept the default temperature.
+          const isGpt5 = /^gpt-5/.test(model);
+          return {
+            model,
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: user },
+            ],
+            ...(isGpt5 ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens, temperature: 0 }),
+          };
+        },
         extractText: (data: unknown) => {
           const d = data as { choices: { message: { content: string } }[] };
           return d.choices?.[0]?.message?.content || "";
