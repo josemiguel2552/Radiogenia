@@ -42,7 +42,7 @@ import {
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { HighlightedText, TraceLegend, useTraceHighlights, type TraceData } from "./trace-highlight";
+import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { RemotePhoneDictation } from "@/components/dashboard/remote-phone-dictation";
@@ -65,6 +65,9 @@ import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
 import { track } from "@/lib/track";
 import { AutoGrowTextarea } from "@/components/ui/autogrow-textarea";
+
+/** Stable empty array so it's never a new identity across renders (useMemo dep). */
+const EMPTY_CONCLUSION_LINKS: { point: number; quote: string }[] = [];
 
 export function DashboardContent() {
   const supabase = createClient();
@@ -174,12 +177,18 @@ export function DashboardContent() {
   // runs the check today) — keyed by style so switching styles doesn't show
   // a stale badge for a version that was never checked.
   const [conclusionVerifyByStyle, setConclusionVerifyByStyle] = useState<Record<string, { status: "ok" | "fixed"; notes?: string } | null>>({});
+  // Which findings sentence backs each conclusion point — fetched lazily,
+  // AFTER the conclusion has already finished streaming, purely to power
+  // hover highlighting. Never awaited by the generation flow itself.
+  const [conclusionLinksByStyle, setConclusionLinksByStyle] = useState<Record<string, { point: number; quote: string }[]>>({});
+  const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
   const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, grouped: false });
   const conclusion = conclusionVersions[conclusionStyle] || "";
   const conclusionVerify = conclusionVerifyByStyle[conclusionStyle] || null;
+  const conclusionLinks = conclusionLinksByStyle[conclusionStyle] || EMPTY_CONCLUSION_LINKS;
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -912,6 +921,8 @@ export function DashboardContent() {
     setConclusionVersions({ ...emptyConcVersions });
     setConclusionVerifyByStyle({});
     setStatusExpanded(null);
+    setConclusionLinksByStyle({});
+    setHoveredConclusionPoint(null);
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1096,6 +1107,25 @@ export function DashboardContent() {
           } else {
             const cleaned = cleanReport(text);
             setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+            // Provenance links (hover a conclusion point → see the backing
+            // finding) are fetched lazily, fire-and-forget, once the
+            // conclusion is already fully shown — never awaited here, so it
+            // cannot add a millisecond to report generation. Only the
+            // "grouped" style gets it (the only one with numbered points).
+            if (style === "grouped" && cleaned.trim()) {
+              fetch("/api/generate/conclusion-links", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ findingsText, conclusionText: cleaned, outputLanguage: effectiveLang }),
+              })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((data) => {
+                  if (data?.links?.length) {
+                    setConclusionLinksByStyle((prev) => ({ ...prev, grouped: data.links }));
+                  }
+                })
+                .catch(() => {});
+            }
             if (style === activeStyle) {
               conclusionText = cleaned;
               setInitialConclusion(cleaned);
@@ -1691,6 +1721,27 @@ export function DashboardContent() {
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
 
+  // Conclusion → findings provenance hover: each numbered conclusion point
+  // becomes a hover zone; hovering one spotlights the findings sentence the
+  // AI quoted as its source, temporarily replacing whatever the findings
+  // box is showing (its own dictation trace, if any).
+  const conclusionPoints = useMemo(() => splitConclusionPoints(conclusion), [conclusion]);
+  const conclusionHoverHighlights = useMemo(() => {
+    if (conclusionLinks.length === 0) return [];
+    const linkedPoints = new Set(conclusionLinks.map((l) => l.point));
+    return conclusionPoints
+      .filter((p) => linkedPoints.has(p.point))
+      .map((p) => ({ start: p.start, end: p.end, colorIdx: 0, fragment: "", isHoverZone: true as const, pointIndex: p.point }));
+  }, [conclusionPoints, conclusionLinks]);
+  const hoveredLink = hoveredConclusionPoint != null ? conclusionLinks.find((l) => l.point === hoveredConclusionPoint) : undefined;
+  const hoveredFindingsSpan = useMemo(() => {
+    if (!hoveredLink) return null;
+    const match = findBestMatch(findings, hoveredLink.quote);
+    if (!match) return null;
+    return { start: match.start, end: match.end, colorIdx: 0, fragment: hoveredLink.quote, isLinked: true as const };
+  }, [hoveredLink, findings]);
+  const findingsHighlightsToShow = hoveredFindingsSpan ? [hoveredFindingsSpan] : findingsHighlights;
+
   async function saveReportQuietly(auto = false) {
     if (!selectedTemplate || !findings) return;
     if (lastSavedReportId) return;
@@ -1822,6 +1873,8 @@ export function DashboardContent() {
     setConclusionVersions({ ...emptyConcVersions });
     setConclusionVerifyByStyle({});
     setStatusExpanded(null);
+    setConclusionLinksByStyle({});
+    setHoveredConclusionPoint(null);
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2601,9 +2654,10 @@ export function DashboardContent() {
               onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
               minHeight={140}
-              traceHighlights={findingsHighlights.length > 0 ? findingsHighlights : undefined}
+              traceHighlights={findingsHighlightsToShow.length > 0 ? findingsHighlightsToShow : undefined}
               traceLocked={loadingTrace}
               isDark={isDark}
+              linkTooltip={t("dash.conclusion_link_tooltip")}
             />
 
             <OutputCard
@@ -2616,9 +2670,13 @@ export function DashboardContent() {
               onChange={(v) => {
                 setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
                 setConclusionVerifyByStyle((prev) => ({ ...prev, [conclusionStyle]: null }));
+                setConclusionLinksByStyle((prev) => ({ ...prev, [conclusionStyle]: [] }));
                 reportDirtyRef.current = true;
               }}
               minHeight={110}
+              traceHighlights={conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
+              onHoverHighlight={(span) => setHoveredConclusionPoint(span?.pointIndex ?? null)}
+              isDark={isDark}
               headerExtra={
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
                   {(["concise", "grouped"] as const).map((s) => (
@@ -3074,6 +3132,8 @@ function OutputCard({
   loadingLabel,
   bare = false,
   airy = false,
+  onHoverHighlight,
+  linkTooltip,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -3085,12 +3145,16 @@ function OutputCard({
   headerExtra?: React.ReactNode;
   footerExtra?: React.ReactNode;
   loadingLabel?: string;
-  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean }[];
+  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isLinked?: boolean; isHoverZone?: boolean; pointIndex?: number }[];
   traceLocked?: boolean;
   isDark?: boolean;
   bare?: boolean;
   /** Extra line spacing on screen only — the copied text keeps its own line breaks. */
   airy?: boolean;
+  /** Fired on hover enter/leave of an isHoverZone span (conclusion points). */
+  onHoverHighlight?: (span: { pointIndex?: number } | null) => void;
+  /** Tooltip for the findings-side isLinked spotlight span. */
+  linkTooltip?: string;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -3156,7 +3220,7 @@ function OutputCard({
             {value}
           </div>
         ) : showTrace && !editing ? (
-          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} />
+          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} linkTooltip={linkTooltip} />
         ) : (
           <AutoGrowTextarea
             value={value}

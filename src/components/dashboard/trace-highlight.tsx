@@ -19,6 +19,8 @@ const TRACE_COLORS = [
 
 const UNMATCHED_COLOR = { bg: "rgba(239,68,68,0.2)", text: "#ef4444", dark: "rgba(248,113,113,0.25)" };
 const HALLUCINATION_COLOR = { bg: "rgba(168,85,247,0.2)", text: "#a855f7", dark: "rgba(192,132,252,0.25)" };
+/** Findings-side spotlight for the sentence backing the hovered conclusion point. */
+const LINK_COLOR = { bg: "rgba(245,158,11,0.3)", text: "#f59e0b", dark: "rgba(251,191,36,0.32)" };
 
 export interface TraceMapping {
   dictation_fragment: string;
@@ -62,9 +64,16 @@ interface HighlightSpan {
   section?: string;
   isUnmatched?: boolean;
   isHallucination?: boolean;
+  /** Findings-side spotlight while a linked conclusion point is hovered. */
+  isLinked?: boolean;
+  /** Conclusion-side hover zone: no persistent color, only a hover affordance
+   *  that reports which point is under the cursor via onHoverSpan. */
+  isHoverZone?: boolean;
+  /** Which conclusion point this span represents (set with isHoverZone). */
+  pointIndex?: number;
 }
 
-function findBestMatch(text: string, fragment: string): { start: number; end: number } | null {
+export function findBestMatch(text: string, fragment: string): { start: number; end: number } | null {
   const normalText = normalizeForSearch(text);
   const normalFrag = normalizeForSearch(fragment);
 
@@ -156,19 +165,42 @@ function buildParts(text: string, highlights: HighlightSpan[]) {
   return result;
 }
 
-function renderParts(parts: ReturnType<typeof buildParts>, isDark: boolean) {
+function renderParts(
+  parts: ReturnType<typeof buildParts>,
+  isDark: boolean,
+  onHoverSpan?: (span: HighlightSpan | null) => void,
+  linkTooltip?: string,
+) {
   return parts.map((p, i) => {
     if (!p.highlight) return <span key={i}>{p.text}</span>;
     const h = p.highlight;
+
+    if (h.isHoverZone) {
+      return (
+        <span
+          key={i}
+          className="rounded px-0.5 cursor-help transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          onMouseEnter={() => onHoverSpan?.(h)}
+          onMouseLeave={() => onHoverSpan?.(null)}
+        >
+          {p.text}
+        </span>
+      );
+    }
+
     const color = h.isHallucination
       ? HALLUCINATION_COLOR
       : h.isUnmatched
       ? UNMATCHED_COLOR
+      : h.isLinked
+      ? LINK_COLOR
       : TRACE_COLORS[h.colorIdx % TRACE_COLORS.length];
     const tooltip = h.isHallucination
       ? `⚠ Hallucination — ${h.section}`
       : h.isUnmatched
       ? `⚠ Not found in findings`
+      : h.isLinked
+      ? (linkTooltip || "→")
       : `→ ${h.section}`;
     return (
       <mark
@@ -192,18 +224,42 @@ export function HighlightedText({
   text,
   highlights,
   isDark,
+  onHoverSpan,
+  linkTooltip,
 }: {
   text: string;
   highlights: HighlightSpan[];
   isDark: boolean;
+  /** Fired on mouse enter/leave of an isHoverZone span (conclusion points). */
+  onHoverSpan?: (span: HighlightSpan | null) => void;
+  /** Tooltip text for an isLinked span (findings-side spotlight). */
+  linkTooltip?: string;
 }) {
   const parts = useMemo(() => buildParts(text, highlights), [text, highlights]);
 
   return (
     <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] min-h-[80px]">
-      {renderParts(parts, isDark)}
+      {renderParts(parts, isDark, onHoverSpan, linkTooltip)}
     </div>
   );
+}
+
+/**
+ * Splits a numbered conclusion ("1. ...\n2. ...") into point ranges, reusing
+ * the same "N. " line-start convention the report generator already writes
+ * to (see NUMBERED_LABEL in normality-defaults.ts). Pure offset math, no
+ * fuzzy matching needed since the text is the conclusion's own.
+ */
+export function splitConclusionPoints(text: string): { point: number; start: number; end: number }[] {
+  const regex = /^(\d+)\.\s/gm;
+  const matches = [...text.matchAll(regex)];
+  return matches
+    .map((m, i) => {
+      const start = m.index ?? 0;
+      const end = i + 1 < matches.length ? (matches[i + 1].index ?? text.length) : text.length;
+      return { point: parseInt(m[1], 10), start, end };
+    })
+    .filter((p) => Number.isFinite(p.point));
 }
 
 export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boolean }) {

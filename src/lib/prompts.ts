@@ -1994,3 +1994,47 @@ RESPONSE FORMAT (nothing else):
 
   return { system, user };
 }
+
+/**
+ * Provenance links for the report UI: for each numbered point of the final
+ * conclusion, the shortest verbatim quote from the findings that backs it —
+ * used to highlight the source sentence in findings when the radiologist
+ * hovers a conclusion point. This is a lazy, best-effort, non-blocking call
+ * fired only after the conclusion has already finished streaming to the
+ * user, never part of the generation pipeline itself.
+ */
+export function buildConclusionLinksPrompt(params: {
+  findingsText: string;
+  conclusionText: string;
+  outputLanguage: OutputLanguage;
+}): { system: string; user: string } {
+  const lang = params.outputLanguage;
+
+  const systemEs = `Recibes los HALLAZGOS de un informe radiológico y su CONCLUSIÓN ya redactada, con puntos numerados. Para cada punto numerado de la conclusión, busca la cita EXACTA y más corta posible dentro de los HALLAZGOS que lo respalda — cópiala literalmente, sin cambiar ni una palabra, tal como aparece en los hallazgos (se usará para buscarla dentro del texto).
+
+Si un punto resume varios hallazgos o no tiene una frase concreta que lo respalde, omítelo (no lo incluyas en la respuesta).
+Si un punto es una negación general (ej: "sin hallazgos agudos"), omítelo también.
+
+Responde ÚNICAMENTE con JSON válido, sin explicación ni texto adicional: un array de objetos con esta forma exacta: [{"point": <número del punto>, "quote": "<cita literal de los hallazgos>"}]. Si ningún punto tiene cita clara, responde [].`;
+
+  const systemPt = `Você recebe os ACHADOS de um laudo radiológico e sua CONCLUSÃO já redigida, com pontos numerados. Para cada ponto numerado da conclusão, busque a citação EXATA e mais curta possível dentro dos ACHADOS que a respalda — copie-a literalmente, sem mudar uma palavra, tal como aparece nos achados (será usada para buscá-la no texto).
+
+Se um ponto resume vários achados ou não tem uma frase concreta que o respalde, omita-o (não o inclua na resposta).
+Se um ponto é uma negação geral (ex: "sem achados agudos"), omita-o também.
+
+Responda APENAS com JSON válido, sem explicação nem texto adicional: um array de objetos nesta forma exata: [{"point": <número do ponto>, "quote": "<citação literal dos achados>"}]. Se nenhum ponto tiver citação clara, responda [].`;
+
+  const systemEn = `You receive the FINDINGS of a radiology report and its already-written CONCLUSION, with numbered points. For each numbered point in the conclusion, find the shortest exact quote within the FINDINGS that supports it — copy it verbatim, not changing a single word, exactly as it appears in the findings (it will be used to search for it in the text).
+
+If a point summarizes multiple findings or has no single concrete supporting phrase, omit it (do not include it in the response).
+If a point is a general negation (e.g. "no acute findings"), omit it too.
+
+Respond ONLY with valid JSON, no explanation or extra text: an array of objects in this exact shape: [{"point": <point number>, "quote": "<verbatim quote from the findings>"}]. If no point has a clear quote, respond [].`;
+
+  const system = lang === "es" ? systemEs : lang === "pt" ? systemPt : systemEn;
+  const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
+  const conclusionLabel = lang === "es" ? "Conclusión" : lang === "pt" ? "Conclusão" : "Conclusion";
+  const user = `${findingsLabel}:\n${params.findingsText}\n\n${conclusionLabel}:\n${params.conclusionText}`;
+
+  return { system, user };
+}
