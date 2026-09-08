@@ -223,6 +223,8 @@ export function DashboardContent() {
   const [traceActive, setTraceActive] = useState(false);
   const [loadingTrace, setLoadingTrace] = useState(false);
   const [repairMessage, setRepairMessage] = useState<string | null>(null);
+  // Which check's detail is expanded in the consolidated report status rail.
+  const [statusExpanded, setStatusExpanded] = useState<"trace" | "conclusion" | null>(null);
 
   // Hidden templates
   const [reportMode, setReportModeState] = useState<ReportMode>("dictation_only");
@@ -909,6 +911,7 @@ export function DashboardContent() {
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
     setConclusionVerifyByStyle({});
+    setStatusExpanded(null);
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1818,6 +1821,7 @@ export function DashboardContent() {
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
     setConclusionVerifyByStyle({});
+    setStatusExpanded(null);
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2506,29 +2510,73 @@ export function DashboardContent() {
               </div>
             )}
 
-            {repairMessage && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-                <span className="text-xs text-amber-700 dark:text-amber-300">{repairMessage}</span>
-              </div>
-            )}
-
-            {traceData && (
-              <Card><CardContent className="p-3"><TraceLegend trace={traceData} isDark={isDark} /></CardContent></Card>
-            )}
-
-            {conclusionVerify?.status === "fixed" && conclusionVerify.notes && (
-              <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
-                <span className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">
-                  {t("dash.conclusion_verify_fixed")}: {conclusionVerify.notes}
-                </span>
-              </div>
-            )}
-            {conclusionVerify?.status === "ok" && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-xs text-emerald-700 dark:text-emerald-300">{t("dash.conclusion_verify_ok")}</span>
+            {/* Consolidated report status rail — one row of pills (findings
+                trace + conclusion fact-check) instead of a stack of separate
+                badges/cards, each expandable on click for its detail. */}
+            {(traceData || conclusionVerify) && (
+              <div className="rounded-lg border bg-white dark:bg-gray-900 dark:border-gray-700 overflow-hidden">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-wrap">
+                  {traceData && (() => {
+                    const traceOk = traceData.unmatched.length === 0 && traceData.hallucinations.length === 0;
+                    const active = statusExpanded === "trace";
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setStatusExpanded(active ? null : "trace")}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
+                          traceOk
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800"
+                            : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"
+                        }`}
+                      >
+                        {traceOk ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                        {t("dash.status_findings")}
+                        {active ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                      </button>
+                    );
+                  })()}
+                  {conclusionVerify && (() => {
+                    const fixed = conclusionVerify.status === "fixed";
+                    const active = statusExpanded === "conclusion";
+                    const cls = fixed
+                      ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800";
+                    if (!fixed) {
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${cls}`}>
+                          <ShieldCheck className="h-3 w-3" />
+                          {t("dash.status_conclusion")}
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setStatusExpanded(active ? null : "conclusion")}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${cls}`}
+                      >
+                        <AlertTriangle className="h-3 w-3" />
+                        {t("dash.status_conclusion")}
+                        {active ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                      </button>
+                    );
+                  })()}
+                </div>
+                {statusExpanded === "trace" && traceData && (
+                  <div className="border-t px-3 py-2 dark:border-gray-700">
+                    {repairMessage && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mb-2 flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 shrink-0" />{repairMessage}
+                      </p>
+                    )}
+                    <TraceLegend trace={traceData} isDark={isDark} />
+                  </div>
+                )}
+                {statusExpanded === "conclusion" && conclusionVerify?.notes && (
+                  <div className="border-t px-3 py-2 dark:border-gray-700">
+                    <p className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">{conclusionVerify.notes}</p>
+                  </div>
+                )}
               </div>
             )}
 
