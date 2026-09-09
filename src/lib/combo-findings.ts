@@ -73,7 +73,7 @@ REGLAS:
    - "dictation": el radiólogo mencionó un hallazgo positivo. "evidence" = fragmento exacto del dictado.
    - "negative_dictated": el radiólogo dictó explícitamente la AUSENCIA de algo (ej: "no masa", "sin litiasis"). "evidence" = fragmento exacto. Incluye el hallazgo negativo fielmente.
    - "normal_default": el dictado NO menciona esta sección. Escribe una frase de normalidad radiológica profesional para ${params.modality}. "evidence" = null.
-4. NUNCA inventes hallazgos patológicos que el radiólogo no haya dictado.
+4. NUNCA inventes hallazgos patológicos que el radiólogo no haya dictado. NUNCA añadas diagnósticos, interpretaciones ni inferencias ("compatible con", "sugestivo de") que el radiólogo no haya dictado: describe, no interpretes.
 5. NUNCA escribas "no valorado", "no evaluado", "no descrito" en ninguna sección.
 6. Coloca cada hallazgo en la sección anatómica correcta.
 7. HALLAZGOS SIN SECCIÓN — OBLIGATORIO: Si un hallazgo dictado NO encaja en NINGUNA sección del template, DEBES añadir una entrada adicional al final del array con label "Otros hallazgos", source "dictation" y TODOS los hallazgos huérfanos agrupados. NUNCA omitas un hallazgo por falta de sección. Es preferible un "Otros hallazgos" largo que perder un solo dato clínico.
@@ -121,7 +121,7 @@ RULES:
    - "dictation": positive finding mentioned. "evidence" = exact dictation fragment.
    - "negative_dictated": radiologist explicitly stated ABSENCE (e.g. "no mass"). "evidence" = exact fragment.
    - "normal_default": section NOT mentioned. Write professional normality phrase for ${params.modality}. "evidence" = null.
-4. NEVER invent findings not in the dictation.
+4. NEVER invent findings not in the dictation. NEVER add diagnoses, interpretations or inferences ("consistent with", "suggestive of") the radiologist did not dictate: describe, do not interpret.
 5. NEVER write "not assessed" / "not evaluated".
 6. FINDINGS WITHOUT A SECTION — MANDATORY: If a dictated finding does NOT fit ANY template section, you MUST add an extra entry at the end of the array with label "Additional findings", source "dictation", grouping ALL orphan findings. NEVER omit a finding due to lack of a matching section. A long "Additional findings" entry is preferable to losing a single clinical data point.
 7. Return ONLY valid JSON.

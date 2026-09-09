@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
 import { streamAIWithFallback, generateAIWithUsageFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
-import { buildConclusionPrompt, buildConclusionRefinePrompt, buildConclusionVerifyPrompt } from "@/lib/prompts";
+import { buildConclusionPrompt, buildConclusionRefinePrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import { logPiiStrip } from "@/lib/pii-log";
@@ -118,7 +118,6 @@ export async function POST(req: NextRequest) {
       action: string,
       usedProvider: string,
       usedModel: string,
-      extraHeaders?: Record<string, string>,
     ) => {
       const reader = stream.getReader();
       const passthrough = new ReadableStream({
@@ -139,7 +138,7 @@ export async function POST(req: NextRequest) {
         },
       });
       return new Response(passthrough, {
-        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage, ...extraHeaders },
+        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage },
       });
     };
 
@@ -169,64 +168,24 @@ export async function POST(req: NextRequest) {
         return new Response("", { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage } });
       }
 
-      // Pass 1.5 — cheap fact-check: does the draft contradict the findings
-      // it was built from? Best-effort: a failure here must never block the
-      // conclusion, so any error just skips straight to the polish pass.
-      let verifyNotes: string | undefined;
-      let verifyRan = false;
-      try {
-        const verifyTask = globalConfig.taskOverrides?.conclusion_verify;
-        const verifyProvider = verifyTask?.provider || draft.usedProvider;
-        const verifyModel = verifyTask?.modelName || draft.usedModel;
-        const verifyKey = verifyTask?.provider
-          ? resolveApiKey(globalConfig, verifyProvider)
-          : (draft.fellBack ? resolveApiKey(globalConfig, verifyProvider) : effectiveKey);
-        const { system: verifySystem, user: verifyUser } = buildConclusionVerifyPrompt({
-          findingsText,
-          draftConclusion: draftText,
-          outputLanguage: outputLanguage as OutputLanguage,
-        });
-        const verify = await generateAIWithUsageFallback({
-          config: globalConfig,
-          provider: verifyProvider,
-          modelName: verifyModel,
-          apiKey: verifyKey,
-          customBaseUrl: globalConfig.customBaseUrl,
-          system: verifySystem,
-          user: verifyUser,
-          maxTokens: 220,
-        });
-        if (verify.usage) {
-          logAICost({ userId, action: "conclusion_verify", provider: verify.usedProvider, model: verify.usedModel, inputTokens: verify.usage.inputTokens, outputTokens: verify.usage.outputTokens });
-        }
-        const verdict = (verify.text || "").trim();
-        verifyRan = true;
-        if (verdict && !/^ok\.?$/i.test(verdict)) {
-          verifyNotes = verdict;
-        }
-      } catch (e) {
-        console.error("[conclusion] verify pass failed (non-fatal):", e instanceof Error ? e.message : e);
-      }
-
-      // Pass 2 — polish the wording (streamed), fixing any flagged
-      // contradiction along the way. If the primary already fell back in
-      // pass 1, start directly with the provider that worked.
+      // Pass 2 — polish the wording (streamed). If the primary already fell
+      // back in pass 1, start directly with the provider that worked.
+      //
+      // The fact-check against the findings deliberately does NOT run here:
+      // it would put a whole extra round-trip in front of the first token the
+      // radiologist sees. It runs afterwards, on the delivered text, via
+      // /api/generate/conclusion-review.
       const pass2 = await streamAIWithFallback({
         config: globalConfig,
         provider: draft.usedProvider,
         modelName: draft.usedModel,
         apiKey: draft.fellBack ? resolveApiKey(globalConfig, draft.usedProvider) : effectiveKey,
         customBaseUrl: globalConfig.customBaseUrl,
-        system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage, verifyNotes),
+        system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage),
         user: draftText,
         maxTokens,
       });
-      const verifyHeaders: Record<string, string> = {};
-      if (verifyRan) {
-        verifyHeaders["X-Conclusion-Verify-Status"] = verifyNotes ? "fixed" : "ok";
-        if (verifyNotes) verifyHeaders["X-Conclusion-Verify-Notes"] = encodeURIComponent(verifyNotes);
-      }
-      return streamToResponse(pass2.stream, pass2.getUsage, "conclusion_refine", pass2.usedProvider, pass2.usedModel, verifyHeaders);
+      return streamToResponse(pass2.stream, pass2.getUsage, "conclusion_refine", pass2.usedProvider, pass2.usedModel);
     }
 
     const single = await streamAIWithFallback({

@@ -176,7 +176,7 @@ export function DashboardContent() {
   // Fact-check + triage result for the conclusion (only the "grouped" style
   // runs the check today) — keyed by style so switching styles doesn't show
   // a stale badge for a version that was never checked.
-  const [conclusionVerifyByStyle, setConclusionVerifyByStyle] = useState<Record<string, { status: "ok" | "fixed"; notes?: string } | null>>({});
+  const [conclusionVerifyByStyle, setConclusionVerifyByStyle] = useState<Record<string, { status: "ok" | "issues"; notes?: string } | null>>({});
   // Which findings sentence backs each conclusion point — fetched lazily,
   // AFTER the conclusion has already finished streaming, purely to power
   // hover highlighting. Never awaited by the generation flow itself.
@@ -1077,14 +1077,6 @@ export function DashboardContent() {
         });
 
         if (res.ok && res.body) {
-          const verifyStatus = res.headers.get("X-Conclusion-Verify-Status");
-          if (verifyStatus === "ok" || verifyStatus === "fixed") {
-            const notesRaw = res.headers.get("X-Conclusion-Verify-Notes");
-            setConclusionVerifyByStyle((prev) => ({
-              ...prev,
-              [style]: { status: verifyStatus, notes: notesRaw ? decodeURIComponent(notesRaw) : undefined },
-            }));
-          }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let text = "";
@@ -1107,21 +1099,25 @@ export function DashboardContent() {
           } else {
             const cleaned = cleanReport(text);
             setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
-            // Provenance links (hover a conclusion point → see the backing
-            // finding) are fetched lazily, fire-and-forget, once the
-            // conclusion is already fully shown — never awaited here, so it
-            // cannot add a millisecond to report generation. Only the
-            // "grouped" style gets it (the only one with numbered points).
-            if (style === "grouped" && cleaned.trim()) {
-              fetch("/api/generate/conclusion-links", {
+            // Post-delivery review (fact-check against the findings + the
+            // hover provenance links), fired lazily once the conclusion is
+            // already fully shown. Never awaited here, so it cannot add a
+            // millisecond to report generation — and it reviews the text the
+            // radiologist actually reads, not an intermediate draft.
+            if (style === activeStyle && cleaned.trim()) {
+              fetch("/api/generate/conclusion-review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ findingsText, conclusionText: cleaned, outputLanguage: effectiveLang }),
               })
                 .then((r) => (r.ok ? r.json() : null))
                 .then((data) => {
-                  if (data?.links?.length) {
-                    setConclusionLinksByStyle((prev) => ({ ...prev, grouped: data.links }));
+                  if (!data) return;
+                  if (data.links?.length) {
+                    setConclusionLinksByStyle((prev) => ({ ...prev, [style]: data.links }));
+                  }
+                  if (data.verify?.status) {
+                    setConclusionVerifyByStyle((prev) => ({ ...prev, [style]: data.verify }));
                   }
                 })
                 .catch(() => {});
@@ -2589,12 +2585,12 @@ export function DashboardContent() {
                     );
                   })()}
                   {conclusionVerify && (() => {
-                    const fixed = conclusionVerify.status === "fixed";
+                    const hasIssues = conclusionVerify.status === "issues";
                     const active = statusExpanded === "conclusion";
-                    const cls = fixed
+                    const cls = hasIssues
                       ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"
                       : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800";
-                    if (!fixed) {
+                    if (!hasIssues) {
                       return (
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${cls}`}>
                           <ShieldCheck className="h-3 w-3" />

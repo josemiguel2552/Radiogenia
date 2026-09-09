@@ -577,17 +577,28 @@ FORMATO:
 IDIOMA: ${l}.
 
 ${params.isBaseline ? `AVALIAÇÃO BASAL RECIST 1.1:
-1. Lesões target definidas com medidas basais.
-2. Soma de diâmetros basal.
-3. Lesões non-target.
-4. Achados adicionais.` : `AVALIAÇÃO RECIST 1.1:
-1. Resposta global: [CR/PR/SD/PD].
-2. Lesões target: soma atual, basal, nadir, % mudança, categoria.
-3. Lesões non-target: categoria.
-4. Lesões novas.
-5. Achados adicionais.`}
+1. Lesões target definidas com órgão, localização e medida basal.
+2. Soma de diâmetros basal: ___ mm.
+3. Lesões non-target: listar com órgão e localização.
+4. Achados adicionais relevantes.` : `AVALIAÇÃO RECIST 1.1:
+1. Resposta global: [CR/PR/SD/PD] segundo critérios RECIST 1.1.
+2. Lesões target: soma atual ___ mm (basal: ___ mm, nadir: ___ mm), % mudança vs basal, % mudança vs nadir, categoria target.
+3. Lesões non-target: [CR/non-CR-non-PD/PD].
+4. Lesões novas: [Sim (descrever) / Não].
+5. Achados adicionais relevantes (se houver).`}
 
-DESCREVA, NÃO DIAGNOSTIQUE. Sem markdown.`;
+${hasClinical ? "Responder à pergunta clínica se foi formulada." : ""}
+
+REGRAS:
+- ${params.isBaseline ? "No estudo basal não há categoria de resposta — apenas se definem as lesões e a soma basal." : "O PRIMEIRO ponto é sempre a resposta global RECIST 1.1."}
+- Incluir dados quantitativos: somas (mm), percentagens de mudança.
+- DESCREVA, NÃO DIAGNOSTIQUE. A categoria RECIST (CR/PR/SD/PD) é um dado objetivo calculado segundo critérios padronizados, não um juízo clínico.
+- NÃO recomendar mudanças de tratamento.
+- NÃO emitir prognósticos.
+
+FORMATO:
+- Pontos numerados. Texto simples. Sem markdown.
+- NÃO incluir o cabeçalho "CONCLUSÃO".`;
   } else {
     system = `You are an expert radiologist writing the CONCLUSION of a RECIST 1.1 tumor response evaluation report.
 
@@ -904,6 +915,7 @@ Un párrafo final que:
 - Indique si el estudio es globalmente normal o patológico.
 ${hasClinical ? "- Responda directamente a la pregunta clínica planteada." : "- Resuma los hallazgos principales y su significado radiológico."}
 - DESCRIBE hallazgos radiológicos, NO emitas diagnósticos. No uses: "compatible con", "sugestivo de", "en relación con", "cardiopatía isquémica", "miocardiopatía", "miocarditis". Describe lo que ves: patrón de realce, distribución, valores alterados.
+- CERO recomendaciones: no sugieras seguimiento, pruebas adicionales, tratamiento ni manejo clínico.
 
 FORMATO:
 - Texto plano. NO uses asteriscos, almohadillas ni markdown.
@@ -936,7 +948,7 @@ Pontos numerados resumindo os achados principais. Incluir SEMPRE:
 Incluir apenas pontos com dados nos achados. Incluir valores numéricos (FE, volumes) e faixas normais de AMBOS os sexos: (normal: XX-XX% homem; XX-XX% mulher).
 
 INTERPRETAÇÃO:
-Parágrafo final sintetizando os achados em linguagem clínica concisa, indicando se o estudo é globalmente normal ou patológico${hasClinical ? " e respondendo à pergunta clínica" : ""}. DESCREVA achados radiológicos, NÃO emita diagnósticos. Não use: "compatível com", "sugestivo de", "cardiopatia isquêmica", "miocardiopatia", "miocardite". Descreva o que vê: padrão de realce, distribuição, valores alterados.
+Parágrafo final sintetizando os achados em linguagem clínica concisa, indicando se o estudo é globalmente normal ou patológico${hasClinical ? " e respondendo à pergunta clínica" : ""}. DESCREVA achados radiológicos, NÃO emita diagnósticos. Não use: "compatível com", "sugestivo de", "cardiopatia isquêmica", "miocardiopatia", "miocardite". Descreva o que vê: padrão de realce, distribuição, valores alterados. ZERO recomendações: não sugira seguimento, exames adicionais, tratamento nem manejo clínico.
 
 FORMATO:
 - Texto simples, sem markdown. Não inclua o cabeçalho "CONCLUSÃO".
@@ -978,6 +990,7 @@ A final paragraph that:
 - States whether the study is globally normal or abnormal.
 ${hasClinical ? "- Directly answers the clinical question posed." : "- Summarizes the main findings and their radiological significance."}
 - DESCRIBE radiological findings, do NOT issue diagnoses. Do not use: "consistent with", "suggestive of", "in keeping with", "ischemic cardiomyopathy", "dilated cardiomyopathy", "myocarditis". Describe what you see: enhancement pattern, distribution, abnormal values.
+- ZERO recommendations: do not suggest follow-up, additional tests, treatment or clinical management.
 
 FORMAT:
 - Plain text. Do NOT use asterisks, hashes or markdown.
@@ -1858,16 +1871,13 @@ GOLDEN RULE: when in doubt whether something is a diagnosis or an interpretation
  * Improves readability/style ONLY — must not lengthen it, change clinical
  * content, or add diagnoses. The user message is the draft conclusion.
  *
- * `verifyNotes`, when present, are concrete contradictions the fact-check
- * pass (buildConclusionVerifyPrompt) found between the draft and the
- * findings — the only content changes this otherwise wording-only pass is
- * allowed to make are fixing those.
+ * Strictly wording-only: it never sees the findings, so it is never allowed
+ * to change clinical content. Anything the fact-check pass flags is shown to
+ * the radiologist instead of being rewritten here — a pass that cannot check
+ * a claim against the findings must not be the one to introduce it.
  */
-export function buildConclusionRefinePrompt(lang: OutputLanguage, verifyNotes?: string): string {
+export function buildConclusionRefinePrompt(lang: OutputLanguage): string {
   const l = LANGUAGE_LABEL[lang];
-  const verifyBlockEs = verifyNotes ? `\n\nCORRECCIONES OBLIGATORIAS (detectadas al comparar con los hallazgos — aplícalas; para ESTA corrección concreta, ignora los límites de "no alargar" y "no cambiar el orden" si hace falta insertar o adelantar un punto, pero no toques nada más):\n${verifyNotes}` : "";
-  const verifyBlockPt = verifyNotes ? `\n\nCORREÇÕES OBRIGATÓRIAS (detectadas ao comparar com os achados — aplique-as; para ESTA correção específica, ignore os limites de "não alongar" e "não mudar a ordem" se for preciso inserir ou adiantar um ponto, mas não mexa em mais nada):\n${verifyNotes}` : "";
-  const verifyBlockEn = verifyNotes ? `\n\nREQUIRED CORRECTIONS (found by comparing against the findings — apply them; for THIS specific correction, ignore the "do not lengthen" and "do not change order" limits if inserting or moving up a point is needed, but do not touch anything else):\n${verifyNotes}` : "";
 
   if (lang === "es") {
     return `Eres un editor de estilo radiológico. Recibes la CONCLUSIÓN de un informe ya redactada y tu única tarea es PULIR LA REDACCIÓN.
@@ -1884,7 +1894,7 @@ LÍMITES ESTRICTOS (NO NEGOCIABLES):
 - NO añadas ni elimines hallazgos, ni datos, ni medidas, ni lateralidades.
 - NO cambies el significado clínico ni el orden de los puntos.
 - NO añadas diagnósticos, interpretaciones, inferencias ("compatible con", "sugestivo de"…), recomendaciones ni clasificaciones que no estuvieran ya.
-- Mantén el formato: mismos puntos numerados, texto plano, sin markdown, sin encabezado "CONCLUSIÓN".${verifyBlockEs}
+- Mantén el formato: mismos puntos numerados, texto plano, sin markdown, sin encabezado "CONCLUSIÓN".
 
 Si la redacción ya es óptima, devuélvela SIN CAMBIOS. Responde ÚNICAMENTE con la conclusión mejorada, nada más.`;
   }
@@ -1903,7 +1913,7 @@ LIMITES ESTRITOS (NÃO NEGOCIÁVEIS):
 - NÃO adicione nem remova achados, dados, medidas ou lateralidades.
 - NÃO mude o significado clínico nem a ordem dos pontos.
 - NÃO adicione diagnósticos, interpretações, inferências, recomendações nem classificações que já não estivessem.
-- Mantenha o formato: mesmos pontos numerados, texto simples, sem markdown, sem cabeçalho "CONCLUSÃO".${verifyBlockPt}
+- Mantenha o formato: mesmos pontos numerados, texto simples, sem markdown, sem cabeçalho "CONCLUSÃO".
 
 Se a redação já for ótima, devolva-a SEM ALTERAÇÕES. Responda APENAS com a conclusão melhorada.`;
   }
@@ -1921,22 +1931,24 @@ STRICT LIMITS (NON-NEGOTIABLE):
 - Do NOT add or remove findings, data, measurements, or lateralities.
 - Do NOT change the clinical meaning or the order of the points.
 - Do NOT add diagnoses, interpretations, inferences ("consistent with", "suggestive of"…), recommendations, or classifications that were not already there.
-- Keep the format: same numbered points, plain text, no markdown, no "CONCLUSION" heading.${verifyBlockEn}
+- Keep the format: same numbered points, plain text, no markdown, no "CONCLUSION" heading.
 
 If the wording is already optimal, return it UNCHANGED. Respond ONLY with the improved conclusion, nothing else.`;
 }
 
 /**
- * Fact-check + triage pass (self-consistency check): compares a draft
- * conclusion against the findings it was built from and flags two kinds of
- * concrete, checkable problems — (A) a measurement, laterality, organ, or
- * presence/absence that doesn't match the findings, and (B) an acute/urgent
- * finding that was left out of the conclusion or buried instead of leading
- * it. Never flags style, brevity, grouping, or omission of clinically
- * irrelevant findings (that's expected). The result feeds into
- * buildConclusionRefinePrompt so the wording-polish pass can fix any real
- * issue in the same round-trip, at no extra latency to the user-visible
- * stream.
+ * Fact-check + triage pass, ADVISORY ONLY. Compares the delivered conclusion
+ * against the findings and reports two kinds of concrete, checkable problems
+ * to the radiologist — (A) a measurement, laterality, organ or
+ * presence/absence that doesn't match the findings, and (B) an acute finding
+ * described in the findings that is missing from the conclusion or buried
+ * below less urgent points.
+ *
+ * Its output is shown to the radiologist, never fed back into the report:
+ * a model that writes a ready-to-insert clinical sentence, applied by a pass
+ * that cannot check it against the findings, is exactly how a diagnosis the
+ * radiologist never dictated ends up in their report. So it quotes the
+ * findings' own wording and names no diagnosis of its own.
  */
 export function buildConclusionVerifyPrompt(params: {
   findingsText: string;
@@ -1945,51 +1957,54 @@ export function buildConclusionVerifyPrompt(params: {
 }): { system: string; user: string } {
   const lang = params.outputLanguage;
 
-  const systemEs = `Eres un verificador de hechos y triaje radiológico. Recibes los HALLAZGOS de un informe y un borrador de su CONCLUSIÓN. Comprueba DOS cosas, nada más:
+  const systemEs = `Eres un verificador radiológico. Recibes los HALLAZGOS de un informe y su CONCLUSIÓN. Avisas al radiólogo de DOS cosas, nada más:
 
-A) HECHOS: que cada afirmación concreta de la conclusión (medidas, lateralidad, órgano o localización, presencia o ausencia de un hallazgo, comparación con estudio previo) esté respaldada por los hallazgos.
-B) TRIAJE: que ningún hallazgo AGUDO o URGENTE de los hallazgos (ej: neumotórax, hemorragia, isquemia, perforación, torsión, fractura inestable, colección a tensión, signos de alarma) se haya quedado FUERA de la conclusión, o esté presente pero enterrado en vez de ser el primer punto.
+A) HECHOS: alguna afirmación concreta de la conclusión (medida, lateralidad, órgano o localización, presencia o ausencia de un hallazgo, comparación con estudio previo) que NO coincida con lo que dicen los hallazgos.
+B) PRIORIDAD: algún hallazgo agudo YA DESCRITO EN LOS HALLAZGOS que no aparezca en la conclusión, o que aparezca por debajo de hallazgos menos urgentes.
 
 NO evalúes estilo, redacción ni brevedad.
-NO señales como error que la conclusión agrupe, resuma u omita hallazgos crónicos o clínicamente irrelevantes — eso es normal y correcto en una conclusión. El triaje (B) es SOLO para hallazgos agudos/urgentes, no para cualquier omisión.
+NO señales como error que la conclusión agrupe, resuma u omita hallazgos crónicos o clínicamente irrelevantes — eso es normal y correcto en una conclusión. (B) es SOLO para hallazgos agudos, no para cualquier omisión.
+NO interpretes, no diagnostiques y no propongas texto nuevo: limítate a citar lo que ya está escrito en los hallazgos. Si los hallazgos no lo dicen, no lo digas tú.
 
 FORMATO DE RESPUESTA (nada más que esto):
 - Si no hay ningún problema: responde EXACTAMENTE "OK".
-- Si hay problemas: como máximo 3, una frase breve y accionable por línea, sin preámbulo ni explicaciones.
-  - Para (A): indica qué dice la conclusión frente a qué dicen los hallazgos, con el dato correcto.
-  - Para (B): indica el hallazgo agudo omitido o mal priorizado, redactado ya como el punto que debería añadirse o adelantarse (con sus datos descriptivos tomados de los hallazgos), para que puedas insertarlo o reordenarlo directamente.`;
+- Si hay problemas: como máximo 3, una frase breve por línea, sin preámbulo ni explicaciones, dirigida al radiólogo.
+  - Para (A): "La conclusión dice X, pero los hallazgos dicen Y."
+  - Para (B): "Los hallazgos describen «<cita literal de los hallazgos>», que no aparece en la conclusión / aparece en el punto N."`;
 
-  const systemPt = `Você é um verificador de fatos e triagem radiológico. Recebe os ACHADOS de um laudo e um rascunho da sua CONCLUSÃO. Confira DUAS coisas, nada mais:
+  const systemPt = `Você é um verificador radiológico. Recebe os ACHADOS de um laudo e sua CONCLUSÃO. Avisa o radiologista de DUAS coisas, nada mais:
 
-A) FATOS: que cada afirmação concreta da conclusão (medidas, lateralidade, órgão ou localização, presença ou ausência de um achado, comparação com exame prévio) está respaldada pelos achados.
-B) TRIAGEM: que nenhum achado AGUDO ou URGENTE dos achados (ex: pneumotórax, hemorragia, isquemia, perfuração, torção, fratura instável, coleção sob tensão, sinais de alarme) tenha ficado FORA da conclusão, ou esteja presente mas enterrado em vez de ser o primeiro ponto.
+A) FATOS: alguma afirmação concreta da conclusão (medida, lateralidade, órgão ou localização, presença ou ausência de um achado, comparação com exame prévio) que NÃO coincida com o que dizem os achados.
+B) PRIORIDADE: algum achado agudo JÁ DESCRITO NOS ACHADOS que não apareça na conclusão, ou que apareça abaixo de achados menos urgentes.
 
 NÃO avalie estilo, redação ou brevidade.
-NÃO aponte como erro que a conclusão agrupe, resuma ou omita achados crônicos ou clinicamente irrelevantes — isso é normal e correto em uma conclusão. A triagem (B) é SOMENTE para achados agudos/urgentes, não para qualquer omissão.
+NÃO aponte como erro que a conclusão agrupe, resuma ou omita achados crônicos ou clinicamente irrelevantes — isso é normal e correto em uma conclusão. (B) é SOMENTE para achados agudos, não para qualquer omissão.
+NÃO interprete, não diagnostique e não proponha texto novo: limite-se a citar o que já está escrito nos achados. Se os achados não dizem, você também não diz.
 
 FORMATO DE RESPOSTA (nada além disso):
 - Se não houver problema: responda EXATAMENTE "OK".
-- Se houver problemas: no máximo 3, uma frase breve e acionável por linha, sem preâmbulo nem explicações.
-  - Para (A): indique o que a conclusão diz versus o que os achados dizem, com o dado correto.
-  - Para (B): indique o achado agudo omitido ou mal priorizado, já redigido como o ponto que deveria ser adicionado ou adiantado (com seus dados descritivos tirados dos achados), para que possa ser inserido ou reordenado diretamente.`;
+- Se houver problemas: no máximo 3, uma frase breve por linha, sem preâmbulo nem explicações, dirigida ao radiologista.
+  - Para (A): "A conclusão diz X, mas os achados dizem Y."
+  - Para (B): "Os achados descrevem «<citação literal dos achados>», que não aparece na conclusão / aparece no ponto N."`;
 
-  const systemEn = `You are a radiology fact-check and triage verifier. You receive the FINDINGS of a report and a draft of its CONCLUSION. Check TWO things, nothing else:
+  const systemEn = `You are a radiology verifier. You receive the FINDINGS of a report and its CONCLUSION. You alert the radiologist to TWO things, nothing else:
 
-A) FACTS: every concrete claim in the conclusion (measurements, laterality, organ or location, presence or absence of a finding, comparison with a prior study) is supported by the findings.
-B) TRIAGE: no ACUTE or URGENT finding in the findings (e.g. pneumothorax, hemorrhage, ischemia, perforation, torsion, unstable fracture, tension collection, alarm signs) was left OUT of the conclusion, or is present but buried instead of being the first point.
+A) FACTS: any concrete claim in the conclusion (measurement, laterality, organ or location, presence or absence of a finding, comparison with a prior study) that does NOT match what the findings say.
+B) PRIORITY: any acute finding ALREADY DESCRIBED IN THE FINDINGS that is missing from the conclusion, or that appears below less urgent findings.
 
 Do NOT evaluate style, wording, or brevity.
-Do NOT flag the conclusion grouping, summarizing, or omitting chronic or clinically irrelevant findings — that is normal and correct in a conclusion. Triage (B) is ONLY for acute/urgent findings, not any omission.
+Do NOT flag the conclusion grouping, summarizing, or omitting chronic or clinically irrelevant findings — that is normal and correct in a conclusion. (B) is ONLY for acute findings, not any omission.
+Do NOT interpret, do NOT diagnose, and do NOT propose new text: quote only what the findings already say. If the findings do not say it, neither do you.
 
 RESPONSE FORMAT (nothing else):
 - If there is no issue: respond EXACTLY "OK".
-- If there are issues: at most 3, one short actionable sentence per line, no preamble, no explanations.
-  - For (A): state what the conclusion says versus what the findings say, with the correct data.
-  - For (B): state the omitted or mis-prioritized acute finding, already phrased as the point to add or move up (with its descriptive data taken from the findings), so it can be inserted or reordered directly.`;
+- If there are issues: at most 3, one short sentence per line, no preamble, no explanations, addressed to the radiologist.
+  - For (A): "The conclusion says X, but the findings say Y."
+  - For (B): "The findings describe '<verbatim quote from the findings>', which is missing from the conclusion / appears at point N."`;
 
   const system = lang === "es" ? systemEs : lang === "pt" ? systemPt : systemEn;
   const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
-  const conclusionLabel = lang === "es" ? "Borrador de conclusión" : lang === "pt" ? "Rascunho da conclusão" : "Draft conclusion";
+  const conclusionLabel = lang === "es" ? "Conclusión" : lang === "pt" ? "Conclusão" : "Conclusion";
   const user = `${findingsLabel}:\n${params.findingsText}\n\n${conclusionLabel}:\n${params.draftConclusion}`;
 
   return { system, user };
