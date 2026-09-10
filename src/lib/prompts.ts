@@ -1523,6 +1523,9 @@ export function buildConclusionPrompt(params: {
   isCardiacMri?: boolean;
   isRecistStudy?: boolean;
   recistConfig?: RecistConfig;
+  /** Findings the radiologist explicitly picked; when set, the model covers
+   *  exactly these instead of deciding for itself what is relevant. */
+  selectedFindings?: string[];
 }): { system: string; user: string } {
   if (params.isCardiacMri) {
     return buildCardiacConclusionPrompt({
@@ -1861,6 +1864,45 @@ GOLDEN RULE: when in doubt whether something is a diagnosis or an interpretation
   }
   const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
   userMsg += `${findingsLabel}:\n${params.findingsText}`;
+
+  // The radiologist picked the findings this conclusion must cover, so the
+  // model no longer decides what is relevant — the part of the job where its
+  // judgement diverges most from theirs. Scope only: the rules against
+  // diagnosing, interpreting and recommending still stand.
+  const selected = params.selectedFindings?.filter((s) => s.trim().length > 0) ?? [];
+  if (selected.length > 0) {
+    const list = selected.map((s) => `- ${s.trim()}`).join("\n");
+    const block = lang === "es"
+      ? `SELECCIÓN DEL RADIÓLOGO — MANDA SOBRE LAS REGLAS DE TRIAJE ANTERIORES:
+El radiólogo ha marcado exactamente qué hallazgos deben aparecer en la conclusión:
+${list}
+
+- Cubre TODOS los hallazgos de esta lista. Ninguno se descarta por parecer poco relevante: si está en la lista, va.
+- NO incluyas ningún otro hallazgo del informe que no esté en la lista.
+- El límite máximo de puntos NO se aplica aquí: usa los puntos que hagan falta para cubrir la lista, agrupando en un mismo punto los hallazgos anatómicamente relacionados.
+- Ordena los puntos por relevancia clínica${hasClinical ? ", empezando por el que responda a la pregunta clínica" : ""}.
+- SIGUEN VIGENTES sin excepción: describir sin diagnosticar, sin interpretaciones ni inferencias, sin recomendaciones, y no añadir ningún dato que no esté en los hallazgos.`
+      : lang === "pt"
+      ? `SELEÇÃO DO RADIOLOGISTA — PREVALECE SOBRE AS REGRAS DE TRIAGEM ANTERIORES:
+O radiologista marcou exatamente quais achados devem aparecer na conclusão:
+${list}
+
+- Cubra TODOS os achados desta lista. Nenhum se descarta por parecer pouco relevante: se está na lista, entra.
+- NÃO inclua nenhum outro achado do laudo que não esteja na lista.
+- O limite máximo de pontos NÃO se aplica aqui: use os pontos necessários para cobrir a lista, agrupando num mesmo ponto os achados anatomicamente relacionados.
+- Ordene os pontos por relevância clínica${hasClinical ? ", começando pelo que responde à pergunta clínica" : ""}.
+- CONTINUAM VÁLIDAS sem exceção: descrever sem diagnosticar, sem interpretações nem inferências, sem recomendações, e não acrescentar nenhum dado que não esteja nos achados.`
+      : `RADIOLOGIST'S SELECTION — OVERRIDES THE TRIAGE RULES ABOVE:
+The radiologist marked exactly which findings must appear in the conclusion:
+${list}
+
+- Cover EVERY finding on this list. None is dropped for seeming unimportant: if it is on the list, it goes in.
+- Do NOT include any other finding from the report that is not on the list.
+- The maximum point count does NOT apply here: use as many points as the list needs, grouping anatomically related findings into the same point.
+- Order the points by clinical relevance${hasClinical ? ", starting with the one that answers the clinical question" : ""}.
+- STILL IN FORCE without exception: describe without diagnosing, no interpretations or inferences, no recommendations, and add no data that is not in the findings.`;
+    userMsg += `\n\n${block}`;
+  }
 
   return { system, user: userMsg };
 }

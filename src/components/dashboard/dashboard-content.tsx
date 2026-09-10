@@ -42,7 +42,7 @@ import {
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, type TraceData } from "./trace-highlight";
+import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { RemotePhoneDictation } from "@/components/dashboard/remote-phone-dictation";
@@ -182,6 +182,10 @@ export function DashboardContent() {
   // hover highlighting. Never awaited by the generation flow itself.
   const [conclusionLinksByStyle, setConclusionLinksByStyle] = useState<Record<string, { point: number; quote: string }[]>>({});
   const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
+  // "Redo conclusion": the radiologist picks which findings it must cover,
+  // pre-ticked with the ones the AI actually used the first time round.
+  const [pickMode, setPickMode] = useState(false);
+  const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
@@ -923,6 +927,8 @@ export function DashboardContent() {
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
     setHoveredConclusionPoint(null);
+    setPickMode(false);
+    setPickedSentences(new Set());
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1736,7 +1742,139 @@ export function DashboardContent() {
     if (!match) return null;
     return { start: match.start, end: match.end, colorIdx: 0, fragment: hoveredLink.quote, isLinked: true as const };
   }, [hoveredLink, findings]);
-  const findingsHighlightsToShow = hoveredFindingsSpan ? [hoveredFindingsSpan] : findingsHighlights;
+  // ── Redo conclusion from picked findings ──────────────────────
+  const findingsSentences = useMemo(() => splitFindingsSentences(findings), [findings]);
+  const pickHighlights = useMemo(() => {
+    if (!pickMode) return [];
+    return findingsSentences.map((s, i) => ({
+      start: s.start,
+      end: s.end,
+      colorIdx: 0,
+      fragment: s.text,
+      isSelectable: true as const,
+      isSelected: pickedSentences.has(i),
+      spanIndex: i,
+    }));
+  }, [pickMode, findingsSentences, pickedSentences]);
+
+  // Picking overrides both the hover spotlight and the dictation trace: while
+  // choosing, the findings box shows one thing only — what goes in or out.
+  const findingsHighlightsToShow = pickMode
+    ? pickHighlights
+    : hoveredFindingsSpan
+    ? [hoveredFindingsSpan]
+    : findingsHighlights;
+
+  function startPickMode() {
+    // Pre-tick what the AI used, so the radiologist edits a selection instead
+    // of building one from scratch. Falls back to empty if the review call
+    // hasn't landed (or found nothing), which is still a usable starting point.
+    const preset = new Set<number>();
+    for (const link of conclusionLinks) {
+      const match = findBestMatch(findings, link.quote);
+      if (!match) continue;
+      findingsSentences.forEach((s, i) => {
+        if (match.start < s.end && match.end > s.start) preset.add(i);
+      });
+    }
+    setPickedSentences(preset);
+    setHoveredConclusionPoint(null);
+    setPickMode(true);
+  }
+
+  function togglePickedSentence(index: number) {
+    setPickedSentences((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
+  async function redoConclusionFromPicked() {
+    if (!selectedTemplate || pickedSentences.size === 0) return;
+    const style = conclusionStyle;
+    const selected = [...pickedSentences]
+      .sort((a, b) => a - b)
+      .map((i) => findingsSentences[i]?.text)
+      .filter((s): s is string => !!s);
+    const studyName = selectedTemplate.name +
+      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
+    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
+    const findingsSnapshot = findings;
+
+    setPickMode(false);
+    setLoadingConcStyles((prev) => ({ ...prev, [style]: true }));
+    setConclusionVerifyByStyle((prev) => ({ ...prev, [style]: null }));
+    setConclusionLinksByStyle((prev) => ({ ...prev, [style]: [] }));
+    setStatusExpanded(null);
+
+    try {
+      const res = await fetch("/api/generate/conclusion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          findingsText: findingsSnapshot,
+          clinicalInfo,
+          modality: selectedTemplate.modality,
+          studyType: studyName,
+          conclusionStyle: style,
+          outputLanguage,
+          selectedFindings: selected,
+          ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
+          ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
+        }),
+      });
+
+      if (!res.ok || !res.body) {
+        toast.error(t("gen_error_conclusion"));
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+      let streamError = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (chunk.includes("__STREAM_ERROR__:")) {
+          streamError = chunk.split("__STREAM_ERROR__:")[1] || "AI provider error";
+          break;
+        }
+        text += chunk;
+        setConclusionVersions((prev) => ({ ...prev, [style]: cleanReport(text) }));
+      }
+
+      if (streamError) {
+        toast.error(t("gen_error") + ": " + streamError);
+        return;
+      }
+
+      const cleaned = cleanReport(text);
+      setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+      reportDirtyRef.current = true;
+
+      // Re-review the new text (off the critical path, same as first time).
+      fetch("/api/generate/conclusion-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ findingsText: findingsSnapshot, conclusionText: cleaned, outputLanguage }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data) return;
+          if (data.links?.length) setConclusionLinksByStyle((prev) => ({ ...prev, [style]: data.links }));
+          if (data.verify?.status) setConclusionVerifyByStyle((prev) => ({ ...prev, [style]: data.verify }));
+        })
+        .catch(() => {});
+    } catch (e) {
+      toast.error(t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")));
+    } finally {
+      setLoadingConcStyles((prev) => ({ ...prev, [style]: false }));
+    }
+  }
 
   async function saveReportQuietly(auto = false) {
     if (!selectedTemplate || !findings) return;
@@ -1871,6 +2009,8 @@ export function DashboardContent() {
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
     setHoveredConclusionPoint(null);
+    setPickMode(false);
+    setPickedSentences(new Set());
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2629,6 +2769,33 @@ export function DashboardContent() {
               </div>
             )}
 
+            {pickMode && (
+              <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-xs text-emerald-800 dark:text-emerald-200 flex-1 min-w-[220px]">
+                  {t("dash.pick_findings_hint")}
+                  <span className="ml-1.5 font-semibold">
+                    {t("dash.pick_findings_count").replace("{0}", String(pickedSentences.size))}
+                  </span>
+                </span>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={pickedSentences.size === 0}
+                  onClick={redoConclusionFromPicked}
+                >
+                  {t("dash.pick_findings_apply")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => setPickMode(false)}
+                >
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            )}
+
             {/* Unified report card: findings + conclusion in one box, tools on the bottom edge.
                 Slight brand tint + accent border so the final report reads as a distinct document. */}
             <Card className="border-brand-soft shadow-md bg-[hsl(var(--primary)/0.02)] dark:bg-[hsl(var(--primary)/0.05)]">
@@ -2651,9 +2818,12 @@ export function DashboardContent() {
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
               minHeight={140}
               traceHighlights={findingsHighlightsToShow.length > 0 ? findingsHighlightsToShow : undefined}
-              traceLocked={loadingTrace}
+              traceLocked={loadingTrace || pickMode}
               isDark={isDark}
               linkTooltip={t("dash.conclusion_link_tooltip")}
+              onClickHighlight={(span) => {
+                if (pickMode && span.spanIndex !== undefined) togglePickedSentence(span.spanIndex);
+              }}
             />
 
             <OutputCard
@@ -2674,6 +2844,18 @@ export function DashboardContent() {
               onHoverHighlight={(span) => setHoveredConclusionPoint(span?.pointIndex ?? null)}
               isDark={isDark}
               headerExtra={
+                <div className="flex items-center gap-1.5">
+                  {conclusion && !loadingConcStyles[conclusionStyle] && !pickMode && (
+                    <button
+                      type="button"
+                      onClick={startPickMode}
+                      className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
+                      title={t("dash.redo_conclusion_hint")}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      {t("dash.redo_conclusion")}
+                    </button>
+                  )}
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
                   {(["concise", "grouped"] as const).map((s) => (
                     <button
@@ -2699,6 +2881,7 @@ export function DashboardContent() {
                       {t(`dash.conclusion_${s}`)}
                     </button>
                   ))}
+                </div>
                 </div>
               }
             />
@@ -3129,6 +3312,7 @@ function OutputCard({
   bare = false,
   airy = false,
   onHoverHighlight,
+  onClickHighlight,
   linkTooltip,
 }: {
   title: string;
@@ -3141,7 +3325,7 @@ function OutputCard({
   headerExtra?: React.ReactNode;
   footerExtra?: React.ReactNode;
   loadingLabel?: string;
-  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isLinked?: boolean; isHoverZone?: boolean; pointIndex?: number }[];
+  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isLinked?: boolean; isHoverZone?: boolean; pointIndex?: number; isSelectable?: boolean; isSelected?: boolean; spanIndex?: number }[];
   traceLocked?: boolean;
   isDark?: boolean;
   bare?: boolean;
@@ -3149,6 +3333,8 @@ function OutputCard({
   airy?: boolean;
   /** Fired on hover enter/leave of an isHoverZone span (conclusion points). */
   onHoverHighlight?: (span: { pointIndex?: number } | null) => void;
+  /** Fired when an isSelectable span is clicked (findings pick list). */
+  onClickHighlight?: (span: { spanIndex?: number }) => void;
   /** Tooltip for the findings-side isLinked spotlight span. */
   linkTooltip?: string;
 }) {
@@ -3216,7 +3402,7 @@ function OutputCard({
             {value}
           </div>
         ) : showTrace && !editing ? (
-          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} linkTooltip={linkTooltip} />
+          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} onClickSpan={onClickHighlight} linkTooltip={linkTooltip} />
         ) : (
           <AutoGrowTextarea
             value={value}

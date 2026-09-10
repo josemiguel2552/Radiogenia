@@ -71,6 +71,12 @@ interface HighlightSpan {
   isHoverZone?: boolean;
   /** Which conclusion point this span represents (set with isHoverZone). */
   pointIndex?: number;
+  /** Findings-side pick list: a sentence the radiologist can toggle in or out
+   *  of the conclusion. Coloured when isSelected, plain otherwise. */
+  isSelectable?: boolean;
+  isSelected?: boolean;
+  /** Index of this sentence in the findings sentence list (with isSelectable). */
+  spanIndex?: number;
 }
 
 export function findBestMatch(text: string, fragment: string): { start: number; end: number } | null {
@@ -170,10 +176,35 @@ function renderParts(
   isDark: boolean,
   onHoverSpan?: (span: HighlightSpan | null) => void,
   linkTooltip?: string,
+  onClickSpan?: (span: HighlightSpan) => void,
 ) {
   return parts.map((p, i) => {
     if (!p.highlight) return <span key={i}>{p.text}</span>;
     const h = p.highlight;
+
+    if (h.isSelectable) {
+      return (
+        <span
+          key={i}
+          role="button"
+          tabIndex={0}
+          onClick={() => onClickSpan?.(h)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onClickSpan?.(h);
+            }
+          }}
+          className={`rounded px-0.5 cursor-pointer transition-colors ${
+            h.isSelected
+              ? "bg-emerald-200/70 dark:bg-emerald-800/50 ring-1 ring-emerald-400 dark:ring-emerald-600"
+              : "hover:bg-gray-200 dark:hover:bg-gray-700"
+          }`}
+        >
+          {p.text}
+        </span>
+      );
+    }
 
     if (h.isHoverZone) {
       return (
@@ -226,6 +257,7 @@ export function HighlightedText({
   isDark,
   onHoverSpan,
   linkTooltip,
+  onClickSpan,
 }: {
   text: string;
   highlights: HighlightSpan[];
@@ -234,14 +266,62 @@ export function HighlightedText({
   onHoverSpan?: (span: HighlightSpan | null) => void;
   /** Tooltip text for an isLinked span (findings-side spotlight). */
   linkTooltip?: string;
+  /** Fired when an isSelectable span is clicked (findings pick list). */
+  onClickSpan?: (span: HighlightSpan) => void;
 }) {
   const parts = useMemo(() => buildParts(text, highlights), [text, highlights]);
 
   return (
     <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] min-h-[80px]">
-      {renderParts(parts, isDark, onHoverSpan, linkTooltip)}
+      {renderParts(parts, isDark, onHoverSpan, linkTooltip, onClickSpan)}
     </div>
   );
+}
+
+/**
+ * Splits structured findings into the individual sentences the radiologist
+ * can pick from when rebuilding a conclusion. Section labels ("Liver:") are
+ * skipped — only the descriptions are selectable — and a period between two
+ * digits is treated as a decimal ("3.5 cm"), not a sentence end.
+ */
+export function splitFindingsSentences(text: string): { start: number; end: number; text: string }[] {
+  const out: { start: number; end: number; text: string }[] = [];
+  let lineStart = 0;
+
+  for (const line of text.split("\n")) {
+    const lineEnd = lineStart + line.length;
+
+    // A short "Label:" prefix is the section name, not part of the finding.
+    const colon = line.indexOf(":");
+    let cursor = colon !== -1 && colon < 60 ? lineStart + colon + 1 : lineStart;
+    while (cursor < lineEnd && /\s/.test(text[cursor])) cursor++;
+
+    let segStart = cursor;
+    for (let i = cursor; i < lineEnd; i++) {
+      if (text[i] !== ".") continue;
+      const prev = text[i - 1] || "";
+      const next = text[i + 1];
+      if (/\d/.test(prev) && next !== undefined && /\d/.test(next)) continue;
+      if (next !== undefined && !/\s/.test(next)) continue;
+
+      const seg = text.slice(segStart, i + 1);
+      if (seg.trim().length >= 3) out.push({ start: segStart, end: i + 1, text: seg.trim() });
+
+      let j = i + 1;
+      while (j < lineEnd && /\s/.test(text[j])) j++;
+      segStart = j;
+      i = j - 1;
+    }
+
+    if (segStart < lineEnd) {
+      const seg = text.slice(segStart, lineEnd);
+      if (seg.trim().length >= 3) out.push({ start: segStart, end: lineEnd, text: seg.trim() });
+    }
+
+    lineStart = lineEnd + 1; // the "\n" the split removed
+  }
+
+  return out;
 }
 
 /**
