@@ -16,7 +16,7 @@ import {
 /** Safe, current default model per provider when used as a fallback. */
 export const FALLBACK_MODELS: Partial<Record<AIProvider, string>> = {
   openai: "gpt-4o-mini",
-  deepseek: "deepseek-v4-flash",
+  deepseek: "deepseek-flash",
   gemini: "gemini-2.0-flash",
   claude: "claude-haiku-4-5-20251001",
   openrouter: "qwen/qwen-2.5-72b-instruct",

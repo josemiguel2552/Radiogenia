@@ -108,13 +108,18 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
           "Content-Type": "application/json",
         },
         buildBody: (model, system, user, maxTokens) => {
-          // DeepSeek retired the legacy model names on 2026-07-24 (the API now
-          // only accepts deepseek-v4-pro / deepseek-v4-flash). Since April 2026
-          // "deepseek-chat" was already an alias FOR v4-flash, so remapping to
-          // v4-flash preserves the exact model (and cost) previously in use;
-          // the thinking-mode "deepseek-reasoner" maps to the advanced v4-pro.
-          const resolved =
-            model === "deepseek-chat" ? "deepseek-v4-flash" : model === "deepseek-reasoner" ? "deepseek-v4-pro" : model;
+          // Names DeepSeek has already retired resolve to deepseek-flash
+          // (V4.1 Flash) here rather than leaning on DeepSeek's own
+          // compatibility routing, which it calls temporary. deepseek-v4-pro
+          // is deliberately NOT remapped: it is still its own model until
+          // DeepSeek routes it on 2026-09-14, and which model replaces it is
+          // an operator's decision, not a silent one.
+          const LEGACY: Record<string, string> = {
+            "deepseek-chat": "deepseek-flash",
+            "deepseek-v4-flash": "deepseek-flash",
+            "deepseek-reasoner": "deepseek-v4-pro",
+          };
+          const resolved = LEGACY[model] ?? model;
           return {
             model: resolved,
             messages: [
@@ -123,11 +128,9 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
             ],
             max_tokens: maxTokens,
             temperature: 0,
-            // V4 models default to thinking mode when called by their new names,
-            // which adds latency and changes prose. The old "deepseek-chat" was
-            // v4-flash with thinking OFF, so disable it to match that behavior;
-            // v4-pro keeps thinking on (that was "deepseek-reasoner"'s behavior).
-            ...(resolved === "deepseek-v4-flash" ? { thinking: { type: "disabled" } } : {}),
+            // Flash defaults to thinking mode at "high" effort, which adds
+            // latency and changes the prose — neither of which a report wants.
+            ...(resolved === "deepseek-flash" ? { thinking: { type: "disabled" } } : {}),
           };
         },
         extractText: (data: unknown) => {
