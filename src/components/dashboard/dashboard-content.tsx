@@ -39,6 +39,7 @@ import {
   Search,
   Tags,
   ClipboardCheck,
+  ListChecks,
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
@@ -186,6 +187,14 @@ export function DashboardContent() {
   // pre-ticked with the ones the AI actually used the first time round.
   const [pickMode, setPickMode] = useState(false);
   const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
+  // The conclusion a rewrite replaced — with its review, so undoing restores
+  // the state it was in, not just its text.
+  const [previousConclusion, setPreviousConclusion] = useState<{
+    style: string;
+    text: string;
+    verify: { status: "ok" | "issues"; notes?: string } | null;
+    links: { point: number; quote: string }[];
+  } | null>(null);
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
@@ -929,6 +938,7 @@ export function DashboardContent() {
     setHoveredConclusionPoint(null);
     setPickMode(false);
     setPickedSentences(new Set());
+    setPreviousConclusion(null);
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1744,6 +1754,22 @@ export function DashboardContent() {
   }, [hoveredLink, findings]);
   // ── Redo conclusion from picked findings ──────────────────────
   const findingsSentences = useMemo(() => splitFindingsSentences(findings), [findings]);
+
+  // Which sentences carry something the radiologist actually dictated — the
+  // trace already worked this out to draw its highlights. Everything else is
+  // normality boilerplate, which is almost never what a conclusion needs, so
+  // it gets faded rather than competing for attention.
+  const dictatedSentences = useMemo(() => {
+    const set = new Set<number>();
+    for (const h of findingsHighlights) {
+      if (h.isUnmatched || h.isHallucination) continue;
+      findingsSentences.forEach((s, i) => {
+        if (h.start < s.end && h.end > s.start) set.add(i);
+      });
+    }
+    return set;
+  }, [findingsHighlights, findingsSentences]);
+
   const pickHighlights = useMemo(() => {
     if (!pickMode) return [];
     return findingsSentences.map((s, i) => ({
@@ -1753,9 +1779,12 @@ export function DashboardContent() {
       fragment: s.text,
       isSelectable: true as const,
       isSelected: pickedSentences.has(i),
+      // Without trace data nothing is known to be dictated — fading the whole
+      // box grey would be worse than fading nothing.
+      isDimmed: dictatedSentences.size > 0 && !dictatedSentences.has(i),
       spanIndex: i,
     }));
-  }, [pickMode, findingsSentences, pickedSentences]);
+  }, [pickMode, findingsSentences, pickedSentences, dictatedSentences]);
 
   // Picking overrides both the hover spotlight and the dictation trace: while
   // choosing, the findings box shows one thing only — what goes in or out.
@@ -1777,7 +1806,9 @@ export function DashboardContent() {
         if (match.start < s.end && match.end > s.start) preset.add(i);
       });
     }
-    setPickedSentences(preset);
+    // No links yet (the review is still in flight, or it found none): start
+    // from everything dictated rather than from an empty selection.
+    setPickedSentences(preset.size > 0 ? preset : new Set(dictatedSentences));
     setHoveredConclusionPoint(null);
     setPickMode(true);
   }
@@ -1791,6 +1822,42 @@ export function DashboardContent() {
     });
   }
 
+  function pickAllDictated() {
+    setPickedSentences(new Set(dictatedSentences));
+  }
+
+  const redoPickedRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    redoPickedRef.current = () => { void redoConclusionFromPicked(); };
+  });
+
+  // Esc backs out, Cmd/Ctrl+Enter rewrites — so a correction can be made
+  // without the mouse leaving the findings text.
+  useEffect(() => {
+    if (!pickMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setPickMode(false);
+      } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        redoPickedRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pickMode]);
+
+  function undoConclusionRewrite() {
+    if (!previousConclusion) return;
+    const { style, text, verify, links } = previousConclusion;
+    setConclusionVersions((prev) => ({ ...prev, [style]: text }));
+    setConclusionVerifyByStyle((prev) => ({ ...prev, [style]: verify }));
+    setConclusionLinksByStyle((prev) => ({ ...prev, [style]: links }));
+    setPreviousConclusion(null);
+    reportDirtyRef.current = true;
+  }
+
   async function redoConclusionFromPicked() {
     if (!selectedTemplate || pickedSentences.size === 0) return;
     const style = conclusionStyle;
@@ -1802,6 +1869,12 @@ export function DashboardContent() {
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
     const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
     const findingsSnapshot = findings;
+    const replaced = {
+      style,
+      text: conclusionVersions[style] || "",
+      verify: conclusionVerifyByStyle[style] || null,
+      links: conclusionLinksByStyle[style] || [],
+    };
 
     setPickMode(false);
     setLoadingConcStyles((prev) => ({ ...prev, [style]: true }));
@@ -1854,6 +1927,7 @@ export function DashboardContent() {
 
       const cleaned = cleanReport(text);
       setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+      if (replaced.text.trim()) setPreviousConclusion(replaced);
       reportDirtyRef.current = true;
 
       // Re-review the new text (off the critical path, same as first time).
@@ -2011,6 +2085,7 @@ export function DashboardContent() {
     setHoveredConclusionPoint(null);
     setPickMode(false);
     setPickedSentences(new Set());
+    setPreviousConclusion(null);
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2770,29 +2845,54 @@ export function DashboardContent() {
             )}
 
             {pickMode && (
-              <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                <span className="text-xs text-emerald-800 dark:text-emerald-200 flex-1 min-w-[220px]">
-                  {t("dash.pick_findings_hint")}
-                  <span className="ml-1.5 font-semibold">
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100">
+                    {t("dash.pick_findings_title")}
+                  </span>
+                  <span className="text-xs text-emerald-800/80 dark:text-emerald-200/80 flex-1 min-w-[200px]">
+                    {t("dash.pick_findings_hint")}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100 mr-1">
                     {t("dash.pick_findings_count").replace("{0}", String(pickedSentences.size))}
                   </span>
-                </span>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs"
-                  disabled={pickedSentences.size === 0}
-                  onClick={redoConclusionFromPicked}
-                >
-                  {t("dash.pick_findings_apply")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs"
-                  onClick={() => setPickMode(false)}
-                >
-                  {t("common.cancel")}
-                </Button>
+                  {dictatedSentences.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={pickAllDictated}
+                      className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors"
+                    >
+                      {t("dash.pick_findings_all_dictated")}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPickedSentences(new Set())}
+                    disabled={pickedSentences.size === 0}
+                    className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors disabled:opacity-40"
+                  >
+                    {t("dash.pick_findings_none")}
+                  </button>
+                  <div className="flex-1" />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => setPickMode(false)}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={pickedSentences.size === 0}
+                    onClick={redoConclusionFromPicked}
+                  >
+                    {t("dash.pick_findings_apply")}
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -2840,11 +2940,22 @@ export function DashboardContent() {
                 reportDirtyRef.current = true;
               }}
               minHeight={110}
-              traceHighlights={conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
+              traceHighlights={!pickMode && conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
               onHoverHighlight={(span) => setHoveredConclusionPoint(span?.pointIndex ?? null)}
               isDark={isDark}
               headerExtra={
                 <div className="flex items-center gap-1.5">
+                  {previousConclusion?.style === conclusionStyle && !loadingConcStyles[conclusionStyle] && !pickMode && (
+                    <button
+                      type="button"
+                      onClick={undoConclusionRewrite}
+                      className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors"
+                      title={t("dash.undo_conclusion_hint")}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      {t("dash.undo_conclusion")}
+                    </button>
+                  )}
                   {conclusion && !loadingConcStyles[conclusionStyle] && !pickMode && (
                     <button
                       type="button"
@@ -2852,7 +2963,7 @@ export function DashboardContent() {
                       className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
                       title={t("dash.redo_conclusion_hint")}
                     >
-                      <RotateCcw className="h-3 w-3" />
+                      <ListChecks className="h-3 w-3" />
                       {t("dash.redo_conclusion")}
                     </button>
                   )}

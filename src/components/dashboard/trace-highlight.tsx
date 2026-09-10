@@ -75,6 +75,9 @@ interface HighlightSpan {
    *  of the conclusion. Coloured when isSelected, plain otherwise. */
   isSelectable?: boolean;
   isSelected?: boolean;
+  /** Boilerplate normality the radiologist never dictated: still pickable,
+   *  but faded so the dictated findings are what the eye lands on. */
+  isDimmed?: boolean;
   /** Index of this sentence in the findings sentence list (with isSelectable). */
   spanIndex?: number;
 }
@@ -198,6 +201,8 @@ function renderParts(
           className={`rounded px-0.5 cursor-pointer transition-colors ${
             h.isSelected
               ? "bg-emerald-200/70 dark:bg-emerald-800/50 ring-1 ring-emerald-400 dark:ring-emerald-600"
+              : h.isDimmed
+              ? "text-gray-400 dark:text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
               : "hover:bg-gray-200 dark:hover:bg-gray-700"
           }`}
         >
