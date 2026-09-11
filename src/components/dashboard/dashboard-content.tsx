@@ -187,6 +187,9 @@ export function DashboardContent() {
   // pre-ticked with the ones the AI actually used the first time round.
   const [pickMode, setPickMode] = useState(false);
   const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
+  // One-line "make it shorter / lead with the pneumothorax" reshaping.
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustText, setAdjustText] = useState("");
   // The conclusion a rewrite replaced — with its review, so undoing restores
   // the state it was in, not just its text.
   const [previousConclusion, setPreviousConclusion] = useState<{
@@ -939,6 +942,8 @@ export function DashboardContent() {
     setPickMode(false);
     setPickedSentences(new Set());
     setPreviousConclusion(null);
+    setAdjustOpen(false);
+    setAdjustText("");
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1858,16 +1863,13 @@ export function DashboardContent() {
     reportDirtyRef.current = true;
   }
 
-  async function redoConclusionFromPicked() {
-    if (!selectedTemplate || pickedSentences.size === 0) return;
+  /**
+   * Streams a replacement conclusion over the current one, keeping the old
+   * version (and its review) so "Undo" can put it back. Shared by rewriting
+   * from picked findings and by a one-line adjustment.
+   */
+  async function replaceConclusion(url: string, payload: Record<string, unknown>) {
     const style = conclusionStyle;
-    const selected = [...pickedSentences]
-      .sort((a, b) => a - b)
-      .map((i) => findingsSentences[i]?.text)
-      .filter((s): s is string => !!s);
-    const studyName = selectedTemplate.name +
-      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
-    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
     const findingsSnapshot = findings;
     const replaced = {
       style,
@@ -1876,27 +1878,16 @@ export function DashboardContent() {
       links: conclusionLinksByStyle[style] || [],
     };
 
-    setPickMode(false);
     setLoadingConcStyles((prev) => ({ ...prev, [style]: true }));
     setConclusionVerifyByStyle((prev) => ({ ...prev, [style]: null }));
     setConclusionLinksByStyle((prev) => ({ ...prev, [style]: [] }));
     setStatusExpanded(null);
 
     try {
-      const res = await fetch("/api/generate/conclusion", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          findingsText: findingsSnapshot,
-          clinicalInfo,
-          modality: selectedTemplate.modality,
-          studyType: studyName,
-          conclusionStyle: style,
-          outputLanguage,
-          selectedFindings: selected,
-          ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
-          ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok || !res.body) {
@@ -1922,6 +1913,7 @@ export function DashboardContent() {
 
       if (streamError) {
         toast.error(t("gen_error") + ": " + streamError);
+        setConclusionVersions((prev) => ({ ...prev, [style]: replaced.text }));
         return;
       }
 
@@ -1948,6 +1940,42 @@ export function DashboardContent() {
     } finally {
       setLoadingConcStyles((prev) => ({ ...prev, [style]: false }));
     }
+  }
+
+  async function redoConclusionFromPicked() {
+    if (!selectedTemplate || pickedSentences.size === 0) return;
+    const selected = [...pickedSentences]
+      .sort((a, b) => a - b)
+      .map((i) => findingsSentences[i]?.text)
+      .filter((s): s is string => !!s);
+    const studyName = selectedTemplate.name +
+      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
+    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
+
+    setPickMode(false);
+    await replaceConclusion("/api/generate/conclusion", {
+      findingsText: findings,
+      clinicalInfo,
+      modality: selectedTemplate.modality,
+      studyType: studyName,
+      conclusionStyle: conclusionStyle,
+      outputLanguage,
+      selectedFindings: selected,
+      ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
+      ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
+    });
+  }
+
+  async function adjustConclusion(instruction: string) {
+    const text = instruction.trim();
+    if (!text || !conclusion.trim()) return;
+    setAdjustOpen(false);
+    setAdjustText("");
+    await replaceConclusion("/api/generate/conclusion-adjust", {
+      conclusionText: conclusion,
+      instruction: text,
+      outputLanguage,
+    });
   }
 
   async function saveReportQuietly(auto = false) {
@@ -2086,6 +2114,8 @@ export function DashboardContent() {
     setPickMode(false);
     setPickedSentences(new Set());
     setPreviousConclusion(null);
+    setAdjustOpen(false);
+    setAdjustText("");
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2959,6 +2989,19 @@ export function DashboardContent() {
                   {conclusion && !loadingConcStyles[conclusionStyle] && !pickMode && (
                     <button
                       type="button"
+                      onClick={() => { setAdjustOpen((v) => !v); setAdjustText(""); }}
+                      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
+                        adjustOpen ? "text-brand" : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                      }`}
+                      title={t("dash.adjust_conclusion_hint")}
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      {t("dash.adjust_conclusion")}
+                    </button>
+                  )}
+                  {conclusion && !loadingConcStyles[conclusionStyle] && !pickMode && (
+                    <button
+                      type="button"
                       onClick={startPickMode}
                       className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
                       title={t("dash.redo_conclusion_hint")}
@@ -2994,6 +3037,55 @@ export function DashboardContent() {
                   ))}
                 </div>
                 </div>
+              }
+              footerExtra={
+                adjustOpen && !loadingConcStyles[conclusionStyle] ? (
+                  <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] p-2 space-y-1.5">
+                    <div className="flex flex-wrap gap-1">
+                      {([
+                        ["dash.adjust_preset_shorter", "dash.adjust_instr_shorter"],
+                        ["dash.adjust_preset_detailed", "dash.adjust_instr_detailed"],
+                        ["dash.adjust_preset_urgency", "dash.adjust_instr_urgency"],
+                        ["dash.adjust_preset_merge", "dash.adjust_instr_merge"],
+                      ] as const).map(([label, instr]) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => adjustConclusion(t(instr))}
+                          className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-gray-600 dark:text-gray-300 hover:border-brand hover:text-brand transition-colors"
+                        >
+                          {t(label)}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        autoFocus
+                        value={adjustText}
+                        onChange={(e) => setAdjustText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            adjustConclusion(adjustText);
+                          } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            setAdjustOpen(false);
+                          }
+                        }}
+                        placeholder={t("dash.adjust_placeholder")}
+                        className="h-7 text-xs"
+                      />
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs shrink-0"
+                        disabled={!adjustText.trim()}
+                        onClick={() => adjustConclusion(adjustText)}
+                      >
+                        {t("dash.adjust_apply")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : undefined
               }
             />
 
