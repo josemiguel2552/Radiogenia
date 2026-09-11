@@ -39,7 +39,6 @@ import {
   Search,
   Tags,
   ClipboardCheck,
-  ListChecks,
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
@@ -1854,7 +1853,7 @@ export function DashboardContent() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        setConclusionTool("adjust");
+        setConclusionTool("none");
       } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         redoPickedRef.current();
@@ -2961,7 +2960,13 @@ export function DashboardContent() {
                   {conclusion && !conclusionBusy && (
                     <button
                       type="button"
-                      onClick={() => { setConclusionTool((v) => (v === "none" ? "adjust" : "none")); setAdjustText(""); }}
+                      onClick={() => {
+                        setAdjustText("");
+                        // Opens on step 1: correcting a conclusion starts by
+                        // saying what it should cover, not by rewording it.
+                        if (conclusionTool === "none") startPickMode();
+                        else setConclusionTool("none");
+                      }}
                       className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
                         conclusionTool !== "none"
                           ? "text-brand"
@@ -3016,10 +3021,45 @@ export function DashboardContent() {
                       ? "sticky bottom-2 z-10 shadow-lg backdrop-blur border-emerald-200 dark:border-emerald-800 bg-emerald-50/95 dark:bg-emerald-900/90"
                       : "border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)]"
                   } ${conclusionBusy ? "opacity-60 pointer-events-none" : ""}`}>
+                    {/* The order is the instruction: say what the conclusion
+                        must cover, then reword what comes out. */}
+                    <div className="flex items-center gap-1 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={startPickMode}
+                        className={`px-1.5 py-0.5 rounded font-medium transition-colors ${
+                          pickMode
+                            ? "bg-emerald-600 text-white"
+                            : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                        }`}
+                      >
+                        {t("dash.conclusion_step_pick")}
+                      </button>
+                      <ChevronRight className={`h-3 w-3 ${pickMode ? "text-emerald-600/60" : "text-gray-400"}`} />
+                      <button
+                        type="button"
+                        onClick={() => setConclusionTool("adjust")}
+                        className={`px-1.5 py-0.5 rounded font-medium transition-colors ${
+                          !pickMode
+                            ? "bg-brand text-white"
+                            : "text-emerald-800/70 dark:text-emerald-200/70 hover:text-emerald-900 dark:hover:text-emerald-100"
+                        }`}
+                      >
+                        {t("dash.conclusion_step_adjust")}
+                      </button>
+                      <div className="flex-1" />
+                      <button
+                        type="button"
+                        onClick={() => setConclusionTool("none")}
+                        className="p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                        title={t("common.cancel")}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     {pickMode ? (
                       <>
                         <p className="text-xs text-emerald-800 dark:text-emerald-200">
-                          <span className="font-semibold">{t("dash.pick_findings_title")}</span>{" "}
                           {t("dash.pick_findings_hint")}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -3044,9 +3084,6 @@ export function DashboardContent() {
                             {t("dash.pick_findings_none")}
                           </button>
                           <div className="flex-1" />
-                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setConclusionTool("adjust")}>
-                            {t("dash.pick_findings_back")}
-                          </Button>
                           <Button
                             size="sm"
                             className="h-7 text-xs"
@@ -3075,15 +3112,6 @@ export function DashboardContent() {
                               {t(label)}
                             </button>
                           ))}
-                          <div className="flex-1" />
-                          <button
-                            type="button"
-                            onClick={startPickMode}
-                            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-brand/40 text-brand hover:bg-brand/10 transition-colors"
-                          >
-                            <ListChecks className="h-3 w-3" />
-                            {t("dash.redo_conclusion")}
-                          </button>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Input
