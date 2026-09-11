@@ -949,11 +949,7 @@ export function DashboardContent() {
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
     setHoveredConclusionPoint(null);
-    setConclusionTool("none");
-    setPickedSentences(new Set());
-    setPickTouched(false);
-    setPreviousConclusion(null);
-    setAdjustText("");
+    resetReportTools();
     setInitialFindings("");
     setInitialConclusion("");
     setTraceData(null);
@@ -1875,6 +1871,22 @@ export function DashboardContent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [pickMode]);
 
+  /**
+   * Clears every editing tool's state. Called wherever the report on screen
+   * is replaced — generated, cleared, or restored — because these hold text
+   * from the report that was there before: an undo snapshot left behind
+   * would paste one patient's findings over another's.
+   */
+  function resetReportTools() {
+    setConclusionTool("none");
+    setPickedSentences(new Set());
+    setPickTouched(false);
+    setPreviousConclusion(null);
+    setAdjustText("");
+    setFindingsSel(null);
+    setSentenceUndo(null);
+  }
+
   const selectedFindingText = findingsSel ? findings.slice(findingsSel.start, findingsSel.end).trim() : "";
 
   async function improveSelectedSentence() {
@@ -2173,11 +2185,7 @@ export function DashboardContent() {
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
     setHoveredConclusionPoint(null);
-    setConclusionTool("none");
-    setPickedSentences(new Set());
-    setPickTouched(false);
-    setPreviousConclusion(null);
-    setAdjustText("");
+    resetReportTools();
     setInitialFindings("");
     setInitialConclusion("");
     setClinicalInfo("");
@@ -2214,6 +2222,7 @@ export function DashboardContent() {
     setCardiacTechniques(snap.cardiacTechniques);
     setTraceData(snap.traceData);
     setTraceActive(snap.traceActive);
+    resetReportTools();
     setLastSavedReportId(snap.lastSavedReportId);
     setGenerationDurationMs(snap.generationDurationMs);
     setErrorReported(snap.errorReported);
@@ -2977,7 +2986,13 @@ export function DashboardContent() {
               loading={loadingFindings}
               loadingLabel={t("gen.phase_findings")}
               value={findings}
-              onChange={(v) => { setFindings(v); reportDirtyRef.current = true; }}
+              onChange={(v) => {
+                setFindings(v);
+                // Hand edits are not part of the sentence rewrite, so undoing
+                // it must not be able to throw them away.
+                setSentenceUndo(null);
+                reportDirtyRef.current = true;
+              }}
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
               minHeight={140}
               traceHighlights={findingsHighlightsToShow.length > 0 ? findingsHighlightsToShow : undefined}
