@@ -41,7 +41,8 @@ import {
   ClipboardCheck,
   Plus,
 } from "lucide-react";
-import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
+import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan, type OutputLanguage } from "@/lib/types";
+import { checkFindingsCoherence } from "@/lib/findings-coherence";
 import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, selectionOffsetsWithin, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -1767,6 +1768,13 @@ export function DashboardContent() {
     return { start: match.start, end: match.end, colorIdx: 0, fragment: hoveredLink.quote, isLinked: true as const };
   }, [hoveredLink, findings]);
   // ── Redo conclusion from picked findings ──────────────────────
+  // Deterministic coherence check: runs on the text as it stands, with no
+  // model call, so it costs nothing and updates as the findings are edited.
+  const coherenceIssues = useMemo(
+    () => checkFindingsCoherence(findings, outputLanguage as OutputLanguage),
+    [findings, outputLanguage],
+  );
+
   const findingsSentences = useMemo(() => splitFindingsSentences(findings), [findings]);
 
   // Which sentences carry something the radiologist actually dictated — the
@@ -2861,11 +2869,12 @@ export function DashboardContent() {
             {/* Consolidated report status rail — one row of pills (findings
                 trace + conclusion fact-check) instead of a stack of separate
                 badges/cards, each expandable on click for its detail. */}
-            {(traceData || conclusionVerify) && (
+            {(traceData || conclusionVerify || coherenceIssues.length > 0) && (
               <div className="rounded-lg border bg-white dark:bg-gray-900 dark:border-gray-700 overflow-hidden">
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-wrap">
-                  {traceData && (() => {
-                    const traceOk = traceData.unmatched.length === 0 && traceData.hallucinations.length === 0;
+                  {(traceData || coherenceIssues.length > 0) && (() => {
+                    const traceOk = (!traceData || (traceData.unmatched.length === 0 && traceData.hallucinations.length === 0))
+                      && coherenceIssues.length === 0;
                     const active = statusExpanded === "trace";
                     return (
                       <button
@@ -2910,14 +2919,26 @@ export function DashboardContent() {
                     );
                   })()}
                 </div>
-                {statusExpanded === "trace" && traceData && (
+                {statusExpanded === "trace" && (traceData || coherenceIssues.length > 0) && (
                   <div className="border-t px-3 py-2 dark:border-gray-700">
                     {repairMessage && (
                       <p className="text-xs text-amber-700 dark:text-amber-300 mb-2 flex items-center gap-1.5">
                         <ShieldCheck className="h-3.5 w-3.5 shrink-0" />{repairMessage}
                       </p>
                     )}
-                    <TraceLegend trace={traceData} isDark={isDark} />
+                    {coherenceIssues.length > 0 && (
+                      <ul className="mb-2 space-y-1">
+                        {coherenceIssues.map((issue, i) => (
+                          <li key={`${issue.start}-${i}`} className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              <span className="font-medium">«{issue.fragment}»</span> — {issue.message}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {traceData && <TraceLegend trace={traceData} isDark={isDark} />}
                   </div>
                 )}
                 {statusExpanded === "conclusion" && conclusionVerify?.notes && (
