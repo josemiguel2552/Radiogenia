@@ -42,7 +42,7 @@ import {
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan } from "@/lib/types";
-import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, type TraceData } from "./trace-highlight";
+import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, selectionOffsetsWithin, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { RemotePhoneDictation } from "@/components/dashboard/remote-phone-dictation";
@@ -194,6 +194,10 @@ export function DashboardContent() {
   const [pickTouched, setPickTouched] = useState(false);
   // One-line "make it shorter / lead with the pneumothorax" reshaping.
   const [adjustText, setAdjustText] = useState("");
+  // Select a findings sentence → one button rewrites just that sentence.
+  const [findingsSel, setFindingsSel] = useState<{ start: number; end: number } | null>(null);
+  const [improvingSentence, setImprovingSentence] = useState(false);
+  const [sentenceUndo, setSentenceUndo] = useState<string | null>(null);
   // The conclusion a rewrite replaced — with its review, so undoing restores
   // the state it was in, not just its text.
   const [previousConclusion, setPreviousConclusion] = useState<{
@@ -1863,6 +1867,43 @@ export function DashboardContent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [pickMode]);
 
+  const selectedFindingText = findingsSel ? findings.slice(findingsSel.start, findingsSel.end).trim() : "";
+
+  async function improveSelectedSentence() {
+    if (!findingsSel || !selectedFindingText || improvingSentence) return;
+    const { start, end } = findingsSel;
+    const before = findings;
+    setImprovingSentence(true);
+    try {
+      const res = await fetch("/api/generate/improve-sentence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sentence: selectedFindingText, outputLanguage }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.text) {
+        toast.error(data?.error || t("gen_error_unknown"));
+        return;
+      }
+      // Splice the rewrite back over exactly what was selected, keeping the
+      // whitespace that sat around it so the report's layout is untouched.
+      const raw = findings.slice(start, end);
+      const lead = raw.slice(0, raw.length - raw.trimStart().length);
+      const tail = raw.slice(raw.trimEnd().length);
+      setFindings(before.slice(0, start) + lead + data.text + tail + before.slice(end));
+      setSentenceUndo(before);
+      setFindingsSel(null);
+      // The findings changed, so the dictation trace no longer describes them.
+      setTraceData(null);
+      setRepairMessage(null);
+      reportDirtyRef.current = true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("gen_error_unknown"));
+    } finally {
+      setImprovingSentence(false);
+    }
+  }
+
   function undoConclusionRewrite() {
     if (!previousConclusion) return;
     const { style, text, verify, links } = previousConclusion;
@@ -2925,6 +2966,49 @@ export function DashboardContent() {
               onClickHighlight={(span) => {
                 if (pickMode && span.spanIndex !== undefined) togglePickedSentence(span.spanIndex);
               }}
+              onSelectRange={pickMode ? undefined : setFindingsSel}
+              footerExtra={
+                !pickMode && (selectedFindingText.length >= 3 || sentenceUndo) ? (
+                  <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    {selectedFindingText.length >= 3 ? (
+                      <>
+                        <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
+                        <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1">
+                          {selectedFindingText.length > 90 ? selectedFindingText.slice(0, 90) + "…" : selectedFindingText}
+                        </p>
+                        <Button
+                          size="sm"
+                          className="h-6 text-[11px] shrink-0"
+                          disabled={improvingSentence}
+                          onClick={improveSelectedSentence}
+                        >
+                          {improvingSentence ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
+                          {t("dash.improve_sentence")}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCheck className="h-3 w-3 text-amber-500 shrink-0" />
+                        <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">{t("dash.improve_sentence_done")}</p>
+                        <button
+                          type="button"
+                          onClick={() => { if (sentenceUndo) { setFindings(sentenceUndo); setSentenceUndo(null); reportDirtyRef.current = true; } }}
+                          className="text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline shrink-0"
+                        >
+                          {t("dash.undo_conclusion")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSentenceUndo(null)}
+                          className="text-amber-400 hover:text-amber-600 shrink-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : undefined
+              }
             />
 
             <OutputCard
@@ -3573,6 +3657,7 @@ function OutputCard({
   airy = false,
   onHoverHighlight,
   onClickHighlight,
+  onSelectRange,
   linkTooltip,
 }: {
   title: string;
@@ -3595,11 +3680,14 @@ function OutputCard({
   onHoverHighlight?: (span: { pointIndex?: number } | null) => void;
   /** Fired when an isSelectable span is clicked (findings pick list). */
   onClickHighlight?: (span: { spanIndex?: number }) => void;
+  /** Character range the reader has selected in this text, or null. */
+  onSelectRange?: (range: { start: number; end: number } | null) => void;
   /** Tooltip for the findings-side isLinked spotlight span. */
   linkTooltip?: string;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
+  const selectionHostRef = useRef<HTMLDivElement>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
 
   useEffect(() => {
@@ -3662,11 +3750,22 @@ function OutputCard({
             {value}
           </div>
         ) : showTrace && !editing ? (
-          <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} onClickSpan={onClickHighlight} linkTooltip={linkTooltip} />
+          // Selecting works in either view, so the sentence tools are reachable
+          // without first switching the box out of its highlighted state.
+          <div
+            ref={selectionHostRef}
+            onMouseUp={() => onSelectRange?.(selectionOffsetsWithin(selectionHostRef.current))}
+          >
+            <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} onClickSpan={onClickHighlight} linkTooltip={linkTooltip} />
+          </div>
         ) : (
           <AutoGrowTextarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onSelect={(e) => {
+              const ta = e.currentTarget;
+              onSelectRange?.(ta.selectionStart < ta.selectionEnd ? { start: ta.selectionStart, end: ta.selectionEnd } : null);
+            }}
             className={`text-sm ${airy ? "leading-loose" : "leading-relaxed"} ${
               bare ? "border-0 bg-transparent px-0 shadow-none focus-visible:ring-0" : ""
             }`}

@@ -1979,6 +1979,73 @@ If the wording is already optimal, return it UNCHANGED. Respond ONLY with the im
 }
 
 /**
+ * Rewrites ONE selected sentence of the findings. The findings are the
+ * primary clinical record, so this is deliberately the strictest pass in the
+ * app: wording only, with every number, side, organ and negation carried
+ * over untouched. It is given the sentence alone — no dictation, no rest of
+ * the report — so there is nothing for it to pull new content from.
+ */
+export function buildSentenceImprovePrompt(lang: OutputLanguage): string {
+  const l = LANGUAGE_LABEL[lang];
+
+  if (lang === "es") {
+    return `Eres un editor de estilo radiológico. Recibes UNA frase de los hallazgos de un informe y la reescribes mejor redactada.
+
+IDIOMA: ${l}. Devuelve la frase en ${l}.
+
+QUÉ DEBES HACER:
+- Mejorar la redacción: fluidez, claridad, precisión terminológica y orden natural de la frase.
+- Eliminar muletillas, redundancias y giros de dictado ("eh", "vamos a ver", "se aprecia que se observa").
+
+LO QUE NO PUEDES TOCAR (NO NEGOCIABLE):
+- Toda MEDIDA y todo número: idénticos, con las mismas unidades.
+- La LATERALIDAD (derecho/izquierdo/bilateral) y la localización anatómica.
+- Las NEGACIONES: si la frase niega algo, la reescritura lo niega igual. Nunca conviertas una ausencia en presencia ni al revés.
+- El grado de certeza: no hagas más rotundo ni más dudoso lo que ya se afirma.
+- NO añadas hallazgos, diagnósticos, interpretaciones ("compatible con", "sugestivo de"…) ni recomendaciones.
+- NO elimines ningún dato clínico de la frase.
+
+Si la frase ya está bien redactada, devuélvela SIN CAMBIOS. Responde ÚNICAMENTE con la frase reescrita, sin comillas ni explicaciones.`;
+  }
+  if (lang === "pt") {
+    return `Você é um editor de estilo radiológico. Recebe UMA frase dos achados de um laudo e a reescreve melhor redigida.
+
+IDIOMA: ${l}. Devolva a frase em ${l}.
+
+O QUE FAZER:
+- Melhorar a redação: fluidez, clareza, precisão terminológica e ordem natural da frase.
+- Eliminar vícios de linguagem, redundâncias e cacoetes de ditado.
+
+O QUE NÃO PODE TOCAR (NÃO NEGOCIÁVEL):
+- Toda MEDIDA e todo número: idênticos, com as mesmas unidades.
+- A LATERALIDADE (direito/esquerdo/bilateral) e a localização anatômica.
+- As NEGAÇÕES: se a frase nega algo, a reescrita nega igual. Nunca transforme uma ausência em presença nem o contrário.
+- O grau de certeza: não deixe mais contundente nem mais duvidoso o que já se afirma.
+- NÃO acrescente achados, diagnósticos, interpretações nem recomendações.
+- NÃO elimine nenhum dado clínico da frase.
+
+Se a frase já estiver bem redigida, devolva-a SEM ALTERAÇÕES. Responda APENAS com a frase reescrita, sem aspas nem explicações.`;
+  }
+  return `You are a radiology style editor. You receive ONE sentence from a report's findings and rewrite it better worded.
+
+LANGUAGE: ${l}. Return the sentence in ${l}.
+
+WHAT TO DO:
+- Improve the wording: flow, clarity, terminological precision, natural sentence order.
+- Remove filler, redundancy and dictation tics ("we can see that there is seen").
+
+WHAT YOU MAY NOT TOUCH (NON-NEGOTIABLE):
+- Every MEASUREMENT and number: identical, same units.
+- LATERALITY (right/left/bilateral) and anatomical location.
+- NEGATIONS: if the sentence denies something, the rewrite denies it too. Never turn an absence into a presence or the reverse.
+- Degree of certainty: do not make what is stated more or less assertive.
+- Do NOT add findings, diagnoses, interpretations ("consistent with", "suggestive of"…) or recommendations.
+- Do NOT drop any clinical data from the sentence.
+
+If the sentence is already well written, return it UNCHANGED. Respond ONLY with the rewritten sentence, no quotes, no explanation.`;
+}
+
+/**
  * Reshapes an existing conclusion to a one-line instruction from the
  * radiologist ("shorter", "lead with the pneumothorax", "merge points 2
  * and 3"). Form only: it is given the conclusion and nothing else, so it

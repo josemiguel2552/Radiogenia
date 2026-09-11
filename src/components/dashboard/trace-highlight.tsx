@@ -284,6 +284,37 @@ export function HighlightedText({
 }
 
 /**
+ * Character offsets of the current browser selection within `container`,
+ * counting only its text. Needed because highlighted text is rendered as a
+ * run of spans, so the selection's node offsets mean nothing on their own —
+ * the text nodes have to be walked in document order to find the position
+ * in the original string.
+ */
+export function selectionOffsetsWithin(container: HTMLElement | null): { start: number; end: number } | null {
+  if (!container || typeof window === "undefined") return null;
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+
+  const range = sel.getRangeAt(0);
+  if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let offset = 0;
+  let start: number | null = null;
+  let end: number | null = null;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    if (node === range.startContainer) start = offset + range.startOffset;
+    if (node === range.endContainer) end = offset + range.endOffset;
+    offset += node.length;
+  }
+
+  if (start === null || end === null || start >= end) return null;
+  return { start, end };
+}
+
+/**
  * Splits structured findings into the individual sentences the radiologist
  * can pick from when rebuilding a conclusion. Section labels ("Liver:") are
  * skipped — only the descriptions are selectable — and a period between two
