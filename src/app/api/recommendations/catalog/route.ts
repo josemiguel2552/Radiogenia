@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getOrgMembership } from "@/lib/auth-helpers";
+import { getOrgMembership, requireRegionFeature } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
@@ -11,6 +11,12 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Follow-up recommendations are clinical decision support and are not
+    // offered where that would qualify the product as a regulated medical
+    // device.
+    const regionBlock = await requireRegionFeature(user.id, "recommendations");
+    if (regionBlock) return regionBlock;
 
     const membership = await getOrgMembership(user.id);
     if (!membership) return NextResponse.json([]);

@@ -862,11 +862,11 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[hsl(var(--card)/0.95)] backdrop-blur-xl border-t border-[hsl(var(--border))] safe-area-bottom">
         <div className="flex items-center h-14 px-1 overflow-x-auto scrollbar-hide">
           {([
-            { key: "dashboard" as ActiveView, icon: LayoutDashboard, label: t("nav.reports") },
-            { key: "templates" as ActiveView, icon: FileText, label: t("nav.templates") },
-            { key: "calculators" as ActiveView, icon: Calculator, label: t("nav.calculators") },
-            { key: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.recommendations") },
-          ] as const).map((item) => (
+            { key: "dashboard" as ActiveView, icon: LayoutDashboard, label: t("nav.reports"), show: true },
+            { key: "templates" as ActiveView, icon: FileText, label: t("nav.templates"), show: true },
+            { key: "calculators" as ActiveView, icon: Calculator, label: t("nav.calculators"), show: true },
+            { key: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.recommendations"), show: recommendationsAllowed },
+          ] as const).filter((item) => item.show).map((item) => (
             <button
               key={item.key}
               className={`flex flex-col items-center shrink-0 gap-0.5 py-1.5 px-2 min-w-[48px] ${activeView === item.key ? "text-brand" : "text-gray-500"}`}

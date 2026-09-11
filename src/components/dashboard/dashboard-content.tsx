@@ -3494,7 +3494,7 @@ export function DashboardContent() {
               modality={selectedModality}
               section={selectedSection}
               outputLanguage={outputLanguage as "es" | "en" | "pt"}
-              visible={!!conclusion}
+              visible={!!conclusion && regionFeatures.recommendations}
               onSelectionChange={setSelectedRecTexts}
             />
 

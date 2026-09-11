@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getOrgMembership } from "@/lib/auth-helpers";
+import { getOrgMembership, requireRegionFeature } from "@/lib/auth-helpers";
 import { dbErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,12 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Follow-up recommendations are clinical decision support and are not
+    // offered where that would qualify the product as a regulated medical
+    // device.
+    const regionBlock = await requireRegionFeature(user.id, "recommendations");
+    if (regionBlock) return regionBlock;
 
     const { data, error } = await supabase
       .from("user_recommendations")
@@ -88,6 +94,12 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Follow-up recommendations are clinical decision support and are not
+    // offered where that would qualify the product as a regulated medical
+    // device.
+    const regionBlock = await requireRegionFeature(user.id, "recommendations", req.headers.get("x-vercel-ip-country"));
+    if (regionBlock) return regionBlock;
+
     const { category, modality, title, text, tags, overrides } = await req.json();
     if (!title || !text) {
       return NextResponse.json({ error: "title and text required" }, { status: 400 });
@@ -121,6 +133,12 @@ export async function PUT(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Follow-up recommendations are clinical decision support and are not
+    // offered where that would qualify the product as a regulated medical
+    // device.
+    const regionBlock = await requireRegionFeature(user.id, "recommendations", req.headers.get("x-vercel-ip-country"));
+    if (regionBlock) return regionBlock;
+
     const { id, category, modality, title, text, tags } = await req.json();
     if (!id || !title || !text) {
       return NextResponse.json({ error: "id, title and text required" }, { status: 400 });
@@ -145,6 +163,12 @@ export async function DELETE(req: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Follow-up recommendations are clinical decision support and are not
+    // offered where that would qualify the product as a regulated medical
+    // device.
+    const regionBlock = await requireRegionFeature(user.id, "recommendations", req.headers.get("x-vercel-ip-country"));
+    if (regionBlock) return regionBlock;
 
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
