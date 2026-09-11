@@ -210,6 +210,7 @@ export function DashboardContent() {
   const conclusion = conclusionVersions[conclusionStyle] || "";
   const conclusionVerify = conclusionVerifyByStyle[conclusionStyle] || null;
   const conclusionLinks = conclusionLinksByStyle[conclusionStyle] || EMPTY_CONCLUSION_LINKS;
+  const conclusionBusy = loadingConcStyles[conclusionStyle] ?? false;
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -2880,8 +2881,18 @@ export function DashboardContent() {
                   </div>
                 )}
                 {statusExpanded === "conclusion" && conclusionVerify?.notes && (
-                  <div className="border-t px-3 py-2 dark:border-gray-700">
+                  <div className="border-t px-3 py-2 dark:border-gray-700 space-y-1.5">
                     <p className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">{conclusionVerify.notes}</p>
+                    {conclusion && !conclusionBusy && (
+                      <button
+                        type="button"
+                        onClick={() => { setConclusionTool("adjust"); setStatusExpanded(null); }}
+                        className="flex items-center gap-1 text-[11px] font-medium text-brand hover:text-brand/80 transition-colors"
+                      >
+                        <Wand2 className="h-3 w-3" />
+                        {t("dash.improve_conclusion_from_note")}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -2947,12 +2958,18 @@ export function DashboardContent() {
                       {t("dash.undo_conclusion")}
                     </button>
                   )}
-                  {conclusion && !loadingConcStyles[conclusionStyle] && (
+                  {conclusion && !conclusionBusy && (
                     <button
                       type="button"
                       onClick={() => { setConclusionTool((v) => (v === "none" ? "adjust" : "none")); setAdjustText(""); }}
                       className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                        conclusionTool !== "none" ? "text-brand" : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                        conclusionTool !== "none"
+                          ? "text-brand"
+                          : conclusionVerify?.status === "issues"
+                          // The check found something: put the fix where the eye
+                          // already is instead of leaving it a grey afterthought.
+                          ? "text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                          : "text-gray-500 dark:text-gray-400 hover:text-brand"
                       }`}
                       title={t("dash.improve_conclusion_hint")}
                     >
@@ -2989,12 +3006,16 @@ export function DashboardContent() {
                 </div>
               }
               footerExtra={
-                conclusionTool === "none" || loadingConcStyles[conclusionStyle] ? undefined : (
-                  <div className={`rounded-lg border p-2 space-y-1.5 ${
+                conclusionTool === "none" ? undefined : (
+                  // Sticky while picking: the sentences are clicked up in the
+                  // findings box, so the count and the buttons have to stay on
+                  // screen instead of being scrolled past. Stays mounted during
+                  // a rewrite too — vanishing and reappearing made the page jump.
+                  <div className={`rounded-lg border p-2 space-y-1.5 transition-opacity ${
                     pickMode
-                      ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20"
+                      ? "sticky bottom-2 z-10 shadow-lg backdrop-blur border-emerald-200 dark:border-emerald-800 bg-emerald-50/95 dark:bg-emerald-900/90"
                       : "border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)]"
-                  }`}>
+                  } ${conclusionBusy ? "opacity-60 pointer-events-none" : ""}`}>
                     {pickMode ? (
                       <>
                         <p className="text-xs text-emerald-800 dark:text-emerald-200">
