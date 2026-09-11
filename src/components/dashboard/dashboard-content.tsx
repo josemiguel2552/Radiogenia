@@ -185,10 +185,15 @@ export function DashboardContent() {
   const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
   // "Redo conclusion": the radiologist picks which findings it must cover,
   // pre-ticked with the ones the AI actually used the first time round.
-  const [pickMode, setPickMode] = useState(false);
+  // Both conclusion tools live in one panel that switches between them:
+  // "adjust" reshapes the wording, "pick" rebuilds it from chosen findings.
+  const [conclusionTool, setConclusionTool] = useState<"none" | "adjust" | "pick">("none");
+  const pickMode = conclusionTool === "pick";
   const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
+  // Set once the radiologist has chosen by hand, so going back into the pick
+  // list returns to their selection instead of starting over from the AI's.
+  const [pickTouched, setPickTouched] = useState(false);
   // One-line "make it shorter / lead with the pneumothorax" reshaping.
-  const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustText, setAdjustText] = useState("");
   // The conclusion a rewrite replaced — with its review, so undoing restores
   // the state it was in, not just its text.
@@ -939,10 +944,10 @@ export function DashboardContent() {
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
     setHoveredConclusionPoint(null);
-    setPickMode(false);
+    setConclusionTool("none");
     setPickedSentences(new Set());
+    setPickTouched(false);
     setPreviousConclusion(null);
-    setAdjustOpen(false);
     setAdjustText("");
     setInitialFindings("");
     setInitialConclusion("");
@@ -1800,9 +1805,16 @@ export function DashboardContent() {
     : findingsHighlights;
 
   function startPickMode() {
-    // Pre-tick what the AI used, so the radiologist edits a selection instead
-    // of building one from scratch. Falls back to empty if the review call
-    // hasn't landed (or found nothing), which is still a usable starting point.
+    setHoveredConclusionPoint(null);
+    setConclusionTool("pick");
+
+    // Coming back after a rewrite: return to the selection they made, not to
+    // a fresh guess — iterating on a choice is the whole point of the tool.
+    if (pickTouched) return;
+
+    // First time: pre-tick what the AI used, so they edit a selection instead
+    // of building one. If the review hasn't landed (or found nothing), fall
+    // back to everything dictated rather than to an empty list.
     const preset = new Set<number>();
     for (const link of conclusionLinks) {
       const match = findBestMatch(findings, link.quote);
@@ -1811,14 +1823,11 @@ export function DashboardContent() {
         if (match.start < s.end && match.end > s.start) preset.add(i);
       });
     }
-    // No links yet (the review is still in flight, or it found none): start
-    // from everything dictated rather than from an empty selection.
     setPickedSentences(preset.size > 0 ? preset : new Set(dictatedSentences));
-    setHoveredConclusionPoint(null);
-    setPickMode(true);
   }
 
   function togglePickedSentence(index: number) {
+    setPickTouched(true);
     setPickedSentences((prev) => {
       const next = new Set(prev);
       if (next.has(index)) next.delete(index);
@@ -1828,6 +1837,7 @@ export function DashboardContent() {
   }
 
   function pickAllDictated() {
+    setPickTouched(true);
     setPickedSentences(new Set(dictatedSentences));
   }
 
@@ -1843,7 +1853,7 @@ export function DashboardContent() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        setPickMode(false);
+        setConclusionTool("adjust");
       } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         redoPickedRef.current();
@@ -1952,7 +1962,9 @@ export function DashboardContent() {
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
     const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
 
-    setPickMode(false);
+    // Land back on the wording tools: "now make it shorter" is the usual next
+    // thought after seeing a rewrite, and the selection is kept for another go.
+    setConclusionTool("adjust");
     await replaceConclusion("/api/generate/conclusion", {
       findingsText: findings,
       clinicalInfo,
@@ -1969,7 +1981,8 @@ export function DashboardContent() {
   async function adjustConclusion(instruction: string) {
     const text = instruction.trim();
     if (!text || !conclusion.trim()) return;
-    setAdjustOpen(false);
+    // The panel stays open so adjustments can be chained ("shorter", then
+    // "order by urgency") without reopening it each time.
     setAdjustText("");
     await replaceConclusion("/api/generate/conclusion-adjust", {
       conclusionText: conclusion,
@@ -2111,10 +2124,10 @@ export function DashboardContent() {
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
     setHoveredConclusionPoint(null);
-    setPickMode(false);
+    setConclusionTool("none");
     setPickedSentences(new Set());
+    setPickTouched(false);
     setPreviousConclusion(null);
-    setAdjustOpen(false);
     setAdjustText("");
     setInitialFindings("");
     setInitialConclusion("");
@@ -2874,58 +2887,6 @@ export function DashboardContent() {
               </div>
             )}
 
-            {pickMode && (
-              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 space-y-1.5">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100">
-                    {t("dash.pick_findings_title")}
-                  </span>
-                  <span className="text-xs text-emerald-800/80 dark:text-emerald-200/80 flex-1 min-w-[200px]">
-                    {t("dash.pick_findings_hint")}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100 mr-1">
-                    {t("dash.pick_findings_count").replace("{0}", String(pickedSentences.size))}
-                  </span>
-                  {dictatedSentences.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={pickAllDictated}
-                      className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors"
-                    >
-                      {t("dash.pick_findings_all_dictated")}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setPickedSentences(new Set())}
-                    disabled={pickedSentences.size === 0}
-                    className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors disabled:opacity-40"
-                  >
-                    {t("dash.pick_findings_none")}
-                  </button>
-                  <div className="flex-1" />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs"
-                    onClick={() => setPickMode(false)}
-                  >
-                    {t("common.cancel")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs"
-                    disabled={pickedSentences.size === 0}
-                    onClick={redoConclusionFromPicked}
-                  >
-                    {t("dash.pick_findings_apply")}
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* Unified report card: findings + conclusion in one box, tools on the bottom edge.
                 Slight brand tint + accent border so the final report reads as a distinct document. */}
             <Card className="border-brand-soft shadow-md bg-[hsl(var(--primary)/0.02)] dark:bg-[hsl(var(--primary)/0.05)]">
@@ -2986,28 +2947,17 @@ export function DashboardContent() {
                       {t("dash.undo_conclusion")}
                     </button>
                   )}
-                  {conclusion && !loadingConcStyles[conclusionStyle] && !pickMode && (
+                  {conclusion && !loadingConcStyles[conclusionStyle] && (
                     <button
                       type="button"
-                      onClick={() => { setAdjustOpen((v) => !v); setAdjustText(""); }}
+                      onClick={() => { setConclusionTool((v) => (v === "none" ? "adjust" : "none")); setAdjustText(""); }}
                       className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                        adjustOpen ? "text-brand" : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                        conclusionTool !== "none" ? "text-brand" : "text-gray-500 dark:text-gray-400 hover:text-brand"
                       }`}
-                      title={t("dash.adjust_conclusion_hint")}
+                      title={t("dash.improve_conclusion_hint")}
                     >
                       <Wand2 className="h-3 w-3" />
-                      {t("dash.adjust_conclusion")}
-                    </button>
-                  )}
-                  {conclusion && !loadingConcStyles[conclusionStyle] && !pickMode && (
-                    <button
-                      type="button"
-                      onClick={startPickMode}
-                      className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
-                      title={t("dash.redo_conclusion_hint")}
-                    >
-                      <ListChecks className="h-3 w-3" />
-                      {t("dash.redo_conclusion")}
+                      {t("dash.improve_conclusion")}
                     </button>
                   )}
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
@@ -3039,53 +2989,111 @@ export function DashboardContent() {
                 </div>
               }
               footerExtra={
-                adjustOpen && !loadingConcStyles[conclusionStyle] ? (
-                  <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] p-2 space-y-1.5">
-                    <div className="flex flex-wrap gap-1">
-                      {([
-                        ["dash.adjust_preset_shorter", "dash.adjust_instr_shorter"],
-                        ["dash.adjust_preset_detailed", "dash.adjust_instr_detailed"],
-                        ["dash.adjust_preset_urgency", "dash.adjust_instr_urgency"],
-                        ["dash.adjust_preset_merge", "dash.adjust_instr_merge"],
-                      ] as const).map(([label, instr]) => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() => adjustConclusion(t(instr))}
-                          className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-gray-600 dark:text-gray-300 hover:border-brand hover:text-brand transition-colors"
-                        >
-                          {t(label)}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Input
-                        autoFocus
-                        value={adjustText}
-                        onChange={(e) => setAdjustText(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            adjustConclusion(adjustText);
-                          } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            setAdjustOpen(false);
-                          }
-                        }}
-                        placeholder={t("dash.adjust_placeholder")}
-                        className="h-7 text-xs"
-                      />
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs shrink-0"
-                        disabled={!adjustText.trim()}
-                        onClick={() => adjustConclusion(adjustText)}
-                      >
-                        {t("dash.adjust_apply")}
-                      </Button>
-                    </div>
+                conclusionTool === "none" || loadingConcStyles[conclusionStyle] ? undefined : (
+                  <div className={`rounded-lg border p-2 space-y-1.5 ${
+                    pickMode
+                      ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20"
+                      : "border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)]"
+                  }`}>
+                    {pickMode ? (
+                      <>
+                        <p className="text-xs text-emerald-800 dark:text-emerald-200">
+                          <span className="font-semibold">{t("dash.pick_findings_title")}</span>{" "}
+                          {t("dash.pick_findings_hint")}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100 mr-1">
+                            {t("dash.pick_findings_count").replace("{0}", String(pickedSentences.size))}
+                          </span>
+                          {dictatedSentences.size > 0 && (
+                            <button
+                              type="button"
+                              onClick={pickAllDictated}
+                              className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors"
+                            >
+                              {t("dash.pick_findings_all_dictated")}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => { setPickTouched(true); setPickedSentences(new Set()); }}
+                            disabled={pickedSentences.size === 0}
+                            className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors disabled:opacity-40"
+                          >
+                            {t("dash.pick_findings_none")}
+                          </button>
+                          <div className="flex-1" />
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setConclusionTool("adjust")}>
+                            {t("dash.pick_findings_back")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={pickedSentences.size === 0}
+                            onClick={redoConclusionFromPicked}
+                          >
+                            {t("dash.pick_findings_apply")}
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap items-center gap-1">
+                          {([
+                            ["dash.adjust_preset_shorter", "dash.adjust_instr_shorter"],
+                            ["dash.adjust_preset_detailed", "dash.adjust_instr_detailed"],
+                            ["dash.adjust_preset_urgency", "dash.adjust_instr_urgency"],
+                            ["dash.adjust_preset_merge", "dash.adjust_instr_merge"],
+                          ] as const).map(([label, instr]) => (
+                            <button
+                              key={label}
+                              type="button"
+                              onClick={() => adjustConclusion(t(instr))}
+                              className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-gray-600 dark:text-gray-300 hover:border-brand hover:text-brand transition-colors"
+                            >
+                              {t(label)}
+                            </button>
+                          ))}
+                          <div className="flex-1" />
+                          <button
+                            type="button"
+                            onClick={startPickMode}
+                            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-brand/40 text-brand hover:bg-brand/10 transition-colors"
+                          >
+                            <ListChecks className="h-3 w-3" />
+                            {t("dash.redo_conclusion")}
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            autoFocus
+                            value={adjustText}
+                            onChange={(e) => setAdjustText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                adjustConclusion(adjustText);
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                setConclusionTool("none");
+                              }
+                            }}
+                            placeholder={t("dash.adjust_placeholder")}
+                            className="h-7 text-xs"
+                          />
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs shrink-0"
+                            disabled={!adjustText.trim()}
+                            onClick={() => adjustConclusion(adjustText)}
+                          >
+                            {t("dash.adjust_apply")}
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
-                ) : undefined
+                )
               }
             />
 
