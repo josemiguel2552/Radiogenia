@@ -1846,7 +1846,11 @@ export function DashboardContent() {
 
   function pickAllDictated() {
     setPickTouched(true);
-    setPickedSentences(new Set(dictatedSentences));
+    setPickedSentences(
+      dictatedSentences.size > 0
+        ? new Set(dictatedSentences)
+        : new Set(findingsSentences.map((_, i) => i)),
+    );
   }
 
   const redoPickedRef = useRef<() => void>(() => {});
@@ -2997,6 +3001,7 @@ export function DashboardContent() {
               minHeight={140}
               traceHighlights={findingsHighlightsToShow.length > 0 ? findingsHighlightsToShow : undefined}
               traceLocked={loadingTrace || pickMode}
+              forceHighlights={pickMode}
               isDark={isDark}
               linkTooltip={t("dash.conclusion_link_tooltip")}
               onClickHighlight={(span) => {
@@ -3186,13 +3191,18 @@ export function DashboardContent() {
                           <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100 mr-1">
                             {t("dash.pick_findings_count").replace("{0}", String(pickedSentences.size))}
                           </span>
-                          {dictatedSentences.size > 0 && (
+                          {findingsSentences.length > 0 && (
                             <button
                               type="button"
                               onClick={pickAllDictated}
                               className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors"
                             >
-                              {t("dash.pick_findings_all_dictated")}
+                              {/* Once the findings are edited by hand the trace is gone
+                                  and nothing is known to be dictated — then the useful
+                                  shortcut is simply "all of them". */}
+                              {dictatedSentences.size > 0
+                                ? t("dash.pick_findings_all_dictated")
+                                : t("dash.pick_findings_all")}
                             </button>
                           )}
                           <button
@@ -3695,6 +3705,7 @@ function OutputCard({
   onHoverHighlight,
   onClickHighlight,
   onSelectRange,
+  forceHighlights,
   linkTooltip,
 }: {
   title: string;
@@ -3719,6 +3730,9 @@ function OutputCard({
   onClickHighlight?: (span: { spanIndex?: number }) => void;
   /** Character range the reader has selected in this text, or null. */
   onSelectRange?: (range: { start: number; end: number } | null) => void;
+  /** Show the clickable highlighted view even if the card was left in edit
+   *  mode — used while picking findings, which needs those spans. */
+  forceHighlights?: boolean;
   /** Tooltip for the findings-side isLinked spotlight span. */
   linkTooltip?: string;
 }) {
@@ -3726,10 +3740,15 @@ function OutputCard({
   const [editing, setEditing] = useState(false);
   const selectionHostRef = useRef<HTMLDivElement>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
+  // Picking needs the clickable spans, so it overrides hand-editing: the
+  // pencil leaves this card in edit mode until "OK" is pressed, and someone
+  // who edits the findings and then goes to fix the conclusion would
+  // otherwise be handed a plain textarea with nothing to select.
+  const readOnlyView = showTrace && (!editing || !!forceHighlights);
 
   useEffect(() => {
-    if (!showTrace) setEditing(false);
-  }, [showTrace]);
+    if (!showTrace || forceHighlights) setEditing(false);
+  }, [showTrace, forceHighlights]);
 
   const Wrapper = bare ? "div" : Card;
   return (
@@ -3786,7 +3805,7 @@ function OutputCard({
           >
             {value}
           </div>
-        ) : showTrace && !editing ? (
+        ) : readOnlyView ? (
           // Selecting works in either view, so the sentence tools are reachable
           // without first switching the box out of its highlighted state.
           <div
