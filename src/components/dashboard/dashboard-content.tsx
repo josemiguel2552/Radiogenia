@@ -3222,6 +3222,7 @@ export function DashboardContent() {
                             ["dash.adjust_preset_detailed", "dash.adjust_instr_detailed"],
                             ["dash.adjust_preset_urgency", "dash.adjust_instr_urgency"],
                             ["dash.adjust_preset_merge", "dash.adjust_instr_merge"],
+                            ["dash.adjust_preset_paraphrase", "dash.adjust_instr_paraphrase"],
                           ] as const).map(([label, instr]) => (
                             <button
                               key={label}
