@@ -2188,6 +2188,8 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "app.skin_glicina": "Glicina",
     "app.skin_niebla": "Niebla",
     "app.skin_pizarra": "Pizarra",
+    "app.skin_porcelana": "Porcelana",
+    "app.skin_oliva": "Oliva",
     // Settings sections
     "settings.visual": "Interfaz visual",
     "settings.functional": "Configuración del informe",
@@ -5507,6 +5509,8 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "app.skin_glicina": "Wisteria",
     "app.skin_niebla": "Mist",
     "app.skin_pizarra": "Slate",
+    "app.skin_porcelana": "Porcelain",
+    "app.skin_oliva": "Olive",
     // Settings sections
     "settings.visual": "Visual interface",
     "settings.functional": "Report configuration",
@@ -8833,6 +8837,8 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "app.skin_glicina": "Glicínia",
     "app.skin_niebla": "Névoa",
     "app.skin_pizarra": "Ardósia",
+    "app.skin_porcelana": "Porcelana",
+    "app.skin_oliva": "Oliva",
     // Settings sections
     "settings.visual": "Interface visual",
     "settings.functional": "Configuração do relatório",
