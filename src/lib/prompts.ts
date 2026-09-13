@@ -1564,7 +1564,6 @@ export function buildConclusionPrompt(params: {
 - Cada punto es un párrafo breve con frases completas y bien redactadas.
 - Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
 - Agrupa hallazgos anatómicamente relacionados o del mismo órgano/región en un solo punto (ej: lesión hepática + adenopatías adyacentes, derrame + atelectasia compresiva).
-- Si dos hallazgos no están anatómicamente relacionados, van en PUNTOS SEPARADOS.
 - NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
 - AGRUPAR NO significa diagnosticar. Describe los hallazgos juntos sin inferir su naturaleza, etiología ni relación causal. NUNCA uses frases como "potencialmente maligno", "probablemente metastásico", "en probable relación con", "sugestivo de neoplasia". Solo describe lo que se ve.
 - Tono: integrador pero riguroso, sintético, PURAMENTE DESCRIPTIVO.
@@ -1588,7 +1587,6 @@ REDACCIÓN (la conclusión sale ya pulida, no hay una segunda pasada):
 - Each point is a brief paragraph with complete, well-written sentences.
 - Include descriptive data: size, location, density/signal, evolution.
 - Group anatomically related findings or findings in the same organ/region into a single point (e.g., hepatic lesion + adjacent lymphadenopathy, effusion + compressive atelectasis).
-- If two findings are not anatomically related, they go in SEPARATE POINTS.
 - Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
 - GROUPING does NOT mean diagnosing. Describe findings together without inferring their nature, etiology, or causal relationship. NEVER use phrases like "potentially malignant", "probably metastatic", "likely related to", "suggestive of neoplasia". Only describe what is seen.
 - Tone: integrative but rigorous, synthetic, PURELY DESCRIPTIVE.
@@ -1612,7 +1610,6 @@ WRITING (the conclusion comes out finished — there is no second pass):
 - Cada ponto é um parágrafo breve com frases completas e bem redigidas.
 - Inclua dados descritivos: tamanho, localização, densidade/sinal, evolução.
 - Agrupe achados anatomicamente relacionados ou do mesmo órgão/região em um único ponto (ex: lesão hepática + linfonodomegalias adjacentes, derrame + atelectasia compressiva).
-- Se dois achados não estão anatomicamente relacionados, vão em PONTOS SEPARADOS.
 - NÃO force conectores entre achados independentes. Cada ponto é uma unidade clínica coerente.
 - AGRUPAR NÃO significa diagnosticar. Descreva os achados juntos sem inferir sua natureza, etiologia nem relação causal. NUNCA use frases como "potencialmente maligno", "provavelmente metastático", "em provável relação com", "sugestivo de neoplasia". Só descreva o que se vê.
 - Tom: integrador mas rigoroso, sintético, PURAMENTE DESCRITIVO.
@@ -1636,105 +1633,61 @@ ${STYLE_BLOCK_ES[style]}
 
 REGLAS DE CONTENIDO:
 
-1. MÁXIMO ${maxPoints} PUNTOS. Nunca más. Si todo cabe en 1 o 2, mejor.
-   - Cada punto debe abordar UN SOLO tema clínico o proceso patológico. NUNCA mezcles hallazgos no relacionados en el mismo punto para ahorrar espacio.
-   - Cada punto debe ser BREVE: máximo 2-3 frases. Si un punto crece demasiado, estás mezclando cosas o añadiendo detalles que pertenecen a hallazgos, no a la conclusión.
+1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.
 
-2. TRIAJE PARA INFORMES COMPLEJOS — la conclusión NO es un resumen de todo:
-   - Si los hallazgos son muy extensos, SELECCIONA solo los más relevantes clínicamente. Para eso están los hallazgos detallados.
-   - Es MEJOR una conclusión de ${maxPoints} puntos enfocados que intente incluir absolutamente todo, produciendo párrafos largos e incoherentes.
-   - DESCARTA sin miedo: hallazgos degenerativos crónicos estables, hallazgos incidentales menores, normalidades de órganos, y cualquier hallazgo que no cambie el manejo clínico inmediato.
+2. TRIAJE — la conclusión NO resume todo: selecciona lo clínicamente relevante y DESCARTA sin miedo lo crónico estable, lo incidental menor, las normalidades de órganos y todo lo que no cambie el manejo. Para el detalle ya están los hallazgos.
 
-3. JERARQUÍA CLÍNICA ESTRICTA — piensa como un radiólogo experto:
-   - PRIMERO: lo que responde a la pregunta clínica o lo que el clínico NECESITA saber de forma urgente (hallazgos agudos, hallazgos que cambian el manejo inmediato).
-   - SEGUNDO: otros hallazgos patológicos clínicamente significativos que impacten en el manejo a corto/medio plazo.
-   - TERCERO (si aplica): hallazgos incidentales que requieran seguimiento o acción, pero SOLO si son clínicamente relevantes.
-   - NUNCA: órganos normales, variantes anatómicas irrelevantes, hallazgos incidentales triviales (quistes simples renales/hepáticos pequeños, pequeños osteofitos degenerativos, etc.) SALVO que sean la razón del estudio.
-   - Si un hallazgo no cambia nada para el clínico, no lo incluyas.
+3. JERARQUÍA CLÍNICA:
+   - PRIMERO: lo que responde a la pregunta clínica, o lo urgente (agudo, lo que cambia el manejo inmediato).
+   - DESPUÉS: otros hallazgos patológicos significativos.
+   - AL FINAL, y solo si requieren acción: incidentales relevantes.
+   - NUNCA: órganos normales, variantes irrelevantes, incidentales triviales (quiste simple pequeño, osteofitos) salvo que sean el motivo del estudio.
 
-4. AGRUPACIÓN POR REGIÓN ANATÓMICA O RELACIÓN ESPACIAL:
-   Agrupa hallazgos que están anatómicamente relacionados o afectan al mismo órgano/región en un solo punto. El clínico necesita entender el panorama completo de cada zona, no una lista fragmentada. Agrupar NO implica diagnosticar — describe cada hallazgo dentro del punto sin inferir su naturaleza ni relación causal.
-   - Ej: lesión focal hepática + adenopatías regionales → un solo punto que describe ambos hallazgos sin asumir su relación.
-   - Ej: derrame pleural + atelectasia compresiva adyacente → un solo punto.
-   - Ej: fractura vertebral + canal estrecho + compresión medular → un solo punto.
-   - Hallazgos que NO se relacionan entre sí van en PUNTOS SEPARADOS.
-   - Hallazgos que muestren MEJORÍA pueden agruparse separados de los que muestren EMPEORAMIENTO.
+4. AGRUPACIÓN: reúne en un mismo punto los hallazgos anatómicamente relacionados o del mismo órgano/región (ej: derrame pleural + atelectasia compresiva adyacente), para que el clínico vea el panorama de cada zona y no una lista fragmentada. Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.
 
-5. ${hasClinical ? `PREGUNTA CLÍNICA PROPORCIONADA — RESUÉLVELA:
-   - El PRIMER punto DEBE responder directamente a la pregunta clínica. El clínico lee la conclusión antes que los hallazgos — dale la respuesta de inmediato.
-   - Si hay hallazgos que respondan: descríbelos con datos clave (tamaño, localización, cambios respecto a previo).
-   - Si NO hay hallazgos que respondan: frase corta negativa directa (ej: "Sin evidencia de TEP en el territorio valorado.").
-   - Si hay hallazgo indeterminado: descríbelo con los datos radiológicos disponibles, sin especular.
-   - Los puntos restantes cubren otros hallazgos significativos NO relacionados con la pregunta clínica.` : `SIN CONTEXTO CLÍNICO — RAZONAMIENTO EXPERTO:
-   - Analiza los hallazgos y DEDUCE cuál es el hallazgo principal. Piensa: ¿por qué se pidió este estudio? ¿Qué busca saber el clínico?
-   - El PRIMER punto debe ser lo más relevante: el hallazgo que motiva la prueba o su ausencia.
-   - Jerarquía de priorización:
-     a) Hallazgos AGUDOS (fractura, colección, isquemia, perforación, torsión) → siempre primero.
-     b) Hallazgos EVOLUTIVOS en lesiones conocidas (cambios de tamaño, número, morfología respecto a previos) → van después o primero si son el motivo del estudio.
-     c) Hallazgos patológicos NUEVOS → por orden de impacto clínico.
-     d) Hallazgos CRÓNICOS/DEGENERATIVOS → solo si pueden requerir acción o si no hay nada más relevante.
-   - NUNCA listes hallazgos como una simple enumeración plana. Prioriza y organiza.`}
+5. ${hasClinical ? `PREGUNTA CLÍNICA — RESUÉLVELA:
+   - El PRIMER punto DEBE responderla: el clínico lee la conclusión antes que los hallazgos.
+   - Si hay hallazgos que respondan, descríbelos con sus datos clave (tamaño, localización, cambios respecto a previo); si no los hay, frase negativa corta (ej: "Sin evidencia de TEP en el territorio valorado."); si el hallazgo es indeterminado, descríbelo sin especular.
+   - Los puntos restantes cubren otros hallazgos significativos.` : `SIN CONTEXTO CLÍNICO:
+   - Deduce cuál es el hallazgo principal: ¿por qué se pidió este estudio? El PRIMER punto debe ser ese hallazgo, o su ausencia.
+   - Orden: agudos (fractura, colección, isquemia, perforación, torsión) → cambios evolutivos en lesiones conocidas → nuevos hallazgos patológicos → crónicos/degenerativos solo si requieren acción.
+   - Nunca enumeres en plano: prioriza.`}
 
-6. HALLAZGOS NEGATIVOS:
-   - Incluye un negativo pertinente SOLO si responde a la pregunta clínica (explícita o deducida).
-   - Ej: pregunta "descartar TEP" → "Sin evidencia de TEP" es relevante y va en el primer punto.
-   - NUNCA listes normalidad como relleno.
+6. NEGATIVOS: incluye un negativo solo si responde a la pregunta clínica (ej: "descartar TEP" → "Sin evidencia de TEP", en el primer punto). Nunca listes normalidad como relleno.
 
-7. COMPARACIONES CON PREVIOS:
-   - Si se mencionan cambios respecto a estudios previos, inclúyelos DENTRO del punto del hallazgo correspondiente.
-   - Califica la evolución con precisión: aumento/disminución de tamaño (con medidas), aparición/desaparición, estabilidad.
-   - Los cambios evolutivos son información de alto valor clínico — no los omitas.
+7. PREVIOS: los cambios respecto a estudios previos van DENTRO del punto del hallazgo correspondiente, con precisión (aumento/disminución con medidas, aparición/desaparición, estabilidad). Son información de alto valor: no los omitas.
 
-8. COMPRENSIÓN DE LOS HALLAZGOS:
-   - Lee y COMPRENDE cada hallazgo individualmente. No copies frases textuales de los hallazgos — sintetiza.
-   - Si los hallazgos describen un nódulo pulmonar de 8 mm en LID con densidad de partes blandas, tu conclusión dice exactamente eso de forma sintética, NO lo ignores ni lo simplifiques a "nódulo pulmonar" sin datos.
-   - CADA dato clínico relevante (tamaño, localización, densidad/señal, lateralidad, número, cambios) DEBE reflejarse en la conclusión. No pierdas información al sintetizar.
+8. NO PIERDAS DATOS: sintetiza en vez de copiar frases textuales, pero cada dato relevante (tamaño, localización, densidad/señal, lateralidad, número, cambios) debe llegar a la conclusión.
 
 PRINCIPIO FUNDAMENTAL — DESCRIBIR, NO DIAGNOSTICAR:
-La conclusión DESCRIBE hallazgos radiológicos. NO emite diagnósticos, interpretaciones etiológicas ni juicios clínicos. El radiólogo describe lo que ve; el clínico decide qué significa.
-- CORRECTO: "Aumento de tamaño de la lesión hepática del segmento VII (de 2 a 3.5 cm respecto al estudio previo)."
-- INCORRECTO: "Progresión tumoral hepática." (esto es un diagnóstico/interpretación)
-- CORRECTO: "Consolidación en lóbulo inferior derecho con broncograma aéreo."
-- INCORRECTO: "Neumonía del lóbulo inferior derecho." (esto es un diagnóstico)
-- CORRECTO: "Lesión focal hepática hipodensa de 25 mm en segmento VI, de nueva aparición."
-- INCORRECTO: "Nueva metástasis hepática." (esto es un diagnóstico)
+Describes lo que se ve; el clínico decide qué significa.
+- CORRECTO: "Consolidación en lóbulo inferior derecho con broncograma aéreo." — INCORRECTO: "Neumonía del lóbulo inferior derecho."
+- CORRECTO: "Aumento de la lesión hepática del segmento VII (2 → 3.5 cm respecto al previo)." — INCORRECTO: "Progresión tumoral hepática."
 
 PROHIBIDO:
-- Emitir diagnósticos o interpretaciones etiológicas: "progresión tumoral", "metástasis", "neumonía", "compatible con X", "sugestivo de X", "en relación con X", "indicativo de X", "consistente con X", "adenoma", "quiste hemorrágico", "angiomiolipoma", "hemangioma". En su lugar, describe el hallazgo radiológico puro (tamaño, densidad, localización).
-- NUNCA caractericen ni clasifiquen lesiones a partir de valores de densidad, señal o realce. Si el radiólogo dicta "lesión adrenal de 18 mm con densidad de 20 UH", la conclusión dice exactamente eso, NO "adenoma", NO "compatible con adenoma". El radiólogo informa datos; el clínico interpreta.
-- Asumir naturaleza de lesiones: "lesión maligna", "tumor", "metástasis", "recidiva", "diseminación", "adenoma", "lipoma", "quiste complicado". En su lugar: "lesión", "nódulo", "masa", "imagen nodular", "captación patológica".
-- Sugerir malignidad o benignidad: "potencialmente maligno", "probablemente metastásico", "sospechoso de malignidad", "de aspecto benigno", "probablemente benigno". En su lugar, describe solo las características radiológicas objetivas.
-- Inferir progresión o respuesta terapéutica: "progresión tumoral", "respuesta parcial", "enfermedad estable". En su lugar: "aumento de tamaño de la lesión", "disminución de tamaño", "sin cambios significativos respecto al previo".
-- Recomendar acciones clínicas, seguimiento o correlación de NINGÚN tipo: "se recomienda biopsia", "completar con RM", "correlacionar clínicamente", "se sugiere seguimiento", "control en X meses", "valorar", "considerar". La conclusión NUNCA debe incluir recomendaciones — solo describe hallazgos.
-- Clasificar según escalas (BI-RADS, Lung-RADS, PI-RADS, TNM).
-- Inferencias causales ("secundario a...", "probablemente relacionado con...", "en contexto de...").
-- Pronósticos ("hallazgo preocupante", "buen pronóstico", "evolución desfavorable").
-- Añadir información no presente en los hallazgos. Los datos clínicos proporcionados son CONTEXTO para priorizar, NO hallazgos — no los incluyas en la conclusión como si el radiólogo los hubiera descrito.
-- Muletillas ("se observa", "se identifica", "se evidencia", "cabe destacar").
+- Nombrar enfermedades o entidades (neumonía, metástasis, adenoma, hemangioma, absceso, colecistitis…) y caracterizar lesiones por su densidad, señal o realce: escribe "lesión adrenal de 18 mm con densidad de 20 UH", nunca "adenoma".
+- Inferencias: "compatible con", "sugestivo de", "en relación con", "secundario a", "probable", "posible".
+- Juicios de naturaleza o pronóstico: maligno, benigno, sospechoso, recidiva, progresión, respuesta al tratamiento.
+- Recomendaciones de cualquier tipo: seguimiento, biopsia, completar con otra prueba, "correlacionar clínicamente", "valorar", "considerar".
+- Clasificaciones por escalas (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM).
+- Añadir nada que no esté en los hallazgos. Los datos clínicos son CONTEXTO para priorizar, no hallazgos.
+- Muletillas ("se observa", "se identifica", "cabe destacar").
 
-EXCEPCIÓN: Usa terminología diagnóstica SOLO si está explícitamente en los hallazgos dictados por el radiólogo (ej: si los hallazgos dicen "fractura", puedes decir "fractura"; si dicen "nódulo", no digas "tumor").
+EXCEPCIÓN: puedes usar un término diagnóstico SOLO si aparece textualmente en los hallazgos dictados (si dicen "fractura", di "fractura"; si dicen "nódulo", no digas "tumor").
 
 Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
 FORMATO:
-- Puntos numerados. Texto plano. Máximo ${maxPoints}.
-- NO uses asteriscos, almohadillas ni markdown.
-- NO incluyas el encabezado "CONCLUSIÓN".
-- Cada punto empieza DIRECTAMENTE con la descripción del hallazgo. PROHIBIDO anteponer títulos, categorías, etiquetas anatómicas o encabezados de cualquier tipo antes de describir el hallazgo.
-  - PROHIBIDO: "1. Parénquima pulmonar: ...", "1. Hígado: ...", "1. Cardiovascular: ...", "1. Nódulos: ...", "1. Ganglios: ...", "1. Hallazgos vasculares: ..."
-  - CORRECTO: "1. Nódulo peribroncovascular de nueva aparición en lóbulo inferior derecho (9 x 8 mm)."
-  - CORRECTO: "1. Aumento de tamaño de la bulla en hemitórax izquierdo con nueva atelectasia subpleural compresiva."
-  - Si el primer token después del número es una categoría anatómica seguida de dos puntos, REESCRIBE la frase sin ese preámbulo.
-- CERO recomendaciones. La conclusión SOLO enumera hallazgos. Nunca incluyas seguimiento, correlación, biopsia ni acciones.
+- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
+- Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.
 
-⚠️ VERIFICACIÓN FINAL OBLIGATORIA — ANTES DE ENTREGAR LA RESPUESTA:
-Relee CADA punto que has escrito y pásalo por este filtro, palabra por palabra. Si un punto falla cualquier prueba, REESCRÍBELO como descripción radiológica pura antes de entregar:
-1. NOMBRE DE ENFERMEDAD O ENTIDAD CLÍNICA: ¿el punto nombra una enfermedad, entidad o proceso patológico (p. ej.: neumonía, metástasis, absceso, adenoma, hemangioma, carcinoma, neoplasia, tumor, recidiva, isquemia, infarto, trombosis, fibrosis, colecistitis, apendicitis, pancreatitis, diverticulitis, EPOC)? → Si ese término NO aparece TEXTUALMENTE en los hallazgos dictados, ES UN DIAGNÓSTICO PROHIBIDO. Sustitúyelo por la descripción del hallazgo (qué se ve, dónde, tamaño, densidad/señal, realce).
-2. INFERENCIA: ¿contiene "compatible con", "sugestivo/sugerente de", "sugiere", "en relación con", "en probable relación", "probable", "posible", "indicativo de", "consistente con", "concordante con", "secundario a", "en el contexto de", "de aspecto (benigno/maligno/típico)"? → Elimina la inferencia; deja SOLO la descripción objetiva.
-3. NATURALEZA / PRONÓSTICO: ¿asigna malignidad, benignidad, etiología, causa o pronóstico? → Elimínalo.
-4. RECOMENDACIÓN / CLASIFICACIÓN: ¿incluye una recomendación, seguimiento, correlación clínica o clasificación por escalas (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM)? → Elimínalo.
-5. PRIVACIDAD: ¿contiene el nombre de una persona o un identificador personal (DNI, teléfono, número de historia, email)? → Sustitúyelo por [NOMBRE] o [ID]. Los marcadores tipo [NOMBRE] o [DNI] ya presentes en los hallazgos se mantienen tal cual.
-REGLA DE ORO: ante la duda de si algo es un diagnóstico o una interpretación, NO lo escribas — describe el hallazgo. Solo entrega la respuesta cuando TODOS los puntos sean descripciones puras de hallazgos, sin diagnósticos, inferencias, juicios ni recomendaciones. La ÚNICA excepción es la terminología que el radiólogo ya usó textualmente en los hallazgos dictados.`;
+⚠️ ANTES DE ENTREGAR, relee cada punto y reescríbelo si falla alguno de estos filtros:
+1. ¿Nombra una enfermedad o entidad que NO aparece textualmente en los hallazgos? → sustitúyelo por la descripción (qué se ve, dónde, tamaño, densidad/señal).
+2. ¿Contiene una inferencia ("compatible con", "probable", "secundario a"…)? → déjalo en descripción objetiva.
+3. ¿Asigna malignidad, benignidad, etiología o pronóstico? → elimínalo.
+4. ¿Incluye recomendación, seguimiento, correlación clínica o clasificación por escalas? → elimínalo.
+5. ¿Contiene un nombre o un identificador personal (DNI, teléfono, nº de historia, email)? → sustitúyelo por [NOMBRE] o [ID]. Los marcadores ya presentes en los hallazgos se mantienen tal cual.
+REGLA DE ORO: ante la duda, describe el hallazgo en vez de interpretarlo.`;
   } else {
     const styleBlock = lang === "pt" ? STYLE_BLOCK_PT[style] : STYLE_BLOCK_EN[style];
     const roleIntro = lang === "pt"
@@ -1750,105 +1703,61 @@ ${styleBlock}
 
 CONTENT RULES:
 
-1. MAXIMUM ${maxPoints} POINTS. Never more. If 1 or 2 suffice, better.
-   - Each point must address ONE SINGLE clinical topic or pathological process. NEVER mix unrelated findings in the same point to save space.
-   - Each point must be BRIEF: maximum 2-3 sentences. If a point grows too long, you are mixing topics or adding detail that belongs in the findings, not the conclusion.
+1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.
 
-2. TRIAGE FOR COMPLEX REPORTS — the conclusion is NOT a summary of everything:
-   - If findings are very extensive, SELECT only the most clinically relevant ones. That is what the detailed findings section is for.
-   - A conclusion with ${maxPoints} focused points is BETTER than one that tries to include absolutely everything, producing long incoherent paragraphs.
-   - DISCARD without hesitation: stable chronic degenerative findings, minor incidental findings, normal organs, and any finding that does not change immediate clinical management.
+2. TRIAGE — the conclusion is NOT a summary of everything: select what is clinically relevant and freely DISCARD stable chronic findings, minor incidentals, organ normality and anything that does not change management. The detail is already in the findings.
 
-3. STRICT CLINICAL HIERARCHY — think like an expert radiologist:
-   - FIRST: what answers the clinical question or what the clinician NEEDS to know urgently (acute findings, findings that change immediate management).
-   - SECOND: other clinically significant pathological findings that impact short/medium-term management.
-   - THIRD (if applicable): incidental findings requiring follow-up or action, but ONLY if clinically relevant.
-   - NEVER: normal organs, irrelevant anatomical variants, trivial incidental findings (small simple renal/hepatic cysts, small degenerative osteophytes, etc.) UNLESS they are the reason for the study.
-   - If a finding changes nothing for the clinician, do not include it.
+3. CLINICAL HIERARCHY:
+   - FIRST: what answers the clinical question, or what is urgent (acute, changes immediate management).
+   - THEN: other significant pathological findings.
+   - LAST, and only if they require action: relevant incidentals.
+   - NEVER: normal organs, irrelevant variants, trivial incidentals (small simple cyst, osteophytes) unless they are the reason for the study.
 
-4. GROUPING BY ANATOMICAL REGION OR SPATIAL RELATIONSHIP:
-   Group findings that are anatomically related or affect the same organ/region into a single point. The clinician needs to understand the complete picture of each area, not a fragmented list. Grouping does NOT imply diagnosing — describe each finding within the point without inferring their nature or causal relationship.
-   - E.g.: focal hepatic lesion + regional lymphadenopathy → one single point describing both findings without assuming their relationship.
-   - E.g.: pleural effusion + adjacent compressive atelectasis → one single point.
-   - E.g.: vertebral fracture + narrow canal + cord compression → one single point.
-   - Findings that are NOT related go in SEPARATE POINTS.
-   - Findings showing IMPROVEMENT may be grouped separately from those showing WORSENING.
+4. GROUPING: put anatomically related findings, or findings in the same organ/region, into a single point (e.g. pleural effusion + adjacent compressive atelectasis), so the clinician sees the whole picture of each area rather than a fragmented list. Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.
 
-5. ${hasClinical ? `CLINICAL QUESTION PROVIDED — ANSWER IT:
-   - The FIRST point MUST directly answer the clinical question. The clinician reads the conclusion before the findings — give them the answer immediately.
-   - If findings answer it: describe them with key data (size, location, changes compared to prior).
-   - If NO findings answer it: short direct negative phrase (e.g., "No evidence of PE in the evaluated territory.").
-   - If there is an indeterminate finding: describe it with the available radiological data, without speculating.
-   - Remaining points cover other significant findings NOT related to the clinical question.` : `NO CLINICAL CONTEXT — EXPERT REASONING:
-   - Analyze the findings and DEDUCE the main finding. Think: why was this study ordered? What does the clinician want to know?
-   - The FIRST point should be the most relevant: the finding that motivates the study or its absence.
-   - Prioritization hierarchy:
-     a) ACUTE findings (fracture, collection, ischemia, perforation, torsion) → always first.
-     b) EVOLUTIONARY findings in known lesions (size, number, morphology changes compared to prior) → next, or first if they are the study's reason.
-     c) NEW pathological findings → by order of clinical impact.
-     d) CHRONIC/DEGENERATIVE findings → only if they may require action or if nothing more relevant exists.
-   - NEVER list findings as a flat enumeration. Prioritize and organize.`}
+5. ${hasClinical ? `CLINICAL QUESTION — ANSWER IT:
+   - The FIRST point MUST answer it: the clinician reads the conclusion before the findings.
+   - If findings answer it, describe them with their key data (size, location, change from prior); if none do, a short negative sentence (e.g. "No evidence of PE in the assessed territory."); if the finding is indeterminate, describe it without speculating.
+   - The remaining points cover other significant findings.` : `NO CLINICAL CONTEXT:
+   - Work out the main finding: why was this study requested? The FIRST point must be that finding, or its absence.
+   - Order: acute findings (fracture, collection, ischemia, perforation, torsion) → interval change in known lesions → new pathological findings → chronic/degenerative only if they require action.
+   - Never list flatly: prioritize.`}
 
-6. NEGATIVE FINDINGS:
-   - Include a pertinent negative ONLY if it answers the clinical question (explicit or deduced).
-   - E.g.: question "rule out PE" → "No evidence of PE" is relevant and goes in the first point.
-   - NEVER list normality as filler.
+6. NEGATIVES: include a negative only if it answers the clinical question (e.g. "rule out PE" → "No evidence of PE", in the first point). Never list normality as filler.
 
-7. COMPARISON WITH PRIOR STUDIES:
-   - If changes compared to prior studies are mentioned, include them WITHIN the corresponding finding's point.
-   - Qualify evolution precisely: size increase/decrease (with measurements), appearance/disappearance, stability.
-   - Evolutionary changes are high-value clinical information — do not omit them.
+7. PRIORS: interval change goes INSIDE the point for that finding, stated precisely (increase/decrease with measurements, appearance/disappearance, stability). It is high-value information: do not omit it.
 
-8. COMPREHENSION OF FINDINGS:
-   - Read and UNDERSTAND each finding individually. Do not copy verbatim phrases from the findings — synthesize.
-   - If findings describe an 8 mm pulmonary nodule in the RLL with soft tissue density, your conclusion says exactly that in synthesized form. Do NOT ignore it or simplify to "pulmonary nodule" without data.
-   - EVERY relevant clinical datum (size, location, density/signal, laterality, count, changes) MUST be reflected in the conclusion. Do not lose information while synthesizing.
+8. DO NOT LOSE DATA: synthesize rather than copying sentences verbatim, but every relevant data point (size, location, density/signal, laterality, number, change) must reach the conclusion.
 
 FUNDAMENTAL PRINCIPLE — DESCRIBE, DO NOT DIAGNOSE:
-The conclusion DESCRIBES radiological findings. It does NOT issue diagnoses, etiological interpretations, or clinical judgments. The radiologist describes what they see; the clinician decides what it means.
-- CORRECT: "Interval increase of the segment VII hepatic lesion (from 2 to 3.5 cm compared to prior study)."
-- INCORRECT: "Hepatic tumor progression." (this is a diagnosis/interpretation)
-- CORRECT: "Right lower lobe consolidation with air bronchograms."
-- INCORRECT: "Right lower lobe pneumonia." (this is a diagnosis)
-- CORRECT: "New 25 mm hypodense focal hepatic lesion in segment VI."
-- INCORRECT: "New hepatic metastasis." (this is a diagnosis)
+You describe what is seen; the clinician decides what it means.
+- CORRECT: "Consolidation in the right lower lobe with air bronchogram." — INCORRECT: "Right lower lobe pneumonia."
+- CORRECT: "Interval increase of the segment VII hepatic lesion (2 → 3.5 cm)." — INCORRECT: "Hepatic tumour progression."
 
 FORBIDDEN:
-- Issuing diagnoses or etiological interpretations: "tumor progression", "metastasis", "pneumonia", "consistent with X", "suggestive of X", "in keeping with X", "indicative of X", "adenoma", "hemorrhagic cyst", "angiomyolipoma", "hemangioma". Instead, describe the pure radiological finding (size, density, location).
-- NEVER characterize or classify lesions based on density, signal, or enhancement values. If the radiologist dictates "18 mm adrenal lesion with density of 20 HU", the conclusion says exactly that, NOT "adenoma", NOT "consistent with adenoma". The radiologist reports data; the clinician interprets.
-- Assuming lesion nature: "malignant lesion", "tumor", "metastasis", "recurrence", "spread", "adenoma", "lipoma", "complicated cyst". Instead: "lesion", "nodule", "mass", "nodular image", "pathological enhancement".
-- Suggesting malignancy or benignity: "potentially malignant", "probably metastatic", "suspicious for malignancy", "benign-appearing", "likely benign". Instead, describe only the objective radiological characteristics.
-- Inferring progression or therapeutic response: "tumor progression", "partial response", "stable disease". Instead: "interval increase in lesion size", "interval decrease in size", "no significant change compared to prior".
-- Recommending clinical actions, follow-up, or correlation of ANY kind: "biopsy recommended", "further evaluation with MRI", "clinical correlation recommended", "follow-up suggested", "control in X months", "consider", "recommend". The conclusion must NEVER include recommendations — it only describes findings.
-- Classifying according to scales (BI-RADS, Lung-RADS, PI-RADS, TNM).
-- Causal inferences ("secondary to...", "likely related to...", "in the context of...").
-- Issuing prognoses ("concerning finding", "good prognosis", "unfavorable evolution").
-- Adding information not present in the findings. Clinical data provided is CONTEXT for prioritization, NOT findings — do not include it in the conclusion as if the radiologist described it.
-- Filler phrases ("noted", "identified", "visualized", "presence of").
+- Naming diseases or entities (pneumonia, metastasis, adenoma, hemangioma, abscess, cholecystitis…) and characterizing lesions by their density, signal or enhancement: write "18 mm adrenal lesion with a density of 20 HU", never "adenoma".
+- Inferences: "consistent with", "suggestive of", "in keeping with", "secondary to", "likely", "possible".
+- Judgments of nature or prognosis: malignant, benign, suspicious, recurrence, progression, treatment response.
+- Recommendations of any kind: follow-up, biopsy, further imaging, "correlate clinically", "consider", "assess".
+- Scale classifications (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM).
+- Adding anything not in the findings. The clinical data is CONTEXT for prioritizing, not findings.
+- Filler verbs ("is noted", "is identified", "of note").
 
-EXCEPTION: Use diagnostic terminology ONLY if it is explicitly stated in the radiologist's dictated findings (e.g., if findings say "fracture", you may say "fracture"; if findings say "nodule", do not say "tumor").
+EXCEPTION: you may use a diagnostic term ONLY if it appears verbatim in the dictated findings (if they say "fracture", say "fracture"; if they say "nodule", do not say "tumour").
 
-If no relevant findings: "${hasClinical ? "No significant findings regarding the clinical question." : "Examination within normal limits."}"
+If there are no relevant findings: "${hasClinical ? "No significant findings in relation to the clinical question." : "Study within normal limits."}"
 
 FORMAT:
-- Numbered points. Plain text. Maximum ${maxPoints}.
-- Do NOT use asterisks, hashes or markdown.
-- Do NOT include the heading "CONCLUSION".
-- Each point starts DIRECTLY with the finding description. FORBIDDEN to prepend titles, categories, anatomical labels, or headings of any kind before describing the finding.
-  - FORBIDDEN: "1. Lung parenchyma and nodules: ...", "1. Liver: ...", "1. Cardiovascular: ...", "1. Lymph nodes: ...", "1. Vascular findings: ..."
-  - CORRECT: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)."
-  - CORRECT: "1. Interval increase of the left hemithorax bulla with new compressive subpleural atelectasis."
-  - If the first token after the number is an anatomical category followed by a colon, REWRITE the sentence without that preamble.
-- ZERO recommendations. The conclusion ONLY lists findings. Never include follow-up, correlation, biopsy, or actions.
+- Numbered points, plain text, maximum ${maxPoints}. No markdown, no "CONCLUSION" heading.
+- Each point starts DIRECTLY with the finding, never with an anatomical label: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)." and NOT "1. Lung parenchyma: …". If a point starts with a category followed by a colon, rewrite it without that preamble.
 
-⚠️ MANDATORY FINAL CHECK — BEFORE DELIVERING YOUR RESPONSE:
-Re-read EACH point you wrote and run it through this filter, word by word. If a point fails any test, REWRITE it as a pure radiological description before delivering:
-1. DISEASE / CLINICAL ENTITY NAME: does the point name a disease, entity, or pathological process (e.g.: pneumonia, metastasis, abscess, adenoma, hemangioma, carcinoma, neoplasm, tumor, recurrence, ischemia, infarction, thrombosis, fibrosis, cholecystitis, appendicitis, pancreatitis, diverticulitis, COPD)? → If that term does NOT appear VERBATIM in the dictated findings, it is a FORBIDDEN DIAGNOSIS. Replace it with the description of the finding (what is seen, where, size, density/signal, enhancement).
-2. INFERENCE: does it contain "consistent with", "suggestive of", "suggests", "in keeping with", "related to", "likely", "possible", "indicative of", "compatible with", "secondary to", "in the context of", "X-appearing (benign/malignant/typical)"? → Remove the inference; keep ONLY the objective description.
-3. NATURE / PROGNOSIS: does it assign malignancy, benignity, etiology, cause, or prognosis? → Remove it.
-4. RECOMMENDATION / CLASSIFICATION: does it include a recommendation, follow-up, clinical correlation, or scale classification (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM)? → Remove it.
-5. PRIVACY: does it contain a person's name or a personal identifier (ID number, phone, medical record number, email)? → Replace it with [NOMBRE] or [ID]. Placeholders like [NOMBRE] or [DNI] already present in the findings must be kept as-is.
-GOLDEN RULE: when in doubt whether something is a diagnosis or an interpretation, do NOT write it — describe the finding instead. Only deliver the response when ALL points are pure descriptions of findings, with no diagnoses, inferences, judgments, or recommendations. The ONLY exception is terminology the radiologist already used verbatim in the dictated findings.`;
+⚠️ BEFORE DELIVERING, re-read each point and rewrite it if it fails any of these filters:
+1. Does it name a disease or entity that does NOT appear verbatim in the findings? → replace it with the description (what is seen, where, size, density/signal).
+2. Does it contain an inference ("consistent with", "likely", "secondary to"…)? → leave only the objective description.
+3. Does it assign malignancy, benignity, etiology or prognosis? → remove it.
+4. Does it include a recommendation, follow-up, clinical correlation or scale classification? → remove it.
+5. Does it contain a person's name or a personal identifier (ID number, phone, medical record number, email)? → replace it with [NOMBRE] or [ID]. Placeholders already present in the findings are kept as-is.
+GOLDEN RULE: when in doubt, describe the finding instead of interpreting it.`;
   }
 
   // Final language enforcement
