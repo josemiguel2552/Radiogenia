@@ -196,6 +196,10 @@ export function DashboardContent() {
   // One-line "make it shorter / lead with the pneumothorax" reshaping.
   const [adjustText, setAdjustText] = useState("");
   // Select a findings sentence → one button rewrites just that sentence.
+  // The findings each conclusion was built from, so an edit to the findings
+  // can be noticed rather than leaving a conclusion that quietly no longer
+  // matches the report above it.
+  const [conclusionBasisByStyle, setConclusionBasisByStyle] = useState<Record<string, string>>({});
   const [findingsSel, setFindingsSel] = useState<{ start: number; end: number } | null>(null);
   const [improvingSentence, setImprovingSentence] = useState(false);
   const [sentenceUndo, setSentenceUndo] = useState<string | null>(null);
@@ -215,6 +219,11 @@ export function DashboardContent() {
   const conclusionVerify = conclusionVerifyByStyle[conclusionStyle] || null;
   const conclusionLinks = conclusionLinksByStyle[conclusionStyle] || EMPTY_CONCLUSION_LINKS;
   const conclusionBusy = loadingConcStyles[conclusionStyle] ?? false;
+  // The findings have moved on since this conclusion was written.
+  const conclusionStale =
+    !!conclusion.trim() &&
+    conclusionBasisByStyle[conclusionStyle] !== undefined &&
+    conclusionBasisByStyle[conclusionStyle] !== findings;
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -1126,6 +1135,7 @@ export function DashboardContent() {
           } else {
             const cleaned = cleanReport(text);
             setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+            setConclusionBasisByStyle((prev) => ({ ...prev, [style]: findingsText }));
             // Post-delivery review (fact-check against the findings + the
             // hover provenance links), fired lazily once the conclusion is
             // already fully shown. Never awaited here, so it cannot add a
@@ -1889,6 +1899,7 @@ export function DashboardContent() {
     setAdjustText("");
     setFindingsSel(null);
     setSentenceUndo(null);
+    setConclusionBasisByStyle({});
   }
 
   const selectedFindingText = findingsSel ? findings.slice(findingsSel.start, findingsSel.end).trim() : "";
@@ -1994,6 +2005,7 @@ export function DashboardContent() {
 
       const cleaned = cleanReport(text);
       setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
+      setConclusionBasisByStyle((prev) => ({ ...prev, [style]: findingsSnapshot }));
       if (replaced.text.trim()) setPreviousConclusion(replaced);
       reportDirtyRef.current = true;
 
@@ -2017,12 +2029,12 @@ export function DashboardContent() {
     }
   }
 
-  async function redoConclusionFromPicked() {
+  async function redoConclusionFromPicked(useSelection = true) {
     if (!selectedTemplate) return;
     // Picking is optional: with nothing selected this is simply "redo the
     // conclusion from the findings as they now stand", which is what is
     // wanted after editing them, and the normal triage rules apply.
-    const selected = [...pickedSentences]
+    const selected = !useSelection ? [] : [...pickedSentences]
       .sort((a, b) => a - b)
       .map((i) => findingsSentences[i]?.text)
       .filter((s): s is string => !!s);
@@ -3145,7 +3157,19 @@ export function DashboardContent() {
                 </div>
               }
               footerExtra={
-                conclusionTool === "none" ? undefined : (
+                <>
+                  {conclusionStale && !conclusionBusy && (
+                    <div className="flex flex-wrap items-center gap-2 px-2 py-1 mb-1.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+                      <span className="text-xs text-amber-700 dark:text-amber-300 flex-1 min-w-[180px]">
+                        {t("dash.conclusion_stale")}
+                      </span>
+                      <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusionFromPicked(false)}>
+                        {t("dash.pick_findings_apply_none")}
+                      </Button>
+                    </div>
+                  )}
+                  {conclusionTool === "none" ? null : (
                   // Sticky while picking: the sentences are clicked up in the
                   // findings box, so the count and the buttons have to stay on
                   // screen instead of being scrolled past. Stays mounted during
@@ -3226,7 +3250,7 @@ export function DashboardContent() {
                           <Button
                             size="sm"
                             className="h-7 text-xs"
-                            onClick={redoConclusionFromPicked}
+                            onClick={() => redoConclusionFromPicked()}
                           >
                             {pickedSentences.size > 0
                               ? t("dash.pick_findings_apply")
@@ -3283,7 +3307,8 @@ export function DashboardContent() {
                       </>
                     )}
                   </div>
-                )
+                  )}
+                </>
               }
             />
 
