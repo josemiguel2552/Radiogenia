@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
-import { streamAIWithFallback, generateAIWithUsageFallback } from "@/lib/ai-fallback";
+import { streamAIWithFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
-import { buildConclusionPrompt, buildConclusionRefinePrompt } from "@/lib/prompts";
+import { buildConclusionPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import { logPiiStrip } from "@/lib/pii-log";
@@ -153,52 +153,14 @@ export async function POST(req: NextRequest) {
       });
     };
 
-    // Integrated (grouped) conclusions get a second wording-polish pass. The
-    // specialized cardiac/RECIST formats keep their single-pass generation.
-    const isCardiac = Array.isArray(cardiacTechniques) && cardiacTechniques.length > 0;
-    const isRecist = !!recistConfig;
-    const shouldRefine = conclusionStyle === "grouped" && !isCardiac && !isRecist;
-
-    if (shouldRefine) {
-      // Pass 1 — generate the draft (buffered), with automatic provider fallback.
-      const draft = await generateAIWithUsageFallback({
-        config: globalConfig,
-        provider: effectiveProvider,
-        modelName: effectiveModel,
-        apiKey: effectiveKey,
-        customBaseUrl: globalConfig.customBaseUrl,
-        system,
-        user: userPrompt,
-        maxTokens,
-      });
-      if (draft.usage) {
-        logAICost({ userId, action: "generate_conclusion", provider: draft.usedProvider, model: draft.usedModel, inputTokens: draft.usage.inputTokens, outputTokens: draft.usage.outputTokens });
-      }
-      const draftText = (draft.text || "").trim();
-      if (!draftText) {
-        return new Response("", { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Output-Language": outputLanguage } });
-      }
-
-      // Pass 2 — polish the wording (streamed). If the primary already fell
-      // back in pass 1, start directly with the provider that worked.
-      //
-      // The fact-check against the findings deliberately does NOT run here:
-      // it would put a whole extra round-trip in front of the first token the
-      // radiologist sees. It runs afterwards, on the delivered text, via
-      // /api/generate/conclusion-review.
-      const pass2 = await streamAIWithFallback({
-        config: globalConfig,
-        provider: draft.usedProvider,
-        modelName: draft.usedModel,
-        apiKey: draft.fellBack ? resolveApiKey(globalConfig, draft.usedProvider) : effectiveKey,
-        customBaseUrl: globalConfig.customBaseUrl,
-        system: buildConclusionRefinePrompt(outputLanguage as OutputLanguage),
-        user: draftText,
-        maxTokens,
-      });
-      return streamToResponse(pass2.stream, pass2.getUsage, "conclusion_refine", pass2.usedProvider, pass2.usedModel);
-    }
-
+    // One streamed pass. The integrated style used to be drafted in full and
+    // then polished in a second call, which meant nothing appeared on screen
+    // until the whole draft existed; its wording rules now live in the prompt
+    // itself, so the text starts arriving immediately.
+    //
+    // The fact-check against the findings deliberately does NOT run here: it
+    // would put a whole round-trip in front of the first token. It runs
+    // afterwards, on the delivered text, via /api/generate/conclusion-review.
     const single = await streamAIWithFallback({
       config: globalConfig,
       provider: effectiveProvider,

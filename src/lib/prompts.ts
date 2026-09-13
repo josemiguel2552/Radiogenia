@@ -1567,7 +1567,13 @@ export function buildConclusionPrompt(params: {
 - Si dos hallazgos no están anatómicamente relacionados, van en PUNTOS SEPARADOS.
 - NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
 - AGRUPAR NO significa diagnosticar. Describe los hallazgos juntos sin inferir su naturaleza, etiología ni relación causal. NUNCA uses frases como "potencialmente maligno", "probablemente metastásico", "en probable relación con", "sugestivo de neoplasia". Solo describe lo que se ve.
-- Tono: integrador pero riguroso, sintético, PURAMENTE DESCRIPTIVO.`,
+- Tono: integrador pero riguroso, sintético, PURAMENTE DESCRIPTIVO.
+
+REDACCIÓN (la conclusión sale ya pulida, no hay una segunda pasada):
+- Cuida la fluidez, la claridad y la precisión terminológica de cada punto.
+- Elimina redundancias, muletillas y palabras superfluas ("se observa", "se identifica", "cabe destacar"…).
+- Unifica el estilo: mismo tiempo verbal y estructura paralela entre los puntos.
+- Si un punto se puede decir con menos palabras sin perder datos, dilo con menos.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
@@ -1585,7 +1591,13 @@ export function buildConclusionPrompt(params: {
 - If two findings are not anatomically related, they go in SEPARATE POINTS.
 - Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
 - GROUPING does NOT mean diagnosing. Describe findings together without inferring their nature, etiology, or causal relationship. NEVER use phrases like "potentially malignant", "probably metastatic", "likely related to", "suggestive of neoplasia". Only describe what is seen.
-- Tone: integrative but rigorous, synthetic, PURELY DESCRIPTIVE.`,
+- Tone: integrative but rigorous, synthetic, PURELY DESCRIPTIVE.
+
+WRITING (the conclusion comes out finished — there is no second pass):
+- Mind the flow, clarity and terminological precision of each point.
+- Remove redundancies, filler verbs and superfluous words ("is noted", "is identified", "of note"…).
+- Unify the style: same verb tense and parallel structure across the points.
+- If a point can be said in fewer words without losing data, say it in fewer.`,
   };
 
   const STYLE_BLOCK_PT: Record<ConclusionStyle, string> = {
@@ -1603,7 +1615,13 @@ export function buildConclusionPrompt(params: {
 - Se dois achados não estão anatomicamente relacionados, vão em PONTOS SEPARADOS.
 - NÃO force conectores entre achados independentes. Cada ponto é uma unidade clínica coerente.
 - AGRUPAR NÃO significa diagnosticar. Descreva os achados juntos sem inferir sua natureza, etiologia nem relação causal. NUNCA use frases como "potencialmente maligno", "provavelmente metastático", "em provável relação com", "sugestivo de neoplasia". Só descreva o que se vê.
-- Tom: integrador mas rigoroso, sintético, PURAMENTE DESCRITIVO.`,
+- Tom: integrador mas rigoroso, sintético, PURAMENTE DESCRITIVO.
+
+REDAÇÃO (a conclusão sai já polida, não há uma segunda passagem):
+- Cuide da fluidez, da clareza e da precisão terminológica de cada ponto.
+- Elimine redundâncias, vícios de linguagem e palavras supérfluas ("observa-se", "identifica-se", "cabe destacar"…).
+- Unifique o estilo: mesmo tempo verbal e estrutura paralela entre os pontos.
+- Se um ponto pode ser dito com menos palavras sem perder dados, diga com menos.`,
   };
 
   let system: string;
@@ -1905,77 +1923,6 @@ ${list}
   }
 
   return { system, user: userMsg };
-}
-
-
-/**
- * Final wording-review pass for an already-generated conclusion.
- * Improves readability/style ONLY — must not lengthen it, change clinical
- * content, or add diagnoses. The user message is the draft conclusion.
- *
- * Strictly wording-only: it never sees the findings, so it is never allowed
- * to change clinical content. Anything the fact-check pass flags is shown to
- * the radiologist instead of being rewritten here — a pass that cannot check
- * a claim against the findings must not be the one to introduce it.
- */
-export function buildConclusionRefinePrompt(lang: OutputLanguage): string {
-  const l = LANGUAGE_LABEL[lang];
-
-  if (lang === "es") {
-    return `Eres un editor de estilo radiológico. Recibes la CONCLUSIÓN de un informe ya redactada y tu única tarea es PULIR LA REDACCIÓN.
-
-IDIOMA: ${l}. Devuelve la conclusión en ${l}.
-
-QUÉ DEBES HACER:
-- Mejorar la fluidez, la claridad y la precisión terminológica de cada punto.
-- Eliminar redundancias, muletillas y palabras superfluas ("se observa", "se identifica", "cabe destacar"…).
-- Unificar el estilo (tiempo verbal, estructura paralela entre puntos).
-
-LÍMITES ESTRICTOS (NO NEGOCIABLES):
-- NO alargues la conclusión. El resultado debe ser IGUAL de largo o MÁS CORTO que el original. Si un punto se puede decir con menos palabras, hazlo.
-- NO añadas ni elimines hallazgos, ni datos, ni medidas, ni lateralidades.
-- NO cambies el significado clínico ni el orden de los puntos.
-- NO añadas diagnósticos, interpretaciones, inferencias ("compatible con", "sugestivo de"…), recomendaciones ni clasificaciones que no estuvieran ya.
-- Mantén el formato: mismos puntos numerados, texto plano, sin markdown, sin encabezado "CONCLUSIÓN".
-
-Si la redacción ya es óptima, devuélvela SIN CAMBIOS. Responde ÚNICAMENTE con la conclusión mejorada, nada más.`;
-  }
-  if (lang === "pt") {
-    return `Você é um editor de estilo radiológico. Recebe a CONCLUSÃO de um laudo já redigida e sua única tarefa é POLIR A REDAÇÃO.
-
-IDIOMA: ${l}. Devolva a conclusão em ${l}.
-
-O QUE FAZER:
-- Melhorar a fluidez, a clareza e a precisão terminológica de cada ponto.
-- Eliminar redundâncias, vícios de linguagem e palavras supérfluas ("observa-se", "identifica-se", "cabe destacar"…).
-- Unificar o estilo (tempo verbal, estrutura paralela entre os pontos).
-
-LIMITES ESTRITOS (NÃO NEGOCIÁVEIS):
-- NÃO alongue a conclusão. O resultado deve ser IGUAL ou MAIS CURTO que o original.
-- NÃO adicione nem remova achados, dados, medidas ou lateralidades.
-- NÃO mude o significado clínico nem a ordem dos pontos.
-- NÃO adicione diagnósticos, interpretações, inferências, recomendações nem classificações que já não estivessem.
-- Mantenha o formato: mesmos pontos numerados, texto simples, sem markdown, sem cabeçalho "CONCLUSÃO".
-
-Se a redação já for ótima, devolva-a SEM ALTERAÇÕES. Responda APENAS com a conclusão melhorada.`;
-  }
-  return `You are a radiology style editor. You receive an already-written report CONCLUSION and your only task is to POLISH THE WORDING.
-
-LANGUAGE: ${l}. Return the conclusion in ${l}.
-
-WHAT TO DO:
-- Improve the flow, clarity, and terminological precision of each point.
-- Remove redundancies, filler verbs, and superfluous words ("is noted", "is identified", "of note"…).
-- Unify style (verb tense, parallel structure across points).
-
-STRICT LIMITS (NON-NEGOTIABLE):
-- Do NOT lengthen the conclusion. The result must be EQUAL length or SHORTER than the original.
-- Do NOT add or remove findings, data, measurements, or lateralities.
-- Do NOT change the clinical meaning or the order of the points.
-- Do NOT add diagnoses, interpretations, inferences ("consistent with", "suggestive of"…), recommendations, or classifications that were not already there.
-- Keep the format: same numbered points, plain text, no markdown, no "CONCLUSION" heading.
-
-If the wording is already optimal, return it UNCHANGED. Respond ONLY with the improved conclusion, nothing else.`;
 }
 
 /**
