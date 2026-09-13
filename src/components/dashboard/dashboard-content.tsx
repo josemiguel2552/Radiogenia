@@ -2018,7 +2018,10 @@ export function DashboardContent() {
   }
 
   async function redoConclusionFromPicked() {
-    if (!selectedTemplate || pickedSentences.size === 0) return;
+    if (!selectedTemplate) return;
+    // Picking is optional: with nothing selected this is simply "redo the
+    // conclusion from the findings as they now stand", which is what is
+    // wanted after editing them, and the normal triage rules apply.
     const selected = [...pickedSentences]
       .sort((a, b) => a - b)
       .map((i) => findingsSentences[i]?.text)
@@ -2037,7 +2040,7 @@ export function DashboardContent() {
       studyType: studyName,
       conclusionStyle: conclusionStyle,
       outputLanguage,
-      selectedFindings: selected,
+      ...(selected.length > 0 ? { selectedFindings: selected } : {}),
       ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
       ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
     });
@@ -2995,6 +2998,12 @@ export function DashboardContent() {
                 // Hand edits are not part of the sentence rewrite, so undoing
                 // it must not be able to throw them away.
                 setSentenceUndo(null);
+                // The trace describes the text as it was generated: once a
+                // character moves, its offsets point at the wrong words, and
+                // everything downstream — the colours, and which sentences
+                // count as dictated when picking — is reading stale data.
+                setTraceData(null);
+                setRepairMessage(null);
                 reportDirtyRef.current = true;
               }}
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
@@ -3217,10 +3226,11 @@ export function DashboardContent() {
                           <Button
                             size="sm"
                             className="h-7 text-xs"
-                            disabled={pickedSentences.size === 0}
                             onClick={redoConclusionFromPicked}
                           >
-                            {t("dash.pick_findings_apply")}
+                            {pickedSentences.size > 0
+                              ? t("dash.pick_findings_apply")
+                              : t("dash.pick_findings_apply_none")}
                           </Button>
                         </div>
                       </>
