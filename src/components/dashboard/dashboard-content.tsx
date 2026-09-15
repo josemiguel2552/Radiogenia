@@ -180,10 +180,10 @@ export function DashboardContent() {
   // never checked.
   const [conclusionVerifyByStyle, setConclusionVerifyByStyle] = useState<Record<string, { status: "ok" | "issues"; notes?: string } | null>>({});
   // Which findings sentence backs each conclusion point — fetched lazily,
-  // AFTER the conclusion has already finished streaming, purely to power
-  // hover highlighting. Never awaited by the generation flow itself.
+  // AFTER the conclusion has already finished streaming, and used to
+  // pre-tick the checklist in edit mode. Never awaited by the generation
+  // flow itself.
   const [conclusionLinksByStyle, setConclusionLinksByStyle] = useState<Record<string, { point: number; quote: string }[]>>({});
-  const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
   const [rewordOpen, setRewordOpen] = useState(false);
   const [conclusionSel, setConclusionSel] = useState<{ start: number; end: number } | null>(null);
   // "Edit (AI)": the conclusion's points light up together with the findings
@@ -941,7 +941,6 @@ export function DashboardContent() {
     setConclusionVerifyByStyle({});
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
-    setHoveredConclusionPoint(null);
     resetReportTools();
     setInitialFindings("");
     setInitialConclusion("");
@@ -1123,7 +1122,7 @@ export function DashboardContent() {
             const cleaned = cleanReport(text);
             setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
             // Post-delivery review (fact-check against the findings + the
-            // hover provenance links), fired lazily once the conclusion is
+            // provenance links), fired lazily once the conclusion is
             // already fully shown. Never awaited here, so it cannot add a
             // millisecond to report generation — and it reviews the text the
             // radiologist actually reads, not an intermediate draft.
@@ -1740,39 +1739,15 @@ export function DashboardContent() {
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   const { findingsHighlights } = useTraceHighlights(dictation, findings, traceData);
 
-  // Conclusion → findings provenance hover: each numbered conclusion point
-  // becomes a hover zone; hovering one spotlights the findings sentence the
-  // AI quoted as its source, temporarily replacing whatever the findings
-  // box is showing (its own dictation trace, if any).
+  // The conclusion's units: lit while edit mode is choosing the findings
+  // they rest on, and the numbering the provenance links use.
   const conclusionPoints = useMemo(() => splitConclusionPoints(conclusion), [conclusion]);
-  const conclusionHoverHighlights = useMemo(() => {
-    if (conclusionLinks.length === 0) return [];
-    const linkedPoints = new Set(conclusionLinks.map((l) => l.point));
-    return conclusionPoints
-      .filter((p) => linkedPoints.has(p.point))
-      .map((p) => ({
-        start: p.start, end: p.end, colorIdx: 0, fragment: "",
-        isHoverZone: true as const, pointIndex: p.point,
-        // In edit mode the points stay lit rather than waiting for a hover,
-        // so both halves of the pairing are visible at once.
-        isActive: editMode,
-      }));
-  }, [conclusionPoints, conclusionLinks, editMode]);
-  // A point can rest on more than one finding, so every sentence behind it
-  // lights up — showing one of three would read as "this is the source".
-  const hoveredQuotes = useMemo(
-    () => (hoveredConclusionPoint == null ? [] : conclusionLinks.filter((l) => l.point === hoveredConclusionPoint).map((l) => l.quote)),
-    [hoveredConclusionPoint, conclusionLinks],
-  );
-  const hoveredFindingsSpans = useMemo(() => {
-    if (hoveredQuotes.length === 0) return [];
-    return hoveredQuotes
-      .map((quote) => {
-        const match = findBestMatch(findings, quote);
-        return match ? { start: match.start, end: match.end, colorIdx: 0, fragment: quote, isLinked: true as const } : null;
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null);
-  }, [hoveredQuotes, findings]);
+  const conclusionEditHighlights = useMemo(() => {
+    if (!editMode) return [];
+    return conclusionPoints.map((p) => ({
+      start: p.start, end: p.end, colorIdx: 0, fragment: "", isActive: true as const,
+    }));
+  }, [conclusionPoints, editMode]);
   // Deterministic coherence check: runs on the text as it stands, with no
   // model call, so it costs nothing and updates as the findings are edited.
   const coherenceIssues = useMemo(
@@ -1797,13 +1772,9 @@ export function DashboardContent() {
     }));
   }, [editMode, findingsSentences, pickedSentences]);
 
-  // Editing overrides both the hover spotlight and the dictation trace: while
-  // choosing, the findings box shows one thing only — what goes in or out.
-  const findingsHighlightsToShow = editMode
-    ? pickHighlights
-    : hoveredFindingsSpans.length > 0
-    ? hoveredFindingsSpans
-    : findingsHighlights;
+  // Editing overrides the dictation trace: while choosing, the findings box
+  // shows one thing only — what goes in or out.
+  const findingsHighlightsToShow = editMode ? pickHighlights : findingsHighlights;
 
   /**
    * Opens edit mode, pre-ticked with the findings the conclusion already
@@ -1823,7 +1794,6 @@ export function DashboardContent() {
     }
     setPickedSentences(seeded.size > 0 ? seeded : new Set(findingsSentences.map((_, i) => i)));
     setPickTouched(false);
-    setHoveredConclusionPoint(null);
     setRewordOpen(false);
     setConclusionSel(null);
     setEditMode(true);
@@ -2169,7 +2139,6 @@ export function DashboardContent() {
     setConclusionVerifyByStyle({});
     setStatusExpanded(null);
     setConclusionLinksByStyle({});
-    setHoveredConclusionPoint(null);
     resetReportTools();
     setInitialFindings("");
     setInitialConclusion("");
@@ -2991,7 +2960,6 @@ export function DashboardContent() {
                 if (editMode && span.spanIndex !== undefined) togglePickedSentence(span.spanIndex);
               }}
               isDark={isDark}
-              linkTooltip={t("dash.conclusion_link_tooltip")}
               footerExtra={
                 editMode ? (
                   <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
@@ -3032,8 +3000,7 @@ export function DashboardContent() {
                 reportDirtyRef.current = true;
               }}
               minHeight={110}
-              traceHighlights={conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
-              onHoverHighlight={(span) => setHoveredConclusionPoint(span?.pointIndex ?? null)}
+              traceHighlights={conclusionEditHighlights.length > 0 ? conclusionEditHighlights : undefined}
               onSelectRange={setConclusionSel}
               isDark={isDark}
               headerExtra={
@@ -3565,10 +3532,8 @@ function OutputCard({
   loadingLabel,
   bare = false,
   airy = false,
-  onHoverHighlight,
   onClickHighlight,
   onSelectRange,
-  linkTooltip,
   forceHighlights,
 }: {
   title: string;
@@ -3581,20 +3546,16 @@ function OutputCard({
   headerExtra?: React.ReactNode;
   footerExtra?: React.ReactNode;
   loadingLabel?: string;
-  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isLinked?: boolean; isHoverZone?: boolean; isActive?: boolean; pointIndex?: number; isSelectable?: boolean; isSelected?: boolean; spanIndex?: number }[];
+  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isActive?: boolean; isSelectable?: boolean; isSelected?: boolean; spanIndex?: number }[];
   traceLocked?: boolean;
   isDark?: boolean;
   bare?: boolean;
   /** Extra line spacing on screen only — the copied text keeps its own line breaks. */
   airy?: boolean;
-  /** Fired on hover enter/leave of an isHoverZone span (conclusion points). */
-  onHoverHighlight?: (span: { pointIndex?: number } | null) => void;
   /** Fired when an isSelectable span is clicked (findings pick list). */
   onClickHighlight?: (span: { spanIndex?: number }) => void;
   /** Character range the reader has selected in this text, or null. */
   onSelectRange?: (range: { start: number; end: number } | null) => void;
-  /** Tooltip for the findings-side isLinked spotlight span. */
-  linkTooltip?: string;
   /** Keeps the highlighted view up even when the text is clicked: while the
    *  spans ARE the controls, a click means "tick this", not "start typing". */
   forceHighlights?: boolean;
@@ -3676,7 +3637,7 @@ function OutputCard({
               }
             }}
           >
-            <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} onClickSpan={onClickHighlight} linkTooltip={linkTooltip} />
+            <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onClickSpan={onClickHighlight} />
           </div>
         ) : (
           <AutoGrowTextarea

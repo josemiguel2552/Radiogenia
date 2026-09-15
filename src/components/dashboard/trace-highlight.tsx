@@ -20,7 +20,6 @@ const TRACE_COLORS = [
 const UNMATCHED_COLOR = { bg: "rgba(239,68,68,0.2)", text: "#ef4444", dark: "rgba(248,113,113,0.25)" };
 const HALLUCINATION_COLOR = { bg: "rgba(168,85,247,0.2)", text: "#a855f7", dark: "rgba(192,132,252,0.25)" };
 /** Findings-side spotlight for the sentence backing the hovered conclusion point. */
-const LINK_COLOR = { bg: "rgba(245,158,11,0.3)", text: "#f59e0b", dark: "rgba(251,191,36,0.32)" };
 
 export interface TraceMapping {
   dictation_fragment: string;
@@ -64,16 +63,8 @@ interface HighlightSpan {
   section?: string;
   isUnmatched?: boolean;
   isHallucination?: boolean;
-  /** Findings-side spotlight while a linked conclusion point is hovered. */
-  isLinked?: boolean;
-  /** Conclusion-side hover zone: no persistent color, only a hover affordance
-   *  that reports which point is under the cursor via onHoverSpan. */
-  isHoverZone?: boolean;
-  /** Keeps a hover zone lit without a hover, so the conclusion points and the
-   *  findings behind them can be seen paired up at once (with isHoverZone). */
+  /** A conclusion unit, lit while its findings are being picked in edit mode. */
   isActive?: boolean;
-  /** Which conclusion point this span represents (set with isHoverZone). */
-  pointIndex?: number;
   /** Findings-side pick list: a sentence the radiologist can toggle in or out
    *  of the conclusion. Coloured when isSelected, plain otherwise. */
   isSelectable?: boolean;
@@ -180,8 +171,6 @@ function buildParts(text: string, highlights: HighlightSpan[]) {
 function renderParts(
   parts: ReturnType<typeof buildParts>,
   isDark: boolean,
-  onHoverSpan?: (span: HighlightSpan | null) => void,
-  linkTooltip?: string,
   onClickSpan?: (span: HighlightSpan) => void,
 ) {
   return parts.map((p, i) => {
@@ -217,15 +206,11 @@ function renderParts(
       );
     }
 
-    if (h.isHoverZone) {
+    if (h.isActive) {
       return (
         <span
           key={i}
-          className={`rounded px-0.5 cursor-help transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30 ${
-            h.isActive ? "bg-emerald-100 dark:bg-emerald-900/40 ring-1 ring-emerald-300 dark:ring-emerald-700" : ""
-          }`}
-          onMouseEnter={() => onHoverSpan?.(h)}
-          onMouseLeave={() => onHoverSpan?.(null)}
+          className="rounded px-0.5 bg-emerald-100 dark:bg-emerald-900/40 ring-1 ring-emerald-300 dark:ring-emerald-700"
         >
           {p.text}
         </span>
@@ -236,15 +221,11 @@ function renderParts(
       ? HALLUCINATION_COLOR
       : h.isUnmatched
       ? UNMATCHED_COLOR
-      : h.isLinked
-      ? LINK_COLOR
       : TRACE_COLORS[h.colorIdx % TRACE_COLORS.length];
     const tooltip = h.isHallucination
       ? `⚠ Hallucination — ${h.section}`
       : h.isUnmatched
       ? `⚠ Not found in findings`
-      : h.isLinked
-      ? (linkTooltip || "→")
       : `→ ${h.section}`;
     return (
       <mark
@@ -268,17 +249,11 @@ export function HighlightedText({
   text,
   highlights,
   isDark,
-  onHoverSpan,
-  linkTooltip,
   onClickSpan,
 }: {
   text: string;
   highlights: HighlightSpan[];
   isDark: boolean;
-  /** Fired on mouse enter/leave of an isHoverZone span (conclusion points). */
-  onHoverSpan?: (span: HighlightSpan | null) => void;
-  /** Tooltip text for an isLinked span (findings-side spotlight). */
-  linkTooltip?: string;
   /** Fired when an isSelectable span is clicked (findings pick list). */
   onClickSpan?: (span: HighlightSpan) => void;
 }) {
@@ -286,7 +261,7 @@ export function HighlightedText({
 
   return (
     <div className="text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] min-h-[80px]">
-      {renderParts(parts, isDark, onHoverSpan, linkTooltip, onClickSpan)}
+      {renderParts(parts, isDark, onClickSpan)}
     </div>
   );
 }
