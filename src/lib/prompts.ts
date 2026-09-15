@@ -1523,9 +1523,10 @@ export function buildConclusionPrompt(params: {
   isCardiacMri?: boolean;
   isRecistStudy?: boolean;
   recistConfig?: RecistConfig;
-  /** Findings the radiologist explicitly picked; when set, the model covers
-   *  exactly these instead of deciding for itself what is relevant. */
-  selectedFindings?: string[];
+  /** Findings the radiologist said must appear, and findings they said to
+   *  leave out. Both are optional and the normal triage applies to the rest. */
+  mustInclude?: string[];
+  exclude?: string[];
 }): { system: string; user: string } {
   if (params.isCardiacMri) {
     return buildCardiacConclusionPrompt({
@@ -1792,43 +1793,29 @@ GOLDEN RULE: when in doubt, describe the finding instead of interpreting it.`;
   const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";
   userMsg += `${findingsLabel}:\n${params.findingsText}`;
 
-  // The radiologist picked the findings this conclusion must cover, so the
-  // model no longer decides what is relevant — the part of the job where its
-  // judgement diverges most from theirs. Scope only: the rules against
-  // diagnosing, interpreting and recommending still stand.
-  const selected = params.selectedFindings?.filter((s) => s.trim().length > 0) ?? [];
-  if (selected.length > 0) {
-    const list = selected.map((s) => `- ${s.trim()}`).join("\n");
-    const block = lang === "es"
-      ? `SELECCIÓN DEL RADIÓLOGO — MANDA SOBRE LAS REGLAS DE TRIAJE ANTERIORES:
-El radiólogo ha marcado exactamente qué hallazgos deben aparecer en la conclusión:
-${list}
-
-- Cubre TODOS los hallazgos de esta lista. Ninguno se descarta por parecer poco relevante: si está en la lista, va.
-- NO incluyas ningún otro hallazgo del informe que no esté en la lista.
-- El límite máximo de puntos NO se aplica aquí: usa los puntos que hagan falta para cubrir la lista, agrupando en un mismo punto los hallazgos anatómicamente relacionados.
-- Ordena los puntos por relevancia clínica${hasClinical ? ", empezando por el que responda a la pregunta clínica" : ""}.
-- SIGUEN VIGENTES sin excepción: describir sin diagnosticar, sin interpretaciones ni inferencias, sin recomendaciones, y no añadir ningún dato que no esté en los hallazgos.`
-      : lang === "pt"
-      ? `SELEÇÃO DO RADIOLOGISTA — PREVALECE SOBRE AS REGRAS DE TRIAGEM ANTERIORES:
-O radiologista marcou exatamente quais achados devem aparecer na conclusão:
-${list}
-
-- Cubra TODOS os achados desta lista. Nenhum se descarta por parecer pouco relevante: se está na lista, entra.
-- NÃO inclua nenhum outro achado do laudo que não esteja na lista.
-- O limite máximo de pontos NÃO se aplica aqui: use os pontos necessários para cobrir a lista, agrupando num mesmo ponto os achados anatomicamente relacionados.
-- Ordene os pontos por relevância clínica${hasClinical ? ", começando pelo que responde à pergunta clínica" : ""}.
-- CONTINUAM VÁLIDAS sem exceção: descrever sem diagnosticar, sem interpretações nem inferências, sem recomendações, e não acrescentar nenhum dado que não esteja nos achados.`
-      : `RADIOLOGIST'S SELECTION — OVERRIDES THE TRIAGE RULES ABOVE:
-The radiologist marked exactly which findings must appear in the conclusion:
-${list}
-
-- Cover EVERY finding on this list. None is dropped for seeming unimportant: if it is on the list, it goes in.
-- Do NOT include any other finding from the report that is not on the list.
-- The maximum point count does NOT apply here: use as many points as the list needs, grouping anatomically related findings into the same point.
-- Order the points by clinical relevance${hasClinical ? ", starting with the one that answers the clinical question" : ""}.
-- STILL IN FORCE without exception: describe without diagnosing, no interpretations or inferences, no recommendations, and add no data that is not in the findings.`;
-    userMsg += `\n\n${block}`;
+  // The radiologist pointed at specific findings: one to make sure is there,
+  // one to leave out. Everything else still goes through the normal triage,
+  // which is the difference between steering a conclusion and dictating it.
+  const include = params.mustInclude?.filter((x) => x.trim()) ?? [];
+  const drop = params.exclude?.filter((x) => x.trim()) ?? [];
+  if (include.length > 0 || drop.length > 0) {
+    const list = (xs: string[]) => xs.map((x) => `- ${x.trim()}`).join("\n");
+    const es = [
+      include.length > 0 ? `EL RADIÓLOGO PIDE QUE LA CONCLUSIÓN RECOJA:\n${list(include)}` : "",
+      drop.length > 0 ? `EL RADIÓLOGO PIDE DEJAR FUERA DE LA CONCLUSIÓN:\n${list(drop)}` : "",
+      "Aplica el resto de reglas con normalidad al resto de hallazgos. Siguen vigentes sin excepción: describir sin diagnosticar, sin inferencias, sin recomendaciones, y no añadir nada que no esté en los hallazgos.",
+    ].filter(Boolean).join("\n\n");
+    const pt = [
+      include.length > 0 ? `O RADIOLOGISTA PEDE QUE A CONCLUSÃO INCLUA:\n${list(include)}` : "",
+      drop.length > 0 ? `O RADIOLOGISTA PEDE PARA DEIXAR FORA DA CONCLUSÃO:\n${list(drop)}` : "",
+      "Aplique o resto das regras normalmente aos demais achados. Continuam válidas sem exceção: descrever sem diagnosticar, sem inferências, sem recomendações, e não acrescentar nada que não esteja nos achados.",
+    ].filter(Boolean).join("\n\n");
+    const en = [
+      include.length > 0 ? `THE RADIOLOGIST ASKS THE CONCLUSION TO COVER:\n${list(include)}` : "",
+      drop.length > 0 ? `THE RADIOLOGIST ASKS TO LEAVE OUT OF THE CONCLUSION:\n${list(drop)}` : "",
+      "Apply the remaining rules normally to the other findings. Still in force without exception: describe without diagnosing, no inferences, no recommendations, and add nothing that is not in the findings.",
+    ].filter(Boolean).join("\n\n");
+    userMsg += `\n\n${lang === "es" ? es : lang === "pt" ? pt : en}`;
   }
 
   return { system, user: userMsg };

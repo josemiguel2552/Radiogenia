@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         .eq("user_id", user.id)
         .maybeSingle(),
     ]);
-    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig, selectedFindings: rawSelected } = body;
+    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig, mustInclude: rawInclude, exclude: rawExclude } = body;
 
     const { cleaned: findingsText, strippedCount: sc1, strippedTypes: st1 } = stripPii(rawFindings || "");
     const { cleaned: clinicalInfo, strippedCount: sc2, strippedTypes: st2 } = stripPii(rawClinical || "");
@@ -48,15 +48,18 @@ export async function POST(req: NextRequest) {
     for (const [k, v] of Object.entries(st2)) mergedTypes[k] = (mergedTypes[k] || 0) + v;
     logPiiStrip(user.id, "conclusion", sc1 + sc2, mergedTypes);
 
-    // Picked findings come back from the browser, so they get the same PII
-    // scrub as everything else before they reach a provider.
-    const selectedFindings = Array.isArray(rawSelected)
-      ? rawSelected
-          .filter((s): s is string => typeof s === "string")
-          .slice(0, 40)
-          .map((s) => stripPii(s.slice(0, 600)).cleaned.trim())
-          .filter(Boolean)
-      : undefined;
+    // Findings the radiologist pointed at come back from the browser, so they
+    // get the same PII scrub as everything else before reaching a provider.
+    const cleanList = (raw: unknown) =>
+      Array.isArray(raw)
+        ? raw
+            .filter((x): x is string => typeof x === "string")
+            .slice(0, 20)
+            .map((x) => stripPii(x.slice(0, 600)).cleaned.trim())
+            .filter(Boolean)
+        : undefined;
+    const mustInclude = cleanList(rawInclude);
+    const exclude = cleanList(rawExclude);
 
     const outputLanguage = reqLang || config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
@@ -103,7 +106,8 @@ export async function POST(req: NextRequest) {
       isCardiacMri: Array.isArray(cardiacTechniques) && cardiacTechniques.length > 0,
       isRecistStudy: !!recistConfig,
       recistConfig: recistConfig || undefined,
-      selectedFindings,
+      mustInclude,
+      exclude,
     });
 
     const taskModel = globalConfig.taskOverrides?.conclusion;

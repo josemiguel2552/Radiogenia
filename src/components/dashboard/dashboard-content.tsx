@@ -39,7 +39,7 @@ import {
   Search,
   Tags,
   ClipboardCheck,
-  ListChecks,
+  RefreshCw,
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan, type OutputLanguage } from "@/lib/types";
@@ -186,14 +186,11 @@ export function DashboardContent() {
   const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
   // "Redo conclusion": the radiologist picks which findings it must cover,
   // pre-ticked with the ones the AI actually used the first time round.
-  // One panel, one job: reshaping the conclusion's wording. Choosing which
-  // findings it must cover is no longer a screen of its own — findings are
-  // marked where they are read, from the selection in the findings box.
-  const [conclusionTool, setConclusionTool] = useState<"none" | "adjust">("none");
-  const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
-  // One-line "make it shorter / lead with the pneumothorax" reshaping.
-  const [adjustText, setAdjustText] = useState("");
-  // Select a findings sentence → one button rewrites just that sentence.
+  // Selecting text is the only way in: the actions that apply to what you
+  // selected appear beside it. "Reword" with nothing selected applies to the
+  // whole conclusion, which is the other half of the same idea.
+  const [rewordOpen, setRewordOpen] = useState(false);
+  const [conclusionSel, setConclusionSel] = useState<{ start: number; end: number } | null>(null);
   // The findings each conclusion was built from, so an edit to the findings
   // can be noticed rather than leaving a conclusion that quietly no longer
   // matches the report above it.
@@ -1779,31 +1776,9 @@ export function DashboardContent() {
     [findings, outputLanguage],
   );
 
-  const findingsSentences = useMemo(() => splitFindingsSentences(findings), [findings]);
-
-  const markHighlights = useMemo(() => {
-    if (pickedSentences.size === 0) return [];
-    return findingsSentences
-      .map((s, i) => ({ s, i }))
-      .filter(({ i }) => pickedSentences.has(i))
-      .map(({ s, i }) => ({
-        start: s.start,
-        end: s.end,
-        colorIdx: 0,
-        fragment: s.text,
-        isSelectable: true as const,
-        isSelected: true,
-        spanIndex: i,
-      }));
-  }, [findingsSentences, pickedSentences]);
-
-  // The hover spotlight is momentary, so it wins while it lasts; marks are
-  // what the radiologist set, so they outrank the dictation trace.
-  const findingsHighlightsToShow = hoveredFindingsSpan
-    ? [hoveredFindingsSpan]
-    : markHighlights.length > 0
-    ? markHighlights
-    : findingsHighlights;
+  // The hover spotlight is momentary, so it wins while it lasts; otherwise the
+  // findings box shows the dictation trace.
+  const findingsHighlightsToShow = hoveredFindingsSpan ? [hoveredFindingsSpan] : findingsHighlights;
 
   /**
    * Clears every editing tool's state. Called wherever the report on screen
@@ -1812,20 +1787,38 @@ export function DashboardContent() {
    * would paste one patient's findings over another's.
    */
   function resetReportTools() {
-    setConclusionTool("none");
-    setPickedSentences(new Set());
+    setRewordOpen(false);
+    setConclusionSel(null);
     setPreviousConclusion(null);
-    setAdjustText("");
     setFindingsSel(null);
     setSentenceUndo(null);
     setConclusionBasisByStyle({});
   }
 
-  const selectedFindingText = findingsSel ? findings.slice(findingsSel.start, findingsSel.end).trim() : "";
+  /**
+   * Selecting by hand is imprecise, so a selection is widened to the whole
+   * sentences it touches. Half a sentence is never what was meant: rewriting
+   * a fragment, or asking for "lesión focal hipodensa de 12" in the
+   * conclusion, reads as nonsense out of context.
+   */
+  const findingsSelSnapped = useMemo(() => {
+    if (!findingsSel) return null;
+    const touched = splitFindingsSentences(findings)
+      .filter((s) => s.start < findingsSel.end && s.end > findingsSel.start);
+    if (touched.length === 0) return findingsSel;
+    // Only ever widen: a selection that already covers the section label
+    // ("Liver:") keeps it, since that is anatomy the rest of the line needs.
+    return {
+      start: Math.min(findingsSel.start, touched[0].start),
+      end: Math.max(findingsSel.end, touched[touched.length - 1].end),
+    };
+  }, [findingsSel, findings]);
+
+  const selectedFindingText = findingsSelSnapped ? findings.slice(findingsSelSnapped.start, findingsSelSnapped.end).trim() : "";
 
   async function improveSelectedSentence() {
-    if (!findingsSel || !selectedFindingText || improvingSentence) return;
-    const { start, end } = findingsSel;
+    if (!findingsSelSnapped || !selectedFindingText || improvingSentence) return;
+    const { start, end } = findingsSelSnapped;
     const before = findings;
     setImprovingSentence(true);
     try {
@@ -1858,33 +1851,43 @@ export function DashboardContent() {
     }
   }
 
-  /** Sentences the current selection touches. */
-  function selectedSentenceIndexes(): number[] {
-    if (!findingsSel) return [];
-    return findingsSentences
-      .map((s, i) => ({ s, i }))
-      .filter(({ s }) => findingsSel.start < s.end && findingsSel.end > s.start)
-      .map(({ i }) => i);
+  const conclusionSelText = conclusionSel ? conclusion.slice(conclusionSel.start, conclusionSel.end).trim() : "";
+
+  /** Rewords the conclusion. With text selected it works on that passage
+   *  only, which is how "shorten" usually means "shorten this point". */
+  async function rewordConclusion(instruction: string) {
+    if (!conclusion.trim()) return;
+    const target = conclusionSelText;
+    setConclusionSel(null);
+    await replaceConclusion("/api/generate/conclusion-adjust", {
+      conclusionText: conclusion,
+      instruction: target.length >= 10
+        ? `${instruction}\n\n${t("dash.instr_only_this")} "${target}"`
+        : instruction,
+      outputLanguage,
+    });
   }
 
-  const selectionIsMarked = (() => {
-    const idx = selectedSentenceIndexes();
-    return idx.length > 0 && idx.every((i) => pickedSentences.has(i));
-  })();
-
-  function toggleSelectionInConclusion() {
-    const idx = selectedSentenceIndexes();
-    if (idx.length === 0) return;
-    const markAll = !idx.every((i) => pickedSentences.has(i));
-    setPickedSentences((prev) => {
-      const next = new Set(prev);
-      for (const i of idx) {
-        if (markAll) next.add(i);
-        else next.delete(i);
-      }
-      return next;
-    });
+  /** Regenerates the conclusion, steered by the finding the radiologist
+   *  pointed at — either to make sure it is covered, or to leave it out. */
+  async function steerConclusion(kind: "include" | "exclude") {
+    if (!selectedTemplate || !selectedFindingText) return;
+    const studyName = selectedTemplate.name +
+      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
+    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
+    const text = selectedFindingText;
     setFindingsSel(null);
+    await replaceConclusion("/api/generate/conclusion", {
+      findingsText: findings,
+      clinicalInfo,
+      modality: selectedTemplate.modality,
+      studyType: studyName,
+      conclusionStyle,
+      outputLanguage,
+      ...(kind === "include" ? { mustInclude: [text] } : { exclude: [text] }),
+      ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
+      ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
+    });
   }
 
   function undoConclusionRewrite() {
@@ -1977,22 +1980,13 @@ export function DashboardContent() {
     }
   }
 
-  async function redoConclusionFromPicked(useSelection = true) {
+  /** A fresh conclusion from the findings exactly as they now stand. */
+  async function redoConclusion() {
     if (!selectedTemplate) return;
-    // Picking is optional: with nothing selected this is simply "redo the
-    // conclusion from the findings as they now stand", which is what is
-    // wanted after editing them, and the normal triage rules apply.
-    const selected = !useSelection ? [] : [...pickedSentences]
-      .sort((a, b) => a - b)
-      .map((i) => findingsSentences[i]?.text)
-      .filter((s): s is string => !!s);
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
     const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
 
-    // Land back on the wording tools: "now make it shorter" is the usual next
-    // thought after seeing a rewrite, and the selection is kept for another go.
-    setConclusionTool("adjust");
     await replaceConclusion("/api/generate/conclusion", {
       findingsText: findings,
       clinicalInfo,
@@ -2000,22 +1994,8 @@ export function DashboardContent() {
       studyType: studyName,
       conclusionStyle: conclusionStyle,
       outputLanguage,
-      ...(selected.length > 0 ? { selectedFindings: selected } : {}),
       ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
       ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
-    });
-  }
-
-  async function adjustConclusion(instruction: string) {
-    const text = instruction.trim();
-    if (!text || !conclusion.trim()) return;
-    // The panel stays open so adjustments can be chained ("shorter", then
-    // "order by urgency") without reopening it each time.
-    setAdjustText("");
-    await replaceConclusion("/api/generate/conclusion-adjust", {
-      conclusionText: conclusion,
-      instruction: text,
-      outputLanguage,
     });
   }
 
@@ -2922,8 +2902,8 @@ export function DashboardContent() {
                     {conclusionStale && (
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-xs text-amber-700 dark:text-amber-300 flex-1 min-w-[180px]">{t("dash.conclusion_stale")}</p>
-                        <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusionFromPicked(false)}>
-                          {t("dash.pick_findings_apply_none")}
+                        <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusion()}>
+                          {t("dash.redo")}
                         </Button>
                       </div>
                     )}
@@ -2933,11 +2913,11 @@ export function DashboardContent() {
                     {conclusion && !conclusionBusy && (
                       <button
                         type="button"
-                        onClick={() => { setConclusionTool("adjust"); setStatusExpanded(null); }}
+                        onClick={() => { setRewordOpen(true); setStatusExpanded(null); }}
                         className="flex items-center gap-1 text-[11px] font-medium text-brand hover:text-brand/80 transition-colors"
                       >
                         <Wand2 className="h-3 w-3" />
-                        {t("dash.improve_conclusion_from_note")}
+                        {t("dash.reword")}
                       </button>
                     )}
                   </div>
@@ -2982,83 +2962,46 @@ export function DashboardContent() {
               traceLocked={loadingTrace}
               isDark={isDark}
               linkTooltip={t("dash.conclusion_link_tooltip")}
-              onClickHighlight={(span) => {
-                if (span.spanIndex === undefined) return;
-                setPickedSentences((prev) => {
-                  const next = new Set(prev);
-                  next.delete(span.spanIndex!);
-                  return next;
-                });
-              }}
               onSelectRange={setFindingsSel}
               footerExtra={
-                selectedFindingText.length >= 3 || sentenceUndo || pickedSentences.size > 0 ? (
+                selectedFindingText.length >= 3 || sentenceUndo ? (
                   <div className="space-y-1.5">
                   {selectedFindingText.length >= 3 && (
-                  <div className="flex flex-wrap items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                    <>
-                        <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
-                        <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1 min-w-[120px]">
-                          {selectedFindingText.length > 70 ? selectedFindingText.slice(0, 70) + "…" : selectedFindingText}
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 text-[11px] shrink-0"
-                          onClick={toggleSelectionInConclusion}
-                        >
-                          <ListChecks className="h-3 w-3 mr-1" />
-                          {selectionIsMarked ? t("dash.unmark_for_conclusion") : t("dash.mark_for_conclusion")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-6 text-[11px] shrink-0"
-                          disabled={improvingSentence}
-                          onClick={improveSelectedSentence}
-                        >
-                          {improvingSentence ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
-                          {t("dash.improve_sentence")}
-                        </Button>
-                    </>
-                  </div>
-                  )}
-                  {pickedSentences.size > 0 && !conclusionBusy && (
-                    <div className="flex flex-wrap items-center gap-2 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                      <ListChecks className="h-3 w-3 text-emerald-600 shrink-0" />
-                      <span className="text-xs text-emerald-800 dark:text-emerald-200 flex-1 min-w-[150px]">
-                        {t("dash.marked_for_conclusion").replace("{0}", String(pickedSentences.size))}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPickedSentences(new Set())}
-                        className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:underline shrink-0"
-                      >
-                        {t("dash.pick_findings_none")}
-                      </button>
-                      <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusionFromPicked()}>
-                        {t("dash.pick_findings_apply")}
+                    <div className="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1 min-w-[110px]">
+                        {selectedFindingText.length > 60 ? selectedFindingText.slice(0, 60) + "…" : selectedFindingText}
+                      </p>
+                      <Button size="sm" className="h-6 text-[11px] shrink-0" disabled={improvingSentence || conclusionBusy} onClick={improveSelectedSentence}>
+                        {improvingSentence ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
+                        {t("dash.sel_improve")}
                       </Button>
+                      {conclusion.trim() && (
+                        <>
+                          <Button size="sm" variant="outline" className="h-6 text-[11px] shrink-0" disabled={conclusionBusy} onClick={() => steerConclusion("include")}>
+                            {t("dash.sel_to_conclusion")}
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-6 text-[11px] shrink-0" disabled={conclusionBusy} onClick={() => steerConclusion("exclude")}>
+                            {t("dash.sel_out_of_conclusion")}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
                   {sentenceUndo && selectedFindingText.length < 3 && (
-                      <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                        <CheckCheck className="h-3 w-3 text-amber-500 shrink-0" />
-                        <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">{t("dash.improve_sentence_done")}</p>
-                        <button
-                          type="button"
-                          onClick={() => { if (sentenceUndo) { setFindings(sentenceUndo); setSentenceUndo(null); reportDirtyRef.current = true; } }}
-                          className="text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline shrink-0"
-                        >
-                          {t("dash.undo_conclusion")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSentenceUndo(null)}
-                          className="text-amber-400 hover:text-amber-600 shrink-0"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
+                    <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <CheckCheck className="h-3 w-3 text-amber-500 shrink-0" />
+                      <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">{t("dash.improve_sentence_done")}</p>
+                      <button
+                        type="button"
+                        onClick={() => { if (sentenceUndo) { setFindings(sentenceUndo); setSentenceUndo(null); reportDirtyRef.current = true; } }}
+                        className="text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline shrink-0"
+                      >
+                        {t("dash.undo_conclusion")}
+                      </button>
+                      <button type="button" onClick={() => setSentenceUndo(null)} className="text-amber-400 hover:text-amber-600 shrink-0">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   )}
                   </div>
                 ) : undefined
@@ -3081,15 +3024,15 @@ export function DashboardContent() {
               minHeight={110}
               traceHighlights={conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
               onHoverHighlight={(span) => setHoveredConclusionPoint(span?.pointIndex ?? null)}
+              onSelectRange={setConclusionSel}
               isDark={isDark}
               headerExtra={
                 <div className="flex items-center gap-1.5">
-                  {previousConclusion?.style === conclusionStyle && !loadingConcStyles[conclusionStyle] && (
+                  {previousConclusion?.style === conclusionStyle && !conclusionBusy && (
                     <button
                       type="button"
                       onClick={undoConclusionRewrite}
                       className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors"
-                      title={t("dash.undo_conclusion_hint")}
                     >
                       <RotateCcw className="h-3 w-3" />
                       {t("dash.undo_conclusion")}
@@ -3098,25 +3041,26 @@ export function DashboardContent() {
                   {conclusion && !conclusionBusy && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setAdjustText("");
-                        // Opens on step 1: correcting a conclusion starts by
-                        // saying what it should cover, not by rewording it.
-                        setConclusionTool(conclusionTool === "none" ? "adjust" : "none");
-                      }}
+                      onClick={() => setRewordOpen((v) => !v)}
                       className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                        conclusionTool !== "none"
-                          ? "text-brand"
-                          : conclusionVerify?.status === "issues"
-                          // The check found something: put the fix where the eye
-                          // already is instead of leaving it a grey afterthought.
-                          ? "text-amber-600 dark:text-amber-400 hover:text-amber-700"
-                          : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                        rewordOpen ? "text-brand" : "text-gray-500 dark:text-gray-400 hover:text-brand"
                       }`}
-                      title={t("dash.improve_conclusion_hint")}
                     >
                       <Wand2 className="h-3 w-3" />
-                      {t("dash.improve_conclusion")}
+                      {t("dash.reword")}
+                    </button>
+                  )}
+                  {conclusion && !conclusionBusy && (
+                    <button
+                      type="button"
+                      onClick={redoConclusion}
+                      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
+                        conclusionStale ? "text-amber-600 dark:text-amber-400 hover:text-amber-700" : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                      }`}
+                      title={t("dash.redo_hint")}
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      {t("dash.redo")}
                     </button>
                   )}
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
@@ -3149,71 +3093,45 @@ export function DashboardContent() {
               }
               footerExtra={
                 <>
-                  {conclusionTool === "none" ? null : (
-                  // Stays mounted during a rewrite rather than unmounting and
-                  // coming back, which made the page jump mid-read.
-                  <div className={`rounded-lg border p-2 space-y-1.5 transition-opacity border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] ${
-                    conclusionBusy ? "opacity-60 pointer-events-none" : ""
-                  }`}>
-                    <div className="flex items-center gap-1 text-[11px]">
-                      <span className="font-medium text-gray-500 dark:text-gray-400">{t("dash.adjust_conclusion_title")}</span>
+                  {(rewordOpen || (conclusionSel && conclusionSelText.length >= 10)) && !conclusionBusy && (
+                    <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)]">
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400 shrink-0">
+                        {conclusionSelText.length >= 10 ? t("dash.reword_selection") : t("dash.reword_all")}
+                      </span>
+                      {([
+                        ["dash.adjust_preset_shorter", "dash.adjust_instr_shorter"],
+                        ["dash.adjust_preset_detailed", "dash.adjust_instr_detailed"],
+                        ["dash.adjust_preset_urgency", "dash.adjust_instr_urgency"],
+                        ["dash.adjust_preset_merge", "dash.adjust_instr_merge"],
+                        ["dash.adjust_preset_paraphrase", "dash.adjust_instr_paraphrase"],
+                      ] as const).map(([label, instr]) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => rewordConclusion(t(instr))}
+                          className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-gray-600 dark:text-gray-300 hover:border-brand hover:text-brand transition-colors"
+                        >
+                          {t(label)}
+                        </button>
+                      ))}
+                      {conclusionSelText.length >= 10 && (
+                        <button
+                          type="button"
+                          onClick={() => rewordConclusion(t("dash.instr_drop_selection"))}
+                          className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-gray-600 dark:text-gray-300 hover:border-red-400 hover:text-red-500 transition-colors"
+                        >
+                          {t("dash.sel_drop")}
+                        </button>
+                      )}
                       <div className="flex-1" />
                       <button
                         type="button"
-                        onClick={() => setConclusionTool("none")}
-                        className="p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                        title={t("common.cancel")}
+                        onClick={() => { setRewordOpen(false); setConclusionSel(null); }}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                      <>
-                        <div className="flex flex-wrap items-center gap-1">
-                          {([
-                            ["dash.adjust_preset_shorter", "dash.adjust_instr_shorter"],
-                            ["dash.adjust_preset_detailed", "dash.adjust_instr_detailed"],
-                            ["dash.adjust_preset_urgency", "dash.adjust_instr_urgency"],
-                            ["dash.adjust_preset_merge", "dash.adjust_instr_merge"],
-                            ["dash.adjust_preset_paraphrase", "dash.adjust_instr_paraphrase"],
-                          ] as const).map(([label, instr]) => (
-                            <button
-                              key={label}
-                              type="button"
-                              onClick={() => adjustConclusion(t(instr))}
-                              className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-gray-600 dark:text-gray-300 hover:border-brand hover:text-brand transition-colors"
-                            >
-                              {t(label)}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Input
-                            autoFocus
-                            value={adjustText}
-                            onChange={(e) => setAdjustText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                adjustConclusion(adjustText);
-                              } else if (e.key === "Escape") {
-                                e.preventDefault();
-                                setConclusionTool("none");
-                              }
-                            }}
-                            placeholder={t("dash.adjust_placeholder")}
-                            className="h-7 text-xs"
-                          />
-                          <Button
-                            size="sm"
-                            className="h-7 text-xs shrink-0"
-                            disabled={!adjustText.trim()}
-                            onClick={() => adjustConclusion(adjustText)}
-                          >
-                            {t("dash.adjust_apply")}
-                          </Button>
-                        </div>
-                      </>
-                  </div>
                   )}
                 </>
               }
