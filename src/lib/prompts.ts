@@ -1552,6 +1552,48 @@ export function buildConclusionPrompt(params: {
 
   const findingsLen = params.findingsText.length;
   const maxPoints = findingsLen > 5000 ? 6 : findingsLen > 3000 ? 5 : 4;
+  // The ultra-short style is one paragraph, so the rules that count and
+  // number points would contradict it outright.
+  const isBrief = style === "brief";
+
+  const RULE_1_ES = isBrief
+    ? `1. UN SOLO PÁRRAFO, sin numerar y sin dividir en puntos. Cuanto más corto, mejor: si cabe en dos frases, que sean dos.`
+    : `1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.`;
+  const FORMAT_ES = isBrief
+    ? `- UN ÚNICO PÁRRAFO de texto plano: sin numerar, sin viñetas, sin saltos de línea. Sin markdown ni encabezado "CONCLUSIÓN".
+- Empieza DIRECTAMENTE por el hallazgo principal, nunca por una etiqueta anatómica ni por un preámbulo ("En el estudio realizado se objetiva…").`
+    : `- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
+- Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.`;
+  const RULE_1_EN = isBrief
+    ? `1. ONE SINGLE PARAGRAPH, not numbered and not split into points. The shorter the better: if it fits in two sentences, make it two.`
+    : `1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.`;
+  const FORMAT_EN = isBrief
+    ? `- ONE SINGLE PARAGRAPH of plain text: no numbering, no bullets, no line breaks. No markdown, no "CONCLUSION" heading.
+- Start DIRECTLY with the main finding, never with an anatomical label or a preamble ("The study performed demonstrates…").`
+    : `- Numbered points, plain text, maximum ${maxPoints}. No markdown, no "CONCLUSION" heading.
+- Each point starts DIRECTLY with the finding, never with an anatomical label: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)." and NOT "1. Lung parenchyma: …". If a point starts with a category followed by a colon, rewrite it without that preamble.`;
+  // The rules below are written around numbered points. In the ultra-short
+  // style there is only a paragraph, so every phrase that says "point" is
+  // said the other way instead of quietly contradicting the style block.
+  const SHAPE_ES = isBrief ? "en un único párrafo que va al grano" : "en puntos descriptivos que van al grano";
+  const SHAPE_EN = isBrief ? "into a single paragraph that gets straight to the point" : "into descriptive bullet points that get straight to the point";
+  const SHAPE_PT = isBrief ? "num único parágrafo que vai direto ao ponto" : "em pontos descritivos que vão direto ao ponto";
+  const RULE_4_ES = isBrief
+    ? `4. HILADO: encadena los hallazgos relacionados o del mismo órgano/región dentro del párrafo, para que el clínico lea el panorama de cada zona y no una lista suelta. Encadenar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.`
+    : `4. AGRUPACIÓN: reúne en un mismo punto los hallazgos anatómicamente relacionados o del mismo órgano/región (ej: derrame pleural + atelectasia compresiva adyacente), para que el clínico vea el panorama de cada zona y no una lista fragmentada. Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.`;
+  const RULE_4_EN = isBrief
+    ? `4. THREADING: chain related findings, or findings in the same organ/region, together within the paragraph, so the clinician reads the whole picture of each area rather than a loose list. Chaining does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.`
+    : `4. GROUPING: put anatomically related findings, or findings in the same organ/region, into a single point (e.g. pleural effusion + adjacent compressive atelectasis), so the clinician sees the whole picture of each area rather than a fragmented list. Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.`;
+  const FIRST_ES = isBrief ? "El párrafo DEBE ABRIR respondiéndola" : "El PRIMER punto DEBE responderla";
+  const FIRST_EN = isBrief ? "The paragraph MUST OPEN by answering it" : "The FIRST point MUST answer it";
+  const REST_ES = isBrief ? "El resto del párrafo" : "Los puntos restantes";
+  const REST_EN = isBrief ? "The rest of the paragraph" : "The remaining points";
+  const AT_START_ES = isBrief ? "al principio del párrafo" : "en el primer punto";
+  const AT_START_EN = isBrief ? "at the start of the paragraph" : "in the first point";
+  const WITH_FINDING_ES = isBrief ? "pegados al hallazgo correspondiente" : "DENTRO del punto del hallazgo correspondiente";
+  const WITH_FINDING_EN = isBrief ? "right next to the finding it belongs to" : "INSIDE the point for that finding";
+  const REREAD_ES = isBrief ? "relee la conclusión entera y reescríbela" : "relee cada punto y reescríbelo";
+  const REREAD_EN = isBrief ? "re-read the whole conclusion and rewrite it" : "re-read each point and rewrite it";
 
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
@@ -1561,19 +1603,14 @@ export function buildConclusionPrompt(params: {
 - ORDENA los puntos por RELEVANCIA CLÍNICA de MAYOR a MENOR: primero lo agudo / lo que responde a la pregunta clínica / lo que cambia el manejo inmediato; al final lo incidental o crónico estable.
 - AGRUPA en un mismo punto los hallazgos clínica o anatómicamente relacionados (mismo órgano/región), manteniendo la frase breve. Los hallazgos no relacionados van en PUNTOS SEPARADOS. Agrupar NO significa diagnosticar.
 - Tono: directo, escueto, descriptivo.`,
-    grouped: `ESTILO — INTEGRADO:
-- Cada punto es un párrafo breve con frases completas y bien redactadas.
-- Incluye datos descriptivos: tamaño, localización, densidad/señal, evolución.
-- Agrupa hallazgos anatómicamente relacionados o del mismo órgano/región en un solo punto (ej: lesión hepática + adenopatías adyacentes, derrame + atelectasia compresiva).
-- NO fuerces conectores entre hallazgos independientes. Cada punto es una unidad clínica coherente.
-- AGRUPAR NO significa diagnosticar. Describe los hallazgos juntos sin inferir su naturaleza, etiología ni relación causal. NUNCA uses frases como "potencialmente maligno", "probablemente metastásico", "en probable relación con", "sugestivo de neoplasia". Solo describe lo que se ve.
-- Tono: integrador pero riguroso, sintético, PURAMENTE DESCRIPTIVO.
-
-REDACCIÓN (la conclusión sale ya pulida, no hay una segunda pasada):
-- Cuida la fluidez, la claridad y la precisión terminológica de cada punto.
-- Elimina redundancias, muletillas y palabras superfluas ("se observa", "se identifica", "cabe destacar"…).
-- Unifica el estilo: mismo tiempo verbal y estructura paralela entre los puntos.
-- Si un punto se puede decir con menos palabras sin perder datos, dilo con menos.`,
+    brief: `ESTILO — ULTRABREVE (UN SOLO PÁRRAFO):
+- La conclusión entera es UN ÚNICO PÁRRAFO corrido: sin numerar, sin viñetas y sin saltos de línea.
+- Va al grano. Exprime los hallazgos relevantes en las menos palabras posibles, encadenados con fluidez.
+- PARAFRASEA con libertad: no copies las frases de los hallazgos. Reformula, funde y condensa hasta que quepa en un párrafo bien escrito.
+- Conserva los datos que importan (tamaño, localización, lateralidad, cambios respecto a previos) y suelta todo lo demás.
+- Prioriza DENTRO del párrafo: primero lo que responde a la pregunta clínica o lo agudo; lo secundario después.
+- Es lo único que el clínico va a leer. Tiene que ser impecable: ni una palabra de relleno, ni una muletilla, ni una subordinada que sobre.
+- CONDENSAR NO ES DIAGNOSTICAR. Sigues describiendo lo que se ve: sin nombrar entidades, sin inferencias, sin juicios de naturaleza y sin recomendaciones. Parafrasear cambia las palabras, nunca el contenido.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
@@ -1584,19 +1621,14 @@ REDACCIÓN (la conclusión sale ya pulida, no hay una segunda pasada):
 - ORDER the points by CLINICAL RELEVANCE from HIGHEST to LOWEST: acute findings / what answers the clinical question / what changes immediate management first; incidental or stable chronic findings last.
 - GROUP clinically or anatomically related findings (same organ/region) into a single point while keeping the phrase brief. Unrelated findings go in SEPARATE POINTS. Grouping does NOT mean diagnosing.
 - Tone: direct, succinct, descriptive.`,
-    grouped: `STYLE — INTEGRATED:
-- Each point is a brief paragraph with complete, well-written sentences.
-- Include descriptive data: size, location, density/signal, evolution.
-- Group anatomically related findings or findings in the same organ/region into a single point (e.g., hepatic lesion + adjacent lymphadenopathy, effusion + compressive atelectasis).
-- Do NOT force connectors between independent findings. Each point is a coherent clinical unit.
-- GROUPING does NOT mean diagnosing. Describe findings together without inferring their nature, etiology, or causal relationship. NEVER use phrases like "potentially malignant", "probably metastatic", "likely related to", "suggestive of neoplasia". Only describe what is seen.
-- Tone: integrative but rigorous, synthetic, PURELY DESCRIPTIVE.
-
-WRITING (the conclusion comes out finished — there is no second pass):
-- Mind the flow, clarity and terminological precision of each point.
-- Remove redundancies, filler verbs and superfluous words ("is noted", "is identified", "of note"…).
-- Unify the style: same verb tense and parallel structure across the points.
-- If a point can be said in fewer words without losing data, say it in fewer.`,
+    brief: `STYLE — ULTRA-SHORT (ONE SINGLE PARAGRAPH):
+- The whole conclusion is ONE SINGLE running PARAGRAPH: no numbering, no bullets, no line breaks.
+- It gets straight to the point. Squeeze the relevant findings into as few words as possible, flowing together.
+- PARAPHRASE freely: do not copy the sentences from the findings. Reword, merge and condense until it fits in one well-written paragraph.
+- Keep the data that matters (size, location, laterality, change from priors) and drop everything else.
+- Prioritize WITHIN the paragraph: what answers the clinical question, or the acute finding, first; secondary findings after.
+- It is the only thing the clinician will read. It has to be flawless: not one filler word, not one stock phrase, not one subordinate clause too many.
+- CONDENSING IS NOT DIAGNOSING. You are still describing what is seen: no naming entities, no inferences, no judgements of nature, no recommendations. Paraphrasing changes the words, never the content.`,
   };
 
   const STYLE_BLOCK_PT: Record<ConclusionStyle, string> = {
@@ -1607,25 +1639,20 @@ WRITING (the conclusion comes out finished — there is no second pass):
 - ORDENE os pontos por RELEVÂNCIA CLÍNICA de MAIOR a MENOR: primeiro o agudo / o que responde à pergunta clínica / o que muda o manejo imediato; por último o incidental ou crônico estável.
 - AGRUPE em um mesmo ponto os achados clínica ou anatomicamente relacionados (mesmo órgão/região), mantendo a frase breve. Achados não relacionados vão em PONTOS SEPARADOS. Agrupar NÃO significa diagnosticar.
 - Tom: direto, sucinto, descritivo.`,
-    grouped: `ESTILO — INTEGRADO:
-- Cada ponto é um parágrafo breve com frases completas e bem redigidas.
-- Inclua dados descritivos: tamanho, localização, densidade/sinal, evolução.
-- Agrupe achados anatomicamente relacionados ou do mesmo órgão/região em um único ponto (ex: lesão hepática + linfonodomegalias adjacentes, derrame + atelectasia compressiva).
-- NÃO force conectores entre achados independentes. Cada ponto é uma unidade clínica coerente.
-- AGRUPAR NÃO significa diagnosticar. Descreva os achados juntos sem inferir sua natureza, etiologia nem relação causal. NUNCA use frases como "potencialmente maligno", "provavelmente metastático", "em provável relação com", "sugestivo de neoplasia". Só descreva o que se vê.
-- Tom: integrador mas rigoroso, sintético, PURAMENTE DESCRITIVO.
-
-REDAÇÃO (a conclusão sai já polida, não há uma segunda passagem):
-- Cuide da fluidez, da clareza e da precisão terminológica de cada ponto.
-- Elimine redundâncias, vícios de linguagem e palavras supérfluas ("observa-se", "identifica-se", "cabe destacar"…).
-- Unifique o estilo: mesmo tempo verbal e estrutura paralela entre os pontos.
-- Se um ponto pode ser dito com menos palavras sem perder dados, diga com menos.`,
+    brief: `ESTILO — ULTRABREVE (UM ÚNICO PARÁGRAFO):
+- A conclusão inteira é UM ÚNICO PARÁGRAFO corrido: sem numeração, sem marcadores e sem quebras de linha.
+- Vai direto ao ponto. Espreme os achados relevantes no menor número de palavras possível, encadeados com fluidez.
+- PARAFRASEIE à vontade: não copie as frases dos achados. Reformule, funda e condense até caber num parágrafo bem escrito.
+- Conserve os dados que importam (tamanho, localização, lateralidade, mudanças em relação a prévios) e largue todo o resto.
+- Priorize DENTRO do parágrafo: primeiro o que responde à pergunta clínica ou o agudo; o secundário depois.
+- É a única coisa que o clínico vai ler. Tem de ser impecável: nem uma palavra de enchimento, nem um vício de linguagem, nem uma oração subordinada a mais.
+- CONDENSAR NÃO É DIAGNOSTICAR. Você continua descrevendo o que se vê: sem nomear entidades, sem inferências, sem juízos de natureza e sem recomendações. Parafrasear muda as palavras, nunca o conteúdo.`,
   };
 
   let system: string;
 
   if (lang === "es") {
-    system = `Eres un radiólogo experto redactando la CONCLUSIÓN de un informe radiológico. Tu rol es sintetizar y DESCRIBIR los hallazgos como lo haría un radiólogo senior experimentado: priorizando jerárquicamente lo clínicamente relevante, orientando sobre la pregunta clínica con datos descriptivos cuando exista (SIN emitir diagnósticos), y organizando la información en puntos descriptivos que van al grano. La conclusión es un resumen DESCRIPTIVO de hallazgos, NUNCA un diagnóstico.
+    system = `Eres un radiólogo experto redactando la CONCLUSIÓN de un informe radiológico. Tu rol es sintetizar y DESCRIBIR los hallazgos como lo haría un radiólogo senior experimentado: priorizando jerárquicamente lo clínicamente relevante, orientando sobre la pregunta clínica con datos descriptivos cuando exista (SIN emitir diagnósticos), y organizando la información ${SHAPE_ES}. La conclusión es un resumen DESCRIPTIVO de hallazgos, NUNCA un diagnóstico.
 
 IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
 Si los hallazgos están en otro idioma, traduce al ${l}.
@@ -1634,7 +1661,7 @@ ${STYLE_BLOCK_ES[style]}
 
 REGLAS DE CONTENIDO:
 
-1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.
+${RULE_1_ES}
 
 2. TRIAJE — la conclusión NO resume todo: selecciona lo clínicamente relevante y DESCARTA sin miedo lo crónico estable, lo incidental menor, las normalidades de órganos y todo lo que no cambie el manejo. Para el detalle ya están los hallazgos.
 
@@ -1644,19 +1671,19 @@ REGLAS DE CONTENIDO:
    - AL FINAL, y solo si requieren acción: incidentales relevantes.
    - NUNCA: órganos normales, variantes irrelevantes, incidentales triviales (quiste simple pequeño, osteofitos) salvo que sean el motivo del estudio.
 
-4. AGRUPACIÓN: reúne en un mismo punto los hallazgos anatómicamente relacionados o del mismo órgano/región (ej: derrame pleural + atelectasia compresiva adyacente), para que el clínico vea el panorama de cada zona y no una lista fragmentada. Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.
+${RULE_4_ES}
 
 5. ${hasClinical ? `PREGUNTA CLÍNICA — RESUÉLVELA:
-   - El PRIMER punto DEBE responderla: el clínico lee la conclusión antes que los hallazgos.
+   - ${FIRST_ES}: el clínico lee la conclusión antes que los hallazgos.
    - Si hay hallazgos que respondan, descríbelos con sus datos clave (tamaño, localización, cambios respecto a previo); si no los hay, frase negativa corta (ej: "Sin evidencia de TEP en el territorio valorado."); si el hallazgo es indeterminado, descríbelo sin especular.
-   - Los puntos restantes cubren otros hallazgos significativos.` : `SIN CONTEXTO CLÍNICO:
+   - ${REST_ES} cubre otros hallazgos significativos.` : `SIN CONTEXTO CLÍNICO:
    - Deduce cuál es el hallazgo principal: ¿por qué se pidió este estudio? El PRIMER punto debe ser ese hallazgo, o su ausencia.
    - Orden: agudos (fractura, colección, isquemia, perforación, torsión) → cambios evolutivos en lesiones conocidas → nuevos hallazgos patológicos → crónicos/degenerativos solo si requieren acción.
    - Nunca enumeres en plano: prioriza.`}
 
-6. NEGATIVOS: incluye un negativo solo si responde a la pregunta clínica (ej: "descartar TEP" → "Sin evidencia de TEP", en el primer punto). Nunca listes normalidad como relleno.
+6. NEGATIVOS: incluye un negativo solo si responde a la pregunta clínica (ej: "descartar TEP" → "Sin evidencia de TEP", ${AT_START_ES}). Nunca listes normalidad como relleno.
 
-7. PREVIOS: los cambios respecto a estudios previos van DENTRO del punto del hallazgo correspondiente, con precisión (aumento/disminución con medidas, aparición/desaparición, estabilidad). Son información de alto valor: no los omitas.
+7. PREVIOS: los cambios respecto a estudios previos van ${WITH_FINDING_ES}, con precisión (aumento/disminución con medidas, aparición/desaparición, estabilidad). Son información de alto valor: no los omitas.
 
 8. NO PIERDAS DATOS: sintetiza en vez de copiar frases textuales, pero cada dato relevante (tamaño, localización, densidad/señal, lateralidad, número, cambios) debe llegar a la conclusión.
 
@@ -1679,10 +1706,9 @@ EXCEPCIÓN: puedes usar un término diagnóstico SOLO si aparece textualmente en
 Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
 FORMATO:
-- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
-- Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.
+${FORMAT_ES}
 
-⚠️ ANTES DE ENTREGAR, relee cada punto y reescríbelo si falla alguno de estos filtros:
+⚠️ ANTES DE ENTREGAR, ${REREAD_ES} si falla alguno de estos filtros:
 1. ¿Nombra una enfermedad o entidad que NO aparece textualmente en los hallazgos? → sustitúyelo por la descripción (qué se ve, dónde, tamaño, densidad/señal).
 2. ¿Contiene una inferencia ("compatible con", "probable", "secundario a"…)? → déjalo en descripción objetiva.
 3. ¿Asigna malignidad, benignidad, etiología o pronóstico? → elimínalo.
@@ -1692,8 +1718,8 @@ REGLA DE ORO: ante la duda, describe el hallazgo en vez de interpretarlo.`;
   } else {
     const styleBlock = lang === "pt" ? STYLE_BLOCK_PT[style] : STYLE_BLOCK_EN[style];
     const roleIntro = lang === "pt"
-      ? `Você é um radiologista experiente redigindo a CONCLUSÃO de um laudo radiológico. Seu papel é sintetizar e DESCREVER os achados como faria um radiologista sênior: priorizando hierarquicamente o clinicamente relevante, orientando sobre a pergunta clínica com dados descritivos quando existir (SEM emitir diagnósticos), e organizando a informação em pontos descritivos que vão direto ao ponto. A conclusão é um resumo DESCRITIVO de achados, NUNCA um diagnóstico.`
-      : `You are an expert radiologist writing the CONCLUSION of a radiology report. Your role is to synthesize and DESCRIBE the findings as a senior experienced radiologist would: hierarchically prioritizing clinical relevance, addressing the clinical question with descriptive data when one exists (WITHOUT issuing diagnoses), and organizing information into descriptive bullet points that get straight to the point. The conclusion is a DESCRIPTIVE summary of findings, NEVER a diagnosis.`;
+      ? `Você é um radiologista experiente redigindo a CONCLUSÃO de um laudo radiológico. Seu papel é sintetizar e DESCREVER os achados como faria um radiologista sênior: priorizando hierarquicamente o clinicamente relevante, orientando sobre a pergunta clínica com dados descritivos quando existir (SEM emitir diagnósticos), e organizando a informação ${SHAPE_PT}. A conclusão é um resumo DESCRITIVO de achados, NUNCA um diagnóstico.`
+      : `You are an expert radiologist writing the CONCLUSION of a radiology report. Your role is to synthesize and DESCRIBE the findings as a senior experienced radiologist would: hierarchically prioritizing clinical relevance, addressing the clinical question with descriptive data when one exists (WITHOUT issuing diagnoses), and organizing information ${SHAPE_EN}. The conclusion is a DESCRIPTIVE summary of findings, NEVER a diagnosis.`;
 
     system = `${roleIntro}
 
@@ -1704,7 +1730,7 @@ ${styleBlock}
 
 CONTENT RULES:
 
-1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.
+${RULE_1_EN}
 
 2. TRIAGE — the conclusion is NOT a summary of everything: select what is clinically relevant and freely DISCARD stable chronic findings, minor incidentals, organ normality and anything that does not change management. The detail is already in the findings.
 
@@ -1714,19 +1740,19 @@ CONTENT RULES:
    - LAST, and only if they require action: relevant incidentals.
    - NEVER: normal organs, irrelevant variants, trivial incidentals (small simple cyst, osteophytes) unless they are the reason for the study.
 
-4. GROUPING: put anatomically related findings, or findings in the same organ/region, into a single point (e.g. pleural effusion + adjacent compressive atelectasis), so the clinician sees the whole picture of each area rather than a fragmented list. Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.
+${RULE_4_EN}
 
 5. ${hasClinical ? `CLINICAL QUESTION — ANSWER IT:
-   - The FIRST point MUST answer it: the clinician reads the conclusion before the findings.
+   - ${FIRST_EN}: the clinician reads the conclusion before the findings.
    - If findings answer it, describe them with their key data (size, location, change from prior); if none do, a short negative sentence (e.g. "No evidence of PE in the assessed territory."); if the finding is indeterminate, describe it without speculating.
-   - The remaining points cover other significant findings.` : `NO CLINICAL CONTEXT:
+   - ${REST_EN} covers other significant findings.` : `NO CLINICAL CONTEXT:
    - Work out the main finding: why was this study requested? The FIRST point must be that finding, or its absence.
    - Order: acute findings (fracture, collection, ischemia, perforation, torsion) → interval change in known lesions → new pathological findings → chronic/degenerative only if they require action.
    - Never list flatly: prioritize.`}
 
-6. NEGATIVES: include a negative only if it answers the clinical question (e.g. "rule out PE" → "No evidence of PE", in the first point). Never list normality as filler.
+6. NEGATIVES: include a negative only if it answers the clinical question (e.g. "rule out PE" → "No evidence of PE", ${AT_START_EN}). Never list normality as filler.
 
-7. PRIORS: interval change goes INSIDE the point for that finding, stated precisely (increase/decrease with measurements, appearance/disappearance, stability). It is high-value information: do not omit it.
+7. PRIORS: interval change goes ${WITH_FINDING_EN}, stated precisely (increase/decrease with measurements, appearance/disappearance, stability). It is high-value information: do not omit it.
 
 8. DO NOT LOSE DATA: synthesize rather than copying sentences verbatim, but every relevant data point (size, location, density/signal, laterality, number, change) must reach the conclusion.
 
@@ -1749,10 +1775,9 @@ EXCEPTION: you may use a diagnostic term ONLY if it appears verbatim in the dict
 If there are no relevant findings: "${hasClinical ? "No significant findings in relation to the clinical question." : "Study within normal limits."}"
 
 FORMAT:
-- Numbered points, plain text, maximum ${maxPoints}. No markdown, no "CONCLUSION" heading.
-- Each point starts DIRECTLY with the finding, never with an anatomical label: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)." and NOT "1. Lung parenchyma: …". If a point starts with a category followed by a colon, rewrite it without that preamble.
+${FORMAT_EN}
 
-⚠️ BEFORE DELIVERING, re-read each point and rewrite it if it fails any of these filters:
+⚠️ BEFORE DELIVERING, ${REREAD_EN} if it fails any of these filters:
 1. Does it name a disease or entity that does NOT appear verbatim in the findings? → replace it with the description (what is seen, where, size, density/signal).
 2. Does it contain an inference ("consistent with", "likely", "secondary to"…)? → leave only the objective description.
 3. Does it assign malignancy, benignity, etiology or prognosis? → remove it.
@@ -2058,26 +2083,29 @@ export function buildConclusionLinksPrompt(params: {
 }): { system: string; user: string } {
   const lang = params.outputLanguage;
 
-  const systemEs = `Recibes los HALLAZGOS de un informe radiológico y su CONCLUSIÓN ya redactada, con puntos numerados. Para cada punto numerado de la conclusión, busca la cita EXACTA y más corta posible dentro de los HALLAZGOS que lo respalda — cópiala literalmente, sin cambiar ni una palabra, tal como aparece en los hallazgos (se usará para buscarla dentro del texto).
+  const systemEs = `Recibes los HALLAZGOS de un informe radiológico y su CONCLUSIÓN ya redactada. Numera las unidades de la conclusión en orden de lectura: si está en puntos numerados, cada punto es una unidad; si es un único párrafo corrido, cada FRASE del párrafo es una unidad (la primera frase es la 1, la segunda la 2, y así). Para cada unidad, busca la cita EXACTA y más corta posible dentro de los HALLAZGOS que la respalda — cópiala literalmente, sin cambiar ni una palabra, tal como aparece en los hallazgos (se usará para buscarla dentro del texto).
 
-Si un punto resume varios hallazgos o no tiene una frase concreta que lo respalde, omítelo (no lo incluyas en la respuesta).
-Si un punto es una negación general (ej: "sin hallazgos agudos"), omítelo también.
+Si una unidad resume varios hallazgos, devuelve una entrada por cada hallazgo que recoja, todas con el mismo número de unidad.
+Si una unidad no tiene ninguna frase concreta que la respalde, omítela (no la incluyas en la respuesta).
+Si una unidad es una negación general (ej: "sin hallazgos agudos"), omítela también.
 
-Responde ÚNICAMENTE con JSON válido, sin explicación ni texto adicional: un array de objetos con esta forma exacta: [{"point": <número del punto>, "quote": "<cita literal de los hallazgos>"}]. Si ningún punto tiene cita clara, responde [].`;
+Responde ÚNICAMENTE con JSON válido, sin explicación ni texto adicional: un array de objetos con esta forma exacta: [{"point": <número de la unidad>, "quote": "<cita literal de los hallazgos>"}]. Si ninguna unidad tiene cita clara, responde [].`;
 
-  const systemPt = `Você recebe os ACHADOS de um laudo radiológico e sua CONCLUSÃO já redigida, com pontos numerados. Para cada ponto numerado da conclusão, busque a citação EXATA e mais curta possível dentro dos ACHADOS que a respalda — copie-a literalmente, sem mudar uma palavra, tal como aparece nos achados (será usada para buscá-la no texto).
+  const systemPt = `Você recebe os ACHADOS de um laudo radiológico e sua CONCLUSÃO já redigida. Numere as unidades da conclusão em ordem de leitura: se estiver em pontos numerados, cada ponto é uma unidade; se for um único parágrafo corrido, cada FRASE do parágrafo é uma unidade (a primeira frase é a 1, a segunda a 2, e assim por diante). Para cada unidade, busque a citação EXATA e mais curta possível dentro dos ACHADOS que a respalda — copie-a literalmente, sem mudar uma palavra, tal como aparece nos achados (será usada para buscá-la no texto).
 
-Se um ponto resume vários achados ou não tem uma frase concreta que o respalde, omita-o (não o inclua na resposta).
-Se um ponto é uma negação geral (ex: "sem achados agudos"), omita-o também.
+Se uma unidade resume vários achados, devolva uma entrada para cada achado que ela recolhe, todas com o mesmo número de unidade.
+Se uma unidade não tem nenhuma frase concreta que a respalde, omita-a (não a inclua na resposta).
+Se uma unidade é uma negação geral (ex: "sem achados agudos"), omita-a também.
 
-Responda APENAS com JSON válido, sem explicação nem texto adicional: um array de objetos nesta forma exata: [{"point": <número do ponto>, "quote": "<citação literal dos achados>"}]. Se nenhum ponto tiver citação clara, responda [].`;
+Responda APENAS com JSON válido, sem explicação nem texto adicional: um array de objetos nesta forma exata: [{"point": <número da unidade>, "quote": "<citação literal dos achados>"}]. Se nenhuma unidade tiver citação clara, responda [].`;
 
-  const systemEn = `You receive the FINDINGS of a radiology report and its already-written CONCLUSION, with numbered points. For each numbered point in the conclusion, find the shortest exact quote within the FINDINGS that supports it — copy it verbatim, not changing a single word, exactly as it appears in the findings (it will be used to search for it in the text).
+  const systemEn = `You receive the FINDINGS of a radiology report and its already-written CONCLUSION. Number the conclusion's units in reading order: if it is in numbered points, each point is a unit; if it is one running paragraph, each SENTENCE of the paragraph is a unit (the first sentence is 1, the second is 2, and so on). For each unit, find the shortest exact quote within the FINDINGS that supports it — copy it verbatim, not changing a single word, exactly as it appears in the findings (it will be used to search for it in the text).
 
-If a point summarizes multiple findings or has no single concrete supporting phrase, omit it (do not include it in the response).
-If a point is a general negation (e.g. "no acute findings"), omit it too.
+If a unit summarizes several findings, return one entry per finding it covers, all with the same unit number.
+If a unit has no concrete supporting phrase at all, omit it (do not include it in the response).
+If a unit is a general negation (e.g. "no acute findings"), omit it too.
 
-Respond ONLY with valid JSON, no explanation or extra text: an array of objects in this exact shape: [{"point": <point number>, "quote": "<verbatim quote from the findings>"}]. If no point has a clear quote, respond [].`;
+Respond ONLY with valid JSON, no explanation or extra text: an array of objects in this exact shape: [{"point": <unit number>, "quote": "<verbatim quote from the findings>"}]. If no unit has a clear quote, respond [].`;
 
   const system = lang === "es" ? systemEs : lang === "pt" ? systemPt : systemEn;
   const findingsLabel = lang === "es" ? "Hallazgos" : lang === "pt" ? "Achados" : "Findings";

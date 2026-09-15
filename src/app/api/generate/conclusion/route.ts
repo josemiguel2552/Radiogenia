@@ -10,7 +10,8 @@ import { buildConclusionPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
 import { logPiiStrip } from "@/lib/pii-log";
-import type { OutputLanguage, ConclusionStyle } from "@/lib/types";
+import type { OutputLanguage } from "@/lib/types";
+import { normalizeConclusionStyle } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
@@ -48,13 +49,16 @@ export async function POST(req: NextRequest) {
     for (const [k, v] of Object.entries(st2)) mergedTypes[k] = (mergedTypes[k] || 0) + v;
     logPiiStrip(user.id, "conclusion", sc1 + sc2, mergedTypes);
 
-    // Findings the radiologist pointed at come back from the browser, so they
-    // get the same PII scrub as everything else before reaching a provider.
+    // Findings the radiologist ticked come back from the browser, so they get
+    // the same PII scrub as everything else before reaching a provider. The
+    // cap is above what a long report splits into: these two lists together
+    // are every sentence of the findings, and dropping the tail of either
+    // would quietly put back a finding that was ticked out.
     const cleanList = (raw: unknown) =>
       Array.isArray(raw)
         ? raw
             .filter((x): x is string => typeof x === "string")
-            .slice(0, 20)
+            .slice(0, 120)
             .map((x) => stripPii(x.slice(0, 600)).cleaned.trim())
             .filter(Boolean)
         : undefined;
@@ -63,8 +67,7 @@ export async function POST(req: NextRequest) {
 
     const outputLanguage = reqLang || config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
-    const rawStyle = reqStyle || config?.conclusion_style || "grouped";
-    const conclusionStyle = (rawStyle === "detailed" ? "grouped" : rawStyle) as ConclusionStyle;
+    const conclusionStyle = normalizeConclusionStyle(reqStyle || config?.conclusion_style);
 
     let preferredConclusionPhrases: string[] | undefined;
     if (styleLearning && modality && studyType) {

@@ -99,6 +99,18 @@ export async function PUT(req: NextRequest) {
         .single();
     }
 
+    // 'brief' replaced 'grouped' as the second conclusion style. Until the
+    // migration that widens the CHECK constraint has been applied, the new
+    // value is rejected, so store the one the old constraint accepts — reads
+    // map anything that is not 'concise' back to 'brief' either way.
+    if (result.error && body.conclusion_style === "brief") {
+      result = await service
+        .from("user_model_config")
+        .upsert({ ...body, conclusion_style: "grouped", user_id: user.id }, { onConflict: "user_id" })
+        .select()
+        .single();
+    }
+
     const { data, error } = result;
 
     if (error) return dbErrorResponse(error);

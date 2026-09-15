@@ -25,13 +25,13 @@ import {
   AlertTriangle,
   Flag,
   Pencil,
-  CheckCheck,
   Wand2,
   ThumbsUp,
   ThumbsDown,
   AlignLeft,
   List,
   X,
+  ListChecks,
   RotateCcw,
   HelpCircle,
   Heart,
@@ -42,7 +42,7 @@ import {
   RefreshCw,
   Plus,
 } from "lucide-react";
-import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan, type OutputLanguage } from "@/lib/types";
+import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, normalizeConclusionStyle, type UserTemplate, type SubscriptionPlan, type OutputLanguage, type ConclusionStyle } from "@/lib/types";
 import { checkFindingsCoherence } from "@/lib/findings-coherence";
 import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, selectionOffsetsWithin, caretOffsetWithin, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
@@ -132,7 +132,7 @@ export function DashboardContent() {
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   // "Refinar" is ON by default; the radiologist can turn it off per session.
   const [lightParaphrase, setLightParaphrase] = useState(true);
-  const [conclusionStyle, setConclusionStyle] = useState<"concise" | "grouped">("grouped");
+  const [conclusionStyle, setConclusionStyle] = useState<ConclusionStyle>("brief");
   const [classifying, setClassifying] = useState(false);
   const [classifyResult, setClassifyResult] = useState<string | null>(null);
   const [detectingSystems, setDetectingSystems] = useState(false);
@@ -173,31 +173,25 @@ export function DashboardContent() {
 
   // Report output state
   const [findings, setFindings] = useState("");
-  const emptyConcVersions = { concise: "", grouped: "" };
+  const emptyConcVersions = { concise: "", brief: "" };
   const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
-  // Fact-check + triage result for the conclusion (only the "grouped" style
-  // runs the check today) — keyed by style so switching styles doesn't show
-  // a stale badge for a version that was never checked.
+  // Fact-check + triage result for the conclusion — keyed by style so
+  // switching styles doesn't show a stale badge for a version that was
+  // never checked.
   const [conclusionVerifyByStyle, setConclusionVerifyByStyle] = useState<Record<string, { status: "ok" | "issues"; notes?: string } | null>>({});
   // Which findings sentence backs each conclusion point — fetched lazily,
   // AFTER the conclusion has already finished streaming, purely to power
   // hover highlighting. Never awaited by the generation flow itself.
   const [conclusionLinksByStyle, setConclusionLinksByStyle] = useState<Record<string, { point: number; quote: string }[]>>({});
   const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
-  // "Redo conclusion": the radiologist picks which findings it must cover,
-  // pre-ticked with the ones the AI actually used the first time round.
-  // Selecting text is the only way in: the actions that apply to what you
-  // selected appear beside it. "Reword" with nothing selected applies to the
-  // whole conclusion, which is the other half of the same idea.
   const [rewordOpen, setRewordOpen] = useState(false);
   const [conclusionSel, setConclusionSel] = useState<{ start: number; end: number } | null>(null);
-  // The findings each conclusion was built from, so an edit to the findings
-  // can be noticed rather than leaving a conclusion that quietly no longer
-  // matches the report above it.
-  const [conclusionBasisByStyle, setConclusionBasisByStyle] = useState<Record<string, string>>({});
-  const [findingsSel, setFindingsSel] = useState<{ start: number; end: number } | null>(null);
-  const [improvingSentence, setImprovingSentence] = useState(false);
-  const [sentenceUndo, setSentenceUndo] = useState<string | null>(null);
+  // "Edit (AI)": the conclusion's points light up together with the findings
+  // sentences behind them, and those sentences become a checklist of what the
+  // conclusion covers — tick to add, untick to drop, then rebuild.
+  const [editMode, setEditMode] = useState(false);
+  const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
+  const [pickTouched, setPickTouched] = useState(false);
   // The conclusion a rewrite replaced — with its review, so undoing restores
   // the state it was in, not just its text.
   const [previousConclusion, setPreviousConclusion] = useState<{
@@ -209,16 +203,11 @@ export function DashboardContent() {
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
-  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, grouped: false });
+  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, brief: false });
   const conclusion = conclusionVersions[conclusionStyle] || "";
   const conclusionVerify = conclusionVerifyByStyle[conclusionStyle] || null;
   const conclusionLinks = conclusionLinksByStyle[conclusionStyle] || EMPTY_CONCLUSION_LINKS;
   const conclusionBusy = loadingConcStyles[conclusionStyle] ?? false;
-  // The findings have moved on since this conclusion was written.
-  const conclusionStale =
-    !!conclusion.trim() &&
-    conclusionBasisByStyle[conclusionStyle] !== undefined &&
-    conclusionBasisByStyle[conclusionStyle] !== findings;
   const loadingConclusion = Object.values(loadingConcStyles).some(Boolean);
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedRecTexts, setSelectedRecTexts] = useState<string[]>([]);
@@ -786,7 +775,7 @@ export function DashboardContent() {
       if (cfgRes?.ok) {
         const cfg = await cfgRes.json();
         if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
-        if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
+        if (cfg.conclusion_style) setConclusionStyle(normalizeConclusionStyle(cfg.conclusion_style));
       }
     }
     seedAndLoad();
@@ -802,7 +791,7 @@ export function DashboardContent() {
       fetch("/api/model-config").then(r => r.ok ? r.json() : null).then(cfg => {
         if (!cfg) return;
         if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
-        if (cfg.conclusion_style && (cfg.conclusion_style === "concise" || cfg.conclusion_style === "grouped")) setConclusionStyle(cfg.conclusion_style);
+        if (cfg.conclusion_style) setConclusionStyle(normalizeConclusionStyle(cfg.conclusion_style));
       }).catch(() => {});
     };
     const handleLangChanged = (e: Event) => {
@@ -946,7 +935,7 @@ export function DashboardContent() {
     correctionLoggedRef.current = false;
     setErrorReported(false);
     setLoadingFindings(true);
-    setLoadingConcStyles({ concise: true, grouped: true });
+    setLoadingConcStyles((prev) => ({ ...prev, [conclusionStyle]: true }));
     setFindings("");
     setConclusionVersions({ ...emptyConcVersions });
     setConclusionVerifyByStyle({});
@@ -1025,17 +1014,17 @@ export function DashboardContent() {
         setFindings(data.error || t("gen_error_findings"));
       }
     } catch (e) {
-      if (signal.aborted) { setLoadingFindings(false); setLoadingConcStyles({ concise: false, grouped: false }); return; }
+      if (signal.aborted) { setLoadingFindings(false); setLoadingConcStyles({ concise: false, brief: false }); return; }
       findingsFailed = true;
       setFindings(t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")));
     }
     setLoadingFindings(false);
 
-    if (signal.aborted) { setLoadingConcStyles({ concise: false, grouped: false }); return; }
+    if (signal.aborted) { setLoadingConcStyles({ concise: false, brief: false }); return; }
 
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
-      setLoadingConcStyles({ concise: false, grouped: false });
+      setLoadingConcStyles({ concise: false, brief: false });
       return;
     }
 
@@ -1086,7 +1075,10 @@ export function DashboardContent() {
       }
     })();
 
-    const concStyles = ["concise", "grouped"] as const;
+    // Only the radiologist's own style is generated. Producing both doubled
+    // the model calls for an alternative that was almost never read; the
+    // other one is a click away, and asking for it changes the default.
+    const concStyles = [conclusionStyle] as const;
     const activeStyle = conclusionStyle;
 
     const conclusionPromise = Promise.all(concStyles.map((style) => (async () => {
@@ -1130,7 +1122,6 @@ export function DashboardContent() {
           } else {
             const cleaned = cleanReport(text);
             setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
-            setConclusionBasisByStyle((prev) => ({ ...prev, [style]: findingsText }));
             // Post-delivery review (fact-check against the findings + the
             // hover provenance links), fired lazily once the conclusion is
             // already fully shown. Never awaited here, so it cannot add a
@@ -1336,7 +1327,7 @@ export function DashboardContent() {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setLoadingFindings(false);
-    setLoadingConcStyles({ concise: false, grouped: false });
+    setLoadingConcStyles({ concise: false, brief: false });
     setLoadingTrace(false);
     toast(t("toast.generation_stopped"));
   }
@@ -1759,16 +1750,29 @@ export function DashboardContent() {
     const linkedPoints = new Set(conclusionLinks.map((l) => l.point));
     return conclusionPoints
       .filter((p) => linkedPoints.has(p.point))
-      .map((p) => ({ start: p.start, end: p.end, colorIdx: 0, fragment: "", isHoverZone: true as const, pointIndex: p.point }));
-  }, [conclusionPoints, conclusionLinks]);
-  const hoveredLink = hoveredConclusionPoint != null ? conclusionLinks.find((l) => l.point === hoveredConclusionPoint) : undefined;
-  const hoveredFindingsSpan = useMemo(() => {
-    if (!hoveredLink) return null;
-    const match = findBestMatch(findings, hoveredLink.quote);
-    if (!match) return null;
-    return { start: match.start, end: match.end, colorIdx: 0, fragment: hoveredLink.quote, isLinked: true as const };
-  }, [hoveredLink, findings]);
-  // ── Redo conclusion from picked findings ──────────────────────
+      .map((p) => ({
+        start: p.start, end: p.end, colorIdx: 0, fragment: "",
+        isHoverZone: true as const, pointIndex: p.point,
+        // In edit mode the points stay lit rather than waiting for a hover,
+        // so both halves of the pairing are visible at once.
+        isActive: editMode,
+      }));
+  }, [conclusionPoints, conclusionLinks, editMode]);
+  // A point can rest on more than one finding, so every sentence behind it
+  // lights up — showing one of three would read as "this is the source".
+  const hoveredQuotes = useMemo(
+    () => (hoveredConclusionPoint == null ? [] : conclusionLinks.filter((l) => l.point === hoveredConclusionPoint).map((l) => l.quote)),
+    [hoveredConclusionPoint, conclusionLinks],
+  );
+  const hoveredFindingsSpans = useMemo(() => {
+    if (hoveredQuotes.length === 0) return [];
+    return hoveredQuotes
+      .map((quote) => {
+        const match = findBestMatch(findings, quote);
+        return match ? { start: match.start, end: match.end, colorIdx: 0, fragment: quote, isLinked: true as const } : null;
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+  }, [hoveredQuotes, findings]);
   // Deterministic coherence check: runs on the text as it stands, with no
   // model call, so it costs nothing and updates as the findings are edited.
   const coherenceIssues = useMemo(
@@ -1776,9 +1780,69 @@ export function DashboardContent() {
     [findings, outputLanguage],
   );
 
-  // The hover spotlight is momentary, so it wins while it lasts; otherwise the
-  // findings box shows the dictation trace.
-  const findingsHighlightsToShow = hoveredFindingsSpan ? [hoveredFindingsSpan] : findingsHighlights;
+  const findingsSentences = useMemo(() => splitFindingsSentences(findings), [findings]);
+
+  // In edit mode every findings sentence becomes a tick box: the lit ones are
+  // what the conclusion covers.
+  const pickHighlights = useMemo(() => {
+    if (!editMode) return [];
+    return findingsSentences.map((s, i) => ({
+      start: s.start,
+      end: s.end,
+      colorIdx: 0,
+      fragment: s.text,
+      isSelectable: true as const,
+      isSelected: pickedSentences.has(i),
+      spanIndex: i,
+    }));
+  }, [editMode, findingsSentences, pickedSentences]);
+
+  // Editing overrides both the hover spotlight and the dictation trace: while
+  // choosing, the findings box shows one thing only — what goes in or out.
+  const findingsHighlightsToShow = editMode
+    ? pickHighlights
+    : hoveredFindingsSpans.length > 0
+    ? hoveredFindingsSpans
+    : findingsHighlights;
+
+  /**
+   * Opens edit mode, pre-ticked with the findings the conclusion already
+   * covers — the review pass quotes the sentence behind each point, so this
+   * starts from what the AI actually used rather than from a blank slate.
+   * Without those quotes (the review is still running, or found none) it
+   * starts from everything, which is a list to prune instead of one to build.
+   */
+  function startEditMode() {
+    const seeded = new Set<number>();
+    for (const link of conclusionLinks) {
+      const match = findBestMatch(findings, link.quote);
+      if (!match) continue;
+      findingsSentences.forEach((s, i) => {
+        if (s.start < match.end && s.end > match.start) seeded.add(i);
+      });
+    }
+    setPickedSentences(seeded.size > 0 ? seeded : new Set(findingsSentences.map((_, i) => i)));
+    setPickTouched(false);
+    setHoveredConclusionPoint(null);
+    setRewordOpen(false);
+    setConclusionSel(null);
+    setEditMode(true);
+  }
+
+  function exitEditMode() {
+    setEditMode(false);
+    setPickedSentences(new Set());
+    setPickTouched(false);
+  }
+
+  function togglePickedSentence(index: number) {
+    setPickedSentences((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
+    setPickTouched(true);
+  }
 
   /**
    * Clears every editing tool's state. Called wherever the report on screen
@@ -1790,65 +1854,9 @@ export function DashboardContent() {
     setRewordOpen(false);
     setConclusionSel(null);
     setPreviousConclusion(null);
-    setFindingsSel(null);
-    setSentenceUndo(null);
-    setConclusionBasisByStyle({});
-  }
-
-  /**
-   * Selecting by hand is imprecise, so a selection is widened to the whole
-   * sentences it touches. Half a sentence is never what was meant: rewriting
-   * a fragment, or asking for "lesión focal hipodensa de 12" in the
-   * conclusion, reads as nonsense out of context.
-   */
-  const findingsSelSnapped = useMemo(() => {
-    if (!findingsSel) return null;
-    const touched = splitFindingsSentences(findings)
-      .filter((s) => s.start < findingsSel.end && s.end > findingsSel.start);
-    if (touched.length === 0) return findingsSel;
-    // Only ever widen: a selection that already covers the section label
-    // ("Liver:") keeps it, since that is anatomy the rest of the line needs.
-    return {
-      start: Math.min(findingsSel.start, touched[0].start),
-      end: Math.max(findingsSel.end, touched[touched.length - 1].end),
-    };
-  }, [findingsSel, findings]);
-
-  const selectedFindingText = findingsSelSnapped ? findings.slice(findingsSelSnapped.start, findingsSelSnapped.end).trim() : "";
-
-  async function improveSelectedSentence() {
-    if (!findingsSelSnapped || !selectedFindingText || improvingSentence) return;
-    const { start, end } = findingsSelSnapped;
-    const before = findings;
-    setImprovingSentence(true);
-    try {
-      const res = await fetch("/api/generate/improve-sentence", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentence: selectedFindingText, outputLanguage }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.text) {
-        toast.error(data?.error || t("gen_error_unknown"));
-        return;
-      }
-      // Splice the rewrite back over exactly what was selected, keeping the
-      // whitespace that sat around it so the report's layout is untouched.
-      const raw = findings.slice(start, end);
-      const lead = raw.slice(0, raw.length - raw.trimStart().length);
-      const tail = raw.slice(raw.trimEnd().length);
-      setFindings(before.slice(0, start) + lead + data.text + tail + before.slice(end));
-      setSentenceUndo(before);
-      setFindingsSel(null);
-      // The findings changed, so the dictation trace no longer describes them.
-      setTraceData(null);
-      setRepairMessage(null);
-      reportDirtyRef.current = true;
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("gen_error_unknown"));
-    } finally {
-      setImprovingSentence(false);
-    }
+    setEditMode(false);
+    setPickedSentences(new Set());
+    setPickTouched(false);
   }
 
   const conclusionSelText = conclusionSel ? conclusion.slice(conclusionSel.start, conclusionSel.end).trim() : "";
@@ -1870,26 +1878,6 @@ export function DashboardContent() {
 
   /** Regenerates the conclusion, steered by the finding the radiologist
    *  pointed at — either to make sure it is covered, or to leave it out. */
-  async function steerConclusion(kind: "include" | "exclude") {
-    if (!selectedTemplate || !selectedFindingText) return;
-    const studyName = selectedTemplate.name +
-      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
-    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
-    const text = selectedFindingText;
-    setFindingsSel(null);
-    await replaceConclusion("/api/generate/conclusion", {
-      findingsText: findings,
-      clinicalInfo,
-      modality: selectedTemplate.modality,
-      studyType: studyName,
-      conclusionStyle,
-      outputLanguage,
-      ...(kind === "include" ? { mustInclude: [text] } : { exclude: [text] }),
-      ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
-      ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
-    });
-  }
-
   function undoConclusionRewrite() {
     if (!previousConclusion) return;
     const { style, text, verify, links } = previousConclusion;
@@ -1905,8 +1893,8 @@ export function DashboardContent() {
    * version (and its review) so "Undo" can put it back. Shared by rewriting
    * from picked findings and by a one-line adjustment.
    */
-  async function replaceConclusion(url: string, payload: Record<string, unknown>) {
-    const style = conclusionStyle;
+  async function replaceConclusion(url: string, payload: Record<string, unknown>, styleOverride?: ConclusionStyle) {
+    const style = styleOverride ?? conclusionStyle;
     const findingsSnapshot = findings;
     const replaced = {
       style,
@@ -1956,7 +1944,6 @@ export function DashboardContent() {
 
       const cleaned = cleanReport(text);
       setConclusionVersions((prev) => ({ ...prev, [style]: cleaned }));
-      setConclusionBasisByStyle((prev) => ({ ...prev, [style]: findingsSnapshot }));
       if (replaced.text.trim()) setPreviousConclusion(replaced);
       reportDirtyRef.current = true;
 
@@ -1980,13 +1967,62 @@ export function DashboardContent() {
     }
   }
 
-  /** A fresh conclusion from the findings exactly as they now stand. */
-  async function redoConclusion() {
-    if (!selectedTemplate) return;
+  /**
+   * Rebuilds the conclusion from the ticked findings. The ticks are a closed
+   * list — what is ticked goes in, what is not stays out — so the model is no
+   * longer deciding what matters, which is the part of the job where its
+   * judgement and the radiologist's diverge most. Everything else it is told
+   * (describe without diagnosing, no inferences, no recommendations) stands.
+   */
+  /**
+   * Switches the conclusion style, which is also how the other style gets
+   * written at all: only one is generated with the report. The choice sticks
+   * as the default from here on — a radiologist who reaches for the other
+   * style once is telling us which one they actually want.
+   */
+  async function switchConclusionStyle(s: ConclusionStyle) {
+    if (s === conclusionStyle || loadingConcStyles[s]) return;
+    setConclusionStyle(s);
+    setStatusExpanded(null);
+    exitEditMode();
+    setRewordOpen(false);
+    setConclusionSel(null);
+    fetch("/api/model-config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conclusion_style: s }),
+    }).catch(() => {});
+
+    if (conclusionVersions[s]?.trim() || !selectedTemplate || !findings.trim()) return;
+
     const studyName = selectedTemplate.name +
       (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
     const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
+    await replaceConclusion("/api/generate/conclusion", {
+      findingsText: findings,
+      clinicalInfo,
+      modality: selectedTemplate.modality,
+      studyType: studyName,
+      conclusionStyle: s,
+      outputLanguage,
+      ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
+      ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
+    }, s);
+  }
 
+  async function updateConclusionFromPicks() {
+    if (!selectedTemplate || conclusionBusy) return;
+    const studyName = selectedTemplate.name +
+      (contrastOption === "con_contraste" ? " con contraste" : contrastOption === "sin_contraste" ? " sin contraste" : "");
+    const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
+    const mustInclude = findingsSentences.filter((_, i) => pickedSentences.has(i)).map((s) => s.text);
+    const exclude = findingsSentences.filter((_, i) => !pickedSentences.has(i)).map((s) => s.text);
+    if (mustInclude.length === 0) {
+      toast.error(t("dash.edit_ai_empty"));
+      return;
+    }
+
+    exitEditMode();
     await replaceConclusion("/api/generate/conclusion", {
       findingsText: findings,
       clinicalInfo,
@@ -1994,6 +2030,8 @@ export function DashboardContent() {
       studyType: studyName,
       conclusionStyle: conclusionStyle,
       outputLanguage,
+      mustInclude,
+      ...(exclude.length > 0 ? { exclude } : {}),
       ...(activeTechs.length > 0 ? { cardiacTechniques: activeTechs } : {}),
       ...(isRecistStudy ? { recistConfig: { isBaseline: recistBaseline, priorReport: recistBaseline ? undefined : recistPriorReport || undefined } } : {}),
     });
@@ -2848,8 +2886,8 @@ export function DashboardContent() {
                       </button>
                     );
                   })()}
-                  {(conclusionVerify || conclusionStale) && (() => {
-                    const hasIssues = conclusionStale || conclusionVerify?.status === "issues";
+                  {conclusionVerify && (() => {
+                    const hasIssues = conclusionVerify.status === "issues";
                     const active = statusExpanded === "conclusion";
                     const cls = hasIssues
                       ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"
@@ -2897,16 +2935,8 @@ export function DashboardContent() {
                     {traceData && <TraceLegend trace={traceData} isDark={isDark} />}
                   </div>
                 )}
-                {statusExpanded === "conclusion" && (conclusionVerify?.notes || conclusionStale) && (
+                {statusExpanded === "conclusion" && conclusionVerify?.notes && (
                   <div className="border-t px-3 py-2 dark:border-gray-700 space-y-1.5">
-                    {conclusionStale && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-xs text-amber-700 dark:text-amber-300 flex-1 min-w-[180px]">{t("dash.conclusion_stale")}</p>
-                        <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusion()}>
-                          {t("dash.redo")}
-                        </Button>
-                      </div>
-                    )}
                     {conclusionVerify?.notes && (
                       <p className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">{conclusionVerify.notes}</p>
                     )}
@@ -2945,13 +2975,9 @@ export function DashboardContent() {
               value={findings}
               onChange={(v) => {
                 setFindings(v);
-                // Hand edits are not part of the sentence rewrite, so undoing
-                // it must not be able to throw them away.
-                setSentenceUndo(null);
                 // The trace describes the text as it was generated: once a
                 // character moves, its offsets point at the wrong words, and
-                // everything downstream — the colours, and which sentences
-                // count as dictated when picking — is reading stale data.
+                // everything downstream is reading stale data.
                 setTraceData(null);
                 setRepairMessage(null);
                 reportDirtyRef.current = true;
@@ -2959,50 +2985,30 @@ export function DashboardContent() {
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
               minHeight={140}
               traceHighlights={findingsHighlightsToShow.length > 0 ? findingsHighlightsToShow : undefined}
-              traceLocked={loadingTrace}
+              traceLocked={loadingTrace || editMode}
+              forceHighlights={editMode}
+              onClickHighlight={(span) => {
+                if (editMode && span.spanIndex !== undefined) togglePickedSentence(span.spanIndex);
+              }}
               isDark={isDark}
               linkTooltip={t("dash.conclusion_link_tooltip")}
-              onSelectRange={setFindingsSel}
               footerExtra={
-                selectedFindingText.length >= 3 || sentenceUndo ? (
-                  <div className="space-y-1.5">
-                  {selectedFindingText.length >= 3 && (
-                    <div className="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1 min-w-[110px]">
-                        {selectedFindingText.length > 60 ? selectedFindingText.slice(0, 60) + "…" : selectedFindingText}
-                      </p>
-                      <Button size="sm" className="h-6 text-[11px] shrink-0" disabled={improvingSentence || conclusionBusy} onClick={improveSelectedSentence}>
-                        {improvingSentence ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
-                        {t("dash.sel_improve")}
+                editMode ? (
+                  <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
+                    <p className="text-xs text-emerald-800 dark:text-emerald-300 flex-1 min-w-[160px]">
+                      {pickTouched
+                        ? t("dash.edit_ai_count").replace("{0}", String(pickedSentences.size))
+                        : t("dash.edit_ai_help")}
+                    </p>
+                    {pickTouched && (
+                      <Button size="sm" className="h-6 text-[11px] shrink-0" disabled={conclusionBusy} onClick={updateConclusionFromPicks}>
+                        {conclusionBusy ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                        {t("dash.update")}
                       </Button>
-                      {conclusion.trim() && (
-                        <>
-                          <Button size="sm" variant="outline" className="h-6 text-[11px] shrink-0" disabled={conclusionBusy} onClick={() => steerConclusion("include")}>
-                            {t("dash.sel_to_conclusion")}
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-6 text-[11px] shrink-0" disabled={conclusionBusy} onClick={() => steerConclusion("exclude")}>
-                            {t("dash.sel_out_of_conclusion")}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  {sentenceUndo && selectedFindingText.length < 3 && (
-                    <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <CheckCheck className="h-3 w-3 text-amber-500 shrink-0" />
-                      <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">{t("dash.improve_sentence_done")}</p>
-                      <button
-                        type="button"
-                        onClick={() => { if (sentenceUndo) { setFindings(sentenceUndo); setSentenceUndo(null); reportDirtyRef.current = true; } }}
-                        className="text-[11px] font-medium text-amber-700 dark:text-amber-300 hover:underline shrink-0"
-                      >
-                        {t("dash.undo_conclusion")}
-                      </button>
-                      <button type="button" onClick={() => setSentenceUndo(null)} className="text-amber-400 hover:text-amber-600 shrink-0">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    <button type="button" onClick={exitEditMode} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 shrink-0">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ) : undefined
               }
@@ -3013,12 +3019,16 @@ export function DashboardContent() {
               title={t("dash.conclusion")}
               icon={<CircleCheck className="h-3.5 w-3.5 text-green-600" />}
               loading={loadingConcStyles[conclusionStyle] ?? false}
-              loadingLabel={conclusionStyle === "grouped" ? t("gen.phase_conclusion_refine") : t("gen.phase_conclusion")}
+              loadingLabel={t("gen.phase_conclusion")}
               value={conclusion}
               onChange={(v) => {
                 setConclusionVersions((prev) => ({ ...prev, [conclusionStyle]: v }));
                 setConclusionVerifyByStyle((prev) => ({ ...prev, [conclusionStyle]: null }));
                 setConclusionLinksByStyle((prev) => ({ ...prev, [conclusionStyle]: [] }));
+                // Correcting the points by hand is the other way out of edit
+                // mode: the pairing it drew is about text that no longer says
+                // the same thing, so it goes rather than lingering as decor.
+                if (editMode) exitEditMode();
                 reportDirtyRef.current = true;
               }}
               minHeight={110}
@@ -3028,17 +3038,20 @@ export function DashboardContent() {
               isDark={isDark}
               headerExtra={
                 <div className="flex items-center gap-1.5">
-                  {previousConclusion?.style === conclusionStyle && !conclusionBusy && (
+                  {conclusion && !conclusionBusy && (
                     <button
                       type="button"
-                      onClick={undoConclusionRewrite}
-                      className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors"
+                      onClick={() => (editMode ? exitEditMode() : startEditMode())}
+                      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
+                        editMode ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400 hover:text-brand"
+                      }`}
+                      title={t("dash.edit_ai_hint")}
                     >
-                      <RotateCcw className="h-3 w-3" />
-                      {t("dash.undo_conclusion")}
+                      <ListChecks className="h-3 w-3" />
+                      {t("dash.edit_ai")}
                     </button>
                   )}
-                  {conclusion && !conclusionBusy && (
+                  {conclusion && !conclusionBusy && !editMode && (
                     <button
                       type="button"
                       onClick={() => setRewordOpen((v) => !v)}
@@ -3050,32 +3063,22 @@ export function DashboardContent() {
                       {t("dash.reword")}
                     </button>
                   )}
-                  {conclusion && !conclusionBusy && (
+                  {previousConclusion?.style === conclusionStyle && !conclusionBusy && !editMode && (
                     <button
                       type="button"
-                      onClick={redoConclusion}
-                      className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                        conclusionStale ? "text-amber-600 dark:text-amber-400 hover:text-amber-700" : "text-gray-500 dark:text-gray-400 hover:text-brand"
-                      }`}
-                      title={t("dash.redo_hint")}
+                      onClick={undoConclusionRewrite}
+                      className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors"
                     >
-                      <RefreshCw className="h-3 w-3" />
-                      {t("dash.redo")}
+                      <RotateCcw className="h-3 w-3" />
+                      {t("dash.undo_conclusion")}
                     </button>
                   )}
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
-                  {(["concise", "grouped"] as const).map((s) => (
+                  {(["concise", "brief"] as const).map((s) => (
                     <button
                       key={s}
                       type="button"
-                      onClick={() => {
-                        setConclusionStyle(s);
-                        fetch("/api/model-config", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ conclusion_style: s }),
-                        }).catch(() => {});
-                      }}
+                      onClick={() => { void switchConclusionStyle(s); }}
                       className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
                         conclusionStyle === s
                           ? "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] shadow-sm"
@@ -3566,6 +3569,7 @@ function OutputCard({
   onClickHighlight,
   onSelectRange,
   linkTooltip,
+  forceHighlights,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -3577,7 +3581,7 @@ function OutputCard({
   headerExtra?: React.ReactNode;
   footerExtra?: React.ReactNode;
   loadingLabel?: string;
-  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isLinked?: boolean; isHoverZone?: boolean; pointIndex?: number; isSelectable?: boolean; isSelected?: boolean; spanIndex?: number }[];
+  traceHighlights?: { start: number; end: number; colorIdx: number; fragment: string; section?: string; isUnmatched?: boolean; isLinked?: boolean; isHoverZone?: boolean; isActive?: boolean; pointIndex?: number; isSelectable?: boolean; isSelected?: boolean; spanIndex?: number }[];
   traceLocked?: boolean;
   isDark?: boolean;
   bare?: boolean;
@@ -3591,6 +3595,9 @@ function OutputCard({
   onSelectRange?: (range: { start: number; end: number } | null) => void;
   /** Tooltip for the findings-side isLinked spotlight span. */
   linkTooltip?: string;
+  /** Keeps the highlighted view up even when the text is clicked: while the
+   *  spans ARE the controls, a click means "tick this", not "start typing". */
+  forceHighlights?: boolean;
 }) {
   // There is no edit mode to switch into: clicking the text starts typing
   // where you clicked, selecting it offers what can be done to the selection,
@@ -3601,11 +3608,11 @@ function OutputCard({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const caretRef = useRef<number | null>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
-  const readOnlyView = showTrace && !editing;
+  const readOnlyView = showTrace && (!editing || !!forceHighlights);
 
   useEffect(() => {
-    if (!showTrace) setEditing(false);
-  }, [showTrace]);
+    if (!showTrace || forceHighlights) setEditing(false);
+  }, [showTrace, forceHighlights]);
 
   // Put the caret where the text was clicked, once the textarea exists.
   useEffect(() => {

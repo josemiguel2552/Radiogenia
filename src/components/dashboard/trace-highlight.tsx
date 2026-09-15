@@ -69,6 +69,9 @@ interface HighlightSpan {
   /** Conclusion-side hover zone: no persistent color, only a hover affordance
    *  that reports which point is under the cursor via onHoverSpan. */
   isHoverZone?: boolean;
+  /** Keeps a hover zone lit without a hover, so the conclusion points and the
+   *  findings behind them can be seen paired up at once (with isHoverZone). */
+  isActive?: boolean;
   /** Which conclusion point this span represents (set with isHoverZone). */
   pointIndex?: number;
   /** Findings-side pick list: a sentence the radiologist can toggle in or out
@@ -218,7 +221,9 @@ function renderParts(
       return (
         <span
           key={i}
-          className="rounded px-0.5 cursor-help transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          className={`rounded px-0.5 cursor-help transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30 ${
+            h.isActive ? "bg-emerald-100 dark:bg-emerald-900/40 ring-1 ring-emerald-300 dark:ring-emerald-700" : ""
+          }`}
           onMouseEnter={() => onHoverSpan?.(h)}
           onMouseLeave={() => onHoverSpan?.(null)}
         >
@@ -388,21 +393,52 @@ export function splitFindingsSentences(text: string): { start: number; end: numb
 }
 
 /**
- * Splits a numbered conclusion ("1. ...\n2. ...") into point ranges, reusing
- * the same "N. " line-start convention the report generator already writes
- * to (see NUMBERED_LABEL in normality-defaults.ts). Pure offset math, no
- * fuzzy matching needed since the text is the conclusion's own.
+ * Splits a conclusion into the units the provenance links are numbered by.
+ *
+ * A numbered conclusion ("1. ...\n2. ...") splits on the same "N. " line-start
+ * convention the report generator already writes to (see NUMBERED_LABEL in
+ * normality-defaults.ts). The ultra-short style is one unnumbered paragraph,
+ * so there its sentences are the units, numbered in reading order — which is
+ * what the links pass is asked to number them by. Pure offset math, no fuzzy
+ * matching needed since the text is the conclusion's own.
  */
 export function splitConclusionPoints(text: string): { point: number; start: number; end: number }[] {
   const regex = /^(\d+)\.\s/gm;
   const matches = [...text.matchAll(regex)];
-  return matches
-    .map((m, i) => {
-      const start = m.index ?? 0;
-      const end = i + 1 < matches.length ? (matches[i + 1].index ?? text.length) : text.length;
-      return { point: parseInt(m[1], 10), start, end };
-    })
-    .filter((p) => Number.isFinite(p.point));
+  if (matches.length > 0) {
+    return matches
+      .map((m, i) => {
+        const start = m.index ?? 0;
+        const end = i + 1 < matches.length ? (matches[i + 1].index ?? text.length) : text.length;
+        return { point: parseInt(m[1], 10), start, end };
+      })
+      .filter((p) => Number.isFinite(p.point));
+  }
+
+  // Unnumbered: one sentence per point. A period between two digits is a
+  // decimal ("3.5 cm"), not a sentence end — the same rule the findings
+  // splitter uses, since conclusions are just as full of measurements.
+  const out: { point: number; start: number; end: number }[] = [];
+  let segStart = 0;
+  while (segStart < text.length && /\s/.test(text[segStart])) segStart++;
+  for (let i = segStart; i < text.length; i++) {
+    if (text[i] !== ".") continue;
+    const prev = text[i - 1] || "";
+    const next = text[i + 1];
+    if (/\d/.test(prev) && next !== undefined && /\d/.test(next)) continue;
+    if (next !== undefined && !/\s/.test(next)) continue;
+    if (text.slice(segStart, i + 1).trim().length >= 3) {
+      out.push({ point: out.length + 1, start: segStart, end: i + 1 });
+    }
+    let j = i + 1;
+    while (j < text.length && /\s/.test(text[j])) j++;
+    segStart = j;
+    i = j - 1;
+  }
+  if (segStart < text.length && text.slice(segStart).trim().length >= 3) {
+    out.push({ point: out.length + 1, start: segStart, end: text.length });
+  }
+  return out;
 }
 
 export function TraceLegend({ trace, isDark }: { trace: TraceData; isDark: boolean }) {
