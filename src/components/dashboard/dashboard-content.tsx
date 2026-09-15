@@ -39,11 +39,12 @@ import {
   Search,
   Tags,
   ClipboardCheck,
+  ListChecks,
   Plus,
 } from "lucide-react";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, type UserTemplate, type SubscriptionPlan, type OutputLanguage } from "@/lib/types";
 import { checkFindingsCoherence } from "@/lib/findings-coherence";
-import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, selectionOffsetsWithin, type TraceData } from "./trace-highlight";
+import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, selectionOffsetsWithin, caretOffsetWithin, type TraceData } from "./trace-highlight";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { RemotePhoneDictation } from "@/components/dashboard/remote-phone-dictation";
@@ -185,14 +186,11 @@ export function DashboardContent() {
   const [hoveredConclusionPoint, setHoveredConclusionPoint] = useState<number | null>(null);
   // "Redo conclusion": the radiologist picks which findings it must cover,
   // pre-ticked with the ones the AI actually used the first time round.
-  // Both conclusion tools live in one panel that switches between them:
-  // "adjust" reshapes the wording, "pick" rebuilds it from chosen findings.
-  const [conclusionTool, setConclusionTool] = useState<"none" | "adjust" | "pick">("none");
-  const pickMode = conclusionTool === "pick";
+  // One panel, one job: reshaping the conclusion's wording. Choosing which
+  // findings it must cover is no longer a screen of its own — findings are
+  // marked where they are read, from the selection in the findings box.
+  const [conclusionTool, setConclusionTool] = useState<"none" | "adjust">("none");
   const [pickedSentences, setPickedSentences] = useState<Set<number>>(new Set());
-  // Set once the radiologist has chosen by hand, so going back into the pick
-  // list returns to their selection instead of starting over from the AI's.
-  const [pickTouched, setPickTouched] = useState(false);
   // One-line "make it shorter / lead with the pneumothorax" reshaping.
   const [adjustText, setAdjustText] = useState("");
   // Select a findings sentence → one button rewrites just that sentence.
@@ -1783,107 +1781,29 @@ export function DashboardContent() {
 
   const findingsSentences = useMemo(() => splitFindingsSentences(findings), [findings]);
 
-  // Which sentences carry something the radiologist actually dictated — the
-  // trace already worked this out to draw its highlights. Everything else is
-  // normality boilerplate, which is almost never what a conclusion needs, so
-  // it gets faded rather than competing for attention.
-  const dictatedSentences = useMemo(() => {
-    const set = new Set<number>();
-    for (const h of findingsHighlights) {
-      if (h.isUnmatched || h.isHallucination) continue;
-      findingsSentences.forEach((s, i) => {
-        if (h.start < s.end && h.end > s.start) set.add(i);
-      });
-    }
-    return set;
-  }, [findingsHighlights, findingsSentences]);
+  const markHighlights = useMemo(() => {
+    if (pickedSentences.size === 0) return [];
+    return findingsSentences
+      .map((s, i) => ({ s, i }))
+      .filter(({ i }) => pickedSentences.has(i))
+      .map(({ s, i }) => ({
+        start: s.start,
+        end: s.end,
+        colorIdx: 0,
+        fragment: s.text,
+        isSelectable: true as const,
+        isSelected: true,
+        spanIndex: i,
+      }));
+  }, [findingsSentences, pickedSentences]);
 
-  const pickHighlights = useMemo(() => {
-    if (!pickMode) return [];
-    return findingsSentences.map((s, i) => ({
-      start: s.start,
-      end: s.end,
-      colorIdx: 0,
-      fragment: s.text,
-      isSelectable: true as const,
-      isSelected: pickedSentences.has(i),
-      // Without trace data nothing is known to be dictated — fading the whole
-      // box grey would be worse than fading nothing.
-      isDimmed: dictatedSentences.size > 0 && !dictatedSentences.has(i),
-      spanIndex: i,
-    }));
-  }, [pickMode, findingsSentences, pickedSentences, dictatedSentences]);
-
-  // Picking overrides both the hover spotlight and the dictation trace: while
-  // choosing, the findings box shows one thing only — what goes in or out.
-  const findingsHighlightsToShow = pickMode
-    ? pickHighlights
-    : hoveredFindingsSpan
+  // The hover spotlight is momentary, so it wins while it lasts; marks are
+  // what the radiologist set, so they outrank the dictation trace.
+  const findingsHighlightsToShow = hoveredFindingsSpan
     ? [hoveredFindingsSpan]
+    : markHighlights.length > 0
+    ? markHighlights
     : findingsHighlights;
-
-  function startPickMode() {
-    setHoveredConclusionPoint(null);
-    setConclusionTool("pick");
-
-    // Coming back after a rewrite: return to the selection they made, not to
-    // a fresh guess — iterating on a choice is the whole point of the tool.
-    if (pickTouched) return;
-
-    // First time: pre-tick what the AI used, so they edit a selection instead
-    // of building one. If the review hasn't landed (or found nothing), fall
-    // back to everything dictated rather than to an empty list.
-    const preset = new Set<number>();
-    for (const link of conclusionLinks) {
-      const match = findBestMatch(findings, link.quote);
-      if (!match) continue;
-      findingsSentences.forEach((s, i) => {
-        if (match.start < s.end && match.end > s.start) preset.add(i);
-      });
-    }
-    setPickedSentences(preset.size > 0 ? preset : new Set(dictatedSentences));
-  }
-
-  function togglePickedSentence(index: number) {
-    setPickTouched(true);
-    setPickedSentences((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  }
-
-  function pickAllDictated() {
-    setPickTouched(true);
-    setPickedSentences(
-      dictatedSentences.size > 0
-        ? new Set(dictatedSentences)
-        : new Set(findingsSentences.map((_, i) => i)),
-    );
-  }
-
-  const redoPickedRef = useRef<() => void>(() => {});
-  useEffect(() => {
-    redoPickedRef.current = () => { void redoConclusionFromPicked(); };
-  });
-
-  // Esc backs out, Cmd/Ctrl+Enter rewrites — so a correction can be made
-  // without the mouse leaving the findings text.
-  useEffect(() => {
-    if (!pickMode) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setConclusionTool("none");
-      } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        redoPickedRef.current();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [pickMode]);
 
   /**
    * Clears every editing tool's state. Called wherever the report on screen
@@ -1894,7 +1814,6 @@ export function DashboardContent() {
   function resetReportTools() {
     setConclusionTool("none");
     setPickedSentences(new Set());
-    setPickTouched(false);
     setPreviousConclusion(null);
     setAdjustText("");
     setFindingsSel(null);
@@ -1937,6 +1856,35 @@ export function DashboardContent() {
     } finally {
       setImprovingSentence(false);
     }
+  }
+
+  /** Sentences the current selection touches. */
+  function selectedSentenceIndexes(): number[] {
+    if (!findingsSel) return [];
+    return findingsSentences
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) => findingsSel.start < s.end && findingsSel.end > s.start)
+      .map(({ i }) => i);
+  }
+
+  const selectionIsMarked = (() => {
+    const idx = selectedSentenceIndexes();
+    return idx.length > 0 && idx.every((i) => pickedSentences.has(i));
+  })();
+
+  function toggleSelectionInConclusion() {
+    const idx = selectedSentenceIndexes();
+    if (idx.length === 0) return;
+    const markAll = !idx.every((i) => pickedSentences.has(i));
+    setPickedSentences((prev) => {
+      const next = new Set(prev);
+      for (const i of idx) {
+        if (markAll) next.add(i);
+        else next.delete(i);
+      }
+      return next;
+    });
+    setFindingsSel(null);
   }
 
   function undoConclusionRewrite() {
@@ -2920,8 +2868,8 @@ export function DashboardContent() {
                       </button>
                     );
                   })()}
-                  {conclusionVerify && (() => {
-                    const hasIssues = conclusionVerify.status === "issues";
+                  {(conclusionVerify || conclusionStale) && (() => {
+                    const hasIssues = conclusionStale || conclusionVerify?.status === "issues";
                     const active = statusExpanded === "conclusion";
                     const cls = hasIssues
                       ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"
@@ -2969,9 +2917,19 @@ export function DashboardContent() {
                     {traceData && <TraceLegend trace={traceData} isDark={isDark} />}
                   </div>
                 )}
-                {statusExpanded === "conclusion" && conclusionVerify?.notes && (
+                {statusExpanded === "conclusion" && (conclusionVerify?.notes || conclusionStale) && (
                   <div className="border-t px-3 py-2 dark:border-gray-700 space-y-1.5">
-                    <p className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">{conclusionVerify.notes}</p>
+                    {conclusionStale && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-300 flex-1 min-w-[180px]">{t("dash.conclusion_stale")}</p>
+                        <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusionFromPicked(false)}>
+                          {t("dash.pick_findings_apply_none")}
+                        </Button>
+                      </div>
+                    )}
+                    {conclusionVerify?.notes && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-line">{conclusionVerify.notes}</p>
+                    )}
                     {conclusion && !conclusionBusy && (
                       <button
                         type="button"
@@ -3021,23 +2979,37 @@ export function DashboardContent() {
               onEdit={() => { setTraceData(null); setRepairMessage(null); }}
               minHeight={140}
               traceHighlights={findingsHighlightsToShow.length > 0 ? findingsHighlightsToShow : undefined}
-              traceLocked={loadingTrace || pickMode}
-              forceHighlights={pickMode}
+              traceLocked={loadingTrace}
               isDark={isDark}
               linkTooltip={t("dash.conclusion_link_tooltip")}
               onClickHighlight={(span) => {
-                if (pickMode && span.spanIndex !== undefined) togglePickedSentence(span.spanIndex);
+                if (span.spanIndex === undefined) return;
+                setPickedSentences((prev) => {
+                  const next = new Set(prev);
+                  next.delete(span.spanIndex!);
+                  return next;
+                });
               }}
-              onSelectRange={pickMode ? undefined : setFindingsSel}
+              onSelectRange={setFindingsSel}
               footerExtra={
-                !pickMode && (selectedFindingText.length >= 3 || sentenceUndo) ? (
-                  <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                    {selectedFindingText.length >= 3 ? (
-                      <>
+                selectedFindingText.length >= 3 || sentenceUndo || pickedSentences.size > 0 ? (
+                  <div className="space-y-1.5">
+                  {selectedFindingText.length >= 3 && (
+                  <div className="flex flex-wrap items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <>
                         <Pencil className="h-3 w-3 text-amber-500 shrink-0" />
-                        <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1">
-                          {selectedFindingText.length > 90 ? selectedFindingText.slice(0, 90) + "…" : selectedFindingText}
+                        <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1 min-w-[120px]">
+                          {selectedFindingText.length > 70 ? selectedFindingText.slice(0, 70) + "…" : selectedFindingText}
                         </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[11px] shrink-0"
+                          onClick={toggleSelectionInConclusion}
+                        >
+                          <ListChecks className="h-3 w-3 mr-1" />
+                          {selectionIsMarked ? t("dash.unmark_for_conclusion") : t("dash.mark_for_conclusion")}
+                        </Button>
                         <Button
                           size="sm"
                           className="h-6 text-[11px] shrink-0"
@@ -3047,9 +3019,29 @@ export function DashboardContent() {
                           {improvingSentence ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
                           {t("dash.improve_sentence")}
                         </Button>
-                      </>
-                    ) : (
-                      <>
+                    </>
+                  </div>
+                  )}
+                  {pickedSentences.size > 0 && !conclusionBusy && (
+                    <div className="flex flex-wrap items-center gap-2 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                      <ListChecks className="h-3 w-3 text-emerald-600 shrink-0" />
+                      <span className="text-xs text-emerald-800 dark:text-emerald-200 flex-1 min-w-[150px]">
+                        {t("dash.marked_for_conclusion").replace("{0}", String(pickedSentences.size))}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPickedSentences(new Set())}
+                        className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:underline shrink-0"
+                      >
+                        {t("dash.pick_findings_none")}
+                      </button>
+                      <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusionFromPicked()}>
+                        {t("dash.pick_findings_apply")}
+                      </Button>
+                    </div>
+                  )}
+                  {sentenceUndo && selectedFindingText.length < 3 && (
+                      <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                         <CheckCheck className="h-3 w-3 text-amber-500 shrink-0" />
                         <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">{t("dash.improve_sentence_done")}</p>
                         <button
@@ -3066,8 +3058,8 @@ export function DashboardContent() {
                         >
                           <X className="h-3 w-3" />
                         </button>
-                      </>
-                    )}
+                      </div>
+                  )}
                   </div>
                 ) : undefined
               }
@@ -3087,12 +3079,12 @@ export function DashboardContent() {
                 reportDirtyRef.current = true;
               }}
               minHeight={110}
-              traceHighlights={!pickMode && conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
+              traceHighlights={conclusionHoverHighlights.length > 0 ? conclusionHoverHighlights : undefined}
               onHoverHighlight={(span) => setHoveredConclusionPoint(span?.pointIndex ?? null)}
               isDark={isDark}
               headerExtra={
                 <div className="flex items-center gap-1.5">
-                  {previousConclusion?.style === conclusionStyle && !loadingConcStyles[conclusionStyle] && !pickMode && (
+                  {previousConclusion?.style === conclusionStyle && !loadingConcStyles[conclusionStyle] && (
                     <button
                       type="button"
                       onClick={undoConclusionRewrite}
@@ -3110,8 +3102,7 @@ export function DashboardContent() {
                         setAdjustText("");
                         // Opens on step 1: correcting a conclusion starts by
                         // saying what it should cover, not by rewording it.
-                        if (conclusionTool === "none") startPickMode();
-                        else setConclusionTool("none");
+                        setConclusionTool(conclusionTool === "none" ? "adjust" : "none");
                       }}
                       className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
                         conclusionTool !== "none"
@@ -3158,53 +3149,14 @@ export function DashboardContent() {
               }
               footerExtra={
                 <>
-                  {conclusionStale && !conclusionBusy && (
-                    <div className="flex flex-wrap items-center gap-2 px-2 py-1 mb-1.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-                      <span className="text-xs text-amber-700 dark:text-amber-300 flex-1 min-w-[180px]">
-                        {t("dash.conclusion_stale")}
-                      </span>
-                      <Button size="sm" className="h-6 text-[11px] shrink-0" onClick={() => redoConclusionFromPicked(false)}>
-                        {t("dash.pick_findings_apply_none")}
-                      </Button>
-                    </div>
-                  )}
                   {conclusionTool === "none" ? null : (
-                  // Sticky while picking: the sentences are clicked up in the
-                  // findings box, so the count and the buttons have to stay on
-                  // screen instead of being scrolled past. Stays mounted during
-                  // a rewrite too — vanishing and reappearing made the page jump.
-                  <div className={`rounded-lg border p-2 space-y-1.5 transition-opacity ${
-                    pickMode
-                      ? "sticky bottom-2 z-10 shadow-lg backdrop-blur border-emerald-200 dark:border-emerald-800 bg-emerald-50/95 dark:bg-emerald-900/90"
-                      : "border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)]"
-                  } ${conclusionBusy ? "opacity-60 pointer-events-none" : ""}`}>
-                    {/* The order is the instruction: say what the conclusion
-                        must cover, then reword what comes out. */}
+                  // Stays mounted during a rewrite rather than unmounting and
+                  // coming back, which made the page jump mid-read.
+                  <div className={`rounded-lg border p-2 space-y-1.5 transition-opacity border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] ${
+                    conclusionBusy ? "opacity-60 pointer-events-none" : ""
+                  }`}>
                     <div className="flex items-center gap-1 text-[11px]">
-                      <button
-                        type="button"
-                        onClick={startPickMode}
-                        className={`px-1.5 py-0.5 rounded font-medium transition-colors ${
-                          pickMode
-                            ? "bg-emerald-600 text-white"
-                            : "text-gray-500 dark:text-gray-400 hover:text-brand"
-                        }`}
-                      >
-                        {t("dash.conclusion_step_pick")}
-                      </button>
-                      <ChevronRight className={`h-3 w-3 ${pickMode ? "text-emerald-600/60" : "text-gray-400"}`} />
-                      <button
-                        type="button"
-                        onClick={() => setConclusionTool("adjust")}
-                        className={`px-1.5 py-0.5 rounded font-medium transition-colors ${
-                          !pickMode
-                            ? "bg-brand text-white"
-                            : "text-emerald-800/70 dark:text-emerald-200/70 hover:text-emerald-900 dark:hover:text-emerald-100"
-                        }`}
-                      >
-                        {t("dash.conclusion_step_adjust")}
-                      </button>
+                      <span className="font-medium text-gray-500 dark:text-gray-400">{t("dash.adjust_conclusion_title")}</span>
                       <div className="flex-1" />
                       <button
                         type="button"
@@ -3215,50 +3167,6 @@ export function DashboardContent() {
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    {pickMode ? (
-                      <>
-                        <p className="text-xs text-emerald-800 dark:text-emerald-200">
-                          {t("dash.pick_findings_hint")}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-100 mr-1">
-                            {t("dash.pick_findings_count").replace("{0}", String(pickedSentences.size))}
-                          </span>
-                          {findingsSentences.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={pickAllDictated}
-                              className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors"
-                            >
-                              {/* Once the findings are edited by hand the trace is gone
-                                  and nothing is known to be dictated — then the useful
-                                  shortcut is simply "all of them". */}
-                              {dictatedSentences.size > 0
-                                ? t("dash.pick_findings_all_dictated")
-                                : t("dash.pick_findings_all")}
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => { setPickTouched(true); setPickedSentences(new Set()); }}
-                            disabled={pickedSentences.size === 0}
-                            className="text-[11px] px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition-colors disabled:opacity-40"
-                          >
-                            {t("dash.pick_findings_none")}
-                          </button>
-                          <div className="flex-1" />
-                          <Button
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => redoConclusionFromPicked()}
-                          >
-                            {pickedSentences.size > 0
-                              ? t("dash.pick_findings_apply")
-                              : t("dash.pick_findings_apply_none")}
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
                       <>
                         <div className="flex flex-wrap items-center gap-1">
                           {([
@@ -3305,7 +3213,6 @@ export function DashboardContent() {
                           </Button>
                         </div>
                       </>
-                    )}
                   </div>
                   )}
                 </>
@@ -3740,7 +3647,6 @@ function OutputCard({
   onHoverHighlight,
   onClickHighlight,
   onSelectRange,
-  forceHighlights,
   linkTooltip,
 }: {
   title: string;
@@ -3765,25 +3671,35 @@ function OutputCard({
   onClickHighlight?: (span: { spanIndex?: number }) => void;
   /** Character range the reader has selected in this text, or null. */
   onSelectRange?: (range: { start: number; end: number } | null) => void;
-  /** Show the clickable highlighted view even if the card was left in edit
-   *  mode — used while picking findings, which needs those spans. */
-  forceHighlights?: boolean;
   /** Tooltip for the findings-side isLinked spotlight span. */
   linkTooltip?: string;
 }) {
-  const t = useT();
+  // There is no edit mode to switch into: clicking the text starts typing
+  // where you clicked, selecting it offers what can be done to the selection,
+  // and clicking away puts the highlighted view back. The pencil-and-OK pair
+  // it replaces was a mode, and modes are what made this card confusing.
   const [editing, setEditing] = useState(false);
   const selectionHostRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const caretRef = useRef<number | null>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
-  // Picking needs the clickable spans, so it overrides hand-editing: the
-  // pencil leaves this card in edit mode until "OK" is pressed, and someone
-  // who edits the findings and then goes to fix the conclusion would
-  // otherwise be handed a plain textarea with nothing to select.
-  const readOnlyView = showTrace && (!editing || !!forceHighlights);
+  const readOnlyView = showTrace && !editing;
 
   useEffect(() => {
-    if (!showTrace || forceHighlights) setEditing(false);
-  }, [showTrace, forceHighlights]);
+    if (!showTrace) setEditing(false);
+  }, [showTrace]);
+
+  // Put the caret where the text was clicked, once the textarea exists.
+  useEffect(() => {
+    if (!editing || caretRef.current === null) return;
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.focus();
+      const at = Math.min(caretRef.current, ta.value.length);
+      ta.setSelectionRange(at, at);
+    }
+    caretRef.current = null;
+  }, [editing]);
 
   const Wrapper = bare ? "div" : Card;
   return (
@@ -3795,26 +3711,6 @@ function OutputCard({
         </h3>
         <div className="flex items-center gap-2">
           {headerExtra}
-          {showTrace && !traceLocked && !editing && (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-1 text-[10px] text-brand hover:text-brand/80 font-medium transition-colors"
-            >
-              <Pencil className="h-3 w-3" />
-              {t("edit")}
-            </button>
-          )}
-          {editing && (
-            <button
-              type="button"
-              onClick={() => { setEditing(false); onEdit?.(); }}
-              className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 dark:text-violet-400 font-medium transition-colors"
-            >
-              <CheckCheck className="h-3 w-3" />
-              OK
-            </button>
-          )}
           {loading && <LoadingDots size="xs" className="text-brand" />}
         </div>
       </div>
@@ -3845,14 +3741,24 @@ function OutputCard({
           // without first switching the box out of its highlighted state.
           <div
             ref={selectionHostRef}
-            onMouseUp={() => onSelectRange?.(selectionOffsetsWithin(selectionHostRef.current))}
+            onMouseUp={() => {
+              const range = selectionOffsetsWithin(selectionHostRef.current);
+              onSelectRange?.(range);
+              // A click rather than a drag: start typing right there.
+              if (!range && !traceLocked) {
+                caretRef.current = caretOffsetWithin(selectionHostRef.current);
+                setEditing(true);
+              }
+            }}
           >
             <HighlightedText text={value} highlights={traceHighlights} isDark={!!isDark} onHoverSpan={onHoverHighlight} onClickSpan={onClickHighlight} linkTooltip={linkTooltip} />
           </div>
         ) : (
           <AutoGrowTextarea
+            ref={textareaRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={() => { setEditing(false); onEdit?.(); }}
             onSelect={(e) => {
               const ta = e.currentTarget;
               onSelectRange?.(ta.selectionStart < ta.selectionEnd ? { start: ta.selectionStart, end: ta.selectionEnd } : null);

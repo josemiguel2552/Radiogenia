@@ -192,6 +192,9 @@ function renderParts(
           role="button"
           tabIndex={0}
           onClick={() => onClickSpan?.(h)}
+          // Keep the click on the span: the container treats a plain click as
+          // "start typing here", which is not what clicking a mark means.
+          onMouseUp={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
@@ -312,6 +315,30 @@ export function selectionOffsetsWithin(container: HTMLElement | null): { start: 
 
   if (start === null || end === null || start >= end) return null;
   return { start, end };
+}
+
+/**
+ * Character offset of a collapsed caret inside `container` — where a click
+ * landed, so typing can start at that point instead of at the top of the box.
+ * Same text-node walk as the selection version; null when text is selected
+ * rather than clicked.
+ */
+export function caretOffsetWithin(container: HTMLElement | null): number | null {
+  if (!container || typeof window === "undefined") return null;
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return null;
+
+  const range = sel.getRangeAt(0);
+  if (!container.contains(range.startContainer)) return null;
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let offset = 0;
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    if (node === range.startContainer) return offset + range.startOffset;
+    offset += node.length;
+  }
+  return null;
 }
 
 /**
