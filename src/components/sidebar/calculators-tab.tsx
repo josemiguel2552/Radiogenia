@@ -19,6 +19,7 @@ import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
 import { track } from "@/lib/track";
+import { stageEsophagealCancer } from "@/lib/tnm-esophagus";
 
 /* ═══════════════════════════════════════════
    Shared helpers
@@ -5609,8 +5610,17 @@ function TNMStager({ config }: { config: TNMConfig }) {
 
   const result = config.stage(sel);
   const tnmStr = [sel.T, sel.N, sel.M].filter(Boolean).join(" ");
+  // Where an extra changes the stage — histology for oesophagus, age band for
+  // thyroid — the pasted line has to carry it. "T1 N1 M0 — Stage IIA" is
+  // stage I if the histology is squamous, so the TNM alone does not say
+  // what was staged.
+  const extrasStr = (config.extras || [])
+    .map((ex) => ex.options.find((o) => o.code === sel[ex.id]))
+    .filter((o): o is TNMOpt => !!o)
+    .map((o) => pick(o.label))
+    .join(", ");
   const copyText = result
-    ? `${tnmStr} — ${t("calc.stage")} ${result.stage}`
+    ? `${tnmStr} — ${t("calc.stage")} ${result.stage}${extrasStr ? ` (${extrasStr})` : ""}`
     : "";
 
   return (
@@ -6034,15 +6044,18 @@ const HCC_TNM: TNMConfig = {
   },
 };
 
-/* ── 9. Esophagus (adenocarcinoma, clinical cTNM, AJCC 8th) ── */
+/* ── 9. Esophagus & OGJ (clinical cTNM, AJCC 8th) ──
+   Adenocarcinoma and squamous carcinoma have different clinical stage
+   groups, so the histology is asked for rather than assumed. The tables
+   themselves live in @/lib/tnm-esophagus, where they are covered by tests. */
 const ESOPHAGUS_TNM: TNMConfig = {
-  edition: "AJCC 8th ed. — Esophagus (adenocarcinoma, clinical)",
+  edition: "AJCC 8th ed. — Esophagus/OGJ (clinical cTNM)",
   t: [
     { code: "Tis", label: { es: "Tis (displasia alto grado)", en: "Tis (high-grade dysplasia)", pt: "Tis (displasia alto grau)" } },
     { code: "T1", label: { es: "T1 (lámina propia/submucosa)", en: "T1 (lamina propria/submucosa)", pt: "T1 (lâmina própria/submucosa)" } },
     { code: "T2", label: { es: "T2 (muscular propia)", en: "T2 (muscularis propria)", pt: "T2 (muscular própria)" } },
     { code: "T3", label: { es: "T3 (adventicia)", en: "T3 (adventitia)", pt: "T3 (adventícia)" } },
-    { code: "T4a", label: { es: "T4a (pleura/pericardio/diafragma)", en: "T4a (pleura/pericardium/diaphragm)", pt: "T4a (pleura/pericárdio/diafragma)" } },
+    { code: "T4a", label: { es: "T4a (pleura/pericardio/ácigos/diafragma/peritoneo)", en: "T4a (pleura/pericardium/azygos/diaphragm/peritoneum)", pt: "T4a (pleura/pericárdio/ázigos/diafragma/peritônio)" } },
     { code: "T4b", label: { es: "T4b (aorta/vía aérea/vértebra)", en: "T4b (aorta/airway/vertebra)", pt: "T4b (aorta/via aérea/vértebra)" } },
   ],
   n: [
@@ -6055,24 +6068,17 @@ const ESOPHAGUS_TNM: TNMConfig = {
     { code: "M0", label: { es: "M0", en: "M0", pt: "M0" } },
     { code: "M1", label: { es: "M1", en: "M1", pt: "M1" } },
   ],
-  stage: (s) => {
-    const { T, N, M } = s;
-    if (!T || !N || !M) return null;
-    if (M === "M1") return { stage: "IVB", color: "red" };
-    if (N === "N3") return { stage: "IVA", color: "red" };
-    if (T === "T4b") return { stage: "IVA", color: "red" };
-    if (N === "N2") return { stage: "IVA", color: "red" };
-    // N0–N1, T up to T4a, M0
-    if (T === "Tis" && N === "N0") return { stage: "0", color: "green" };
-    if (T === "T1" && N === "N0") return { stage: "I", color: "green" };
-    if (T === "T1" && N === "N1") return { stage: "IIA", color: "yellow" };
-    if (T === "T2" && N === "N0") return { stage: "IIB", color: "yellow" };
-    // T2 N1, T3 N0–1, T4a N0–1 → III
-    if ((T === "T2" && N === "N1") || (T === "T3" && (N === "N0" || N === "N1")) || (T === "T4a" && (N === "N0" || N === "N1"))) {
-      return { stage: "III", color: "red" };
-    }
-    return null;
-  },
+  extras: [
+    {
+      id: "HIST",
+      label: { es: "Histología", en: "Histology", pt: "Histologia" },
+      options: [
+        { code: "adeno", label: { es: "Adenocarcinoma", en: "Adenocarcinoma", pt: "Adenocarcinoma" } },
+        { code: "squamous", label: { es: "Escamoso (epidermoide)", en: "Squamous cell", pt: "Escamoso (epidermoide)" } },
+      ],
+    },
+  ],
+  stage: (s) => stageEsophagealCancer({ histology: s.HIST, T: s.T, N: s.N, M: s.M }),
 };
 
 /* ── 10. Gallbladder (AJCC 8th) ── */
