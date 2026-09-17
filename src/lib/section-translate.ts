@@ -1012,6 +1012,7 @@ const PT: Record<string, string> = {
   "Aorta and pulmonary artery": "Aorta e artéria pulmonar",
   "Aorta and great vessels": "Aorta e grandes vasos",
   "Heart and pericardium": "Coração e pericárdio",
+  "Pulmonary arteries": "Artérias pulmonares",
   "Pleura": "Pleura",
   "Diaphragm": "Diafragma",
   "Thoracic wall": "Parede torácica",

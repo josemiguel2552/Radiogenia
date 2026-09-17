@@ -10936,6 +10936,7 @@ const sections: Record<UILanguage, Record<string, string>> = {
     "Aorta and pulmonary arteries": "Aorta e artérias pulmonares",
     "Aorta and great vessels": "Aorta e grandes vasos",
     "Heart and pericardium": "Coração e pericárdio",
+    "Pulmonary arteries": "Artérias pulmonares",
     "Pleura": "Pleura",
     "Diaphragm": "Diafragma",
     "Thoracic wall": "Parede torácica",
