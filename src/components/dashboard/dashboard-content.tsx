@@ -1780,8 +1780,9 @@ export function DashboardContent() {
    * Opens edit mode, pre-ticked with the findings the conclusion already
    * covers — the review pass quotes the sentence behind each point, so this
    * starts from what the AI actually used rather than from a blank slate.
-   * Without those quotes (the review is still running, or found none) it
-   * starts from everything, which is a list to prune instead of one to build.
+   * Without those quotes (the review is still running, or found none)
+   * nothing is ticked and the footer says so, because a tick is a claim
+   * about what the conclusion contains and we would not know.
    */
   function startEditMode() {
     const seeded = new Set<number>();
@@ -1792,7 +1793,10 @@ export function DashboardContent() {
         if (s.start < match.end && s.end > match.start) seeded.add(i);
       });
     }
-    setPickedSentences(seeded.size > 0 ? seeded : new Set(findingsSentences.map((_, i) => i)));
+    // Only what the conclusion actually rests on is ticked. Falling back to
+    // ticking everything when the pairing is unknown made a long report a
+    // chore of unticking, and said the conclusion covered findings it did not.
+    setPickedSentences(seeded);
     setPickTouched(false);
     setRewordOpen(false);
     setConclusionSel(null);
@@ -2966,6 +2970,8 @@ export function DashboardContent() {
                     <p className="text-xs text-emerald-800 dark:text-emerald-300 flex-1 min-w-[160px]">
                       {pickTouched
                         ? t("dash.edit_ai_count").replace("{0}", String(pickedSentences.size))
+                        : pickedSentences.size === 0
+                        ? t("dash.edit_ai_unknown")
                         : t("dash.edit_ai_help")}
                     </p>
                     {pickTouched && (
