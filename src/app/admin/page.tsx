@@ -430,9 +430,21 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/sync-billing", { method: "POST" });
       const d = await res.json().catch(() => ({}));
       if (res.ok) {
-        setSyncResult(t("admin.bill_sync_done")
-          .replace("{checked}", String(d.checked ?? 0))
-          .replace("{failed}", String(d.failuresFound ?? 0)));
+        // The counts that matter for money go first: a cancellation Stripe was
+        // still going to renew is a charge someone is not expecting, and it
+        // was invisible when this only reported checked/failed.
+        const lines = [
+          t("admin.bill_sync_done")
+            .replace("{checked}", String(d.checked ?? 0))
+            .replace("{failed}", String(d.failuresFound ?? 0)),
+        ];
+        if (d.stillBillingAfterCancel > 0) {
+          lines.unshift(t("admin.bill_sync_fixed").replace("{n}", String(d.stillBillingAfterCancel)));
+        }
+        if (d.needsReview > 0) {
+          lines.unshift(t("admin.bill_sync_review").replace("{n}", String(d.needsReview)));
+        }
+        setSyncResult(lines.join(" · "));
         await loadAll();
       } else {
         setSyncResult(d.error || "Error");
