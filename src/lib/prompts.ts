@@ -1557,7 +1557,7 @@ export function buildConclusionPrompt(params: {
   const isBrief = style === "brief";
 
   const RULE_1_ES = isBrief
-    ? `1. UN SOLO PÁRRAFO, sin numerar y sin dividir en puntos. Cuanto más corto, mejor: si cabe en dos frases, que sean dos.`
+    ? `1. UN SOLO PÁRRAFO, sin numerar y sin dividir en puntos. Objetivo: 1-3 frases, entre 30 y 60 palabras. Si te pasas, no has triado bastante; si bajas de ahí, comprueba que no has dejado fuera un hallazgo que cambia el manejo.`
     : `1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.`;
   const FORMAT_ES = isBrief
     ? `- UN ÚNICO PÁRRAFO de texto plano: sin numerar, sin viñetas, sin saltos de línea. Sin markdown ni encabezado "CONCLUSIÓN".
@@ -1565,7 +1565,7 @@ export function buildConclusionPrompt(params: {
     : `- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
 - Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.`;
   const RULE_1_EN = isBrief
-    ? `1. ONE SINGLE PARAGRAPH, not numbered and not split into points. The shorter the better: if it fits in two sentences, make it two.`
+    ? `1. ONE SINGLE PARAGRAPH, not numbered and not split into points. Target: 1-3 sentences, 30 to 60 words. Longer than that and you have not triaged enough; shorter, and check you have not left out a finding that changes management.`
     : `1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.`;
   const FORMAT_EN = isBrief
     ? `- ONE SINGLE PARAGRAPH of plain text: no numbering, no bullets, no line breaks. No markdown, no "CONCLUSION" heading.
@@ -1595,6 +1595,116 @@ export function buildConclusionPrompt(params: {
   const REREAD_ES = isBrief ? "relee la conclusión entera y reescríbela" : "relee cada punto y reescríbelo";
   const REREAD_EN = isBrief ? "re-read the whole conclusion and rewrite it" : "re-read each point and rewrite it";
 
+  // One finished example per style. The rules say what not to do; this is the
+  // only place the model is shown what a good conclusion actually looks like,
+  // which for a fine-tuned model reading a rulebook it never trained on does
+  // more work than another paragraph of prohibitions. The pair is deliberate:
+  // the bad one carries the five failures that actually happen.
+  const SHARED_CASE_ES = `Hallazgos del ejemplo:
+Hígado: lesión focal hipodensa de 12 mm en segmento VII, bien definida, sin realce.
+Vesícula: litiasis de 8 mm, pared fina, sin líquido perivesicular.
+Vía biliar: colédoco de 9 mm (6 mm en el estudio previo).
+Riñones: quiste simple cortical izquierdo de 15 mm.
+Óseo: cambios degenerativos dorsolumbares.
+Datos clínicos del ejemplo: dolor en hipocondrio derecho e ictericia.`;
+
+  const EXAMPLE_ES = isBrief
+    ? `EJEMPLO — así se hace:
+
+${SHARED_CASE_ES}
+
+✓ BIEN: "Colédoco dilatado a 9 mm, mayor que en el estudio previo (6 mm), con litiasis vesicular de 8 mm sin engrosamiento parietal ni líquido perivesicular. Lesión hepática de 12 mm en segmento VII, bien definida y sin realce."
+Responde primero a la ictericia, encadena lo biliar, conserva cada medida y el cambio respecto al previo, y suelta el quiste renal y los cambios degenerativos porque no cambian el manejo.
+
+✗ MAL: "Se observa dilatación de la vía biliar en probable relación con coledocolitiasis, junto con colelitiasis. Quiste renal simple. Cambios degenerativos dorsolumbares. Se recomienda correlación clínica y valorar colangio-RM."
+Cinco fallos: muletilla de apertura, una inferencia ("en probable relación con"), un diagnóstico que nadie dictó ("coledocolitiasis"), relleno incidental, y una recomendación.`
+    : `EJEMPLO — así se hace:
+
+${SHARED_CASE_ES}
+
+✓ BIEN:
+"1. Colédoco dilatado a 9 mm, mayor que en el estudio previo (6 mm), con litiasis vesicular de 8 mm sin engrosamiento parietal ni líquido perivesicular.
+2. Lesión hepática de 12 mm en segmento VII, bien definida y sin realce."
+Responde primero a la ictericia, agrupa lo biliar en un punto, conserva cada medida y el cambio respecto al previo, y suelta el quiste renal y los cambios degenerativos porque no cambian el manejo.
+
+✗ MAL:
+"1. Se observa dilatación de la vía biliar en probable relación con coledocolitiasis.
+2. Colelitiasis.
+3. Quiste renal simple.
+4. Cambios degenerativos dorsolumbares.
+5. Se recomienda correlación clínica."
+Cinco fallos: muletilla de apertura, una inferencia ("en probable relación con"), un diagnóstico que nadie dictó ("coledocolitiasis"), relleno incidental en puntos propios, y una recomendación.`;
+
+  const SHARED_CASE_PT = `Achados do exemplo:
+Fígado: lesão focal hipodensa de 12 mm no segmento VII, bem definida, sem realce.
+Vesícula: cálculo de 8 mm, parede fina, sem líquido pericolecístico.
+Via biliar: colédoco de 9 mm (6 mm no estudo prévio).
+Rins: cisto simples cortical esquerdo de 15 mm.
+Ósseo: alterações degenerativas dorsolombares.
+Dados clínicos do exemplo: dor no hipocôndrio direito e icterícia.`;
+
+  const EXAMPLE_PT = isBrief
+    ? `EXEMPLO — é assim que se faz:
+
+${SHARED_CASE_PT}
+
+✓ BEM: "Colédoco dilatado para 9 mm, maior que no estudo prévio (6 mm), com cálculo vesicular de 8 mm sem espessamento parietal nem líquido pericolecístico. Lesão hepática de 12 mm no segmento VII, bem definida e sem realce."
+Responde primeiro à icterícia, encadeia o biliar, conserva cada medida e a mudança em relação ao prévio, e larga o cisto renal e as alterações degenerativas porque não mudam o manejo.
+
+✗ MAL: "Observa-se dilatação da via biliar em provável relação com coledocolitíase, junto com colelitíase. Cisto renal simples. Alterações degenerativas dorsolombares. Recomenda-se correlação clínica e avaliar colangio-RM."
+Cinco falhas: vício de linguagem na abertura, uma inferência ("em provável relação com"), um diagnóstico que ninguém ditou ("coledocolitíase"), enchimento incidental, e uma recomendação.`
+    : `EXEMPLO — é assim que se faz:
+
+${SHARED_CASE_PT}
+
+✓ BEM:
+"1. Colédoco dilatado para 9 mm, maior que no estudo prévio (6 mm), com cálculo vesicular de 8 mm sem espessamento parietal nem líquido pericolecístico.
+2. Lesão hepática de 12 mm no segmento VII, bem definida e sem realce."
+Responde primeiro à icterícia, agrupa o biliar num ponto, conserva cada medida e a mudança em relação ao prévio, e larga o cisto renal e as alterações degenerativas porque não mudam o manejo.
+
+✗ MAL:
+"1. Observa-se dilatação da via biliar em provável relação com coledocolitíase.
+2. Colelitíase.
+3. Cisto renal simples.
+4. Alterações degenerativas dorsolombares.
+5. Recomenda-se correlação clínica."
+Cinco falhas: vício de linguagem na abertura, uma inferência ("em provável relação com"), um diagnóstico que ninguém ditou ("coledocolitíase"), enchimento incidental em pontos próprios, e uma recomendação.`;
+
+  const SHARED_CASE_EN = `Example findings:
+Liver: 12 mm hypodense focal lesion in segment VII, well defined, no enhancement.
+Gallbladder: 8 mm stone, thin wall, no pericholecystic fluid.
+Bile duct: common bile duct 9 mm (6 mm on the prior study).
+Kidneys: 15 mm simple cortical cyst on the left.
+Bone: dorsolumbar degenerative change.
+Example clinical context: right upper quadrant pain and jaundice.`;
+
+  const EXAMPLE_EN = isBrief
+    ? `EXAMPLE — this is how it is done:
+
+${SHARED_CASE_EN}
+
+✓ GOOD: "Common bile duct dilated to 9 mm, up from 6 mm on the prior study, with an 8 mm gallbladder stone, no wall thickening and no pericholecystic fluid. 12 mm hepatic lesion in segment VII, well defined and non-enhancing."
+It answers the jaundice first, chains the biliary findings, keeps every measurement and the interval change, and drops the renal cyst and the degenerative change because they do not alter management.
+
+✗ BAD: "There is noted dilatation of the biliary tree probably related to choledocholithiasis, together with cholelithiasis. Simple renal cyst. Dorsolumbar degenerative changes. Clinical correlation and MRCP are recommended."
+Five failures: an opening filler verb, an inference ("probably related to"), a diagnosis nobody dictated ("choledocholithiasis"), incidental padding, and a recommendation.`
+    : `EXAMPLE — this is how it is done:
+
+${SHARED_CASE_EN}
+
+✓ GOOD:
+"1. Common bile duct dilated to 9 mm, up from 6 mm on the prior study, with an 8 mm gallbladder stone, no wall thickening and no pericholecystic fluid.
+2. 12 mm hepatic lesion in segment VII, well defined and non-enhancing."
+It answers the jaundice first, groups the biliary findings into one point, keeps every measurement and the interval change, and drops the renal cyst and the degenerative change because they do not alter management.
+
+✗ BAD:
+"1. There is noted dilatation of the biliary tree probably related to choledocholithiasis.
+2. Cholelithiasis.
+3. Simple renal cyst.
+4. Dorsolumbar degenerative changes.
+5. Clinical correlation is recommended."
+Five failures: an opening filler verb, an inference ("probably related to"), a diagnosis nobody dictated ("choledocholithiasis"), incidental padding in points of their own, and a recommendation.`;
+
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
 - Cada punto es UNA SOLA FRASE breve, directa y accionable.
@@ -1607,7 +1717,7 @@ export function buildConclusionPrompt(params: {
 - La conclusión entera es UN ÚNICO PÁRRAFO corrido: sin numerar, sin viñetas y sin saltos de línea.
 - Va al grano. Exprime los hallazgos relevantes en las menos palabras posibles, encadenados con fluidez.
 - PARAFRASEA con libertad: no copies las frases de los hallazgos. Reformula, funde y condensa hasta que quepa en un párrafo bien escrito.
-- Conserva los datos que importan (tamaño, localización, lateralidad, cambios respecto a previos) y suelta todo lo demás.
+- Lo que recortas son hallazgos ENTEROS, nunca los datos de los que se quedan: un hallazgo que entra, entra con su tamaño, su localización, su lateralidad y su cambio respecto al previo.
 - Prioriza DENTRO del párrafo: primero lo que responde a la pregunta clínica o lo agudo; lo secundario después.
 - Es lo único que el clínico va a leer. Tiene que ser impecable: ni una palabra de relleno, ni una muletilla, ni una subordinada que sobre.
 - CONDENSAR NO ES DIAGNOSTICAR. Sigues describiendo lo que se ve: sin nombrar entidades, sin inferencias, sin juicios de naturaleza y sin recomendaciones. Parafrasear cambia las palabras, nunca el contenido.`,
@@ -1625,7 +1735,7 @@ export function buildConclusionPrompt(params: {
 - The whole conclusion is ONE SINGLE running PARAGRAPH: no numbering, no bullets, no line breaks.
 - It gets straight to the point. Squeeze the relevant findings into as few words as possible, flowing together.
 - PARAPHRASE freely: do not copy the sentences from the findings. Reword, merge and condense until it fits in one well-written paragraph.
-- Keep the data that matters (size, location, laterality, change from priors) and drop everything else.
+- What you cut is WHOLE findings, never the data of the ones that stay: a finding that goes in goes in with its size, its location, its laterality and its interval change.
 - Prioritize WITHIN the paragraph: what answers the clinical question, or the acute finding, first; secondary findings after.
 - It is the only thing the clinician will read. It has to be flawless: not one filler word, not one stock phrase, not one subordinate clause too many.
 - CONDENSING IS NOT DIAGNOSING. You are still describing what is seen: no naming entities, no inferences, no judgements of nature, no recommendations. Paraphrasing changes the words, never the content.`,
@@ -1643,7 +1753,7 @@ export function buildConclusionPrompt(params: {
 - A conclusão inteira é UM ÚNICO PARÁGRAFO corrido: sem numeração, sem marcadores e sem quebras de linha.
 - Vai direto ao ponto. Espreme os achados relevantes no menor número de palavras possível, encadeados com fluidez.
 - PARAFRASEIE à vontade: não copie as frases dos achados. Reformule, funda e condense até caber num parágrafo bem escrito.
-- Conserve os dados que importam (tamanho, localização, lateralidade, mudanças em relação a prévios) e largue todo o resto.
+- O que você corta são achados INTEIROS, nunca os dados dos que ficam: um achado que entra, entra com seu tamanho, sua localização, sua lateralidade e sua mudança em relação ao prévio.
 - Priorize DENTRO do parágrafo: primeiro o que responde à pergunta clínica ou o agudo; o secundário depois.
 - É a única coisa que o clínico vai ler. Tem de ser impecável: nem uma palavra de enchimento, nem um vício de linguagem, nem uma oração subordinada a mais.
 - CONDENSAR NÃO É DIAGNOSTICAR. Você continua descrevendo o que se vê: sem nomear entidades, sem inferências, sem juízos de natureza e sem recomendações. Parafrasear muda as palavras, nunca o conteúdo.`,
@@ -1658,6 +1768,8 @@ IDIOMA DE SALIDA: ${l}. Toda la conclusión debe estar en ${l}.
 Si los hallazgos están en otro idioma, traduce al ${l}.
 
 ${STYLE_BLOCK_ES[style]}
+
+${EXAMPLE_ES}
 
 REGLAS DE CONTENIDO:
 
@@ -1685,7 +1797,7 @@ ${RULE_4_ES}
 
 7. PREVIOS: los cambios respecto a estudios previos van ${WITH_FINDING_ES}, con precisión (aumento/disminución con medidas, aparición/desaparición, estabilidad). Son información de alto valor: no los omitas.
 
-8. NO PIERDAS DATOS: sintetiza en vez de copiar frases textuales, pero cada dato relevante (tamaño, localización, densidad/señal, lateralidad, número, cambios) debe llegar a la conclusión.
+8. NO PIERDAS DATOS AL SINTETIZAR: el triaje decide QUÉ hallazgos entran; una vez dentro, un hallazgo entra COMPLETO. De los que entran no se pierde ni un dato (tamaño, localización, densidad/señal, lateralidad, número, cambios respecto al previo). Sintetiza en vez de copiar frases textuales. Acortar es dejar hallazgos FUERA, nunca describir a medias los que están DENTRO.
 
 PRINCIPIO FUNDAMENTAL — DESCRIBIR, NO DIAGNOSTICAR:
 Describes lo que se ve; el clínico decide qué significa.
@@ -1728,6 +1840,8 @@ If findings are in another language, translate to ${l}.
 
 ${styleBlock}
 
+${lang === "pt" ? EXAMPLE_PT : EXAMPLE_EN}
+
 CONTENT RULES:
 
 ${RULE_1_EN}
@@ -1754,7 +1868,7 @@ ${RULE_4_EN}
 
 7. PRIORS: interval change goes ${WITH_FINDING_EN}, stated precisely (increase/decrease with measurements, appearance/disappearance, stability). It is high-value information: do not omit it.
 
-8. DO NOT LOSE DATA: synthesize rather than copying sentences verbatim, but every relevant data point (size, location, density/signal, laterality, number, change) must reach the conclusion.
+8. DO NOT LOSE DATA WHEN SYNTHESIZING: triage decides WHICH findings go in; once in, a finding goes in WHOLE. Not one data point is lost from the ones that go in (size, location, density/signal, laterality, number, interval change). Synthesize rather than copying sentences verbatim. Shortening means leaving findings OUT, never half-describing the ones that are IN.
 
 FUNDAMENTAL PRINCIPLE — DESCRIBE, DO NOT DIAGNOSE:
 You describe what is seen; the clinician decides what it means.
