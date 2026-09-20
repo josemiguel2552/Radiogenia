@@ -4,6 +4,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { PLANS, type SubscriptionPlan } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
 import Stripe from "stripe";
+import {
+  decideCancellation,
+  cancellationConfirmed,
+  isBilling,
+  type SubscriptionLike,
+} from "@/lib/cancel-subscription";
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -25,6 +31,40 @@ function getNextPeriodDate(periodStart: string): Date {
   const next = new Date(start);
   next.setMonth(next.getMonth() + 1);
   return next;
+}
+
+
+/**
+ * Finds the subscription Stripe really holds for this customer. The stored id
+ * can be missing entirely — the checkout webhook may never have arrived, which
+ * this codebase already compensates for elsewhere — so a customer-wide lookup
+ * is the fallback rather than an optimisation.
+ *
+ * Returns `lookupFailed` instead of throwing, because the caller has to tell
+ * "Stripe says nothing is billing" apart from "we could not ask Stripe".
+ */
+async function findLiveSubscription(
+  stripe: Stripe,
+  customerId: string,
+  storedSubId: string | null | undefined,
+): Promise<{ subscription: SubscriptionLike | null; lookupFailed: boolean }> {
+  let stored: Stripe.Subscription | null = null;
+  try {
+    if (storedSubId) stored = await stripe.subscriptions.retrieve(storedSubId);
+  } catch {
+    // A stale id is not a failure: fall through to the customer lookup, which
+    // is the authoritative answer anyway.
+    stored = null;
+  }
+  if (isBilling(stored)) return { subscription: stored, lookupFailed: false };
+
+  try {
+    const list = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 20 });
+    const live = list.data.find((s) => isBilling(s)) ?? null;
+    return { subscription: live ?? stored, lookupFailed: false };
+  } catch {
+    return { subscription: null, lookupFailed: true };
+  }
 }
 
 export async function GET() {
@@ -313,7 +353,7 @@ export async function PUT(req: NextRequest) {
 
     const { data: profile } = await service
       .from("profiles")
-      .select("subscription_plan, billing_period_start, stripe_subscription_id, reports_used_this_month, dictation_seconds_used")
+      .select("subscription_plan, billing_period_start, stripe_subscription_id, stripe_customer_id, reports_used_this_month, dictation_seconds_used")
       .eq("id", user.id)
       .single();
 
@@ -396,37 +436,103 @@ export async function PUT(req: NextRequest) {
       })
       .eq("id", user.id);
 
+    // A cancellation has to reach Stripe or fail. Before this, a profile with
+    // no stored subscription id — which happens whenever the checkout webhook
+    // does not arrive — skipped Stripe entirely and still returned success,
+    // so the account went on being charged while the UI said "cancelled".
+    if (plan === "free") {
+      const stripe = getStripe();
+      let live: SubscriptionLike | null = null;
+      let lookupFailed = false;
+
+      if (stripe && profile.stripe_customer_id) {
+        const found = await findLiveSubscription(stripe, profile.stripe_customer_id, profile.stripe_subscription_id);
+        live = found.subscription;
+        lookupFailed = found.lookupFailed;
+      }
+
+      const decision = decideCancellation({
+        stripeConfigured: !!stripe,
+        stripeCustomerId: profile.stripe_customer_id,
+        liveSubscription: live,
+        lookupFailed,
+      });
+
+      if (decision.kind === "blocked") {
+        // Undo the deferred write: claiming a cancellation we could not make
+        // is what we are here to stop.
+        await service
+          .from("profiles")
+          .update({ pending_plan: null, pending_plan_effective_date: null })
+          .eq("id", user.id);
+        console.error(`[subscription] cancellation blocked for user=${user.id}: ${decision.reason}`);
+        return NextResponse.json(
+          { error: "cancel_unverified", reason: decision.reason },
+          { status: 503 },
+        );
+      }
+
+      if (decision.kind === "stripe" && stripe) {
+        try {
+          const updated = await stripe.subscriptions.update(decision.subscriptionId, {
+            cancel_at_period_end: true,
+          });
+
+          if (!cancellationConfirmed(updated)) {
+            // The call returned, but the subscription is still set to renew.
+            throw new Error(`Stripe did not confirm cancellation of ${decision.subscriptionId}`);
+          }
+
+          // The id we just cancelled is the one to keep: the stored one may
+          // have been missing or stale, which is how we got here.
+          if (profile.stripe_subscription_id !== decision.subscriptionId) {
+            await service
+              .from("profiles")
+              .update({ stripe_subscription_id: decision.subscriptionId })
+              .eq("id", user.id);
+          }
+
+          // Stripe decides the real end of access: the trial end while
+          // trialing, otherwise the end of the paid period. Our provisional
+          // billing_period_start+1mo estimate can be wrong (e.g. a month out
+          // for a trial cancelled on day 1) — store the authoritative date.
+          const endTs = updated.cancel_at
+            || updated.trial_end
+            || updated.items.data[0]?.current_period_end
+            || null;
+          if (endTs) {
+            effectiveDate = new Date(endTs * 1000);
+            await service
+              .from("profiles")
+              .update({ pending_plan_effective_date: effectiveDate.toISOString() })
+              .eq("id", user.id);
+          }
+        } catch (stripeErr) {
+          await service
+            .from("profiles")
+            .update({ pending_plan: null, pending_plan_effective_date: null })
+            .eq("id", user.id);
+          throw stripeErr;
+        }
+      }
+
+      // Record when the cancellation was requested (admin visibility). Only
+      // reached once Stripe has confirmed, or once we know nothing is billing.
+      try {
+        await service
+          .from("profiles")
+          .update({ subscription_cancelled_at: new Date().toISOString() })
+          .eq("id", user.id);
+      } catch { /* column may predate migration */ }
+
+      return NextResponse.json({ ok: true, deferred: true, effectiveDate: effectiveDate.toISOString() });
+    }
+
     if (profile.stripe_subscription_id) {
       const stripe = getStripe();
       if (stripe) {
         try {
-          if (plan === "free") {
-            const updated = await stripe.subscriptions.update(profile.stripe_subscription_id, {
-              cancel_at_period_end: true,
-            });
-            // Stripe decides the real end of access: the trial end while
-            // trialing, otherwise the end of the paid period. Our provisional
-            // billing_period_start+1mo estimate can be wrong (e.g. a month out
-            // for a trial cancelled on day 1) — store the authoritative date.
-            const endTs = updated.cancel_at
-              || updated.trial_end
-              || updated.items.data[0]?.current_period_end
-              || null;
-            if (endTs) {
-              effectiveDate = new Date(endTs * 1000);
-              await service
-                .from("profiles")
-                .update({ pending_plan_effective_date: effectiveDate.toISOString() })
-                .eq("id", user.id);
-            }
-            // Record when the cancellation was requested (admin visibility).
-            try {
-              await service
-                .from("profiles")
-                .update({ subscription_cancelled_at: new Date().toISOString() })
-                .eq("id", user.id);
-            } catch { /* column may predate migration */ }
-          } else {
+          {
             const envKey = PLAN_PRICE_ENV[plan];
             const newPriceId = envKey ? process.env[envKey] : null;
             if (newPriceId) {
