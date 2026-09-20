@@ -4,6 +4,9 @@ import {
   cancellationConfirmed,
   isCancellationOutOfSync,
   needsCancellationReview,
+  decideReactivation,
+  reactivationConfirmed,
+  priceRestored,
   isBilling,
   type CancelContext,
   type SubscriptionLike,
@@ -185,5 +188,77 @@ describe("which statuses count as still taking money", () => {
   it("treats nothing as not billing", () => {
     expect(isBilling(null)).toBe(false);
     expect(isBilling(undefined)).toBe(false);
+  });
+});
+
+
+describe("undoing a scheduled change is held to the same standard", () => {
+  it("goes through Stripe when a live subscription is scheduled to end", () => {
+    const d = decideReactivation(ctx({ liveSubscription: sub("active", true) }));
+    expect(d).toEqual({ kind: "stripe", subscriptionId: "sub_123" });
+  });
+
+  it("blocks with a Stripe customer and no key", () => {
+    // Before, this cleared the pending change and said "reactivated" while
+    // Stripe went on ending the subscription on the renewal date.
+    expect(decideReactivation(ctx({ stripeConfigured: false }))).toEqual({
+      kind: "blocked", reason: "stripe_unavailable",
+    });
+  });
+
+  it("blocks when the lookup threw", () => {
+    expect(decideReactivation(ctx({ lookupFailed: true })).kind).toBe("blocked");
+  });
+
+  it("reports it as gone rather than reactivated when Stripe has nothing", () => {
+    // Saying "you are subscribed again" when Stripe holds nothing is the same
+    // lie pointing the other way.
+    expect(decideReactivation(ctx({ liveSubscription: null })).kind).toBe("gone");
+    expect(decideReactivation(ctx({ liveSubscription: sub("canceled") })).kind).toBe("gone");
+  });
+
+  it("is local-only when the account never had a Stripe customer", () => {
+    expect(decideReactivation(ctx({ stripeCustomerId: null })).kind).toBe("db-only");
+  });
+
+  it("never reports success from an unknown state", () => {
+    for (const over of [{ stripeConfigured: false }, { lookupFailed: true }]) {
+      expect(["blocked"]).toContain(decideReactivation(ctx(over)).kind);
+    }
+  });
+});
+
+describe("Stripe has to confirm the subscription is no longer ending", () => {
+  it("accepts a billing subscription that is not set to cancel", () => {
+    expect(reactivationConfirmed(sub("active", false))).toBe(true);
+    expect(reactivationConfirmed(sub("active"))).toBe(true);
+    expect(reactivationConfirmed(sub("trialing", false))).toBe(true);
+  });
+
+  it("rejects one still set to cancel at period end", () => {
+    expect(reactivationConfirmed(sub("active", true))).toBe(false);
+  });
+
+  it("rejects one that is not billing at all", () => {
+    expect(reactivationConfirmed(sub("canceled", false))).toBe(false);
+    expect(reactivationConfirmed(null)).toBe(false);
+  });
+});
+
+describe("undoing a downgrade has to actually restore the price", () => {
+  const withPrice = (id: string) => ({ items: { data: [{ price: { id } }] } });
+
+  it("accepts the price the plan is being kept on", () => {
+    expect(priceRestored(withPrice("price_pro"), "price_pro")).toBe(true);
+  });
+
+  it("rejects a call that left the downgraded price in place", () => {
+    expect(priceRestored(withPrice("price_starter"), "price_pro")).toBe(false);
+  });
+
+  it("rejects a reply with no price to check", () => {
+    expect(priceRestored({ items: { data: [] } }, "price_pro")).toBe(false);
+    expect(priceRestored(null, "price_pro")).toBe(false);
+    expect(priceRestored(undefined, "price_pro")).toBe(false);
   });
 });

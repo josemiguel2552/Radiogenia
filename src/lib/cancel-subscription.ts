@@ -120,3 +120,56 @@ export function needsCancellationReview(
   if (!profile.subscription_cancelled_at) return false;
   return isBilling(sub) && sub!.cancel_at_period_end !== true;
 }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+ * Undoing a scheduled change ("keep my subscription after all").
+ *
+ * The mirror image of the same rule. Clearing the pending change locally
+ * without Stripe agreeing leaves someone believing they are still subscribed
+ * while Stripe quietly ends it on the renewal date — they do not lose money,
+ * they lose access, and equally without warning.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+export type ReactivateDecision =
+  /** Stripe holds the subscription: the scheduled change must be lifted there. */
+  | { kind: "stripe"; subscriptionId: string }
+  /** No Stripe customer, so the pending change only ever existed locally. */
+  | { kind: "db-only" }
+  /** Stripe was reached and has nothing billing: there is nothing to keep. */
+  | { kind: "gone" }
+  /** We cannot establish what Stripe holds. */
+  | { kind: "blocked"; reason: BlockedReason };
+
+export function decideReactivation(ctx: CancelContext): ReactivateDecision {
+  if (!ctx.stripeCustomerId) return { kind: "db-only" };
+  if (!ctx.stripeConfigured) return { kind: "blocked", reason: "stripe_unavailable" };
+  if (ctx.lookupFailed) return { kind: "blocked", reason: "stripe_lookup_failed" };
+
+  // Already ended, or never started. Telling someone their subscription is
+  // back when Stripe has nothing would be the same lie in the other
+  // direction — they have to subscribe again.
+  if (!isBilling(ctx.liveSubscription)) return { kind: "gone" };
+
+  return { kind: "stripe", subscriptionId: ctx.liveSubscription!.id };
+}
+
+/** Stripe must actually show the subscription as no longer ending. */
+export function reactivationConfirmed(updated: SubscriptionLike | null | undefined): boolean {
+  if (!updated) return false;
+  if (!isBilling(updated)) return false;
+  return updated.cancel_at_period_end !== true;
+}
+
+/**
+ * For undoing a scheduled DOWNGRADE rather than a cancellation: the price has
+ * to be back on the plan they are keeping. A call that returns without having
+ * changed the price has not undone anything.
+ */
+export function priceRestored(
+  updated: { items?: { data?: { price?: { id?: string } | null }[] } } | null | undefined,
+  expectedPriceId: string,
+): boolean {
+  const actual = updated?.items?.data?.[0]?.price?.id;
+  return !!actual && actual === expectedPriceId;
+}

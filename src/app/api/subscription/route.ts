@@ -7,6 +7,9 @@ import Stripe from "stripe";
 import {
   decideCancellation,
   cancellationConfirmed,
+  decideReactivation,
+  reactivationConfirmed,
+  priceRestored,
   isBilling,
   type SubscriptionLike,
 } from "@/lib/cancel-subscription";
@@ -290,31 +293,81 @@ export async function PUT(req: NextRequest) {
     if (cancelPending) {
       const { data: info } = await service
         .from("profiles")
-        .select("stripe_subscription_id, pending_plan, subscription_plan")
+        .select("stripe_subscription_id, stripe_customer_id, pending_plan, subscription_plan")
         .eq("id", user.id)
         .single();
 
-      if (info?.stripe_subscription_id) {
-        const stripe = getStripe();
-        if (stripe) {
-          if (info.pending_plan === "free") {
-            await stripe.subscriptions.update(info.stripe_subscription_id, {
-              cancel_at_period_end: false,
-            });
-          } else if (info.pending_plan && info.subscription_plan && info.subscription_plan !== "free") {
-            const envKey = PLAN_PRICE_ENV[info.subscription_plan];
-            const currentPriceId = envKey ? process.env[envKey] : null;
-            if (currentPriceId) {
-              const sub = await stripe.subscriptions.retrieve(info.stripe_subscription_id);
-              const itemId = sub.items.data[0]?.id;
-              if (itemId) {
-                await stripe.subscriptions.update(info.stripe_subscription_id, {
-                  items: [{ id: itemId, price: currentPriceId }],
-                  proration_behavior: "none",
-                });
-              }
-            }
+      // Same rule as cancelling, pointing the other way: clearing the pending
+      // change locally without Stripe agreeing leaves someone believing they
+      // are still subscribed while Stripe ends it on the renewal date.
+      const stripe = getStripe();
+      let live: SubscriptionLike | null = null;
+      let lookupFailed = false;
+
+      if (stripe && info?.stripe_customer_id) {
+        const found = await findLiveSubscription(stripe, info.stripe_customer_id, info.stripe_subscription_id);
+        live = found.subscription;
+        lookupFailed = found.lookupFailed;
+      }
+
+      const decision = decideReactivation({
+        stripeConfigured: !!stripe,
+        stripeCustomerId: info?.stripe_customer_id,
+        liveSubscription: live,
+        lookupFailed,
+      });
+
+      if (decision.kind === "blocked") {
+        console.error(`[subscription] reactivation blocked for user=${user.id}: ${decision.reason}`);
+        return NextResponse.json(
+          { error: "reactivate_unverified", reason: decision.reason },
+          { status: 503 },
+        );
+      }
+
+      if (decision.kind === "gone") {
+        // Nothing left to keep. Saying otherwise would send them away thinking
+        // they are covered until they find they are not.
+        return NextResponse.json(
+          { error: "subscription_gone", needsCheckout: true },
+          { status: 409 },
+        );
+      }
+
+      if (decision.kind === "stripe" && stripe) {
+        if (info?.pending_plan === "free") {
+          const updated = await stripe.subscriptions.update(decision.subscriptionId, {
+            cancel_at_period_end: false,
+          });
+          if (!reactivationConfirmed(updated)) {
+            throw new Error(`Stripe did not lift the cancellation on ${decision.subscriptionId}`);
           }
+        } else if (info?.pending_plan && info.subscription_plan && info.subscription_plan !== "free") {
+          const envKey = PLAN_PRICE_ENV[info.subscription_plan];
+          const currentPriceId = envKey ? process.env[envKey] : null;
+          if (!currentPriceId) {
+            return NextResponse.json({ error: "Price not configured" }, { status: 503 });
+          }
+          const sub = await stripe.subscriptions.retrieve(decision.subscriptionId);
+          const itemId = sub.items.data[0]?.id;
+          if (!itemId) {
+            throw new Error(`Subscription ${decision.subscriptionId} has no item to price`);
+          }
+          const updated = await stripe.subscriptions.update(decision.subscriptionId, {
+            items: [{ id: itemId, price: currentPriceId }],
+            proration_behavior: "none",
+          });
+          if (!priceRestored(updated, currentPriceId)) {
+            throw new Error(`Stripe did not restore the price on ${decision.subscriptionId}`);
+          }
+        }
+
+        // The id we just acted on is the one to keep.
+        if (info?.stripe_subscription_id !== decision.subscriptionId) {
+          await service
+            .from("profiles")
+            .update({ stripe_subscription_id: decision.subscriptionId })
+            .eq("id", user.id);
         }
       }
 

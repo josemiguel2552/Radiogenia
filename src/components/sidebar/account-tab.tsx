@@ -212,6 +212,11 @@ export function AccountTab() {
       } else {
         const reason = res.status === 403 && selectedPlan === "resident"
           ? t("account.resident_verification_required")
+          // The cancellation could not be confirmed with the payment
+          // provider, so it did NOT happen — say so plainly rather than
+          // showing an error code, because the next renewal is still coming.
+          : data.error === "cancel_unverified"
+          ? t("account.cancel_unverified")
           : data.error || t("gen_error");
         setPlanMsg({ ok: false, text: reason });
       }
@@ -223,15 +228,33 @@ export function AccountTab() {
 
   const cancelPendingPlan = useCallback(async () => {
     try {
-      await fetch("/api/subscription", {
+      const res = await fetch("/api/subscription", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cancelPending: true }),
       });
+      // This used to ignore the reply entirely, so a refusal looked exactly
+      // like a success: the pending change simply stayed on screen with no
+      // reason given.
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setPlanMsg({
+          ok: false,
+          text: data?.error === "subscription_gone"
+            ? t("account.subscription_gone")
+            : data?.error === "reactivate_unverified"
+            ? t("account.reactivate_unverified")
+            : t("gen_error"),
+        });
+        await loadSub();
+        return;
+      }
       await loadSub();
       setPlanMsg(null);
-    } catch { /* ignore */ }
-  }, [loadSub]);
+    } catch {
+      setPlanMsg({ ok: false, text: t("gen_error") });
+    }
+  }, [loadSub, t]);
 
   const openBillingPortal = useCallback(async () => {
     setPortalLoading(true);
