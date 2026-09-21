@@ -444,6 +444,9 @@ export default function AdminPage() {
         if (d.needsReview > 0) {
           lines.unshift(t("admin.bill_sync_review").replace("{n}", String(d.needsReview)));
         }
+        if (d.freeButBilling > 0) {
+          lines.unshift(t("admin.bill_sync_free_billing").replace("{n}", String(d.freeButBilling)));
+        }
         setSyncResult(lines.join(" · "));
         await loadAll();
       } else {

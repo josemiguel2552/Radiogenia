@@ -7,6 +7,7 @@ import {
   decideReactivation,
   reactivationConfirmed,
   priceRestored,
+  isLocallyFreeButBilling,
   isBilling,
   type CancelContext,
   type SubscriptionLike,
@@ -260,5 +261,32 @@ describe("undoing a downgrade has to actually restore the price", () => {
     expect(priceRestored({ items: { data: [] } }, "price_pro")).toBe(false);
     expect(priceRestored(null, "price_pro")).toBe(false);
     expect(priceRestored(undefined, "price_pro")).toBe(false);
+  });
+});
+
+
+describe("finding the accounts the bug leaves no marker on", () => {
+  // The old code wrote subscription_cancelled_at inside the same block it
+  // skipped, and invoice.paid then cleared pending_plan — so the victims are
+  // recognisable only by us billing them nothing while Stripe bills them.
+  it("flags an account we treat as free that Stripe still charges", () => {
+    expect(isLocallyFreeButBilling({ subscription_plan: "free" }, sub("active", false))).toBe(true);
+    expect(isLocallyFreeButBilling({ subscription_plan: "free" }, sub("active", true))).toBe(true);
+    expect(isLocallyFreeButBilling({ subscription_plan: "free" }, sub("past_due"))).toBe(true);
+  });
+
+  it("does not flag a free account Stripe is not charging", () => {
+    expect(isLocallyFreeButBilling({ subscription_plan: "free" }, sub("canceled"))).toBe(false);
+    expect(isLocallyFreeButBilling({ subscription_plan: "free" }, null)).toBe(false);
+  });
+
+  it("does not flag a paying account", () => {
+    expect(isLocallyFreeButBilling({ subscription_plan: "starter" }, sub("active"))).toBe(false);
+  });
+
+  it("leaves a pending cancellation to the check that handles it", () => {
+    expect(
+      isLocallyFreeButBilling({ subscription_plan: "free", pending_plan: "free" }, sub("active", false)),
+    ).toBe(false);
   });
 });

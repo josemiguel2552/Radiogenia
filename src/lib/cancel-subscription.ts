@@ -173,3 +173,29 @@ export function priceRestored(
   const actual = updated?.items?.data?.[0]?.price?.id;
   return !!actual && actual === expectedPriceId;
 }
+
+
+/**
+ * The fingerprint the original bug actually leaves behind.
+ *
+ * When a cancellation never reached Stripe, the old code also skipped writing
+ * `subscription_cancelled_at` — both lived inside the same `if
+ * (stripe_subscription_id)` block. Then the renewal it failed to stop arrived,
+ * and the invoice.paid handler cleared `pending_plan` and set the plan to
+ * "free". So the victims carry no cancellation marker at all: what is left is
+ * an account we bill nothing for while Stripe bills them every month.
+ *
+ * That discrepancy has two readings and they cannot be told apart from here:
+ * a cancellation we failed to honour, or a checkout whose webhook never
+ * arrived, leaving someone paying for a plan we never gave them. Both are
+ * wrong, both need a person, and neither may be acted on automatically —
+ * cancelling the second kind would cut off someone who is paying.
+ */
+export function isLocallyFreeButBilling(
+  profile: { subscription_plan?: string | null; pending_plan?: string | null },
+  sub: SubscriptionLike | null,
+): boolean {
+  if (profile.subscription_plan !== "free") return false;
+  if (profile.pending_plan === "free") return false; // a pending cancellation, covered above
+  return isBilling(sub);
+}

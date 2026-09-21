@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
 import Stripe from "stripe";
-import { isCancellationOutOfSync, needsCancellationReview, isBilling } from "@/lib/cancel-subscription";
+import { isCancellationOutOfSync, needsCancellationReview, isLocallyFreeButBilling, isBilling } from "@/lib/cancel-subscription";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -61,6 +61,7 @@ export async function POST() {
     let cleared = 0;
     let stillBillingAfterCancel = 0;
     let needsReview = 0;
+    let freeButBilling = 0;
     const details: { email: string | null; status: string; action: string }[] = [];
 
     for (const p of profiles || []) {
@@ -94,6 +95,19 @@ export async function POST() {
         if (needsCancellationReview(p, sub)) {
           needsReview += 1;
           details.push({ email: p.email, status: sub!.status, action: "REVIEW: cancelled_at set but still billing" });
+          continue;
+        }
+
+        // We bill them nothing, Stripe bills them monthly. Either a
+        // cancellation that never reached Stripe, or a checkout whose webhook
+        // never arrived — opposite fixes, so a person decides.
+        if (isLocallyFreeButBilling(p, sub)) {
+          freeButBilling += 1;
+          details.push({
+            email: p.email,
+            status: sub!.status,
+            action: "REVIEW: we show free, Stripe is billing" + (sub!.cancel_at_period_end ? " (ends at period end)" : " (RENEWS)"),
+          });
           continue;
         }
 
@@ -149,7 +163,7 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({ ok: true, checked, failuresFound, cleared, stillBillingAfterCancel, needsReview, details });
+    return NextResponse.json({ ok: true, checked, failuresFound, cleared, stillBillingAfterCancel, needsReview, freeButBilling, details });
   } catch (error) {
     return toErrorResponse(error);
   }
