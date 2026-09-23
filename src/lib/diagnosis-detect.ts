@@ -61,6 +61,28 @@ const INTERPRETATION_PHRASES = [
   // Portuguese
   "compativel com", "sugestivo de", "sugere", "em relacao a", "em relacao com",
   "no contexto de", "suspeito de", "suspeita de", "provavelmente", "possivelmente",
+  // Course and treatment response. A measurement that grew is described as
+  // having grown; calling it progression, or a shrinking one a response, reads
+  // the disease rather than the image. These were missed entirely until the
+  // conclusion style organised by change made them the likely wrong words.
+  // Spanish
+  "progresion de la enfermedad", "progresion tumoral", "progresion radiologica",
+  "progresion de la lesion", "enfermedad en progresion", "respuesta parcial",
+  "respuesta completa", "respuesta al tratamiento", "respuesta terapeutica",
+  "enfermedad estable", "estabilidad de la enfermedad", "buena evolucion",
+  "mala evolucion", "empeoramiento radiologico", "mejoria radiologica",
+  "remision", "recidiva tumoral", "recaida",
+  // English
+  "disease progression", "tumour progression", "tumor progression",
+  "radiological progression", "progressive disease", "partial response",
+  "complete response", "response to treatment", "treatment response",
+  "stable disease", "disease stability", "radiological improvement",
+  "radiological worsening", "remission", "tumour recurrence", "tumor recurrence",
+  // Portuguese
+  "progressao da doenca", "progressao tumoral", "doenca em progressao",
+  "resposta parcial", "resposta completa", "resposta ao tratamento",
+  "doenca estavel", "estabilidade da doenca", "boa evolucao", "ma evolucao",
+  "melhora radiologica", "piora radiologica", "remissao", "recidiva tumoral",
 ];
 
 const RECOMMENDATION_PHRASES = [

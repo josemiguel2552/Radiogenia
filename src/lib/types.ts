@@ -168,13 +168,14 @@ export type AIProvider = "claude" | "openai" | "deepseek" | "gemini" | "openrout
 export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
 export type ParaphraseLevel = "none" | "light" | "free";
-export type ConclusionStyle = "concise" | "brief";
+export type ConclusionStyle = "concise" | "evolutive";
 
-/** Styles stored before "brief" replaced the integrated/grouped paragraph
- *  style. Saved preferences outlive a rename, so they are mapped on read
- *  rather than requiring every row to be migrated before the app works. */
+/** Every style that has occupied the second slot — "grouped"/"detailed" (the
+ *  integrated paragraphs) and "brief" (the ultra-short one) — resolves to the
+ *  current occupant. Saved preferences outlive a rename, so they are mapped on
+ *  read rather than requiring every row to be migrated before the app works. */
 export function normalizeConclusionStyle(raw: unknown): ConclusionStyle {
-  return raw === "concise" ? "concise" : "brief";
+  return raw === "concise" ? "concise" : "evolutive";
 }
 export type OutputLanguage = "es" | "en" | "pt";
 export type DictationLanguage = OutputLanguage | "auto";

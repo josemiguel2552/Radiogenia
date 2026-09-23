@@ -102,3 +102,35 @@ describe("detectDiagnoses", () => {
     });
   });
 });
+
+
+describe("course and treatment response are interpretations, not measurements", () => {
+  // A lesion that grew is described as having grown. Calling it progression,
+  // or a shrinking one a response, reads the disease rather than the image —
+  // and these went undetected until a conclusion style ordered by change made
+  // them the likely wrong words.
+  it.each([
+    "Progresión de la enfermedad a nivel hepático.",
+    "Respuesta parcial del derrame pleural.",
+    "Enfermedad estable a nivel ganglionar.",
+    "Disease progression in the liver.",
+    "Partial response of the pleural effusion.",
+    "Stable disease in the mediastinum.",
+    "Progressão da doença a nível hepático.",
+    "Resposta parcial do derrame pleural.",
+    "Doença estável a nível ganglionar.",
+  ])("flags %s", (text) => {
+    expect(hasDiagnosticLanguage(text)).toBe(true);
+  });
+
+  it.each([
+    "Aumentado: lesión hepática del segmento VII (8 → 12 mm).",
+    "Disminuido: derrame pleural derecho.",
+    "Sin cambios: adenopatía interaortocava de 15 mm.",
+    "Resuelto: ya no se identifica el derrame pleural derecho.",
+    "Increased: segment VII hepatic lesion (8 → 12 mm).",
+    "Unchanged: 15 mm interaortocaval node.",
+  ])("leaves the plain measurement alone: %s", (text) => {
+    expect(hasDiagnosticLanguage(text)).toBe(false);
+  });
+});

@@ -132,7 +132,7 @@ export function DashboardContent() {
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   // "Refinar" is ON by default; the radiologist can turn it off per session.
   const [lightParaphrase, setLightParaphrase] = useState(true);
-  const [conclusionStyle, setConclusionStyle] = useState<ConclusionStyle>("brief");
+  const [conclusionStyle, setConclusionStyle] = useState<ConclusionStyle>("evolutive");
   const [classifying, setClassifying] = useState(false);
   const [classifyResult, setClassifyResult] = useState<string | null>(null);
   const [detectingSystems, setDetectingSystems] = useState(false);
@@ -173,7 +173,7 @@ export function DashboardContent() {
 
   // Report output state
   const [findings, setFindings] = useState("");
-  const emptyConcVersions = { concise: "", brief: "" };
+  const emptyConcVersions = { concise: "", evolutive: "" };
   const [conclusionVersions, setConclusionVersions] = useState<Record<string, string>>({ ...emptyConcVersions });
   // Fact-check + triage result for the conclusion — keyed by style so
   // switching styles doesn't show a stale badge for a version that was
@@ -203,7 +203,7 @@ export function DashboardContent() {
   const [initialFindings, setInitialFindings] = useState("");
   const [initialConclusion, setInitialConclusion] = useState("");
   const [loadingFindings, setLoadingFindings] = useState(false);
-  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, brief: false });
+  const [loadingConcStyles, setLoadingConcStyles] = useState<Record<string, boolean>>({ concise: false, evolutive: false });
   const conclusion = conclusionVersions[conclusionStyle] || "";
   const conclusionVerify = conclusionVerifyByStyle[conclusionStyle] || null;
   const conclusionLinks = conclusionLinksByStyle[conclusionStyle] || EMPTY_CONCLUSION_LINKS;
@@ -1013,17 +1013,17 @@ export function DashboardContent() {
         setFindings(data.error || t("gen_error_findings"));
       }
     } catch (e) {
-      if (signal.aborted) { setLoadingFindings(false); setLoadingConcStyles({ concise: false, brief: false }); return; }
+      if (signal.aborted) { setLoadingFindings(false); setLoadingConcStyles({ concise: false, evolutive: false }); return; }
       findingsFailed = true;
       setFindings(t("gen_error") + ": " + (e instanceof Error ? e.message : t("gen_error_unknown")));
     }
     setLoadingFindings(false);
 
-    if (signal.aborted) { setLoadingConcStyles({ concise: false, brief: false }); return; }
+    if (signal.aborted) { setLoadingConcStyles({ concise: false, evolutive: false }); return; }
 
     if (findingsFailed || !findingsText) {
       if (!findingsFailed) setFindings(t("error.empty_generation"));
-      setLoadingConcStyles({ concise: false, brief: false });
+      setLoadingConcStyles({ concise: false, evolutive: false });
       return;
     }
 
@@ -1326,7 +1326,7 @@ export function DashboardContent() {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setLoadingFindings(false);
-    setLoadingConcStyles({ concise: false, brief: false });
+    setLoadingConcStyles({ concise: false, evolutive: false });
     setLoadingTrace(false);
     toast(t("toast.generation_stopped"));
   }
@@ -3047,7 +3047,7 @@ export function DashboardContent() {
                     </button>
                   )}
                 <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
-                  {(["concise", "brief"] as const).map((s) => (
+                  {(["concise", "evolutive"] as const).map((s) => (
                     <button
                       key={s}
                       type="button"

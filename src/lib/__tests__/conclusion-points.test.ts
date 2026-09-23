@@ -65,9 +65,13 @@ describe("normalizeConclusionStyle", () => {
     expect(normalizeConclusionStyle("concise")).toBe("concise");
   });
 
-  it("maps the styles that 'brief' replaced, so saved preferences still load", () => {
-    for (const legacy of ["grouped", "detailed", "brief", null, undefined, ""]) {
-      expect(normalizeConclusionStyle(legacy)).toBe("brief");
+  it("maps every style that has held the second slot, so saved preferences still load", () => {
+    // 'grouped'/'detailed' were the integrated paragraphs, 'brief' the
+    // ultra-short one. Both were stored in this column and both must resolve
+    // to whatever occupies that slot now, without a migration having to run
+    // before the app works.
+    for (const legacy of ["grouped", "detailed", "brief", "evolutive", null, undefined, ""]) {
+      expect(normalizeConclusionStyle(legacy)).toBe("evolutive");
     }
   });
 });

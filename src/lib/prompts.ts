@@ -1,4 +1,5 @@
 import type { FindingsLength, NormalFieldsVerbosity, ParaphraseLevel, OutputLanguage, PreferredNormalPhrase, ConclusionStyle } from "./types";
+import { hasPriorComparison } from "./prior-comparison";
 
 /* ── Per-language instruction blocks ────────────────────────── */
 
@@ -1548,162 +1549,201 @@ export function buildConclusionPrompt(params: {
   const lang = params.outputLanguage;
   const l = LANGUAGE_LABEL[lang];
   const hasClinical = params.clinicalInfo.trim().length > 0;
-  const style = params.conclusionStyle || "concise";
+  // The evolutive style is ordered by what changed, which needs something to
+  // have changed from. On a first study it would have the model inventing
+  // comparisons or writing empty labels, so it falls back to the concise one.
+  // Silent on purpose: the alternative is refusing to write a conclusion.
+  const requested = params.conclusionStyle || "concise";
+  const style: ConclusionStyle =
+    requested === "evolutive"
+      && !hasPriorComparison(params.findingsText, { priorReportProvided: !!params.recistConfig?.priorReport })
+      ? "concise"
+      : requested;
 
   const findingsLen = params.findingsText.length;
   const maxPoints = findingsLen > 5000 ? 6 : findingsLen > 3000 ? 5 : 4;
-  // The ultra-short style is one paragraph, so the rules that count and
-  // number points would contradict it outright.
-  const isBrief = style === "brief";
+  // Both styles are numbered points, so the shape rules are shared. What the
+  // evolutive style changes is the ORDER — by change rather than by relevance
+  // — which collides with the two rules that put the clinical question first,
+  // so those get a version that says it the other way.
+  const isEvo = style === "evolutive";
 
-  const RULE_1_ES = isBrief
-    ? `1. UN SOLO PÁRRAFO, sin numerar y sin dividir en puntos. Objetivo: 1-3 frases, entre 30 y 60 palabras. Si te pasas, no has triado bastante; si bajas de ahí, comprueba que no has dejado fuera un hallazgo que cambia el manejo.`
+  const RULE_1_ES = isEvo
+    ? `1. UN PUNTO POR ETIQUETA DE CAMBIO que tenga contenido, máximo 6. Dentro de un punto caben varios hallazgos de la misma etiqueta si están relacionados. Si una etiqueta no tiene nada, se omite: no escribas "Resuelto: ninguno".`
     : `1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.`;
-  const FORMAT_ES = isBrief
-    ? `- UN ÚNICO PÁRRAFO de texto plano: sin numerar, sin viñetas, sin saltos de línea. Sin markdown ni encabezado "CONCLUSIÓN".
-- Empieza DIRECTAMENTE por el hallazgo principal, nunca por una etiqueta anatómica ni por un preámbulo ("En el estudio realizado se objetiva…").`
+  const FORMAT_ES = isEvo
+    ? `- Puntos numerados, texto plano, máximo 6. Sin markdown ni encabezado "CONCLUSIÓN".
+- Cada punto empieza por su etiqueta de cambio seguida de dos puntos: "1. Nuevo: nódulo de 9 mm en lóbulo inferior derecho." Es la ÚNICA excepción a la regla de no empezar por una etiqueta — la etiqueta es de cambio, nunca anatómica ("1. Parénquima pulmonar: …" sigue prohibido).`
     : `- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
 - Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.`;
-  const RULE_1_EN = isBrief
-    ? `1. ONE SINGLE PARAGRAPH, not numbered and not split into points. Target: 1-3 sentences, 30 to 60 words. Longer than that and you have not triaged enough; shorter, and check you have not left out a finding that changes management.`
+  const RULE_1_EN = isEvo
+    ? `1. ONE POINT PER CHANGE LABEL that has content, maximum 6. A point may hold several findings under the same label when they are related. A label with nothing in it is omitted: do not write "Resolved: none".`
     : `1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.`;
-  const FORMAT_EN = isBrief
-    ? `- ONE SINGLE PARAGRAPH of plain text: no numbering, no bullets, no line breaks. No markdown, no "CONCLUSION" heading.
-- Start DIRECTLY with the main finding, never with an anatomical label or a preamble ("The study performed demonstrates…").`
+  const FORMAT_EN = isEvo
+    ? `- Numbered points, plain text, maximum 6. No markdown, no "CONCLUSION" heading.
+- Each point opens with its change label followed by a colon: "1. New: 9 mm nodule in the right lower lobe." That is the ONLY exception to not opening with a label — it is a change label, never an anatomical one ("1. Lung parenchyma: …" is still forbidden).`
     : `- Numbered points, plain text, maximum ${maxPoints}. No markdown, no "CONCLUSION" heading.
 - Each point starts DIRECTLY with the finding, never with an anatomical label: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)." and NOT "1. Lung parenchyma: …". If a point starts with a category followed by a colon, rewrite it without that preamble.`;
-  // The rules below are written around numbered points. In the ultra-short
-  // style there is only a paragraph, so every phrase that says "point" is
-  // said the other way instead of quietly contradicting the style block.
-  const SHAPE_ES = isBrief ? "en un único párrafo que va al grano" : "en puntos descriptivos que van al grano";
-  const SHAPE_EN = isBrief ? "into a single paragraph that gets straight to the point" : "into descriptive bullet points that get straight to the point";
-  const SHAPE_PT = isBrief ? "num único parágrafo que vai direto ao ponto" : "em pontos descritivos que vão direto ao ponto";
-  const RULE_4_ES = isBrief
-    ? `4. HILADO: encadena los hallazgos relacionados o del mismo órgano/región dentro del párrafo, para que el clínico lea el panorama de cada zona y no una lista suelta. Encadenar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.`
-    : `4. AGRUPACIÓN: reúne en un mismo punto los hallazgos anatómicamente relacionados o del mismo órgano/región (ej: derrame pleural + atelectasia compresiva adyacente), para que el clínico vea el panorama de cada zona y no una lista fragmentada. Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.`;
-  const RULE_4_EN = isBrief
-    ? `4. THREADING: chain related findings, or findings in the same organ/region, together within the paragraph, so the clinician reads the whole picture of each area rather than a loose list. Chaining does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.`
-    : `4. GROUPING: put anatomically related findings, or findings in the same organ/region, into a single point (e.g. pleural effusion + adjacent compressive atelectasis), so the clinician sees the whole picture of each area rather than a fragmented list. Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.`;
-  const FIRST_ES = isBrief ? "El párrafo DEBE ABRIR respondiéndola" : "El PRIMER punto DEBE responderla";
-  const FIRST_EN = isBrief ? "The paragraph MUST OPEN by answering it" : "The FIRST point MUST answer it";
-  const REST_ES = isBrief ? "El resto del párrafo" : "Los puntos restantes";
-  const REST_EN = isBrief ? "The rest of the paragraph" : "The remaining points";
-  const AT_START_ES = isBrief ? "al principio del párrafo" : "en el primer punto";
-  const AT_START_EN = isBrief ? "at the start of the paragraph" : "in the first point";
-  const WITH_FINDING_ES = isBrief ? "pegados al hallazgo correspondiente" : "DENTRO del punto del hallazgo correspondiente";
-  const WITH_FINDING_EN = isBrief ? "right next to the finding it belongs to" : "INSIDE the point for that finding";
-  const REREAD_ES = isBrief ? "relee la conclusión entera y reescríbela" : "relee cada punto y reescríbelo";
-  const REREAD_EN = isBrief ? "re-read the whole conclusion and rewrite it" : "re-read each point and rewrite it";
+  const SHAPE_ES = isEvo ? "en puntos ordenados por lo que ha cambiado" : "en puntos descriptivos que van al grano";
+  const SHAPE_EN = isEvo ? "into points ordered by what has changed" : "into descriptive bullet points that get straight to the point";
+  const SHAPE_PT = isEvo ? "em pontos ordenados pelo que mudou" : "em pontos descritivos que vão direto ao ponto";
+  const RULE_4_ES = `4. AGRUPACIÓN: reúne en un mismo punto los hallazgos anatómicamente relacionados o del mismo órgano/región (ej: derrame pleural + atelectasia compresiva adyacente), para que el clínico vea el panorama de cada zona y no una lista fragmentada. Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.`;
+  const RULE_4_EN = `4. GROUPING: put anatomically related findings, or findings in the same organ/region, into a single point (e.g. pleural effusion + adjacent compressive atelectasis), so the clinician sees the whole picture of each area rather than a fragmented list. Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.`;
+  // Ordering. The evolutive style is ordered by change, so "answer the
+  // clinical question in the first point" would fight its own structure: the
+  // answer leads its own label instead, and a negative answer goes on top.
+  const RULE_3_ES = isEvo
+    ? `3. ORDEN — POR CAMBIO, NO POR RELEVANCIA: NUEVO → AUMENTADO → DISMINUIDO → SIN CAMBIOS → RESUELTO. DENTRO de cada etiqueta, primero lo clínicamente más relevante. NUNCA incluyas órganos normales ni incidentales triviales estables.`
+    : null;
+  const RULE_3_EN = isEvo
+    ? `3. ORDER — BY CHANGE, NOT BY RELEVANCE: NEW → INCREASED → DECREASED → UNCHANGED → RESOLVED. WITHIN each label, most clinically relevant first. NEVER include normal organs or trivial stable incidentals.`
+    : null;
+  const FIRST_ES = isEvo
+    ? "El hallazgo que la responda va PRIMERO DENTRO DE SU ETIQUETA; si ninguno la responde, abre con una frase negativa corta ANTES de los puntos etiquetados"
+    : "El PRIMER punto DEBE responderla";
+  const FIRST_EN = isEvo
+    ? "The finding that answers it goes FIRST WITHIN ITS LABEL; if none answers it, open with a short negative sentence BEFORE the labelled points"
+    : "The FIRST point MUST answer it";
+  const REST_ES = isEvo ? "El resto de los puntos" : "Los puntos restantes";
+  const REST_EN = isEvo ? "The remaining points" : "The remaining points";
+  const AT_START_ES = isEvo ? "antes de los puntos etiquetados" : "en el primer punto";
+  const AT_START_EN = isEvo ? "before the labelled points" : "in the first point";
+  const WITH_FINDING_ES = "DENTRO del punto del hallazgo correspondiente";
+  const WITH_FINDING_EN = "INSIDE the point for that finding";
+  const REREAD_ES = "relee cada punto y reescríbelo";
+  const REREAD_EN = "re-read each point and rewrite it";
 
   // One finished example per style. The rules say what not to do; this is the
   // only place the model is shown what a good conclusion actually looks like,
   // which for a fine-tuned model reading a rulebook it never trained on does
   // more work than another paragraph of prohibitions. The pair is deliberate:
   // the bad one carries the five failures that actually happen.
-  const SHARED_CASE_ES = `Hallazgos del ejemplo:
-Hígado: lesión focal hipodensa de 12 mm en segmento VII, bien definida, sin realce.
-Vesícula: litiasis de 8 mm, pared fina, sin líquido perivesicular.
-Vía biliar: colédoco de 9 mm (6 mm en el estudio previo).
-Riñones: quiste simple cortical izquierdo de 15 mm.
+  const SHARED_CASE_ES = `Hallazgos del ejemplo (estudio de control):
+Hígado: lesión focal hipodensa de 12 mm en segmento VII (8 mm en el estudio previo).
+Pulmón: nódulo de 9 mm en lóbulo inferior derecho, no presente en el estudio previo.
+Pleura: el derrame pleural derecho del estudio previo ya no se identifica.
+Adenopatías: adenopatía interaortocava de 15 mm, sin cambios.
 Óseo: cambios degenerativos dorsolumbares.
-Datos clínicos del ejemplo: dolor en hipocondrio derecho e ictericia.`;
+Datos clínicos del ejemplo: control de paciente oncológico.`;
 
-  const EXAMPLE_ES = isBrief
+  const EXAMPLE_ES = isEvo
     ? `EJEMPLO — así se hace:
 
 ${SHARED_CASE_ES}
 
-✓ BIEN: "Colédoco dilatado a 9 mm, mayor que en el estudio previo (6 mm), con litiasis vesicular de 8 mm sin engrosamiento parietal ni líquido perivesicular. Lesión hepática de 12 mm en segmento VII, bien definida y sin realce."
-Responde primero a la ictericia, encadena lo biliar, conserva cada medida y el cambio respecto al previo, y suelta el quiste renal y los cambios degenerativos porque no cambian el manejo.
+✓ BIEN:
+"1. Nuevo: nódulo de 9 mm en lóbulo inferior derecho, no presente en el estudio previo.
+2. Aumentado: lesión hepática del segmento VII (8 → 12 mm).
+3. Sin cambios: adenopatía interaortocava de 15 mm.
+4. Resuelto: ya no se identifica el derrame pleural derecho."
+Ordena por etiqueta de cambio, conserva cada medida con su valor previo, y suelta los cambios degenerativos porque son estables y no cambian el manejo.
 
-✗ MAL: "Se observa dilatación de la vía biliar en probable relación con coledocolitiasis, junto con colelitiasis. Quiste renal simple. Cambios degenerativos dorsolumbares. Se recomienda correlación clínica y valorar colangio-RM."
-Cinco fallos: muletilla de apertura, una inferencia ("en probable relación con"), un diagnóstico que nadie dictó ("coledocolitiasis"), relleno incidental, y una recomendación.`
+✗ MAL:
+"1. Progresión de la enfermedad con aumento de la lesión hepática y nueva metástasis pulmonar.
+2. Respuesta parcial del derrame pleural.
+3. Enfermedad estable a nivel ganglionar.
+4. Cambios degenerativos dorsolumbares."
+Cuatro fallos: "progresión" y "respuesta parcial" interpretan lo que la medida solo describe, "metástasis" es un diagnóstico que nadie dictó, y los cambios degenerativos son relleno estable. Medir no es interpretar.`
     : `EJEMPLO — así se hace:
 
 ${SHARED_CASE_ES}
 
 ✓ BIEN:
-"1. Colédoco dilatado a 9 mm, mayor que en el estudio previo (6 mm), con litiasis vesicular de 8 mm sin engrosamiento parietal ni líquido perivesicular.
-2. Lesión hepática de 12 mm en segmento VII, bien definida y sin realce."
-Responde primero a la ictericia, agrupa lo biliar en un punto, conserva cada medida y el cambio respecto al previo, y suelta el quiste renal y los cambios degenerativos porque no cambian el manejo.
+"1. Nódulo de nueva aparición de 9 mm en lóbulo inferior derecho.
+2. Lesión hepática del segmento VII, mayor que en el previo (8 → 12 mm), junto con adenopatía interaortocava de 15 mm sin cambios."
+Ordena por relevancia clínica, conserva cada medida con su valor previo, agrupa lo relacionado, y suelta los cambios degenerativos porque no cambian el manejo.
 
 ✗ MAL:
-"1. Se observa dilatación de la vía biliar en probable relación con coledocolitiasis.
-2. Colelitiasis.
-3. Quiste renal simple.
-4. Cambios degenerativos dorsolumbares.
-5. Se recomienda correlación clínica."
-Cinco fallos: muletilla de apertura, una inferencia ("en probable relación con"), un diagnóstico que nadie dictó ("coledocolitiasis"), relleno incidental en puntos propios, y una recomendación.`;
+"1. Se observa progresión de la enfermedad con nueva metástasis pulmonar.
+2. Respuesta parcial del derrame pleural.
+3. Cambios degenerativos dorsolumbares.
+4. Se recomienda correlación clínica."
+Cinco fallos: muletilla de apertura, "progresión" y "respuesta parcial" interpretan la medida, "metástasis" es un diagnóstico que nadie dictó, relleno incidental, y una recomendación.`;
 
-  const SHARED_CASE_PT = `Achados do exemplo:
-Fígado: lesão focal hipodensa de 12 mm no segmento VII, bem definida, sem realce.
-Vesícula: cálculo de 8 mm, parede fina, sem líquido pericolecístico.
-Via biliar: colédoco de 9 mm (6 mm no estudo prévio).
-Rins: cisto simples cortical esquerdo de 15 mm.
+  const SHARED_CASE_PT = `Achados do exemplo (estudo de controle):
+Fígado: lesão focal hipodensa de 12 mm no segmento VII (8 mm no estudo prévio).
+Pulmão: nódulo de 9 mm no lobo inferior direito, não presente no estudo prévio.
+Pleura: o derrame pleural direito do estudo prévio já não se identifica.
+Linfonodos: linfonodo interaortocava de 15 mm, sem alterações.
 Ósseo: alterações degenerativas dorsolombares.
-Dados clínicos do exemplo: dor no hipocôndrio direito e icterícia.`;
+Dados clínicos do exemplo: controle de paciente oncológico.`;
 
-  const EXAMPLE_PT = isBrief
+  const EXAMPLE_PT = isEvo
     ? `EXEMPLO — é assim que se faz:
 
 ${SHARED_CASE_PT}
 
-✓ BEM: "Colédoco dilatado para 9 mm, maior que no estudo prévio (6 mm), com cálculo vesicular de 8 mm sem espessamento parietal nem líquido pericolecístico. Lesão hepática de 12 mm no segmento VII, bem definida e sem realce."
-Responde primeiro à icterícia, encadeia o biliar, conserva cada medida e a mudança em relação ao prévio, e larga o cisto renal e as alterações degenerativas porque não mudam o manejo.
+✓ BEM:
+"1. Novo: nódulo de 9 mm no lobo inferior direito, não presente no estudo prévio.
+2. Aumentado: lesão hepática do segmento VII (8 → 12 mm).
+3. Sem alterações: linfonodo interaortocava de 15 mm.
+4. Resolvido: já não se identifica o derrame pleural direito."
+Ordena pela etiqueta de mudança, conserva cada medida com o valor prévio, e larga as alterações degenerativas porque são estáveis e não mudam o manejo.
 
-✗ MAL: "Observa-se dilatação da via biliar em provável relação com coledocolitíase, junto com colelitíase. Cisto renal simples. Alterações degenerativas dorsolombares. Recomenda-se correlação clínica e avaliar colangio-RM."
-Cinco falhas: vício de linguagem na abertura, uma inferência ("em provável relação com"), um diagnóstico que ninguém ditou ("coledocolitíase"), enchimento incidental, e uma recomendação.`
+✗ MAL:
+"1. Progressão da doença com aumento da lesão hepática e nova metástase pulmonar.
+2. Resposta parcial do derrame pleural.
+3. Doença estável a nível ganglionar.
+4. Alterações degenerativas dorsolombares."
+Quatro falhas: "progressão" e "resposta parcial" interpretam o que a medida apenas descreve, "metástase" é um diagnóstico que ninguém ditou, e as alterações degenerativas são enchimento estável. Medir não é interpretar.`
     : `EXEMPLO — é assim que se faz:
 
 ${SHARED_CASE_PT}
 
 ✓ BEM:
-"1. Colédoco dilatado para 9 mm, maior que no estudo prévio (6 mm), com cálculo vesicular de 8 mm sem espessamento parietal nem líquido pericolecístico.
-2. Lesão hepática de 12 mm no segmento VII, bem definida e sem realce."
-Responde primeiro à icterícia, agrupa o biliar num ponto, conserva cada medida e a mudança em relação ao prévio, e larga o cisto renal e as alterações degenerativas porque não mudam o manejo.
+"1. Nódulo de nova aparição de 9 mm no lobo inferior direito.
+2. Lesão hepática do segmento VII, maior que no prévio (8 → 12 mm), junto com linfonodo interaortocava de 15 mm sem alterações."
+Ordena por relevância clínica, conserva cada medida com o valor prévio, agrupa o relacionado, e larga as alterações degenerativas porque não mudam o manejo.
 
 ✗ MAL:
-"1. Observa-se dilatação da via biliar em provável relação com coledocolitíase.
-2. Colelitíase.
-3. Cisto renal simples.
-4. Alterações degenerativas dorsolombares.
-5. Recomenda-se correlação clínica."
-Cinco falhas: vício de linguagem na abertura, uma inferência ("em provável relação com"), um diagnóstico que ninguém ditou ("coledocolitíase"), enchimento incidental em pontos próprios, e uma recomendação.`;
+"1. Observa-se progressão da doença com nova metástase pulmonar.
+2. Resposta parcial do derrame pleural.
+3. Alterações degenerativas dorsolombares.
+4. Recomenda-se correlação clínica."
+Cinco falhas: vício de linguagem na abertura, "progressão" e "resposta parcial" interpretando a medida, "metástase" como diagnóstico que ninguém ditou, enchimento incidental, e uma recomendação.`;
 
-  const SHARED_CASE_EN = `Example findings:
-Liver: 12 mm hypodense focal lesion in segment VII, well defined, no enhancement.
-Gallbladder: 8 mm stone, thin wall, no pericholecystic fluid.
-Bile duct: common bile duct 9 mm (6 mm on the prior study).
-Kidneys: 15 mm simple cortical cyst on the left.
+  const SHARED_CASE_EN = `Example findings (follow-up study):
+Liver: 12 mm hypodense focal lesion in segment VII (8 mm on the prior study).
+Lung: 9 mm nodule in the right lower lobe, not present on the prior study.
+Pleura: the right pleural effusion seen previously is no longer identified.
+Nodes: 15 mm interaortocaval node, unchanged.
 Bone: dorsolumbar degenerative change.
-Example clinical context: right upper quadrant pain and jaundice.`;
+Example clinical context: oncology follow-up.`;
 
-  const EXAMPLE_EN = isBrief
+  const EXAMPLE_EN = isEvo
     ? `EXAMPLE — this is how it is done:
 
 ${SHARED_CASE_EN}
 
-✓ GOOD: "Common bile duct dilated to 9 mm, up from 6 mm on the prior study, with an 8 mm gallbladder stone, no wall thickening and no pericholecystic fluid. 12 mm hepatic lesion in segment VII, well defined and non-enhancing."
-It answers the jaundice first, chains the biliary findings, keeps every measurement and the interval change, and drops the renal cyst and the degenerative change because they do not alter management.
+✓ GOOD:
+"1. New: 9 mm nodule in the right lower lobe, not present on the prior study.
+2. Increased: segment VII hepatic lesion (8 → 12 mm).
+3. Unchanged: 15 mm interaortocaval node.
+4. Resolved: the right pleural effusion is no longer identified."
+Ordered by change label, every measurement kept with its prior value, and the degenerative change dropped because it is stable and does not alter management.
 
-✗ BAD: "There is noted dilatation of the biliary tree probably related to choledocholithiasis, together with cholelithiasis. Simple renal cyst. Dorsolumbar degenerative changes. Clinical correlation and MRCP are recommended."
-Five failures: an opening filler verb, an inference ("probably related to"), a diagnosis nobody dictated ("choledocholithiasis"), incidental padding, and a recommendation.`
+✗ BAD:
+"1. Disease progression with an enlarging hepatic lesion and a new pulmonary metastasis.
+2. Partial response of the pleural effusion.
+3. Stable nodal disease.
+4. Dorsolumbar degenerative changes."
+Four failures: "progression" and "partial response" interpret what the measurement only describes, "metastasis" is a diagnosis nobody dictated, and the degenerative change is stable padding. Measuring is not interpreting.`
     : `EXAMPLE — this is how it is done:
 
 ${SHARED_CASE_EN}
 
 ✓ GOOD:
-"1. Common bile duct dilated to 9 mm, up from 6 mm on the prior study, with an 8 mm gallbladder stone, no wall thickening and no pericholecystic fluid.
-2. 12 mm hepatic lesion in segment VII, well defined and non-enhancing."
-It answers the jaundice first, groups the biliary findings into one point, keeps every measurement and the interval change, and drops the renal cyst and the degenerative change because they do not alter management.
+"1. New 9 mm nodule in the right lower lobe.
+2. Segment VII hepatic lesion, larger than on the prior study (8 → 12 mm), with a 15 mm interaortocaval node unchanged."
+Ordered by clinical relevance, every measurement kept with its prior value, related findings grouped, and the degenerative change dropped because it does not alter management.
 
 ✗ BAD:
-"1. There is noted dilatation of the biliary tree probably related to choledocholithiasis.
-2. Cholelithiasis.
-3. Simple renal cyst.
-4. Dorsolumbar degenerative changes.
-5. Clinical correlation is recommended."
-Five failures: an opening filler verb, an inference ("probably related to"), a diagnosis nobody dictated ("choledocholithiasis"), incidental padding in points of their own, and a recommendation.`;
+"1. There is noted disease progression with a new pulmonary metastasis.
+2. Partial response of the pleural effusion.
+3. Dorsolumbar degenerative changes.
+4. Clinical correlation is recommended."
+Five failures: an opening filler verb, "progression" and "partial response" interpreting the measurement, "metastasis" as a diagnosis nobody dictated, incidental padding, and a recommendation.`;
+
 
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
@@ -1713,14 +1753,19 @@ Five failures: an opening filler verb, an inference ("probably related to"), a d
 - ORDENA los puntos por RELEVANCIA CLÍNICA de MAYOR a MENOR: primero lo agudo / lo que responde a la pregunta clínica / lo que cambia el manejo inmediato; al final lo incidental o crónico estable.
 - AGRUPA en un mismo punto los hallazgos clínica o anatómicamente relacionados (mismo órgano/región), manteniendo la frase breve. Los hallazgos no relacionados van en PUNTOS SEPARADOS. Agrupar NO significa diagnosticar.
 - Tono: directo, escueto, descriptivo.`,
-    brief: `ESTILO — ULTRABREVE (UN SOLO PÁRRAFO):
-- La conclusión entera es UN ÚNICO PÁRRAFO corrido: sin numerar, sin viñetas y sin saltos de línea.
-- Va al grano. Exprime los hallazgos relevantes en las menos palabras posibles, encadenados con fluidez.
-- PARAFRASEA con libertad: no copies las frases de los hallazgos. Reformula, funde y condensa hasta que quepa en un párrafo bien escrito.
-- Lo que recortas son hallazgos ENTEROS, nunca los datos de los que se quedan: un hallazgo que entra, entra con su tamaño, su localización, su lateralidad y su cambio respecto al previo.
-- Prioriza DENTRO del párrafo: primero lo que responde a la pregunta clínica o lo agudo; lo secundario después.
-- Es lo único que el clínico va a leer. Tiene que ser impecable: ni una palabra de relleno, ni una muletilla, ni una subordinada que sobre.
-- CONDENSAR NO ES DIAGNOSTICAR. Sigues describiendo lo que se ve: sin nombrar entidades, sin inferencias, sin juicios de naturaleza y sin recomendaciones. Parafrasear cambia las palabras, nunca el contenido.`,
+    evolutive: `ESTILO — EVOLUTIVA (ORGANIZADA POR EL CAMBIO):
+- Este estudio se compara con uno previo. La conclusión se ordena por CÓMO HA CAMBIADO cada hallazgo, no por relevancia.
+- Cada punto empieza por su etiqueta de cambio, en este orden: NUEVO → AUMENTADO → DISMINUIDO → SIN CAMBIOS → RESUELTO.
+- Formato de punto: "N. Etiqueta: descripción del hallazgo con sus medidas y el dato del previo." Ej: "2. Aumentado: lesión hepática del segmento VII (2 → 3.5 cm)."
+- Agrupa en un mismo punto los hallazgos de la misma etiqueta que estén anatómicamente relacionados.
+- SIN CAMBIOS: incluye solo lo que el clínico necesita saber que sigue igual (lo que se está vigilando). No listes toda la normalidad estable.
+- Un hallazgo del que los hallazgos NO dicen si cambió va al FINAL, sin etiqueta de cambio y sin inventarle una.
+- ⚠️ MEDIR NO ES INTERPRETAR. Describe el cambio de tamaño, NUNCA lo que significa:
+  · "Aumentado: lesión de 2 a 3.5 cm" — NUNCA "progresión", "progresión tumoral", "peor evolución".
+  · "Disminuido: lesión de 3.5 a 2 cm" — NUNCA "respuesta parcial", "respuesta al tratamiento", "mejoría".
+  · "Sin cambios: lesión de 2 cm" — NUNCA "enfermedad estable", "estabilidad de la enfermedad".
+  · "Resuelto: ya no se identifica el derrame" — NUNCA "resolución del proceso", "curación".
+- El resto de reglas siguen intactas: describir sin diagnosticar, sin inferencias, sin recomendaciones, sin añadir nada que no esté en los hallazgos.`,
   };
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
@@ -1731,14 +1776,19 @@ Five failures: an opening filler verb, an inference ("probably related to"), a d
 - ORDER the points by CLINICAL RELEVANCE from HIGHEST to LOWEST: acute findings / what answers the clinical question / what changes immediate management first; incidental or stable chronic findings last.
 - GROUP clinically or anatomically related findings (same organ/region) into a single point while keeping the phrase brief. Unrelated findings go in SEPARATE POINTS. Grouping does NOT mean diagnosing.
 - Tone: direct, succinct, descriptive.`,
-    brief: `STYLE — ULTRA-SHORT (ONE SINGLE PARAGRAPH):
-- The whole conclusion is ONE SINGLE running PARAGRAPH: no numbering, no bullets, no line breaks.
-- It gets straight to the point. Squeeze the relevant findings into as few words as possible, flowing together.
-- PARAPHRASE freely: do not copy the sentences from the findings. Reword, merge and condense until it fits in one well-written paragraph.
-- What you cut is WHOLE findings, never the data of the ones that stay: a finding that goes in goes in with its size, its location, its laterality and its interval change.
-- Prioritize WITHIN the paragraph: what answers the clinical question, or the acute finding, first; secondary findings after.
-- It is the only thing the clinician will read. It has to be flawless: not one filler word, not one stock phrase, not one subordinate clause too many.
-- CONDENSING IS NOT DIAGNOSING. You are still describing what is seen: no naming entities, no inferences, no judgements of nature, no recommendations. Paraphrasing changes the words, never the content.`,
+    evolutive: `STYLE — EVOLUTIVE (ORGANISED BY CHANGE):
+- This study is compared against a prior one. The conclusion is ordered by HOW EACH FINDING HAS CHANGED, not by relevance.
+- Each point opens with its change label, in this order: NEW → INCREASED → DECREASED → UNCHANGED → RESOLVED.
+- Point format: "N. Label: description of the finding with its measurements and the prior value." e.g. "2. Increased: segment VII hepatic lesion (2 → 3.5 cm)."
+- Group findings under the same label into one point when they are anatomically related.
+- UNCHANGED: include only what the clinician needs to know is still there (what is being watched). Do not list every stable normality.
+- A finding the report does NOT say changed goes LAST, with no change label and none invented for it.
+- ⚠️ MEASURING IS NOT INTERPRETING. Describe the change in size, NEVER what it means:
+  · "Increased: lesion from 2 to 3.5 cm" — NEVER "progression", "tumour progression", "worsening".
+  · "Decreased: lesion from 3.5 to 2 cm" — NEVER "partial response", "response to treatment", "improvement".
+  · "Unchanged: 2 cm lesion" — NEVER "stable disease", "disease stability".
+  · "Resolved: the effusion is no longer seen" — NEVER "resolution of the process", "cure".
+- Every other rule stands: describe without diagnosing, no inferences, no recommendations, add nothing that is not in the findings.`,
   };
 
   const STYLE_BLOCK_PT: Record<ConclusionStyle, string> = {
@@ -1749,14 +1799,19 @@ Five failures: an opening filler verb, an inference ("probably related to"), a d
 - ORDENE os pontos por RELEVÂNCIA CLÍNICA de MAIOR a MENOR: primeiro o agudo / o que responde à pergunta clínica / o que muda o manejo imediato; por último o incidental ou crônico estável.
 - AGRUPE em um mesmo ponto os achados clínica ou anatomicamente relacionados (mesmo órgão/região), mantendo a frase breve. Achados não relacionados vão em PONTOS SEPARADOS. Agrupar NÃO significa diagnosticar.
 - Tom: direto, sucinto, descritivo.`,
-    brief: `ESTILO — ULTRABREVE (UM ÚNICO PARÁGRAFO):
-- A conclusão inteira é UM ÚNICO PARÁGRAFO corrido: sem numeração, sem marcadores e sem quebras de linha.
-- Vai direto ao ponto. Espreme os achados relevantes no menor número de palavras possível, encadeados com fluidez.
-- PARAFRASEIE à vontade: não copie as frases dos achados. Reformule, funda e condense até caber num parágrafo bem escrito.
-- O que você corta são achados INTEIROS, nunca os dados dos que ficam: um achado que entra, entra com seu tamanho, sua localização, sua lateralidade e sua mudança em relação ao prévio.
-- Priorize DENTRO do parágrafo: primeiro o que responde à pergunta clínica ou o agudo; o secundário depois.
-- É a única coisa que o clínico vai ler. Tem de ser impecável: nem uma palavra de enchimento, nem um vício de linguagem, nem uma oração subordinada a mais.
-- CONDENSAR NÃO É DIAGNOSTICAR. Você continua descrevendo o que se vê: sem nomear entidades, sem inferências, sem juízos de natureza e sem recomendações. Parafrasear muda as palavras, nunca o conteúdo.`,
+    evolutive: `ESTILO — EVOLUTIVA (ORGANIZADA PELA MUDANÇA):
+- Este estudo é comparado com um prévio. A conclusão ordena-se por COMO CADA ACHADO MUDOU, não por relevância.
+- Cada ponto começa pela sua etiqueta de mudança, nesta ordem: NOVO → AUMENTADO → DIMINUÍDO → SEM ALTERAÇÕES → RESOLVIDO.
+- Formato do ponto: "N. Etiqueta: descrição do achado com as medidas e o dado do prévio." Ex: "2. Aumentado: lesão hepática do segmento VII (2 → 3,5 cm)."
+- Agrupe num mesmo ponto os achados da mesma etiqueta que estejam anatomicamente relacionados.
+- SEM ALTERAÇÕES: inclua só o que o clínico precisa saber que continua igual (o que se está vigiando). Não liste toda a normalidade estável.
+- Um achado do qual os achados NÃO dizem se mudou vai no FINAL, sem etiqueta de mudança e sem inventar nenhuma.
+- ⚠️ MEDIR NÃO É INTERPRETAR. Descreva a mudança de tamanho, NUNCA o que significa:
+  · "Aumentado: lesão de 2 para 3,5 cm" — NUNCA "progressão", "progressão tumoral", "piora".
+  · "Diminuído: lesão de 3,5 para 2 cm" — NUNCA "resposta parcial", "resposta ao tratamento", "melhora".
+  · "Sem alterações: lesão de 2 cm" — NUNCA "doença estável", "estabilidade da doença".
+  · "Resolvido: já não se identifica o derrame" — NUNCA "resolução do processo", "cura".
+- Todas as outras regras continuam: descrever sem diagnosticar, sem inferências, sem recomendações, sem acrescentar nada que não esteja nos achados.`,
   };
 
   let system: string;
@@ -1777,11 +1832,11 @@ ${RULE_1_ES}
 
 2. TRIAJE — la conclusión NO resume todo: selecciona lo clínicamente relevante y DESCARTA sin miedo lo crónico estable, lo incidental menor, las normalidades de órganos y todo lo que no cambie el manejo. Para el detalle ya están los hallazgos.
 
-3. JERARQUÍA CLÍNICA:
+${RULE_3_ES ?? `3. JERARQUÍA CLÍNICA:
    - PRIMERO: lo que responde a la pregunta clínica, o lo urgente (agudo, lo que cambia el manejo inmediato).
    - DESPUÉS: otros hallazgos patológicos significativos.
    - AL FINAL, y solo si requieren acción: incidentales relevantes.
-   - NUNCA: órganos normales, variantes irrelevantes, incidentales triviales (quiste simple pequeño, osteofitos) salvo que sean el motivo del estudio.
+   - NUNCA: órganos normales, variantes irrelevantes, incidentales triviales (quiste simple pequeño, osteofitos) salvo que sean el motivo del estudio.`}
 
 ${RULE_4_ES}
 
@@ -1848,11 +1903,11 @@ ${RULE_1_EN}
 
 2. TRIAGE — the conclusion is NOT a summary of everything: select what is clinically relevant and freely DISCARD stable chronic findings, minor incidentals, organ normality and anything that does not change management. The detail is already in the findings.
 
-3. CLINICAL HIERARCHY:
+${RULE_3_EN ?? `3. CLINICAL HIERARCHY:
    - FIRST: what answers the clinical question, or what is urgent (acute, changes immediate management).
    - THEN: other significant pathological findings.
    - LAST, and only if they require action: relevant incidentals.
-   - NEVER: normal organs, irrelevant variants, trivial incidentals (small simple cyst, osteophytes) unless they are the reason for the study.
+   - NEVER: normal organs, irrelevant variants, trivial incidentals (small simple cyst, osteophytes) unless they are the reason for the study.`}
 
 ${RULE_4_EN}
 

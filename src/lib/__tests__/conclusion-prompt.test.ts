@@ -4,9 +4,9 @@ import { detectDiagnoses } from "@/lib/diagnosis-detect";
 import type { ConclusionStyle, OutputLanguage } from "@/lib/types";
 
 const LANGS: OutputLanguage[] = ["es", "en", "pt"];
-const STYLES: ConclusionStyle[] = ["brief", "concise"];
+const STYLES: ConclusionStyle[] = ["evolutive", "concise"];
 
-const FINDINGS = `Hígado: lesión focal hipodensa de 12 mm en segmento VII.
+const FINDINGS = `Hígado: lesión focal hipodensa de 12 mm en segmento VII (8 mm en el estudio previo).
 Vesícula: litiasis de 8 mm.
 Riñones: quiste simple de 15 mm.`;
 
@@ -75,20 +75,83 @@ describe("the guardrails survive every style and language", () => {
 
 describe("the two styles ask for different shapes", () => {
   for (const lang of LANGS) {
-    it(`brief asks for one unnumbered paragraph (${lang})`, () => {
-      const { system } = build(lang, "brief");
-      expect(/UN SOLO PÁRRAFO|ONE SINGLE PARAGRAPH|UM ÚNICO PARÁGRAFO/.test(system)).toBe(true);
-      // A word budget, so "as short as possible" has a floor as well as a ceiling.
-      expect(/30/.test(system) && /60/.test(system)).toBe(true);
-      expect(system).not.toContain("Puntos numerados");
-      expect(system).not.toContain("Numbered points");
+    it(`evolutive orders by change, not by relevance (${lang})`, () => {
+      const { system } = build(lang, "evolutive");
+      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(true);
+      // The five labels, in the order the conclusion has to use them.
+      expect(/NUEVO . AUMENTADO . DISMINUIDO . SIN CAMBIOS . RESUELTO|NEW . INCREASED . DECREASED . UNCHANGED . RESOLVED/.test(system)).toBe(true);
     });
 
-    it(`concise asks for numbered points with a cap (${lang})`, () => {
+    it(`concise keeps ordering by clinical relevance (${lang})`, () => {
       const { system } = build(lang, "concise");
-      expect(/MÁXIMO \d+ PUNTOS|MAXIMUM \d+ POINTS/.test(system)).toBe(true);
+      expect(/JERARQUÍA CLÍNICA|CLINICAL HIERARCHY/.test(system)).toBe(true);
+      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(false);
+    });
+
+    it(`both ask for numbered points (${lang})`, () => {
+      for (const style of STYLES) {
+        expect(/Puntos numerados|Numbered points/.test(build(lang, style).system)).toBe(true);
+      }
     });
   }
+});
+
+describe("the evolutive style guards the line between measuring and interpreting", () => {
+  // This style sits right on top of the forbidden words: an increase is not
+  // "progression", a decrease is not "response". The mapping is spelled out
+  // rather than left to the general prohibition list.
+  for (const lang of LANGS) {
+    it(`forbids progression, response and stable disease by name (${lang})`, () => {
+      const { system } = build(lang, "evolutive");
+      const banned = lang === "es"
+        ? ["progresión", "respuesta parcial", "enfermedad estable"]
+        : lang === "pt"
+        ? ["progressão", "resposta parcial", "doença estável"]
+        : ["progression", "partial response", "stable disease"];
+      for (const term of banned) expect(system.toLowerCase()).toContain(term.toLowerCase());
+      expect(/MEDIR NO ES INTERPRETAR|MEASURING IS NOT INTERPRETING|MEDIR NÃO É INTERPRETAR/.test(system)).toBe(true);
+    });
+  }
+});
+
+describe("the evolutive style needs something to compare against", () => {
+  const FIRST_STUDY = "Hígado: lesión focal hipodensa de 12 mm en segmento VII.\nVesícula: litiasis de 8 mm.";
+
+  for (const lang of LANGS) {
+    it(`falls back to concise on a first study (${lang})`, () => {
+      // Asking for changes when there is no prior produces invented
+      // comparisons or empty labels, so the style quietly steps aside.
+      const { system } = buildConclusionPrompt({
+        findingsText: FIRST_STUDY,
+        clinicalInfo: "Dolor abdominal.",
+        outputLanguage: lang,
+        conclusionStyle: "evolutive",
+      });
+      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(false);
+      expect(/JERARQUÍA CLÍNICA|CLINICAL HIERARCHY/.test(system)).toBe(true);
+    });
+
+    it(`uses it once the findings reference a prior (${lang})`, () => {
+      const { system } = buildConclusionPrompt({
+        findingsText: FIRST_STUDY + "\nLa lesión ha aumentado respecto al estudio previo.",
+        clinicalInfo: "Control.",
+        outputLanguage: lang,
+        conclusionStyle: "evolutive",
+      });
+      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(true);
+    });
+  }
+
+  it("uses it when a prior report is handed in, whatever the findings say", () => {
+    const { system } = buildConclusionPrompt({
+      findingsText: FIRST_STUDY,
+      clinicalInfo: "Control oncológico.",
+      outputLanguage: "es",
+      conclusionStyle: "evolutive",
+      recistConfig: { isBaseline: false, priorReport: "TC previa: lesión de 8 mm." },
+    });
+    expect(system).toContain("POR CAMBIO, NO POR RELEVANCIA");
+  });
 });
 
 describe("triage and completeness no longer contradict each other", () => {
@@ -109,12 +172,12 @@ describe("triage and completeness no longer contradict each other", () => {
 describe("the clinical question drives the opening", () => {
   for (const lang of LANGS) {
     it(`asks for it to be answered first when one is given (${lang})`, () => {
-      const { system } = build(lang, "brief");
+      const { system } = build(lang, "evolutive");
       expect(/PREGUNTA CLÍNICA|CLINICAL QUESTION/.test(system)).toBe(true);
     });
 
     it(`switches to deducing the main finding when none is given (${lang})`, () => {
-      const { system } = build(lang, "brief", "");
+      const { system } = build(lang, "evolutive", "");
       expect(/SIN CONTEXTO CLÍNICO|NO CLINICAL CONTEXT/.test(system)).toBe(true);
     });
   }
@@ -141,11 +204,12 @@ describe("the example we teach agrees with the detector we ship", () => {
   it("the bad Spanish answer trips it, so the lesson is a real one", () => {
     for (const style of STYLES) {
       const answer = exampleAnswer(build("es", style).system, "✗");
-      const hits = detectDiagnoses(answer, FINDINGS);
-      expect(hits.length).toBeGreaterThan(0);
-      const kinds = new Set(hits.map((h) => h.type));
-      expect(kinds.has("recommendation")).toBe(true);
+      const kinds = new Set(detectDiagnoses(answer, FINDINGS).map((h) => h.type));
+      // Each style's bad example teaches the failures that style invites:
+      // the concise one ends in a recommendation, the evolutive one reads the
+      // disease off the measurement. Both are inferences.
       expect(kinds.has("interpretation")).toBe(true);
+      expect(kinds.has(style === "concise" ? "recommendation" : "diagnosis")).toBe(true);
     }
   });
 });

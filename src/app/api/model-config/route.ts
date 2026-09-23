@@ -99,11 +99,12 @@ export async function PUT(req: NextRequest) {
         .single();
     }
 
-    // 'brief' replaced 'grouped' as the second conclusion style. Until the
-    // migration that widens the CHECK constraint has been applied, the new
-    // value is rejected, so store the one the old constraint accepts — reads
-    // map anything that is not 'concise' back to 'brief' either way.
-    if (result.error && body.conclusion_style === "brief") {
+    // The second conclusion style has been renamed twice ('grouped' →
+    // 'brief' → 'evolutive'). Until the migration widening the CHECK
+    // constraint has run, the new value is rejected, so store the one the
+    // oldest constraint accepts — reads map anything that is not 'concise'
+    // forward to the current style either way.
+    if (result.error && body.conclusion_style === "evolutive") {
       result = await service
         .from("user_model_config")
         .upsert({ ...body, conclusion_style: "grouped", user_id: user.id }, { onConflict: "user_id" })
