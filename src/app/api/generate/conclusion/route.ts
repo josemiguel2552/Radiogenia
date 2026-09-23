@@ -14,6 +14,39 @@ import type { OutputLanguage } from "@/lib/types";
 import { normalizeConclusionStyle } from "@/lib/types";
 import { toErrorResponse } from "@/lib/api-error";
 
+
+/**
+ * The radiologist's own recent conclusions for this kind of study, used to
+ * match their voice. Returns [] rather than throwing: a missing table or a
+ * slow query must not be able to fail a report.
+ */
+async function fetchConclusionStyleSamples(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  modality: unknown,
+  studyType: unknown,
+): Promise<string[]> {
+  if (typeof modality !== "string" || typeof studyType !== "string" || !modality || !studyType) return [];
+  const base = () =>
+    supabase
+      .from("style_patterns")
+      .select("phrase, frequency, last_seen_at")
+      .eq("user_id", userId)
+      .eq("modality", modality)
+      .eq("kind", "conclusion_sample")
+      .order("last_seen_at", { ascending: false })
+      .limit(3);
+  try {
+    const [{ data: exact }, { data: fallback }] = await Promise.all([
+      base().eq("study_type", studyType),
+      base().neq("study_type", studyType),
+    ]);
+    return [...(exact || []), ...(fallback || [])].slice(0, 3).map((s) => s.phrase);
+  } catch {
+    return [];
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -23,25 +56,34 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`generate:${user.id}`, RATE_LIMITS.generate);
     if (!rl.allowed) return rl.errorResponse!;
 
-    // Card-first billing: no AI usage without an active subscription, even
-    // via direct API calls with a live session.
-    if (!(await hasPlatformAccess(user.id))) {
-      return NextResponse.json({ error: "Subscription required", code: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
-    }
-
-
     const service = createServiceClient();
 
-    const [body, globalConfig, { data: config }] = await Promise.all([
-      req.json(),
+    // The body is read first because everything else needs what is in it, and
+    // reading it costs no round trip — then the four lookups that used to run
+    // one after another (access check, global config, user config, style
+    // samples) go out together. They have no dependencies on each other, so
+    // serialising them was putting three needless round trips in front of the
+    // first token.
+    const body = await req.json();
+    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig, mustInclude: rawInclude, exclude: rawExclude } = body;
+
+    const [hasAccess, globalConfig, { data: config }, styleSamples] = await Promise.all([
+      hasPlatformAccess(user.id),
       getGlobalAIConfig(),
       service
         .from("user_model_config")
         .select("output_language, style_learning_enabled, conclusion_style")
         .eq("user_id", user.id)
         .maybeSingle(),
+      fetchConclusionStyleSamples(supabase, user.id, modality, studyType),
     ]);
-    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig, mustInclude: rawInclude, exclude: rawExclude } = body;
+
+    // Card-first billing: no AI usage without an active subscription, even via
+    // direct API calls with a live session. Fetched in parallel, checked
+    // before anything reaches a provider.
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Subscription required", code: "SUBSCRIPTION_REQUIRED" }, { status: 403 });
+    }
 
     const { cleaned: findingsText, strippedCount: sc1, strippedTypes: st1 } = stripPii(rawFindings || "");
     const { cleaned: clinicalInfo, strippedCount: sc2, strippedTypes: st2 } = stripPii(rawClinical || "");
@@ -69,36 +111,11 @@ export async function POST(req: NextRequest) {
     const styleLearning = config?.style_learning_enabled ?? true;
     const conclusionStyle = normalizeConclusionStyle(reqStyle || config?.conclusion_style);
 
-    let preferredConclusionPhrases: string[] | undefined;
-    if (styleLearning && modality && studyType) {
-      try {
-        const [{ data: exact }, { data: fallback }] = await Promise.all([
-          supabase
-            .from("style_patterns")
-            .select("phrase, frequency, last_seen_at")
-            .eq("user_id", user.id)
-            .eq("modality", modality)
-            .eq("study_type", studyType)
-            .eq("kind", "conclusion_sample")
-            .order("last_seen_at", { ascending: false })
-            .limit(3),
-          supabase
-            .from("style_patterns")
-            .select("phrase, frequency, last_seen_at")
-            .eq("user_id", user.id)
-            .eq("modality", modality)
-            .neq("study_type", studyType)
-            .eq("kind", "conclusion_sample")
-            .order("last_seen_at", { ascending: false })
-            .limit(3),
-        ]);
-
-        const samples = [...(exact || []), ...(fallback || [])].slice(0, 3);
-        if (samples.length > 0) {
-          preferredConclusionPhrases = samples.map((s) => s.phrase);
-        }
-      } catch { /* style_patterns table may not exist */ }
-    }
+    // Fetched above alongside everything else; the preference only decides
+    // whether the samples are used, which costs nothing to evaluate here.
+    const preferredConclusionPhrases = styleLearning && styleSamples.length > 0
+      ? styleSamples
+      : undefined;
 
     const { system, user: userPrompt } = buildConclusionPrompt({
       findingsText,
