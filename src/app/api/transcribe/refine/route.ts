@@ -2,7 +2,7 @@ export const maxDuration = 45;
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGlobalAIConfig, resolveApiKey, checkDictationLimit, incrementDictationUsage } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, checkDictationLimit } from "@/lib/auth-helpers";
 import { verifyRemoteDictationToken, REMOTE_DICTATION_HEADER } from "@/lib/remote-dictation";
 import { getWhisperPrompt } from "@/lib/whisper-prompts";
 import { postprocessWhisper } from "@/lib/whisper-postprocess";
@@ -75,7 +75,9 @@ export async function POST(req: NextRequest) {
     const context = (formData.get("context") as string) || "";
     const modality = (formData.get("modality") as string) || "";
     const studyType = (formData.get("study_type") as string) || "";
-    const durationSeconds = Math.max(0, Math.min(120, Number(formData.get("duration_seconds")) || 0));
+    // Ceiling matches the hook's 6-minute hard cap on one dictation, with
+    // margin. The old 120 s clamp silently under-reported longer sessions.
+    const durationSeconds = Math.max(0, Math.min(400, Number(formData.get("duration_seconds")) || 0));
 
     if (!audioFile) {
       return NextResponse.json({ error: "No audio file" }, { status: 400 });
@@ -132,11 +134,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Whisper error: ${err}` }, { status: whisperRes.status });
     }
 
-    let newUsedSeconds = quota.usedSeconds;
+    // The radiologist's dictation allowance is charged ONCE, by
+    // /api/transcribe/usage when the recording stops. Refinement is a second
+    // pass over that same audio, not a second dictation: charging here too
+    // burned everyone's monthly minutes at twice the real rate.
+    //
+    // The provider cost is still logged — that is what Whisper actually costs
+    // us, and it is a separate number from the user's quota.
+    const newUsedSeconds = quota.usedSeconds;
     if (durationSeconds > 0) {
-      const roundedSeconds = Math.ceil(durationSeconds);
-      newUsedSeconds = await incrementDictationUsage(userId, roundedSeconds);
-      logAudioCost({ userId, action: "transcription", provider: "openai", model: "whisper-1", durationSeconds: roundedSeconds });
+      logAudioCost({ userId, action: "transcription", provider: "openai", model: "whisper-1", durationSeconds: Math.ceil(durationSeconds) });
     }
 
     const rawText = await whisperRes.text();

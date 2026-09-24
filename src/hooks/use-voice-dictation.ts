@@ -150,6 +150,10 @@ export function useVoiceDictation({
       cachedTokenRef.current = token;
       return token;
     } catch {
+      // A throw here is the network, not the service. Returning null silently
+      // meant pressing dictate did nothing whatsoever: no recording, no error,
+      // nothing to retry against.
+      if (!silent) onError?.("No se pudo contactar con el servicio de dictado. Comprueba tu conexión e inténtalo de nuevo.");
       return null;
     }
   }, [onError]);
@@ -509,19 +513,37 @@ export function useVoiceDictation({
     reportStreamingUsage();
 
     const recorder = recorderRef.current;
-    if (recorder && recorder.state === "recording") {
-      recorder.stop();
-    }
     recorderRef.current = null;
 
-    // Snapshot audio blobs and DG text immediately, start Whisper refinement NOW (before drain)
-    const snapshotBlobs = [...whisperAudioRef.current];
-    const snapshotDgText = dgAccumulatedRef.current + (interimTextRef.current ? (dgAccumulatedRef.current ? " " : "") + interimTextRef.current : "");
-    whisperAudioRef.current = [];
-    dgAccumulatedRef.current = "";
+    // Take the audio for Whisper only once the recorder has handed over its
+    // last chunk. stop() dispatches a final ondataavailable ASYNCHRONOUSLY, so
+    // snapshotting straight after the call misses the tail of the dictation —
+    // and since the refined text replaces what Deepgram heard, the radiologist
+    // loses the end of what they said. The drain below already waits 250 ms
+    // for this same chunk to reach Deepgram; this path was not waiting for it.
+    let handedOver = false;
+    const takeAudioAndRefine = () => {
+      if (handedOver) return;
+      handedOver = true;
+      const snapshotBlobs = [...whisperAudioRef.current];
+      const snapshotDgText = dgAccumulatedRef.current + (interimTextRef.current ? (dgAccumulatedRef.current ? " " : "") + interimTextRef.current : "");
+      whisperAudioRef.current = [];
+      dgAccumulatedRef.current = "";
 
-    if (durationSec >= 2) {
-      sendWhisperRefinement(durationSec, snapshotBlobs, snapshotDgText, whisperSessionRef.current);
+      if (durationSec >= 2) {
+        sendWhisperRefinement(durationSec, snapshotBlobs, snapshotDgText, whisperSessionRef.current);
+      }
+    };
+
+    if (recorder && recorder.state === "recording") {
+      // onstop fires after that final ondataavailable, so the tail is in hand.
+      recorder.onstop = takeAudioAndRefine;
+      recorder.stop();
+      // Belt and braces: if onstop never arrives, refine what we have rather
+      // than silently dropping the refinement altogether.
+      setTimeout(takeAudioAndRefine, 400);
+    } else {
+      takeAudioAndRefine();
     }
 
     // Stop the level meter and keep-alive but keep WS open for draining
