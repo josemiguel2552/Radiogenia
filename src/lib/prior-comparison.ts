@@ -19,13 +19,22 @@ const PRIOR_REFERENCE = [
   "respecto al estudio", "comparado con", "en comparación", "control evolutivo",
   "tc previa", "tc previo", "rm previa", "rm previo", "eco previa", "informe previo",
   "exploración previa", "estudio anterior", "estudios anteriores", "respecto al anterior",
+  // How radiologists actually abbreviate it in a findings line: "(8 mm en el
+  // previo)". Missing these sent every real follow-up down the no-prior path.
+  "en el previo", "del previo", "al previo", "con el previo", "que el previo",
+  "en el anterior", "del anterior", "al anterior", "que el anterior",
+  "no presente en el previo", "presente en el previo",
   // en
   "prior study", "prior studies", "previous study", "previous studies",
   "compared with", "compared to", "comparison with", "interval change",
   "since the prior", "since the previous", "prior examination", "previous examination",
+  "on the prior", "from the prior", "than on the prior", "on the previous",
+  "from the previous", "than on the previous",
   // pt
   "estudo prévio", "estudos prévios", "em relação ao prévio", "comparado com o",
   "exame prévio", "estudo anterior", "estudos anteriores", "em relação ao anterior",
+  "no prévio", "do prévio", "ao prévio", "que o prévio",
+  "no anterior", "do anterior", "ao anterior", "que o anterior",
 ];
 
 /** Phrasing that mentions a prior only to say there isn't one. */

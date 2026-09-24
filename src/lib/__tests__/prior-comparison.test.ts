@@ -12,6 +12,13 @@ describe("reports that do compare with an earlier study", () => {
     ["en", "Pleural effusion has resolved."],
     ["pt", "Lesão hepática de 12 mm, maior que no estudo prévio."],
     ["pt", "Linfonodo sem alterações em relação ao anterior."],
+    // The shorthand radiologists actually write inside a findings line.
+    ["es", "Lesión hepática de 12 mm (8 mm en el previo)."],
+    ["es", "Nódulo de 9 mm, no presente en el previo."],
+    ["es", "Adenopatía de 15 mm, igual que el anterior."],
+    ["en", "Hepatic lesion 12 mm (8 mm on the prior)."],
+    ["en", "Nodule measuring 9 mm, larger than on the previous."],
+    ["pt", "Lesão hepática de 12 mm (8 mm no prévio)."],
   ])("%s: %s", (_lang, text) => {
     expect(hasPriorComparison(text)).toBe(true);
   });

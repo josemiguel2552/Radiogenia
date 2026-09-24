@@ -1569,19 +1569,19 @@ export function buildConclusionPrompt(params: {
   const isEvo = style === "evolutive";
 
   const RULE_1_ES = isEvo
-    ? `1. UN PUNTO POR ETIQUETA DE CAMBIO que tenga contenido, máximo 6. Dentro de un punto caben varios hallazgos de la misma etiqueta si están relacionados. Si una etiqueta no tiene nada, se omite: no escribas "Resuelto: ninguno".`
+    ? `1. MÁXIMO 6 PUNTOS. Agrupa en un mismo punto los hallazgos que han cambiado igual y están relacionados. Un tipo de cambio del que no hay nada simplemente no aparece.`
     : `1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.`;
   const FORMAT_ES = isEvo
     ? `- Puntos numerados, texto plano, máximo 6. Sin markdown ni encabezado "CONCLUSIÓN".
-- Cada punto empieza por su etiqueta de cambio seguida de dos puntos: "1. Nuevo: nódulo de 9 mm en lóbulo inferior derecho." Es la ÚNICA excepción a la regla de no empezar por una etiqueta — la etiqueta es de cambio, nunca anatómica ("1. Parénquima pulmonar: …" sigue prohibido).`
+- Cada punto empieza DIRECTAMENTE por el hallazgo y dice el cambio DENTRO de la frase, con naturalidad. NUNCA una etiqueta fija seguida de dos puntos: escribe "1. Aumento de la lesión hepática del segmento VII (8 → 12 mm)." y NO "1. Aumentado: lesión hepática…". Tampoco etiquetas anatómicas ("1. Parénquima pulmonar: …").`
     : `- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
 - Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.`;
   const RULE_1_EN = isEvo
-    ? `1. ONE POINT PER CHANGE LABEL that has content, maximum 6. A point may hold several findings under the same label when they are related. A label with nothing in it is omitted: do not write "Resolved: none".`
+    ? `1. MAXIMUM 6 POINTS. Group into one point the findings that changed the same way and are related. A kind of change with nothing in it simply does not appear.`
     : `1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.`;
   const FORMAT_EN = isEvo
     ? `- Numbered points, plain text, maximum 6. No markdown, no "CONCLUSION" heading.
-- Each point opens with its change label followed by a colon: "1. New: 9 mm nodule in the right lower lobe." That is the ONLY exception to not opening with a label — it is a change label, never an anatomical one ("1. Lung parenchyma: …" is still forbidden).`
+- Each point starts DIRECTLY with the finding and states the change WITHIN the sentence, naturally. NEVER a fixed label followed by a colon: write "1. Interval increase of the segment VII hepatic lesion (8 → 12 mm)." and NOT "1. Increased: segment VII hepatic lesion…". No anatomical labels either ("1. Lung parenchyma: …").`
     : `- Numbered points, plain text, maximum ${maxPoints}. No markdown, no "CONCLUSION" heading.
 - Each point starts DIRECTLY with the finding, never with an anatomical label: "1. New peribronchovascular nodule in the right lower lobe (9 x 8 mm)." and NOT "1. Lung parenchyma: …". If a point starts with a category followed by a colon, rewrite it without that preamble.`;
   const SHAPE_ES = isEvo ? "en puntos ordenados por lo que ha cambiado" : "en puntos descriptivos que van al grano";
@@ -1593,10 +1593,10 @@ export function buildConclusionPrompt(params: {
   // clinical question in the first point" would fight its own structure: the
   // answer leads its own label instead, and a negative answer goes on top.
   const RULE_3_ES = isEvo
-    ? `3. ORDEN — POR CAMBIO, NO POR RELEVANCIA: NUEVO → AUMENTADO → DISMINUIDO → SIN CAMBIOS → RESUELTO. DENTRO de cada etiqueta, primero lo clínicamente más relevante. NUNCA incluyas órganos normales ni incidentales triviales estables.`
+    ? `3. ORDEN — POR CAMBIO, NO POR RELEVANCIA: primero lo NUEVO, después lo que ha AUMENTADO, después lo que ha DISMINUIDO, después lo que sigue SIN CAMBIOS, y al final lo que se ha RESUELTO. Dentro de cada grupo, primero lo clínicamente más relevante. El orden se nota en la secuencia de los puntos, no en etiquetas escritas. NUNCA incluyas órganos normales ni incidentales triviales estables.`
     : null;
   const RULE_3_EN = isEvo
-    ? `3. ORDER — BY CHANGE, NOT BY RELEVANCE: NEW → INCREASED → DECREASED → UNCHANGED → RESOLVED. WITHIN each label, most clinically relevant first. NEVER include normal organs or trivial stable incidentals.`
+    ? `3. ORDER — BY CHANGE, NOT BY RELEVANCE: what is NEW first, then what has INCREASED, then what has DECREASED, then what is UNCHANGED, and last what has RESOLVED. Within each group, most clinically relevant first. The order shows in the sequence of the points, not in written labels. NEVER include normal organs or trivial stable incidentals.`
     : null;
   const FIRST_ES = isEvo
     ? "El hallazgo que la responda va PRIMERO DENTRO DE SU ETIQUETA; si ninguno la responde, abre con una frase negativa corta ANTES de los puntos etiquetados"
@@ -1632,11 +1632,11 @@ Datos clínicos del ejemplo: control de paciente oncológico.`;
 ${SHARED_CASE_ES}
 
 ✓ BIEN:
-"1. Nuevo: nódulo de 9 mm en lóbulo inferior derecho, no presente en el estudio previo.
-2. Aumentado: lesión hepática del segmento VII (8 → 12 mm).
-3. Sin cambios: adenopatía interaortocava de 15 mm.
-4. Resuelto: ya no se identifica el derrame pleural derecho."
-Ordena por etiqueta de cambio, conserva cada medida con su valor previo, y suelta los cambios degenerativos porque son estables y no cambian el manejo.
+"1. Nódulo de nueva aparición de 9 mm en lóbulo inferior derecho, no presente en el estudio previo.
+2. Aumento de la lesión hepática del segmento VII (8 → 12 mm).
+3. Adenopatía interaortocava de 15 mm, sin cambios.
+4. Ya no se identifica el derrame pleural derecho."
+Los puntos van en orden de cambio sin anunciarlo: primero lo nuevo, luego lo que creció, luego lo estable, y al final lo resuelto. Cada medida conserva su valor previo, y los cambios degenerativos se quedan fuera porque son estables y no cambian el manejo.
 
 ✗ MAL:
 "1. Progresión de la enfermedad con aumento de la lesión hepática y nueva metástasis pulmonar.
@@ -1674,11 +1674,11 @@ Dados clínicos do exemplo: controle de paciente oncológico.`;
 ${SHARED_CASE_PT}
 
 ✓ BEM:
-"1. Novo: nódulo de 9 mm no lobo inferior direito, não presente no estudo prévio.
-2. Aumentado: lesão hepática do segmento VII (8 → 12 mm).
-3. Sem alterações: linfonodo interaortocava de 15 mm.
-4. Resolvido: já não se identifica o derrame pleural direito."
-Ordena pela etiqueta de mudança, conserva cada medida com o valor prévio, e larga as alterações degenerativas porque são estáveis e não mudam o manejo.
+"1. Nódulo de nova aparição de 9 mm no lobo inferior direito, não presente no estudo prévio.
+2. Aumento da lesão hepática do segmento VII (8 → 12 mm).
+3. Linfonodo interaortocava de 15 mm, sem alterações.
+4. Já não se identifica o derrame pleural direito."
+Os pontos seguem a ordem da mudança sem a anunciar: primeiro o novo, depois o que cresceu, depois o estável, e por último o resolvido. Cada medida conserva o valor prévio, e as alterações degenerativas ficam de fora porque são estáveis e não mudam o manejo.
 
 ✗ MAL:
 "1. Progressão da doença com aumento da lesão hepática e nova metástase pulmonar.
@@ -1716,11 +1716,11 @@ Example clinical context: oncology follow-up.`;
 ${SHARED_CASE_EN}
 
 ✓ GOOD:
-"1. New: 9 mm nodule in the right lower lobe, not present on the prior study.
-2. Increased: segment VII hepatic lesion (8 → 12 mm).
-3. Unchanged: 15 mm interaortocaval node.
-4. Resolved: the right pleural effusion is no longer identified."
-Ordered by change label, every measurement kept with its prior value, and the degenerative change dropped because it is stable and does not alter management.
+"1. New 9 mm nodule in the right lower lobe, not present on the prior study.
+2. Interval increase of the segment VII hepatic lesion (8 → 12 mm).
+3. 15 mm interaortocaval node, unchanged.
+4. The right pleural effusion is no longer identified."
+The points run in change order without announcing it: what is new, then what grew, then what is stable, and last what resolved. Every measurement keeps its prior value, and the degenerative change is dropped because it is stable and does not alter management.
 
 ✗ BAD:
 "1. Disease progression with an enlarging hepatic lesion and a new pulmonary metastasis.
@@ -1755,16 +1755,17 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
 - Tono: directo, escueto, descriptivo.`,
     evolutive: `ESTILO — EVOLUTIVA (ORGANIZADA POR EL CAMBIO):
 - Este estudio se compara con uno previo. La conclusión se ordena por CÓMO HA CAMBIADO cada hallazgo, no por relevancia.
-- Cada punto empieza por su etiqueta de cambio, en este orden: NUEVO → AUMENTADO → DISMINUIDO → SIN CAMBIOS → RESUELTO.
-- Formato de punto: "N. Etiqueta: descripción del hallazgo con sus medidas y el dato del previo." Ej: "2. Aumentado: lesión hepática del segmento VII (2 → 3.5 cm)."
-- Agrupa en un mismo punto los hallazgos de la misma etiqueta que estén anatómicamente relacionados.
-- SIN CAMBIOS: incluye solo lo que el clínico necesita saber que sigue igual (lo que se está vigilando). No listes toda la normalidad estable.
-- Un hallazgo del que los hallazgos NO dicen si cambió va al FINAL, sin etiqueta de cambio y sin inventarle una.
+- Los puntos van en este orden: lo NUEVO, lo que ha AUMENTADO, lo que ha DISMINUIDO, lo que sigue SIN CAMBIOS, y lo que se ha RESUELTO.
+- El cambio se dice DENTRO de la frase, redactado con naturalidad, NUNCA como etiqueta fija seguida de dos puntos. Ej: "2. Aumento de la lesión hepática del segmento VII (8 → 12 mm)." — NO "2. Aumentado: lesión hepática…".
+- Cada punto empieza directamente por el hallazgo, como en cualquier conclusión radiológica bien escrita. El orden ya comunica el cambio; no hace falta anunciarlo.
+- Agrupa en un mismo punto los hallazgos que han cambiado igual y están anatómicamente relacionados.
+- Lo que sigue igual: incluye solo lo que el clínico necesita saber que no ha cambiado (lo que se está vigilando). No listes toda la normalidad estable.
+- Un hallazgo del que los hallazgos NO dicen si cambió va al FINAL, descrito sin atribuirle ningún cambio.
 - ⚠️ MEDIR NO ES INTERPRETAR. Describe el cambio de tamaño, NUNCA lo que significa:
-  · "Aumentado: lesión de 2 a 3.5 cm" — NUNCA "progresión", "progresión tumoral", "peor evolución".
-  · "Disminuido: lesión de 3.5 a 2 cm" — NUNCA "respuesta parcial", "respuesta al tratamiento", "mejoría".
-  · "Sin cambios: lesión de 2 cm" — NUNCA "enfermedad estable", "estabilidad de la enfermedad".
-  · "Resuelto: ya no se identifica el derrame" — NUNCA "resolución del proceso", "curación".
+  · "Aumento de la lesión (2 → 3.5 cm)" — NUNCA "progresión", "progresión tumoral", "peor evolución".
+  · "Disminución de la lesión (3.5 → 2 cm)" — NUNCA "respuesta parcial", "respuesta al tratamiento", "mejoría".
+  · "Lesión de 2 cm, sin cambios" — NUNCA "enfermedad estable", "estabilidad de la enfermedad".
+  · "Ya no se identifica el derrame" — NUNCA "resolución del proceso", "curación".
 - El resto de reglas siguen intactas: describir sin diagnosticar, sin inferencias, sin recomendaciones, sin añadir nada que no esté en los hallazgos.`,
   };
 
@@ -1778,16 +1779,17 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
 - Tone: direct, succinct, descriptive.`,
     evolutive: `STYLE — EVOLUTIVE (ORGANISED BY CHANGE):
 - This study is compared against a prior one. The conclusion is ordered by HOW EACH FINDING HAS CHANGED, not by relevance.
-- Each point opens with its change label, in this order: NEW → INCREASED → DECREASED → UNCHANGED → RESOLVED.
-- Point format: "N. Label: description of the finding with its measurements and the prior value." e.g. "2. Increased: segment VII hepatic lesion (2 → 3.5 cm)."
-- Group findings under the same label into one point when they are anatomically related.
-- UNCHANGED: include only what the clinician needs to know is still there (what is being watched). Do not list every stable normality.
-- A finding the report does NOT say changed goes LAST, with no change label and none invented for it.
+- The points run in this order: what is NEW, what has INCREASED, what has DECREASED, what is UNCHANGED, and what has RESOLVED.
+- The change is stated WITHIN the sentence, worded naturally, NEVER as a fixed label followed by a colon. e.g. "2. Interval increase of the segment VII hepatic lesion (8 → 12 mm)." — NOT "2. Increased: segment VII hepatic lesion…".
+- Each point starts directly with the finding, as any well-written radiology conclusion does. The order already conveys the change; it does not need announcing.
+- Group into one point the findings that changed the same way and are anatomically related.
+- What is unchanged: include only what the clinician needs to know has not moved (what is being watched). Do not list every stable normality.
+- A finding the report does NOT say changed goes LAST, described without attributing any change to it.
 - ⚠️ MEASURING IS NOT INTERPRETING. Describe the change in size, NEVER what it means:
-  · "Increased: lesion from 2 to 3.5 cm" — NEVER "progression", "tumour progression", "worsening".
-  · "Decreased: lesion from 3.5 to 2 cm" — NEVER "partial response", "response to treatment", "improvement".
-  · "Unchanged: 2 cm lesion" — NEVER "stable disease", "disease stability".
-  · "Resolved: the effusion is no longer seen" — NEVER "resolution of the process", "cure".
+  · "Interval increase of the lesion (2 → 3.5 cm)" — NEVER "progression", "tumour progression", "worsening".
+  · "Interval decrease of the lesion (3.5 → 2 cm)" — NEVER "partial response", "response to treatment", "improvement".
+  · "2 cm lesion, unchanged" — NEVER "stable disease", "disease stability".
+  · "The effusion is no longer seen" — NEVER "resolution of the process", "cure".
 - Every other rule stands: describe without diagnosing, no inferences, no recommendations, add nothing that is not in the findings.`,
   };
 
@@ -1801,16 +1803,17 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
 - Tom: direto, sucinto, descritivo.`,
     evolutive: `ESTILO — EVOLUTIVA (ORGANIZADA PELA MUDANÇA):
 - Este estudo é comparado com um prévio. A conclusão ordena-se por COMO CADA ACHADO MUDOU, não por relevância.
-- Cada ponto começa pela sua etiqueta de mudança, nesta ordem: NOVO → AUMENTADO → DIMINUÍDO → SEM ALTERAÇÕES → RESOLVIDO.
-- Formato do ponto: "N. Etiqueta: descrição do achado com as medidas e o dado do prévio." Ex: "2. Aumentado: lesão hepática do segmento VII (2 → 3,5 cm)."
-- Agrupe num mesmo ponto os achados da mesma etiqueta que estejam anatomicamente relacionados.
-- SEM ALTERAÇÕES: inclua só o que o clínico precisa saber que continua igual (o que se está vigiando). Não liste toda a normalidade estável.
-- Um achado do qual os achados NÃO dizem se mudou vai no FINAL, sem etiqueta de mudança e sem inventar nenhuma.
+- Os pontos seguem esta ordem: o NOVO, o que AUMENTOU, o que DIMINUIU, o que continua SEM ALTERAÇÕES, e o que se RESOLVEU.
+- A mudança diz-se DENTRO da frase, redigida com naturalidade, NUNCA como etiqueta fixa seguida de dois pontos. Ex: "2. Aumento da lesão hepática do segmento VII (8 → 12 mm)." — NÃO "2. Aumentado: lesão hepática…".
+- Cada ponto começa diretamente pelo achado, como em qualquer conclusão radiológica bem escrita. A ordem já comunica a mudança; não precisa de ser anunciada.
+- Agrupe num mesmo ponto os achados que mudaram igual e estão anatomicamente relacionados.
+- O que continua igual: inclua só o que o clínico precisa saber que não mudou (o que se está vigiando). Não liste toda a normalidade estável.
+- Um achado do qual os achados NÃO dizem se mudou vai no FINAL, descrito sem lhe atribuir nenhuma mudança.
 - ⚠️ MEDIR NÃO É INTERPRETAR. Descreva a mudança de tamanho, NUNCA o que significa:
-  · "Aumentado: lesão de 2 para 3,5 cm" — NUNCA "progressão", "progressão tumoral", "piora".
-  · "Diminuído: lesão de 3,5 para 2 cm" — NUNCA "resposta parcial", "resposta ao tratamento", "melhora".
-  · "Sem alterações: lesão de 2 cm" — NUNCA "doença estável", "estabilidade da doença".
-  · "Resolvido: já não se identifica o derrame" — NUNCA "resolução do processo", "cura".
+  · "Aumento da lesão (2 → 3,5 cm)" — NUNCA "progressão", "progressão tumoral", "piora".
+  · "Diminuição da lesão (3,5 → 2 cm)" — NUNCA "resposta parcial", "resposta ao tratamento", "melhora".
+  · "Lesão de 2 cm, sem alterações" — NUNCA "doença estável", "estabilidade da doença".
+  · "Já não se identifica o derrame" — NUNCA "resolução do processo", "cura".
 - Todas as outras regras continuam: descrever sem diagnosticar, sem inferências, sem recomendações, sem acrescentar nada que não esteja nos achados.`,
   };
 

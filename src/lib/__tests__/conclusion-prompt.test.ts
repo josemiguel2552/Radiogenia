@@ -77,9 +77,31 @@ describe("the two styles ask for different shapes", () => {
   for (const lang of LANGS) {
     it(`evolutive orders by change, not by relevance (${lang})`, () => {
       const { system } = build(lang, "evolutive");
-      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(true);
-      // The five labels, in the order the conclusion has to use them.
-      expect(/NUEVO . AUMENTADO . DISMINUIDO . SIN CAMBIOS . RESUELTO|NEW . INCREASED . DECREASED . UNCHANGED . RESOLVED/.test(system)).toBe(true);
+      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE|PELA MUDANÇA/.test(system)).toBe(true);
+      // The five groups, in the order the points have to run in.
+      const groups = lang === "es"
+        ? ["NUEVO", "AUMENTADO", "DISMINUIDO", "SIN CAMBIOS", "RESUELTO"]
+        : lang === "pt"
+        ? ["NOVO", "AUMENTOU", "DIMINUIU", "SEM ALTERAÇÕES", "RESOLVEU"]
+        : ["NEW", "INCREASED", "DECREASED", "UNCHANGED", "RESOLVED"];
+      let at = -1;
+      for (const g of groups) {
+        const next = system.indexOf(g, at + 1);
+        expect(next).toBeGreaterThan(at);
+        at = next;
+      }
+    });
+
+    it(`evolutive states the change in the sentence, not as a label (${lang})`, () => {
+      // The radiologist rejected "Aumentado: lesión…" — a conclusion reads as
+      // prose, and the ordering already carries the change.
+      const { system } = build(lang, "evolutive");
+      expect(/NUNCA como etiqueta fija|NEVER as a fixed label|NUNCA como etiqueta fixa/.test(system)).toBe(true);
+      // And the worked example must not be teaching the format it forbids.
+      const good = system.slice(system.indexOf("✓"), system.indexOf("✗"));
+      for (const label of ["Aumentado:", "Increased:", "Sem alterações:", "Nuevo:", "New:", "Resuelto:", "Resolved:"]) {
+        expect(good).not.toContain(label);
+      }
     });
 
     it(`concise keeps ordering by clinical relevance (${lang})`, () => {
