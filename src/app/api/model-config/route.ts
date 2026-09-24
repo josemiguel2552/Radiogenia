@@ -100,16 +100,24 @@ export async function PUT(req: NextRequest) {
     }
 
     // The second conclusion style has been renamed twice ('grouped' →
-    // 'brief' → 'evolutive'). Until the migration widening the CHECK
-    // constraint has run, the new value is rejected, so store the one the
-    // oldest constraint accepts — reads map anything that is not 'concise'
-    // forward to the current style either way.
+    // 'brief' → 'evolutive'), and each rename shipped a migration widening the
+    // CHECK constraint. A deployment can be sitting on any of the three, so
+    // the names are tried newest first until one is accepted rather than
+    // guessing which migration has run — guessing wrong fails the whole save,
+    // which is how picking the style would have errored on a database that had
+    // the 'brief' migration but not the 'evolutive' one.
+    //
+    // Whichever name lands, reads map anything that is not 'concise' forward
+    // to the current style, so the preference behaves the same either way.
     if (result.error && body.conclusion_style === "evolutive") {
-      result = await service
-        .from("user_model_config")
-        .upsert({ ...body, conclusion_style: "grouped", user_id: user.id }, { onConflict: "user_id" })
-        .select()
-        .single();
+      for (const legacyName of ["brief", "grouped"]) {
+        result = await service
+          .from("user_model_config")
+          .upsert({ ...body, conclusion_style: legacyName, user_id: user.id }, { onConflict: "user_id" })
+          .select()
+          .single();
+        if (!result.error) break;
+      }
     }
 
     const { data, error } = result;
