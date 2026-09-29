@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { DifferentialDialog } from "@/components/admin/differential-dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -764,6 +765,10 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
             <span className="text-[9px] font-medium leading-none max-w-full truncate px-0.5">{item.label}</span>
           </button>
         ))}
+        {/* Admin-gated, like the endpoint behind it. Sitting in the report
+            rail is a convenience for whoever can already use it, not a wider
+            audience for it. */}
+        {role === "admin" && <DifferentialDialog variant="rail" />}
         {role === "admin" && (
           <Link href="/admin" className="flex flex-col items-center gap-1 w-14 py-1.5 text-amber-500 hover:bg-gray-800 hover:text-amber-300 rounded-lg transition-colors" title={t("nav.admin")}>
             <Shield className="h-[18px] w-[18px]" />
@@ -884,6 +889,11 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
               <UserIcon className="h-5 w-5" />
               <span className="text-[9px] leading-tight">{t("nav.account")}</span>
             </button>
+          )}
+          {role === "admin" && (
+            <div className="flex flex-col items-center shrink-0 min-w-[48px]">
+              <DifferentialDialog variant="rail" />
+            </div>
           )}
           {role === "admin" && (
             <Link href="/admin" className="flex flex-col items-center shrink-0 gap-0.5 text-amber-500 py-1.5 px-2 min-w-[48px]">

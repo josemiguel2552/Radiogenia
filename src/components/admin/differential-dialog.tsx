@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Loader2, Upload, X, Sparkles, ExternalLink, AlertTriangle, Crop, Trash2,
+  Loader2, Upload, X, Sparkles, ExternalLink, AlertTriangle, Crop, Trash2, ScanSearch,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
@@ -133,7 +133,7 @@ function RoiCanvas({
   );
 }
 
-export function DifferentialDialog() {
+export function DifferentialDialog({ variant = "header" }: { variant?: "header" | "rail" }) {
   const t = useT();
   const { prefs } = useUIPrefs();
   const lang = (prefs.uiLanguage || "es") as "es" | "en" | "pt";
@@ -215,16 +215,30 @@ export function DifferentialDialog() {
 
   return (
     <>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-8 gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand"
-        onClick={() => setOpen(true)}
-        title={t("diff.open_hint")}
-      >
-        <Sparkles className="h-3.5 w-3.5" />
-        {t("diff.open")}
-      </Button>
+      {variant === "rail" ? (
+        // The report screen's rail: same shape as the views beside it, so it
+        // reads as one more place to go rather than a control bolted on.
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title={t("diff.open_hint")}
+          className="flex flex-col items-center gap-1 w-14 py-1.5 text-cyan-400 hover:bg-gray-800 hover:text-cyan-300 rounded-lg transition-colors cursor-pointer"
+        >
+          <ScanSearch className="h-[18px] w-[18px]" />
+          <span className="text-[9px] font-medium leading-none max-w-full truncate px-0.5">{t("diff.open")}</span>
+        </button>
+      ) : (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand"
+          onClick={() => setOpen(true)}
+          title={t("diff.open_hint")}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {t("diff.open")}
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
