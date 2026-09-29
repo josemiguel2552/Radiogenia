@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { DifferentialDialog } from "@/components/admin/differential-dialog";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1013,9 +1014,12 @@ export default function AdminPage() {
               {t("admin.badge")}
             </Badge>
           </div>
-          <Button variant="ghost" size="icon" className="ml-auto h-9 w-9" onClick={loadAll} title={t("admin.refresh")}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            <DifferentialDialog />
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={loadAll} title={t("admin.refresh")}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 

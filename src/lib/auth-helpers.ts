@@ -34,6 +34,8 @@ export interface GlobalAIConfig {
     data_augmentation?: TaskModelOverride;
     classify?: TaskModelOverride;
     chatbot?: TaskModelOverride;
+    /** Differential-diagnosis assistant. Must be a provider that can see. */
+    differential?: TaskModelOverride;
   };
 }
 
@@ -116,6 +118,9 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
   }
   if (data.classify_provider && data.classify_model) {
     taskOverrides.classify = { provider: data.classify_provider as AIProvider, modelName: data.classify_model };
+  }
+  if (data.differential_provider && data.differential_model) {
+    taskOverrides.differential = { provider: data.differential_provider as AIProvider, modelName: data.differential_model };
   }
   if (data.chatbot_provider && data.chatbot_model) {
     taskOverrides.chatbot = { provider: data.chatbot_provider as AIProvider, modelName: data.chatbot_model };
