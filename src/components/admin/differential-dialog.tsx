@@ -143,6 +143,8 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
   const [region, setRegion] = useState<BodyRegion | "">("");
   const [modality, setModality] = useState("");
   const [hounsfield, setHounsfield] = useState("");
+  const [sizeMm, setSizeMm] = useState("");
+  const [phase, setPhase] = useState("");
   const [note, setNote] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -151,7 +153,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
-    setImages([]); setRegion(""); setModality(""); setHounsfield("");
+    setImages([]); setRegion(""); setModality(""); setHounsfield(""); setSizeMm(""); setPhase("");
     setNote(""); setConfirmed(false); setError(null); setResult(null); setLoading(false);
   }, []);
 
@@ -191,6 +193,8 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
           regionLabel: t(`diff.region_${region}`),
           modality,
           hounsfield,
+          sizeMm,
+          phase,
           clinicalNote: note,
           hasRoi: images.some((i) => i.roi),
           language: lang,
@@ -211,7 +215,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
     } finally {
       setLoading(false);
     }
-  }, [canSubmit, images, region, modality, hounsfield, note, lang, t]);
+  }, [canSubmit, images, region, modality, hounsfield, sizeMm, phase, note, lang, t]);
 
   return (
     <>
@@ -342,7 +346,31 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
                 </div>
               </div>
 
-              {/* ── Hounsfield ── */}
+              {/* ── What the model cannot read off the image ── */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs mb-1.5 block">{t("diff.size")}</Label>
+                  <Input
+                    value={sizeMm}
+                    onChange={(e) => setSizeMm(e.target.value)}
+                    placeholder={t("diff.size_ph")}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">{t("diff.phase")}</Label>
+                  <select
+                    value={phase}
+                    onChange={(e) => setPhase(e.target.value)}
+                    className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 text-sm"
+                  >
+                    <option value="">{t("diff.phase_unknown")}</option>
+                    {["no_contrast", "arterial", "portal", "delayed", "excretory", "other"].map((ph) => (
+                      <option key={ph} value={t(`diff.phase_${ph}`)}>{t(`diff.phase_${ph}`)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               <div>
                 <Label className="text-xs mb-1.5 block">{t("diff.hu")}</Label>
                 <Input

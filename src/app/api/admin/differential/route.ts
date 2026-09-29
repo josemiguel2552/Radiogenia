@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { generateWithImages, providerSupportsVision, isAcceptedImageType, type VisionImage } from "@/lib/vision-ai";
 import { buildDifferentialPrompt, parseDifferentialResponse, isBodyRegion, type DifferentialLang } from "@/lib/differential";
+import { selectReferencesForRegion } from "@/lib/differential-references";
+import { buildClinicalReferenceData } from "@/lib/chatbot-knowledge";
 import { stripPii } from "@/lib/pii-detect";
 import { logAICost } from "@/lib/log-ai-cost";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -34,6 +36,8 @@ export async function POST(req: NextRequest) {
       region,
       modality: rawModality,
       hounsfield: rawHu,
+      sizeMm: rawSize,
+      phase: rawPhase,
       clinicalNote: rawNote,
       hasRoi,
       language: rawLang,
@@ -76,6 +80,8 @@ export async function POST(req: NextRequest) {
     const hounsfield = stripPii(String(rawHu ?? "").slice(0, 120)).cleaned.trim();
     const clinicalNote = stripPii(String(rawNote ?? "").slice(0, 600)).cleaned.trim();
     const modality = String(rawModality ?? "").slice(0, 40).trim();
+    const sizeMm = stripPii(String(rawSize ?? "").slice(0, 60)).cleaned.trim();
+    const phase = String(rawPhase ?? "").slice(0, 60).trim();
     const regionLabel = typeof body.regionLabel === "string" ? body.regionLabel.slice(0, 60) : region;
 
     const globalConfig = await getGlobalAIConfig();
@@ -97,15 +103,26 @@ export async function POST(req: NextRequest) {
     const modelName = override?.modelName
       || (provider === "claude" ? "claude-sonnet-5" : "gpt-4o");
 
+    // The platform's own verified thresholds for this region, rather than
+    // whatever the model remembers of them.
+    const references = selectReferencesForRegion(
+      buildClinicalReferenceData(lang),
+      region,
+      { hasDensity: !!hounsfield },
+    );
+
     const { system, user } = buildDifferentialPrompt({
       lang,
       region,
       regionLabel,
       modality: modality || undefined,
       hounsfield: hounsfield || undefined,
+      sizeMm: sizeMm || undefined,
+      phase: phase || undefined,
       clinicalNote: clinicalNote || undefined,
       imageCount: images.length,
       hasRoi: hasRoi === true,
+      references,
     });
 
     const result = await generateWithImages({
