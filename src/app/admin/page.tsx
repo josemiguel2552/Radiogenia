@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DifferentialDialog } from "@/components/admin/differential-dialog";
+import { providerSupportsVision } from "@/lib/vision-ai";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
   Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
-  BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw,
+  BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw, AlertTriangle,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
   MessageSquare, DollarSign, Sparkles, ShieldAlert, Plus,
   ThumbsUp, ThumbsDown, Building2,
@@ -83,7 +84,7 @@ interface FtFileInfo {
   createdAt: number;
 }
 
-type TaskKey = "findings" | "conclusion" | "conclusion_verify" | "trace" | "dictation_correction" | "improve_writing" | "data_augmentation" | "classify" | "chatbot";
+type TaskKey = "findings" | "conclusion" | "conclusion_verify" | "trace" | "dictation_correction" | "improve_writing" | "data_augmentation" | "classify" | "chatbot" | "differential";
 
 interface UserRow {
   id: string;
@@ -261,6 +262,7 @@ export default function AdminPage() {
     data_augmentation: { provider: "", model: "" },
     classify: { provider: "", model: "" },
     chatbot: { provider: "", model: "" },
+    differential: { provider: "", model: "" },
   });
 
   // Fine-tuning
@@ -570,6 +572,7 @@ export default function AdminPage() {
         data_augmentation: { provider: d.data_augmentation_provider || "", model: d.data_augmentation_model || "" },
         classify: { provider: d.classify_provider || "", model: d.classify_model || "" },
         chatbot: { provider: d.chatbot_provider || "", model: d.chatbot_model || "" },
+        differential: { provider: d.differential_provider || "", model: d.differential_model || "" },
       });
     }
 
@@ -683,7 +686,7 @@ export default function AdminPage() {
       if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
-      for (const task of ["findings", "conclusion", "conclusion_verify", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot"] as TaskKey[]) {
+      for (const task of ["findings", "conclusion", "conclusion_verify", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot", "differential"] as TaskKey[]) {
         const o = taskOverrides[task];
         body[`${task}_provider`] = o.provider || "";
         body[`${task}_model`] = o.model || "";
@@ -1787,6 +1790,7 @@ export default function AdminPage() {
                   { key: "data_augmentation" as TaskKey, label: t("admin.task_data_augmentation"), desc: t("admin.task_data_augmentation_desc") },
                   { key: "classify" as TaskKey, label: t("admin.task_classify"), desc: t("admin.task_classify_desc") },
                   { key: "chatbot" as TaskKey, label: t("admin.task_chatbot"), desc: t("admin.task_chatbot_desc") },
+                  { key: "differential" as TaskKey, label: t("admin.task_differential"), desc: t("admin.task_differential_desc") },
                 ]).map(({ key, label, desc }) => {
                   const o = taskOverrides[key];
                   const taskProv = PROVIDERS.find((p) => p.value === o.provider);
@@ -1803,6 +1807,15 @@ export default function AdminPage() {
                           <Badge variant="outline" className="text-[10px] text-gray-400">{t("admin.default")}</Badge>
                         )}
                       </div>
+                      {/* The differential task sends images. A provider with no
+                          vision API cannot serve it, and the description alone
+                          is easy to miss when picking from a dropdown. */}
+                      {key === "differential" && o.provider && !providerSupportsVision(o.provider) && (
+                        <p className="flex items-start gap-1.5 text-[10px] text-red-600 dark:text-red-400">
+                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                          {t("admin.task_differential_no_vision").replace("{0}", o.provider)}
+                        </p>
+                      )}
                       {(
                       <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2 items-end">
                         <Select value={o.provider || "default"} onValueChange={(v) => {
@@ -1880,7 +1893,7 @@ export default function AdminPage() {
                 {(() => {
                   // Collect all providers in use across task overrides that differ from default
                   const extraProviders = new Set<string>();
-                  for (const task of ["findings", "conclusion", "conclusion_verify", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot"] as TaskKey[]) {
+                  for (const task of ["findings", "conclusion", "conclusion_verify", "trace", "dictation_correction", "improve_writing", "data_augmentation", "classify", "chatbot", "differential"] as TaskKey[]) {
                     const p = taskOverrides[task].provider;
                     if (p && p !== provider) extraProviders.add(p);
                   }

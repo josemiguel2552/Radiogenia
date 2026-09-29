@@ -65,6 +65,7 @@ export async function PUT(req: NextRequest) {
       "data_augmentation_provider", "data_augmentation_model",
       "classify_provider", "classify_model",
       "chatbot_provider", "chatbot_model",
+      "differential_provider", "differential_model",
     ];
     for (const field of taskFields) {
       if (field in body) updates[field] = body[field] || null;
