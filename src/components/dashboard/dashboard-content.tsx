@@ -1088,6 +1088,7 @@ export function DashboardContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             findingsText,
+            dictation,
             clinicalInfo,
             modality: selectedTemplate.modality,
             studyType: studyName,
@@ -1974,6 +1975,7 @@ export function DashboardContent() {
     const activeTechs = Object.entries(cardiacTechniques).filter(([, v]) => v).map(([k]) => k);
     await replaceConclusion("/api/generate/conclusion", {
       findingsText: findings,
+      dictation,
       clinicalInfo,
       modality: selectedTemplate.modality,
       studyType: studyName,
@@ -1999,6 +2001,7 @@ export function DashboardContent() {
     exitEditMode();
     await replaceConclusion("/api/generate/conclusion", {
       findingsText: findings,
+      dictation,
       clinicalInfo,
       modality: selectedTemplate.modality,
       studyType: studyName,

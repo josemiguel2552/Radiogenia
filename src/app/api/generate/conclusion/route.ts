@@ -9,6 +9,7 @@ import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { stripPii } from "@/lib/pii-detect";
+import { extractDictatedRecommendations } from "@/lib/dictated-recommendations";
 import { logPiiStrip } from "@/lib/pii-log";
 import type { OutputLanguage } from "@/lib/types";
 import { normalizeConclusionStyle } from "@/lib/types";
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     // serialising them was putting three needless round trips in front of the
     // first token.
     const body = await req.json();
-    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig, mustInclude: rawInclude, exclude: rawExclude } = body;
+    const { findingsText: rawFindings, clinicalInfo: rawClinical, modality, studyType, conclusionStyle: reqStyle, outputLanguage: reqLang, cardiacTechniques, recistConfig, mustInclude: rawInclude, exclude: rawExclude, dictation: rawDictation } = body;
 
     const [hasAccess, globalConfig, { data: config }, styleSamples] = await Promise.all([
       hasPlatformAccess(user.id),
@@ -107,6 +108,13 @@ export async function POST(req: NextRequest) {
     const mustInclude = cleanList(rawInclude);
     const exclude = cleanList(rawExclude);
 
+    // Only the recommendation sentences are lifted out of the dictation — the
+    // dictation itself never enters the conclusion prompt, so the guarantee
+    // that nothing outside the findings can appear still holds.
+    const dictatedRecommendations = extractDictatedRecommendations(
+      stripPii(String(rawDictation ?? "").slice(0, 20000)).cleaned,
+    );
+
     const outputLanguage = reqLang || config?.output_language || "es";
     const styleLearning = config?.style_learning_enabled ?? true;
     const conclusionStyle = normalizeConclusionStyle(reqStyle || config?.conclusion_style);
@@ -128,6 +136,7 @@ export async function POST(req: NextRequest) {
       recistConfig: recistConfig || undefined,
       mustInclude,
       exclude,
+      dictatedRecommendations,
     });
 
     const taskModel = globalConfig.taskOverrides?.conclusion;

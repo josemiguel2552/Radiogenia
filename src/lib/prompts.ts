@@ -145,6 +145,10 @@ FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ni
 - Muletillas verbales (solo en texto generado por ti, NO en hallazgos dictados por el radiólogo): "se observa", "se evidencia", "se identifica", "se aprecia", "se demuestra", "se detecta", "se visualiza", "cabe destacar", "llama la atención", "noted", "observed", "identified", "seen", "demonstrated", "visualized". En secciones de normalidad y texto que tú redactes, escribe directamente sin verbos introductorios. Ej: "Nódulo hepático de 12 mm en segmento VI." en vez de "Se observa un nódulo hepático de 12 mm en segmento VI." EXCEPCIÓN: si el radiólogo usó estas palabras en su dictado, respétalas tal cual.
 Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
 
+RECOMENDACIONES DICTADAS — NO SON HALLAZGOS:
+Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca al final de la conclusión, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
+No la reformules ni la conviertas en hallazgo. Simplemente no la incluyas en los hallazgos.
+
 HALLAZGOS NEGATIVOS DICTADOS:
 Cuando el radiólogo dicta explícitamente la AUSENCIA de un hallazgo (ej: "no masa colónica", "sin evidencia de TEP", "no disección aórtica", "no se identifica litiasis"), esto es un hallazgo negativo relevante y DEBE incluirse en la sección anatómica correspondiente. No lo omitas ni lo sustituyas por una frase genérica de normalidad. Reproduce fielmente la negación dictada.
 
@@ -193,6 +197,7 @@ FORMATO DE SALIDA — ESTRICTO, SIN EXCEPCIONES:
 - Primera letra de la sección en MAYÚSCULA, el resto en minúsculas. Dos puntos. Un espacio. Descripción. Punto final.
 - Una línea por sección. Sin líneas en blanco entre secciones. Sin saltos de línea dentro de una sección.
 - NUNCA repitas el nombre de una sección. Si una sección tiene MÚLTIPLES hallazgos, TODOS van en la MISMA línea, separados con PUNTOS (.). NUNCA crees líneas separadas con el mismo nombre de sección para hallazgos distintos. Ej CORRECTO: "Porciones incluidas del tórax: Masa pulmonar de 45 mm en lóbulo superior derecho. Nódulos pulmonares de 10 y 12 mm en lóbulo inferior derecho." Ej INCORRECTO (PROHIBIDO): "Porciones incluidas del tórax: Masa pulmonar de 45 mm.\nPorciones incluidas del tórax: Nódulos pulmonares de 10 y 12 mm."
+- ESTA REGLA ES SOBRE LÍNEAS, NO SOBRE FRASES. Si el radiólogo dictó un párrafo corrido describiendo varios hallazgos encadenados, RESPÉTALO TAL CUAL: su redacción, sus frases, sus conectores y su puntuación. NO lo trocees en frases cortas ni lo reescribas en estilo telegráfico. Lo que la regla prohíbe es REPETIR el nombre de la sección en varias líneas; no te autoriza a reescribir la prosa del radiólogo.
 - NO uses asteriscos (*), almohadillas (#), guiones (-), viñetas, negritas ni ningún formato markdown.
 - NO numeres las secciones.
 - NO añadas encabezados como "HALLAZGOS", "FINDINGS" ni agrupaciones. Solo la lista plana de secciones.
@@ -221,6 +226,10 @@ FRASES ABSOLUTAMENTE PROIBIDAS (nunca escreva nenhuma destas em nenhuma seção,
 - "não avaliado", "não analisado", "não descrito", "não mencionado", "não explorado", "não visualizado para avaliação", "not assessed", "not evaluated", "no valorado", "no se describe".
 - Vícios de linguagem (apenas no texto gerado por você, NÃO nos achados ditados pelo radiologista): "observa-se", "evidencia-se", "identifica-se", "nota-se", "demonstra-se", "detecta-se", "visualiza-se", "cabe destacar", "chama atenção", "noted", "observed", "identified". Nas seções de normalidade e texto que você redigir, escreva diretamente sem verbos introdutórios. Ex: "Nódulo hepático de 12 mm no segmento VI." em vez de "Observa-se nódulo hepático de 12 mm no segmento VI." EXCEÇÃO: se o radiologista usou essas palavras no ditado, mantenha-as como estão.
 Se uma seção não é mencionada no ditado, SEMPRE escreva uma descrição de normalidade. JAMAIS indique que não foi avaliada.
+
+RECOMENDAÇÕES DITADAS — NÃO SÃO ACHADOS:
+Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada no fim da conclusão, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
+Não a reformule nem a converta em achado. Simplesmente não a inclua nos achados.
 
 ACHADOS NEGATIVOS DITADOS:
 Quando o radiologista dita explicitamente a AUSÊNCIA de um achado (ex: "sem massa colônica", "sem evidência de TEP", "sem dissecção aórtica", "não se identifica litíase"), isso é um achado negativo relevante e DEVE ser incluído na seção anatômica correspondente. Não o omita nem o substitua por uma frase genérica de normalidade. Reproduza fielmente a negação ditada.
@@ -270,6 +279,7 @@ FORMATO DE SAÍDA — ESTRITO, SEM EXCEÇÕES:
 - Primeira letra da seção em MAIÚSCULA, o restante em minúsculas. Dois pontos. Um espaço. Descrição. Ponto final.
 - Uma linha por seção. Sem linhas em branco entre seções. Sem quebras de linha dentro de uma seção.
 - NUNCA repita o nome de uma seção. Se uma seção tem MÚLTIPLOS achados, TODOS vão na MESMA linha, separados com PONTOS (.). NUNCA crie linhas separadas com o mesmo nome de seção para achados distintos. Ex CORRETO: "Porções incluídas do tórax: Massa pulmonar de 45 mm no lobo superior direito. Nódulos pulmonares de 10 e 12 mm no lobo inferior direito." Ex INCORRETO (PROIBIDO): "Porções incluídas do tórax: Massa pulmonar de 45 mm.\nPorções incluídas do tórax: Nódulos pulmonares de 10 e 12 mm."
+- ESTA REGRA É SOBRE LINHAS, NÃO SOBRE FRASES. Se o radiologista ditou um parágrafo corrido descrevendo vários achados encadeados, RESPEITE-O TAL COMO ESTÁ: a sua redação, as suas frases, os seus conectores e a sua pontuação. NÃO o corte em frases curtas nem o reescreva em estilo telegráfico. O que a regra proíbe é REPETIR o nome da seção em várias linhas; não o autoriza a reescrever a prosa do radiologista.
 - NÃO use asteriscos (*), cerquilhas (#), hífens (-), marcadores, negrito nem nenhuma formatação markdown.
 - NÃO numere as seções.
 - NÃO adicione cabeçalhos como "ACHADOS" nem agrupamentos. Apenas a lista plana de seções.
@@ -297,6 +307,10 @@ ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any
 - "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
 - Filler verbs (only in text YOU generate, NOT in the radiologist's dictated findings): "noted", "observed", "identified", "seen", "demonstrated", "visualized", "detected", "appreciated", "is noted", "is observed", "is seen", "are identified", "se observa", "se identifica", "se evidencia". In normality sections and text you write, state findings directly without introductory verbs. E.g.: "12 mm hepatic nodule in segment VI." instead of "A 12 mm hepatic nodule is noted in segment VI." EXCEPTION: if the radiologist used these words in their dictation, preserve them as-is.
 If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
+
+DICTATED RECOMMENDATIONS — NOT FINDINGS:
+If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed at the end of the conclusion, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
+Do not rephrase it or turn it into a finding. Simply leave it out of the findings.
 
 DICTATED NEGATIVE FINDINGS:
 When the radiologist explicitly dictates the ABSENCE of a finding (e.g. "no colonic mass", "no CT evidence of acute pulmonary embolism", "no aortic dissection", "no lithiasis identified"), this is a relevant negative finding and MUST be included in the corresponding anatomical section. Do not omit it or replace it with a generic normality phrase. Faithfully reproduce the dictated negation.
@@ -346,6 +360,7 @@ OUTPUT FORMAT — STRICT, NO EXCEPTIONS:
 - First letter of section name in UPPERCASE, rest in lowercase. Colon. One space. Description. Period.
 - One line per section. No blank lines between sections. No line breaks within a section.
 - NEVER repeat a section name. If a section has MULTIPLE findings, ALL go on the SAME line, separated by PERIODS (.). NEVER create separate lines with the same section name for different findings. CORRECT: "Included portions of the chest: 45 mm pulmonary mass in the right upper lobe. 10 and 12 mm pulmonary nodules in the right lower lobe." INCORRECT (FORBIDDEN): "Included portions of the chest: 45 mm pulmonary mass.\nIncluded portions of the chest: 10 and 12 mm pulmonary nodules."
+- THIS RULE IS ABOUT LINES, NOT SENTENCES. If the radiologist dictated a flowing paragraph describing several chained findings, KEEP IT AS IT IS: their wording, their sentences, their connectives and their punctuation. Do NOT chop it into short sentences or rewrite it in telegraphic style. What the rule forbids is REPEATING the section name across lines; it does not license rewriting the radiologist's prose.
 - Do NOT use asteriscos (*), hashes (#), dashes (-), bullets, bold or any markdown formatting.
 - Do NOT number the sections.
 - Do NOT add headings like "FINDINGS" or groupings. Only the flat list of sections.
@@ -1074,6 +1089,10 @@ REGLAS (sin excepciones):
 - CADA hallazgo del dictado DEBE aparecer en el informe. NUNCA omitas un hallazgo dictado.
 - Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta.
 
+RECOMENDACIONES DICTADAS — NO SON HALLAZGOS:
+Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca al final de la conclusión, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
+No la reformules ni la conviertas en hallazgo. Simplemente no la incluyas en los hallazgos.
+
 HALLAZGOS NEGATIVOS DICTADOS:
 Cuando el radiólogo dicta explícitamente la AUSENCIA de un hallazgo (ej: "no masa colónica", "sin evidencia de TEP"), esto es un hallazgo negativo relevante y DEBE incluirse.
 
@@ -1139,6 +1158,10 @@ REGRAS (sem exceções):
 - CADA achado do ditado DEVE aparecer no laudo. NUNCA omita um achado ditado.
 - Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta.
 
+RECOMENDAÇÕES DITADAS — NÃO SÃO ACHADOS:
+Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada no fim da conclusão, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
+Não a reformule nem a converta em achado. Simplesmente não a inclua nos achados.
+
 ACHADOS NEGATIVOS DITADOS:
 Quando o radiologista dita explicitamente a AUSÊNCIA de um achado (ex: "sem massa colônica", "sem evidência de TEP"), isso é um achado negativo relevante e DEVE ser incluído.
 
@@ -1202,6 +1225,10 @@ RULES (no exceptions):
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE:
 - EVERY dictated finding MUST appear in the report. NEVER omit a dictated finding.
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response.
+
+DICTATED RECOMMENDATIONS — NOT FINDINGS:
+If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed at the end of the conclusion, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
+Do not rephrase it or turn it into a finding. Simply leave it out of the findings.
 
 DICTATED NEGATIVE FINDINGS:
 When the radiologist explicitly dictates the ABSENCE of a finding (e.g. "no colonic mass", "no evidence of PE"), this is a relevant negative finding and MUST be included.
@@ -1528,6 +1555,9 @@ export function buildConclusionPrompt(params: {
    *  leave out. Both are optional and the normal triage applies to the rest. */
   mustInclude?: string[];
   exclude?: string[];
+  /** Management recommendations the radiologist dictated, verbatim. Never
+   *  generated: these are their words, lifted out of the findings. */
+  dictatedRecommendations?: string[];
 }): { system: string; user: string } {
   if (params.isCardiacMri) {
     return buildCardiacConclusionPrompt({
@@ -2013,6 +2043,35 @@ GOLDEN RULE: when in doubt, describe the finding instead of interpreting it.`;
       "Apply the remaining rules normally to the other findings. Still in force without exception: describe without diagnosing, no inferences, no recommendations, and add nothing that is not in the findings.",
     ].filter(Boolean).join("\n\n");
     userMsg += `\n\n${lang === "es" ? es : lang === "pt" ? pt : en}`;
+  }
+
+  // The radiologist's own recommendations, reproduced rather than written.
+  // The ban on recommendations above is about inventing them; these were
+  // dictated, and belong at the end of the conclusion where a clinician looks.
+  const recs = params.dictatedRecommendations?.filter((r) => r.trim()) ?? [];
+  if (recs.length > 0) {
+    const list = recs.map((r) => `- ${r.trim()}`).join("\n");
+    const block = lang === "es"
+      ? `RECOMENDACIONES DICTADAS POR EL RADIÓLOGO — REPRODÚCELAS, NO LAS ESCRIBAS TÚ:
+${list}
+
+- Van al FINAL de la conclusión, después de los hallazgos, como último punto o última frase.
+- CÓPIALAS LITERALMENTE. No las reformules, no las resumas, no las amplíes, no las reordenes y no añadas ninguna que no esté en esta lista.
+- Esta es la ÚNICA excepción a la prohibición de recomendar: son palabras del radiólogo, no tuyas. Todo lo demás sigue igual: describir sin diagnosticar, sin inferencias, y no añadir nada que no esté en los hallazgos.`
+      : lang === "pt"
+      ? `RECOMENDAÇÕES DITADAS PELO RADIOLOGISTA — REPRODUZA-AS, NÃO AS ESCREVA:
+${list}
+
+- Vão no FIM da conclusão, depois dos achados, como último ponto ou última frase.
+- COPIE-AS LITERALMENTE. Não as reformule, não as resuma, não as amplie, não as reordene e não acrescente nenhuma que não esteja nesta lista.
+- Esta é a ÚNICA exceção à proibição de recomendar: são palavras do radiologista, não suas. Todo o resto continua igual: descrever sem diagnosticar, sem inferências, e não acrescentar nada que não esteja nos achados.`
+      : `RECOMMENDATIONS DICTATED BY THE RADIOLOGIST — REPRODUCE THEM, DO NOT WRITE THEM:
+${list}
+
+- They go at the END of the conclusion, after the findings, as the last point or last sentence.
+- COPY THEM VERBATIM. Do not rephrase, summarise, expand or reorder them, and add none that is not on this list.
+- This is the ONLY exception to the ban on recommending: these are the radiologist's words, not yours. Everything else stands: describe without diagnosing, no inferences, and add nothing that is not in the findings.`;
+    userMsg += `\n\n${block}`;
   }
 
   return { system, user: userMsg };
