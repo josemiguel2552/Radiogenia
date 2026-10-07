@@ -1,9 +1,25 @@
 import { describe, it, expect } from "vitest";
 import { extractDictatedRecommendations, isRecommendationSentence } from "@/lib/dictated-recommendations";
-import { buildConclusionPrompt } from "@/lib/prompts";
+import { buildConclusionPrompt, buildFindingsPrompt } from "@/lib/prompts";
 import type { OutputLanguage } from "@/lib/types";
 
 const LANGS: OutputLanguage[] = ["es", "en", "pt"];
+
+function buildFindingsPromptFor(
+  outputLanguage: OutputLanguage,
+  paraphraseLevel: "none" | "light" | "free",
+) {
+  return buildFindingsPrompt({
+    template: "****FINDINGS****\n**Hígado**: {hígado}\n****CONCLUSION****\n{conclusion}",
+    dictation: "x",
+    modality: "CT",
+    findingsLength: "standard",
+    normalFieldsVerbosity: "standard",
+    paraphraseLevel,
+    outputLanguage,
+  });
+}
+
 
 describe("what counts as a recommendation the radiologist dictated", () => {
   it.each([
@@ -150,8 +166,7 @@ describe("the conclusion reproduces them and never writes its own", () => {
 });
 
 describe("the findings are told recommendations are not findings", () => {
-  it("says so in all three languages", async () => {
-    const { buildFindingsPrompt } = await import("@/lib/prompts");
+  it("says so in all three languages", () => {
     for (const [lang, marker] of [
       ["es", "RECOMENDACIONES DICTADAS — NO SON HALLAZGOS"],
       ["en", "DICTATED RECOMMENDATIONS — NOT FINDINGS"],
@@ -172,8 +187,7 @@ describe("the findings are told recommendations are not findings", () => {
 });
 
 describe("a dictated paragraph keeps its own shape", () => {
-  it("tells the findings prompt the line rule is not a licence to rewrite prose", async () => {
-    const { buildFindingsPrompt } = await import("@/lib/prompts");
+  it("tells the findings prompt the line rule is not a licence to rewrite prose", () => {
     for (const [lang, marker] of [
       ["es", "ESTA REGLA ES SOBRE LÍNEAS, NO SOBRE FRASES"],
       ["en", "THIS RULE IS ABOUT LINES, NOT SENTENCES"],
@@ -190,5 +204,55 @@ describe("a dictated paragraph keeps its own shape", () => {
       });
       expect(system).toContain(marker);
     }
+  });
+});
+
+describe("the radiologist's own wording survives into the findings", () => {
+  const build = (lang: OutputLanguage, paraphraseLevel: "none" | "light" | "free") =>
+    buildFindingsPromptFor(lang, paraphraseLevel);
+
+  it("states the fidelity principle in every language", async () => {
+    for (const [lang, marker] of [
+      ["es", "FIDELIDAD A LO QUE ESCRIBIÓ EL RADIÓLOGO"],
+      ["en", "FIDELITY TO WHAT THE RADIOLOGIST WROTE"],
+      ["pt", "FIDELIDADE AO QUE O RADIOLOGISTA ESCREVEU"],
+    ] as const) {
+      expect(build(lang, "light").system).toContain(marker);
+    }
+  });
+
+  it("makes the default level copy rather than improve", () => {
+    // The old "light" only listed what was allowed and never said to leave a
+    // correct sentence alone, so "by size criteria" came back as "meeting
+    // size criteria" — both valid, one of them not the radiologist's.
+    const system = build("en", "light").system;
+    expect(system).toContain("COPY THE RADIOLOGIST'S TEXT AS IT IS");
+    expect(system).toContain("by size criteria");
+    expect(system).toContain("meeting size criteria");
+    expect(system).toMatch(/is it wrong\?/i);
+  });
+
+  it("keeps the bar at wrong, not at improvable, in every language", () => {
+    for (const [lang, marker] of [
+      ["es", '"¿está mal?", no "¿podría quedar mejor?"'],
+      ["en", '"is it wrong?", not "could it read better?"'],
+      ["pt", '"está errado?", não "podia ficar melhor?"'],
+    ] as const) {
+      expect(build(lang, "light").system).toContain(marker);
+    }
+  });
+
+  it("tells even the free level not to churn equivalent wording", () => {
+    for (const [lang, marker] of [
+      ["es", "Cambiar una redacción válida por otra equivalente no mejora nada"],
+      ["en", "Swapping valid wording for equivalent wording improves nothing"],
+      ["pt", "Trocar uma redação válida por outra equivalente não melhora nada"],
+    ] as const) {
+      expect(build(lang, "free").system).toContain(marker);
+    }
+  });
+
+  it("leaves the literal level literal", () => {
+    expect(build("en", "none").system).toContain("Do not change any words");
   });
 });

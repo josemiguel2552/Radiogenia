@@ -42,7 +42,10 @@ const VERBOSITY_INSTRUCTIONS: Record<OutputLanguage, Record<NormalFieldsVerbosit
 const PARAPHRASE_INSTRUCTIONS: Record<OutputLanguage, Record<ParaphraseLevel, string>> = {
   es: {
     none: "Transcribe los hallazgos dictados de forma literal. No cambies ninguna palabra. Solo ubícalos en la sección correcta.",
-    light: "Puedes corregir gramática, orden sintáctico y errores de terminología médica (ej: 'supracolicular'→'supraclavicular', 'arthrosis' en abdomen→'artrosis/hidronefrosis'). Usa el término anatómico o patológico correcto según el contexto clínico y la modalidad. No cambies ningún dato clínico, medida ni descriptor.",
+    light: `Por defecto, COPIA EL TEXTO DEL RADIÓLOGO TAL CUAL. Solo intervén cuando algo está CLARAMENTE MAL: un término médico equivocado ('supracolicular'→'supraclavicular', 'arthrosis' en abdomen→'hidronefrosis'), una palabra que no existe, una concordancia rota.
+NO cambies una redacción válida por otra que te guste más. Si la frase se entiende y es correcta, va EXACTAMENTE como está escrita, aunque tú la dirías de otra forma. Ejemplo real de lo que NO debes hacer: "No supraclavicular or axillary lymphadenopathy by size criteria" → NO lo conviertas en "...meeting size criteria". Las dos son correctas, y la del radiólogo es la que manda.
+La vara de medir es "¿está mal?", no "¿podría quedar mejor?". Ante la duda, no toques.
+No cambies ningún dato clínico, medida ni descriptor.`,
     free: `Reescribe los hallazgos con estilo radiológico profesional, fluido y bien estructurado. Mejoras permitidas:
 - Mejorar la fluidez y legibilidad de las frases.
 - Reorganizar el orden DENTRO de cada sección para mayor claridad (ej: primero el dato principal, luego descriptores).
@@ -50,11 +53,15 @@ const PARAPHRASE_INSTRUCTIONS: Record<OutputLanguage, Record<ParaphraseLevel, st
 - Eliminar repeticiones y redundancias.
 - Unificar el estilo entre secciones (concordancia de tiempo verbal, estructura paralela).
 - Corregir gramática, ortografía y terminología.
+Incluso aquí: si una frase ya está bien escrita, DÉJALA. Cambiar una redacción válida por otra equivalente no mejora nada y le quita al radiólogo su voz.
 PROHIBIDO: añadir hallazgos, diagnósticos, interpretaciones o información que NO esté en el dictado. PROHIBIDO: omitir cualquier hallazgo, medida, lateralidad o dato clínico del dictado. Cada dato dictado DEBE aparecer en la salida. Si el radiólogo dijo "12 mm", no escribas "1.2 cm" ni redondees. Si dijo "derecho", no cambies a "izquierdo". Mantén la INTEGRIDAD CLÍNICA absoluta mientras mejoras la FORMA.`,
   },
   en: {
     none: "Transcribe dictated findings literally. Do not change any words. Only place them in the correct section.",
-    light: "You may correct grammar, syntax, and medical terminology errors (e.g. 'supracolicular'→'supraclavicular', 'arthrosis' in abdomen→'hydronephrosis'). Use the correct anatomical/pathological term based on clinical context and modality. Do not change any clinical data, measurements or descriptors.",
+    light: `By default, COPY THE RADIOLOGIST'S TEXT AS IT IS. Step in only where something is CLEARLY WRONG: a mistaken medical term ('supracolicular'→'supraclavicular', 'arthrosis' in abdomen→'hydronephrosis'), a word that does not exist, broken agreement.
+Do NOT swap valid wording for wording you prefer. If the sentence reads correctly, it goes in EXACTLY as written, even if you would have put it differently. A real example of what NOT to do: "No supraclavicular or axillary lymphadenopathy by size criteria" → do NOT turn it into "...meeting size criteria". Both are correct, and the radiologist's is the one that counts.
+The test is "is it wrong?", not "could it read better?". When in doubt, leave it.
+Do not change any clinical data, measurements or descriptors.`,
     free: `Rewrite findings in professional, fluent, well-structured radiological style. Allowed improvements:
 - Improve sentence flow and readability.
 - Reorganize order WITHIN each section for clarity (e.g., main finding first, then descriptors).
@@ -62,11 +69,15 @@ PROHIBIDO: añadir hallazgos, diagnósticos, interpretaciones o información que
 - Remove repetitions and redundancies.
 - Unify style across sections (verb tense consistency, parallel structure).
 - Correct grammar, spelling, and terminology.
+Even here: if a sentence is already well written, LEAVE IT. Swapping valid wording for equivalent wording improves nothing and costs the radiologist their voice.
 FORBIDDEN: adding findings, diagnoses, interpretations, or information NOT in the dictation. FORBIDDEN: omitting any finding, measurement, laterality, or clinical data from the dictation. Every dictated data point MUST appear in the output. If the radiologist said "12 mm", do not write "1.2 cm" or round. If they said "right", do not change to "left". Maintain ABSOLUTE CLINICAL INTEGRITY while improving the FORM.`,
   },
   pt: {
     none: "Transcreva os achados ditados de forma literal. Não mude nenhuma palavra. Apenas coloque-os na seção correta.",
-    light: "Pode corrigir gramática, ordem sintática e erros de terminologia médica (ex: 'supracolicular'→'supraclavicular'). Use o termo anatômico/patológico correto de acordo com o contexto clínico e a modalidade. Não mude nenhum dado clínico, medida ou descritor.",
+    light: `Por defeito, COPIE O TEXTO DO RADIOLOGISTA TAL COMO ESTÁ. Intervenha só onde algo está CLARAMENTE ERRADO: um termo médico equivocado ('supracolicular'→'supraclavicular'), uma palavra que não existe, uma concordância quebrada.
+NÃO troque uma redação válida por outra de que goste mais. Se a frase se entende e está correta, entra EXATAMENTE como está escrita, mesmo que você a dissesse de outra forma. Exemplo real do que NÃO fazer: "No supraclavicular or axillary lymphadenopathy by size criteria" → NÃO o converta em "...meeting size criteria". As duas estão corretas, e a do radiologista é a que manda.
+A régua é "está errado?", não "podia ficar melhor?". Na dúvida, não toque.
+Não mude nenhum dado clínico, medida ou descritor.`,
     free: `Reescreva os achados com estilo radiológico profissional, fluido e bem estruturado. Melhorias permitidas:
 - Melhorar a fluidez e legibilidade das frases.
 - Reorganizar a ordem DENTRO de cada seção para maior clareza (ex: primeiro o achado principal, depois descritores).
@@ -74,6 +85,7 @@ FORBIDDEN: adding findings, diagnoses, interpretations, or information NOT in th
 - Eliminar repetições e redundâncias.
 - Unificar o estilo entre seções (concordância verbal, estrutura paralela).
 - Corrigir gramática, ortografia e terminologia.
+Mesmo aqui: se uma frase já está bem escrita, DEIXE-A. Trocar uma redação válida por outra equivalente não melhora nada e tira ao radiologista a sua voz.
 PROIBIDO: adicionar achados, diagnósticos, interpretações ou informação que NÃO esteja no ditado. PROIBIDO: omitir qualquer achado, medida, lateralidade ou dado clínico do ditado. Cada dado ditado DEVE aparecer na saída. Se o radiologista disse "12 mm", não escreva "1,2 cm" nem arredonde. Se disse "direito", não mude para "esquerdo". Mantenha a INTEGRIDADE CLÍNICA absoluta enquanto melhora a FORMA.`,
   },
 };
@@ -144,6 +156,13 @@ FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ni
 - "no valorado", "no evaluado", "no analizado", "no descrito", "no mencionado", "no explorado", "no se describe", "no se explora", "no se valora", "no se analiza", "sin valorar", "sin evaluar", "sin describir", "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported".
 - Muletillas verbales (solo en texto generado por ti, NO en hallazgos dictados por el radiólogo): "se observa", "se evidencia", "se identifica", "se aprecia", "se demuestra", "se detecta", "se visualiza", "cabe destacar", "llama la atención", "noted", "observed", "identified", "seen", "demonstrated", "visualized". En secciones de normalidad y texto que tú redactes, escribe directamente sin verbos introductorios. Ej: "Nódulo hepático de 12 mm en segmento VI." en vez de "Se observa un nódulo hepático de 12 mm en segmento VI." EXCEPCIÓN: si el radiólogo usó estas palabras en su dictado, respétalas tal cual.
 Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
+
+FIDELIDAD A LO QUE ESCRIBIÓ EL RADIÓLOGO (principio general):
+El texto del radiólogo entra TAL CUAL. Tu trabajo es colocarlo en la sección correcta y rellenar lo que no mencionó, NO mejorar cómo lo dice.
+- Si una frase es correcta y se entiende, va palabra por palabra como está escrita, aunque tú la redactarías mejor.
+- Reescribir solo está justificado cuando algo está CLARAMENTE MAL: un término equivocado, una palabra inexistente, una concordancia rota. "Se podría decir mejor" NO es motivo.
+- Respeta sus conectores, su puntuación, su orden de palabras y sus abreviaturas.
+Un informe que suena a él y dice lo que él dijo vale más que uno más pulido que ya no es suyo.
 
 RECOMENDACIONES DICTADAS — NO SON HALLAZGOS:
 Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca en la conclusión, junto al hallazgo del que habla, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
@@ -227,6 +246,13 @@ FRASES ABSOLUTAMENTE PROIBIDAS (nunca escreva nenhuma destas em nenhuma seção,
 - Vícios de linguagem (apenas no texto gerado por você, NÃO nos achados ditados pelo radiologista): "observa-se", "evidencia-se", "identifica-se", "nota-se", "demonstra-se", "detecta-se", "visualiza-se", "cabe destacar", "chama atenção", "noted", "observed", "identified". Nas seções de normalidade e texto que você redigir, escreva diretamente sem verbos introdutórios. Ex: "Nódulo hepático de 12 mm no segmento VI." em vez de "Observa-se nódulo hepático de 12 mm no segmento VI." EXCEÇÃO: se o radiologista usou essas palavras no ditado, mantenha-as como estão.
 Se uma seção não é mencionada no ditado, SEMPRE escreva uma descrição de normalidade. JAMAIS indique que não foi avaliada.
 
+FIDELIDADE AO QUE O RADIOLOGISTA ESCREVEU (princípio geral):
+O texto do radiologista entra TAL COMO ESTÁ. O seu trabalho é colocá-lo na seção correta e preencher o que ele não mencionou, NÃO melhorar como o diz.
+- Se uma frase está correta e se entende, entra palavra por palavra como está escrita, mesmo que você a redigisse melhor.
+- Reescrever só se justifica quando algo está CLARAMENTE ERRADO: um termo equivocado, uma palavra inexistente, uma concordância quebrada. "Podia soar melhor" NÃO é motivo.
+- Respeite os seus conectores, a sua pontuação, a sua ordem de palavras e as suas abreviaturas.
+Um laudo que soa a ele e diz o que ele disse vale mais do que um mais polido que já não é seu.
+
 RECOMENDAÇÕES DITADAS — NÃO SÃO ACHADOS:
 Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada na conclusão, junto ao achado de que fala, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
 Não a reformule nem a converta em achado. Simplesmente não a inclua nos achados.
@@ -307,6 +333,13 @@ ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any
 - "not assessed", "not evaluated", "not analyzed", "not described", "not mentioned", "not reported", "not commented on", "not included", "not explored", "not examined", "not visualized for assessment", "no se describe", "no se valora", "no valorado".
 - Filler verbs (only in text YOU generate, NOT in the radiologist's dictated findings): "noted", "observed", "identified", "seen", "demonstrated", "visualized", "detected", "appreciated", "is noted", "is observed", "is seen", "are identified", "se observa", "se identifica", "se evidencia". In normality sections and text you write, state findings directly without introductory verbs. E.g.: "12 mm hepatic nodule in segment VI." instead of "A 12 mm hepatic nodule is noted in segment VI." EXCEPTION: if the radiologist used these words in their dictation, preserve them as-is.
 If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
+
+FIDELITY TO WHAT THE RADIOLOGIST WROTE (general principle):
+The radiologist's text goes in AS IT IS. Your job is to place it in the right section and fill in what they did not mention, NOT to improve how they said it.
+- If a sentence is correct and reads clearly, it goes in word for word as written, even if you would have phrased it better.
+- Rewriting is justified only where something is CLEARLY WRONG: a mistaken term, a word that does not exist, broken agreement. "It could read better" is NOT a reason.
+- Keep their connectives, their punctuation, their word order and their abbreviations.
+A report that sounds like them and says what they said beats a more polished one that is no longer theirs.
 
 DICTATED RECOMMENDATIONS — NOT FINDINGS:
 If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed in the conclusion, with the finding it is about, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
@@ -1089,6 +1122,13 @@ REGLAS (sin excepciones):
 - CADA hallazgo del dictado DEBE aparecer en el informe. NUNCA omitas un hallazgo dictado.
 - Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta.
 
+FIDELIDAD A LO QUE ESCRIBIÓ EL RADIÓLOGO (principio general):
+El texto del radiólogo entra TAL CUAL. Tu trabajo es colocarlo en la sección correcta y rellenar lo que no mencionó, NO mejorar cómo lo dice.
+- Si una frase es correcta y se entiende, va palabra por palabra como está escrita, aunque tú la redactarías mejor.
+- Reescribir solo está justificado cuando algo está CLARAMENTE MAL: un término equivocado, una palabra inexistente, una concordancia rota. "Se podría decir mejor" NO es motivo.
+- Respeta sus conectores, su puntuación, su orden de palabras y sus abreviaturas.
+Un informe que suena a él y dice lo que él dijo vale más que uno más pulido que ya no es suyo.
+
 RECOMENDACIONES DICTADAS — NO SON HALLAZGOS:
 Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca en la conclusión, junto al hallazgo del que habla, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
 No la reformules ni la conviertas en hallazgo. Simplemente no la incluyas en los hallazgos.
@@ -1158,6 +1198,13 @@ REGRAS (sem exceções):
 - CADA achado do ditado DEVE aparecer no laudo. NUNCA omita um achado ditado.
 - Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta.
 
+FIDELIDADE AO QUE O RADIOLOGISTA ESCREVEU (princípio geral):
+O texto do radiologista entra TAL COMO ESTÁ. O seu trabalho é colocá-lo na seção correta e preencher o que ele não mencionou, NÃO melhorar como o diz.
+- Se uma frase está correta e se entende, entra palavra por palavra como está escrita, mesmo que você a redigisse melhor.
+- Reescrever só se justifica quando algo está CLARAMENTE ERRADO: um termo equivocado, uma palavra inexistente, uma concordância quebrada. "Podia soar melhor" NÃO é motivo.
+- Respeite os seus conectores, a sua pontuação, a sua ordem de palavras e as suas abreviaturas.
+Um laudo que soa a ele e diz o que ele disse vale mais do que um mais polido que já não é seu.
+
 RECOMENDAÇÕES DITADAS — NÃO SÃO ACHADOS:
 Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada na conclusão, junto ao achado de que fala, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
 Não a reformule nem a converta em achado. Simplesmente não a inclua nos achados.
@@ -1225,6 +1272,13 @@ RULES (no exceptions):
 ⚠️⚠️ ZERO-OMISSION RULE — ABSOLUTE:
 - EVERY dictated finding MUST appear in the report. NEVER omit a dictated finding.
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response.
+
+FIDELITY TO WHAT THE RADIOLOGIST WROTE (general principle):
+The radiologist's text goes in AS IT IS. Your job is to place it in the right section and fill in what they did not mention, NOT to improve how they said it.
+- If a sentence is correct and reads clearly, it goes in word for word as written, even if you would have phrased it better.
+- Rewriting is justified only where something is CLEARLY WRONG: a mistaken term, a word that does not exist, broken agreement. "It could read better" is NOT a reason.
+- Keep their connectives, their punctuation, their word order and their abbreviations.
+A report that sounds like them and says what they said beats a more polished one that is no longer theirs.
 
 DICTATED RECOMMENDATIONS — NOT FINDINGS:
 If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed in the conclusion, with the finding it is about, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
