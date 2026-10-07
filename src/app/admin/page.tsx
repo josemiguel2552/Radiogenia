@@ -536,6 +536,10 @@ export default function AdminPage() {
   const [ftBatchSize, setFtBatchSize] = useState<string>("auto");
   const [ftAugmenting, setFtAugmenting] = useState(false);
   const [ftAugmentResult, setFtAugmentResult] = useState<{ originalCount: number; syntheticCount: number; totalCount: number } | null>(null);
+  // The augmented file itself, so it can be trained on rather than only
+  // downloaded. Before this it went to the browser and nowhere else.
+  const [ftAugmentedJsonl, setFtAugmentedJsonl] = useState<string | null>(null);
+  const [ftUploadingAugmented, setFtUploadingAugmented] = useState(false);
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -938,10 +942,34 @@ export default function AdminPage() {
     }
   }
 
+  /** Hands the augmented file to the same upload the plain one uses, so the
+   *  training panel below it picks up the file id with nothing else changed. */
+  async function handleUploadAugmented() {
+    if (!ftAugmentedJsonl) return;
+    setFtUploadingAugmented(true);
+    setFtError("");
+    setFtDataError(null);
+    try {
+      const blob = new Blob([ftAugmentedJsonl], { type: "application/jsonl" });
+      const form = new FormData();
+      form.append("file", blob, `radiogenai-finetune-augmented-${new Date().toISOString().slice(0, 10)}.jsonl`);
+      const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) { setFtDataError(data.error || "Upload failed"); return; }
+      setFtFileId(data.fileId);
+      setFtExamples(data.validExamples);
+    } catch (e) {
+      setFtDataError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setFtUploadingAugmented(false);
+    }
+  }
+
   async function handleAugmentData() {
     setFtAugmenting(true);
     setFtDataError(null);
     setFtAugmentResult(null);
+    setFtAugmentedJsonl(null);
     try {
       const params = new URLSearchParams();
       if (ftDataModality !== "all") params.set("modality", ftDataModality);
@@ -962,6 +990,7 @@ export default function AdminPage() {
       if (!augRes.ok) { setFtDataError(augData.error || "Augmentation failed"); setFtAugmenting(false); return; }
 
       setFtAugmentResult({ originalCount: augData.originalCount, syntheticCount: augData.syntheticCount, totalCount: augData.totalCount });
+      setFtAugmentedJsonl(augData.jsonl);
 
       const blob = new Blob([augData.jsonl], { type: "application/jsonl" });
       const url = URL.createObjectURL(blob);
@@ -2719,6 +2748,21 @@ export default function AdminPage() {
                         <p className="text-[11px] text-green-600">
                           {t("admin.ft_augment_result").replace("{0}", String(ftAugmentResult.originalCount)).replace("{1}", String(ftAugmentResult.syntheticCount)).replace("{2}", String(ftAugmentResult.totalCount))}
                         </p>
+                      )}
+                      {ftAugmentedJsonl && (
+                        <div className="space-y-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={handleUploadAugmented}
+                            disabled={ftUploadingAugmented}
+                          >
+                            {ftUploadingAugmented ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                            {ftUploadingAugmented ? t("admin.ft_uploading_augmented") : t("admin.ft_upload_augmented")}
+                          </Button>
+                          <p className="text-[10px] text-gray-500">{t("admin.ft_upload_augmented_hint")}</p>
+                        </div>
                       )}
                     </div>
 

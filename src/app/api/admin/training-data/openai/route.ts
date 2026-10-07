@@ -3,11 +3,17 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { getErrorMessage, getErrorStatus } from "@/lib/api-error";
 import { reconcileFindings } from "@/lib/training-preprocess";
+import { buildTrainingPrompt } from "@/lib/training-prompt";
 
 export const dynamic = "force-dynamic";
 
-const SYSTEM_PROMPT =
-  "You are a radiology report assistant. Given the study type, modality, and the radiologist's findings, generate a conclusion that accurately summarizes ONLY the findings provided. Do not include any information not present in the findings. Match the radiologist's writing style, terminology, and level of detail.";
+/**
+ * Each example is paired with the prompt the conclusion route actually sends
+ * for that case, built by the same function. A fine-tune trained against a
+ * different instruction than it meets in service learns a mapping that does
+ * not apply — which is what a 45-word generic instruction was doing here
+ * while production sent some 2,500 tokens of rules.
+ */
 
 interface TrainingExample {
   messages: { role: "system" | "user" | "assistant"; content: string }[];
@@ -90,17 +96,15 @@ async function fromReportsTable(
     })
     .map((r) => {
       const correctedFindings = reconcileFindings(r.findings_text!, r.conclusion_text!);
+      const prompt = buildTrainingPrompt({
+        findingsText: correctedFindings,
+        conclusionText: r.conclusion_text!,
+        clinicalInfo: r.clinical_context,
+      });
       return {
         messages: [
-          { role: "system" as const, content: SYSTEM_PROMPT },
-          {
-            role: "user" as const,
-            content: [
-              `Study: ${r.study_type} (${r.modality})`,
-              r.clinical_context ? `Clinical context: ${r.clinical_context}` : null,
-              `Findings:\n${correctedFindings}`,
-            ].filter(Boolean).join("\n\n"),
-          },
+          { role: "system" as const, content: prompt.system },
+          { role: "user" as const, content: prompt.user },
           { role: "assistant" as const, content: r.conclusion_text! },
         ],
       };
@@ -145,16 +149,14 @@ async function fromAuditLogs(
     const reconciledFindings = reconcileFindings(correctedFindings, correctedConclusion);
 
     modalities.add(mod);
+    const prompt = buildTrainingPrompt({
+      findingsText: reconciledFindings,
+      conclusionText: correctedConclusion,
+    });
     examples.push({
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            `Study: ${m.study_type || "Unknown"} (${mod})`,
-            `Findings:\n${reconciledFindings}`,
-          ].filter(Boolean).join("\n\n"),
-        },
+        { role: "system", content: prompt.system },
+        { role: "user", content: prompt.user },
         { role: "assistant", content: correctedConclusion },
       ],
     });
