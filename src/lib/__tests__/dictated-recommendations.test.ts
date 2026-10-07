@@ -91,6 +91,36 @@ describe("the conclusion reproduces them and never writes its own", () => {
       expect(/REPRODÚCELAS, NO LAS ESCRIBAS TÚ|REPRODUCE THEM, DO NOT WRITE THEM|REPRODUZA-AS, NÃO AS ESCREVA/.test(user)).toBe(true);
     });
 
+    it(`attaches each one to the finding it is about, not to the end (${lang})`, () => {
+      // Piled at the end they read as a block of admin; beside the lesion
+      // they belong to, they read as part of the finding.
+      const { user } = buildConclusionPrompt({
+        ...base,
+        outputLanguage: lang,
+        dictatedRecommendations: ["Se recomienda control ecográfico en 6 meses."],
+      });
+      expect(/JUNTO AL HALLAZGO DEL QUE HABLA|WITH THE FINDING IT IS ABOUT|JUNTO AO ACHADO DE QUE FALA/.test(user)).toBe(true);
+      expect(/NO las amontones todas al final|Do NOT pile them all at the end|NÃO as amontoe todas no fim/.test(user)).toBe(true);
+    });
+
+    it(`puts a finding back if a recommendation is about it (${lang})`, () => {
+      const { user } = buildConclusionPrompt({
+        ...base,
+        outputLanguage: lang,
+        dictatedRecommendations: ["Repetir en un año."],
+      });
+      expect(/habías descartado en el triaje|triaged out|descartado na triagem/.test(user)).toBe(true);
+    });
+
+    it(`keeps the end for recommendations about nothing in particular (${lang})`, () => {
+      const { user } = buildConclusionPrompt({
+        ...base,
+        outputLanguage: lang,
+        dictatedRecommendations: ["Correlacionar clínicamente."],
+      });
+      expect(/recomendaciones generales|general recommendations|recomendações gerais/.test(user)).toBe(true);
+    });
+
     it(`tells it to copy, not rephrase (${lang})`, () => {
       const { user } = buildConclusionPrompt({
         ...base,

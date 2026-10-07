@@ -146,7 +146,7 @@ FRASES ABSOLUTAMENTE PROHIBIDAS (nunca las escribas en ninguna sección, bajo ni
 Si una sección no se menciona en el dictado, SIEMPRE escribe una descripción de normalidad. JAMÁS indiques que no fue valorada.
 
 RECOMENDACIONES DICTADAS — NO SON HALLAZGOS:
-Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca al final de la conclusión, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
+Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca en la conclusión, junto al hallazgo del que habla, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
 No la reformules ni la conviertas en hallazgo. Simplemente no la incluyas en los hallazgos.
 
 HALLAZGOS NEGATIVOS DICTADOS:
@@ -228,7 +228,7 @@ FRASES ABSOLUTAMENTE PROIBIDAS (nunca escreva nenhuma destas em nenhuma seção,
 Se uma seção não é mencionada no ditado, SEMPRE escreva uma descrição de normalidade. JAMAIS indique que não foi avaliada.
 
 RECOMENDAÇÕES DITADAS — NÃO SÃO ACHADOS:
-Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada no fim da conclusão, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
+Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada na conclusão, junto ao achado de que fala, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
 Não a reformule nem a converta em achado. Simplesmente não a inclua nos achados.
 
 ACHADOS NEGATIVOS DITADOS:
@@ -309,7 +309,7 @@ ABSOLUTELY FORBIDDEN PHRASES (never write any of these in any section, under any
 If a section is not mentioned in the dictation, ALWAYS write a normality description. NEVER indicate that it was not assessed.
 
 DICTATED RECOMMENDATIONS — NOT FINDINGS:
-If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed at the end of the conclusion, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
+If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed in the conclusion, with the finding it is about, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
 Do not rephrase it or turn it into a finding. Simply leave it out of the findings.
 
 DICTATED NEGATIVE FINDINGS:
@@ -1090,7 +1090,7 @@ REGLAS (sin excepciones):
 - Antes de finalizar, VERIFICA que cada dato del dictado aparece en tu respuesta.
 
 RECOMENDACIONES DICTADAS — NO SON HALLAZGOS:
-Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca al final de la conclusión, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
+Si el radiólogo dicta una recomendación de manejo ("se recomienda control en 6 meses", "completar con RM", "correlacionar clínicamente", "repetir en un año"), NO es un hallazgo y NO va en ninguna sección anatómica. OMÍTELA aquí: se recoge aparte y se coloca en la conclusión, junto al hallazgo del que habla, que es donde el clínico la busca. Una recomendación pegada a una sección se lee como si ese órgano recomendara algo.
 No la reformules ni la conviertas en hallazgo. Simplemente no la incluyas en los hallazgos.
 
 HALLAZGOS NEGATIVOS DICTADOS:
@@ -1159,7 +1159,7 @@ REGRAS (sem exceções):
 - Antes de finalizar, VERIFIQUE que cada dado do ditado aparece na sua resposta.
 
 RECOMENDAÇÕES DITADAS — NÃO SÃO ACHADOS:
-Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada no fim da conclusão, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
+Se o radiologista dita uma recomendação de manejo ("recomenda-se controle em 6 meses", "completar com RM", "correlacionar clinicamente", "repetir em um ano"), NÃO é um achado e NÃO vai em nenhuma seção anatómica. OMITA-A aqui: é recolhida à parte e colocada na conclusão, junto ao achado de que fala, que é onde o clínico a procura. Uma recomendação colada a uma seção lê-se como se aquele órgão recomendasse algo.
 Não a reformule nem a converta em achado. Simplesmente não a inclua nos achados.
 
 ACHADOS NEGATIVOS DITADOS:
@@ -1227,7 +1227,7 @@ RULES (no exceptions):
 - Before finalizing, VERIFY that every piece of data from the dictation appears in your response.
 
 DICTATED RECOMMENDATIONS — NOT FINDINGS:
-If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed at the end of the conclusion, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
+If the radiologist dictates a management recommendation ("follow-up in 6 months", "complete with MRI", "clinical correlation", "repeat in a year"), it is NOT a finding and does NOT belong in any anatomical section. OMIT IT here: it is collected separately and placed in the conclusion, with the finding it is about, which is where a clinician looks for it. A recommendation attached to a section reads as though that organ were recommending something.
 Do not rephrase it or turn it into a finding. Simply leave it out of the findings.
 
 DICTATED NEGATIVE FINDINGS:
@@ -2055,20 +2055,26 @@ GOLDEN RULE: when in doubt, describe the finding instead of interpreting it.`;
       ? `RECOMENDACIONES DICTADAS POR EL RADIÓLOGO — REPRODÚCELAS, NO LAS ESCRIBAS TÚ:
 ${list}
 
-- Van al FINAL de la conclusión, después de los hallazgos, como último punto o última frase.
+- COLOCA CADA UNA JUNTO AL HALLAZGO DEL QUE HABLA, dentro del mismo punto y detrás de su descripción. Ej: "1. Lesión hepática de 12 mm en segmento VII. Se recomienda control ecográfico en 6 meses." NO las amontones todas al final.
+- Si una recomendación habla de un hallazgo que habías descartado en el triaje, inclúyelo: que el radiólogo recomiende algo sobre él significa que importa.
+- Solo las recomendaciones generales, que no se refieren a ningún hallazgo concreto (ej: "correlacionar clínicamente"), van al final.
 - CÓPIALAS LITERALMENTE. No las reformules, no las resumas, no las amplíes, no las reordenes y no añadas ninguna que no esté en esta lista.
 - Esta es la ÚNICA excepción a la prohibición de recomendar: son palabras del radiólogo, no tuyas. Todo lo demás sigue igual: describir sin diagnosticar, sin inferencias, y no añadir nada que no esté en los hallazgos.`
       : lang === "pt"
       ? `RECOMENDAÇÕES DITADAS PELO RADIOLOGISTA — REPRODUZA-AS, NÃO AS ESCREVA:
 ${list}
 
-- Vão no FIM da conclusão, depois dos achados, como último ponto ou última frase.
+- COLOQUE CADA UMA JUNTO AO ACHADO DE QUE FALA, dentro do mesmo ponto e depois da sua descrição. Ex: "1. Lesão hepática de 12 mm no segmento VII. Recomenda-se controle ecográfico em 6 meses." NÃO as amontoe todas no fim.
+- Se uma recomendação fala de um achado que você tinha descartado na triagem, inclua-o: que o radiologista recomende algo sobre ele significa que importa.
+- Só as recomendações gerais, que não se referem a nenhum achado concreto (ex: "correlacionar clinicamente"), vão no fim.
 - COPIE-AS LITERALMENTE. Não as reformule, não as resuma, não as amplie, não as reordene e não acrescente nenhuma que não esteja nesta lista.
 - Esta é a ÚNICA exceção à proibição de recomendar: são palavras do radiologista, não suas. Todo o resto continua igual: descrever sem diagnosticar, sem inferências, e não acrescentar nada que não esteja nos achados.`
       : `RECOMMENDATIONS DICTATED BY THE RADIOLOGIST — REPRODUCE THEM, DO NOT WRITE THEM:
 ${list}
 
-- They go at the END of the conclusion, after the findings, as the last point or last sentence.
+- PUT EACH ONE WITH THE FINDING IT IS ABOUT, inside the same point and after its description. e.g. "1. 12 mm hepatic lesion in segment VII. Ultrasound follow-up in 6 months is recommended." Do NOT pile them all at the end.
+- If a recommendation is about a finding you had triaged out, put that finding back in: the radiologist recommending something about it means it matters.
+- Only general recommendations, which refer to no particular finding (e.g. "clinical correlation"), go at the end.
 - COPY THEM VERBATIM. Do not rephrase, summarise, expand or reorder them, and add none that is not on this list.
 - This is the ONLY exception to the ban on recommending: these are the radiologist's words, not yours. Everything else stands: describe without diagnosing, no inferences, and add nothing that is not in the findings.`;
     userMsg += `\n\n${block}`;
