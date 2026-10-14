@@ -25,6 +25,8 @@ export default function HospitalOnboardingPage() {
   const tr = (es: string, en: string, pt: string) => (lang === "es" ? es : lang === "pt" ? pt : en);
 
   const [orgName, setOrgName] = useState<string | null>(null);
+  // A gifted institution fills in the same form with the money taken out.
+  const [gifted, setGifted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
 
@@ -37,7 +39,7 @@ export default function HospitalOnboardingPage() {
   const [method, setMethod] = useState<"card" | "transfer">("card");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState<null | "card" | "transfer">(search.get("paid") === "1" ? "card" : null);
+  const [done, setDone] = useState<null | "card" | "transfer" | "gifted">(search.get("paid") === "1" ? "card" : null);
 
   const load = useCallback(async () => {
     try {
@@ -45,6 +47,7 @@ export default function HospitalOnboardingPage() {
       if (!res.ok) { setInvalid(true); return; }
       const d = await res.json();
       setOrgName(d.orgName);
+      setGifted(d.gifted === true);
     } catch { setInvalid(true); }
     setLoading(false);
   }, [token]);
@@ -93,6 +96,7 @@ export default function HospitalOnboardingPage() {
         setSubmitting(false);
         return;
       }
+      if (d.method === "gifted") { setDone("gifted"); setSubmitting(false); return; }
       if (d.method === "card" && d.url) { window.location.href = d.url; return; }
       setDone("transfer");
     } catch {
@@ -130,12 +134,14 @@ export default function HospitalOnboardingPage() {
               </div>
             </div>
             <h1 className="text-xl font-bold text-white">
-              {done === "card"
-                ? tr("¡Pago recibido!", "Payment received!", "Pagamento recebido!")
-                : tr("Solicitud registrada", "Request registered", "Solicitação registada")}
+              {done === "gifted"
+                ? tr("Licencias activadas", "Licences activated", "Licenças ativadas")
+                : done === "card"
+                  ? tr("¡Pago recibido!", "Payment received!", "Pagamento recebido!")
+                  : tr("Solicitud registrada", "Request registered", "Solicitação registada")}
             </h1>
             <p className="text-sm text-gray-400 leading-relaxed">
-              {done === "card"
+              {done === "gifted" || done === "card"
                 ? tr("Cada radiólogo recibirá ahora un correo para crear su contraseña y entrar a la plataforma.",
                      "Each radiologist will now receive an email to create their password and access the platform.",
                      "Cada radiologista receberá agora um e-mail para criar a sua senha e aceder à plataforma.")
@@ -210,10 +216,19 @@ export default function HospitalOnboardingPage() {
             <Plus className="h-3.5 w-3.5" /> {tr("Añadir licencia", "Add licence", "Adicionar licença")}
           </button>
           <div className="flex items-baseline justify-between pt-2 border-t border-white/10">
-            <span className="text-xs text-gray-400">
-              {seats} × {SEAT_PRICE_EUR.toFixed(2)} €{tr("/mes", "/mo", "/mês")}
-            </span>
-            <span className="text-xl font-bold text-white">{total} €<span className="text-xs font-normal text-gray-400">{tr("/mes", "/mo", "/mês")}</span></span>
+            {gifted ? (
+              <>
+                <span className="text-xs text-gray-400">{seats} {tr("licencias", "licences", "licenças")}</span>
+                <span className="text-xl font-bold text-emerald-400">{tr("Sin coste", "No charge", "Sem custo")}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-gray-400">
+                  {seats} × {SEAT_PRICE_EUR.toFixed(2)} €{tr("/mes", "/mo", "/mês")}
+                </span>
+                <span className="text-xl font-bold text-white">{total} €<span className="text-xs font-normal text-gray-400">{tr("/mes", "/mo", "/mês")}</span></span>
+              </>
+            )}
           </div>
         </section>
 
@@ -267,7 +282,8 @@ export default function HospitalOnboardingPage() {
           </label>
         </section>
 
-        {/* 4 — Payment */}
+        {/* 4 — Payment (absent for a gifted institution) */}
+        {!gifted && (
         <section className="p-5 rounded-2xl border border-white/10 bg-white/[0.03] space-y-3">
           <h2 className="text-sm font-semibold text-white">4. {tr("Forma de pago", "Payment method", "Forma de pagamento")}</h2>
           <div className="grid sm:grid-cols-2 gap-3">
@@ -300,6 +316,7 @@ export default function HospitalOnboardingPage() {
             </p>
           )}
         </section>
+        )}
 
         {error && (
           <p className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
@@ -313,12 +330,18 @@ export default function HospitalOnboardingPage() {
           className="w-full h-12 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 font-semibold text-base"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" />
-            : method === "card"
-              ? tr(`Pagar ${total} €/mes`, `Pay €${total}/mo`, `Pagar ${total} €/mês`)
-              : tr("Solicitar datos bancarios", "Request bank details", "Solicitar dados bancários")}
+            : gifted
+              ? tr("Activar licencias", "Activate licences", "Ativar licenças")
+              : method === "card"
+                ? tr(`Pagar ${total} €/mes`, `Pay €${total}/mo`, `Pagar ${total} €/mês`)
+                : tr("Solicitar datos bancarios", "Request bank details", "Solicitar dados bancários")}
         </Button>
         <p className="text-[11px] text-gray-500 text-center pb-6">
-          {tr("Los pagos no son reembolsables. Puedes cancelar en cualquier momento escribiendo a info@radiogen.ai.",
+          {gifted
+            ? tr("Estas licencias se han concedido sin coste. Puedes escribirnos a info@radiogen.ai para cualquier cambio.",
+                 "These licences have been granted at no cost. Write to info@radiogen.ai for any change.",
+                 "Estas licenças foram concedidas sem custo. Escreva para info@radiogen.ai para qualquer alteração.")
+            : tr("Los pagos no son reembolsables. Puedes cancelar en cualquier momento escribiendo a info@radiogen.ai.",
               "Payments are non-refundable. You can cancel anytime by writing to info@radiogen.ai.",
               "Os pagamentos não são reembolsáveis. Pode cancelar quando quiser escrevendo para info@radiogen.ai.")}
         </p>

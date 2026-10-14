@@ -1,11 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Globe, Check, AlertTriangle, Building2 } from "lucide-react";
+import { Loader2, Globe, Check, AlertTriangle, Building2, Mail } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { createClient } from "@/lib/supabase/client";
 import { usePublicLang, nextLang, langLabel, type PublicLang } from "@/lib/public-i18n";
 
 const SUBSPECIALTIES: Record<PublicLang, string[]> = {
@@ -26,6 +25,9 @@ const S: Record<PublicLang, Record<string, string>> = {
     err_seats: "El hospital ha alcanzado su número de licencias. Contacta con tu coordinador.",
     err_subs: "Selecciona al menos una subespecialidad.",
     err_invalid: "Este enlace de alta no es válido o ha caducado.",
+    confirm_title: "Revisa tu correo",
+    confirm_body: "Te hemos enviado un enlace de confirmación a {0}. Ábrelo para activar tu cuenta y entrar.",
+    confirm_spam: "Si no aparece en unos minutos, mira en spam o correo no deseado.",
     loading: "Cargando…", have: "¿Ya tienes cuenta?", signin: "Inicia sesión",
   },
   en: {
@@ -39,6 +41,9 @@ const S: Record<PublicLang, Record<string, string>> = {
     err_seats: "The hospital has reached its license count. Contact your coordinator.",
     err_subs: "Select at least one subspecialty.",
     err_invalid: "This signup link is invalid or has expired.",
+    confirm_title: "Check your email",
+    confirm_body: "We have sent a confirmation link to {0}. Open it to activate your account and sign in.",
+    confirm_spam: "If it does not arrive within a few minutes, check your spam folder.",
     loading: "Loading…", have: "Already have an account?", signin: "Sign in",
   },
   pt: {
@@ -52,19 +57,22 @@ const S: Record<PublicLang, Record<string, string>> = {
     err_seats: "O hospital atingiu o número de licenças. Contate seu coordenador.",
     err_subs: "Selecione ao menos uma subespecialidade.",
     err_invalid: "Este link de cadastro é inválido ou expirou.",
+    confirm_title: "Verifique o seu email",
+    confirm_body: "Enviámos um link de confirmação para {0}. Abra-o para ativar a sua conta e entrar.",
+    confirm_spam: "Se não chegar em alguns minutos, verifique a pasta de spam.",
     loading: "Carregando…", have: "Já tem conta?", signin: "Entrar",
   },
 };
 
 function HospitalSignupInner() {
   const params = useSearchParams();
-  const router = useRouter();
   const { lang, setLang } = usePublicLang();
   const token = params.get("token") || "";
   const t = (k: string) => S[lang][k] || S.es[k] || k;
 
   const [hospital, setHospital] = useState<string | null>(null);
   const [tokenState, setTokenState] = useState<"loading" | "ok" | "invalid">("loading");
+  const [done, setDone] = useState(false);
   const [name, setName] = useState("");
   const [subs, setSubs] = useState<string[]>([]);
   const [avg, setAvg] = useState("");
@@ -108,16 +116,10 @@ function HospitalSignupInner() {
         setSubmitting(false);
         return;
       }
-      // Immediate access: sign in with the credentials just created.
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-      if (signInError) {
-        // Account exists but auto-login failed — send them to login.
-        router.push("/auth/login");
-        return;
-      }
-      router.push("/dashboard");
-      router.refresh();
+      // The account is created unconfirmed, so signing in here would fail by
+      // design. Tell them to open the email instead.
+      setDone(true);
+      setSubmitting(false);
     } catch {
       setError(t("err_generic"));
       setSubmitting(false);
@@ -150,7 +152,20 @@ function HospitalSignupInner() {
           </div>
         )}
 
-        {tokenState === "ok" && (
+        {done && (
+          <div className="text-center space-y-3 py-10">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Mail className="h-6 w-6 text-emerald-400" />
+            </div>
+            <p className="text-white font-semibold">{t("confirm_title")}</p>
+            <p className="text-sm text-gray-400 max-w-sm mx-auto">
+              {t("confirm_body").replace("{0}", email.trim().toLowerCase())}
+            </p>
+            <p className="text-xs text-gray-500">{t("confirm_spam")}</p>
+          </div>
+        )}
+
+        {tokenState === "ok" && !done && (
           <>
             <div>
               {hospital && (

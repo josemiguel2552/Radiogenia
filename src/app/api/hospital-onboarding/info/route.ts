@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const service = createServiceClient();
     const { data: org } = await service
       .from("organizations")
-      .select("id, name, is_active")
+      .select("id, name, is_active, billing_mode")
       .eq("onboarding_token", token)
       .maybeSingle();
 
@@ -34,6 +34,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       orgName: org.name,
+      // A gifted institution gets the same form without the money: the page
+      // reads this to drop the price, the payment choice and the totals.
+      gifted: org.billing_mode === "gifted",
       seatPrice: SEAT_PRICE_EUR,
       minSeats: MIN_SEATS,
       lastOrder: lastOrder || null,

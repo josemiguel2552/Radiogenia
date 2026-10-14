@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { activateSeatOrder } from "@/lib/activate-seat-order";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
 import { HOSPITAL_TERMS_VERSION, SEAT_PRICE_EUR, MIN_SEATS } from "@/lib/hospital-terms";
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     const service = createServiceClient();
     const { data: org } = await service
       .from("organizations")
-      .select("id, name, is_active")
+      .select("id, name, is_active, billing_mode")
       .eq("onboarding_token", token)
       .maybeSingle();
     if (!org || !org.is_active) return NextResponse.json({ error: "invalid_token" }, { status: 404 });
@@ -96,6 +97,21 @@ export async function POST(req: NextRequest) {
 
     // Tell the owner a new institutional order landed (best-effort).
     sendHospitalOrderNotice(org.name, seats, paymentMethod, contactName, contactEmail).catch(() => {});
+
+    // A gifted hospital is not buying anything: the order is recorded for the
+    // audit trail and the seats are provisioned straight away, with no payment
+    // step and no Stripe.
+    if (org.billing_mode === "gifted") {
+      await service.from("org_seat_orders").update({ status: "paid" }).eq("id", order.id);
+      const res = await activateSeatOrder(order.id);
+      return NextResponse.json({
+        ok: true,
+        method: "gifted",
+        orderId: order.id,
+        activated: res.activated,
+        errors: res.errors,
+      });
+    }
 
     if (paymentMethod === "transfer") {
       await sendHospitalTransferInstructions(contactEmail, org.name, seats, SEAT_PRICE_EUR);

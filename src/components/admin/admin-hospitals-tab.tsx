@@ -16,6 +16,7 @@ import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 interface Hospital {
   id: string; name: string; slug: string; billing_email: string | null;
   max_seats: number; is_active: boolean; is_pilot: boolean; active_members: number;
+  region?: string | null; billing_mode?: string | null;
   signup_token: string;
   onboarding_token?: string | null;
   trial_token?: string | null;
@@ -60,6 +61,9 @@ export function AdminHospitalsTab() {
   const [cName, setCName] = useState("");
   const [cEmail, setCEmail] = useState("");
   const [cSeats, setCSeats] = useState("8");
+  // Which interface its radiologists get, and whether the institution pays.
+  const [cRegion, setCRegion] = useState<"" | "eu" | "us" | "open">("");
+  const [cGifted, setCGifted] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -79,10 +83,15 @@ export function AdminHospitalsTab() {
       const slug = cName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 40) || `h-${Date.now()}`;
       const res = await fetch("/api/admin/organizations", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: cName.trim(), slug, billing_email: cEmail.trim() || null, max_seats: Number(cSeats) || 8 }),
+        body: JSON.stringify({
+          name: cName.trim(), slug, billing_email: cEmail.trim() || null,
+          max_seats: Number(cSeats) || 8,
+          region: cRegion || undefined,
+          billing_mode: cGifted ? "gifted" : "paid",
+        }),
       });
       if (res.ok) {
-        setCreateOpen(false); setCName(""); setCEmail(""); setCSeats("8");
+        setCreateOpen(false); setCName(""); setCEmail(""); setCSeats("8"); setCRegion(""); setCGifted(false);
         await load();
       }
     } catch { /* ignore */ }
@@ -121,7 +130,11 @@ export function AdminHospitalsTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{h.name}</p>
-                  <p className="text-[11px] text-gray-500">{h.active_members}/{h.max_seats} radiólogos{h.billing_email ? ` · ${h.billing_email}` : ""}</p>
+                  <p className="text-[11px] text-gray-500">
+                    {h.active_members}/{h.max_seats} radiólogos{h.billing_email ? ` · ${h.billing_email}` : ""}
+                    {h.region ? ` · ${h.region === "eu" ? "Europa" : h.region === "us" ? "EE.UU." : "Latam"}` : ""}
+                    {h.billing_mode === "gifted" ? " · regalado" : ""}
+                  </p>
                 </div>
                 {h.is_pilot && <Badge variant="secondary" className="text-[10px]">Piloto</Badge>}
                 {!h.is_active && <Badge variant="outline" className="text-[10px] text-amber-600">Inactivo</Badge>}
@@ -147,6 +160,28 @@ export function AdminHospitalsTab() {
               <label className="text-xs text-gray-500 mb-1 block">Número de licencias</label>
               <Input value={cSeats} onChange={(e) => setCSeats(e.target.value.replace(/[^0-9]/g, ""))} className="h-9 w-24" inputMode="numeric" />
             </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Versión de la plataforma</label>
+              <select
+                value={cRegion}
+                onChange={(e) => setCRegion(e.target.value as "" | "eu" | "us" | "open")}
+                className="h-9 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 text-sm"
+              >
+                <option value="">Automática (según el país de cada radiólogo)</option>
+                <option value="open">Latinoamérica — versión completa</option>
+                <option value="eu">Europa — solo documentación (MDR)</option>
+                <option value="us">Estados Unidos — solo documentación (FDA)</option>
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Decide qué interfaz ven sus radiólogos. En Europa y EE.UU. se ocultan clasificación, recomendaciones y asistente de casos.
+              </p>
+            </div>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={cGifted} onChange={(e) => setCGifted(e.target.checked)} className="mt-0.5" />
+              <span className="text-xs text-gray-600 dark:text-gray-300">
+                Hospital regalado — su enlace institucional no pedirá pago y las licencias se activan al enviarlo.
+              </span>
+            </label>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="ghost" size="sm" onClick={() => setCreateOpen(false)}>Cancelar</Button>
               <Button size="sm" onClick={createHospital} disabled={saving || !cName.trim()}>

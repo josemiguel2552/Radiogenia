@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     // Resolve token → hospital, and enforce seat limit.
     const { data: org } = await service
       .from("organizations")
-      .select("id, name, is_active, max_seats")
+      .select("id, name, is_active, max_seats, region")
       .eq("signup_token", token)
       .maybeSingle();
     if (!org || !org.is_active) return NextResponse.json({ error: "invalid_token" }, { status: 404 });
@@ -52,12 +53,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "seats_full" }, { status: 409 });
     }
 
-    // Create the auth user with the chosen password (immediate access — no
-    // email verification gate for hospital members).
+    // The address has to be confirmed before the account works. Created
+    // unconfirmed so Supabase itself refuses the sign-in until the link is
+    // clicked, rather than this code inventing a second gate alongside it.
     const { data: authData, error: authError } = await service.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: { name },
     });
     if (authError) {
@@ -77,8 +79,7 @@ export async function POST(req: NextRequest) {
       role: "radiologist",
       subscription_plan: "free",
       approved: true,
-      email_verified: true,
-      email_verified_at: new Date().toISOString(),
+      email_verified: false,
       billing_period_start: new Date().toISOString(),
       reports_used_this_month: 0,
       dictation_seconds_used: 0,
@@ -86,6 +87,16 @@ export async function POST(req: NextRequest) {
       avg_reports_month: avgReportsMonth,
       hospital: org.name,
     });
+
+    // The hospital decides which regime its radiologists work under. Without
+    // it the region fell back to the country on the profile — which this form
+    // never asks for — and then to the IP the signup arrived through, so a
+    // Latin American hospital could end up on the European feature set.
+    if (org.region === "eu" || org.region === "us" || org.region === "open") {
+      try {
+        await service.from("profiles").update({ region_override: org.region }).eq("id", userId);
+      } catch { /* column may predate the migration; region then infers as before */ }
+    }
 
     await service.from("user_model_config").insert({ user_id: userId }).select().maybeSingle();
 
@@ -99,7 +110,33 @@ export async function POST(req: NextRequest) {
       deactivated_at: null,
     }, { onConflict: "org_id,user_id" });
 
-    return NextResponse.json({ ok: true, email });
+    // Confirmation link. "signup" is the type meant for an unconfirmed user;
+    // magiclink is the fallback, since it also confirms the address on use.
+    let confirmUrl: string | null = null;
+    const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+    for (const type of ["signup", "magiclink"] as const) {
+      try {
+        const { data: linkData } = await service.auth.admin.generateLink(
+          type === "signup" ? { type, email, password } : { type, email },
+        );
+        if (linkData?.properties?.hashed_token) {
+          confirmUrl = `${base}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=${type}`;
+          break;
+        }
+      } catch (err) {
+        console.error(`[hospital-signup] ${type} link error: ${err}`);
+      }
+    }
+
+    try {
+      await sendWelcomeEmail(email, name, "es", confirmUrl, null);
+    } catch (err) {
+      console.error(`[hospital-signup] email error: ${err}`);
+    }
+
+    // needsConfirmation tells the page to say "check your email" instead of
+    // signing them straight in, which would now fail.
+    return NextResponse.json({ ok: true, email, needsConfirmation: true, confirmSent: !!confirmUrl });
   } catch (error) {
     return toErrorResponse(error);
   }

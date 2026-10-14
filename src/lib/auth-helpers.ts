@@ -518,9 +518,18 @@ export async function getUserRegion(userId: string, connectionCountry?: string |
   const service = createServiceClient();
   const { data } = await service
     .from("profiles")
-    .select("country")
+    .select("country, region_override")
     .eq("id", userId)
     .maybeSingle();
+
+  // A hospital decides the regime its radiologists work under. Inferring it
+  // per user put members of the same institution on different feature sets
+  // depending on the country on their profile, or the edge their signup came
+  // through. Written server-side only, so it is the admin's decision and not
+  // the account holder's.
+  const override = data?.region_override;
+  if (override === "eu" || override === "us" || override === "open") return override;
+
   return resolveRegion(data?.country, connectionCountry);
 }
 

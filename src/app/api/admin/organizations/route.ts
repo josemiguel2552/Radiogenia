@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const { userId } = await requireAdmin();
     const service = createServiceClient();
 
-    const { name, slug, billing_email, max_seats } = await req.json();
+    const { name, slug, billing_email, max_seats, region, billing_mode } = await req.json();
     if (!name || !slug) {
       return NextResponse.json({ error: "Missing name or slug" }, { status: 400 });
     }
@@ -59,6 +59,11 @@ export async function POST(req: NextRequest) {
         slug,
         billing_email: billing_email || null,
         max_seats: max_seats || 50,
+        // Which legal regime its radiologists work under, and whether the
+        // institution is buying seats or being given them. null region keeps
+        // the old behaviour of inferring per user.
+        ...(region === "eu" || region === "us" || region === "open" ? { region } : {}),
+        ...(billing_mode === "gifted" ? { billing_mode } : {}),
         created_by: userId,
       })
       .select()
@@ -76,7 +81,7 @@ export async function PUT(req: NextRequest) {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { id, name, slug, billing_email, max_seats, is_active, is_pilot } = await req.json();
+    const { id, name, slug, billing_email, max_seats, is_active, is_pilot, region, billing_mode } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing organization id" }, { status: 400 });
 
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -86,6 +91,8 @@ export async function PUT(req: NextRequest) {
     if (max_seats !== undefined) update.max_seats = max_seats;
     if (is_active !== undefined) update.is_active = is_active;
     if (is_pilot !== undefined) update.is_pilot = is_pilot;
+    if (region !== undefined) update.region = region === "" ? null : region;
+    if (billing_mode === "paid" || billing_mode === "gifted") update.billing_mode = billing_mode;
 
     const { error } = await service.from("organizations").update(update).eq("id", id);
     if (error) return dbErrorResponse(error);
