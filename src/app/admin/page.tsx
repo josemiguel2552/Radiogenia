@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
-  Eye, EyeOff, FileText, Zap, TrendingUp, CreditCard,
+  Eye, EyeOff, Zap, TrendingUp,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw, AlertTriangle,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
   MessageSquare, DollarSign, Sparkles, ShieldAlert, Plus,
@@ -40,6 +40,7 @@ const AdminWaitlistTab = nextDynamic(() => import("@/components/admin/admin-wait
 const AdminCostsTab = nextDynamic(() => import("@/components/admin/admin-costs-tab").then((m) => m.AdminCostsTab), { ssr: false, loading: adminTabLoading });
 const AdminHospitalsTab = nextDynamic(() => import("@/components/admin/admin-hospitals-tab").then((m) => m.AdminHospitalsTab), { ssr: false, loading: adminTabLoading });
 const AdminEngagementTab = nextDynamic(() => import("@/components/admin/admin-engagement-tab").then((m) => m.AdminEngagementTab), { ssr: false, loading: adminTabLoading });
+const AdminOverviewTab = nextDynamic(() => import("@/components/admin/admin-overview-tab").then((m) => m.AdminOverviewTab), { ssr: false, loading: adminTabLoading });
 const AdminManualDownload = nextDynamic(() => import("@/components/admin/admin-manual-download").then((m) => m.AdminManualDownload), { ssr: false, loading: adminTabLoading });
 
 interface GlobalConfig {
@@ -334,31 +335,6 @@ export default function AdminPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   /* ── Live AI provider balance / spend ── */
-  interface AiBalanceCard {
-    provider: "deepseek" | "openai" | "claude";
-    balance: number | null;
-    balanceCurrency: string | null;
-    providerSpendMtd: number | null;
-    loggedSpendMtd: number;
-    status: "ok" | "no_key" | "unsupported" | "error";
-    detail?: string;
-  }
-  const [aiBalance, setAiBalance] = useState<AiBalanceCard[] | null>(null);
-  const [aiBalanceLoading, setAiBalanceLoading] = useState(false);
-
-  const loadAiBalance = useCallback(async () => {
-    setAiBalanceLoading(true);
-    try {
-      const res = await fetch("/api/admin/ai-balance");
-      if (res.ok) {
-        const d = await res.json();
-        setAiBalance(d.providers || []);
-      }
-    } catch { /* card shows unavailable */ }
-    setAiBalanceLoading(false);
-  }, []);
-
-  useEffect(() => { if (tab === "overview") loadAiBalance(); }, [tab, loadAiBalance]);
 
   /* ── Legacy purge (accounts from before the card-first cutover) ── */
   interface PurgeCandidate {
@@ -1008,7 +984,6 @@ export default function AdminPage() {
 
   const radiologists = users.filter((u) => u.role !== "admin");
   const pendingUsers = users.filter((u) => u.approved === false && u.invitation_code);
-  const totalReports = users.reduce((s, u) => s + u.report_count, 0);
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: t("admin.tab_overview"), icon: <BarChart3 className="h-4 w-4" /> },
@@ -1076,335 +1051,7 @@ export default function AdminPage() {
         </div>
 
         {/* ═══ OVERVIEW ═══ */}
-        {tab === "overview" && (
-          <div className="space-y-6">
-            {/* Live AI provider balance / month-to-date spend */}
-            <Card>
-              <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-                <Plug className="h-4 w-4 text-emerald-500" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.ai_balance_title")}</h3>
-                <button
-                  onClick={loadAiBalance}
-                  className="ml-auto p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                  title={t("conv.refresh")}
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${aiBalanceLoading ? "animate-spin" : ""}`} />
-                </button>
-              </div>
-              <CardContent className="pt-0">
-                <div className="grid sm:grid-cols-3 gap-3">
-                  {(aiBalance || []).map((p) => {
-                    const name = p.provider === "deepseek" ? "DeepSeek" : p.provider === "openai" ? "OpenAI" : "Claude";
-                    const low = p.balance != null && p.balance < 5;
-                    return (
-                      <div key={p.provider} className="p-3.5 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{name}</p>
-                        {p.balance != null ? (
-                          <>
-                            <p className={`text-2xl font-bold ${low ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"}`}>
-                              {p.balanceCurrency === "USD" ? "$" : ""}{p.balance.toFixed(2)}
-                              {p.balanceCurrency && p.balanceCurrency !== "USD" && (
-                                <span className="text-xs font-normal text-gray-400"> {p.balanceCurrency}</span>
-                              )}
-                            </p>
-                            <p className="text-[10px] text-gray-500">{t("admin.ai_balance_label")}</p>
-                          </>
-                        ) : p.providerSpendMtd != null ? (
-                          <>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">${p.providerSpendMtd.toFixed(2)}</p>
-                            <p className="text-[10px] text-gray-500">{t("admin.ai_spend_provider")}</p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-2xl font-bold text-gray-400">—</p>
-                            <p className="text-[10px] text-gray-500">
-                              {p.status === "unsupported"
-                                ? t("admin.ai_balance_unsupported")
-                                : p.status === "no_key"
-                                ? t("admin.ai_balance_no_key")
-                                : t("admin.ai_balance_error")}
-                            </p>
-                          </>
-                        )}
-                        <p className="text-[10px] text-gray-400 mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-800">
-                          {t("admin.ai_spend_logged")}: ${p.loggedSpendMtd.toFixed(2)}
-                        </p>
-                      </div>
-                    );
-                  })}
-                  {!aiBalance && (
-                    <div className="sm:col-span-3 flex justify-center py-4">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <StatCard icon={<Users className="h-5 w-5 text-blue-500" />} label={t("admin.total_users")} value={stats?.totalUsers ?? radiologists.length} />
-              <StatCard icon={<FileText className="h-5 w-5 text-purple-500" />} label={t("admin.total_reports")} value={stats?.totalReports ?? totalReports} />
-              <StatCard icon={<TrendingUp className="h-5 w-5 text-violet-500" />} label={t("admin.reports_this_month")} value={stats?.reportsThisMonth ?? 0} />
-              <StatCard icon={<Mic className="h-5 w-5 text-violet-500" />} label={t("admin.dictation_min")} value={`${stats?.totalDictationMinutes ?? 0} min`} />
-              <StatCard icon={<CreditCard className="h-5 w-5 text-amber-500" />} label={t("admin.mrr")} value={`$${stats?.mrr?.toFixed(2) ?? "0.00"}`} />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Plan distribution */}
-              <Card>
-                <div className="px-5 pt-5 pb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.plan_distribution")}</h3>
-                </div>
-                <CardContent className="pt-0 space-y-3">
-                  {(["free", "starter", "professional"] as const).map((p) => {
-                    const count = stats?.planCounts?.[p] ?? 0;
-                    const total = stats?.totalUsers ?? 1;
-                    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                    return (
-                      <div key={p} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">{p}</span>
-                          <span className="text-gray-500">{count} {t("admin.users_count")} ({pct}%)</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              p === "free" ? "bg-gray-400" : p === "starter" ? "bg-blue-500" : "bg-purple-500"
-                            }`}
-                            style={{ width: `${Math.max(pct, 2)}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-
-              {/* Modality usage */}
-              <Card>
-                <div className="px-5 pt-5 pb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.reports_by_modality")}</h3>
-                </div>
-                <CardContent className="pt-0 space-y-2">
-                  {stats?.modalityCounts && Object.keys(stats.modalityCounts).length > 0 ? (
-                    Object.entries(stats.modalityCounts)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 8)
-                      .map(([mod, count]) => (
-                        <div key={mod} className="flex items-center justify-between text-xs">
-                          <span className="text-gray-700 dark:text-gray-300">{mod}</span>
-                          <Badge variant="secondary" className="text-[10px]">{count}</Badge>
-                        </div>
-                      ))
-                  ) : (
-                    <p className="text-xs text-gray-400 py-4 text-center">{t("admin.no_reports_yet")}</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* AI status */}
-            <Card>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Plug className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {selectedProvider?.label || provider} — {modelName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {config?.updated_at ? `${t("admin.updated")} ${new Date(config.updated_at).toLocaleDateString()}` : t("admin.global_ai_config")}
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setTab("ai")} className="text-xs gap-1.5">
-                  <Plug className="h-3 w-3" /> {t("admin.configure")}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Clinical checklist KB */}
-            <Card>
-              <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-amber-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.clinical_checklist_title")}</h3>
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">Beta</Badge>
-                  {checklistDirty && <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px]">Sin guardar</Badge>}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {checklistDirty && (
-                    <Button
-                      size="sm"
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white h-7"
-                      disabled={savingChecklist}
-                      onClick={async () => {
-                        setSavingChecklist(true);
-                        try {
-                          const res = await fetch("/api/admin/clinical-checklist", {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ sections: checklistSections }),
-                          });
-                          if (res.ok) { setChecklistDirty(false); }
-                        } finally { setSavingChecklist(false); }
-                      }}
-                    >
-                      {savingChecklist ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
-                      {t("admin.clinical_checklist_save")}
-                    </Button>
-                  )}
-                  {missingDefaultsCount > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7 gap-1 border-amber-300 text-amber-700 dark:text-amber-300 dark:border-amber-700"
-                      onClick={addMissingDefaults}
-                      title={t("admin.clinical_checklist_add_defaults_hint")}
-                    >
-                      <Plus className="h-3 w-3" />
-                      {t("admin.clinical_checklist_add_defaults")} ({missingDefaultsCount})
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={() => setChecklistExpanded(!checklistExpanded)} className="text-xs gap-1 h-7">
-                    <ChevronDown className={`h-3 w-3 transition-transform ${checklistExpanded ? "rotate-180" : ""}`} />
-                  </Button>
-                </div>
-              </div>
-              {checklistExpanded && (
-                <CardContent className="pt-0 space-y-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("admin.clinical_checklist_desc")}</p>
-
-                  {/* Structured sections view */}
-                  <div className="space-y-2">
-                    {checklistSections.map((section) => {
-                      const isOpen = expandedSections.has(section.id);
-                      return (
-                        <div key={section.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => setExpandedSections((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(section.id)) next.delete(section.id); else next.add(section.id);
-                              return next;
-                            })}
-                            className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`} />
-                              <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{section.name}</span>
-                              <Badge variant="secondary" className="text-[10px]">{section.conditions.length}</Badge>
-                            </div>
-                          </button>
-                          {isOpen && (
-                            <div className="px-3 py-2 space-y-2.5">
-                              {section.conditions.map((condition) => (
-                                <div key={condition.id} className="pl-4 border-l-2 border-amber-300 dark:border-amber-700">
-                                  <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">{condition.name}</p>
-                                  <ul className="space-y-0.5">
-                                    {condition.findings.map((finding, fi) => (
-                                      <li key={fi} className="text-[10px] text-gray-500 dark:text-gray-400 flex items-start gap-1">
-                                        <span className="text-amber-500 mt-0.5 flex-shrink-0">•</span>
-                                        <span>{finding}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {checklistSections.length === 0 && (
-                      <p className="text-xs text-gray-400 text-center py-4">No hay condiciones configuradas</p>
-                    )}
-                  </div>
-
-                  {/* Chat interface */}
-                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/30 dark:bg-amber-950/10 p-3 space-y-2">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                      <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{t("admin.checklist_chat_title")}</span>
-                    </div>
-
-                    {chatHistory.length > 0 && (
-                      <div className="max-h-48 overflow-y-auto space-y-1.5 mb-2">
-                        {chatHistory.map((msg, i) => (
-                          <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg ${
-                            msg.role === "user"
-                              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 ml-8"
-                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 mr-8 border border-gray-200 dark:border-gray-700"
-                          }`}>
-                            {msg.text}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={chatMessage}
-                        onChange={(e) => setChatMessage(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey && chatMessage.trim() && !chatLoading) {
-                            e.preventDefault();
-                            handleChecklistChat();
-                          }
-                        }}
-                        placeholder={t("admin.checklist_chat_placeholder")}
-                        className="flex-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        disabled={chatLoading}
-                      />
-                      <Button
-                        size="sm"
-                        className="text-xs bg-amber-600 hover:bg-amber-700 text-white h-7 px-3"
-                        disabled={chatLoading || !chatMessage.trim()}
-                        onClick={handleChecklistChat}
-                      >
-                        {chatLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "→"}
-                      </Button>
-                    </div>
-                    <p className="text-[9px] text-gray-400 dark:text-gray-500">{t("admin.checklist_chat_hint")}</p>
-                  </div>
-
-                  {/* Reset */}
-                  <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                      onClick={async () => {
-                        const res = await fetch("/api/admin/clinical-checklist", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ sections: [] }),
-                        });
-                        if (res.ok) {
-                          const reload = await fetch("/api/admin/clinical-checklist");
-                          if (reload.ok) {
-                            const d = await reload.json();
-                            setChecklistSections(d.sections || []);
-                            setChecklistDirty(false);
-                          }
-                        }
-                      }}
-                    >
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      {t("admin.clinical_checklist_reset")}
-                    </Button>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Hospital manual download */}
-            <Card>
-              <AdminManualDownload />
-            </Card>
-          </div>
-        )}
+        {tab === "overview" && <AdminOverviewTab onNavigate={(k) => setTab(k as Tab)} />}
 
         {/* ═══ USERS ═══ */}
         {tab === "users" && (
@@ -2278,6 +1925,182 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+            {/* Clinical checklist KB */}
+            <Card>
+              <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.clinical_checklist_title")}</h3>
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">Beta</Badge>
+                  {checklistDirty && <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px]">Sin guardar</Badge>}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {checklistDirty && (
+                    <Button
+                      size="sm"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white h-7"
+                      disabled={savingChecklist}
+                      onClick={async () => {
+                        setSavingChecklist(true);
+                        try {
+                          const res = await fetch("/api/admin/clinical-checklist", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ sections: checklistSections }),
+                          });
+                          if (res.ok) { setChecklistDirty(false); }
+                        } finally { setSavingChecklist(false); }
+                      }}
+                    >
+                      {savingChecklist ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
+                      {t("admin.clinical_checklist_save")}
+                    </Button>
+                  )}
+                  {missingDefaultsCount > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 gap-1 border-amber-300 text-amber-700 dark:text-amber-300 dark:border-amber-700"
+                      onClick={addMissingDefaults}
+                      title={t("admin.clinical_checklist_add_defaults_hint")}
+                    >
+                      <Plus className="h-3 w-3" />
+                      {t("admin.clinical_checklist_add_defaults")} ({missingDefaultsCount})
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setChecklistExpanded(!checklistExpanded)} className="text-xs gap-1 h-7">
+                    <ChevronDown className={`h-3 w-3 transition-transform ${checklistExpanded ? "rotate-180" : ""}`} />
+                  </Button>
+                </div>
+              </div>
+              {checklistExpanded && (
+                <CardContent className="pt-0 space-y-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("admin.clinical_checklist_desc")}</p>
+
+                  {/* Structured sections view */}
+                  <div className="space-y-2">
+                    {checklistSections.map((section) => {
+                      const isOpen = expandedSections.has(section.id);
+                      return (
+                        <div key={section.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedSections((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(section.id)) next.delete(section.id); else next.add(section.id);
+                              return next;
+                            })}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`} />
+                              <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{section.name}</span>
+                              <Badge variant="secondary" className="text-[10px]">{section.conditions.length}</Badge>
+                            </div>
+                          </button>
+                          {isOpen && (
+                            <div className="px-3 py-2 space-y-2.5">
+                              {section.conditions.map((condition) => (
+                                <div key={condition.id} className="pl-4 border-l-2 border-amber-300 dark:border-amber-700">
+                                  <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">{condition.name}</p>
+                                  <ul className="space-y-0.5">
+                                    {condition.findings.map((finding, fi) => (
+                                      <li key={fi} className="text-[10px] text-gray-500 dark:text-gray-400 flex items-start gap-1">
+                                        <span className="text-amber-500 mt-0.5 flex-shrink-0">•</span>
+                                        <span>{finding}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {checklistSections.length === 0 && (
+                      <p className="text-xs text-gray-400 text-center py-4">No hay condiciones configuradas</p>
+                    )}
+                  </div>
+
+                  {/* Chat interface */}
+                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/30 dark:bg-amber-950/10 p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                      <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{t("admin.checklist_chat_title")}</span>
+                    </div>
+
+                    {chatHistory.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-1.5 mb-2">
+                        {chatHistory.map((msg, i) => (
+                          <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg ${
+                            msg.role === "user"
+                              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 ml-8"
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 mr-8 border border-gray-200 dark:border-gray-700"
+                          }`}>
+                            {msg.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey && chatMessage.trim() && !chatLoading) {
+                            e.preventDefault();
+                            handleChecklistChat();
+                          }
+                        }}
+                        placeholder={t("admin.checklist_chat_placeholder")}
+                        className="flex-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                        disabled={chatLoading}
+                      />
+                      <Button
+                        size="sm"
+                        className="text-xs bg-amber-600 hover:bg-amber-700 text-white h-7 px-3"
+                        disabled={chatLoading || !chatMessage.trim()}
+                        onClick={handleChecklistChat}
+                      >
+                        {chatLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "→"}
+                      </Button>
+                    </div>
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500">{t("admin.checklist_chat_hint")}</p>
+                  </div>
+
+                  {/* Reset */}
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={async () => {
+                        const res = await fetch("/api/admin/clinical-checklist", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ sections: [] }),
+                        });
+                        if (res.ok) {
+                          const reload = await fetch("/api/admin/clinical-checklist");
+                          if (reload.ok) {
+                            const d = await reload.json();
+                            setChecklistSections(d.sections || []);
+                            setChecklistDirty(false);
+                          }
+                        }
+                      }}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      {t("admin.clinical_checklist_reset")}
+                    </Button>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
           </div>
         )}
 
@@ -2294,7 +2117,14 @@ export default function AdminPage() {
         {/* ═══ COSTS ═══ */}
         {tab === "costs" && <AdminCostsTab />}
 
-        {tab === "hospitals" && <AdminHospitalsTab />}
+        {tab === "hospitals" && (
+          <div className="space-y-4">
+            <AdminHospitalsTab />
+            <Card>
+              <AdminManualDownload />
+            </Card>
+          </div>
+        )}
 
         {/* ═══ SUBSCRIBER ENGAGEMENT ═══ */}
         {tab === "engagement" && <AdminEngagementTab />}
@@ -2980,20 +2810,3 @@ export default function AdminPage() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
-            {icon}
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-            <p className="text-[11px] text-gray-500">{label}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
