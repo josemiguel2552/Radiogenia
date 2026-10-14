@@ -102,6 +102,30 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+/**
+ * Tables that hang off an organization, in the order they have to go: seat
+ * invites point at seat orders, so the orders cannot leave first.
+ *
+ * The migrations declare these foreign keys as `on delete cascade`, which would
+ * make the cleanup unnecessary — but a cascade that is missing on the live
+ * database turns the delete into a constraint violation and leaves the admin
+ * with a hospital they cannot remove. Clearing the children explicitly costs
+ * one round trip each and works either way.
+ */
+const ORG_CHILD_TABLES = [
+  "org_seat_invites",
+  "org_seat_orders",
+  "org_members",
+  "org_sections",
+  "org_templates",
+  "org_normality_phrases",
+  "org_recommendations",
+  "support_tickets",
+  "report_metrics",
+  "pilot_survey_responses",
+  "consent_records",
+] as const;
+
 export async function DELETE(req: NextRequest) {
   try {
     await requireAdmin();
@@ -111,9 +135,28 @@ export async function DELETE(req: NextRequest) {
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing organization id" }, { status: 400 });
 
+    const { data: org } = await service
+      .from("organizations")
+      .select("id, name")
+      .eq("id", id)
+      .maybeSingle();
+    if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+
+    // The radiologists' own accounts are deliberately kept — deleting a
+    // hospital withdraws its unlimited access, it does not erase the people.
+    // Detaching them here rather than relying on `on delete set null` for the
+    // same reason as the children above.
+    await service.from("profiles").update({ org_id: null }).eq("org_id", id);
+
+    for (const table of ORG_CHILD_TABLES) {
+      // A table absent from this database is not a failure: nothing references
+      // the organization from it. Any real error surfaces on the delete below.
+      await service.from(table).delete().eq("org_id", id);
+    }
+
     const { error } = await service.from("organizations").delete().eq("id", id);
     if (error) return dbErrorResponse(error);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, name: org.name });
   } catch (error) {
     return toErrorResponse(error);
   }

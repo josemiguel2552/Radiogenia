@@ -97,6 +97,53 @@ describe("a gifted hospital is never asked for money", () => {
   });
 });
 
+describe("a hospital that already exists can be changed and removed", () => {
+  const api = source("src/app/api/admin/organizations/route.ts");
+  const ui = source("src/components/admin/admin-hospitals-tab.tsx");
+
+  it("offers the version and billing controls on an existing hospital, not only at creation", () => {
+    // Every hospital created before these controls existed has region null, so
+    // the editor is the only way they ever get a version.
+    const detail = ui.slice(ui.indexOf("function HospitalDetail"));
+    expect(detail).toContain("setERegion");
+    expect(detail).toContain("setEGifted");
+    expect(detail).toMatch(/method: "PUT"/);
+  });
+
+  it("can clear the version again, back to inferring per radiologist", () => {
+    // "" has to reach the API as a cleared region rather than be dropped.
+    expect(api).toContain('update.region = region === "" ? null : region');
+  });
+
+  it("deletes through the API from the detail view", () => {
+    expect(ui).toContain("/api/admin/organizations?id=");
+    expect(ui).toMatch(/method: "DELETE"/);
+  });
+
+  it("asks for the hospital name before deleting, since nothing undoes it", () => {
+    expect(ui).toContain("delName.trim() !== hospital.name");
+  });
+
+  it("detaches the radiologists rather than deleting their accounts", () => {
+    expect(api).toContain('.from("profiles").update({ org_id: null })');
+  });
+
+  it("clears the dependents first, so a missing cascade cannot block the delete", () => {
+    // This is what left the admin with test hospitals they could not remove:
+    // one constraint without ON DELETE CASCADE fails the whole statement.
+    for (const t of ["org_seat_invites", "org_seat_orders", "org_members", "org_sections"]) {
+      expect(api).toContain(t);
+    }
+    // Invites reference the orders, so they cannot be cleared after them.
+    expect(api.indexOf("org_seat_invites")).toBeLessThan(api.indexOf("org_seat_orders"));
+    // And every child goes before the organization row itself.
+    const children = api.indexOf("ORG_CHILD_TABLES = [");
+    const orgDelete = api.indexOf('.from("organizations").delete()');
+    expect(children).toBeGreaterThan(-1);
+    expect(orgDelete).toBeGreaterThan(children);
+  });
+});
+
 describe("the radiologist signup asks for an email confirmation and nothing else", () => {
   const signup = source("src/app/api/hospital-signup/route.ts");
 

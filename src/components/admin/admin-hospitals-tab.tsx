@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Building2, Plus, Loader2, Copy, Check, KeyRound, UserPlus, Link as LinkIcon, X,
   ChevronLeft, Users, BarChart3, Mail, Ban, RotateCcw, FileText, Mic, Send, Trash2,
-  CreditCard,
+  CreditCard, Settings2,
 } from "lucide-react";
 import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 
@@ -288,6 +288,59 @@ function HospitalDetail({ hospital, subView, setSubView, onBack }: {
 
   const [notice, setNotice] = useState<string | null>(null);
 
+  // The version and the billing mode of a hospital that already exists. Both
+  // were only settable at creation, which left every hospital created before
+  // them inferring the region per radiologist.
+  const initialRegion: "" | "eu" | "us" | "open" =
+    hospital.region === "eu" || hospital.region === "us" || hospital.region === "open" ? hospital.region : "";
+  const [eRegion, setERegion] = useState(initialRegion);
+  const [eGifted, setEGifted] = useState(hospital.billing_mode === "gifted");
+  const [savingCfg, setSavingCfg] = useState(false);
+  // What the database holds, so the save button can tell whether anything
+  // changed. Kept here rather than read back off the prop, which this view
+  // must not write to.
+  const [savedCfg, setSavedCfg] = useState({ region: initialRegion, gifted: hospital.billing_mode === "gifted" });
+  const dirty = eRegion !== savedCfg.region || eGifted !== savedCfg.gifted;
+
+  async function saveConfig() {
+    setSavingCfg(true); setNotice(null);
+    try {
+      const res = await fetch("/api/admin/organizations", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: hospital.id,
+          region: eRegion, // "" clears it, going back to inferring per radiologist
+          billing_mode: eGifted ? "gifted" : "paid",
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSavedCfg({ region: eRegion, gifted: eGifted });
+        setNotice("Configuración guardada. Los radiólogos que entren a partir de ahora usarán esta versión.");
+      } else {
+        setNotice(`No se pudo guardar: ${d.error || "error"}`);
+      }
+    } catch { setNotice("Error de red al guardar."); }
+    setSavingCfg(false);
+  }
+
+  // Deleting a hospital is irreversible, so the name has to be typed out.
+  const [delOpen, setDelOpen] = useState(false);
+  const [delName, setDelName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [delError, setDelError] = useState<string | null>(null);
+
+  async function deleteHospital() {
+    setDeleting(true); setDelError(null);
+    try {
+      const res = await fetch(`/api/admin/organizations?id=${hospital.id}`, { method: "DELETE" });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) { setDelOpen(false); onBack(); return; }
+      setDelError(d.error || "No se pudo eliminar el hospital.");
+    } catch { setDelError("Error de red al eliminar."); }
+    setDeleting(false);
+  }
+
   const origin = typeof window !== "undefined" ? window.location.origin : "https://radiogen.ai";
   const inviteLink = `${origin}/hospital-signup?token=${hospital.signup_token}`;
   const inviteEmail =
@@ -453,6 +506,44 @@ Equipo Radiogen.AI`;
         </div>
       ) : (
         <>
+          {/* Version and billing of a hospital that already exists */}
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Settings2 className="h-3.5 w-3.5 text-blue-500" /> Versión y facturación
+              </p>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Versión de la plataforma</label>
+                <select
+                  value={eRegion}
+                  onChange={(e) => setERegion(e.target.value as "" | "eu" | "us" | "open")}
+                  className="h-9 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 text-sm"
+                >
+                  <option value="">Automática (según el país de cada radiólogo)</option>
+                  <option value="open">Latinoamérica — versión completa</option>
+                  <option value="eu">Europa — solo documentación (MDR)</option>
+                  <option value="us">Estados Unidos — solo documentación (FDA)</option>
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  En Europa y EE.UU. se ocultan clasificación, recomendaciones y asistente de casos.
+                  Se aplica a los radiólogos que se den de alta desde ahora; los que ya tienen cuenta
+                  mantienen la versión con la que se registraron.
+                </p>
+              </div>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" checked={eGifted} onChange={(e) => setEGifted(e.target.checked)} className="mt-0.5" />
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  Hospital regalado — su enlace institucional no pedirá pago y las licencias se activan al enviarlo.
+                </span>
+              </label>
+              <div className="flex justify-end">
+                <Button size="sm" className="h-8 text-xs" onClick={saveConfig} disabled={savingCfg || !dirty}>
+                  {savingCfg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Guardar cambios"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Trial link — direct access, no registration, 30 days */}
           {hospital.trial_token && (
             <Card>
@@ -693,8 +784,62 @@ Equipo Radiogen.AI`;
               ))}
             </div>
           )}
+
+          {/* Removing the hospital itself */}
+          <Card className="border-red-200 dark:border-red-900/60">
+            <CardContent className="p-4 space-y-2">
+              <p className="text-xs font-semibold text-red-700 dark:text-red-400 flex items-center gap-1.5">
+                <Trash2 className="h-3.5 w-3.5" /> Eliminar hospital
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Borra el hospital, su equipo, sus pedidos de licencias, sus plantillas y sus métricas.
+                Las cuentas de los radiólogos no se borran, pero pierden el acceso ilimitado del hospital
+                y sus enlaces dejan de funcionar. No se puede deshacer.
+              </p>
+              <div className="flex justify-end">
+                <Button
+                  size="sm" variant="outline"
+                  className="h-8 text-xs gap-1.5 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/40"
+                  onClick={() => { setDelName(""); setDelError(null); setDelOpen(true); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Eliminar este hospital
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
+
+      <Dialog open={delOpen} onOpenChange={setDelOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Eliminar {hospital.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              Se eliminarán el hospital y todo lo asociado: {members.length} miembro(s) del equipo,
+              sus pedidos de licencias, plantillas y métricas. Las cuentas de los radiólogos se
+              conservan, sin el acceso del hospital. Esta acción no se puede deshacer.
+            </p>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">
+                Escribe <span className="font-semibold text-gray-700 dark:text-gray-200">{hospital.name}</span> para confirmar
+              </label>
+              <Input value={delName} onChange={(e) => setDelName(e.target.value)} className="h-9" />
+            </div>
+            {delError && <p className="text-[11px] text-red-600 dark:text-red-400">{delError}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" size="sm" onClick={() => setDelOpen(false)}>Cancelar</Button>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={deleting || delName.trim() !== hospital.name}
+                onClick={deleteHospital}
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Eliminar definitivamente"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md">
