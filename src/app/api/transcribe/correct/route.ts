@@ -60,6 +60,14 @@ export async function POST(req: NextRequest) {
     if (!rl.allowed) return rl.errorResponse!;
 
     const quota = await checkDictationLimit(user.id);
+    if (!quota.allowed && quota.reason === "org_disabled") {
+      // Not a quota: this hospital has dictation switched off.
+      return NextResponse.json({
+        corrected: "",
+        error: "Voice dictation is not enabled for your hospital",
+        code: "DICTATION_DISABLED",
+      }, { status: 403 });
+    }
     if (!quota.allowed) {
       return NextResponse.json({ corrected: "", error: "Dictation limit reached" }, { status: 429 });
     }

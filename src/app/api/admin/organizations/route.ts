@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const { userId } = await requireAdmin();
     const service = createServiceClient();
 
-    const { name, slug, billing_email, max_seats, region, billing_mode } = await req.json();
+    const { name, slug, billing_email, max_seats, region, billing_mode, dictation_enabled } = await req.json();
     if (!name || !slug) {
       return NextResponse.json({ error: "Missing name or slug" }, { status: 400 });
     }
@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
         // the old behaviour of inferring per user.
         ...(region === "eu" || region === "us" || region === "open" ? { region } : {}),
         ...(billing_mode === "gifted" ? { billing_mode } : {}),
+        // Only written when withheld: the column defaults to true, so a
+        // database without the migration still accepts every other field.
+        ...(dictation_enabled === false ? { dictation_enabled: false } : {}),
         created_by: userId,
       })
       .select()
@@ -81,7 +84,7 @@ export async function PUT(req: NextRequest) {
     await requireAdmin();
     const service = createServiceClient();
 
-    const { id, name, slug, billing_email, max_seats, is_active, is_pilot, region, billing_mode } = await req.json();
+    const { id, name, slug, billing_email, max_seats, is_active, is_pilot, region, billing_mode, dictation_enabled } = await req.json();
     if (!id) return NextResponse.json({ error: "Missing organization id" }, { status: 400 });
 
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -93,6 +96,7 @@ export async function PUT(req: NextRequest) {
     if (is_pilot !== undefined) update.is_pilot = is_pilot;
     if (region !== undefined) update.region = region === "" ? null : region;
     if (billing_mode === "paid" || billing_mode === "gifted") update.billing_mode = billing_mode;
+    if (typeof dictation_enabled === "boolean") update.dictation_enabled = dictation_enabled;
 
     const { error } = await service.from("organizations").update(update).eq("id", id);
     if (error) return dbErrorResponse(error);

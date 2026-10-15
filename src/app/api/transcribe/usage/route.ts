@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
     const rounded = Math.max(1, Math.ceil(Number(seconds) || 0));
 
     const quota = await checkDictationLimit(userId);
+    if (!quota.allowed && quota.reason === "org_disabled") {
+      // Not a quota: this hospital has dictation switched off.
+      return NextResponse.json({
+        error: "Voice dictation is not enabled for your hospital",
+        code: "DICTATION_DISABLED",
+      }, { status: 403 });
+    }
     if (!quota.allowed) {
       return NextResponse.json(
         { error: "Dictation limit reached", dictation: { usedSeconds: quota.usedSeconds, limitSeconds: quota.limitSeconds } },

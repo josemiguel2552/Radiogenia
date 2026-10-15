@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getUserRegion, getUserRole, REGION_VIEW_COOKIE } from "@/lib/auth-helpers";
+import { getUserRegion, getUserRole, isDictationEnabledForUser, REGION_VIEW_COOKIE } from "@/lib/auth-helpers";
 import { regionFeatures, resolveRegion, IP_COUNTRY_HEADER, type Region } from "@/lib/region";
 import { createServiceClient } from "@/lib/supabase/service";
 import { toErrorResponse } from "@/lib/api-error";
@@ -18,6 +18,12 @@ export async function GET(req: NextRequest) {
     const region = await getUserRegion(user.id, req.headers.get(IP_COUNTRY_HEADER));
     const isAdmin = (await getUserRole(user.id)) === "admin";
 
+    // Dictation is not a regional restriction — the MDR has nothing to say
+    // about transcribing what a radiologist dictates. It is a per-hospital
+    // entitlement, composed into the same `features` object so the interface
+    // has one place to ask what this user may use.
+    const dictation = await isDictationEnabledForUser(user.id);
+
     // Admins get the extra context needed to switch between both interfaces.
     let ownRegion: Region | null = null;
     let viewing: string | null = null;
@@ -30,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       region,
-      features: regionFeatures(region),
+      features: { ...regionFeatures(region), dictation },
       isAdmin,
       ...(isAdmin ? { ownRegion, viewing } : {}),
     });

@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
 
     // Check dictation quota before calling Whisper
     const quota = await checkDictationLimit(user.id);
+    if (!quota.allowed && quota.reason === "org_disabled") {
+      // Not a quota, and no plan upgrade would lift it: this hospital has
+      // dictation switched off.
+      return NextResponse.json({
+        error: "Voice dictation is not enabled for your hospital",
+        code: "DICTATION_DISABLED",
+      }, { status: 403 });
+    }
     if (!quota.allowed) {
       const usedMin = Math.round(quota.usedSeconds / 60);
       const limitMin = Math.round(quota.limitSeconds / 60);

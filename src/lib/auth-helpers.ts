@@ -236,11 +236,46 @@ export async function checkReportLimit(userId: string): Promise<{ allowed: boole
   };
 }
 
+/**
+ * Whether the hospital this user belongs to allows voice dictation.
+ *
+ * True for anyone outside a hospital, and true for a hospital that has not
+ * been switched off — including one whose row predates the column, so a
+ * failed read never silently withdraws a feature people are using.
+ */
+export async function isDictationEnabledForUser(userId: string): Promise<boolean> {
+  const service = createServiceClient();
+  const { data: profile } = await service
+    .from("profiles")
+    .select("org_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profile?.org_id) return true;
+  return isDictationEnabledForOrg(profile.org_id);
+}
+
+async function isDictationEnabledForOrg(orgId: string): Promise<boolean> {
+  try {
+    const service = createServiceClient();
+    const { data, error } = await service
+      .from("organizations")
+      .select("dictation_enabled")
+      .eq("id", orgId)
+      .maybeSingle();
+    if (error) return true; // column not deployed yet
+    return data?.dictation_enabled !== false;
+  } catch {
+    return true;
+  }
+}
+
 export async function checkDictationLimit(userId: string): Promise<{
   allowed: boolean;
   usedSeconds: number;
   limitSeconds: number;
   plan: SubscriptionPlan;
+  /** Why it is not allowed, when the reason is not the quota. */
+  reason?: "org_disabled";
 }> {
   const service = createServiceClient();
   const { data: profile } = await service
@@ -264,6 +299,12 @@ export async function checkDictationLimit(userId: string): Promise<{
       return { allowed: false, usedSeconds: 0, limitSeconds: 0, plan: "free" };
     }
     const usedSeconds = isCalendarMonthStale(profile.billing_period_start) ? 0 : (profile.dictation_seconds_used || 0);
+    // A hospital can buy the platform without dictation. This is the single
+    // gate every transcription endpoint goes through, so hiding the microphone
+    // in the interface is a courtesy rather than the control.
+    if (!(await isDictationEnabledForOrg(profile.org_id))) {
+      return { allowed: false, usedSeconds, limitSeconds: 0, plan: "professional", reason: "org_disabled" };
+    }
     return { allowed: true, usedSeconds, limitSeconds: 999999 * 60, plan: "professional" };
   }
 

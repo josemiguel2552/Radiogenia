@@ -16,7 +16,7 @@ import { AdminPilotTab } from "@/components/admin/admin-pilot-tab";
 interface Hospital {
   id: string; name: string; slug: string; billing_email: string | null;
   max_seats: number; is_active: boolean; is_pilot: boolean; active_members: number;
-  region?: string | null; billing_mode?: string | null;
+  region?: string | null; billing_mode?: string | null; dictation_enabled?: boolean | null;
   signup_token: string;
   onboarding_token?: string | null;
   trial_token?: string | null;
@@ -64,6 +64,8 @@ export function AdminHospitalsTab() {
   // Which interface its radiologists get, and whether the institution pays.
   const [cRegion, setCRegion] = useState<"" | "eu" | "us" | "open">("");
   const [cGifted, setCGifted] = useState(false);
+  // Some institutions buy structured reporting without microphone capture.
+  const [cDictation, setCDictation] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -88,10 +90,11 @@ export function AdminHospitalsTab() {
           max_seats: Number(cSeats) || 8,
           region: cRegion || undefined,
           billing_mode: cGifted ? "gifted" : "paid",
+          dictation_enabled: cDictation,
         }),
       });
       if (res.ok) {
-        setCreateOpen(false); setCName(""); setCEmail(""); setCSeats("8"); setCRegion(""); setCGifted(false);
+        setCreateOpen(false); setCName(""); setCEmail(""); setCSeats("8"); setCRegion(""); setCGifted(false); setCDictation(true);
         await load();
       }
     } catch { /* ignore */ }
@@ -134,6 +137,7 @@ export function AdminHospitalsTab() {
                     {h.active_members}/{h.max_seats} radiólogos{h.billing_email ? ` · ${h.billing_email}` : ""}
                     {h.region ? ` · ${h.region === "eu" ? "Europa" : h.region === "us" ? "EE.UU." : "Latam"}` : ""}
                     {h.billing_mode === "gifted" ? " · regalado" : ""}
+                    {h.dictation_enabled === false ? " · sin dictado" : ""}
                   </p>
                 </div>
                 {h.is_pilot && <Badge variant="secondary" className="text-[10px]">Piloto</Badge>}
@@ -180,6 +184,12 @@ export function AdminHospitalsTab() {
               <input type="checkbox" checked={cGifted} onChange={(e) => setCGifted(e.target.checked)} className="mt-0.5" />
               <span className="text-xs text-gray-600 dark:text-gray-300">
                 Hospital regalado — su enlace institucional no pedirá pago y las licencias se activan al enviarlo.
+              </span>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={cDictation} onChange={(e) => setCDictation(e.target.checked)} className="mt-0.5" />
+              <span className="text-xs text-gray-600 dark:text-gray-300">
+                Dictado por voz — sus radiólogos pueden dictar con el micrófono y con el móvil. Desmárcalo para un hospital que solo informe escribiendo.
               </span>
             </label>
             <div className="flex justify-end gap-2 pt-1">
@@ -295,12 +305,17 @@ function HospitalDetail({ hospital, subView, setSubView, onBack }: {
     hospital.region === "eu" || hospital.region === "us" || hospital.region === "open" ? hospital.region : "";
   const [eRegion, setERegion] = useState(initialRegion);
   const [eGifted, setEGifted] = useState(hospital.billing_mode === "gifted");
+  const [eDictation, setEDictation] = useState(hospital.dictation_enabled !== false);
   const [savingCfg, setSavingCfg] = useState(false);
   // What the database holds, so the save button can tell whether anything
   // changed. Kept here rather than read back off the prop, which this view
   // must not write to.
-  const [savedCfg, setSavedCfg] = useState({ region: initialRegion, gifted: hospital.billing_mode === "gifted" });
-  const dirty = eRegion !== savedCfg.region || eGifted !== savedCfg.gifted;
+  const [savedCfg, setSavedCfg] = useState({
+    region: initialRegion,
+    gifted: hospital.billing_mode === "gifted",
+    dictation: hospital.dictation_enabled !== false,
+  });
+  const dirty = eRegion !== savedCfg.region || eGifted !== savedCfg.gifted || eDictation !== savedCfg.dictation;
 
   async function saveConfig() {
     setSavingCfg(true); setNotice(null);
@@ -311,11 +326,12 @@ function HospitalDetail({ hospital, subView, setSubView, onBack }: {
           id: hospital.id,
           region: eRegion, // "" clears it, going back to inferring per radiologist
           billing_mode: eGifted ? "gifted" : "paid",
+          dictation_enabled: eDictation,
         }),
       });
       const d = await res.json().catch(() => ({}));
       if (res.ok) {
-        setSavedCfg({ region: eRegion, gifted: eGifted });
+        setSavedCfg({ region: eRegion, gifted: eGifted, dictation: eDictation });
         setNotice("Configuración guardada. Los radiólogos que entren a partir de ahora usarán esta versión.");
       } else {
         setNotice(`No se pudo guardar: ${d.error || "error"}`);
@@ -534,6 +550,12 @@ Equipo Radiogen.AI`;
                 <input type="checkbox" checked={eGifted} onChange={(e) => setEGifted(e.target.checked)} className="mt-0.5" />
                 <span className="text-xs text-gray-600 dark:text-gray-300">
                   Hospital regalado — su enlace institucional no pedirá pago y las licencias se activan al enviarlo.
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" checked={eDictation} onChange={(e) => setEDictation(e.target.checked)} className="mt-0.5" />
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  Dictado por voz — al desactivarlo, sus radiólogos dejan de ver el micrófono y el dictado por móvil, y los informes se escriben a mano. Tiene efecto inmediato, también para quienes ya tienen cuenta.
                 </span>
               </label>
               <div className="flex justify-end">

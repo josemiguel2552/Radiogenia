@@ -237,13 +237,17 @@ export function DashboardContent() {
   const [dictationLanguage, setDictationLanguage] = useState<string>("es");
   // Interpretive features are withheld in regulated regions (EU/US); the
   // server enforces this too — the UI just avoids offering what would fail.
+  // `dictation` is not regional — it is whether the user's hospital bought
+  // voice dictation at all. It travels in the same payload so the interface
+  // has one place to ask what this account may use.
   const [regionFeatures, setRegionFeatures] = useState<{
     classification: boolean; recommendations: boolean; clinicalCheck: boolean; caseAssistant: boolean;
-  }>({ classification: true, recommendations: true, clinicalCheck: true, caseAssistant: true });
+    dictation: boolean;
+  }>({ classification: true, recommendations: true, clinicalCheck: true, caseAssistant: true, dictation: true });
   useEffect(() => {
     fetch("/api/region")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.features) setRegionFeatures(d.features); })
+      .then((d) => { if (d?.features) setRegionFeatures({ dictation: true, ...d.features }); })
       .catch(() => { /* keep the permissive default; the server still decides */ });
   }, []);
 
@@ -2604,42 +2608,45 @@ export function DashboardContent() {
       <div>
           <Card className="border-[hsl(var(--border)/0.55)] shadow-none">
             <CardContent className="space-y-3 p-4">
-              {/* Language selector */}
-              <div className="flex items-center gap-1.5">
-                <Mic className="h-3 w-3 text-gray-400 shrink-0" />
-                <Select value={resolvedDictLang} onValueChange={changeDictLang}>
-                  <SelectTrigger className="h-6 w-[72px] text-[10px] px-2 py-0 border-gray-200 dark:border-gray-700">
-                    <SelectValue>{resolvedDictLang.toUpperCase()}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
-                      <SelectItem key={l.value} value={l.value} className="text-xs">{l.value.toUpperCase()} — {l.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="ml-auto">
-                  <RemotePhoneDictation
-                    getContext={() => ({
-                      language: resolvedDictLangRef.current || resolvedDictLang || "es",
-                      templateSections: whisperTemplateSectionsRef.current,
-                      studyContext: whisperStudyContextRef.current,
-                      modality: whisperModalityRef.current,
-                      studyType: whisperStudyTypeRef.current,
-                    })}
-                    onFinal={applyTranscriptText}
-                    onRefine={applyWhisperRefine}
-                    onRecStart={() => {
-                      whisperDictationStartRef.current = -1;
-                      whisperSkipRef.current = false;
-                    }}
-                    onRecStop={finishDictationSegment}
-                  />
+              {/* Dictation language and paired phone — only when the hospital
+                  allows dictation at all */}
+              {regionFeatures.dictation && (
+                <div className="flex items-center gap-1.5">
+                  <Mic className="h-3 w-3 text-gray-400 shrink-0" />
+                  <Select value={resolvedDictLang} onValueChange={changeDictLang}>
+                    <SelectTrigger className="h-6 w-[72px] text-[10px] px-2 py-0 border-gray-200 dark:border-gray-700">
+                      <SelectValue>{resolvedDictLang.toUpperCase()}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DICTATION_LANGUAGES.filter(l => l.value !== "auto").map((l) => (
+                        <SelectItem key={l.value} value={l.value} className="text-xs">{l.value.toUpperCase()} — {l.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="ml-auto">
+                    <RemotePhoneDictation
+                      getContext={() => ({
+                        language: resolvedDictLangRef.current || resolvedDictLang || "es",
+                        templateSections: whisperTemplateSectionsRef.current,
+                        studyContext: whisperStudyContextRef.current,
+                        modality: whisperModalityRef.current,
+                        studyType: whisperStudyTypeRef.current,
+                      })}
+                      onFinal={applyTranscriptText}
+                      onRefine={applyWhisperRefine}
+                      onRecStart={() => {
+                        whisperDictationStartRef.current = -1;
+                        whisperSkipRef.current = false;
+                      }}
+                      onRecStop={finishDictationSegment}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="relative">
                 <AutoGrowTextarea
                   ref={dictTextareaRef}
-                  placeholder={t("dash.dictation_placeholder")}
+                  placeholder={t(regionFeatures.dictation ? "dash.dictation_placeholder" : "dash.typed_placeholder")}
                   value={dictation}
                   onChange={(e) => { setDictation(e.target.value); correctedLenRef.current = 0; setTraceData(null); setRepairMessage(null); if (!reportStartTimeRef.current) reportStartTimeRef.current = Date.now(); }}
                   onSelect={(e) => {
@@ -2650,10 +2657,10 @@ export function DashboardContent() {
                       setDictSelRange(null);
                     }
                   }}
-                  className="text-sm pr-14"
+                  className={regionFeatures.dictation ? "text-sm pr-14" : "text-sm"}
                   minHeight={230}
                 />
-                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className="px-3 py-2 pr-14" />
+                <SelectionHighlight text={dictation} range={dictSelRange} textareaRef={dictTextareaRef} className={regionFeatures.dictation ? "px-3 py-2 pr-14" : "px-3 py-2"} />
                 {isFirstTime && !dictation.trim() && !isRecording && !isTranscribing && (
                   <button
                     type="button"
@@ -2664,19 +2671,23 @@ export function DashboardContent() {
                     {t("dash.try_example")}
                   </button>
                 )}
-                <Button
-                  variant={isRecording ? "destructive" : "secondary"}
-                  size="icon"
-                  className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
-                  style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
-                  onClick={() => { if (!isRecording) track("ui_dictation_start"); toggleRecording(); }}
-                >
-                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
-                  <div className="absolute top-1 right-1">
-                    <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
-                  </div>
+                {regionFeatures.dictation && (
+                  <>
+                  <Button
+                    variant={isRecording ? "destructive" : "secondary"}
+                    size="icon"
+                    className={`absolute top-2 right-2 h-10 w-10 md:h-8 md:w-8 rounded-full transition-shadow ${isRecording ? "recording-pulse" : ""}`}
+                    style={isRecording ? { boxShadow: `0 0 0 ${Math.round(audioLevel * 12)}px rgba(239,68,68,${0.15 + audioLevel * 0.25})` } : undefined}
+                    onClick={() => { if (!isRecording) track("ui_dictation_start"); toggleRecording(); }}
+                  >
+                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                  {!isRecording && !isTranscribing && !isCorrecting && !isRefining && (
+                    <div className="absolute top-1 right-1">
+                      <span className="text-[7px] font-bold px-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 uppercase">Beta</span>
+                    </div>
+                  )}
+                  </>
                 )}
                 {(isRecording || isTranscribing || isCorrecting || isRefining) && (
                   <div className="absolute bottom-2 right-2">
