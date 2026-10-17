@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,7 @@ import { useUIPrefs } from "@/lib/ui-prefs";
 import { copyToClipboard } from "@/lib/copy-text";
 import { track } from "@/lib/track";
 import { AutoGrowTextarea } from "@/components/ui/autogrow-textarea";
+import { captureScrollAnchors, restoreScrollAnchors, type ScrollAnchor } from "@/lib/scroll-preserve";
 
 /** Stable empty array so it's never a new identity across renders (useMemo dep). */
 const EMPTY_CONCLUSION_LINKS: { point: number; quote: string }[] = [];
@@ -3588,6 +3589,10 @@ function OutputCard({
   const selectionHostRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const caretRef = useRef<number | null>(null);
+  // Where the page was before the highlighted view was swapped for a textarea.
+  // Captured in the click handler: by the time an effect runs, the DOM has
+  // already changed and reading the offset returns the clamped one.
+  const scrollAnchorsRef = useRef<ScrollAnchor[] | null>(null);
   const showTrace = traceHighlights && traceHighlights.length > 0;
   const readOnlyView = showTrace && (!editing || !!forceHighlights);
 
@@ -3596,15 +3601,26 @@ function OutputCard({
   }, [showTrace, forceHighlights]);
 
   // Put the caret where the text was clicked, once the textarea exists.
-  useEffect(() => {
-    if (!editing || caretRef.current === null) return;
+  //
+  // A layout effect, and it runs after the textarea's own sizing (React runs
+  // children's layout effects first), so the page is put back only once the
+  // box has its real height. preventScroll because the caret is placed here
+  // explicitly — letting focus() scroll as well is what dragged the view away
+  // from the sentence that was clicked.
+  useLayoutEffect(() => {
     const ta = textareaRef.current;
-    if (ta) {
-      ta.focus();
+    if (editing && ta && caretRef.current !== null) {
+      ta.focus({ preventScroll: true });
       const at = Math.min(caretRef.current, ta.value.length);
       ta.setSelectionRange(at, at);
     }
     caretRef.current = null;
+    // Both directions: going back to the highlighted view can change the box
+    // height too, and a jump on the way out is the same annoyance.
+    if (scrollAnchorsRef.current) {
+      restoreScrollAnchors(scrollAnchorsRef.current);
+      scrollAnchorsRef.current = null;
+    }
   }, [editing]);
 
   const Wrapper = bare ? "div" : Card;
@@ -3653,6 +3669,7 @@ function OutputCard({
               // A click rather than a drag: start typing right there.
               if (!range && !traceLocked) {
                 caretRef.current = caretOffsetWithin(selectionHostRef.current);
+                scrollAnchorsRef.current = captureScrollAnchors(selectionHostRef.current);
                 setEditing(true);
               }
             }}
@@ -3664,7 +3681,11 @@ function OutputCard({
             ref={textareaRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={() => { setEditing(false); onEdit?.(); }}
+            onBlur={() => {
+              scrollAnchorsRef.current = captureScrollAnchors(textareaRef.current);
+              setEditing(false);
+              onEdit?.();
+            }}
             onSelect={(e) => {
               const ta = e.currentTarget;
               onSelectRange?.(ta.selectionStart < ta.selectionEnd ? { start: ta.selectionStart, end: ta.selectionEnd } : null);
