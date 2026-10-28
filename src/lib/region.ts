@@ -27,6 +27,12 @@ export interface RegionFeatures {
   clinicalCheck: boolean;
   /** Assistant answering clinical questions about the case at hand. */
   caseAssistant: boolean;
+  /** Whether the CONCLUSION may carry a diagnostic term or an inference the
+   *  radiologist dictated, rather than restating it as pure description.
+   *  Reproducing the radiologist's own words is not a device function, but it
+   *  is interpretive text in a report we generated, so it is withheld where
+   *  that distinction would have to be argued to a regulator. */
+  interpretiveConclusion: boolean;
 }
 
 const EU_EEA_UK = new Set([
@@ -104,10 +110,10 @@ export function resolveRegion(
 
 export function regionFeatures(region: Region): RegionFeatures {
   if (region === "open") {
-    return { classification: true, recommendations: true, clinicalCheck: true, caseAssistant: true };
+    return { classification: true, recommendations: true, clinicalCheck: true, caseAssistant: true, interpretiveConclusion: true };
   }
   // EU and US: documentation-only feature set.
-  return { classification: false, recommendations: false, clinicalCheck: false, caseAssistant: false };
+  return { classification: false, recommendations: false, clinicalCheck: false, caseAssistant: false, interpretiveConclusion: false };
 }
 
 export function isRestrictedRegion(region: Region): boolean {

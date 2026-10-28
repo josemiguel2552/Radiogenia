@@ -52,6 +52,19 @@ export interface TrainingPromptInput {
   findingsText: string;
   conclusionText: string;
   clinicalInfo?: string | null;
+  /**
+   * Whether this example's prompt allows carrying a dictated diagnostic term,
+   * as production does outside the EU and the US.
+   *
+   * ⚠️ The export does not supply it yet, because `reports` does not record
+   * the region the conclusion was written under. Until it does, every example
+   * is paired with the strict prompt while a Latin American radiologist is
+   * served the permissive one — the same train/serve skew this module exists
+   * to prevent, in a smaller form. Resolve it before the next training run:
+   * either store the region on the report, or derive it from the author's
+   * profile in the export.
+   */
+  allowInterpretation?: boolean;
 }
 
 /**
@@ -70,5 +83,6 @@ export function buildTrainingPrompt(input: TrainingPromptInput): { system: strin
     clinicalInfo: input.clinicalInfo || "",
     outputLanguage,
     conclusionStyle,
+    allowInterpretation: input.allowInterpretation,
   });
 }

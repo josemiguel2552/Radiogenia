@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { buildConclusionPrompt } from "@/lib/prompts";
 import { detectDiagnoses } from "@/lib/diagnosis-detect";
 import type { ConclusionStyle, OutputLanguage } from "@/lib/types";
@@ -104,9 +106,9 @@ describe("the two styles ask for different shapes", () => {
       }
     });
 
-    it(`concise keeps ordering by clinical relevance (${lang})`, () => {
+    it(`concise orders by what changes management, not by change (${lang})`, () => {
       const { system } = build(lang, "concise");
-      expect(/JERARQUÍA CLÍNICA|CLINICAL HIERARCHY/.test(system)).toBe(true);
+      expect(/POR LO QUE CAMBIA EL MANEJO|BY WHAT CHANGES MANAGEMENT/.test(system)).toBe(true);
       expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(false);
     });
 
@@ -150,7 +152,7 @@ describe("the evolutive style needs something to compare against", () => {
         conclusionStyle: "evolutive",
       });
       expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(false);
-      expect(/JERARQUÍA CLÍNICA|CLINICAL HIERARCHY/.test(system)).toBe(true);
+      expect(/POR LO QUE CAMBIA EL MANEJO|BY WHAT CHANGES MANAGEMENT/.test(system)).toBe(true);
     });
 
     it(`uses it once the findings reference a prior (${lang})`, () => {
@@ -233,5 +235,175 @@ describe("the example we teach agrees with the detector we ship", () => {
       expect(kinds.has("interpretation")).toBe(true);
       expect(kinds.has(style === "concise" ? "recommendation" : "diagnosis")).toBe(true);
     }
+  });
+});
+
+/**
+ * The decisions behind the rewrite of rules 1, 3 and 4.
+ *
+ * The prompt had three grouping criteria competing at once — anatomy in rule
+ * 4, clinical problem in its own worked example, change type in the evolutive
+ * style — so the model picked a different one per report. That is what
+ * produced the complaint these answer: things joined that do not belong
+ * together, and things split that do.
+ */
+describe("grouping has one criterion, and it is the clinical problem", () => {
+  for (const lang of LANGS) {
+    for (const style of STYLES) {
+      it(`groups by problem, never by adjacency (${lang}/${style})`, () => {
+        const { system } = build(lang, style);
+        expect(/POR PROBLEMA CLÍNICO|BY CLINICAL PROBLEM|PROBLEMA CLÍNICO/.test(system)).toBe(true);
+      });
+    }
+
+    it(`never merges unrelated findings to hit the target (${lang})`, () => {
+      // The decisive rule: the cap gives way, the grouping does not. Without
+      // it, "few points" is an instruction to join whatever is left over.
+      const { system } = build(lang, "concise");
+      expect(/PUNTOS SEPARADOS|SEPARATE POINTS|PONTOS SEPARADOS/.test(system)).toBe(true);
+      expect(/añada un punto|adds a point|acrescente um ponto/.test(system)).toBe(true);
+    });
+
+    it(`states the point count as a target, not a maximum (${lang})`, () => {
+      // "MÁXIMO 4 PUNTOS" read as a hard law, which left the model choosing
+      // between dropping a real problem and welding two into one point.
+      const { system } = build(lang, "concise");
+      expect(/OBJETIVO:|TARGET:/.test(system)).toBe(true);
+      expect(system).not.toContain("MÁXIMO 4 PUNTOS");
+      expect(system).not.toContain("MAXIMUM 4 POINTS");
+    });
+  }
+});
+
+describe("ordering follows what the clinician has to do", () => {
+  for (const lang of LANGS) {
+    it(`orders by what changes management, with or without a clinical question (${lang})`, () => {
+      for (const clinical of ["Dolor en hipocondrio derecho.", ""]) {
+        const { system } = build(lang, "concise", clinical);
+        expect(/CAMBIA EL MANEJO|CHANGES MANAGEMENT|obliga a actuar|forces action/.test(system)).toBe(true);
+      }
+    });
+
+    it(`rules out the orderings it is not (${lang})`, () => {
+      const { system } = build(lang, "concise");
+      expect(/no por gravedad abstracta|not by abstract severity/.test(system)).toBe(true);
+      expect(/no por orden anatómico|not anatomically/.test(system)).toBe(true);
+    });
+  }
+});
+
+describe("brevity never wins against a data point", () => {
+  for (const lang of LANGS) {
+    it(`allows a second sentence rather than dropping a measurement (${lang})`, () => {
+      const { system } = build(lang, "concise");
+      // The style block used to demand ONE sentence while rule 8 demanded
+      // every data point: for a complex finding both could not hold.
+      expect(/usa dos|use two|use duas/.test(system)).toBe(true);
+      expect(system).not.toContain("Cada punto es UNA SOLA FRASE");
+      expect(system).not.toContain("Each point is ONE SINGLE brief");
+    });
+  }
+});
+
+describe("the filler ban no longer contradicts the example it ships with", () => {
+  for (const style of STYLES) {
+    it(`still bans opening fillers (es/${style})`, () => {
+      const { system } = build("es", style);
+      expect(system).toContain("Muletillas de apertura");
+      expect(system).toContain('"se observa"');
+    });
+
+    it(`allows saying something is no longer seen (es/${style})`, () => {
+      const { system } = build("es", style);
+      expect(system).toContain("NO es muletilla");
+      // The evolutive worked example says exactly this, and the blanket ban
+      // made the rulebook forbid its own example.
+      expect(system).toContain("ya no se identifica");
+    });
+  }
+});
+
+describe("carrying a dictated diagnosis is regional", () => {
+  const withFlag = (allowInterpretation: boolean, lang: OutputLanguage = "es") =>
+    buildConclusionPrompt({
+      findingsText: "Consolidación en lóbulo inferior derecho compatible con neumonía.",
+      clinicalInfo: "Fiebre.",
+      outputLanguage: lang,
+      conclusionStyle: "concise",
+      allowInterpretation,
+    }).system;
+
+  it("defaults to the strict prompt when the caller does not say", () => {
+    // A caller that does not know the region must not accidentally unlock it.
+    const { system } = build("es", "concise");
+    expect(system).toContain('- Inferencias: "compatible con"');
+  });
+
+  it("keeps pure description when it is withheld", () => {
+    const system = withFlag(false);
+    expect(system).toContain('- Inferencias: "compatible con"');
+    expect(system).not.toContain("Inferencias TUYAS");
+  });
+
+  it("lets the radiologist's own inference through when it is granted", () => {
+    const system = withFlag(true);
+    expect(system).toContain("Inferencias TUYAS");
+    expect(system).toContain("compatible con neumonía");
+  });
+
+  it("still forbids the inference nobody dictated, either way", () => {
+    for (const allowed of [true, false]) {
+      const system = withFlag(allowed);
+      expect(/inventarla, no|inventing one, no|Inferencias:/.test(system)).toBe(true);
+      // Prognosis and nature judgements are never on the table.
+      expect(/maligno, benigno|malignant, benign/.test(system)).toBe(true);
+      // Nor are recommendations or scales.
+      expect(/Recomendaciones de cualquier tipo|Recommendations of any kind/.test(system)).toBe(true);
+      expect(/BI-RADS/.test(system)).toBe(true);
+    }
+  });
+
+  it("does not let the worked principle override the permission", () => {
+    // "INCORRECTO: Neumonía del lóbulo inferior derecho" unqualified reads as
+    // an absolute ban, which would cancel the rule two lines above it.
+    expect(withFlag(true)).toContain('INCORRECTO (si el radiólogo no dictó "neumonía")');
+    expect(withFlag(false)).toContain('INCORRECTO: "Neumonía del lóbulo inferior derecho."');
+  });
+
+  it("keeps prognosis wrong in both modes, dictated or not", () => {
+    for (const allowed of [true, false]) {
+      expect(withFlag(allowed)).toContain('INCORRECTO: "Progresión tumoral hepática."');
+    }
+  });
+
+  it("asks the closing self-check about the right thing in each mode", () => {
+    expect(withFlag(true)).toContain("que NO esté en los hallazgos dictados?");
+    expect(withFlag(false)).not.toContain("que NO esté en los hallazgos dictados?");
+  });
+
+  it("reaches the English and Portuguese rulebooks too", () => {
+    for (const lang of ["en", "pt"] as const) {
+      expect(withFlag(true, lang)).toContain("Inferences OF YOUR OWN");
+      expect(withFlag(false, lang)).toContain('- Inferences: "consistent with"');
+    }
+  });
+});
+
+describe("the route decides the mode from the region, not from the request", () => {
+  const route = readFileSync(
+    join(__dirname, "../../..", "src/app/api/generate/conclusion/route.ts"),
+    "utf8",
+  );
+
+  it("reads it off the signed-in user's region", () => {
+    // Never off the request body: a client that could ask for the permissive
+    // prompt would be a way around the regional restriction.
+    expect(route).toContain("allowInterpretation: regionFeatures(");
+    expect(route).toContain("getUserRegion(user.id");
+    expect(route).toContain("interpretiveConclusion");
+  });
+
+  it("does not take it from the body", () => {
+    expect(route).not.toMatch(/const \{[^}]*allowInterpretation/);
   });
 });

@@ -3,7 +3,8 @@ export const maxDuration = 120;
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess } from "@/lib/auth-helpers";
+import { getGlobalAIConfig, resolveApiKey, hasPlatformAccess, getUserRegion } from "@/lib/auth-helpers";
+import { regionFeatures, IP_COUNTRY_HEADER } from "@/lib/region";
 import { streamAIWithFallback } from "@/lib/ai-fallback";
 import { logAICost } from "@/lib/log-ai-cost";
 import { buildConclusionPrompt } from "@/lib/prompts";
@@ -137,6 +138,11 @@ export async function POST(req: NextRequest) {
       mustInclude,
       exclude,
       dictatedRecommendations,
+      // getUserRegion honours the hospital's region_override, so an
+      // institution set to Europe gets pure description wherever it is.
+      allowInterpretation: regionFeatures(
+        await getUserRegion(user.id, req.headers.get(IP_COUNTRY_HEADER)),
+      ).interpretiveConclusion,
     });
 
     const taskModel = globalConfig.taskOverrides?.conclusion;

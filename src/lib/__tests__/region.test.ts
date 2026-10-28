@@ -48,6 +48,9 @@ describe("regionFeatures", () => {
       expect(f.recommendations).toBe(false);
       expect(f.clinicalCheck).toBe(false);
       expect(f.caseAssistant).toBe(false);
+      // The conclusion stays pure description under MDR/FDA: carrying a
+      // dictated diagnosis forward is interpretive text in a report we wrote.
+      expect(f.interpretiveConclusion).toBe(false);
       expect(isRestrictedRegion(r)).toBe(true);
     }
   });
@@ -55,6 +58,7 @@ describe("regionFeatures", () => {
   it("enables everything elsewhere", () => {
     const f = regionFeatures("open");
     expect(f.classification && f.recommendations && f.clinicalCheck && f.caseAssistant).toBe(true);
+    expect(f.interpretiveConclusion).toBe(true);
     expect(isRestrictedRegion("open")).toBe(false);
   });
 });

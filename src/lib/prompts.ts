@@ -1612,6 +1612,11 @@ export function buildConclusionPrompt(params: {
   /** Management recommendations the radiologist dictated, verbatim. Never
    *  generated: these are their words, lifted out of the findings. */
   dictatedRecommendations?: string[];
+  /** Whether the conclusion may carry a diagnostic term or an inference the
+   *  radiologist DICTATED. Granted outside the EU and the US only, and never
+   *  a licence to infer — see the comment at allowInterp. Defaults to off, so
+   *  a caller that does not know the region gets the strict prompt. */
+  allowInterpretation?: boolean;
 }): { system: string; user: string } {
   if (params.isCardiacMri) {
     return buildCardiacConclusionPrompt({
@@ -1653,16 +1658,16 @@ export function buildConclusionPrompt(params: {
   const isEvo = style === "evolutive";
 
   const RULE_1_ES = isEvo
-    ? `1. MÁXIMO 6 PUNTOS. Agrupa en un mismo punto los hallazgos que han cambiado igual y están relacionados. Un tipo de cambio del que no hay nada simplemente no aparece.`
-    : `1. MÁXIMO ${maxPoints} PUNTOS, y mejor menos. Cada punto trata UN SOLO tema clínico en 2-3 frases como mucho. Si un punto crece, estás mezclando temas o metiendo detalle que pertenece a los hallazgos.`;
+    ? `1. OBJETIVO: 6 PUNTOS O MENOS. Agrupa en un mismo punto los hallazgos que han cambiado igual Y pertenecen al mismo problema clínico. Un tipo de cambio del que no hay nada simplemente no aparece. Si quedan más problemas relevantes que puntos, añade el punto que falte antes que fusionar problemas distintos.`
+    : `1. OBJETIVO: ${maxPoints} PUNTOS O MENOS. Un punto por PROBLEMA CLÍNICO (regla 4), no por hallazgo ni por órgano. El objetivo se cumple AGRUPANDO lo que es un mismo problema y DESCARTANDO lo irrelevante — nunca fusionando problemas distintos ni recortando datos. Si quedan más problemas relevantes que puntos, añade el punto que falte.`;
   const FORMAT_ES = isEvo
     ? `- Puntos numerados, texto plano, máximo 6. Sin markdown ni encabezado "CONCLUSIÓN".
 - Cada punto empieza DIRECTAMENTE por el hallazgo y dice el cambio DENTRO de la frase, con naturalidad. NUNCA una etiqueta fija seguida de dos puntos: escribe "1. Aumento de la lesión hepática del segmento VII (8 → 12 mm)." y NO "1. Aumentado: lesión hepática…". Tampoco etiquetas anatómicas ("1. Parénquima pulmonar: …").`
     : `- Puntos numerados, texto plano, máximo ${maxPoints}. Sin markdown ni encabezado "CONCLUSIÓN".
 - Cada punto empieza DIRECTAMENTE por el hallazgo, nunca por una etiqueta anatómica: "1. Nódulo de nueva aparición en lóbulo inferior derecho (9 x 8 mm)." y NO "1. Parénquima pulmonar: …". Si un punto empieza por una categoría seguida de dos puntos, reescríbelo sin ese preámbulo.`;
   const RULE_1_EN = isEvo
-    ? `1. MAXIMUM 6 POINTS. Group into one point the findings that changed the same way and are related. A kind of change with nothing in it simply does not appear.`
-    : `1. MAXIMUM ${maxPoints} POINTS, fewer if possible. Each point covers ONE SINGLE clinical topic in 2-3 sentences at most. If a point grows, you are mixing topics or adding detail that belongs in the findings.`;
+    ? `1. TARGET: 6 POINTS OR FEWER. Group into one point the findings that changed the same way AND belong to the same clinical problem. A kind of change with nothing in it simply does not appear. If more relevant problems remain than points, add the point that is missing rather than merging distinct problems.`
+    : `1. TARGET: ${maxPoints} POINTS OR FEWER. One point per CLINICAL PROBLEM (rule 4), not per finding and not per organ. The target is met by GROUPING what is one problem and DISCARDING what is irrelevant — never by merging distinct problems or trimming data. If more relevant problems remain than points, add the point that is missing.`;
   const FORMAT_EN = isEvo
     ? `- Numbered points, plain text, maximum 6. No markdown, no "CONCLUSION" heading.
 - Each point starts DIRECTLY with the finding and states the change WITHIN the sentence, naturally. NEVER a fixed label followed by a colon: write "1. Interval increase of the segment VII hepatic lesion (8 → 12 mm)." and NOT "1. Increased: segment VII hepatic lesion…". No anatomical labels either ("1. Lung parenchyma: …").`
@@ -1671,8 +1676,16 @@ export function buildConclusionPrompt(params: {
   const SHAPE_ES = isEvo ? "en puntos ordenados por lo que ha cambiado" : "en puntos descriptivos que van al grano";
   const SHAPE_EN = isEvo ? "into points ordered by what has changed" : "into descriptive bullet points that get straight to the point";
   const SHAPE_PT = isEvo ? "em pontos ordenados pelo que mudou" : "em pontos descritivos que vão direto ao ponto";
-  const RULE_4_ES = `4. AGRUPACIÓN: reúne en un mismo punto los hallazgos anatómicamente relacionados o del mismo órgano/región (ej: derrame pleural + atelectasia compresiva adyacente), para que el clínico vea el panorama de cada zona y no una lista fragmentada. Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal.`;
-  const RULE_4_EN = `4. GROUPING: put anatomically related findings, or findings in the same organ/region, into a single point (e.g. pleural effusion + adjacent compressive atelectasis), so the clinician sees the whole picture of each area rather than a fragmented list. Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship.`;
+  const RULE_4_ES = `4. AGRUPACIÓN — POR PROBLEMA CLÍNICO, NO POR ANATOMÍA: reúne en un mismo punto los hallazgos que el clínico va a manejar como UNA SOLA COSA, aunque estén en órganos o regiones distintas.
+   - Un mismo problema repartido entre varios órganos va JUNTO: en un control oncológico, la lesión hepática, la adenopatía retroperitoneal y el nódulo pulmonar son UN punto, no tres.
+   - Dos problemas distintos van SEPARADOS aunque sean vecinos: el derrame pleural con su atelectasia compresiva adyacente es un punto (un problema); una fractura costal en el mismo hemitórax es otro.
+   - Si dos hallazgos no comparten problema, van en PUNTOS SEPARADOS aunque eso añada un punto. NUNCA los fusiones para cumplir el objetivo de la regla 1.
+   - Agrupar NO implica diagnosticar: describe cada hallazgo sin inferir su naturaleza ni su relación causal. Que vayan en el mismo punto ya transmite que van juntos; no escribas por qué.`;
+  const RULE_4_EN = `4. GROUPING — BY CLINICAL PROBLEM, NOT BY ANATOMY: put into a single point the findings the clinician will manage as ONE THING, even when they sit in different organs or regions.
+   - One problem spread across organs goes TOGETHER: on an oncology follow-up, the hepatic lesion, the retroperitoneal node and the pulmonary nodule are ONE point, not three.
+   - Two distinct problems stay SEPARATE even when adjacent: a pleural effusion with its adjacent compressive atelectasis is one point (one problem); a rib fracture in the same hemithorax is another.
+   - If two findings do not share a problem, they go in SEPARATE POINTS even if that adds a point. NEVER merge them to meet the target in rule 1.
+   - Grouping does NOT mean diagnosing: describe each finding without inferring its nature or any causal relationship. Sharing a point already conveys that they belong together; do not write why.`;
   // Ordering. The evolutive style is ordered by change, so "answer the
   // clinical question in the first point" would fight its own structure: the
   // answer leads its own label instead, and a negative answer goes on top.
@@ -1688,8 +1701,8 @@ export function buildConclusionPrompt(params: {
   const FIRST_EN = isEvo
     ? "The finding that answers it goes FIRST WITHIN ITS LABEL; if none answers it, open with a short negative sentence BEFORE the labelled points"
     : "The FIRST point MUST answer it";
-  const REST_ES = isEvo ? "El resto de los puntos" : "Los puntos restantes";
-  const REST_EN = isEvo ? "The remaining points" : "The remaining points";
+  const REST_ES = isEvo ? "El resto de los puntos cubre" : "Los puntos restantes cubren";
+  const REST_EN = "The remaining points cover";
   const AT_START_ES = isEvo ? "antes de los puntos etiquetados" : "en el primer punto";
   const AT_START_EN = isEvo ? "before the labelled points" : "in the first point";
   const WITH_FINDING_ES = "DENTRO del punto del hallazgo correspondiente";
@@ -1831,18 +1844,18 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
 
   const STYLE_BLOCK_ES: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
-- Cada punto es UNA SOLA FRASE breve, directa y accionable.
-- Sin subordinadas largas ni explicaciones. Solo el dato clave condensado.
+- Una frase breve, directa y accionable por punto. Si un hallazgo no cabe en una frase sin perder un dato, usa dos: la brevedad NUNCA se compra recortando datos (regla 8).
+- Sin subordinadas largas ni explicaciones. Solo los datos, condensados.
 - Usa paréntesis para medidas y datos: "Aumento de la lesión hepática del segmento VII (2→3.5 cm) con nueva adenopatía retroperitoneal (15 mm)."
-- ORDENA los puntos por RELEVANCIA CLÍNICA de MAYOR a MENOR: primero lo agudo / lo que responde a la pregunta clínica / lo que cambia el manejo inmediato; al final lo incidental o crónico estable.
-- AGRUPA en un mismo punto los hallazgos clínica o anatómicamente relacionados (mismo órgano/región), manteniendo la frase breve. Los hallazgos no relacionados van en PUNTOS SEPARADOS. Agrupar NO significa diagnosticar.
+- ORDENA los puntos por LO QUE CAMBIA EL MANEJO, de más a menos: primero lo agudo o lo que responde a la pregunta clínica; al final lo que solo se documenta.
+- AGRUPA por PROBLEMA CLÍNICO, no por órgano: lo que el clínico maneja como una sola cosa va en UN punto aunque esté repartido por varios sitios. Problemas distintos van en PUNTOS SEPARADOS aunque sean vecinos, y aunque eso añada un punto. Agrupar NO significa diagnosticar.
 - Tono: directo, escueto, descriptivo.`,
     evolutive: `ESTILO — EVOLUTIVA (ORGANIZADA POR EL CAMBIO):
 - Este estudio se compara con uno previo. La conclusión se ordena por CÓMO HA CAMBIADO cada hallazgo, no por relevancia.
 - Los puntos van en este orden: lo NUEVO, lo que ha AUMENTADO, lo que ha DISMINUIDO, lo que sigue SIN CAMBIOS, y lo que se ha RESUELTO.
 - El cambio se dice DENTRO de la frase, redactado con naturalidad, NUNCA como etiqueta fija seguida de dos puntos. Ej: "2. Aumento de la lesión hepática del segmento VII (8 → 12 mm)." — NO "2. Aumentado: lesión hepática…".
 - Cada punto empieza directamente por el hallazgo, como en cualquier conclusión radiológica bien escrita. El orden ya comunica el cambio; no hace falta anunciarlo.
-- Agrupa en un mismo punto los hallazgos que han cambiado igual y están anatómicamente relacionados.
+- Agrupa en un mismo punto los hallazgos que han cambiado igual Y pertenecen al mismo problema clínico, aunque estén en órganos distintos. Dos problemas distintos no se fusionan ni cuando han cambiado igual.
 - Lo que sigue igual: incluye solo lo que el clínico necesita saber que no ha cambiado (lo que se está vigilando). No listes toda la normalidad estable.
 - Un hallazgo del que los hallazgos NO dicen si cambió va al FINAL, descrito sin atribuirle ningún cambio.
 - ⚠️ MEDIR NO ES INTERPRETAR. Describe el cambio de tamaño, NUNCA lo que significa:
@@ -1855,18 +1868,18 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
 
   const STYLE_BLOCK_EN: Record<ConclusionStyle, string> = {
     concise: `STYLE — CONCISE:
-- Each point is ONE SINGLE brief, direct, actionable phrase.
-- No long subordinate clauses or explanations. Only the key data condensed.
+- One brief, direct, actionable sentence per point. If a finding will not fit in one sentence without losing a data point, use two: brevity is NEVER bought by trimming data (rule 8).
+- No long subordinate clauses or explanations. Only the data, condensed.
 - Use parentheses for measurements and data: "Interval increase of segment VII hepatic lesion (2→3.5 cm) with new retroperitoneal lymph node (15 mm)."
-- ORDER the points by CLINICAL RELEVANCE from HIGHEST to LOWEST: acute findings / what answers the clinical question / what changes immediate management first; incidental or stable chronic findings last.
-- GROUP clinically or anatomically related findings (same organ/region) into a single point while keeping the phrase brief. Unrelated findings go in SEPARATE POINTS. Grouping does NOT mean diagnosing.
+- ORDER the points by WHAT CHANGES MANAGEMENT, from most to least: acute findings or what answers the clinical question first; what is only documented last.
+- GROUP by CLINICAL PROBLEM, not by organ: what the clinician manages as one thing goes in ONE point even when spread across several sites. Distinct problems go in SEPARATE POINTS even when adjacent, and even if that adds a point. Grouping does NOT mean diagnosing.
 - Tone: direct, succinct, descriptive.`,
     evolutive: `STYLE — EVOLUTIVE (ORGANISED BY CHANGE):
 - This study is compared against a prior one. The conclusion is ordered by HOW EACH FINDING HAS CHANGED, not by relevance.
 - The points run in this order: what is NEW, what has INCREASED, what has DECREASED, what is UNCHANGED, and what has RESOLVED.
 - The change is stated WITHIN the sentence, worded naturally, NEVER as a fixed label followed by a colon. e.g. "2. Interval increase of the segment VII hepatic lesion (8 → 12 mm)." — NOT "2. Increased: segment VII hepatic lesion…".
 - Each point starts directly with the finding, as any well-written radiology conclusion does. The order already conveys the change; it does not need announcing.
-- Group into one point the findings that changed the same way and are anatomically related.
+- Group into one point the findings that changed the same way AND belong to the same clinical problem, even in different organs. Two distinct problems are never merged, not even when they changed the same way.
 - What is unchanged: include only what the clinician needs to know has not moved (what is being watched). Do not list every stable normality.
 - A finding the report does NOT say changed goes LAST, described without attributing any change to it.
 - ⚠️ MEASURING IS NOT INTERPRETING. Describe the change in size, NEVER what it means:
@@ -1879,18 +1892,18 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
 
   const STYLE_BLOCK_PT: Record<ConclusionStyle, string> = {
     concise: `ESTILO — CONCISO:
-- Cada ponto é UMA ÚNICA frase breve, direta e acionável.
-- Sem orações subordinadas longas nem explicações. Apenas o dado-chave condensado.
+- Uma frase breve, direta e acionável por ponto. Se um achado não couber numa frase sem perder um dado, use duas: a brevidade NUNCA se compra cortando dados (regra 8).
+- Sem orações subordinadas longas nem explicações. Apenas os dados, condensados.
 - Use parênteses para medidas e dados: "Aumento da lesão hepática do segmento VII (2→3,5 cm) com nova linfonodomegalia retroperitoneal (15 mm)."
-- ORDENE os pontos por RELEVÂNCIA CLÍNICA de MAIOR a MENOR: primeiro o agudo / o que responde à pergunta clínica / o que muda o manejo imediato; por último o incidental ou crônico estável.
-- AGRUPE em um mesmo ponto os achados clínica ou anatomicamente relacionados (mesmo órgão/região), mantendo a frase breve. Achados não relacionados vão em PONTOS SEPARADOS. Agrupar NÃO significa diagnosticar.
+- ORDENE os pontos pelo QUE MUDA O MANEJO, de mais a menos: primeiro o agudo ou o que responde à pergunta clínica; por último o que só se documenta.
+- AGRUPE por PROBLEMA CLÍNICO, não por órgão: o que o clínico maneja como uma só coisa vai em UM ponto mesmo que esteja repartido por vários sítios. Problemas distintos vão em PONTOS SEPARADOS mesmo que sejam vizinhos, e mesmo que isso acrescente um ponto. Agrupar NÃO significa diagnosticar.
 - Tom: direto, sucinto, descritivo.`,
     evolutive: `ESTILO — EVOLUTIVA (ORGANIZADA PELA MUDANÇA):
 - Este estudo é comparado com um prévio. A conclusão ordena-se por COMO CADA ACHADO MUDOU, não por relevância.
 - Os pontos seguem esta ordem: o NOVO, o que AUMENTOU, o que DIMINUIU, o que continua SEM ALTERAÇÕES, e o que se RESOLVEU.
 - A mudança diz-se DENTRO da frase, redigida com naturalidade, NUNCA como etiqueta fixa seguida de dois pontos. Ex: "2. Aumento da lesão hepática do segmento VII (8 → 12 mm)." — NÃO "2. Aumentado: lesão hepática…".
 - Cada ponto começa diretamente pelo achado, como em qualquer conclusão radiológica bem escrita. A ordem já comunica a mudança; não precisa de ser anunciada.
-- Agrupe num mesmo ponto os achados que mudaram igual e estão anatomicamente relacionados.
+- Agrupe num mesmo ponto os achados que mudaram igual E pertencem ao mesmo problema clínico, mesmo em órgãos diferentes. Dois problemas distintos nunca se fundem, nem quando mudaram igual.
 - O que continua igual: inclua só o que o clínico precisa saber que não mudou (o que se está vigiando). Não liste toda a normalidade estável.
 - Um achado do qual os achados NÃO dizem se mudou vai no FINAL, descrito sem lhe atribuir nenhuma mudança.
 - ⚠️ MEDIR NÃO É INTERPRETAR. Descreva a mudança de tamanho, NUNCA o que significa:
@@ -1900,6 +1913,53 @@ Five failures: an opening filler verb, "progression" and "partial response" inte
   · "Já não se identifica o derrame" — NUNCA "resolução do processo", "cura".
 - Todas as outras regras continuam: descrever sem diagnosticar, sem inferências, sem recomendações, sem acrescentar nada que não esteja nos achados.`,
   };
+
+  // Reproducing the radiologist's own words is not interpreting. Someone who
+  // dictated "consolidación compatible con neumonía" writes that in their own
+  // conclusion, and refusing to carry it back is a good part of why these read
+  // like a machine. What stays forbidden everywhere is the inference NOBODY
+  // dictated — and in the EU and the US, so does carrying one, because an
+  // interpretive conclusion is the line between documentation software and a
+  // regulated medical device.
+  const allowInterp = !!params.allowInterpretation;
+
+  const NAMING_ES = allowInterp
+    ? `- Nombrar una enfermedad o entidad, o caracterizar una lesión, CUANDO NO ESTÉ YA EN LOS HALLAZGOS DICTADOS. Si el radiólogo escribió "consolidación compatible con neumonía", la conclusión puede decirlo; si escribió "consolidación con broncograma aéreo", la conclusión describe eso y nada más. Nunca asciendas una descripción a diagnóstico: si el radiólogo no la llamó "adenoma", escribe "lesión adrenal de 18 mm con densidad de 20 UH".`
+    : `- Nombrar enfermedades o entidades (neumonía, metástasis, adenoma, hemangioma, absceso, colecistitis…) y caracterizar lesiones por su densidad, señal o realce: escribe "lesión adrenal de 18 mm con densidad de 20 UH", nunca "adenoma".`;
+  const INFER_ES = allowInterp
+    ? `- Inferencias TUYAS: no añadas "compatible con", "sugestivo de", "en relación con", "secundario a", "probable" ni "posible" a un hallazgo que los hallazgos describen sin ellas. Reproducir la inferencia que dictó el radiólogo, sí; inventarla, no.`
+    : `- Inferencias: "compatible con", "sugestivo de", "en relación con", "secundario a", "probable", "posible".`;
+  const EXCEPT_ES = allowInterp
+    ? `EXCEPCIÓN: puedes usar un término diagnóstico, y la inferencia que lo acompaña, SOLO si aparece en los hallazgos dictados (si dicen "fractura", di "fractura"; si dicen "compatible con neumonía", puedes decirlo; si dicen "nódulo", no digas "tumor").`
+    : `EXCEPCIÓN: puedes usar un término diagnóstico SOLO si aparece textualmente en los hallazgos dictados (si dicen "fractura", di "fractura"; si dicen "nódulo", no digas "tumor").`;
+  const FILTER_2_ES = allowInterp
+    ? `2. ¿Contiene una inferencia ("compatible con", "probable", "secundario a"…) que NO esté en los hallazgos dictados? → déjalo en descripción objetiva.`
+    : `2. ¿Contiene una inferencia ("compatible con", "probable", "secundario a"…)? → déjalo en descripción objetiva.`;
+  // Narrowed from a blanket ban: the prohibition is about OPENING a point with
+  // a filler verb. "Ya no se identifica el derrame" is how a radiologist says
+  // something has gone, and it is what the worked example above says — so the
+  // blanket version had the rulebook contradicting its own example.
+  const PRINCIPLE_WRONG_ES = allowInterp
+    ? `INCORRECTO (si el radiólogo no dictó "neumonía")`
+    : `INCORRECTO`;
+  const PRINCIPLE_WRONG_EN = allowInterp
+    ? `INCORRECT (unless the radiologist dictated "pneumonia")`
+    : `INCORRECT`;
+  const FILLER_ES = `- Muletillas de apertura: no empieces un punto con "se observa", "se identifica", "cabe destacar" ni "destaca". En cambio "ya no se identifica el derrame" o "no se identifica", para decir que algo falta o ha desaparecido, NO es muletilla: es el hallazgo.`;
+
+  const NAMING_EN = allowInterp
+    ? `- Naming a disease or entity, or characterizing a lesion, WHEN IT IS NOT ALREADY IN THE DICTATED FINDINGS. If the radiologist wrote "consolidation consistent with pneumonia", the conclusion may say so; if they wrote "consolidation with air bronchogram", the conclusion describes that and nothing more. Never promote a description to a diagnosis: unless the radiologist called it an "adenoma", write "18 mm adrenal lesion with a density of 20 HU".`
+    : `- Naming diseases or entities (pneumonia, metastasis, adenoma, hemangioma, abscess, cholecystitis…) and characterizing lesions by their density, signal or enhancement: write "18 mm adrenal lesion with a density of 20 HU", never "adenoma".`;
+  const INFER_EN = allowInterp
+    ? `- Inferences OF YOUR OWN: do not add "consistent with", "suggestive of", "in keeping with", "secondary to", "likely" or "possible" to a finding the report describes without them. Reproducing the inference the radiologist dictated, yes; inventing one, no.`
+    : `- Inferences: "consistent with", "suggestive of", "in keeping with", "secondary to", "likely", "possible".`;
+  const EXCEPT_EN = allowInterp
+    ? `EXCEPTION: you may use a diagnostic term, and the inference attached to it, ONLY if it appears in the dictated findings (if they say "fracture", say "fracture"; if they say "consistent with pneumonia", you may say so; if they say "nodule", do not say "tumour").`
+    : `EXCEPTION: you may use a diagnostic term ONLY if it appears verbatim in the dictated findings (if they say "fracture", say "fracture"; if they say "nodule", do not say "tumour").`;
+  const FILTER_2_EN = allowInterp
+    ? `2. Does it contain an inference ("consistent with", "likely", "secondary to"…) that is NOT in the dictated findings? → leave only the objective description.`
+    : `2. Does it contain an inference ("consistent with", "likely", "secondary to"…)? → leave only the objective description.`;
+  const FILLER_EN = `- Opening filler verbs: do not start a point with "is noted", "is identified", "of note" or "there is seen". By contrast "is no longer seen" or "is not identified", to say something is absent or has gone, is NOT filler: it is the finding.`;
 
   let system: string;
 
@@ -1919,10 +1979,10 @@ ${RULE_1_ES}
 
 2. TRIAJE — la conclusión NO resume todo: selecciona lo clínicamente relevante y DESCARTA sin miedo lo crónico estable, lo incidental menor, las normalidades de órganos y todo lo que no cambie el manejo. Para el detalle ya están los hallazgos.
 
-${RULE_3_ES ?? `3. JERARQUÍA CLÍNICA:
-   - PRIMERO: lo que responde a la pregunta clínica, o lo urgente (agudo, lo que cambia el manejo inmediato).
-   - DESPUÉS: otros hallazgos patológicos significativos.
-   - AL FINAL, y solo si requieren acción: incidentales relevantes.
+${RULE_3_ES ?? `3. ORDEN — POR LO QUE CAMBIA EL MANEJO:
+   - PRIMERO: lo que responde a la pregunta clínica, o lo urgente (agudo, lo que obliga a actuar hoy).
+   - DESPUÉS: el resto ordenado por cuánto obliga al clínico a HACER algo — no por gravedad abstracta, no por orden anatómico, no por tamaño. Un hallazgo que exige una decisión va DELANTE de otro más llamativo que no cambia nada.
+   - AL FINAL: lo que solo se documenta.
    - NUNCA: órganos normales, variantes irrelevantes, incidentales triviales (quiste simple pequeño, osteofitos) salvo que sean el motivo del estudio.`}
 
 ${RULE_4_ES}
@@ -1930,9 +1990,9 @@ ${RULE_4_ES}
 5. ${hasClinical ? `PREGUNTA CLÍNICA — RESUÉLVELA:
    - ${FIRST_ES}: el clínico lee la conclusión antes que los hallazgos.
    - Si hay hallazgos que respondan, descríbelos con sus datos clave (tamaño, localización, cambios respecto a previo); si no los hay, frase negativa corta (ej: "Sin evidencia de TEP en el territorio valorado."); si el hallazgo es indeterminado, descríbelo sin especular.
-   - ${REST_ES} cubre otros hallazgos significativos.` : `SIN CONTEXTO CLÍNICO:
+   - ${REST_ES} otros hallazgos significativos.` : `SIN CONTEXTO CLÍNICO:
    - Deduce cuál es el hallazgo principal: ¿por qué se pidió este estudio? El PRIMER punto debe ser ese hallazgo, o su ausencia.
-   - Orden: agudos (fractura, colección, isquemia, perforación, torsión) → cambios evolutivos en lesiones conocidas → nuevos hallazgos patológicos → crónicos/degenerativos solo si requieren acción.
+   - Orden, por lo que obliga a actuar: lo que exige acción hoy (agudos: fractura, colección, isquemia, perforación, torsión) → lo que exige una decisión próxima (cambios en lesiones conocidas, hallazgos nuevos) → lo que solo se documenta (crónicos/degenerativos, y solo si requieren acción).
    - Nunca enumeres en plano: prioriza.`}
 
 6. NEGATIVOS: incluye un negativo solo si responde a la pregunta clínica (ej: "descartar TEP" → "Sin evidencia de TEP", ${AT_START_ES}). Nunca listes normalidad como relleno.
@@ -1943,19 +2003,19 @@ ${RULE_4_ES}
 
 PRINCIPIO FUNDAMENTAL — DESCRIBIR, NO DIAGNOSTICAR:
 Describes lo que se ve; el clínico decide qué significa.
-- CORRECTO: "Consolidación en lóbulo inferior derecho con broncograma aéreo." — INCORRECTO: "Neumonía del lóbulo inferior derecho."
+- CORRECTO: "Consolidación en lóbulo inferior derecho con broncograma aéreo." — ${PRINCIPLE_WRONG_ES}: "Neumonía del lóbulo inferior derecho."
 - CORRECTO: "Aumento de la lesión hepática del segmento VII (2 → 3.5 cm respecto al previo)." — INCORRECTO: "Progresión tumoral hepática."
 
 PROHIBIDO:
-- Nombrar enfermedades o entidades (neumonía, metástasis, adenoma, hemangioma, absceso, colecistitis…) y caracterizar lesiones por su densidad, señal o realce: escribe "lesión adrenal de 18 mm con densidad de 20 UH", nunca "adenoma".
-- Inferencias: "compatible con", "sugestivo de", "en relación con", "secundario a", "probable", "posible".
+${NAMING_ES}
+${INFER_ES}
 - Juicios de naturaleza o pronóstico: maligno, benigno, sospechoso, recidiva, progresión, respuesta al tratamiento.
 - Recomendaciones de cualquier tipo: seguimiento, biopsia, completar con otra prueba, "correlacionar clínicamente", "valorar", "considerar".
 - Clasificaciones por escalas (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM).
 - Añadir nada que no esté en los hallazgos. Los datos clínicos son CONTEXTO para priorizar, no hallazgos.
-- Muletillas ("se observa", "se identifica", "cabe destacar").
+${FILLER_ES}
 
-EXCEPCIÓN: puedes usar un término diagnóstico SOLO si aparece textualmente en los hallazgos dictados (si dicen "fractura", di "fractura"; si dicen "nódulo", no digas "tumor").
+${EXCEPT_ES}
 
 Si no hay hallazgos relevantes: "${hasClinical ? "Sin hallazgos significativos en relación con la pregunta clínica." : "Exploración dentro de límites normales."}"
 
@@ -1964,7 +2024,7 @@ ${FORMAT_ES}
 
 ⚠️ ANTES DE ENTREGAR, ${REREAD_ES} si falla alguno de estos filtros:
 1. ¿Nombra una enfermedad o entidad que NO aparece textualmente en los hallazgos? → sustitúyelo por la descripción (qué se ve, dónde, tamaño, densidad/señal).
-2. ¿Contiene una inferencia ("compatible con", "probable", "secundario a"…)? → déjalo en descripción objetiva.
+${FILTER_2_ES}
 3. ¿Asigna malignidad, benignidad, etiología o pronóstico? → elimínalo.
 4. ¿Incluye recomendación, seguimiento, correlación clínica o clasificación por escalas? → elimínalo.
 5. ¿Contiene un nombre o un identificador personal (DNI, teléfono, nº de historia, email)? → sustitúyelo por [NOMBRE] o [ID]. Los marcadores ya presentes en los hallazgos se mantienen tal cual.
@@ -1990,10 +2050,10 @@ ${RULE_1_EN}
 
 2. TRIAGE — the conclusion is NOT a summary of everything: select what is clinically relevant and freely DISCARD stable chronic findings, minor incidentals, organ normality and anything that does not change management. The detail is already in the findings.
 
-${RULE_3_EN ?? `3. CLINICAL HIERARCHY:
-   - FIRST: what answers the clinical question, or what is urgent (acute, changes immediate management).
-   - THEN: other significant pathological findings.
-   - LAST, and only if they require action: relevant incidentals.
+${RULE_3_EN ?? `3. ORDER — BY WHAT CHANGES MANAGEMENT:
+   - FIRST: what answers the clinical question, or what is urgent (acute, forces action today).
+   - THEN: the rest ordered by how much it forces the clinician to DO something — not by abstract severity, not anatomically, not by size. A finding that demands a decision goes AHEAD of a more striking one that changes nothing.
+   - LAST: what is only being documented.
    - NEVER: normal organs, irrelevant variants, trivial incidentals (small simple cyst, osteophytes) unless they are the reason for the study.`}
 
 ${RULE_4_EN}
@@ -2001,9 +2061,9 @@ ${RULE_4_EN}
 5. ${hasClinical ? `CLINICAL QUESTION — ANSWER IT:
    - ${FIRST_EN}: the clinician reads the conclusion before the findings.
    - If findings answer it, describe them with their key data (size, location, change from prior); if none do, a short negative sentence (e.g. "No evidence of PE in the assessed territory."); if the finding is indeterminate, describe it without speculating.
-   - ${REST_EN} covers other significant findings.` : `NO CLINICAL CONTEXT:
+   - ${REST_EN} other significant findings.` : `NO CLINICAL CONTEXT:
    - Work out the main finding: why was this study requested? The FIRST point must be that finding, or its absence.
-   - Order: acute findings (fracture, collection, ischemia, perforation, torsion) → interval change in known lesions → new pathological findings → chronic/degenerative only if they require action.
+   - Order, by what forces action: what demands action today (acute: fracture, collection, ischemia, perforation, torsion) → what demands a decision soon (interval change in known lesions, new findings) → what is only documented (chronic/degenerative, and only if they require action).
    - Never list flatly: prioritize.`}
 
 6. NEGATIVES: include a negative only if it answers the clinical question (e.g. "rule out PE" → "No evidence of PE", ${AT_START_EN}). Never list normality as filler.
@@ -2014,19 +2074,19 @@ ${RULE_4_EN}
 
 FUNDAMENTAL PRINCIPLE — DESCRIBE, DO NOT DIAGNOSE:
 You describe what is seen; the clinician decides what it means.
-- CORRECT: "Consolidation in the right lower lobe with air bronchogram." — INCORRECT: "Right lower lobe pneumonia."
+- CORRECT: "Consolidation in the right lower lobe with air bronchogram." — ${PRINCIPLE_WRONG_EN}: "Right lower lobe pneumonia."
 - CORRECT: "Interval increase of the segment VII hepatic lesion (2 → 3.5 cm)." — INCORRECT: "Hepatic tumour progression."
 
 FORBIDDEN:
-- Naming diseases or entities (pneumonia, metastasis, adenoma, hemangioma, abscess, cholecystitis…) and characterizing lesions by their density, signal or enhancement: write "18 mm adrenal lesion with a density of 20 HU", never "adenoma".
-- Inferences: "consistent with", "suggestive of", "in keeping with", "secondary to", "likely", "possible".
+${NAMING_EN}
+${INFER_EN}
 - Judgments of nature or prognosis: malignant, benign, suspicious, recurrence, progression, treatment response.
 - Recommendations of any kind: follow-up, biopsy, further imaging, "correlate clinically", "consider", "assess".
 - Scale classifications (BI-RADS, Lung-RADS, PI-RADS, TI-RADS, TNM).
 - Adding anything not in the findings. The clinical data is CONTEXT for prioritizing, not findings.
-- Filler verbs ("is noted", "is identified", "of note").
+${FILLER_EN}
 
-EXCEPTION: you may use a diagnostic term ONLY if it appears verbatim in the dictated findings (if they say "fracture", say "fracture"; if they say "nodule", do not say "tumour").
+${EXCEPT_EN}
 
 If there are no relevant findings: "${hasClinical ? "No significant findings in relation to the clinical question." : "Study within normal limits."}"
 
@@ -2035,7 +2095,7 @@ ${FORMAT_EN}
 
 ⚠️ BEFORE DELIVERING, ${REREAD_EN} if it fails any of these filters:
 1. Does it name a disease or entity that does NOT appear verbatim in the findings? → replace it with the description (what is seen, where, size, density/signal).
-2. Does it contain an inference ("consistent with", "likely", "secondary to"…)? → leave only the objective description.
+${FILTER_2_EN}
 3. Does it assign malignancy, benignity, etiology or prognosis? → remove it.
 4. Does it include a recommendation, follow-up, clinical correlation or scale classification? → remove it.
 5. Does it contain a person's name or a personal identifier (ID number, phone, medical record number, email)? → replace it with [NOMBRE] or [ID]. Placeholders already present in the findings are kept as-is.
