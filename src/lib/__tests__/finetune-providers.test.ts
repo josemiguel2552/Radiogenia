@@ -243,3 +243,102 @@ describe("the dashboard drives the whole run from one place", () => {
     expect(page).toContain("FINETUNE_PROVIDERS[ftProvider].keyProvider");
   });
 });
+
+/**
+ * The two ends of the chain, checked against each other.
+ *
+ * The exporter builds examples and the uploader validates them, and nothing
+ * made them agree: a change to either could leave the panel generating a file
+ * its own upload rejects, which only shows up as "no valid training examples"
+ * on a file that looks fine.
+ */
+describe("what the exporter produces is what the uploader accepts", () => {
+  it("keeps an example built exactly the way the export builds it", async () => {
+    const { buildTrainingPrompt } = await import("@/lib/training-prompt");
+    const findings = "Hígado: lesión de 12 mm en segmento VII (8 mm en el previo).\nPulmón: nódulo de 9 mm en LID.";
+    const conclusion = "1. Nódulo de nueva aparición de 9 mm en lóbulo inferior derecho.\n2. Lesión hepática mayor que en el previo (8 → 12 mm).";
+    const prompt = buildTrainingPrompt({ findingsText: findings, conclusionText: conclusion, clinicalInfo: "Control oncológico." });
+
+    const line = JSON.stringify({
+      messages: [
+        { role: "system", content: prompt.system },
+        { role: "user", content: prompt.user },
+        { role: "assistant", content: conclusion },
+      ],
+    });
+
+    for (const spec of Object.values(FINETUNE_PROVIDERS)) {
+      const r = adaptJsonl(line, spec);
+      expect(r.kept).toBe(1);
+      expect(r.dropped).toEqual([]);
+      // The conversation survives intact: a trimmed system prompt would train
+      // against instructions production does not send.
+      const parsed = JSON.parse(r.jsonl.trim());
+      expect(parsed.messages).toHaveLength(3);
+      expect(parsed.messages[0].content).toBe(prompt.system);
+      expect(parsed.messages[2].content).toBe(conclusion);
+    }
+  });
+
+  it("strips patient identifiers before the file leaves", () => {
+    // This file is uploaded to a third party and kept by them. Every
+    // generation route already strips; this was the one payload that got
+    // STORED rather than answered and forgotten.
+    const route = source("src/app/api/admin/training-data/openai/route.ts");
+    expect(route).toContain('import { stripPii } from "@/lib/pii-detect"');
+    expect(route).toContain("stripPii(r.findings_text!).cleaned");
+    expect(route).toContain("stripPii(r.conclusion_text!).cleaned");
+    // The audit-log fallback path builds examples too.
+    expect(route).toContain("stripPii((m.corrected_conclusion");
+  });
+
+  it("trains on the stripped text it will be asked about in service", () => {
+    // The conclusion route strips before prompting, so an example paired with
+    // unstripped findings is an example of input the model never meets.
+    const route = source("src/app/api/admin/training-data/openai/route.ts");
+    const mapBlock = route.slice(route.indexOf("const findings = stripPii"), route.indexOf("return {", route.indexOf("const findings = stripPii")));
+    expect(mapBlock).toContain("reconcileFindings(findings, conclusion)");
+    expect(mapBlock).not.toContain("r.findings_text!, r.conclusion_text!");
+  });
+});
+
+describe("a trained model reaches the dropdowns", () => {
+  const page = source("src/app/admin/page.tsx");
+  const route = source("src/app/api/finetune/status/route.ts");
+
+  it("offers each provider its own fine-tunes", () => {
+    // Both pickers used to gate the fine-tuned group on provider === "openai",
+    // so a model trained anywhere else could never be selected — the whole
+    // point of training it.
+    expect(page).toContain("ftModelsByProvider[provider] || []");
+    expect(page).toContain("ftModelsByProvider[o.provider] || []");
+    expect(page).not.toContain('provider === "openai"\n                        ? ftModelsList');
+    expect(page).not.toContain("ftModelsList");
+  });
+
+  it("does not let the training panel's selection decide what Modelos offers", () => {
+    // The list is built for every provider with a key, not for the one
+    // selected in Entrenamiento.
+    expect(route).toContain("Object.values(FINETUNE_PROVIDERS).map(async (sp)");
+    expect(route).toContain("modelsByProvider");
+  });
+
+  it("keys the list by the provider a task override would name", () => {
+    // taskOverrides store {provider, model}; indexing by anything else would
+    // offer a model under a provider that cannot serve it.
+    expect(route).toContain("[sp.keyProvider, await modelsFor(sp, key)]");
+  });
+
+  it("asks OpenAI for its model list rather than reading its jobs", () => {
+    // The jobs endpoint is paginated: a fine-tune older than the first page
+    // would silently disappear from the dropdowns while still existing.
+    const fn = route.slice(route.indexOf("async function modelsFor"), route.indexOf("Every job this provider has"));
+    expect(fn).toContain("https://api.openai.com/v1/models");
+    expect(fn).toContain('startsWith("ft:")');
+  });
+
+  it("skips a provider with no key instead of calling it", () => {
+    expect(route).toContain("if (!apiKey) return [];");
+    expect(route).toContain("apiKey ? await fetch(spec.endpoints.jobs");
+  });
+});

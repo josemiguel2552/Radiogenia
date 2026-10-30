@@ -282,7 +282,10 @@ export default function AdminPage() {
 
   // Fine-tuning
   const [ftJobs, setFtJobs] = useState<FtJob[]>([]);
-  const [ftModelsList, setFtModelsList] = useState<string[]>([]);
+  // Fine-tuned models keyed by the provider that serves them. A single flat
+  // list could only ever belong to one provider, which is why a model trained
+  // anywhere but OpenAI could not be selected.
+  const [ftModelsByProvider, setFtModelsByProvider] = useState<Record<string, string[]>>({});
   const [ftFileMap, setFtFileMap] = useState<Record<string, FtFileInfo>>({});
   const [ftUploading, setFtUploading] = useState(false);
   const [ftStarting, setFtStarting] = useState(false);
@@ -595,7 +598,7 @@ export default function AdminPage() {
       if (ftRes?.ok) {
         const ftData = await ftRes.json();
         setFtJobs(ftData.jobs || []);
-        setFtModelsList(ftData.ftModels || []);
+        setFtModelsByProvider(ftData.modelsByProvider || {});
         setFtFileMap(ftData.fileMap || {});
       }
     } catch { /* fine-tune listing may fail if not OpenAI */ }
@@ -679,7 +682,7 @@ export default function AdminPage() {
         if (res.ok && !cancelled) {
           const d = await res.json();
           setFtJobs(d.jobs || []);
-          setFtModelsList(d.ftModels || []);
+          setFtModelsByProvider(d.modelsByProvider || {});
         }
       } catch { /* the panel keeps whatever it had */ }
     })();
@@ -1528,9 +1531,7 @@ export default function AdminPage() {
                     <Label className="text-xs">{t("admin.model")}</Label>
                     {(() => {
                       const base = selectedProvider?.models || [];
-                      const ft = provider === "openai"
-                        ? ftModelsList
-                        : [];
+                      const ft = ftModelsByProvider[provider] || [];
                       const all = [...base, ...ft];
                       const inList = !modelName || all.includes(modelName);
                       return all.length > 0 ? (
@@ -1690,9 +1691,7 @@ export default function AdminPage() {
                         {o.provider ? (
                           (() => {
                             const baseModels = taskProv?.models || [];
-                            const ftModels = o.provider === "openai"
-                              ? ftModelsList
-                              : [];
+                            const ftModels = ftModelsByProvider[o.provider] || [];
                             const allModels = [...baseModels, ...ftModels];
                             const currentInList = !o.model || allModels.includes(o.model);
                             return allModels.length > 0 ? (

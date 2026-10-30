@@ -4,10 +4,20 @@ import { requireAdmin } from "@/lib/auth-helpers";
 import { getErrorMessage, getErrorStatus } from "@/lib/api-error";
 import { reconcileFindings } from "@/lib/training-preprocess";
 import { buildTrainingPrompt } from "@/lib/training-prompt";
+import { stripPii } from "@/lib/pii-detect";
 
 export const dynamic = "force-dynamic";
 
 /**
+ * ⚠️ Every field of every example goes through stripPii before it leaves.
+ *
+ * This file is uploaded to a third party to train on and is kept by them.
+ * Every generation route already strips before calling a provider, and this
+ * one did not — so the one payload that gets STORED rather than answered and
+ * forgotten was the only one leaving with patient text in it. It also aligns
+ * training with service: production sends stripped findings, so a model
+ * trained on unstripped ones is trained on input it will never see.
+ *
  * Each example is paired with the prompt the conclusion route actually sends
  * for that case, built by the same function. A fine-tune trained against a
  * different instruction than it meets in service learns a mapping that does
@@ -95,17 +105,20 @@ async function fromReportsTable(
       return findings && conclusion;
     })
     .map((r) => {
-      const correctedFindings = reconcileFindings(r.findings_text!, r.conclusion_text!);
+      const findings = stripPii(r.findings_text!).cleaned;
+      const conclusion = stripPii(r.conclusion_text!).cleaned;
+      const clinical = r.clinical_context ? stripPii(r.clinical_context).cleaned : null;
+      const correctedFindings = reconcileFindings(findings, conclusion);
       const prompt = buildTrainingPrompt({
         findingsText: correctedFindings,
-        conclusionText: r.conclusion_text!,
-        clinicalInfo: r.clinical_context,
+        conclusionText: conclusion,
+        clinicalInfo: clinical,
       });
       return {
         messages: [
           { role: "system" as const, content: prompt.system },
           { role: "user" as const, content: prompt.user },
-          { role: "assistant" as const, content: r.conclusion_text! },
+          { role: "assistant" as const, content: conclusion },
         ],
       };
     });
@@ -139,8 +152,8 @@ async function fromAuditLogs(
     const m = row.metadata;
     if (!m) continue;
 
-    const correctedFindings = (m.corrected_findings || m.original_findings || "").trim();
-    const correctedConclusion = (m.corrected_conclusion || "").trim();
+    const correctedFindings = stripPii((m.corrected_findings || m.original_findings || "").trim()).cleaned;
+    const correctedConclusion = stripPii((m.corrected_conclusion || "").trim()).cleaned;
     if (!correctedFindings || !correctedConclusion) continue;
 
     const mod = m.modality || "Unknown";
