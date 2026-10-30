@@ -199,6 +199,39 @@ function getProviderConfig(params: GenerateParams): ProviderConfig {
         },
       };
 
+    // Together serves an OpenAI-shaped chat-completions API, which is what
+    // makes a fine-tune trained there usable by every task in the app without
+    // a second code path: the model name the training job returns goes
+    // straight into a task override.
+    case "together":
+      return {
+        url: "https://api.together.xyz/v1/chat/completions",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        buildBody: (model, system, user, maxTokens) => ({
+          model,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+          max_tokens: maxTokens,
+          temperature: 0,
+        }),
+        extractText: (data: unknown) => {
+          const d = data as { choices: { message: { content: string } }[] };
+          return d.choices?.[0]?.message?.content || "";
+        },
+        extractUsage: (data: unknown) => {
+          const d = data as { usage?: { prompt_tokens?: number; completion_tokens?: number } };
+          return {
+            inputTokens: d.usage?.prompt_tokens || 0,
+            outputTokens: d.usage?.completion_tokens || 0,
+          };
+        },
+      };
+
     case "custom":
       return {
         url: `${customBaseUrl || "http://localhost:11434"}/v1/chat/completions`,
@@ -281,6 +314,7 @@ function extractStreamToken(parsed: any, provider: AIProvider, eventType: string
     case "openai":
     case "deepseek":
     case "openrouter":
+    case "together":
     case "custom":
       return parsed?.choices?.[0]?.delta?.content || "";
     case "claude":
@@ -329,7 +363,7 @@ function extractSSEError(parsed: Record<string, unknown>, provider: AIProvider, 
     const err = parsed as { error?: { message?: string }; message?: string };
     return err.error?.message || err.message || "Stream error";
   }
-  if (provider === "openai" || provider === "deepseek" || provider === "openrouter" || provider === "custom") {
+  if (provider === "openai" || provider === "deepseek" || provider === "openrouter" || provider === "together" || provider === "custom") {
     const obj = parsed as { error?: { message?: string } };
     if (obj.error?.message) return obj.error.message;
   }
@@ -488,7 +522,7 @@ export async function generateAIStreamWithUsage(params: GenerateParams): Promise
     url = url.replace(":generateContent", ":streamGenerateContent");
     url += url.includes("?") ? "&alt=sse" : "?alt=sse";
     requestBody = body;
-  } else if (provider === "openai" || provider === "deepseek" || provider === "openrouter" || provider === "custom") {
+  } else if (provider === "openai" || provider === "deepseek" || provider === "openrouter" || provider === "together" || provider === "custom") {
     requestBody = { ...body, stream: true, stream_options: { include_usage: true } };
   } else {
     requestBody = { ...body, stream: true };

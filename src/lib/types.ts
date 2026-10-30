@@ -164,7 +164,7 @@ export interface UserTemplate {
   created_at: string;
 }
 
-export type AIProvider = "claude" | "openai" | "deepseek" | "gemini" | "openrouter" | "custom";
+export type AIProvider = "claude" | "openai" | "deepseek" | "gemini" | "openrouter" | "together" | "custom";
 export type FindingsLength = "concise" | "standard" | "detailed";
 export type NormalFieldsVerbosity = "minimal" | "standard" | "explicit";
 export type ParaphraseLevel = "none" | "light" | "free";
@@ -282,6 +282,9 @@ export const PROVIDERS: { value: AIProvider; label: string; models: string[] }[]
   { value: "deepseek", label: "DeepSeek", models: ["deepseek-flash", "deepseek-v4-pro", "deepseek-v4-flash"] },
   { value: "gemini", label: "Gemini (Google)", models: ["gemini-1.5-pro", "gemini-2.0-flash"] },
   { value: "openrouter", label: "OpenRouter", models: ["qwen/qwen-2.5-72b-instruct", "qwen/qwen2.5-32b-instruct", "meta-llama/llama-3.3-70b-instruct", "mistralai/mistral-small-24b-instruct-2501", "deepseek/deepseek-chat"] },
+  // Models trained here are named by the training job, so the list is only a
+  // starting point: a fine-tune's own name is typed into the model field.
+  { value: "together", label: "Together AI", models: ["Qwen/Qwen3-8B", "meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo"] },
   { value: "custom", label: "Custom Endpoint", models: [] },
 ];
 

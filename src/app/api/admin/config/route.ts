@@ -29,6 +29,7 @@ export async function GET() {
       "google_api_key_encrypted",
       "deepseek_api_key_encrypted",
       "openrouter_api_key_encrypted",
+      "together_api_key_encrypted",
       "custom_api_key_encrypted",
     ] as const;
 
@@ -84,6 +85,7 @@ export async function PUT(req: NextRequest) {
       ["google_api_key", "google_api_key_encrypted"],
       ["deepseek_api_key", "deepseek_api_key_encrypted"],
       ["openrouter_api_key", "openrouter_api_key_encrypted"],
+      ["together_api_key", "together_api_key_encrypted"],
       ["custom_api_key", "custom_api_key_encrypted"],
     ];
     for (const [bodyField, dbCol] of providerKeyMap) {
@@ -116,7 +118,8 @@ export async function PUT(req: NextRequest) {
     const MASKED = [
       "api_key_encrypted", "whisper_api_key_encrypted",
       "anthropic_api_key_encrypted", "google_api_key_encrypted",
-      "deepseek_api_key_encrypted", "openrouter_api_key_encrypted", "custom_api_key_encrypted",
+      "deepseek_api_key_encrypted", "openrouter_api_key_encrypted",
+      "together_api_key_encrypted", "custom_api_key_encrypted",
     ] as const;
     const result = { ...data };
     for (const f of MASKED) {

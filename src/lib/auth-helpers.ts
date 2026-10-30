@@ -85,6 +85,7 @@ export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
     ["google_api_key_encrypted", "gemini"],
     ["deepseek_api_key_encrypted", "deepseek"],
     ["openrouter_api_key_encrypted", "openrouter"],
+    ["together_api_key_encrypted", "together"],
     ["custom_api_key_encrypted", "custom"],
   ];
   for (const [col, prov] of keyMap) {

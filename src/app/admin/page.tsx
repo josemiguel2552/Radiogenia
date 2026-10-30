@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
-  Eye, EyeOff, Zap, TrendingUp, FileText, Search,
+  Eye, EyeOff, Zap, TrendingUp, FileText, Search, Copy,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw, AlertTriangle,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
   MessageSquare, DollarSign, Sparkles, ShieldAlert, Plus,
@@ -23,6 +23,7 @@ import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { resolveRegion } from "@/lib/region";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
 import { useT } from "@/lib/i18n";
+import { FINETUNE_PROVIDERS, type FinetuneProviderId } from "@/lib/finetune-providers";
 import { Logo } from "@/components/ui/logo";
 import nextDynamic from "next/dynamic";
 
@@ -255,6 +256,7 @@ export default function AdminPage() {
   const [googleKey, setGoogleKey] = useState("");
   const [deepseekKey, setDeepseekKey] = useState("");
   const [openrouterKey, setOpenrouterKey] = useState("");
+  const [togetherKey, setTogetherKey] = useState("");
   const [customProvKey, setCustomProvKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [showWhisperKey, setShowWhisperKey] = useState(false);
@@ -287,7 +289,16 @@ export default function AdminPage() {
   const [ftFileId, setFtFileId] = useState<string | null>(null);
   const [ftExamples, setFtExamples] = useState(0);
   const [ftSuffix, setFtSuffix] = useState("radiogenai");
-  const [ftBaseModel, setFtBaseModel] = useState("gpt-4o-mini-2024-07-18");
+  const [ftProvider, setFtProvider] = useState<FinetuneProviderId>("openai");
+  const [ftBaseModel, setFtBaseModel] = useState(FINETUNE_PROVIDERS.openai.baseModels[0].id);
+  // A base model only exists for one provider, so switching has to move it or
+  // the next run is launched against a name the other one has never heard of.
+  function changeFtProvider(id: FinetuneProviderId) {
+    setFtProvider(id);
+    setFtBaseModel(FINETUNE_PROVIDERS[id].baseModels[0].id);
+    setFtFileId(null);
+    setFtError("");
+  }
   const [ftError, setFtError] = useState("");
   const [ftChecking, setFtChecking] = useState(false);
 
@@ -561,6 +572,7 @@ export default function AdminPage() {
       setGoogleKey(d.google_api_key_encrypted || "");
       setDeepseekKey(d.deepseek_api_key_encrypted || "");
       setOpenrouterKey(d.openrouter_api_key_encrypted || "");
+      setTogetherKey(d.together_api_key_encrypted || "");
       setCustomProvKey(d.custom_api_key_encrypted || "");
       setCustomUrl(d.custom_base_url || "");
       const isCombo = d.findings_provider === "combo";
@@ -579,7 +591,7 @@ export default function AdminPage() {
     }
 
     try {
-      const ftRes = await fetch("/api/finetune/status");
+      const ftRes = await fetch(`/api/finetune/status?provider=${ftProvider}`);
       if (ftRes?.ok) {
         const ftData = await ftRes.json();
         setFtJobs(ftData.jobs || []);
@@ -659,6 +671,22 @@ export default function AdminPage() {
   }, [auditCursor, auditLoadingMore]);
 
   useEffect(() => {
+    if (tab !== "training") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/finetune/status?provider=${ftProvider}`);
+        if (res.ok && !cancelled) {
+          const d = await res.json();
+          setFtJobs(d.jobs || []);
+          setFtModelsList(d.ftModels || []);
+        }
+      } catch { /* the panel keeps whatever it had */ }
+    })();
+    return () => { cancelled = true; };
+  }, [ftProvider, tab]);
+
+  useEffect(() => {
     // Each panel loads with the section that shows it. These used to both
     // hang off the audit tab, so opening fine-tuning directly showed an empty
     // data panel until you had visited Audit at some point.
@@ -688,6 +716,7 @@ export default function AdminPage() {
       if (googleKey && googleKey !== "••••••••") body.google_api_key = googleKey;
       if (deepseekKey && deepseekKey !== "••••••••") body.deepseek_api_key = deepseekKey;
       if (openrouterKey && openrouterKey !== "••••••••") body.openrouter_api_key = openrouterKey;
+      if (togetherKey && togetherKey !== "••••••••") body.together_api_key = togetherKey;
       if (customProvKey && customProvKey !== "••••••••") body.custom_api_key = customProvKey;
       body.custom_base_url = provider === "custom" ? customUrl : "";
 
@@ -713,6 +742,7 @@ export default function AdminPage() {
         setGoogleKey(d.google_api_key_encrypted || "");
         setDeepseekKey(d.deepseek_api_key_encrypted || "");
         setOpenrouterKey(d.openrouter_api_key_encrypted || "");
+        setTogetherKey(d.together_api_key_encrypted || "");
         setCustomProvKey(d.custom_api_key_encrypted || "");
         setConfigSuccess(true);
         setTimeout(() => setConfigSuccess(false), 3000);
@@ -755,6 +785,7 @@ export default function AdminPage() {
     try {
       const form = new FormData();
       form.append("file", file);
+      form.append("provider", ftProvider);
       const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) { setFtError(data.error || t("admin.ft_upload_failed")); return; }
@@ -775,7 +806,7 @@ export default function AdminPage() {
       const res = await fetch("/api/finetune/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix, nEpochs: ftNEpochs, learningRateMultiplier: ftLearningRate, batchSize: ftBatchSize }),
+        body: JSON.stringify({ provider: ftProvider, fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix, nEpochs: ftNEpochs, learningRateMultiplier: ftLearningRate, batchSize: ftBatchSize }),
       });
       const data = await res.json();
       if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
@@ -794,7 +825,7 @@ export default function AdminPage() {
       const res = await fetch("/api/finetune/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId }),
+        body: JSON.stringify({ jobId, provider: ftProvider }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -931,6 +962,7 @@ export default function AdminPage() {
 
       const form = new FormData();
       form.append("file", blob, `radiogenai-finetune-${new Date().toISOString().slice(0, 10)}.jsonl`);
+      form.append("provider", ftProvider);
       const uploadRes = await fetch("/api/finetune/upload", { method: "POST", body: form });
       const data = await uploadRes.json();
       if (!uploadRes.ok) { setFtError(data.error || "Upload failed"); return; }
@@ -954,6 +986,7 @@ export default function AdminPage() {
       const blob = new Blob([ftAugmentedJsonl], { type: "application/jsonl" });
       const form = new FormData();
       form.append("file", blob, `radiogenai-finetune-augmented-${new Date().toISOString().slice(0, 10)}.jsonl`);
+      form.append("provider", ftProvider);
       const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) { setFtDataError(data.error || "Upload failed"); return; }
@@ -1721,6 +1754,7 @@ export default function AdminPage() {
                     { prov: "gemini", label: "Google (Gemini)", value: googleKey, setter: setGoogleKey },
                     { prov: "deepseek", label: "DeepSeek", value: deepseekKey, setter: setDeepseekKey },
                     { prov: "openrouter", label: "OpenRouter", value: openrouterKey, setter: setOpenrouterKey },
+                    { prov: "together", label: "Together AI", value: togetherKey, setter: setTogetherKey },
                     { prov: "custom", label: t("admin.custom_endpoint"), value: customProvKey, setter: setCustomProvKey },
                     { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: t("admin.uses_whisper_key") },
                   ];
@@ -2028,6 +2062,35 @@ export default function AdminPage() {
                   {t("admin.fine_tuning_desc")}
                 </p>
 
+                {/* Who trains it — everything below follows from this */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">{t("admin.ft_who_trains")}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.values(FINETUNE_PROVIDERS)).map((sp) => (
+                      <button
+                        key={sp.id}
+                        onClick={() => changeFtProvider(sp.id)}
+                        className={`flex-1 min-w-[160px] text-left px-3 py-2 rounded-lg border transition-colors ${
+                          ftProvider === sp.id
+                            ? "border-purple-400 bg-purple-50/60 dark:bg-purple-950/20"
+                            : "border-[hsl(var(--border))] hover:border-purple-300"
+                        }`}
+                      >
+                        <span className="text-xs font-semibold text-gray-900 dark:text-white">{sp.label}</span>
+                        <span className="block text-[11px] text-gray-500">
+                          {sp.ownsWeights ? t("admin.ft_owns_weights") : t("admin.ft_hosted_only")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {FINETUNE_PROVIDERS[ftProvider].caveat === "openai_sunset" && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400">{t("admin.ft_caveat_openai")}</p>
+                  )}
+                  {FINETUNE_PROVIDERS[ftProvider].caveat === "together_unverified" && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400">{t("admin.ft_caveat_together")}</p>
+                  )}
+                </div>
+
                 {/* Step 1: Generate or upload */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">{t("admin.ft_step1")}</Label>
@@ -2056,8 +2119,11 @@ export default function AdminPage() {
                         <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gpt-4o-mini-2024-07-18">gpt-4o-mini ({t("admin.ft_recommended")})</SelectItem>
-                            <SelectItem value="gpt-4o-2024-08-06">gpt-4o ({t("admin.ft_higher_quality")})</SelectItem>
+                            {FINETUNE_PROVIDERS[ftProvider].baseModels.map((bm) => (
+                              <SelectItem key={bm.id} value={bm.id} className="text-xs">
+                                {bm.label}{bm.note ? ` — ${bm.note}` : ""}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -2186,11 +2252,25 @@ export default function AdminPage() {
                             </div>
 
                             {job.fineTunedModel && (
-                              <div className="pt-1 border-t dark:border-gray-700">
-                                <span className="text-gray-400 text-[11px]">{t("admin.ft_result_model")}: </span>
-                                <Badge variant="outline" className="text-[11px] text-purple-600">
-                                  {job.fineTunedModel}
-                                </Badge>
+                              <div className="pt-1.5 border-t dark:border-gray-700 space-y-1">
+                                <p className="text-[11px] font-semibold text-green-700 dark:text-green-400">
+                                  {t("admin.ft_ready_title")}
+                                </p>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <Badge variant="outline" className="text-[11px]">
+                                    {FINETUNE_PROVIDERS[ftProvider].keyProvider}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-[11px] text-purple-600 font-mono">
+                                    {job.fineTunedModel}
+                                  </Badge>
+                                  <Button
+                                    size="sm" variant="ghost" className="h-6 px-1.5 text-[11px] gap-1"
+                                    onClick={() => navigator.clipboard.writeText(job.fineTunedModel!)}
+                                  >
+                                    <Copy className="h-3 w-3" /> {t("admin.copy")}
+                                  </Button>
+                                </div>
+                                <p className="text-[11px] text-gray-500">{t("admin.ft_ready_desc")}</p>
                               </div>
                             )}
                           </div>
