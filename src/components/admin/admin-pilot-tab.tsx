@@ -587,7 +587,7 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
       {/* Downloadable pilot guides */}
       <div className={`rounded-lg border border-white/10 bg-white/5 dark:bg-gray-900/50 p-3 ${fixedOrgId ? "hidden" : ""}`}>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t("pilot.guides")}:</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t("pilot.guides")}:</span>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={downloadRadiologistGuide}>
             <FileText className="h-3.5 w-3.5" />
             {t("pilot.guide_radiologist")}
@@ -597,7 +597,7 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
             {t("pilot.guide_chief")}
           </Button>
         </div>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">{t("pilot.guides_hint")}</p>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">{t("pilot.guides_hint")}</p>
       </div>
 
       {/* Controls */}
@@ -605,7 +605,7 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
         <div className="flex flex-wrap gap-3 items-end">
           {!fixedOrgId && (
           <div className="min-w-[200px]">
-            <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.select_org")}</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">{t("pilot.select_org")}</label>
             <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
               <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t("pilot.select_org")} /></SelectTrigger>
               <SelectContent>
@@ -615,11 +615,11 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
           </div>
           )}
           <div>
-            <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.from")}</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">{t("pilot.from")}</label>
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 text-xs w-[140px]" />
           </div>
           <div>
-            <label className="text-[11px] font-medium text-gray-500 mb-1 block">{t("pilot.to")}</label>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">{t("pilot.to")}</label>
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 text-xs w-[140px]" />
           </div>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs h-9" onClick={exportCsv} disabled={userBreakdown.length === 0}>
@@ -640,27 +640,27 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
           {/* Summary cards — zeroed when no data */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-gray-400 mb-1"><Clock className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.avg_time")}</span></div>
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Clock className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.avg_time")}</span></div>
               <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0:00</p>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-gray-400 mb-1"><FileText className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.total_reports")}</span></div>
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><FileText className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.total_reports")}</span></div>
               <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0</p>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-gray-400 mb-1"><Users className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.active_users")}</span></div>
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Users className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.active_users")}</span></div>
               <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0</p>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-gray-400 mb-1"><Mic className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.adoption_rate")}</span></div>
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Mic className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.adoption_rate")}</span></div>
               <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0%</p>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-gray-400 mb-1"><CheckSquare className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.completeness")}</span></div>
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><CheckSquare className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.completeness")}</span></div>
               <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0%</p>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-gray-400 mb-1"><Pencil className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.edit_rate")}</span></div>
+              <div className="flex items-center gap-2 text-gray-400 mb-1"><Pencil className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.edit_rate")}</span></div>
               <p className="text-xl font-bold text-gray-300 dark:text-gray-600">0%</p>
             </div>
           </div>
@@ -720,27 +720,27 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
           {summary && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-1"><Clock className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.avg_time")}</span></div>
+                <div className="flex items-center gap-2 text-gray-400 mb-1"><Clock className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.avg_time")}</span></div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{fmtMin(summary.avgDuration)}</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-1"><FileText className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.total_reports")}</span></div>
+                <div className="flex items-center gap-2 text-gray-400 mb-1"><FileText className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.total_reports")}</span></div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalReports}</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-1"><Users className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.active_users")}</span></div>
+                <div className="flex items-center gap-2 text-gray-400 mb-1"><Users className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.active_users")}</span></div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.activeUsers}</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-1"><Mic className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.adoption_rate")}</span></div>
+                <div className="flex items-center gap-2 text-gray-400 mb-1"><Mic className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.adoption_rate")}</span></div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{Math.round(summary.adoptionRate * 100)}%</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-1"><CheckSquare className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.completeness")}</span></div>
+                <div className="flex items-center gap-2 text-gray-400 mb-1"><CheckSquare className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.completeness")}</span></div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{Math.round(summary.avgCompleteness * 100)}%</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-1"><Pencil className="h-3.5 w-3.5" /><span className="text-[10px]">{t("pilot.edit_rate")}</span></div>
+                <div className="flex items-center gap-2 text-gray-400 mb-1"><Pencil className="h-3.5 w-3.5" /><span className="text-[11px]">{t("pilot.edit_rate")}</span></div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{Math.round(summary.avgEditRate * 100)}%</p>
               </div>
             </div>
@@ -800,10 +800,10 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                     <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="px-3 py-2">
                         <p className="font-medium text-gray-900 dark:text-white">{u.name}</p>
-                        {u.section && <p className="text-[10px] text-gray-400">{u.section}</p>}
+                        {u.section && <p className="text-[11px] text-gray-400">{u.section}</p>}
                       </td>
                       <td className="px-3 py-2">
-                        <Badge variant="outline" className={`text-[9px] ${u.staff === "resident" ? "border-violet-400/50 text-violet-600" : "border-gray-300 text-gray-500"}`}>
+                        <Badge variant="outline" className={`text-[10px] ${u.staff === "resident" ? "border-violet-400/50 text-violet-600" : "border-gray-300 text-gray-500"}`}>
                           {u.staff === "resident" ? t("admin.org.staff_resident") : t("admin.org.staff_attending")}
                         </Badge>
                       </td>
@@ -840,10 +840,10 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                       ))}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{s.user_name}</span>
-                      {s.feedback_text && <p className="text-[11px] text-gray-500 mt-0.5">{s.feedback_text}</p>}
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{s.user_name}</span>
+                      {s.feedback_text && <p className="text-xs text-gray-500 mt-0.5">{s.feedback_text}</p>}
                     </div>
-                    <span className="text-[10px] text-gray-400 shrink-0">{s.created_at.slice(0, 10)}</span>
+                    <span className="text-[11px] text-gray-400 shrink-0">{s.created_at.slice(0, 10)}</span>
                   </div>
                 ))}
               </div>
@@ -858,7 +858,7 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                   <Eye className="h-3.5 w-3.5" />
                   {t("pilot.report_detail")}
                 </h3>
-                <span className="text-[10px] text-gray-400">{reportsWithTexts.length}</span>
+                <span className="text-[11px] text-gray-400">{reportsWithTexts.length}</span>
               </div>
               <ScrollArea className="max-h-[600px]">
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -877,18 +877,18 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-medium text-gray-900 dark:text-white">{m.user_name}</span>
-                              {m.study_type && <span className="text-[10px] text-gray-400 truncate">{m.study_type}</span>}
+                              <span className="text-xs font-medium text-gray-900 dark:text-white">{m.user_name}</span>
+                              {m.study_type && <span className="text-[11px] text-gray-400 truncate">{m.study_type}</span>}
                             </div>
                             <div className="flex items-center gap-3 mt-0.5">
-                              <span className="text-[10px] text-gray-400">{m.created_at.slice(0, 16).replace("T", " ")}</span>
+                              <span className="text-[11px] text-gray-400">{m.created_at.slice(0, 16).replace("T", " ")}</span>
                               {hasChanges ? (
-                                <Badge variant="outline" className="text-[9px] border-amber-400/50 text-amber-600">{editPct}% {t("pilot.edit_rate").toLowerCase()}</Badge>
+                                <Badge variant="outline" className="text-[10px] border-amber-400/50 text-amber-600">{editPct}% {t("pilot.edit_rate").toLowerCase()}</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[9px] border-violet-400/50 text-violet-600">{t("pilot.no_changes")}</Badge>
+                                <Badge variant="outline" className="text-[10px] border-violet-400/50 text-violet-600">{t("pilot.no_changes")}</Badge>
                               )}
                               {m.recommendations_text && (
-                                <Badge variant="outline" className="text-[9px] border-blue-400/50 text-blue-600">{t("pilot.recommendations")}</Badge>
+                                <Badge variant="outline" className="text-[10px] border-blue-400/50 text-blue-600">{t("pilot.recommendations")}</Badge>
                               )}
                             </div>
                           </div>
@@ -899,16 +899,16 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                             {/* Findings comparison */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                               <div>
-                                <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1">{t("pilot.ai_findings")}</p>
-                                <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-2.5 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                                <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1">{t("pilot.ai_findings")}</p>
+                                <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-2.5 text-xs leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-[300px] overflow-y-auto">
                                   {m.ai_findings_text || "—"}
                                 </div>
                               </div>
                               <div>
-                                <p className="text-[10px] font-semibold mb-1" style={{ color: findingsChanged ? "#d97706" : "#059669" }}>
+                                <p className="text-[11px] font-semibold mb-1" style={{ color: findingsChanged ? "#d97706" : "#059669" }}>
                                   {t("pilot.final_findings")} {findingsChanged ? "✎" : "✓"}
                                 </p>
-                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto ${findingsChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-violet-50 dark:bg-violet-950/20 text-gray-700 dark:text-gray-300"}`}>
+                                <div className={`rounded-md p-2.5 text-xs leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto ${findingsChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-violet-50 dark:bg-violet-950/20 text-gray-700 dark:text-gray-300"}`}>
                                   {m.final_findings_text || m.ai_findings_text || "—"}
                                 </div>
                               </div>
@@ -916,16 +916,16 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                             {/* Conclusion comparison */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                               <div>
-                                <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1">{t("pilot.ai_conclusion")}</p>
-                                <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-2.5 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                                <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mb-1">{t("pilot.ai_conclusion")}</p>
+                                <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-2.5 text-xs leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
                                   {m.ai_conclusion_text || "—"}
                                 </div>
                               </div>
                               <div>
-                                <p className="text-[10px] font-semibold mb-1" style={{ color: conclusionChanged ? "#d97706" : "#059669" }}>
+                                <p className="text-[11px] font-semibold mb-1" style={{ color: conclusionChanged ? "#d97706" : "#059669" }}>
                                   {t("pilot.final_conclusion")} {conclusionChanged ? "✎" : "✓"}
                                 </p>
-                                <div className={`rounded-md p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto ${conclusionChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-violet-50 dark:bg-violet-950/20 text-gray-700 dark:text-gray-300"}`}>
+                                <div className={`rounded-md p-2.5 text-xs leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto ${conclusionChanged ? "bg-amber-50 dark:bg-amber-950/20 text-gray-700 dark:text-gray-300" : "bg-violet-50 dark:bg-violet-950/20 text-gray-700 dark:text-gray-300"}`}>
                                   {m.final_conclusion_text || m.ai_conclusion_text || "—"}
                                 </div>
                               </div>
@@ -933,8 +933,8 @@ export function AdminPilotTab({ fixedOrgId }: { fixedOrgId?: string } = {}) {
                             {/* Recommendations */}
                             {m.recommendations_text && (
                               <div>
-                                <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1">{t("pilot.recommendations")}</p>
-                                <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 p-2.5 text-[11px] leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 mb-1">{t("pilot.recommendations")}</p>
+                                <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 p-2.5 text-xs leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                                   {m.recommendations_text}
                                 </div>
                               </div>

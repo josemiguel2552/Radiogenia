@@ -229,7 +229,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
           className="flex flex-col items-center gap-1 w-14 py-1.5 text-cyan-400 hover:bg-gray-800 hover:text-cyan-300 rounded-lg transition-colors cursor-pointer"
         >
           <ScanSearch className="h-[18px] w-[18px]" />
-          <span className="text-[9px] font-medium leading-none max-w-full truncate px-0.5">{t("diff.open")}</span>
+          <span className="text-[10px] font-medium leading-none max-w-full truncate px-0.5">{t("diff.open")}</span>
         </button>
       ) : (
         <Button
@@ -256,7 +256,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
           {/* What this is, and what it is not. Stated once, at the top. */}
           <div className="flex gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">{t("diff.disclaimer")}</p>
+            <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">{t("diff.disclaimer")}</p>
           </div>
 
           {!result && (
@@ -277,13 +277,13 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
                         />
                         <div className="flex items-center gap-1.5">
                           <Crop className="h-3 w-3 text-gray-400 shrink-0" />
-                          <span className="text-[10px] text-gray-500 flex-1 truncate">
+                          <span className="text-[11px] text-gray-500 flex-1 truncate">
                             {img.roi ? t("diff.roi_set") : t("diff.roi_hint")}
                           </span>
                           {img.roi && (
                             <button
                               type="button"
-                              className="text-[10px] text-gray-500 hover:text-brand"
+                              className="text-[11px] text-gray-500 hover:text-brand"
                               onClick={() => setImages((prev) => prev.map((p) => p.id === img.id ? { ...p, roi: undefined } : p))}
                             >
                               {t("diff.roi_clear")}
@@ -379,7 +379,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
                   placeholder={t("diff.hu_ph")}
                   className="h-9 text-sm"
                 />
-                <p className="text-[10px] text-gray-500 mt-1">{t("diff.hu_hint")}</p>
+                <p className="text-[11px] text-gray-500 mt-1">{t("diff.hu_hint")}</p>
               </div>
 
               {/* ── Clinical note ── */}
@@ -402,7 +402,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
                   onChange={(e) => setConfirmed(e.target.checked)}
                   className="mt-0.5"
                 />
-                <span className="text-[11px] leading-relaxed text-gray-600 dark:text-gray-300">{t("diff.anon_confirm")}</span>
+                <span className="text-xs leading-relaxed text-gray-600 dark:text-gray-300">{t("diff.anon_confirm")}</span>
               </label>
 
               {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
@@ -452,7 +452,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
                           href={item.radiopaediaUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-brand hover:underline mt-1.5"
+                          className="inline-flex items-center gap-1 text-xs text-brand hover:underline mt-1.5"
                         >
                           <ExternalLink className="h-3 w-3" />
                           {t("diff.radiopaedia")}
@@ -470,7 +470,7 @@ export function DifferentialDialog({ variant = "header" }: { variant?: "header" 
                 </div>
               )}
 
-              <p className="text-[10px] text-gray-500 leading-relaxed">{t("diff.footer_note")}</p>
+              <p className="text-[11px] text-gray-500 leading-relaxed">{t("diff.footer_note")}</p>
 
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-1.5" onClick={reset}>

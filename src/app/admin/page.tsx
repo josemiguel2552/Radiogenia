@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
-  Eye, EyeOff, Zap, TrendingUp,
+  Eye, EyeOff, Zap, TrendingUp, FileText, Search,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw, AlertTriangle,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
   MessageSquare, DollarSign, Sparkles, ShieldAlert, Plus,
@@ -40,6 +40,7 @@ const AdminWaitlistTab = nextDynamic(() => import("@/components/admin/admin-wait
 const AdminCostsTab = nextDynamic(() => import("@/components/admin/admin-costs-tab").then((m) => m.AdminCostsTab), { ssr: false, loading: adminTabLoading });
 const AdminHospitalsTab = nextDynamic(() => import("@/components/admin/admin-hospitals-tab").then((m) => m.AdminHospitalsTab), { ssr: false, loading: adminTabLoading });
 const AdminEngagementTab = nextDynamic(() => import("@/components/admin/admin-engagement-tab").then((m) => m.AdminEngagementTab), { ssr: false, loading: adminTabLoading });
+const AdminJump = nextDynamic(() => import("@/components/admin/admin-jump").then((m) => m.AdminJump), { ssr: false });
 const AdminOverviewTab = nextDynamic(() => import("@/components/admin/admin-overview-tab").then((m) => m.AdminOverviewTab), { ssr: false, loading: adminTabLoading });
 const AdminManualDownload = nextDynamic(() => import("@/components/admin/admin-manual-download").then((m) => m.AdminManualDownload), { ssr: false, loading: adminTabLoading });
 
@@ -221,7 +222,13 @@ interface Stats {
   dictationFeedback?: { up: number; down: number };
 }
 
-type Tab = "overview" | "users" | "ai" | "residents" | "support" | "audit" | "engagement" | "waitlist" | "costs" | "hospitals";
+type Tab =
+  | "overview" | "users" | "residents" | "support" | "waitlist"
+  | "hospitals" | "engagement" | "costs"
+  // Platform: the AI tab was 786 lines of unrelated jobs in one scroll, and
+  // fine-tuning was split across two tabs — the data in Audit, the training
+  // run here. One job per section, and fine-tuning in one place.
+  | "ai" | "dictation" | "training" | "checklist" | "audit";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -231,6 +238,7 @@ export default function AdminPage() {
   // overview reads two months of reports, which is not worth paying for five
   // numbers on every page load.
   const [navQueue, setNavQueue] = useState<{ key: string; count: number; tab: string }[]>([]);
+  const [jumpOpen, setJumpOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Stats
@@ -651,8 +659,11 @@ export default function AdminPage() {
   }, [auditCursor, auditLoadingMore]);
 
   useEffect(() => {
+    // Each panel loads with the section that shows it. These used to both
+    // hang off the audit tab, so opening fine-tuning directly showed an empty
+    // data panel until you had visited Audit at some point.
+    if (tab === "training" && !ftDataPreview && !ftDataLoading) loadFtDataPreview();
     if (tab === "audit") {
-      if (!ftDataPreview && !ftDataLoading) loadFtDataPreview();
       if (!piiStats && !piiStatsLoading) {
         setPiiStatsLoading(true);
         fetch("/api/admin/pii-stats")
@@ -1036,13 +1047,45 @@ export default function AdminPage() {
     {
       key: "platform", label: t("admin.grp_platform"), icon: <Plug className="h-4 w-4" />,
       sections: [
-        { key: "ai", label: t("admin.tab_ai_config"), icon: <Plug className="h-3.5 w-3.5" /> },
-        { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-3.5 w-3.5" /> },
+        { key: "ai", label: t("admin.sec_models"), icon: <Plug className="h-3.5 w-3.5" /> },
+        { key: "dictation", label: t("admin.sec_dictation"), icon: <Mic className="h-3.5 w-3.5" /> },
+        { key: "training", label: t("admin.sec_training"), icon: <GraduationCap className="h-3.5 w-3.5" /> },
+        { key: "checklist", label: t("admin.sec_checklist"), icon: <ClipboardList className="h-3.5 w-3.5" /> },
+        { key: "audit", label: t("admin.tab_audit"), icon: <FileText className="h-3.5 w-3.5" /> },
       ],
     },
   ];
 
   const activeGroup = GROUPS.find((g) => g.sections.some((sec) => sec.key === tab)) || GROUPS[0];
+
+  // What each section is for, in the words someone would actually type. Built
+  // from GROUPS so a new section is searchable the moment it is added, rather
+  // than from a second list that would quietly fall behind.
+  const SECTION_KEYWORDS: Record<string, string> = {
+    overview: "resumen summary kpi mrr informes ingresos margen pendiente",
+    users: "usuarios users cuentas plan suscripción aprobar borrar rol admin email",
+    residents: "residentes residents verificación verification documento beca descuento",
+    waitlist: "lista espera waitlist invitar registro",
+    support: "soporte support tickets mensajes incidencias respuesta",
+    hospitals: "hospitales hospitals organizaciones instituciones licencias seats región versión dictado regalado enlace alta",
+    engagement: "suscriptores subscribers conversión embudo funnel prueba trial cancelaciones churn stripe",
+    costs: "costes costs coste gasto spend tokens proveedor factura stripe margen",
+    ai: "ia ai modelo modelos provider proveedor claves api key deepseek openai claude gemini tareas override",
+    dictation: "dictado dictation voz whisper deepgram micrófono transcripción idioma",
+    training: "entrenamiento training fine tuning finetune jsonl ejemplos datos modelo entrenar aumentar",
+    checklist: "checklist clínico condiciones hallazgos neumonía protocolo base conocimiento",
+    audit: "auditoría audit logs registro trazabilidad pii errores privacidad",
+  };
+
+  const jumpTargets = GROUPS.flatMap((g) =>
+    g.sections.map((sec) => ({
+      key: sec.key as string,
+      label: sec.label,
+      group: g.label,
+      keywords: SECTION_KEYWORDS[sec.key] || "",
+      icon: sec.icon,
+    })),
+  );
   /** Work waiting, per section, for the badges. */
   const pendingFor = (key: Tab) => navQueue.find((q) => q.tab === key)?.count || 0;
   const pendingInGroup = (g: typeof GROUPS[number]) =>
@@ -1067,11 +1110,23 @@ export default function AdminPage() {
           <div className="flex items-center gap-2 min-w-0">
             <Logo size="sm" variant="icon" className="sm:hidden" />
             <Logo size="sm" className="hidden sm:inline-flex" />
-            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">
+            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[11px]">
               {t("admin.badge")}
             </Badge>
           </div>
           <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={() => setJumpOpen(true)}
+              className="hidden sm:flex items-center gap-2 h-9 pl-2.5 pr-2 rounded-lg border border-[hsl(var(--border))] text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              title={t("admin.jump_open")}
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">{t("admin.jump_open")}</span>
+              <kbd className="text-[11px] border border-[hsl(var(--border))] rounded px-1 py-0.5">⌘K</kbd>
+            </button>
+            <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden" onClick={() => setJumpOpen(true)} title={t("admin.jump_open")}>
+              <Search className="h-4 w-4" />
+            </Button>
             <DifferentialDialog />
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={loadAll} title={t("admin.refresh")}>
               <RefreshCw className="h-4 w-4" />
@@ -1090,7 +1145,7 @@ export default function AdminPage() {
               <button
                 key={g.key}
                 onClick={() => setTab(g.sections[0].key)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-xs font-medium transition-all whitespace-nowrap ${
                   active
                     ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -1099,7 +1154,7 @@ export default function AdminPage() {
                 {g.icon}
                 <span>{g.label}</span>
                 {pending > 0 && (
-                  <span className="ml-0.5 min-w-[1.1rem] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-[1.1rem] text-center">
+                  <span className="ml-0.5 min-w-[1.1rem] px-1 rounded-full bg-amber-500 text-white text-[11px] font-bold leading-[1.1rem] text-center">
                     {pending}
                   </span>
                 )}
@@ -1117,7 +1172,7 @@ export default function AdminPage() {
                 <button
                   key={sec.key}
                   onClick={() => setTab(sec.key)}
-                  className={`flex items-center gap-1.5 pb-2 -mb-px border-b-2 text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 pb-2 -mb-px border-b-2 text-xs sm:text-xs font-medium transition-colors whitespace-nowrap ${
                     tab === sec.key
                       ? "border-brand text-gray-900 dark:text-white"
                       : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -1126,7 +1181,7 @@ export default function AdminPage() {
                   {sec.icon}
                   <span>{sec.label}</span>
                   {pending > 0 && (
-                    <span className="min-w-[1.1rem] px-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold leading-[1.1rem] text-center">
+                    <span className="min-w-[1.1rem] px-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[11px] font-bold leading-[1.1rem] text-center">
                       {pending}
                     </span>
                   )}
@@ -1182,7 +1237,7 @@ export default function AdminPage() {
             </div>
             <CardContent className="pt-0">
               {syncResult && (
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2">{syncResult}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{syncResult}</p>
               )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -1212,9 +1267,9 @@ export default function AdminPage() {
                           <td className="py-3 px-2">
                             <div>
                               <p className="text-gray-900 dark:text-white font-medium text-xs">{u.name || "—"}</p>
-                              <p className="text-[11px] text-gray-500">{u.email}</p>
+                              <p className="text-xs text-gray-500">{u.email}</p>
                               {(u.hospital || u.country) && (
-                                <p className="text-[10px] text-gray-400">
+                                <p className="text-[11px] text-gray-400">
                                   {[u.hospital, u.country].filter(Boolean).join(" · ")}
                                   {(() => {
                                     const r = resolveRegion(u.country);
@@ -1231,7 +1286,7 @@ export default function AdminPage() {
                           <td className="py-3 px-2 hidden sm:table-cell">
                             <Badge
                               variant={u.role === "admin" ? "default" : "secondary"}
-                              className="text-[10px]"
+                              className="text-[11px]"
                             >
                               {u.role === "admin" ? (
                                 <span className="flex items-center gap-1"><Shield className="h-2.5 w-2.5" /> {t("admin.role_admin")}</span>
@@ -1242,7 +1297,7 @@ export default function AdminPage() {
                             {u.role !== "admin" && (
                               u.approved === false && u.invitation_code ? (
                                 <div className="flex items-center gap-1">
-                                  <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px]">
+                                  <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[11px]">
                                     {t("admin.pending_approval")}
                                   </Badge>
                                   <Button
@@ -1261,7 +1316,7 @@ export default function AdminPage() {
                                   </Button>
                                 </div>
                               ) : (
-                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
+                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[11px]">
                                   {t("admin.approved")}
                                 </Badge>
                               )
@@ -1270,7 +1325,7 @@ export default function AdminPage() {
                           <td className="py-3 px-2">
                             {u.role !== "admin" && (
                               <Badge
-                                className={`text-[10px] ${
+                                className={`text-[11px] ${
                                   plan === "unlimited"
                                     ? "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300"
                                     : plan === "professional"
@@ -1292,9 +1347,9 @@ export default function AdminPage() {
                               const sendState = activationSent[u.id];
                               return (
                                 <div className="space-y-0.5">
-                                  <Badge className={`text-[10px] ${bi.cls}`}>{bi.label}</Badge>
+                                  <Badge className={`text-[11px] ${bi.cls}`}>{bi.label}</Badge>
                                   {bi.lines.map((l) => (
-                                    <p key={l} className="text-[10px] text-gray-500 whitespace-nowrap">{l}</p>
+                                    <p key={l} className="text-[11px] text-gray-500 whitespace-nowrap">{l}</p>
                                   ))}
                                   {bi.kind === "failed" && (
                                     <div className="flex items-center gap-2">
@@ -1302,7 +1357,7 @@ export default function AdminPage() {
                                         type="button"
                                         disabled={retrying[u.id] === "sending"}
                                         onClick={() => retryPayment(u.id)}
-                                        className="text-[10px] font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-60 whitespace-nowrap"
+                                        className="text-[11px] font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-60 whitespace-nowrap"
                                       >
                                         {retrying[u.id] === "sending" ? "…"
                                           : retrying[u.id] === "paid" ? `✓ ${t("admin.bill_retry_ok")}`
@@ -1314,7 +1369,7 @@ export default function AdminPage() {
                                           href={u.last_invoice_url}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="text-[10px] text-gray-500 hover:underline whitespace-nowrap"
+                                          className="text-[11px] text-gray-500 hover:underline whitespace-nowrap"
                                         >
                                           {t("admin.bill_invoice_link")}
                                         </a>
@@ -1326,7 +1381,7 @@ export default function AdminPage() {
                                       type="button"
                                       disabled={sendState === "sending" || sendState === "sent"}
                                       onClick={() => sendActivationReminder(u.id)}
-                                      className="text-[10px] font-medium text-violet-600 dark:text-violet-400 hover:underline disabled:opacity-60 disabled:no-underline whitespace-nowrap"
+                                      className="text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:underline disabled:opacity-60 disabled:no-underline whitespace-nowrap"
                                     >
                                       {sendState === "sent"
                                         ? `✓ ${t("admin.bill_activation_sent")}`
@@ -1350,7 +1405,7 @@ export default function AdminPage() {
                                     style={{ width: `${Math.min(usagePct, 100)}%` }}
                                   />
                                 </div>
-                                <span className="text-[10px] text-gray-500 w-14 text-right">
+                                <span className="text-[11px] text-gray-500 w-14 text-right">
                                   {u.reports_used_this_month || 0}/{planConfig.reports}
                                 </span>
                               </div>
@@ -1365,13 +1420,13 @@ export default function AdminPage() {
                                     style={{ width: `${Math.min(dictPct, 100)}%` }}
                                   />
                                 </div>
-                                <span className="text-[10px] text-gray-500 w-16 text-right">
+                                <span className="text-[11px] text-gray-500 w-16 text-right">
                                   {dictUsedMin}/{dictLimitMin}m
                                 </span>
                               </div>
                             )}
                           </td>
-                          <td className="py-3 px-2 text-right text-gray-500 text-[11px] hidden md:table-cell">
+                          <td className="py-3 px-2 text-right text-gray-500 text-xs hidden md:table-cell">
                             {new Date(u.created_at).toLocaleDateString()}
                           </td>
                           <td className="py-3 px-2 text-right">
@@ -1405,8 +1460,9 @@ export default function AdminPage() {
         )}
 
         {/* ═══ AI CONFIG ═══ */}
-        {tab === "ai" && (
+        {(tab === "ai" || tab === "dictation" || tab === "training" || tab === "checklist") && (
           <div className="space-y-4">
+            {tab === "ai" && (<>
             {/* ── Default model + keys ── */}
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
@@ -1448,14 +1504,14 @@ export default function AdminPage() {
                         <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
                           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {base.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.standard")}</SelectLabel>
+                            {base.length > 0 && <SelectGroup><SelectLabel className="text-[11px]">{t("admin.standard")}</SelectLabel>
                               {base.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                             </SelectGroup>}
-                            {ft.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.fine_tuned")}</SelectLabel>
+                            {ft.length > 0 && <SelectGroup><SelectLabel className="text-[11px]">{t("admin.fine_tuned")}</SelectLabel>
                               {ft.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                             </SelectGroup>}
                             {!inList && modelName && (
-                              <SelectGroup><SelectLabel className="text-[10px]">{t("admin.current")}</SelectLabel>
+                              <SelectGroup><SelectLabel className="text-[11px]">{t("admin.current")}</SelectLabel>
                                 <SelectItem value={modelName}>{modelName}</SelectItem>
                               </SelectGroup>
                             )}
@@ -1527,7 +1583,7 @@ export default function AdminPage() {
                 {configError && <p className="text-xs text-red-500">{configError}</p>}
                 {configSuccess && <p className="text-xs text-green-600">{t("admin.config_saved")}</p>}
                 {config?.updated_at && (
-                  <p className="text-[11px] text-gray-400">{t("admin.last_updated")}: {new Date(config.updated_at).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400">{t("admin.last_updated")}: {new Date(config.updated_at).toLocaleString()}</p>
                 )}
               </CardContent>
             </Card>
@@ -1561,19 +1617,19 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-semibold text-gray-900 dark:text-white">{label}</p>
-                          <p className="text-[10px] text-gray-400">{desc}</p>
+                          <p className="text-[11px] text-gray-400">{desc}</p>
                         </div>
                         {o.provider && o.model ? (
-                          <Badge variant="secondary" className="text-[10px]">{o.provider}/{o.model.split("/").pop()}</Badge>
+                          <Badge variant="secondary" className="text-[11px]">{o.provider}/{o.model.split("/").pop()}</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] text-gray-400">{t("admin.default")}</Badge>
+                          <Badge variant="outline" className="text-[11px] text-gray-400">{t("admin.default")}</Badge>
                         )}
                       </div>
                       {/* The differential task sends images. A provider with no
                           vision API cannot serve it, and the description alone
                           is easy to miss when picking from a dropdown. */}
                       {key === "differential" && o.provider && !providerSupportsVision(o.provider) && (
-                        <p className="flex items-start gap-1.5 text-[10px] text-red-600 dark:text-red-400">
+                        <p className="flex items-start gap-1.5 text-[11px] text-red-600 dark:text-red-400">
                           <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
                           {t("admin.task_differential_no_vision").replace("{0}", o.provider)}
                         </p>
@@ -1610,18 +1666,18 @@ export default function AdminPage() {
                               <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
                                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("admin.model")} /></SelectTrigger>
                                 <SelectContent>
-                                  {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.standard")}</SelectLabel>
+                                  {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[11px]">{t("admin.standard")}</SelectLabel>
                                     {baseModels.map((m) => (
                                       <SelectItem key={m} value={m}>{m}</SelectItem>
                                     ))}
                                   </SelectGroup>}
-                                  {ftModels.length > 0 && <SelectGroup><SelectLabel className="text-[10px]">{t("admin.fine_tuned")}</SelectLabel>
+                                  {ftModels.length > 0 && <SelectGroup><SelectLabel className="text-[11px]">{t("admin.fine_tuned")}</SelectLabel>
                                     {ftModels.map((m) => (
                                       <SelectItem key={m} value={m}>{m}</SelectItem>
                                     ))}
                                   </SelectGroup>}
                                   {!currentInList && o.model && (
-                                    <SelectGroup><SelectLabel className="text-[10px]">{t("admin.current")}</SelectLabel>
+                                    <SelectGroup><SelectLabel className="text-[11px]">{t("admin.current")}</SelectLabel>
                                       <SelectItem value={o.model}>{o.model}</SelectItem>
                                     </SelectGroup>
                                   )}
@@ -1680,7 +1736,7 @@ export default function AdminPage() {
                         <Eye className="h-3.5 w-3.5 text-blue-500" />
                         <Label className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.provider_api_keys")}</Label>
                       </div>
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {t("admin.main_key_covers")} {PROVIDERS.find((p) => p.value === provider)?.label || provider}. {t("admin.add_keys_other_providers")}
                       </p>
                       <div className="space-y-2">
@@ -1706,7 +1762,7 @@ export default function AdminPage() {
                                     <Check className="h-3.5 w-3.5 text-violet-500 flex-shrink-0" />
                                   )}
                                   {isSaved && (
-                                    <Badge variant="secondary" className="text-[9px] flex-shrink-0">{t("admin.saved")}</Badge>
+                                    <Badge variant="secondary" className="text-[10px] flex-shrink-0">{t("admin.saved")}</Badge>
                                   )}
                                 </>
                               )}
@@ -1720,6 +1776,9 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
+            </>)}
+
+            {tab === "dictation" && (<>
             {/* ── Dictation pipeline config ── */}
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
@@ -1731,38 +1790,38 @@ export default function AdminPage() {
 
                 {/* Pipeline visual */}
                 <div className="space-y-3 p-3 rounded-lg border border-blue-200 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-900/10">
-                  <p className="text-[11px] font-semibold text-blue-700 dark:text-blue-400">{t("admin.dictation_pipeline")}</p>
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">{t("admin.dictation_pipeline")}</p>
 
                   {/* Step 1: STT */}
                   <div className="flex items-start gap-2">
-                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">1</div>
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[11px] font-bold text-blue-600 dark:text-blue-400">1</div>
                     <div className="flex-1">
                       <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_stt")}</p>
-                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_stt_desc")}</p>
+                      <p className="text-[11px] text-gray-500">{t("admin.dict_step_stt_desc")}</p>
                       <div className="mt-1 flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">Whisper-1 (OpenAI)</Badge>
-                        <Badge variant="outline" className="text-[10px]">temp: 0</Badge>
+                        <Badge variant="outline" className="text-[11px]">Whisper-1 (OpenAI)</Badge>
+                        <Badge variant="outline" className="text-[11px]">temp: 0</Badge>
                       </div>
                     </div>
                   </div>
 
                   {/* Step 2: Postprocess */}
                   <div className="flex items-start gap-2">
-                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-[10px] font-bold text-violet-600 dark:text-violet-400">2</div>
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-[11px] font-bold text-violet-600 dark:text-violet-400">2</div>
                     <div className="flex-1">
                       <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_postprocess")}</p>
-                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_postprocess_desc")}</p>
+                      <p className="text-[11px] text-gray-500">{t("admin.dict_step_postprocess_desc")}</p>
                     </div>
                   </div>
 
                   {/* Step 3: AI Correction */}
                   <div className="flex items-start gap-2">
-                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-600 dark:text-amber-400">3</div>
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[11px] font-bold text-amber-600 dark:text-amber-400">3</div>
                     <div className="flex-1">
                       <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_correction")}</p>
-                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_correction_desc")}</p>
+                      <p className="text-[11px] text-gray-500">{t("admin.dict_step_correction_desc")}</p>
                       <div className="mt-1 flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-[11px]">
                           {taskOverrides.dictation_correction.provider || provider || "openai"}: {taskOverrides.dictation_correction.model || "gpt-4o-mini"}
                         </Badge>
                       </div>
@@ -1771,10 +1830,10 @@ export default function AdminPage() {
 
                   {/* Step 4: PII stripping */}
                   <div className="flex items-start gap-2">
-                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-[10px] font-bold text-red-600 dark:text-red-400">4</div>
+                    <div className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-[11px] font-bold text-red-600 dark:text-red-400">4</div>
                     <div className="flex-1">
                       <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.dict_step_pii")}</p>
-                      <p className="text-[10px] text-gray-500">{t("admin.dict_step_pii_desc")}</p>
+                      <p className="text-[11px] text-gray-500">{t("admin.dict_step_pii_desc")}</p>
                     </div>
                   </div>
                 </div>
@@ -1782,7 +1841,7 @@ export default function AdminPage() {
                 {/* Correction rules */}
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.dict_rules_title")}</p>
-                  <p className="text-[10px] text-gray-500">{t("admin.dict_rules_desc")}</p>
+                  <p className="text-[11px] text-gray-500">{t("admin.dict_rules_desc")}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {([
                       { key: "punctuation", icon: "✏️" },
@@ -1795,8 +1854,8 @@ export default function AdminPage() {
                       <div key={rule.key} className="flex items-start gap-2 p-2 rounded-md border dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                         <span className="text-xs flex-shrink-0 mt-0.5">{rule.icon}</span>
                         <div>
-                          <p className="text-[11px] font-medium text-gray-900 dark:text-white">{t(`admin.dict_rule_${rule.key}`)}</p>
-                          <p className="text-[10px] text-gray-400 leading-tight">{t(`admin.dict_rule_${rule.key}_desc`)}</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-white">{t(`admin.dict_rule_${rule.key}`)}</p>
+                          <p className="text-[11px] text-gray-400 leading-tight">{t(`admin.dict_rule_${rule.key}_desc`)}</p>
                         </div>
                       </div>
                     ))}
@@ -1809,21 +1868,155 @@ export default function AdminPage() {
                     <Shield className="h-3.5 w-3.5 text-blue-500" />
                     <p className="text-xs font-semibold text-gray-900 dark:text-white">{t("admin.dict_modality_title")}</p>
                   </div>
-                  <p className="text-[10px] text-gray-500">{t("admin.dict_modality_desc")}</p>
+                  <p className="text-[11px] text-gray-500">{t("admin.dict_modality_desc")}</p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {["TC/CT", "RM/MRI", "Eco/US", "Rx/XRay", "MG/Mammo"].map((mod) => (
-                      <Badge key={mod} variant="secondary" className="text-[10px]">{mod}</Badge>
+                      <Badge key={mod} variant="secondary" className="text-[11px]">{mod}</Badge>
                     ))}
                   </div>
                 </div>
 
-                <p className="text-[10px] text-gray-400 flex items-center gap-1.5">
+                <p className="text-[11px] text-gray-400 flex items-center gap-1.5">
                   <Zap className="h-3 w-3 text-amber-500 flex-shrink-0" />
                   {t("admin.dict_model_hint")}
                 </p>
               </CardContent>
             </Card>
 
+            </>)}
+
+            {tab === "training" && (<>
+            {/* Fine-tune Data Generator */}
+            <Card>
+              <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
+                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.ft_data_title")}</h2>
+                {ftDataPreview && <Badge variant="secondary" className="text-xs">{ftDataPreview.total} {t("admin.ft_examples_count")}</Badge>}
+                <div className="ml-auto flex flex-wrap gap-1.5 items-center">
+                  <Select value={ftDataModality} onValueChange={(v) => setFtDataModality(v)}>
+                    <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("admin.all_modalities")}</SelectItem>
+                      <SelectItem value="CT">CT</SelectItem>
+                      <SelectItem value="MRI">MRI</SelectItem>
+                      <SelectItem value="XRay">XRay</SelectItem>
+                      <SelectItem value="Ultrasound">Ultrasound</SelectItem>
+                      <SelectItem value="Mammography">Mammography</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <button
+                    type="button"
+                    onClick={() => setFtCorrectionsOnly((v) => !v)}
+                    className={`h-7 px-2.5 text-xs rounded-md border transition-colors ${
+                      ftCorrectionsOnly
+                        ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 font-medium"
+                        : "border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                    title={t("admin.ft_corrections_only_hint")}
+                  >
+                    {t("admin.ft_corrections_only")}
+                  </button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadFtDataPreview} disabled={ftDataLoading}>
+                    {ftDataLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    {t("admin.load")}
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportFtData} disabled={ftExporting || !ftDataPreview?.total}>
+                    {ftExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                    {t("admin.ft_download_jsonl")}
+                  </Button>
+                </div>
+              </div>
+              <CardContent className="pt-0 space-y-3">
+                <p className="text-xs text-gray-500">{t("admin.ft_data_desc")}</p>
+                {ftDataError && (
+                  <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                    {ftDataError}
+                  </div>
+                )}
+                {ftDataLoading ? (
+                  <div className="text-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-gray-400 mb-2" />
+                    <p className="text-xs text-gray-400">{t("admin.loading")}...</p>
+                  </div>
+                ) : ftDataPreview ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{ftDataPreview.total}</p>
+                        <p className="text-[11px] text-purple-500">{t("admin.ft_training_examples")}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                        <p className="text-lg font-bold text-gray-700 dark:text-gray-300">{ftDataPreview.modalities.length}</p>
+                        <p className="text-[11px] text-gray-500">{t("admin.ft_modalities")}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+                        <p className="text-lg font-bold text-green-700 dark:text-green-300">{ftDataPreview.total >= 10 ? "✓" : "✗"}</p>
+                        <p className="text-[11px] text-violet-500">{t("admin.ft_min_examples")}</p>
+                      </div>
+                    </div>
+
+                    <div className="border border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.ft_augment_title")}</p>
+                      </div>
+                      <p className="text-xs text-gray-500">{t("admin.ft_augment_desc")}</p>
+                      <Button size="sm" className="h-7 text-xs gap-1.5 bg-purple-600 hover:bg-purple-500 text-white" onClick={handleAugmentData} disabled={ftAugmenting || !ftDataPreview.total}>
+                        {ftAugmenting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        {ftAugmenting ? t("admin.ft_augmenting") : t("admin.ft_augment_button")}
+                      </Button>
+                      {ftAugmentResult && (
+                        <p className="text-xs text-green-600">
+                          {t("admin.ft_augment_result").replace("{0}", String(ftAugmentResult.originalCount)).replace("{1}", String(ftAugmentResult.syntheticCount)).replace("{2}", String(ftAugmentResult.totalCount))}
+                        </p>
+                      )}
+                      {ftAugmentedJsonl && (
+                        <div className="space-y-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={handleUploadAugmented}
+                            disabled={ftUploadingAugmented}
+                          >
+                            {ftUploadingAugmented ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                            {ftUploadingAugmented ? t("admin.ft_uploading_augmented") : t("admin.ft_upload_augmented")}
+                          </Button>
+                          <p className="text-[11px] text-gray-500">{t("admin.ft_upload_augmented_hint")}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {ftDataPreview.preview.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t("admin.ft_preview")}</p>
+                        {ftDataPreview.preview.slice(0, 3).map((ex, i) => {
+                          const userMsg = ex.messages.find((m) => m.role === "user");
+                          const assistantMsg = ex.messages.find((m) => m.role === "assistant");
+                          return (
+                            <div key={i} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 space-y-2">
+                              <div>
+                                <p className="text-[11px] font-semibold text-blue-500 mb-0.5">{t("admin.ft_input")}</p>
+                                <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 whitespace-pre-wrap max-h-24 overflow-y-auto">{userMsg?.content?.slice(0, 500) || "—"}</pre>
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-semibold text-green-600 mb-0.5">{t("admin.ft_expected_output")}</p>
+                                <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 whitespace-pre-wrap max-h-24 overflow-y-auto">{assistantMsg?.content?.slice(0, 500) || "—"}</pre>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-400 text-xs">
+                    <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    {t("admin.ft_no_data")}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             {/* ── Fine-tuning (OpenAI) ── */}
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
@@ -1850,7 +2043,7 @@ export default function AdminPage() {
                         onChange={(e) => { if (e.target.files?.[0]) handleFtUpload(e.target.files[0]); }} />
                     </label>
                   </div>
-                  {ftFileId && <p className="text-[10px] text-green-600">{t("admin.ft_file_uploaded")}: {ftFileId} ({ftExamples} {t("admin.ft_examples_ready")})</p>}
+                  {ftFileId && <p className="text-[11px] text-green-600">{t("admin.ft_file_uploaded")}: {ftFileId} ({ftExamples} {t("admin.ft_examples_ready")})</p>}
                 </div>
 
                 {/* Step 2: Configure & start */}
@@ -1859,7 +2052,7 @@ export default function AdminPage() {
                     <Label className="text-xs font-semibold">{t("admin.ft_step2")}</Label>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">{t("admin.ft_base_model")}</Label>
+                        <Label className="text-[11px] text-gray-400">{t("admin.ft_base_model")}</Label>
                         <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -1869,7 +2062,7 @@ export default function AdminPage() {
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">{t("admin.ft_suffix")}</Label>
+                        <Label className="text-[11px] text-gray-400">{t("admin.ft_suffix")}</Label>
                         <input type="text" value={ftSuffix} onChange={(e) => setFtSuffix(e.target.value)}
                           className="w-full h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
                           placeholder="radiogenai" />
@@ -1877,7 +2070,7 @@ export default function AdminPage() {
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Epochs</Label>
+                        <Label className="text-[11px] text-gray-400">Epochs</Label>
                         <Select value={ftNEpochs} onValueChange={setFtNEpochs}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -1892,7 +2085,7 @@ export default function AdminPage() {
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Learning rate</Label>
+                        <Label className="text-[11px] text-gray-400">Learning rate</Label>
                         <Select value={ftLearningRate} onValueChange={setFtLearningRate}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -1907,7 +2100,7 @@ export default function AdminPage() {
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-gray-400">Batch size</Label>
+                        <Label className="text-[11px] text-gray-400">Batch size</Label>
                         <Select value={ftBatchSize} onValueChange={setFtBatchSize}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -1942,10 +2135,10 @@ export default function AdminPage() {
                           <div key={job.jobId} className="p-3 rounded-lg border text-xs dark:border-gray-700 space-y-2">
                             <div className="flex items-center gap-2">
                               <div className="flex-1 min-w-0">
-                                <p className="font-mono text-[10px] text-gray-500 truncate">{job.jobId}</p>
+                                <p className="font-mono text-[11px] text-gray-500 truncate">{job.jobId}</p>
                               </div>
                               <Badge variant={job.status === "succeeded" ? "default" : job.status === "failed" ? "destructive" : "secondary"}
-                                className="text-[10px] flex-shrink-0">
+                                className="text-[11px] flex-shrink-0">
                                 {job.status}
                               </Badge>
                               {job.status !== "succeeded" && job.status !== "failed" && (
@@ -1956,7 +2149,7 @@ export default function AdminPage() {
                               )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                               <div>
                                 <span className="text-gray-400">{t("admin.ft_base_model")}: </span>
                                 <span className="text-gray-700 dark:text-gray-300">{job.model}</span>
@@ -1994,8 +2187,8 @@ export default function AdminPage() {
 
                             {job.fineTunedModel && (
                               <div className="pt-1 border-t dark:border-gray-700">
-                                <span className="text-gray-400 text-[10px]">{t("admin.ft_result_model")}: </span>
-                                <Badge variant="outline" className="text-[10px] text-purple-600">
+                                <span className="text-gray-400 text-[11px]">{t("admin.ft_result_model")}: </span>
+                                <Badge variant="outline" className="text-[11px] text-purple-600">
                                   {job.fineTunedModel}
                                 </Badge>
                               </div>
@@ -2004,21 +2197,24 @@ export default function AdminPage() {
                         );
                       })}
                     </div>
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[11px] text-gray-400">
                       {t("admin.ft_jobs_hint")}
                     </p>
                   </div>
                 )}
               </CardContent>
             </Card>
+            </>)}
+
+            {tab === "checklist" && (<>
             {/* Clinical checklist KB */}
             <Card>
               <div className="px-5 pt-5 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-amber-500" />
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.clinical_checklist_title")}</h3>
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">Beta</Badge>
-                  {checklistDirty && <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px]">Sin guardar</Badge>}
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[11px]">Beta</Badge>
+                  {checklistDirty && <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[11px]">Sin guardar</Badge>}
                 </div>
                 <div className="flex items-center gap-1.5">
                   {checklistDirty && (
@@ -2081,17 +2277,17 @@ export default function AdminPage() {
                             <div className="flex items-center gap-2">
                               <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"}`} />
                               <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{section.name}</span>
-                              <Badge variant="secondary" className="text-[10px]">{section.conditions.length}</Badge>
+                              <Badge variant="secondary" className="text-[11px]">{section.conditions.length}</Badge>
                             </div>
                           </button>
                           {isOpen && (
                             <div className="px-3 py-2 space-y-2.5">
                               {section.conditions.map((condition) => (
                                 <div key={condition.id} className="pl-4 border-l-2 border-amber-300 dark:border-amber-700">
-                                  <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">{condition.name}</p>
+                                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{condition.name}</p>
                                   <ul className="space-y-0.5">
                                     {condition.findings.map((finding, fi) => (
-                                      <li key={fi} className="text-[10px] text-gray-500 dark:text-gray-400 flex items-start gap-1">
+                                      <li key={fi} className="text-[11px] text-gray-500 dark:text-gray-400 flex items-start gap-1">
                                         <span className="text-amber-500 mt-0.5 flex-shrink-0">•</span>
                                         <span>{finding}</span>
                                       </li>
@@ -2113,13 +2309,13 @@ export default function AdminPage() {
                   <div className="border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50/30 dark:bg-amber-950/10 p-3 space-y-2">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                      <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{t("admin.checklist_chat_title")}</span>
+                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t("admin.checklist_chat_title")}</span>
                     </div>
 
                     {chatHistory.length > 0 && (
                       <div className="max-h-48 overflow-y-auto space-y-1.5 mb-2">
                         {chatHistory.map((msg, i) => (
-                          <div key={i} className={`text-[11px] px-2.5 py-1.5 rounded-lg ${
+                          <div key={i} className={`text-xs px-2.5 py-1.5 rounded-lg ${
                             msg.role === "user"
                               ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 ml-8"
                               : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 mr-8 border border-gray-200 dark:border-gray-700"
@@ -2154,7 +2350,7 @@ export default function AdminPage() {
                         {chatLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "→"}
                       </Button>
                     </div>
-                    <p className="text-[9px] text-gray-400 dark:text-gray-500">{t("admin.checklist_chat_hint")}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">{t("admin.checklist_chat_hint")}</p>
                   </div>
 
                   {/* Reset */}
@@ -2186,6 +2382,7 @@ export default function AdminPage() {
                 </CardContent>
               )}
             </Card>
+            </>)}
 
           </div>
         )}
@@ -2232,23 +2429,23 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-center">
                         <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{piiStats.totalStripped}</p>
-                        <p className="text-[10px] text-orange-500">{t("admin.pii_total_stripped")}</p>
+                        <p className="text-[11px] text-orange-500">{t("admin.pii_total_stripped")}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
                         <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{piiStats.totalEvents}</p>
-                        <p className="text-[10px] text-blue-500">{t("admin.pii_requests_with_pii")}</p>
+                        <p className="text-[11px] text-blue-500">{t("admin.pii_requests_with_pii")}</p>
                       </div>
                       {Object.entries(piiStats.byType).sort(([, a], [, b]) => b - a).slice(0, 2).map(([type, count]) => (
                         <div key={type} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-center">
                           <p className="text-xl font-bold text-gray-700 dark:text-gray-300">{count}</p>
-                          <p className="text-[10px] text-gray-500">{type.toUpperCase()}</p>
+                          <p className="text-[11px] text-gray-500">{type.toUpperCase()}</p>
                         </div>
                       ))}
                     </div>
                     {Object.keys(piiStats.byType).length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(piiStats.byType).sort(([, a], [, b]) => b - a).map(([type, count]) => (
-                          <Badge key={type} variant="outline" className="text-[10px] gap-1">
+                          <Badge key={type} variant="outline" className="text-[11px] gap-1">
                             {type.toUpperCase()} <span className="font-bold">{count}</span>
                           </Badge>
                         ))}
@@ -2256,9 +2453,9 @@ export default function AdminPage() {
                     )}
                     {Object.keys(piiStats.byEndpoint).length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] text-gray-400 self-center">{t("admin.pii_by_endpoint")}:</span>
+                        <span className="text-[11px] text-gray-400 self-center">{t("admin.pii_by_endpoint")}:</span>
                         {Object.entries(piiStats.byEndpoint).sort(([, a], [, b]) => b - a).map(([ep, count]) => (
-                          <Badge key={ep} variant="secondary" className="text-[10px] gap-1">
+                          <Badge key={ep} variant="secondary" className="text-[11px] gap-1">
                             {ep} <span className="font-bold">{count}</span>
                           </Badge>
                         ))}
@@ -2282,7 +2479,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                     <Mic className="h-4 w-4 text-violet-500" />
                     <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.dict_fb_title")}</h2>
-                    <span className="text-[10px] text-gray-400">{t("admin.dict_fb_hint")}</span>
+                    <span className="text-[11px] text-gray-400">{t("admin.dict_fb_hint")}</span>
                   </div>
                   <CardContent className="pt-0">
                     {total === 0 ? (
@@ -2294,17 +2491,17 @@ export default function AdminPage() {
                             <p className="text-xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-1.5">
                               <ThumbsUp className="h-4 w-4" /> {up}
                             </p>
-                            <p className="text-[10px] text-green-600 dark:text-green-400 mt-0.5">{t("admin.dict_fb_positive")}</p>
+                            <p className="text-[11px] text-green-600 dark:text-green-400 mt-0.5">{t("admin.dict_fb_positive")}</p>
                           </div>
                           <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-center">
                             <p className="text-xl font-bold text-red-700 dark:text-red-300 flex items-center justify-center gap-1.5">
                               <ThumbsDown className="h-4 w-4" /> {down}
                             </p>
-                            <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">{t("admin.dict_fb_negative")}</p>
+                            <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{t("admin.dict_fb_negative")}</p>
                           </div>
                           <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
                             <p className="text-xl font-bold text-violet-700 dark:text-violet-300">{satisfaction}%</p>
-                            <p className="text-[10px] text-violet-600 dark:text-violet-400 mt-0.5">{t("admin.dict_fb_satisfaction")}</p>
+                            <p className="text-[11px] text-violet-600 dark:text-violet-400 mt-0.5">{t("admin.dict_fb_satisfaction")}</p>
                           </div>
                         </div>
                         <div className="flex h-2 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -2323,7 +2520,7 @@ export default function AdminPage() {
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <BarChart3 className="h-4 w-4 text-violet-500" />
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.usage_summary")}</h2>
-                <span className="text-[10px] text-gray-400">{t("admin.usage_summary_hint")}</span>
+                <span className="text-[11px] text-gray-400">{t("admin.usage_summary_hint")}</span>
               </div>
               <CardContent className="pt-0">
                 {(() => {
@@ -2341,13 +2538,13 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
                       {rows.map(([action, v]) => (
                         <div key={action} className="flex items-center gap-2">
-                          <span className={`text-[11px] w-44 shrink-0 truncate ${action.startsWith("ui_") ? "text-violet-600 dark:text-violet-400" : "text-gray-700 dark:text-gray-300"}`}>
+                          <span className={`text-xs w-44 shrink-0 truncate ${action.startsWith("ui_") ? "text-violet-600 dark:text-violet-400" : "text-gray-700 dark:text-gray-300"}`}>
                             {action.replace(/^ui_/, "· ")}
                           </span>
                           <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                             <div className="h-full rounded-full bg-violet-400/70" style={{ width: `${Math.max(4, Math.round((v.total / max) * 100))}%` }} />
                           </div>
-                          <span className="text-[11px] tabular-nums text-gray-500 w-16 text-right shrink-0">{v.total} · {v.users.size}u</span>
+                          <span className="text-xs tabular-nums text-gray-500 w-16 text-right shrink-0">{v.total} · {v.users.size}u</span>
                         </div>
                       ))}
                     </div>
@@ -2405,29 +2602,29 @@ export default function AdminPage() {
                               className={`w-full text-left flex items-center hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors ${hasDetail || hasTraceIssues ? "cursor-pointer" : "cursor-default"}`}
                               onClick={() => (hasDetail || hasTraceIssues) && setExpandedAuditId(isExpanded ? null : log.id)}
                             >
-                              <span className="py-2.5 px-2 text-[11px] text-gray-500 whitespace-nowrap w-[140px] shrink-0">
+                              <span className="py-2.5 px-2 text-xs text-gray-500 whitespace-nowrap w-[140px] shrink-0">
                                 {new Date(log.created_at).toLocaleString()}
                               </span>
                               <span className="py-2.5 px-2 w-[130px] shrink-0">
                                 <span className="block text-xs font-medium text-gray-900 dark:text-white truncate">{log.user_name}</span>
-                                <span className="block text-[10px] text-gray-500 truncate">{log.user_email}</span>
+                                <span className="block text-[11px] text-gray-500 truncate">{log.user_email}</span>
                               </span>
                               <span className="py-2.5 px-2 shrink-0">
                                 <Badge
                                   variant={log.action === "report_error" ? "destructive" : "secondary"}
-                                  className={`text-[10px] ${isCorrection ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : ""}`}
+                                  className={`text-[11px] ${isCorrection ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : ""}`}
                                 >
                                   {log.action === "report_error" && <Flag className="h-2.5 w-2.5 mr-0.5" />}
                                   {isCorrection ? t("admin.correction") : log.action.replace(/_/g, " ")}
                                 </Badge>
                                 {log.had_corrections && !isCorrection && (
-                                  <Badge variant="outline" className="text-[10px] ml-1">{t("admin.edited")}</Badge>
+                                  <Badge variant="outline" className="text-[11px] ml-1">{t("admin.edited")}</Badge>
                                 )}
                                 {isCorrection && !!meta?.conclusion_changed && (
-                                  <Badge className="text-[10px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.conclusion_label")}</Badge>
+                                  <Badge className="text-[11px] ml-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{t("admin.conclusion_label")}</Badge>
                                 )}
                                 {isCorrection && !!meta?.findings_changed && (
-                                  <Badge className="text-[10px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">{t("admin.findings_label")}</Badge>
+                                  <Badge className="text-[11px] ml-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">{t("admin.findings_label")}</Badge>
                                 )}
                               </span>
                               <span className="py-2.5 px-2 text-xs text-gray-600 dark:text-gray-400 hidden md:inline w-[140px] shrink-0">
@@ -2470,14 +2667,14 @@ export default function AdminPage() {
 
                                 {hasTraceIssues && (
                                   <div className="flex gap-3 text-xs">
-                                    <Badge variant="secondary" className="text-[10px]">{Number(meta.trace_mappings) || 0} {t("admin.matched")}</Badge>
+                                    <Badge variant="secondary" className="text-[11px]">{Number(meta.trace_mappings) || 0} {t("admin.matched")}</Badge>
                                     {(Number(meta.trace_unmatched) || 0) > 0 && (
-                                      <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                      <Badge className="text-[11px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                                         {Number(meta.trace_unmatched)} {t("admin.omissions")}
                                       </Badge>
                                     )}
                                     {(Number(meta.trace_hallucinations) || 0) > 0 && (
-                                      <Badge variant="destructive" className="text-[10px]">
+                                      <Badge variant="destructive" className="text-[11px]">
                                         {Number(meta.trace_hallucinations)} {t("admin.hallucinations")}
                                       </Badge>
                                     )}
@@ -2486,7 +2683,7 @@ export default function AdminPage() {
 
                                 {!!meta?.raw_dictation && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.dictation_input")}</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.dictation_input")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.raw_dictation)}
                                     </pre>
@@ -2495,7 +2692,7 @@ export default function AdminPage() {
 
                                 {!!meta?.generated_findings && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.generated_findings")}</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.generated_findings")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                       {String(meta.generated_findings)}
                                     </pre>
@@ -2504,7 +2701,7 @@ export default function AdminPage() {
 
                                 {!!meta?.generated_conclusion && !isCorrection && (
                                   <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600 mb-1">{t("admin.generated_conclusion")}</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-green-600 mb-1">{t("admin.generated_conclusion")}</p>
                                     <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-40 overflow-y-auto">
                                       {String(meta.generated_conclusion)}
                                     </pre>
@@ -2514,13 +2711,13 @@ export default function AdminPage() {
                                 {isCorrection && !!meta?.conclusion_changed && (
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_conclusion_ai")}</p>
+                                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_conclusion_ai")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.original_conclusion || "—")}
                                       </pre>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.corrected_conclusion_rad")}</p>
+                                      <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-500 mb-1">{t("admin.corrected_conclusion_rad")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-blue-200 dark:border-blue-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.corrected_conclusion || "—")}
                                       </pre>
@@ -2531,13 +2728,13 @@ export default function AdminPage() {
                                 {isCorrection && !!meta?.findings_changed && (
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_findings_ai")}</p>
+                                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{t("admin.original_findings_ai")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.original_findings || "—")}
                                       </pre>
                                     </div>
                                     <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-purple-500 mb-1">{t("admin.corrected_findings_rad")}</p>
+                                      <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-500 mb-1">{t("admin.corrected_findings_rad")}</p>
                                       <pre className="text-xs bg-white dark:bg-gray-900 rounded border border-purple-200 dark:border-purple-700 p-2.5 whitespace-pre-wrap max-h-60 overflow-y-auto">
                                         {String(meta.corrected_findings || "—")}
                                       </pre>
@@ -2580,140 +2777,16 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* Fine-tune Data Generator */}
-            <Card>
-              <div className="flex items-center gap-2 px-5 pt-5 pb-3 flex-wrap">
-                <GraduationCap className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.ft_data_title")}</h2>
-                {ftDataPreview && <Badge variant="secondary" className="text-xs">{ftDataPreview.total} {t("admin.ft_examples_count")}</Badge>}
-                <div className="ml-auto flex flex-wrap gap-1.5 items-center">
-                  <Select value={ftDataModality} onValueChange={(v) => setFtDataModality(v)}>
-                    <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("admin.all_modalities")}</SelectItem>
-                      <SelectItem value="CT">CT</SelectItem>
-                      <SelectItem value="MRI">MRI</SelectItem>
-                      <SelectItem value="XRay">XRay</SelectItem>
-                      <SelectItem value="Ultrasound">Ultrasound</SelectItem>
-                      <SelectItem value="Mammography">Mammography</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <button
-                    type="button"
-                    onClick={() => setFtCorrectionsOnly((v) => !v)}
-                    className={`h-7 px-2.5 text-xs rounded-md border transition-colors ${
-                      ftCorrectionsOnly
-                        ? "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 font-medium"
-                        : "border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                    }`}
-                    title={t("admin.ft_corrections_only_hint")}
-                  >
-                    {t("admin.ft_corrections_only")}
-                  </button>
-                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={loadFtDataPreview} disabled={ftDataLoading}>
-                    {ftDataLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    {t("admin.load")}
-                  </Button>
-                  <Button size="sm" className="h-7 text-xs gap-1 bg-purple-600 hover:bg-purple-700 text-white" onClick={handleExportFtData} disabled={ftExporting || !ftDataPreview?.total}>
-                    {ftExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                    {t("admin.ft_download_jsonl")}
-                  </Button>
-                </div>
-              </div>
-              <CardContent className="pt-0 space-y-3">
-                <p className="text-xs text-gray-500">{t("admin.ft_data_desc")}</p>
-                {ftDataError && (
-                  <div className="px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
-                    {ftDataError}
-                  </div>
-                )}
-                {ftDataLoading ? (
-                  <div className="text-center py-6">
-                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-gray-400 mb-2" />
-                    <p className="text-xs text-gray-400">{t("admin.loading")}...</p>
-                  </div>
-                ) : ftDataPreview ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
-                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{ftDataPreview.total}</p>
-                        <p className="text-[10px] text-purple-500">{t("admin.ft_training_examples")}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
-                        <p className="text-lg font-bold text-gray-700 dark:text-gray-300">{ftDataPreview.modalities.length}</p>
-                        <p className="text-[10px] text-gray-500">{t("admin.ft_modalities")}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-                        <p className="text-lg font-bold text-green-700 dark:text-green-300">{ftDataPreview.total >= 10 ? "✓" : "✗"}</p>
-                        <p className="text-[10px] text-violet-500">{t("admin.ft_min_examples")}</p>
-                      </div>
-                    </div>
-
-                    <div className="border border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                        <p className="text-xs font-medium text-gray-900 dark:text-white">{t("admin.ft_augment_title")}</p>
-                      </div>
-                      <p className="text-[11px] text-gray-500">{t("admin.ft_augment_desc")}</p>
-                      <Button size="sm" className="h-7 text-xs gap-1.5 bg-purple-600 hover:bg-purple-500 text-white" onClick={handleAugmentData} disabled={ftAugmenting || !ftDataPreview.total}>
-                        {ftAugmenting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                        {ftAugmenting ? t("admin.ft_augmenting") : t("admin.ft_augment_button")}
-                      </Button>
-                      {ftAugmentResult && (
-                        <p className="text-[11px] text-green-600">
-                          {t("admin.ft_augment_result").replace("{0}", String(ftAugmentResult.originalCount)).replace("{1}", String(ftAugmentResult.syntheticCount)).replace("{2}", String(ftAugmentResult.totalCount))}
-                        </p>
-                      )}
-                      {ftAugmentedJsonl && (
-                        <div className="space-y-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs gap-1.5"
-                            onClick={handleUploadAugmented}
-                            disabled={ftUploadingAugmented}
-                          >
-                            {ftUploadingAugmented ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                            {ftUploadingAugmented ? t("admin.ft_uploading_augmented") : t("admin.ft_upload_augmented")}
-                          </Button>
-                          <p className="text-[10px] text-gray-500">{t("admin.ft_upload_augmented_hint")}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {ftDataPreview.preview.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{t("admin.ft_preview")}</p>
-                        {ftDataPreview.preview.slice(0, 3).map((ex, i) => {
-                          const userMsg = ex.messages.find((m) => m.role === "user");
-                          const assistantMsg = ex.messages.find((m) => m.role === "assistant");
-                          return (
-                            <div key={i} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 space-y-2">
-                              <div>
-                                <p className="text-[10px] font-semibold text-blue-500 mb-0.5">{t("admin.ft_input")}</p>
-                                <pre className="text-[11px] bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 whitespace-pre-wrap max-h-24 overflow-y-auto">{userMsg?.content?.slice(0, 500) || "—"}</pre>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-semibold text-green-600 mb-0.5">{t("admin.ft_expected_output")}</p>
-                                <pre className="text-[11px] bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 p-2 whitespace-pre-wrap max-h-24 overflow-y-auto">{assistantMsg?.content?.slice(0, 500) || "—"}</pre>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-gray-400 text-xs">
-                    <Database className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    {t("admin.ft_no_data")}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
+
+      <AdminJump
+        targets={jumpTargets}
+        onPick={(k) => setTab(k as Tab)}
+        open={jumpOpen}
+        setOpen={setJumpOpen}
+      />
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
@@ -2787,7 +2860,7 @@ export default function AdminPage() {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{c.email}</p>
-                      <p className="text-[10px] text-gray-500">
+                      <p className="text-[11px] text-gray-500">
                         {new Date(c.created_at).toLocaleDateString()} · {[c.country, c.hospital].filter(Boolean).join(" · ") || "—"}
                         {c.report_count > 0 && <span className="text-amber-600 dark:text-amber-400"> · {c.report_count} inf.</span>}
                       </p>

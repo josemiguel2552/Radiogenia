@@ -18,8 +18,11 @@ const page = source("src/app/admin/page.tsx");
 
 /** The section keys the page knows about, from `type Tab = ...`. */
 function unionSections(): string[] {
-  const line = page.slice(page.indexOf("type Tab ="), page.indexOf("\n", page.indexOf("type Tab =")));
-  return [...line.matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
+  // The union spans several lines now, so read to its semicolon rather than
+  // to the first newline — which silently returned nothing.
+  const start = page.indexOf("type Tab =");
+  const decl = page.slice(start, page.indexOf(";", start));
+  return [...decl.matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
 }
 
 /** The section keys reachable through the group navigation. */
@@ -126,5 +129,78 @@ describe("the dashboard no longer carries code it cannot open", () => {
   it("left the hospital's own section editor in place", () => {
     const org = source("src/app/org/page.tsx");
     expect(org).toContain('fetch("/api/org/sections"');
+  });
+});
+
+/**
+ * Searching exists so the structure does not have to be learned. Fifteen
+ * sections under five groups is a map you would otherwise memorise, and the
+ * admin opens this panel a few times a month — often enough to have forgotten
+ * which group holds the audit log.
+ */
+describe("anything can be reached by typing", () => {
+  const jump = source("src/components/admin/admin-jump.tsx");
+
+  it("indexes every section, built from the groups themselves", () => {
+    // A second hand-written list would fall behind the moment a section is
+    // added, and the new one would be the one you cannot find.
+    expect(page).toContain("const jumpTargets = GROUPS.flatMap(");
+    for (const key of groupedSections()) {
+      expect(page).toContain(`${key}:`);
+    }
+  });
+
+  it("matches on words that are not on the screen", () => {
+    // "stripe" is nowhere in the Costs label, and it is what you would type.
+    const kw = page.slice(page.indexOf("SECTION_KEYWORDS"), page.indexOf("const jumpTargets"));
+    expect(kw).toContain("stripe");
+    expect(kw).toContain("fine tuning");
+    expect(kw).toContain("pii");
+  });
+
+  it("opens on the shortcut and on a plain slash", () => {
+    expect(jump).toContain("e.metaKey || e.ctrlKey");
+    expect(jump).toMatch(/e\.key === "\/"/);
+  });
+
+  it("does not steal the slash while something is being typed", () => {
+    // Without this, typing a URL or a decimal into any admin field opens the
+    // search instead.
+    expect(jump).toContain('closest("input, textarea, [contenteditable]")');
+  });
+
+  it("cannot pick past the end of a filtered list", () => {
+    // The cursor stays where it was as the list shortens, so Enter would
+    // otherwise land on nothing.
+    expect(jump).toContain("Math.min(cursor, results.length - 1)");
+  });
+
+  it("requires every typed word to match, so two words narrow it", () => {
+    expect(jump).toContain("words.every(");
+  });
+});
+
+describe("one job per section", () => {
+  it("splits the platform group's wall into its separate jobs", () => {
+    for (const key of ["ai", "dictation", "training", "checklist"]) {
+      expect(page).toContain(`{tab === "${key}" && (<>`);
+    }
+  });
+
+  it("puts fine-tuning in one place instead of two tabs", () => {
+    // The data it trains on used to live in Audit and the training run here,
+    // so preparing a model meant two tabs that never mentioned each other.
+    const training = page.slice(page.indexOf('{tab === "training" && (<>'), page.indexOf('{tab === "checklist" && (<>'));
+    expect(training).toContain("Fine-tune Data Generator");
+    expect(training).toContain("admin.fine_tuning_title");
+  });
+
+  it("loads each panel with the section that shows it", () => {
+    // Both of these hung off the audit tab, so opening fine-tuning directly
+    // showed an empty data panel until Audit had been visited.
+    expect(page).toContain('if (tab === "training" && !ftDataPreview && !ftDataLoading) loadFtDataPreview();');
+    const auditEffect = page.slice(page.indexOf('if (tab === "audit") {'));
+    expect(auditEffect.slice(0, 300)).toContain("piiStats");
+    expect(auditEffect.slice(0, 300)).not.toContain("loadFtDataPreview");
   });
 });

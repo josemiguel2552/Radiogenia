@@ -42,7 +42,7 @@ function CopyButton({ text, small }: { text: string; small?: boolean }) {
   return (
     <Button
       variant="outline" size="sm"
-      className={small ? "h-7 gap-1 text-[11px] px-2" : "h-8 gap-1.5 text-xs"}
+      className={small ? "h-7 gap-1 text-xs px-2" : "h-8 gap-1.5 text-xs"}
       onClick={() => { navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); }}
     >
       {done ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
@@ -133,15 +133,15 @@ export function AdminHospitalsTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{h.name}</p>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-xs text-gray-500">
                     {h.active_members}/{h.max_seats} radiólogos{h.billing_email ? ` · ${h.billing_email}` : ""}
                     {h.region ? ` · ${h.region === "eu" ? "Europa" : h.region === "us" ? "EE.UU." : "Latam"}` : ""}
                     {h.billing_mode === "gifted" ? " · regalado" : ""}
                     {h.dictation_enabled === false ? " · sin dictado" : ""}
                   </p>
                 </div>
-                {h.is_pilot && <Badge variant="secondary" className="text-[10px]">Piloto</Badge>}
-                {!h.is_active && <Badge variant="outline" className="text-[10px] text-amber-600">Inactivo</Badge>}
+                {h.is_pilot && <Badge variant="secondary" className="text-[11px]">Piloto</Badge>}
+                {!h.is_active && <Badge variant="outline" className="text-[11px] text-amber-600">Inactivo</Badge>}
               </CardContent>
             </Card>
           ))}
@@ -176,7 +176,7 @@ export function AdminHospitalsTab() {
                 <option value="eu">Europa — solo documentación (MDR)</option>
                 <option value="us">Estados Unidos — solo documentación (FDA)</option>
               </select>
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Decide qué interfaz ven sus radiólogos. En Europa y EE.UU. se ocultan clasificación, recomendaciones y asistente de casos.
               </p>
             </div>
@@ -500,7 +500,7 @@ Equipo Radiogen.AI`;
       {subView === "metrics" ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-3 py-2">
-            <p className="text-[11px] text-gray-500">¿Faltan informes ya generados? Sincroniza para incorporarlos a las métricas.</p>
+            <p className="text-xs text-gray-500">¿Faltan informes ya generados? Sincroniza para incorporarlos a las métricas.</p>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" disabled={busy} onClick={async () => {
               setBusy(true); setNotice(null);
               try {
@@ -540,7 +540,7 @@ Equipo Radiogen.AI`;
                   <option value="eu">Europa — solo documentación (MDR)</option>
                   <option value="us">Estados Unidos — solo documentación (FDA)</option>
                 </select>
-                <p className="text-[11px] text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   En Europa y EE.UU. se ocultan clasificación, recomendaciones y asistente de casos.
                   Se aplica a los radiólogos que se den de alta desde ahora; los que ya tienen cuenta
                   mantienen la versión con la que se registraron.
@@ -573,7 +573,7 @@ Equipo Radiogen.AI`;
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <LinkIcon className="h-3.5 w-3.5 text-amber-500" /> Enlace de prueba (sin registro)
                 </p>
-                <p className="text-[11px] text-gray-500">
+                <p className="text-xs text-gray-500">
                   Quien abra este enlace entra directamente a la plataforma, sin registrarse, con todas las herramientas sin límite.
                   {hospital.trial_expires_at && (
                     <> Válido hasta el <span className="font-semibold text-gray-700 dark:text-gray-300">{new Date(hospital.trial_expires_at).toLocaleDateString()}</span>.</>
@@ -581,7 +581,7 @@ Equipo Radiogen.AI`;
                   {" "}En cada ordenador nuevo se muestra el asistente de bienvenida y el acceso a la guía.
                 </p>
                 <div className="flex items-center gap-2">
-                  <Input readOnly value={`${origin}/hospital-trial?token=${hospital.trial_token}`} className="h-8 text-[11px] font-mono flex-1" />
+                  <Input readOnly value={`${origin}/hospital-trial?token=${hospital.trial_token}`} className="h-8 text-xs font-mono flex-1" />
                   <CopyButton text={`${origin}/hospital-trial?token=${hospital.trial_token}`} small />
                 </div>
               </CardContent>
@@ -594,7 +594,7 @@ Equipo Radiogen.AI`;
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                 <LinkIcon className="h-3.5 w-3.5 text-violet-500" /> Enlace de alta institucional
               </p>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-xs text-gray-500">
                 Envía este enlace al hospital. Desde ahí eligen cuántas licencias quieren (mínimo 2),
                 indican los correos de los radiólogos, firman las condiciones y pagan con tarjeta o
                 solicitan los datos para transferencia. Al cobrarse, cada radiólogo recibe un correo
@@ -602,11 +602,11 @@ Equipo Radiogen.AI`;
               </p>
               {hospital.onboarding_token ? (
                 <div className="flex items-center gap-2">
-                  <Input readOnly value={`${origin}/hospital-onboarding/${hospital.onboarding_token}`} className="h-8 text-[11px] font-mono flex-1" />
+                  <Input readOnly value={`${origin}/hospital-onboarding/${hospital.onboarding_token}`} className="h-8 text-xs font-mono flex-1" />
                   <CopyButton text={`${origin}/hospital-onboarding/${hospital.onboarding_token}`} small />
                 </div>
               ) : (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                <p className="text-xs text-amber-600 dark:text-amber-400">
                   Pendiente de aplicar la migración de pedidos institucionales en Supabase.
                 </p>
               )}
@@ -622,36 +622,36 @@ Equipo Radiogen.AI`;
               {orders === null ? (
                 <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></div>
               ) : orders.length === 0 ? (
-                <p className="text-[11px] text-gray-500">Todavía no hay pedidos desde el enlace.</p>
+                <p className="text-xs text-gray-500">Todavía no hay pedidos desde el enlace.</p>
               ) : (
                 <div className="space-y-2">
                   {orders.map((o) => (
                     <div key={o.id} className="p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={`text-[10px] ${
+                        <Badge className={`text-[11px] ${
                           o.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                           : o.status === "paid" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                           : o.status === "cancelled" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                           : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"}`}>
                           {o.status === "active" ? "Activo" : o.status === "paid" ? "Pagado" : o.status === "cancelled" ? "Cancelado" : "Pendiente de pago"}
                         </Badge>
-                        <span className="text-[11px] text-gray-600 dark:text-gray-300">
+                        <span className="text-xs text-gray-600 dark:text-gray-300">
                           {o.seats} licencias · {(o.seats * Number(o.unit_price)).toFixed(2)} €/mes · {o.payment_method === "transfer" ? "transferencia" : "tarjeta"}
                         </span>
-                        <span className="text-[10px] text-gray-400">{new Date(o.created_at).toLocaleDateString()}</span>
+                        <span className="text-[11px] text-gray-400">{new Date(o.created_at).toLocaleDateString()}</span>
                       </div>
-                      <p className="text-[10px] text-gray-500">
+                      <p className="text-[11px] text-gray-500">
                         {o.contact_name} — {o.contact_email}
                         {o.legal_accepted_at && <> · condiciones firmadas el {new Date(o.legal_accepted_at).toLocaleDateString()} (v{o.legal_version})</>}
                       </p>
-                      {o.billing_details && <p className="text-[10px] text-gray-400 whitespace-pre-line">{o.billing_details}</p>}
-                      <p className="text-[10px] text-gray-500">
+                      {o.billing_details && <p className="text-[11px] text-gray-400 whitespace-pre-line">{o.billing_details}</p>}
+                      <p className="text-[11px] text-gray-500">
                         {o.invites.map((i) => `${i.email}${i.status === "activated" ? " ✓" : i.status === "failed" ? " ✗" : ""}`).join(" · ")}
                       </p>
                       {o.status === "pending" && (
                         <Button
                           size="sm"
-                          className="h-7 text-[11px] gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                          className="h-7 text-xs gap-1.5 bg-green-600 hover:bg-green-700 text-white"
                           disabled={activating === o.id}
                           onClick={() => activateOrder(o.id)}
                         >
@@ -672,7 +672,7 @@ Equipo Radiogen.AI`;
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                 <FileText className="h-3.5 w-3.5 text-blue-500" /> Plantillas institucionales
               </p>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-xs text-gray-500">
                 Las que cargues aquí aparecen automáticamente en la pestaña Plantillas de todos los
                 radiólogos de este hospital, incluidos los que se den de alta más adelante.
               </p>
@@ -683,8 +683,8 @@ Equipo Radiogen.AI`;
                 <div className="space-y-1">
                   {orgTemplates.map((t) => (
                     <div key={t.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50 dark:bg-gray-900/50">
-                      <span className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 truncate">{t.name}</span>
-                      <Badge variant="secondary" className="text-[10px]">{t.modality}</Badge>
+                      <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">{t.name}</span>
+                      <Badge variant="secondary" className="text-[11px]">{t.modality}</Badge>
                       <button onClick={() => deleteOrgTemplate(t.id)} className="text-gray-400 hover:text-red-500" title="Eliminar">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -742,10 +742,10 @@ Equipo Radiogen.AI`;
             <CardContent className="p-4 space-y-3">
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><LinkIcon className="h-3.5 w-3.5" /> Enlace de invitación (por si lo envías tú mismo)</p>
               <div className="flex items-center gap-2">
-                <Input readOnly value={inviteLink} className="h-8 text-[11px] font-mono flex-1" />
+                <Input readOnly value={inviteLink} className="h-8 text-xs font-mono flex-1" />
                 <CopyButton text={inviteLink} small />
               </div>
-              <p className="text-[11px] text-gray-500 flex items-center gap-1.5"><Mail className="h-3 w-3" /> Texto del correo (copiable):</p>
+              <p className="text-xs text-gray-500 flex items-center gap-1.5"><Mail className="h-3 w-3" /> Texto del correo (copiable):</p>
               <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-2.5 max-h-48 overflow-y-auto">
                 <pre className="text-[10.5px] text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-sans leading-relaxed">{inviteEmail}</pre>
               </div>
@@ -772,14 +772,14 @@ Equipo Radiogen.AI`;
                   <CardContent className="p-3 flex items-start gap-3 flex-wrap">
                     <div className="flex-1 min-w-[200px]">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{m.user_name || "—"}</p>
-                      <p className="text-[11px] text-gray-500">{m.user_email}</p>
+                      <p className="text-xs text-gray-500">{m.user_email}</p>
                       {m.subspecialties?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                          {m.subspecialties.map((s) => <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300">{s}</span>)}
+                          {m.subspecialties.map((s) => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300">{s}</span>)}
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
                       <span className="flex items-center gap-1" title="Informes este mes"><FileText className="h-3 w-3" /> {m.reports_this_month}</span>
                       <span className="flex items-center gap-1" title="Minutos de dictado"><Mic className="h-3 w-3" /> {m.dictation_minutes}m</span>
                       {m.avg_reports_month != null && <span className="text-gray-400" title="Informes/mes declarados">~{m.avg_reports_month}/mes</span>}
@@ -813,7 +813,7 @@ Equipo Radiogen.AI`;
               <p className="text-xs font-semibold text-red-700 dark:text-red-400 flex items-center gap-1.5">
                 <Trash2 className="h-3.5 w-3.5" /> Eliminar hospital
               </p>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-xs text-gray-500">
                 Borra el hospital, su equipo, sus pedidos de licencias, sus plantillas y sus métricas.
                 Las cuentas de los radiólogos no se borran, pero pierden el acceso ilimitado del hospital
                 y sus enlaces dejan de funcionar. No se puede deshacer.
@@ -847,7 +847,7 @@ Equipo Radiogen.AI`;
               </label>
               <Input value={delName} onChange={(e) => setDelName(e.target.value)} className="h-9" />
             </div>
-            {delError && <p className="text-[11px] text-red-600 dark:text-red-400">{delError}</p>}
+            {delError && <p className="text-xs text-red-600 dark:text-red-400">{delError}</p>}
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="ghost" size="sm" onClick={() => setDelOpen(false)}>Cancelar</Button>
               <Button

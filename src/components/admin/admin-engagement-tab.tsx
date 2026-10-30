@@ -127,7 +127,7 @@ export function AdminEngagementTab() {
             <button
               key={d}
               onClick={() => setDays(d)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
                 days === d
                   ? "bg-violet-600 text-white border-violet-600"
                   : "text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -162,7 +162,7 @@ export function AdminEngagementTab() {
               {funnelSteps.map((s, i) => (
                 <div key={s.label} className="flex-1 flex items-center gap-2">
                   <div className="flex-1 p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/40">
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{s.label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">{s.value}</p>
                     <div className="mt-1.5 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
@@ -170,7 +170,7 @@ export function AdminEngagementTab() {
                         style={{ width: f && f.registered > 0 ? `${Math.round((s.value / f.registered) * 100)}%` : "0%" }}
                       />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1">
+                    <p className="text-[11px] text-gray-400 mt-1">
                       {i === 0 ? " " : `${pctOf(s.value, s.prev)} ${t("conv.of_prev")}`}
                     </p>
                   </div>
@@ -190,17 +190,17 @@ export function AdminEngagementTab() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30">
                   <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{data.states.trialing}</p>
-                  <p className="text-[10px] text-gray-500">{t("conv.t_active")}</p>
+                  <p className="text-[11px] text-gray-500">{t("conv.t_active")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50">
                   <p className="text-lg font-bold text-gray-700 dark:text-gray-300">{data.trialCancellations}</p>
-                  <p className="text-[10px] text-gray-500">{t("conv.t_cancelled")}</p>
+                  <p className="text-[11px] text-gray-500">{t("conv.t_cancelled")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-950/30">
                   <p className="text-lg font-bold text-green-700 dark:text-green-300">
                     {data.trialConversion.paid}/{data.trialConversion.finished}
                   </p>
-                  <p className="text-[10px] text-gray-500">{t("conv.t_conversion")}</p>
+                  <p className="text-[11px] text-gray-500">{t("conv.t_conversion")}</p>
                 </div>
               </div>
             </Card>
@@ -214,7 +214,7 @@ export function AdminEngagementTab() {
                 {(Object.keys(data.states) as ConvState[])
                   .filter((s) => data.states[s] > 0)
                   .map((s) => (
-                    <Badge key={s} className={`text-[10px] ${STATE_STYLE[s]}`}>
+                    <Badge key={s} className={`text-[11px] ${STATE_STYLE[s]}`}>
                       {stateLabel(s)}: {data.states[s]}
                       {s === "paying" && Object.keys(data.payingByPlan).length > 0 && (
                         <span className="ml-1 opacity-75">
@@ -232,8 +232,8 @@ export function AdminEngagementTab() {
             <Card className="p-4">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xs font-semibold text-gray-900 dark:text-white">{t("conv.timeline_title")}</span>
-                <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="h-2 w-2 rounded-sm bg-blue-400" /> {t("conv.tl_signups")}</span>
-                <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="h-2 w-2 rounded-sm bg-violet-500" /> {t("conv.tl_cards")}</span>
+                <span className="flex items-center gap-1 text-[11px] text-gray-500"><span className="h-2 w-2 rounded-sm bg-blue-400" /> {t("conv.tl_signups")}</span>
+                <span className="flex items-center gap-1 text-[11px] text-gray-500"><span className="h-2 w-2 rounded-sm bg-violet-500" /> {t("conv.tl_cards")}</span>
               </div>
               <div className="flex items-end gap-1 h-24 overflow-x-auto pb-1">
                 {data.timeline.map((d) => (
@@ -270,15 +270,15 @@ export function AdminEngagementTab() {
                     <tr key={u.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-2.5 px-2">
                         <p className="text-xs font-medium text-gray-900 dark:text-white">{u.name !== "—" ? u.name : u.email}</p>
-                        <p className="text-[10px] text-gray-500">{u.email}{u.country ? ` · ${u.country}` : ""}</p>
+                        <p className="text-[11px] text-gray-500">{u.email}{u.country ? ` · ${u.country}` : ""}</p>
                       </td>
                       <td className="py-2.5 px-2 text-xs text-gray-500 whitespace-nowrap">{fmtD(u.signup)}</td>
                       <td className="py-2.5 px-2">
-                        <Badge className={`text-[10px] ${STATE_STYLE[u.state]}`}>{stateLabel(u.state)}</Badge>
+                        <Badge className={`text-[11px] ${STATE_STYLE[u.state]}`}>{stateLabel(u.state)}</Badge>
                       </td>
                       <td className="py-2.5 px-2 hidden md:table-cell">
                         {userDates(u).map((l) => (
-                          <p key={l} className="text-[10px] text-gray-500 whitespace-nowrap">{l}</p>
+                          <p key={l} className="text-[11px] text-gray-500 whitespace-nowrap">{l}</p>
                         ))}
                       </td>
                       <td className="py-2.5 px-2 text-right text-xs text-gray-600 dark:text-gray-300">{u.reportsThisMonth}</td>

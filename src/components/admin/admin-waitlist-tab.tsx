@@ -135,7 +135,7 @@ export function AdminWaitlistTab() {
           <Building2 className="h-3 w-3" />
           {t("admin.waitlist.tab_enterprise")}
           {inquiries.length > 0 && (
-            <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{inquiries.length}</Badge>
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{inquiries.length}</Badge>
           )}
         </button>
       </div>
@@ -168,12 +168,12 @@ export function AdminWaitlistTab() {
                             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{inq.name}</p>
                             <p className="text-xs text-gray-500 truncate">{inq.email}</p>
                           </div>
-                          <span className="text-[11px] text-gray-400 shrink-0">{new Date(inq.created_at).toLocaleDateString()}</span>
+                          <span className="text-xs text-gray-400 shrink-0">{new Date(inq.created_at).toLocaleDateString()}</span>
                         </button>
                         {isOpen && (
                           <div className="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-800 space-y-3">
                             <div>
-                              <p className="text-[11px] text-gray-500 mb-1">{t("admin.waitlist.col_message")}</p>
+                              <p className="text-xs text-gray-500 mb-1">{t("admin.waitlist.col_message")}</p>
                               <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{inq.message}</p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export function AdminWaitlistTab() {
                       <td className="py-2 px-2 text-gray-600 dark:text-gray-300">{e.country}</td>
                       <td className="py-2 px-2 text-gray-600 dark:text-gray-300 max-w-[200px] truncate">{e.hospital}</td>
                       <td className="py-2 px-2">
-                        <Badge variant="secondary" className={`text-[10px] ${e.role === "resident" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"}`}>
+                        <Badge variant="secondary" className={`text-[11px] ${e.role === "resident" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"}`}>
                           {e.role === "resident" ? t("admin.waitlist.role_resident") : t("admin.waitlist.role_attending")}
                         </Badge>
                       </td>

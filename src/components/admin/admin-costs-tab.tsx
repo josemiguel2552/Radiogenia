@@ -269,11 +269,11 @@ export function AdminCostsTab() {
           <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3 flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" />
             {t("admin.costs.by_user")}
-            <Badge variant="secondary" className="text-[9px] ml-1">{data.userCount}</Badge>
+            <Badge variant="secondary" className="text-[10px] ml-1">{data.userCount}</Badge>
           </h3>
 
           {/* Table header */}
-          <div className="hidden md:grid md:grid-cols-[1fr_auto_auto_auto_auto_auto_auto_auto_auto] gap-x-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider pb-1.5 border-b border-gray-100 dark:border-gray-800 mb-1">
+          <div className="hidden md:grid md:grid-cols-[1fr_auto_auto_auto_auto_auto_auto_auto_auto] gap-x-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider pb-1.5 border-b border-gray-100 dark:border-gray-800 mb-1">
             <span>{t("admin.costs.user")}</span>
             <span className="w-16 text-right">{t("admin.costs.plan")}</span>
             <SortHeader label={t("admin.costs.total")} field="totalCost" current={sortField} asc={sortAsc} onSort={handleSort} />
@@ -348,7 +348,7 @@ function SummaryCard({
       <CardContent className="p-3">
         <div className="flex items-center gap-2 mb-1">
           {icon}
-          <span className="text-[10px] text-gray-500 uppercase tracking-wide">{label}</span>
+          <span className="text-[11px] text-gray-500 uppercase tracking-wide">{label}</span>
         </div>
         <span className={`text-lg font-bold font-mono ${valueClass}`}>{value}</span>
       </CardContent>
@@ -411,10 +411,10 @@ function UserRow({
             <span className="font-medium text-gray-800 dark:text-gray-200 block truncate">
               {user.name}
             </span>
-            <span className="text-[10px] text-gray-400 block truncate">{user.email}</span>
+            <span className="text-[11px] text-gray-400 block truncate">{user.email}</span>
           </div>
           <span className="w-16 text-right">
-            <Badge className={`text-[9px] ${planBadgeColor(user.plan)}`}>{user.plan}</Badge>
+            <Badge className={`text-[10px] ${planBadgeColor(user.plan)}`}>{user.plan}</Badge>
           </span>
           <span className={`w-16 text-right font-mono font-medium ${costColor(user.totalCost)}`}>
             {fmt(user.totalCost)}
@@ -446,10 +446,10 @@ function UserRow({
             <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
               {user.name}
             </span>
-            <span className="text-[10px] text-gray-400">{user.email}</span>
+            <span className="text-[11px] text-gray-400">{user.email}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={`text-[9px] ${planBadgeColor(user.plan)}`}>{user.plan}</Badge>
+            <Badge className={`text-[10px] ${planBadgeColor(user.plan)}`}>{user.plan}</Badge>
             <span className={`text-xs font-mono font-medium ${costColor(user.totalCost)}`}>
               {fmt(user.totalCost)}
             </span>
@@ -461,14 +461,14 @@ function UserRow({
       {/* Expanded details */}
       {expanded && (
         <div className="ml-2 mr-1 mb-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
-          <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
             {t("admin.costs.details")}
           </h4>
           <div className="space-y-1">
             {Object.entries(user.breakdown)
               .sort(([, a], [, b]) => b.cost - a.cost)
               .map(([action, bd]) => (
-                <div key={action} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3 text-[11px] items-center">
+                <div key={action} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3 text-xs items-center">
                   <span className="text-gray-700 dark:text-gray-300">{actionLabel(t, action)}</span>
                   <span className="text-gray-400 text-right">{bd.count}x</span>
                   <span className="text-gray-400 text-right" title={t("admin.costs.tokens_in")}>

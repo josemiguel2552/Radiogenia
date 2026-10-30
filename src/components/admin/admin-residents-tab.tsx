@@ -113,18 +113,18 @@ export function AdminResidentsTab() {
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
                       onClick={() => toggleExpand(v.id)}
                     >
-                      <Badge className={`${statusColor[v.status]} text-[10px]`}>
+                      <Badge className={`${statusColor[v.status]} text-[11px]`}>
                         {v.status}
                       </Badge>
                       <div className="text-left min-w-0 flex-1">
                         <span className="text-sm font-medium text-gray-900 dark:text-white block truncate">
                           {v.user_name || v.user_email}
                         </span>
-                        <span className="text-[11px] text-gray-500 block truncate">
+                        <span className="text-xs text-gray-500 block truncate">
                           {v.institution_name || t("admin.residents.no_institution")} · {v.residency_start} → {v.residency_end}
                         </span>
                       </div>
-                      <span className="text-[10px] text-gray-400 shrink-0">
+                      <span className="text-[11px] text-gray-400 shrink-0">
                         {new Date(v.created_at).toLocaleDateString()}
                       </span>
                       <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
@@ -213,7 +213,7 @@ export function AdminResidentsTab() {
                         )}
 
                         {v.reviewed_at && (
-                          <div className="text-[10px] text-gray-400">
+                          <div className="text-[11px] text-gray-400">
                             {t("admin.residents.reviewed")} {new Date(v.reviewed_at).toLocaleString()}
                           </div>
                         )}

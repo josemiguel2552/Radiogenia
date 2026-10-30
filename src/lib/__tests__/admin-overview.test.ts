@@ -248,7 +248,8 @@ describe("the overview summarizes the other tabs instead of replacing them", () 
   it("sends every queue item to a tab that exists", () => {
     // A chip pointing at a tab the page does not know would silently do
     // nothing, which is worse than not offering the shortcut.
-    const union = page.slice(page.indexOf("type Tab ="), page.indexOf("\n", page.indexOf("type Tab =")));
+    const start = page.indexOf("type Tab =");
+    const union = page.slice(start, page.indexOf(";", start));
     const o = buildOverview(input({
       tickets: [{ status: "open" }],
       residentVerifications: [{ status: "pending" }],

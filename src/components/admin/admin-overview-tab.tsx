@@ -85,7 +85,7 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <p className="text-xs text-gray-500 max-w-xl">{t("admin.ov.subtitle")}</p>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-400">{new Date(data.generatedAt).toLocaleTimeString()}</span>
+          <span className="text-[11px] text-gray-400">{new Date(data.generatedAt).toLocaleTimeString()}</span>
           <button
             onClick={load}
             className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
@@ -97,7 +97,7 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
       </div>
 
       {data.truncated && (
-        <div className="flex items-start gap-2 text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 px-3 py-2">
+        <div className="flex items-start gap-2 text-xs rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 px-3 py-2">
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
           <span>{t("admin.ov.truncated")}</span>
         </div>
@@ -110,7 +110,7 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> {t("admin.ov.queue")}
           </p>
           {queue.length === 0 ? (
-            <p className="text-[11px] text-gray-400">{t("admin.ov.queue_empty")}</p>
+            <p className="text-xs text-gray-400">{t("admin.ov.queue_empty")}</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {queue.map((q) => (
@@ -120,7 +120,7 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
                   className="group flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900/70 bg-amber-50/60 dark:bg-amber-950/20 px-3 py-2 hover:border-amber-400 transition-colors"
                 >
                   <span className="text-base font-bold text-amber-700 dark:text-amber-300">{q.count}</span>
-                  <span className="text-[11px] text-gray-700 dark:text-gray-300">{QUEUE_LABEL[q.key] || q.key}</span>
+                  <span className="text-xs text-gray-700 dark:text-gray-300">{QUEUE_LABEL[q.key] || q.key}</span>
                   <ChevronRight className="h-3 w-3 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               ))}
@@ -162,7 +162,7 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
             <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
               {Object.entries(money.mrrByPlan).sort((a, b) => b[1] - a[1]).map(([plan, value]) => (
                 <div key={plan} className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="capitalize text-gray-600 dark:text-gray-300">{plan}</span>
                     <span className="text-gray-500">{eur(value)}</span>
                   </div>
@@ -185,13 +185,13 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
             [t("admin.ov.dictation_min"), `${activity.dictationMinutes} min`],
           ]} />
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400 mb-1.5">{t("admin.ov.modalities")}</p>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1.5">{t("admin.ov.modalities")}</p>
             {activity.topModalities.length === 0 ? (
-              <p className="text-[11px] text-gray-400">{t("admin.ov.no_data")}</p>
+              <p className="text-xs text-gray-400">{t("admin.ov.no_data")}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {activity.topModalities.map((m) => (
-                  <Badge key={m.modality} variant="secondary" className="text-[10px]">{m.modality} · {m.count}</Badge>
+                  <Badge key={m.modality} variant="secondary" className="text-[11px]">{m.modality} · {m.count}</Badge>
                 ))}
               </div>
             )}
@@ -207,7 +207,7 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
             [t("admin.ov.error_rate"), pct(cost.errorRatePct), (cost.errorRatePct ?? 0) > 2 ? "warn" : undefined],
           ]} />
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400 mb-1.5 flex items-center gap-1">
+            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1.5 flex items-center gap-1">
               <Plug className="h-3 w-3" /> {t("admin.ai_balance_title")}
             </p>
             {balances === null ? (
@@ -218,13 +218,13 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
                   const low = p.balance != null && p.balance < 5;
                   return (
                     <div key={p.provider} className="rounded-lg border border-gray-100 dark:border-gray-800 px-2 py-1.5">
-                      <p className="text-[10px] text-gray-500 truncate">{p.provider}</p>
+                      <p className="text-[11px] text-gray-500 truncate">{p.provider}</p>
                       <p className={`text-sm font-bold ${low ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"}`}>
                         {p.balance != null
                           ? `${p.balanceCurrency === "USD" ? "$" : ""}${p.balance.toFixed(2)}`
                           : p.providerSpendMtd != null ? usd(p.providerSpendMtd) : "—"}
                       </p>
-                      <p className="text-[9px] text-gray-400">{usd(p.loggedSpendMtd)}</p>
+                      <p className="text-[10px] text-gray-400">{usd(p.loggedSpendMtd)}</p>
                     </div>
                   );
                 })}
@@ -248,10 +248,10 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
           )}
           {Object.keys(hospitals.byRegion).length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <p className="text-[10px] uppercase tracking-wide text-gray-400 mb-1.5">{t("admin.ov.by_region")}</p>
+              <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1.5">{t("admin.ov.by_region")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(hospitals.byRegion).map(([r, n]) => (
-                  <Badge key={r} variant="secondary" className="text-[10px]">
+                  <Badge key={r} variant="secondary" className="text-[11px]">
                     {r === "eu" ? "Europa" : r === "us" ? "EE.UU." : r === "open" ? "Latam" : t("admin.ov.region_auto")} · {n}
                   </Badge>
                 ))}
@@ -268,30 +268,30 @@ export function AdminOverviewTab({ onNavigate }: { onNavigate: (tab: string) => 
             <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
               <ThumbsUp className="h-3.5 w-3.5 text-emerald-500" /> {t("admin.ov.sec_quality")}
             </p>
-            <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1" onClick={() => onNavigate("audit")}>
+            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => onNavigate("audit")}>
               {t("admin.ov.view")} <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
             <div>
-              <p className="text-[11px] text-gray-500">{t("admin.ov.dictation_satisfaction")}</p>
+              <p className="text-xs text-gray-500">{t("admin.ov.dictation_satisfaction")}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{pct(quality.dictationPct)}</p>
-              <p className="text-[10px] text-gray-400">
+              <p className="text-[11px] text-gray-400">
                 <Mic className="h-2.5 w-2.5 inline mr-0.5" />
                 {quality.dictationUp} / {quality.dictationUp + quality.dictationDown}
               </p>
             </div>
             <div>
-              <p className="text-[11px] text-gray-500">{t("admin.ov.error_rate")}</p>
+              <p className="text-xs text-gray-500">{t("admin.ov.error_rate")}</p>
               <p className={`text-xl font-bold ${(cost.errorRatePct ?? 0) > 2 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"}`}>
                 {pct(cost.errorRatePct)}
               </p>
-              <p className="text-[10px] text-gray-400">{cost.calls.current} {t("admin.ov.calls").toLowerCase()}</p>
+              <p className="text-[11px] text-gray-400">{cost.calls.current} {t("admin.ov.calls").toLowerCase()}</p>
             </div>
             <div>
-              <p className="text-[11px] text-gray-500">{t("admin.ov.per_active_user")}</p>
+              <p className="text-xs text-gray-500">{t("admin.ov.per_active_user")}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{activity.reportsPerActiveUser ?? "—"}</p>
-              <p className="text-[10px] text-gray-400">{t("admin.ov.vs_prev")}</p>
+              <p className="text-[11px] text-gray-400">{t("admin.ov.vs_prev")}</p>
             </div>
           </div>
         </CardContent>
@@ -319,9 +319,9 @@ function Kpi({ icon, label, value, trend, invert }: {
       <CardContent className="p-3">
         <div className="flex items-center gap-1.5 mb-1.5">{icon}</div>
         <p className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{value}</p>
-        <p className="text-[10px] text-gray-500 leading-snug">{label}</p>
+        <p className="text-[11px] text-gray-500 leading-snug">{label}</p>
         {trend && (
-          <p className={`text-[10px] mt-1 flex items-center gap-0.5 ${
+          <p className={`text-[11px] mt-1 flex items-center gap-0.5 ${
             good === null ? "text-gray-400" : good ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
           }`}>
             {delta == null ? (
@@ -351,7 +351,7 @@ function Section({ title, icon, onOpen, children }: {
           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
             {icon} {title}
           </p>
-          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1" onClick={onOpen}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onOpen}>
             {t("admin.ov.view")} <ArrowRight className="h-3 w-3" />
           </Button>
         </div>
@@ -365,7 +365,7 @@ function Rows({ rows }: { rows: (readonly [string, string, string?])[] }) {
   return (
     <div className="space-y-1">
       {rows.map(([label, value, tone]) => (
-        <div key={label} className="flex items-center justify-between text-[11px] gap-2">
+        <div key={label} className="flex items-center justify-between text-xs gap-2">
           <span className="text-gray-500 truncate">{label}</span>
           <span className={`font-semibold tabular-nums flex-shrink-0 ${
             tone === "warn" ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-white"
@@ -389,18 +389,18 @@ function SparkCard({ title, series, color }: { title: string; series: { day: str
     <Card>
       <CardContent className="p-4">
         <div className="flex items-baseline justify-between mb-2">
-          <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{title}</p>
-          <span className="text-[10px] text-gray-400" title={`${t("admin.ov.vs_prev")}`}>{total}</span>
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{title}</p>
+          <span className="text-[11px] text-gray-400" title={`${t("admin.ov.vs_prev")}`}>{total}</span>
         </div>
         {total === 0 ? (
-          <p className="text-[11px] text-gray-400 py-3">{t("admin.ov.no_data")}</p>
+          <p className="text-xs text-gray-400 py-3">{t("admin.ov.no_data")}</p>
         ) : (
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none" role="img" aria-label={title}>
             <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
             <polyline points={`0,${H} ${points} ${W},${H}`} fill={color} fillOpacity="0.12" stroke="none" />
           </svg>
         )}
-        <div className="flex justify-between text-[9px] text-gray-400 mt-1">
+        <div className="flex justify-between text-[10px] text-gray-400 mt-1">
           <span>{series[0]?.day.slice(5)}</span>
           <span>{series[series.length - 1]?.day.slice(5)}</span>
         </div>

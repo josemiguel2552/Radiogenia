@@ -114,7 +114,7 @@ export function AdminSupportTab() {
         <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           {t("admin.support.title")}
           {openCount > 0 && (
-            <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">
+            <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[11px]">
               {openCount} {t("admin.support.open")}
             </Badge>
           )}
@@ -146,7 +146,7 @@ export function AdminSupportTab() {
               <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2 flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-blue-500" />
                 {orgName}
-                <Badge variant="secondary" className="text-[9px] ml-1">{orgTickets.length}</Badge>
+                <Badge variant="secondary" className="text-[10px] ml-1">{orgTickets.length}</Badge>
               </h3>
               <div className="space-y-1.5">
                 {orgTickets.map((tk) => (
@@ -176,7 +176,7 @@ export function AdminSupportTab() {
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
                 {t("admin.support.individual_users")}
-                <Badge variant="secondary" className="text-[9px] ml-1">{individualTickets.length}</Badge>
+                <Badge variant="secondary" className="text-[10px] ml-1">{individualTickets.length}</Badge>
               </h3>
               <div className="space-y-1.5">
                 {individualTickets.map((tk) => (
@@ -236,11 +236,11 @@ function TicketRow({
               <span className="text-xs font-medium text-gray-800 dark:text-gray-200 block truncate">
                 {tk.subject || tk.body.slice(0, 60)}
               </span>
-              <span className="text-[10px] text-gray-400">
+              <span className="text-[11px] text-gray-400">
                 {tk.user_name || tk.user_email} — {new Date(tk.created_at).toLocaleDateString()}
               </span>
             </div>
-            <Badge className={`text-[9px] ${statusColor(tk.status)}`}>{tk.status}</Badge>
+            <Badge className={`text-[10px] ${statusColor(tk.status)}`}>{tk.status}</Badge>
             <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
           </div>
         </button>
@@ -251,7 +251,7 @@ function TicketRow({
 
             {tk.admin_reply && (
               <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40">
-                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 block mb-0.5">{t("admin.support.admin_reply")}</span>
+                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 block mb-0.5">{t("admin.support.admin_reply")}</span>
                 <p className="text-xs text-blue-800 dark:text-blue-200 whitespace-pre-wrap">{tk.admin_reply}</p>
               </div>
             )}
@@ -267,24 +267,24 @@ function TicketRow({
                   autoFocus
                 />
                 <div className="flex gap-1.5 justify-end">
-                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={onCancelReply}>{t("admin.support.cancel")}</Button>
-                  <Button size="sm" className="h-7 text-[10px]" onClick={() => onSendReply(tk.id)} disabled={saving || !replyText.trim()}>
+                  <Button variant="outline" size="sm" className="h-7 text-[11px]" onClick={onCancelReply}>{t("admin.support.cancel")}</Button>
+                  <Button size="sm" className="h-7 text-[11px]" onClick={() => onSendReply(tk.id)} disabled={saving || !replyText.trim()}>
                     {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("admin.support.reply_resolve")}
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="flex gap-1.5">
-                <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStartReply(tk.id)}>
+                <Button variant="outline" size="sm" className="h-7 text-[11px]" onClick={() => onStartReply(tk.id)}>
                   {t("admin.support.reply")}
                 </Button>
                 {tk.status === "open" && (
-                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStatusChange(tk.id, "in_progress")}>
+                  <Button variant="outline" size="sm" className="h-7 text-[11px]" onClick={() => onStatusChange(tk.id, "in_progress")}>
                     {t("admin.support.mark_in_progress")}
                   </Button>
                 )}
                 {tk.status !== "closed" && (
-                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => onStatusChange(tk.id, "closed")}>
+                  <Button variant="outline" size="sm" className="h-7 text-[11px]" onClick={() => onStatusChange(tk.id, "closed")}>
                     {t("admin.support.close")}
                   </Button>
                 )}

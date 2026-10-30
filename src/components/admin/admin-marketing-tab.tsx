@@ -1881,8 +1881,8 @@ const BRAND_TABS: { key: BrandTab; label: string; icon: React.ReactNode }[] = [
 function CopyBlock({ label, text, copied, onCopy }: { label: string; text: string; copied: string | null; onCopy: (label: string, text: string) => void }) {
   return (
     <div className="flex items-start gap-2 p-2.5 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
-      <Badge variant="secondary" className="text-[9px] shrink-0 mt-0.5">{label}</Badge>
-      <p className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 min-w-0 whitespace-pre-wrap">{text}</p>
+      <Badge variant="secondary" className="text-[10px] shrink-0 mt-0.5">{label}</Badge>
+      <p className="text-xs text-gray-700 dark:text-gray-300 flex-1 min-w-0 whitespace-pre-wrap">{text}</p>
       <button onClick={() => onCopy(label, text)} className="shrink-0 text-gray-400 hover:text-violet-500 transition-colors mt-0.5">
         {copied === label ? <CheckCheck className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
       </button>
@@ -1891,7 +1891,7 @@ function CopyBlock({ label, text, copied, onCopy }: { label: string; text: strin
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{children}</p>;
+  return <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{children}</p>;
 }
 
 function BrandKitSection() {
@@ -1959,7 +1959,7 @@ function BrandKitSection() {
           <button
             key={t.key}
             onClick={() => setBrandTab(t.key)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               brandTab === t.key
                 ? "bg-violet-600 text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -1979,9 +1979,9 @@ function BrandKitSection() {
               <button key={c.hex} onClick={() => copyColor(c.hex)} className="group rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-violet-400 transition-colors text-left">
                 <div className="h-12 w-full" style={{ backgroundColor: c.hex }} />
                 <div className="p-1.5">
-                  <p className="text-[10px] font-semibold text-gray-700 dark:text-gray-300">{c.name}</p>
-                  <p className="text-[9px] font-mono text-gray-400">{copiedColor === c.hex ? "Copiado!" : c.hex}</p>
-                  <p className="text-[9px] text-gray-400 truncate">{c.usage}</p>
+                  <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{c.name}</p>
+                  <p className="text-[10px] font-mono text-gray-400">{copiedColor === c.hex ? "Copiado!" : c.hex}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{c.usage}</p>
                 </div>
               </button>
             ))}
@@ -1990,11 +1990,11 @@ function BrandKitSection() {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
               <p className="text-lg font-extrabold text-gray-900 dark:text-white" style={{ fontFamily: "system-ui,-apple-system,sans-serif" }}>Radiogen<span className="text-violet-400">.ai</span></p>
-              <p className="text-[10px] text-gray-400 mt-1">Font: system-ui / Inter · Weight: 800</p>
+              <p className="text-[11px] text-gray-400 mt-1">Font: system-ui / Inter · Weight: 800</p>
             </div>
             <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Informes radiológicos con IA</p>
-              <p className="text-[10px] text-gray-400 mt-1">Tagline · Weight: 500</p>
+              <p className="text-[11px] text-gray-400 mt-1">Tagline · Weight: 500</p>
             </div>
           </div>
           <SectionTitle>Textos de marca</SectionTitle>
@@ -2029,14 +2029,14 @@ function BrandKitSection() {
               ].map((t) => (
                 <div key={t.trait} className={`rounded-lg border p-3 ${t.color}`}>
                   <p className="text-xs font-bold text-gray-900 dark:text-white">{t.trait}</p>
-                  <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1">{t.desc}</p>
+                  <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">{t.desc}</p>
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg border border-violet-200 dark:border-violet-900/50 bg-violet-50/50 dark:bg-violet-950/20">
-                <p className="text-[10px] font-bold text-green-700 dark:text-green-400 mb-1.5">✓ SÍ DECIR</p>
-                <ul className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5">
+                <p className="text-[11px] font-bold text-green-700 dark:text-green-400 mb-1.5">✓ SÍ DECIR</p>
+                <ul className="text-[11px] text-gray-600 dark:text-gray-400 space-y-0.5">
                   <li>• "Reduce tu tiempo de informe un 60%"</li>
                   <li>• "Dicta, revisa y firma — en segundos"</li>
                   <li>• "Tú controlas, la IA ayuda"</li>
@@ -2045,8 +2045,8 @@ function BrandKitSection() {
                 </ul>
               </div>
               <div className="p-3 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20">
-                <p className="text-[10px] font-bold text-red-700 dark:text-red-400 mb-1.5">✗ NO DECIR</p>
-                <ul className="text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5">
+                <p className="text-[11px] font-bold text-red-700 dark:text-red-400 mb-1.5">✗ NO DECIR</p>
+                <ul className="text-[11px] text-gray-600 dark:text-gray-400 space-y-0.5">
                   <li>• "La IA reemplaza al radiólogo"</li>
                   <li>• "Informes automáticos sin supervisión"</li>
                   <li>• "Diagnóstico por IA"</li>
@@ -2108,7 +2108,7 @@ function BrandKitSection() {
                 { pain: "Sin visibilidad de productividad", sol: "Dashboard de métricas en tiempo real: tiempos, volumen, adopción, completitud." },
                 { pain: "Integración compleja con RIS/PACS", sol: "Zero-install. El radiólogo copia el informe al RIS. Sin APIs, sin VPN, sin IT." },
               ].map((p, i) => (
-                <div key={i} className="grid grid-cols-2 gap-2 text-[11px]">
+                <div key={i} className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 rounded-md bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300">✗ {p.pain}</div>
                   <div className="p-2 rounded-md bg-violet-50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 text-violet-800 dark:text-violet-300">✓ {p.sol}</div>
                 </div>
@@ -2143,7 +2143,7 @@ function BrandKitSection() {
               ].map((s) => (
                 <button key={s.num} onClick={() => cp(s.num, `${s.num} — ${s.desc}`)} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center hover:border-violet-400 transition-colors">
                   <p className="text-xl font-bold text-violet-600 dark:text-violet-400">{s.num}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{s.desc}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{s.desc}</p>
                 </button>
               ))}
             </div>
@@ -2294,14 +2294,14 @@ Radiogen.ai` },
                   <Mail className="h-4 w-4 text-violet-500" />
                   <h3 className="text-xs font-semibold text-gray-900 dark:text-white">{email.label}</h3>
                 </div>
-                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={() => cp(`email-${email.label}`, `Asunto: ${email.subject}\n\n${email.body}`)}>
+                <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1" onClick={() => cp(`email-${email.label}`, `Asunto: ${email.subject}\n\n${email.body}`)}>
                   {copiedColor === `email-${email.label}` ? <CheckCheck className="h-3 w-3 text-violet-500" /> : <Copy className="h-3 w-3" />}
                   Copiar todo
                 </Button>
               </div>
               <CopyBlock label="Asunto" text={email.subject} copied={copiedColor} onCopy={cp} />
               <div className="p-3 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
-                <p className="text-[11px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{email.body}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{email.body}</p>
               </div>
             </CardContent></Card>
           ))}
@@ -2323,7 +2323,7 @@ Radiogen.ai` },
               ].map((p) => (
                 <div key={p.platform} className={`rounded-lg border p-3 ${p.color}`}>
                   <p className="text-xs font-bold text-gray-900 dark:text-white mb-1">{p.platform}</p>
-                  <p className="text-[10px] text-gray-600 dark:text-gray-400">{p.strategy}</p>
+                  <p className="text-[11px] text-gray-600 dark:text-gray-400">{p.strategy}</p>
                 </div>
               ))}
             </div>
@@ -2331,7 +2331,7 @@ Radiogen.ai` },
 
           <Card><CardContent className="p-5 space-y-4">
             <SectionTitle>Calendario semanal</SectionTitle>
-            <div className="grid grid-cols-5 gap-1.5 text-[10px]">
+            <div className="grid grid-cols-5 gap-1.5 text-[11px]">
               {[
                 { day: "LUN", type: "Educativo", desc: "Artículo o dato sobre IA en radiología", color: "bg-blue-50 dark:bg-blue-950/20" },
                 { day: "MAR", type: "Producto", desc: "Tip de uso, funcionalidad destacada", color: "bg-violet-50 dark:bg-violet-950/20" },
@@ -2385,7 +2385,7 @@ Radiogen.ai` },
             <SectionTitle>Keywords principales</SectionTitle>
             <div className="flex flex-wrap gap-1.5">
               {["informes radiológicos con IA", "software radiología", "dictado radiólogo", "informe radiológico automático", "plantillas radiología", "IA radiología", "transcripción médica IA", "conclusión radiológica automática", "herramienta radiólogo", "radiology report AI", "PACS reporting", "AI radiology software"].map((kw) => (
-                <button key={kw} onClick={() => cp(`kw-${kw}`, kw)} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors">
+                <button key={kw} onClick={() => cp(`kw-${kw}`, kw)} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors">
                   {copiedColor === `kw-${kw}` ? "✓" : ""} {kw}
                 </button>
               ))}
@@ -2396,7 +2396,7 @@ Radiogen.ai` },
             <SectionTitle>Long-tail keywords</SectionTitle>
             <div className="flex flex-wrap gap-1.5">
               {["cómo hacer informes radiológicos más rápido", "software dictado voz radiología", "plantilla informe TC tórax", "automatizar informes radiológicos", "IA para redactar informes médicos", "programa piloto IA hospital", "mejorar productividad servicio radiología", "informe resonancia magnética cardíaca", "conclusión automática radiología", "trazabilidad informe radiológico", "herramienta radiología sin instalación", "LGPD software médico nube", "reducir tiempo informe radiológico", "aprendizaje estilo radiólogo IA", "gestión usuarios servicio radiología"].map((kw) => (
-                <button key={kw} onClick={() => cp(`lt-${kw}`, kw)} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <button key={kw} onClick={() => cp(`lt-${kw}`, kw)} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                   {kw}
                 </button>
               ))}
@@ -2481,8 +2481,8 @@ La plataforma es cloud-native, zero-install, compatible con cualquier RIS/PACS v
                 { label: "Cumplimiento", value: "LGPD, anonimización en origen, sin datos de paciente en IA" },
               ].map((d) => (
                 <button key={d.label} onClick={() => cp(`press-${d.label}`, `${d.label}: ${d.value}`)} className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-left hover:border-violet-400 transition-colors">
-                  <p className="text-[10px] text-gray-500">{d.label}</p>
-                  <p className="text-[11px] font-medium text-gray-900 dark:text-white mt-0.5">{d.value}</p>
+                  <p className="text-[11px] text-gray-500">{d.label}</p>
+                  <p className="text-xs font-medium text-gray-900 dark:text-white mt-0.5">{d.value}</p>
                 </button>
               ))}
             </div>
@@ -2526,7 +2526,7 @@ radiogen.ai`} copied={copiedColor} onCopy={cp} />
             <div className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-violet-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Assets descargables</h3>
-              <Badge variant="secondary" className="text-[10px]">{BRAND_ASSETS.length} assets</Badge>
+              <Badge variant="secondary" className="text-[11px]">{BRAND_ASSETS.length} assets</Badge>
             </div>
             <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleDownloadAll}>
               <Download className="h-3 w-3" />
@@ -2547,9 +2547,9 @@ radiogen.ai`} copied={copiedColor} onCopy={cp} />
                     </div>
                     <div className="p-2 space-y-1">
                       <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{asset.label}</p>
-                      <p className="text-[10px] text-gray-500">{asset.description}</p>
-                      <p className="text-[10px] text-gray-400">{asset.width}×{asset.height}px</p>
-                      <Button variant="outline" size="sm" className="w-full h-7 text-[11px] gap-1 mt-1" onClick={() => renderAndDownload(asset)}>
+                      <p className="text-[11px] text-gray-500">{asset.description}</p>
+                      <p className="text-[11px] text-gray-400">{asset.width}×{asset.height}px</p>
+                      <Button variant="outline" size="sm" className="w-full h-7 text-xs gap-1 mt-1" onClick={() => renderAndDownload(asset)}>
                         <Download className="h-3 w-3" />
                         Descargar PNG
                       </Button>
@@ -2749,9 +2749,9 @@ export function AdminMarketingTab() {
             <KeyRound className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-semibold text-gray-900 dark:text-white">API Keys</span>
             {keys.openaiKey && keys.imageApiKey ? (
-              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-violet-300 text-[10px]">Configuradas</Badge>
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-violet-300 text-[11px]">Configuradas</Badge>
             ) : (
-              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">
+              <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[11px]">
                 {!keys.openaiKey && !keys.imageApiKey ? "Sin configurar" : "Incompleta"}
               </Badge>
             )}
@@ -2762,7 +2762,7 @@ export function AdminMarketingTab() {
           <CardContent className="pt-0 pb-5 px-5 space-y-5 border-t border-gray-100 dark:border-gray-800">
             {/* Text generation */}
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Texto (OpenAI)</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Texto (OpenAI)</p>
               <div className="space-y-1.5">
                 <Label className="text-xs">OpenAI API Key</Label>
                 <div className="relative">
@@ -2798,7 +2798,7 @@ export function AdminMarketingTab() {
 
             {/* Image generation */}
             <div className="space-y-3 border-t border-gray-100 dark:border-gray-800 pt-4">
-              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Imágenes</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Imágenes</p>
               <div className="space-y-1.5">
                 <Label className="text-xs">Proveedor</Label>
                 <div className="flex gap-1">
@@ -2863,7 +2863,7 @@ export function AdminMarketingTab() {
                   )}
                 </select>
               </div>
-              <p className="text-[10px] text-gray-400">Las keys se guardan solo en este navegador.</p>
+              <p className="text-[11px] text-gray-400">Las keys se guardan solo en este navegador.</p>
             </div>
           </CardContent>
         )}
@@ -2921,7 +2921,7 @@ export function AdminMarketingTab() {
                           : "border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
                       }`}
                     >
-                      <span className="text-[10px] font-bold">{PLATFORM_LABELS[p]}</span>
+                      <span className="text-[11px] font-bold">{PLATFORM_LABELS[p]}</span>
                     </button>
                   ))}
                 </div>
@@ -2985,7 +2985,7 @@ export function AdminMarketingTab() {
                       </div>
                       <span className="text-xs font-medium text-gray-500 capitalize">{platform}</span>
                     </div>
-                    <Badge variant="secondary" className="text-[10px]">{generatedPost.length} chars</Badge>
+                    <Badge variant="secondary" className="text-[11px]">{generatedPost.length} chars</Badge>
                   </div>
                   <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap leading-relaxed">{generatedPost}</p>
                 </div>
@@ -3036,7 +3036,7 @@ export function AdminMarketingTab() {
             <div className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-purple-500" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Generador de Imágenes</h3>
-              <Badge variant="secondary" className="text-[10px]">{keys.imageProvider === "together" ? "Together AI" : "Replicate"}</Badge>
+              <Badge variant="secondary" className="text-[11px]">{keys.imageProvider === "together" ? "Together AI" : "Replicate"}</Badge>
             </div>
 
             <div className="space-y-1.5">
@@ -3151,7 +3151,7 @@ export function AdminMarketingTab() {
               <div className="flex items-center gap-2">
                 <FolderOpen className="h-4 w-4 text-amber-500" />
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Biblioteca</h3>
-                <Badge variant="secondary" className="text-[10px]">{assets.length}</Badge>
+                <Badge variant="secondary" className="text-[11px]">{assets.length}</Badge>
               </div>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={loadAssets}>
                 Actualizar
@@ -3173,13 +3173,13 @@ export function AdminMarketingTab() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Badge className={`text-[10px] shrink-0 ${asset.type === "post" ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"}`}>
+                        <Badge className={`text-[11px] shrink-0 ${asset.type === "post" ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"}`}>
                           {asset.type === "post" ? "Post" : "Imagen"}
                         </Badge>
                         {asset.platform && (
-                          <span className="text-[10px] text-gray-500 capitalize">{asset.platform}</span>
+                          <span className="text-[11px] text-gray-500 capitalize">{asset.platform}</span>
                         )}
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-[11px] text-gray-400">
                           {new Date(asset.created_at).toLocaleDateString()}
                         </span>
                       </div>
