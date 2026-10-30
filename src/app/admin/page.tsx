@@ -227,6 +227,10 @@ export default function AdminPage() {
   const router = useRouter();
   const t = useT();
   const [tab, setTab] = useState<Tab>("overview");
+  // Counts for the navigation badges, from the cheap count-only mode: the full
+  // overview reads two months of reports, which is not worth paying for five
+  // numbers on every page load.
+  const [navQueue, setNavQueue] = useState<{ key: string; count: number; tab: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Stats
@@ -521,11 +525,21 @@ export default function AdminPage() {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
-    const [statsRes, configRes, usersRes] = await Promise.all([
+    const [statsRes, configRes, usersRes, queueRes] = await Promise.all([
       fetch("/api/admin/stats").catch(() => null),
       fetch("/api/admin/config").catch(() => null),
       fetch("/api/admin/users").catch(() => null),
+      fetch("/api/admin/overview?only=queue").catch(() => null),
     ]);
+
+    // Badges are a convenience: a failure here leaves them off rather than
+    // holding up the page.
+    if (queueRes?.ok) {
+      try {
+        const d = await queueRes.json();
+        setNavQueue(Array.isArray(d?.queue) ? d.queue : []);
+      } catch { /* no badges */ }
+    }
 
     if (statsRes?.ok) setStats(await statsRes.json());
     if (configRes?.ok) {
@@ -985,18 +999,54 @@ export default function AdminPage() {
   const radiologists = users.filter((u) => u.role !== "admin");
   const pendingUsers = users.filter((u) => u.approved === false && u.invitation_code);
 
-  const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "overview", label: t("admin.tab_overview"), icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "users", label: t("admin.tab_users"), icon: <Users className="h-4 w-4" /> },
-    { key: "ai", label: t("admin.tab_ai_config"), icon: <Plug className="h-4 w-4" /> },
-    { key: "residents", label: t("admin.tab_residents"), icon: <GraduationCap className="h-4 w-4" /> },
-    { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-4 w-4" /> },
-    { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-4 w-4" /> },
-    { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-4 w-4" /> },
-    { key: "engagement", label: t("admin.tab_engagement"), icon: <TrendingUp className="h-4 w-4" /> },
-    { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-4 w-4" /> },
-    { key: "hospitals", label: "Hospitales", icon: <Building2 className="h-4 w-4" /> },
+  // Ten flat tabs made the admin read the whole strip to find anything, and
+  // said nothing about which of them had work waiting. They group into five
+  // jobs; `tab` stays the single source of truth so the summary's shortcuts
+  // (and anything else holding a section key) keep working untouched.
+  const GROUPS: {
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+    sections: { key: Tab; label: string; icon: React.ReactNode }[];
+  }[] = [
+    {
+      key: "summary", label: t("admin.grp_summary"), icon: <BarChart3 className="h-4 w-4" />,
+      sections: [{ key: "overview", label: t("admin.tab_overview"), icon: <BarChart3 className="h-3.5 w-3.5" /> }],
+    },
+    {
+      key: "accounts", label: t("admin.grp_accounts"), icon: <Users className="h-4 w-4" />,
+      sections: [
+        { key: "users", label: t("admin.tab_users"), icon: <Users className="h-3.5 w-3.5" /> },
+        { key: "residents", label: t("admin.tab_residents"), icon: <GraduationCap className="h-3.5 w-3.5" /> },
+        { key: "waitlist", label: t("admin.tab_waitlist"), icon: <UserPlus className="h-3.5 w-3.5" /> },
+        { key: "support", label: t("admin.tab_support"), icon: <MessageSquare className="h-3.5 w-3.5" /> },
+      ],
+    },
+    {
+      key: "hospitals", label: t("admin.grp_hospitals"), icon: <Building2 className="h-4 w-4" />,
+      sections: [{ key: "hospitals", label: t("admin.grp_hospitals"), icon: <Building2 className="h-3.5 w-3.5" /> }],
+    },
+    {
+      key: "business", label: t("admin.grp_business"), icon: <TrendingUp className="h-4 w-4" />,
+      sections: [
+        { key: "engagement", label: t("admin.tab_engagement"), icon: <TrendingUp className="h-3.5 w-3.5" /> },
+        { key: "costs", label: t("admin.tab_costs"), icon: <DollarSign className="h-3.5 w-3.5" /> },
+      ],
+    },
+    {
+      key: "platform", label: t("admin.grp_platform"), icon: <Plug className="h-4 w-4" />,
+      sections: [
+        { key: "ai", label: t("admin.tab_ai_config"), icon: <Plug className="h-3.5 w-3.5" /> },
+        { key: "audit", label: t("admin.tab_audit"), icon: <ClipboardList className="h-3.5 w-3.5" /> },
+      ],
+    },
   ];
+
+  const activeGroup = GROUPS.find((g) => g.sections.some((sec) => sec.key === tab)) || GROUPS[0];
+  /** Work waiting, per section, for the badges. */
+  const pendingFor = (key: Tab) => navQueue.find((q) => q.tab === key)?.count || 0;
+  const pendingInGroup = (g: typeof GROUPS[number]) =>
+    g.sections.reduce((sum, sec) => sum + pendingFor(sec.key), 0);
 
   if (loading) {
     return (
@@ -1031,24 +1081,60 @@ export default function AdminPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-6">
-        {/* Tab navigation */}
-        <div className="flex flex-wrap gap-1 mb-4 md:mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl">
-          {TABS.map((tb) => (
-            <button
-              key={tb.key}
-              ref={(el) => { if (tb.key === tab && el) el.scrollIntoView({ block: "nearest", inline: "nearest" }); }}
-              onClick={() => setTab(tb.key)}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
-                tab === tb.key
-                  ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
-            >
-              {tb.icon}
-              <span>{tb.label}</span>
-            </button>
-          ))}
+        {/* Five jobs, with what is waiting inside each one */}
+        <div className="flex flex-wrap gap-1 mb-2 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl">
+          {GROUPS.map((g) => {
+            const pending = pendingInGroup(g);
+            const active = g.key === activeGroup.key;
+            return (
+              <button
+                key={g.key}
+                onClick={() => setTab(g.sections[0].key)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
+                  active
+                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+              >
+                {g.icon}
+                <span>{g.label}</span>
+                {pending > 0 && (
+                  <span className="ml-0.5 min-w-[1.1rem] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-[1.1rem] text-center">
+                    {pending}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+
+        {/* The sections of the job in hand — hidden when there is only one */}
+        {activeGroup.sections.length > 1 && (
+          <div className="flex flex-wrap gap-3 mb-4 md:mb-6 px-1 border-b border-gray-200 dark:border-gray-800">
+            {activeGroup.sections.map((sec) => {
+              const pending = pendingFor(sec.key);
+              return (
+                <button
+                  key={sec.key}
+                  onClick={() => setTab(sec.key)}
+                  className={`flex items-center gap-1.5 pb-2 -mb-px border-b-2 text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap ${
+                    tab === sec.key
+                      ? "border-brand text-gray-900 dark:text-white"
+                      : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {sec.icon}
+                  <span>{sec.label}</span>
+                  {pending > 0 && (
+                    <span className="min-w-[1.1rem] px-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold leading-[1.1rem] text-center">
+                      {pending}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* ═══ OVERVIEW ═══ */}
         {tab === "overview" && <AdminOverviewTab onNavigate={(k) => setTab(k as Tab)} />}
@@ -2104,7 +2190,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ═══ PLANS ═══ */}
         {/* ═══ RESIDENTS ═══ */}
         {tab === "residents" && <AdminResidentsTab />}
 

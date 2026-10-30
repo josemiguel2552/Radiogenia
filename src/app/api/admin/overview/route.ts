@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
@@ -35,9 +35,55 @@ async function fetchAll<T>(build: () => Rangeable): Promise<{ rows: T[]; truncat
   return { rows, truncated: true };
 }
 
-export async function GET() {
+/**
+ * Just the work waiting for the admin, for the badges on the navigation.
+ *
+ * Count-only queries: the full overview paginates two months of reports and
+ * AI calls, which is far too much to run on every admin page load for five
+ * numbers — and would run it twice, since the summary fetches it as well.
+ */
+async function queueOnly() {
+  const supabase = createServiceClient();
+  const head = { count: "exact" as const, head: true };
+  /** A table this database does not have is not work waiting. */
+  const n = async (p: PromiseLike<{ count: number | null; error: unknown }>) => {
+    try {
+      const { count, error } = await p;
+      return error ? 0 : count || 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const [tickets, residents, seatOrders, approvals, waitlist] = await Promise.all([
+    n(supabase.from("support_tickets").select("id", head).in("status", ["open", "in_progress"])),
+    n(supabase.from("resident_verifications").select("id", head).eq("status", "pending")),
+    n(supabase.from("org_seat_orders").select("id", head).eq("status", "pending")),
+    n(supabase.from("profiles").select("id", head).eq("approved", false)),
+    n(supabase.from("waitlist").select("id", head)),
+  ]);
+
+  return {
+    queue: [
+      { key: "tickets", count: tickets, tab: "support" },
+      { key: "residents", count: residents, tab: "residents" },
+      { key: "seat_orders", count: seatOrders, tab: "hospitals" },
+      { key: "approvals", count: approvals, tab: "users" },
+      { key: "waitlist", count: waitlist, tab: "waitlist" },
+    ].filter((q) => q.count > 0),
+  };
+}
+
+export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
+
+    if (new URL(req.url).searchParams.get("only") === "queue") {
+      return NextResponse.json(await queueOnly(), {
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      });
+    }
+
     const supabase = createServiceClient();
 
     const now = Date.now();
