@@ -3208,7 +3208,6 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "admin.input": "Entrada",
     "admin.output": "Salida",
     "admin.margins": "Márgenes",
-    "admin.marketing_cost": "coste de marketing",
     "admin.margin": "margen",
     "admin.user_mo": "usuario/mes",
     // Admin – Audit
@@ -6663,7 +6662,6 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "admin.input": "Input",
     "admin.output": "Output",
     "admin.margins": "Margins",
-    "admin.marketing_cost": "marketing cost",
     "admin.margin": "margin",
     "admin.user_mo": "user/mo",
     // Admin – Audit
@@ -10125,7 +10123,6 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "admin.input": "Entrada",
     "admin.output": "Saída",
     "admin.margins": "Margens",
-    "admin.marketing_cost": "custo de marketing",
     "admin.margin": "margem",
     "admin.user_mo": "usuário/mês",
     // Admin – Audit
