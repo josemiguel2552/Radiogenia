@@ -266,6 +266,12 @@ export default function AdminPage() {
   // numbers on every page load.
   const [navQueue, setNavQueue] = useState<{ key: string; count: number; tab: string }[]>([]);
   const [jumpOpen, setJumpOpen] = useState(false);
+  // A fine-tune's name is not in any static list, and before the job list
+  // refreshes it is not in the fetched one either — so every model field has
+  // to accept a typed name, not only the ones whose list happens to be empty.
+  const [modelManual, setModelManual] = useState(false);
+  const [manualTasks, setManualTasks] = useState<Set<string>>(new Set());
+  const MANUAL = "__manual__";
   const [loading, setLoading] = useState(true);
 
   // Stats
@@ -1546,8 +1552,15 @@ export default function AdminPage() {
                       const ft = ftModelsByProvider[provider] || [];
                       const all = [...base, ...ft];
                       const inList = !modelName || all.includes(modelName);
-                      return all.length > 0 ? (
-                        <Select value={modelName} onValueChange={(v) => { setModelName(v); setTestResult(null); }}>
+                      return all.length > 0 && !modelManual ? (
+                        <Select
+                          value={modelName}
+                          onValueChange={(v) => {
+                            if (v === MANUAL) { setModelManual(true); return; }
+                            setModelName(v);
+                            setTestResult(null);
+                          }}
+                        >
                           <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {base.length > 0 && <SelectGroup><SelectLabel className="text-[11px]">{t("admin.standard")}</SelectLabel>
@@ -1561,13 +1574,21 @@ export default function AdminPage() {
                                 <SelectItem value={modelName}>{modelName}</SelectItem>
                               </SelectGroup>
                             )}
+                            <SelectItem value={MANUAL}>{t("admin.model_type_manually")}</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
-                        <input type="text" value={modelName}
-                          onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
-                          className="w-full h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
-                          placeholder={t("admin.model_name")} />
+                        <div className="flex gap-1.5">
+                          <input type="text" value={modelName}
+                            onChange={(e) => { setModelName(e.target.value); setTestResult(null); }}
+                            className="flex-1 h-9 px-3 border rounded-md text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                            placeholder={t("admin.model_name")} autoFocus={modelManual} />
+                          {all.length > 0 && (
+                            <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setModelManual(false)}>
+                              {t("admin.model_pick_from_list")}
+                            </Button>
+                          )}
+                        </div>
                       );
                     })()}
                   </div>
@@ -1706,8 +1727,18 @@ export default function AdminPage() {
                             const ftModels = ftModelsByProvider[o.provider] || [];
                             const allModels = [...baseModels, ...ftModels];
                             const currentInList = !o.model || allModels.includes(o.model);
-                            return allModels.length > 0 ? (
-                              <Select value={o.model} onValueChange={(v) => updateTaskOverride(key, "model", v)}>
+                            const manual = manualTasks.has(key);
+                            return allModels.length > 0 && !manual ? (
+                              <Select
+                                value={o.model}
+                                onValueChange={(v) => {
+                                  if (v === MANUAL) {
+                                    setManualTasks((prev) => new Set(prev).add(key));
+                                    return;
+                                  }
+                                  updateTaskOverride(key, "model", v);
+                                }}
+                              >
                                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("admin.model")} /></SelectTrigger>
                                 <SelectContent>
                                   {baseModels.length > 0 && <SelectGroup><SelectLabel className="text-[11px]">{t("admin.standard")}</SelectLabel>
@@ -1725,13 +1756,27 @@ export default function AdminPage() {
                                       <SelectItem value={o.model}>{o.model}</SelectItem>
                                     </SelectGroup>
                                   )}
+                                  <SelectItem value={MANUAL}>{t("admin.model_type_manually")}</SelectItem>
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <input type="text" value={o.model}
-                                onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
-                                className="h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                                placeholder={t("admin.model_name")} />
+                              <div className="flex gap-1">
+                                <input type="text" value={o.model}
+                                  onChange={(e) => updateTaskOverride(key, "model", e.target.value)}
+                                  className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                                  placeholder={t("admin.model_name")} autoFocus={manual} />
+                                {allModels.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualTasks((prev) => {
+                                      const next = new Set(prev); next.delete(key); return next;
+                                    })}
+                                    className="h-8 px-2 text-[11px] text-gray-500 border rounded-md hover:text-gray-700 dark:border-gray-700"
+                                  >
+                                    {t("admin.model_pick_from_list")}
+                                  </button>
+                                )}
+                              </div>
                             );
                           })()
                         ) : (
@@ -1770,8 +1815,12 @@ export default function AdminPage() {
                     { prov: "openai", label: "OpenAI", value: whisperKey, setter: setWhisperKey, hint: t("admin.uses_whisper_key") },
                   ];
 
-                  // Show fields only for providers different from the default (main key covers default)
-                  const toShow = keyConfig.filter((k) => extraProviders.has(k.prov));
+                  // Every provider except the main one, whose key is the field
+                  // above. Showing only the providers a task override already
+                  // named was a circle: you could not add a Together key until
+                  // something used Together, and fine-tuning is not a task —
+                  // so its key could never be entered at all.
+                  const toShow = keyConfig.filter((k) => k.prov !== provider);
 
                   if (toShow.length === 0) return null;
 
@@ -1789,7 +1838,12 @@ export default function AdminPage() {
                           const isSaved = k.value === "••••••••";
                           return (
                             <div key={k.prov} className="flex items-center gap-2">
-                              <Label className="text-xs text-gray-600 dark:text-gray-400 w-32 flex-shrink-0">{k.label}</Label>
+                              <Label className="text-xs text-gray-600 dark:text-gray-400 w-32 flex-shrink-0 flex items-center gap-1">
+                                {k.label}
+                                {extraProviders.has(k.prov) && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 flex-shrink-0" title={t("admin.in_use")} />
+                                )}
+                              </Label>
                               {k.hint ? (
                                 <div className="flex-1 h-8 px-2 flex items-center text-xs text-gray-400 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                                   {isSaved ? t("admin.configured_whisper_key") : k.hint}

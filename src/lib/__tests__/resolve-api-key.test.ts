@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { resolveApiKey } from "@/lib/auth-helpers";
 import type { GlobalAIConfig } from "@/lib/auth-helpers";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+const adminPage = readFileSync(join(__dirname, "../../..", "src/app/admin/page.tsx"), "utf8");
 
 /**
  * Which key goes to which provider.
@@ -111,5 +115,57 @@ describe("the guards that this makes live", () => {
     const src = readFileSync(join(__dirname, "../combo-findings.ts"), "utf8");
     expect(src).toContain("if (!openaiKey) throw new Error");
     expect(src).toContain("if (!deepseekKey) throw new Error");
+  });
+});
+
+/**
+ * Being able to enter a key and a model at all.
+ *
+ * The keys section showed a field only for providers some task override
+ * already named, which is a circle: you cannot point a task at Together
+ * until Together works, and you cannot make it work without its key. Fine-
+ * tuning made it unreachable — training is not a task, so nothing would ever
+ * name the provider you want to train with.
+ */
+describe("the Models section lets a key be entered", () => {
+  const page = adminPage;
+
+  it("shows a field for every provider but the main one", () => {
+    expect(page).toContain("const toShow = keyConfig.filter((k) => k.prov !== provider)");
+    expect(page).not.toContain("keyConfig.filter((k) => extraProviders.has(k.prov))");
+  });
+
+  it("still offers a field for the one we added", () => {
+    expect(page).toContain('{ prov: "together", label: "Together AI"');
+  });
+
+  it("marks which providers a task is actually pointing at", () => {
+    // The information the filter used to convey, without gating on it.
+    expect(page).toContain("extraProviders.has(k.prov) && (");
+    expect(page).toContain("admin.in_use");
+  });
+});
+
+describe("a model name can always be typed", () => {
+  const page = adminPage;
+
+  it("offers it on both pickers, not only when the list is empty", () => {
+    // A fine-tune's name is in no static list, and before the job list
+    // refreshes it is in no fetched one either.
+    expect(page.match(/admin\.model_type_manually/g)?.length).toBe(2);
+    expect(page).toContain("all.length > 0 && !modelManual");
+    expect(page).toContain("allModels.length > 0 && !manual");
+  });
+
+  it("lets you go back to the list", () => {
+    expect(page.match(/admin\.model_pick_from_list/g)?.length).toBe(2);
+  });
+
+  it("keeps the sentinel out of the saved value", () => {
+    // Picking "type a name" must switch the field, not store "__manual__" as
+    // the model.
+    expect(page).toContain('const MANUAL = "__manual__"');
+    expect(page).toContain("if (v === MANUAL) { setModelManual(true); return; }");
+    expect(page).toContain("if (v === MANUAL) {\n                                    setManualTasks");
   });
 });
