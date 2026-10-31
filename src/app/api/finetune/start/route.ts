@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
+import { recordJob } from "@/lib/finetune-jobs";
 import { toErrorResponse } from "@/lib/api-error";
 import { finetuneSpec, normaliseJob, clampBatch } from "@/lib/finetune-providers";
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin();
+    const { userId } = await requireAdmin();
 
     const { fileId, baseModel, suffix, nEpochs, learningRateMultiplier, batchSize, provider } = await req.json();
     const spec = finetuneSpec(String(provider || "openai"));
@@ -86,6 +87,16 @@ export async function POST(req: NextRequest) {
         { status: 502 },
       );
     }
+
+    // Before anything else can lose it: a run outlives the page, and the
+    // provider's list could not be read reliably.
+    await recordJob({
+      provider: spec.id,
+      jobId: normalised.jobId,
+      baseModel: normalised.baseModel || model,
+      status: normalised.status,
+      createdBy: userId,
+    });
 
     return NextResponse.json({
       provider: spec.id,

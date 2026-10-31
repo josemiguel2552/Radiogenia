@@ -339,33 +339,35 @@ export default function AdminPage() {
   const [ftListNote, setFtListNote] = useState<string | null>(null);
 
   /**
-   * Job ids we started, kept across reloads.
-   *
-   * A training run outlives the page by hours, and the provider's own list
-   * endpoint is the only other record — when that returned nothing readable,
-   * a queued job simply disappeared from the panel. These ids are polled one
-   * by one, so a job we launched is never lost because a list could not be
-   * parsed.
+   * Jobs are recorded server-side now, so they show on every device. All this
+   * does is hand over ids stranded in one browser's localStorage from before
+   * that table existed — a run started on a phone was invisible from a
+   * desktop — and then stop keeping them here.
    */
   const FT_JOBS_KEY = "rg_ft_jobs";
-  function rememberFtJob(provider: string, jobId: string) {
+  async function adoptStrandedFtJobs(provider: string) {
+    let jobIds: string[] = [];
     try {
       const raw = localStorage.getItem(FT_JOBS_KEY);
       const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
-      const mine = new Set(all[provider] || []);
-      mine.add(jobId);
-      all[provider] = [...mine].slice(-25);
-      localStorage.setItem(FT_JOBS_KEY, JSON.stringify(all));
-    } catch { /* a private window just loses the shortcut */ }
-  }
-  function rememberedFtJobs(provider: string): string[] {
-    try {
-      const raw = localStorage.getItem(FT_JOBS_KEY);
-      const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
-      return Array.isArray(all[provider]) ? all[provider] : [];
+      jobIds = Array.isArray(all[provider]) ? all[provider] : [];
     } catch {
-      return [];
+      return;
     }
+    if (jobIds.length === 0) return;
+    try {
+      const res = await fetch("/api/finetune/adopt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, jobIds }),
+      });
+      if (!res.ok) return;
+      // Handed over: the table is the record from here.
+      const raw = localStorage.getItem(FT_JOBS_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+      delete all[provider];
+      localStorage.setItem(FT_JOBS_KEY, JSON.stringify(all));
+    } catch { /* tried again next load */ }
   }
   const [ftBaseManual, setFtBaseManual] = useState(false);
 
@@ -783,37 +785,16 @@ export default function AdminPage() {
     let cancelled = false;
     (async () => {
       try {
+        // One-time: give up any ids this browser is still holding alone.
+        await adoptStrandedFtJobs(ftProvider);
         const res = await fetch(`/api/finetune/status?provider=${ftProvider}`);
         if (res.ok && !cancelled) {
           const d = await readJson(res);
           setFtModelsByProvider(d.modelsByProvider || {});
           setFtListNote(d.listDiagnostic || null);
-
-          const listed: FtJob[] = d.jobs || [];
-          // Anything we launched that the list did not mention, asked for by
-          // id. This is what keeps a running job visible after a reload.
-          const seen = new Set(listed.map((j) => j.jobId));
-          const missing = rememberedFtJobs(ftProvider).filter((id) => !seen.has(id));
-          const extra = await Promise.all(missing.map(async (jobId) => {
-            try {
-              const r = await fetch("/api/finetune/status", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ jobId, provider: ftProvider }),
-              });
-              if (!r.ok) return null;
-              const j = await readJson(r);
-              return {
-                jobId: j.jobId, status: j.status, model: j.model ?? null,
-                fineTunedModel: j.fineTunedModel ?? null, createdAt: j.createdAt ?? null,
-                finishedAt: j.finishedAt ?? null, trainedTokens: j.trainedTokens ?? null,
-                trainingFile: j.trainingFile ?? null, nEpochs: null,
-              } as FtJob;
-            } catch {
-              return null;
-            }
-          }));
-          if (!cancelled) setFtJobs([...extra.filter((j): j is FtJob => !!j), ...listed]);
+          // The server merges what we launched with the provider's own list,
+          // so this is the same on every device.
+          setFtJobs(d.jobs || []);
         }
       } catch { /* the panel keeps whatever it had */ }
     })();
@@ -957,7 +938,6 @@ export default function AdminPage() {
       });
       const data = await readJson(res);
       if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
-      rememberFtJob(ftProvider, data.jobId);
       setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null, trainedTokens: null, trainingFile: null, nEpochs: null }, ...prev]);
       setFtFileId(null);
     } catch (e) {

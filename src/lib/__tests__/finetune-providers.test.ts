@@ -706,25 +706,62 @@ describe("every number Together needs is sent", () => {
  * job at all, which is the worst way to lose track of something that costs
  * money and hours.
  */
-describe("a launched job survives a reload", () => {
+describe("a launched job is visible from any device", () => {
+  const page = source("src/app/admin/page.tsx");
+  const start = source("src/app/api/finetune/start/route.ts");
+  const status = source("src/app/api/finetune/status/route.ts");
+  const jobs = source("src/lib/finetune-jobs.ts");
+
+  it("records the job server-side the moment it is accepted", () => {
+    // Not in the browser that happened to launch it: a run started on a
+    // phone was invisible from a desktop.
+    expect(start).toContain("await recordJob({");
+    expect(start).toContain("createdBy: userId");
+  });
+
+  it("reads the record back into the list, whatever the provider's list does", () => {
+    expect(status).toContain("const stored = await listJobs(spec.id)");
+    expect(status).toContain("stored.filter((j) => j.jobId && !listedIds.has(j.jobId))");
+  });
+
+  it("writes back what the provider says, so another device sees it too", () => {
+    expect(status).toContain("await updateJob(spec.id,");
+    expect(jobs).toContain("export async function updateJob");
+  });
+
+  it("counts a finished stored job among the usable models", () => {
+    expect(status).toContain('polled.filter((j) => j.status === "succeeded" && j.fineTunedModel)');
+  });
+
+  it("keeps working when the table has not been created yet", () => {
+    // A missing migration should cost the history, not the panel.
+    for (const fn of ["recordJob", "listJobs", "updateJob", "adoptJobs"]) {
+      const body = jobs.slice(jobs.indexOf(`export async function ${fn}`));
+      expect(body.slice(0, 1200)).toContain("catch");
+    }
+    expect(jobs).toContain("return [];");
+  });
+
+  it("is admin-only, with row level security and no policy", () => {
+    const sql = source("supabase/migrations/20261031_finetune_jobs.sql");
+    expect(sql).toContain("alter table public.finetune_jobs enable row level security");
+    expect(sql).not.toContain("create policy");
+    // One row per job, so a repeated poll cannot duplicate it.
+    expect(sql).toContain("unique (provider, job_id)");
+  });
+
+  it("collects the ids stranded in one browser, once", () => {
+    expect(page).toContain("adoptStrandedFtJobs");
+    expect(page).toContain('fetch("/api/finetune/adopt"');
+    // And stops holding them afterwards.
+    expect(page).toContain("delete all[provider]");
+    expect(page).not.toContain("rememberFtJob(");
+  });
+});
+
+describe("the provider's own list is still read when it can be", () => {
   const page = source("src/app/admin/page.tsx");
   const route = source("src/app/api/finetune/status/route.ts");
-
-  it("remembers the ids it started", () => {
-    expect(page).toContain("function rememberFtJob");
-    expect(page).toContain("rememberFtJob(ftProvider, data.jobId)");
-  });
-
-  it("asks for them by id when the list does not mention them", () => {
-    expect(page).toContain("rememberedFtJobs(ftProvider).filter((id) => !seen.has(id))");
-    expect(page).toContain('body: JSON.stringify({ jobId, provider: ftProvider })');
-  });
-
-  it("survives a browser that refuses storage", () => {
-    // A private window should lose the shortcut, not the page.
-    const fn = page.slice(page.indexOf("function rememberFtJob"));
-    expect(fn.slice(0, 900)).toContain("catch");
-  });
 
   it("says why a list came back empty instead of showing nothing", () => {
     expect(route).toContain("listDiagnostic");

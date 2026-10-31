@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
 import { finetuneSpec, normaliseJob, FINETUNE_PROVIDERS, type FinetuneProviderId } from "@/lib/finetune-providers";
+import { listJobs, updateJob } from "@/lib/finetune-jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,14 @@ export async function POST(req: NextRequest) {
     let job: Record<string, unknown> = {};
     try { job = JSON.parse(raw); } catch { /* fields come back null */ }
     const n = normaliseJob(job, spec.id);
+
+    // Write back what the provider just said, so a device that never polled
+    // still sees the finished model name.
+    await updateJob(spec.id, n.jobId || jobId, {
+      status: n.status,
+      fineTunedModel: n.fineTunedModel,
+      baseModel: n.baseModel,
+    });
 
     return NextResponse.json({
       provider: spec.id,
@@ -159,6 +168,38 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Jobs we launched, from the table rather than from one browser. The
+    // provider's list is merged over them when it works; when it does not,
+    // these are the only reason a running job is still visible.
+    const stored = await listJobs(spec.id);
+    const listedIds = new Set(jobs.map((j) => j.n.jobId));
+    const missing = stored.filter((j) => j.jobId && !listedIds.has(j.jobId));
+
+    const polled = await Promise.all(missing.slice(0, 20).map(async (j) => {
+      if (!apiKey) return j;
+      try {
+        const r = await fetch(spec.endpoints.job(j.jobId), { headers });
+        if (!r.ok) return j;
+        const fresh = normaliseJob(await r.json(), spec.id);
+        if (fresh.status !== j.status || fresh.fineTunedModel !== j.fineTunedModel) {
+          await updateJob(spec.id, j.jobId, {
+            status: fresh.status,
+            fineTunedModel: fresh.fineTunedModel,
+            baseModel: fresh.baseModel,
+          });
+        }
+        return {
+          ...j,
+          status: fresh.status,
+          fineTunedModel: fresh.fineTunedModel ?? j.fineTunedModel,
+          baseModel: fresh.baseModel ?? j.baseModel,
+        };
+      } catch {
+        // Keep the last known state rather than dropping the job.
+        return j;
+      }
+    }));
+
     // Every provider's usable models, keyed by the provider a task override
     // would name — which is what the dropdowns index by.
     const entries = await Promise.all(
@@ -169,7 +210,11 @@ export async function GET(req: NextRequest) {
     );
     const modelsByProvider: Record<string, string[]> = {};
     for (const [prov, models] of entries) if (models.length > 0) modelsByProvider[prov] = models;
-    const ftModels = modelsByProvider[spec.keyProvider] || [];
+    const ftModels = [...new Set([
+      ...(modelsByProvider[spec.keyProvider] || []),
+      ...polled.filter((j) => j.status === "succeeded" && j.fineTunedModel).map((j) => j.fineTunedModel!),
+    ])];
+    if (ftModels.length > 0) modelsByProvider[spec.keyProvider] = ftModels;
 
     const fileMap: Record<string, { filename: string; bytes: number; createdAt: number }> = {};
     if (spec.id === "openai") {
@@ -187,7 +232,19 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       provider: spec.id,
-      jobs: jobs.map(({ n, raw }) => ({
+      jobs: [
+        ...polled.map((j) => ({
+          jobId: j.jobId,
+          status: j.status,
+          fineTunedModel: j.fineTunedModel,
+          model: j.baseModel,
+          createdAt: j.createdAt ? Math.floor(Date.parse(j.createdAt) / 1000) : null,
+          finishedAt: null,
+          trainedTokens: null,
+          trainingFile: null,
+          nEpochs: null,
+        })),
+        ...jobs.map(({ n, raw }) => ({
         jobId: n.jobId,
         status: n.status,
         fineTunedModel: n.fineTunedModel,
@@ -197,7 +254,8 @@ export async function GET(req: NextRequest) {
         trainedTokens: (raw.trained_tokens as number) ?? (raw.total_tokens as number) ?? null,
         trainingFile: (raw.training_file as string) || null,
         nEpochs: (raw.hyperparameters as Record<string, unknown> | undefined)?.n_epochs ?? (raw.n_epochs as number) ?? null,
-      })),
+        })),
+      ],
       ftModels,
       modelsByProvider,
       fileMap,
