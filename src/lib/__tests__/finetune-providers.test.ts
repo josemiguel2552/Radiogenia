@@ -491,3 +491,77 @@ describe("an error says which call failed", () => {
     expect(fn.slice(0, 900)).toContain("(${where})");
   });
 });
+
+/**
+ * The knobs are not the same knobs.
+ *
+ * Together answered "batch size is zero" because it fills nothing in and we
+ * omitted the value when the panel said "auto". The dangerous half was
+ * quieter: its learning_rate is absolute while OpenAI's is a multiplier of
+ * its own default, and the panel offered OpenAI's scale for both. Picking
+ * "1.8x" would have sent Together a learning rate of 1.8 — a run that costs
+ * money, reports success, and produces noise.
+ */
+describe("hyperparameters belong to their provider", () => {
+  const start = source("src/app/api/finetune/start/route.ts");
+  const page = source("src/app/admin/page.tsx");
+
+  it("sends Together a number for every knob", () => {
+    const branch = start.slice(start.indexOf('if (spec.id === "together")'), start.indexOf("} else {"));
+    for (const field of ["n_epochs", "batch_size", "learning_rate"]) {
+      expect(branch).toContain(`${field}: num(`);
+    }
+    // Never omitted: that is what reads as zero.
+    expect(branch).not.toContain('!== "auto"');
+  });
+
+  it("falls back to a real default rather than zero", () => {
+    const branch = start.slice(start.indexOf('if (spec.id === "together")'), start.indexOf("} else {"));
+    expect(branch).toContain("Number.isFinite(n) && n > 0 ? n : Number(fallback)");
+    expect(together.hyperparams.defaults.batchSize).not.toBe("auto");
+    expect(Number(together.hyperparams.defaults.batchSize)).toBeGreaterThan(0);
+    expect(Number(together.hyperparams.defaults.epochs)).toBeGreaterThan(0);
+  });
+
+  it("keeps OpenAI's multiplier out of Together's learning rate", () => {
+    // Together's offered rates are all absolute and small; a multiplier like
+    // 1.8 must not be among them.
+    for (const lr of together.hyperparams.learningRates) {
+      expect(Number(lr.value)).toBeGreaterThan(0);
+      expect(Number(lr.value)).toBeLessThan(0.01);
+    }
+    const openaiValues = openai.hyperparams.learningRates.map((l) => l.value);
+    expect(openaiValues).toContain("1.8");
+    for (const v of together.hyperparams.learningRates.map((l) => l.value)) {
+      expect(openaiValues).not.toContain(v);
+    }
+  });
+
+  it("only offers auto where auto means something", () => {
+    expect(openai.hyperparams.supportsAuto).toBe(true);
+    expect(together.hyperparams.supportsAuto).toBe(false);
+    expect(together.hyperparams.epochs).not.toContain("auto");
+    expect(together.hyperparams.batchSizes).not.toContain("auto");
+    expect(together.hyperparams.learningRates.map((l) => l.value)).not.toContain("auto");
+  });
+
+  it("keeps OpenAI sending its hyperparameters the way it did", () => {
+    const branch = start.slice(start.indexOf("} else {"));
+    expect(branch).toContain("learning_rate_multiplier");
+    expect(branch).toContain('nEpochs !== "auto"');
+  });
+
+  it("offers the panel's knobs from the provider, not one fixed list", () => {
+    expect(page).toContain("FINETUNE_PROVIDERS[ftProvider].hyperparams");
+    expect(page).toContain("hp.learningRates.map");
+    expect(page).not.toContain('<SelectItem value="1.8">1.8x');
+  });
+
+  it("resets the knobs when the provider changes", () => {
+    // A value carried across means either an auto Together cannot read or a
+    // multiplier it would take literally.
+    const fn = page.slice(page.indexOf("function changeFtProvider"));
+    expect(fn.slice(0, 900)).toContain("setFtLearningRate(hp.defaults.learningRate)");
+    expect(fn.slice(0, 900)).toContain("setFtBatchSize(hp.defaults.batchSize)");
+  });
+});

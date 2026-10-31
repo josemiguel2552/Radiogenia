@@ -26,11 +26,25 @@ export async function POST(req: NextRequest) {
     if (spec.id === "together") {
       // LoRA by default: it is the cheap option, and the adapter is a thing we
       // own rather than a model held on someone's roadmap.
-      body = { training_file: fileId, model, lora: true };
+      //
+      // Every hyperparameter is sent as a number. Together fills nothing in —
+      // omitting batch_size answers "batch size is zero" — and its
+      // learning_rate is absolute, so OpenAI's multiplier scale must not be
+      // passed through here: 1.8 would be a learning rate of 1.8.
+      const hp = spec.hyperparams;
+      const num = (given: unknown, fallback: string) => {
+        const n = Number(given);
+        return Number.isFinite(n) && n > 0 ? n : Number(fallback);
+      };
+      body = {
+        training_file: fileId,
+        model,
+        lora: true,
+        n_epochs: num(nEpochs, hp.defaults.epochs),
+        batch_size: num(batchSize, hp.defaults.batchSize),
+        learning_rate: num(learningRateMultiplier, hp.defaults.learningRate),
+      };
       if (suffix) body.suffix = suffix;
-      if (nEpochs && nEpochs !== "auto") body.n_epochs = Number(nEpochs);
-      if (learningRateMultiplier && learningRateMultiplier !== "auto") body.learning_rate = Number(learningRateMultiplier);
-      if (batchSize && batchSize !== "auto") body.batch_size = Number(batchSize);
     } else {
       const hyperparameters: Record<string, unknown> = {};
       if (nEpochs && nEpochs !== "auto") hyperparameters.n_epochs = Number(nEpochs);

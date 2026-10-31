@@ -26,6 +26,27 @@ export interface FinetuneBaseModel {
   note?: string;
 }
 
+/**
+ * The knobs, per provider, because they are not the same knobs.
+ *
+ * OpenAI takes "auto" and scales the learning rate as a MULTIPLIER of its own
+ * default (1.8 means 1.8x). Together takes neither: omit a value and it
+ * answers "batch size is zero", and its learning_rate is an ABSOLUTE number,
+ * so a multiplier of 1.8 would arrive as a learning rate of 1.8 and train a
+ * model into noise — a run that costs money, reports success, and produces
+ * something unusable. Which is worse than an error, so the scales are kept
+ * apart here rather than shared.
+ */
+export interface FinetuneHyperparams {
+  /** Whether leaving a value out means "choose for me". */
+  supportsAuto: boolean;
+  epochs: string[];
+  batchSizes: string[];
+  learningRates: { value: string; label: string }[];
+  /** Sent when the admin has not chosen. "auto" only where that is allowed. */
+  defaults: { epochs: string; batchSize: string; learningRate: string };
+}
+
 export interface FinetuneProviderSpec {
   id: FinetuneProviderId;
   label: string;
@@ -42,6 +63,7 @@ export interface FinetuneProviderSpec {
   baseModels: FinetuneBaseModel[];
   /** Fewest examples the provider will accept in a file. */
   minExamples: number;
+  hyperparams: FinetuneHyperparams;
   /**
    * Whether a finished job yields an adapter we own and can serve elsewhere,
    * as opposed to a hosted model that only answers from the vendor's API.
@@ -67,6 +89,21 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
       { id: "gpt-4.1-mini-2025-04-14", label: "gpt-4.1-mini", note: "retires 2027-01-14" },
     ],
     minExamples: 10,
+    hyperparams: {
+      supportsAuto: true,
+      epochs: ["auto", "1", "2", "3", "4", "5", "10"],
+      batchSizes: ["auto", "1", "2", "4", "8", "16"],
+      learningRates: [
+        { value: "auto", label: "Auto" },
+        { value: "0.1", label: "0.1x" },
+        { value: "0.5", label: "0.5x" },
+        { value: "1", label: "1x" },
+        { value: "1.8", label: "1.8x" },
+        { value: "2", label: "2x" },
+        { value: "5", label: "5x" },
+      ],
+      defaults: { epochs: "auto", batchSize: "auto", learningRate: "auto" },
+    },
     ownsWeights: false,
     caveat: "openai_sunset",
   },
@@ -97,6 +134,22 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
       { id: "openai/gpt-oss-20b", label: "gpt-oss 20B", note: "unverified name" },
     ],
     minExamples: 10,
+    hyperparams: {
+      // No "auto": a missing value is read as zero.
+      supportsAuto: false,
+      epochs: ["1", "2", "3", "4", "5"],
+      batchSizes: ["1", "2", "4", "8", "16", "32"],
+      // Absolute rates. 1e-4 is the usual starting point for a LoRA adapter;
+      // the lower ones are for when a run overfits.
+      learningRates: [
+        { value: "0.00001", label: "1e-5" },
+        { value: "0.00005", label: "5e-5" },
+        { value: "0.0001", label: "1e-4" },
+        { value: "0.0002", label: "2e-4" },
+        { value: "0.0003", label: "3e-4" },
+      ],
+      defaults: { epochs: "3", batchSize: "8", learningRate: "0.0001" },
+    },
     ownsWeights: true,
     caveat: "together_unverified",
   },

@@ -342,6 +342,12 @@ export default function AdminPage() {
     setFtError("");
     setFtLiveModels([]);
     setFtBaseManual(false);
+    // "auto" is meaningless to Together, and 1.8 means 1.8x to OpenAI but a
+    // learning rate of 1.8 to Together. Carrying a value across is not safe.
+    const hp = FINETUNE_PROVIDERS[id].hyperparams;
+    setFtNEpochs(hp.defaults.epochs);
+    setFtLearningRate(hp.defaults.learningRate);
+    setFtBatchSize(hp.defaults.batchSize);
   }
   const [ftError, setFtError] = useState("");
   const [ftChecking, setFtChecking] = useState(false);
@@ -2265,52 +2271,57 @@ export default function AdminPage() {
                           placeholder="radiogenai" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] text-gray-400">Epochs</Label>
-                        <Select value={ftNEpochs} onValueChange={setFtNEpochs}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Auto ({t("admin.ft_recommended")})</SelectItem>
-                            <SelectItem value="1">1</SelectItem>
-                            <SelectItem value="2">2</SelectItem>
-                            <SelectItem value="3">3</SelectItem>
-                            <SelectItem value="4">4</SelectItem>
-                            <SelectItem value="5">5</SelectItem>
-                            <SelectItem value="10">10</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] text-gray-400">Learning rate</Label>
-                        <Select value={ftLearningRate} onValueChange={setFtLearningRate}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Auto ({t("admin.ft_recommended")})</SelectItem>
-                            <SelectItem value="0.1">0.1x</SelectItem>
-                            <SelectItem value="0.5">0.5x</SelectItem>
-                            <SelectItem value="1">1x</SelectItem>
-                            <SelectItem value="1.8">1.8x ({t("admin.ft_default")})</SelectItem>
-                            <SelectItem value="2">2x</SelectItem>
-                            <SelectItem value="5">5x</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] text-gray-400">Batch size</Label>
-                        <Select value={ftBatchSize} onValueChange={setFtBatchSize}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Auto ({t("admin.ft_recommended")})</SelectItem>
-                            <SelectItem value="1">1</SelectItem>
-                            <SelectItem value="2">2</SelectItem>
-                            <SelectItem value="4">4</SelectItem>
-                            <SelectItem value="8">8</SelectItem>
-                            <SelectItem value="16">16</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    {/* The knobs each provider actually has. OpenAI's
+                        learning rate is a multiplier of its own default;
+                        Together's is an absolute rate, and it has no auto. */}
+                    {(() => {
+                      const hp = FINETUNE_PROVIDERS[ftProvider].hyperparams;
+                      return (
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-[11px] text-gray-400">Epochs</Label>
+                            <Select value={ftNEpochs} onValueChange={setFtNEpochs}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {hp.epochs.map((v) => (
+                                  <SelectItem key={v} value={v} className="text-xs">
+                                    {v === "auto" ? `Auto (${t("admin.ft_recommended")})` : v}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[11px] text-gray-400">
+                              Learning rate{hp.supportsAuto ? "" : " (abs.)"}
+                            </Label>
+                            <Select value={ftLearningRate} onValueChange={setFtLearningRate}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {hp.learningRates.map((lr) => (
+                                  <SelectItem key={lr.value} value={lr.value} className="text-xs">
+                                    {lr.value === "auto" ? `${lr.label} (${t("admin.ft_recommended")})` : lr.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[11px] text-gray-400">Batch size</Label>
+                            <Select value={ftBatchSize} onValueChange={setFtBatchSize}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {hp.batchSizes.map((v) => (
+                                  <SelectItem key={v} value={v} className="text-xs">
+                                    {v === "auto" ? `Auto (${t("admin.ft_recommended")})` : v}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <Button size="sm" onClick={handleFtStart} disabled={ftStarting}
                       className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white">
                       {ftStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
