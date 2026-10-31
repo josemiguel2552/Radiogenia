@@ -447,3 +447,47 @@ describe("the augmentation finishes, or says how far it got", () => {
     expect(augment).not.toContain("const batchSize = 3");
   });
 });
+
+/**
+ * The second 413, and why it took a guess to find.
+ *
+ * Once the browser stopped carrying the generated file, one path could still
+ * send a big body: the admin picking an exported .jsonl off disk. "HTTP 413"
+ * on its own did not say which of the page's calls produced it.
+ */
+describe("the hand-picked file", () => {
+  const page = source("src/app/admin/page.tsx");
+
+  it("is measured before it is sent, not after it is refused", () => {
+    expect(page).toContain("const UPLOAD_BODY_LIMIT = 4.5 * 1024 * 1024");
+    const fn = page.slice(page.indexOf("async function handleFtUpload"));
+    const guard = fn.indexOf("file.size > UPLOAD_BODY_LIMIT");
+    const send = fn.indexOf("fetch(\"/api/finetune/upload\"");
+    expect(guard).toBeGreaterThan(-1);
+    expect(send).toBeGreaterThan(guard);
+  });
+
+  it("points at the button that does not have the limit", () => {
+    // The server can build this exact file, so the answer is a different
+    // button rather than a smaller file.
+    expect(page).toContain("admin.ft_file_too_big");
+    const es = source("src/lib/i18n.ts");
+    const msg = es.slice(es.indexOf('"admin.ft_file_too_big"'), es.indexOf('"admin.ft_file_too_big"') + 400);
+    expect(msg).toContain("Generar desde correcciones");
+  });
+
+  it("shows what the dataset weighs, since the count does not say", () => {
+    // 841 examples sounds small; at 9.5 KB each it is 7.65 MB.
+    expect(page).toContain("ftDataPreview.bytes / 1024 / 1024");
+    expect(source("src/app/api/admin/training-data/openai/route.ts")).toContain("bytes: Buffer.byteLength");
+  });
+});
+
+describe("an error says which call failed", () => {
+  it("includes the endpoint path", () => {
+    const page = source("src/app/admin/page.tsx");
+    const fn = page.slice(page.indexOf("async function readJson"));
+    expect(fn.slice(0, 900)).toContain("new URL(res.url).pathname");
+    expect(fn.slice(0, 900)).toContain("(${where})");
+  });
+});

@@ -246,8 +246,14 @@ async function readJson<T = any>(res: Response): Promise<T> {
   try {
     return (raw ? JSON.parse(raw) : {}) as T;
   } catch {
+    // Name the endpoint: "HTTP 413" alone leaves you guessing which of the
+    // half-dozen calls on the page produced it.
     const firstLine = raw.split("\n")[0].slice(0, 200).trim();
-    return { error: `HTTP ${res.status}${firstLine ? ` — ${firstLine}` : ""}` } as T;
+    let where = "";
+    try { where = new URL(res.url).pathname; } catch { /* relative or blank */ }
+    return {
+      error: `HTTP ${res.status}${firstLine ? ` — ${firstLine}` : ""}${where ? ` (${where})` : ""}`,
+    } as T;
   }
 }
 
@@ -545,7 +551,7 @@ export default function AdminPage() {
   const [piiStatsLoading, setPiiStatsLoading] = useState(false);
 
   // Fine-tune data generation
-  interface FtPreview { total: number; preview: { messages: { role: string; content: string }[] }[]; modalities: string[] }
+  interface FtPreview { total: number; preview: { messages: { role: string; content: string }[] }[]; modalities: string[]; bytes?: number }
   const [ftDataPreview, setFtDataPreview] = useState<FtPreview | null>(null);
   const [ftDataLoading, setFtDataLoading] = useState(false);
   const [ftDataModality, setFtDataModality] = useState<string>("all");
@@ -799,7 +805,20 @@ export default function AdminPage() {
     }));
   }
 
+  /** The platform's request-body cap. Anything over this answers 413. */
+  const UPLOAD_BODY_LIMIT = 4.5 * 1024 * 1024;
+
   async function handleFtUpload(file: File) {
+    // Checked here rather than discovered as a 413: the server can build this
+    // exact file itself, so the fix is a different button, not a smaller file.
+    if (file.size > UPLOAD_BODY_LIMIT) {
+      setFtError(
+        t("admin.ft_file_too_big")
+          .replace("{0}", (file.size / 1024 / 1024).toFixed(1))
+          .replace("{1}", (UPLOAD_BODY_LIMIT / 1024 / 1024).toFixed(1)),
+      );
+      return;
+    }
     setFtUploading(true);
     setFtError("");
     setFtFileId(null);
@@ -1918,6 +1937,13 @@ export default function AdminPage() {
                 <GraduationCap className="h-4 w-4 text-purple-500" />
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.ft_data_title")}</h2>
                 {ftDataPreview && <Badge variant="secondary" className="text-xs">{ftDataPreview.total} {t("admin.ft_examples_count")}</Badge>}
+                {!!ftDataPreview?.bytes && (
+                  // Each example embeds the whole conclusion prompt, so the
+                  // file is far bigger than the example count suggests.
+                  <Badge variant="outline" className="text-xs">
+                    {(ftDataPreview.bytes / 1024 / 1024).toFixed(1)} MB
+                  </Badge>
+                )}
                 <div className="ml-auto flex flex-wrap gap-1.5 items-center">
                   <Select value={ftDataModality} onValueChange={(v) => setFtDataModality(v)}>
                     <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
