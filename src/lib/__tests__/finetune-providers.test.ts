@@ -284,19 +284,19 @@ describe("what the exporter produces is what the uploader accepts", () => {
     // This file is uploaded to a third party and kept by them. Every
     // generation route already strips; this was the one payload that got
     // STORED rather than answered and forgotten.
-    const route = source("src/app/api/admin/training-data/openai/route.ts");
-    expect(route).toContain('import { stripPii } from "@/lib/pii-detect"');
-    expect(route).toContain("stripPii(r.findings_text!).cleaned");
-    expect(route).toContain("stripPii(r.conclusion_text!).cleaned");
+    const lib = source("src/lib/training-export.ts");
+    expect(lib).toContain('import { stripPii } from "./pii-detect"');
+    expect(lib).toContain("stripPii(r.findings_text!).cleaned");
+    expect(lib).toContain("stripPii(r.conclusion_text!).cleaned");
     // The audit-log fallback path builds examples too.
-    expect(route).toContain("stripPii((m.corrected_conclusion");
+    expect(lib).toContain("stripPii((m.corrected_conclusion");
   });
 
   it("trains on the stripped text it will be asked about in service", () => {
     // The conclusion route strips before prompting, so an example paired with
     // unstripped findings is an example of input the model never meets.
-    const route = source("src/app/api/admin/training-data/openai/route.ts");
-    const mapBlock = route.slice(route.indexOf("const findings = stripPii"), route.indexOf("return {", route.indexOf("const findings = stripPii")));
+    const lib = source("src/lib/training-export.ts");
+    const mapBlock = lib.slice(lib.indexOf("const findings = stripPii"), lib.indexOf("return {", lib.indexOf("const findings = stripPii")));
     expect(mapBlock).toContain("reconcileFindings(findings, conclusion)");
     expect(mapBlock).not.toContain("r.findings_text!, r.conclusion_text!");
   });
@@ -340,5 +340,110 @@ describe("a trained model reaches the dropdowns", () => {
   it("skips a provider with no key instead of calling it", () => {
     expect(route).toContain("if (!apiKey) return [];");
     expect(route).toContain("apiKey ? await fetch(spec.endpoints.jobs");
+  });
+});
+
+/**
+ * The failure this chain actually hit.
+ *
+ * Each example embeds the whole ~8,900-character conclusion prompt, so the
+ * file is about 9.5 KB per example: 841 examples is 7.65 MB, and doubled it
+ * is 15.3 MB. The panel downloaded it and posted it back through our own API,
+ * where a request body is capped at 4.5 MB. The upload answered 413 with a
+ * plain-text body and the browser's res.json() turned that into
+ * "Unexpected token 'R', \"Request En\"... is not valid JSON" — a parser error
+ * about the parser, with nothing in it about the actual limit.
+ */
+describe("the browser never carries the training file", () => {
+  const page = source("src/app/admin/page.tsx");
+  const upload = source("src/app/api/finetune/upload/route.ts");
+  const augment = source("src/app/api/admin/training-data/augment/route.ts");
+
+  it("asks the server to build and upload, instead of shipping bytes", () => {
+    // Both buttons send a short JSON instruction, not a file.
+    expect(page).toContain('correctionsOnly: ftCorrectionsOnly,');
+    // Nothing is posted back up as a file. Downloading one to inspect is
+    // still fine — the 4.5 MB cap is on request bodies, not responses.
+    expect(page).not.toContain('form.append("file", blob');
+    const download = page.slice(page.indexOf("async function handleExportFtData"));
+    expect(download.slice(0, 500)).toContain("await res.blob()");
+  });
+
+  it("builds the file inside the upload route", () => {
+    expect(upload).toContain("buildTrainingExamples(createServiceClient()");
+    expect(upload).toContain('contentType.includes("application/json")');
+  });
+
+  it("keeps the by-hand upload for small curated files", () => {
+    // Still useful, and still under the cap it is meant for.
+    expect(upload).toContain("req.formData()");
+  });
+
+  it("gives the long routes time to finish", () => {
+    // Paging the whole history and building a prompt per row does not fit in
+    // the default.
+    expect(upload).toContain("export const maxDuration = 120");
+    expect(augment).toContain("export const maxDuration = 300");
+    expect(source("src/app/api/admin/training-data/openai/route.ts")).toContain("export const maxDuration = 120");
+  });
+
+  it("does not hand a multi-megabyte file back from the augmentation", () => {
+    expect(augment).toContain("uploadJsonlToProvider");
+    // It returns a file id and a short preview, not the file.
+    expect(augment).toContain("preview: synthetic.slice(0, 2)");
+    expect(augment).not.toMatch(/\n\s+jsonl,\n/);
+  });
+});
+
+describe("a response that is not JSON reads as what it is", () => {
+  const page = source("src/app/admin/page.tsx");
+
+  it("never parses a body blind", () => {
+    expect(page).toContain("async function readJson");
+    // Every call site goes through it; a single res.json() left behind is
+    // another "Unexpected token" waiting to happen.
+    expect(page).not.toContain("await res.json()");
+    expect(page).not.toContain("await uploadRes.json()");
+    expect(page).not.toContain("await augRes.json()");
+  });
+
+  it("reports the status and the first line instead of a parser error", () => {
+    const fn = page.slice(page.indexOf("async function readJson"));
+    expect(fn.slice(0, 700)).toContain("HTTP ${res.status}");
+    expect(fn.slice(0, 700)).toContain("res.text()");
+  });
+
+  it("reads the provider's reply as text first, server-side too", () => {
+    // The same mistake one layer down: an error from whatever sits in front
+    // of the provider is not JSON either.
+    const up = source("src/lib/finetune-upload.ts");
+    expect(up).toContain("const raw = await res.text()");
+    expect(up.indexOf("await res.text()")).toBeLessThan(up.indexOf("JSON.parse(raw)"));
+  });
+});
+
+describe("the augmentation finishes, or says how far it got", () => {
+  const augment = source("src/app/api/admin/training-data/augment/route.ts");
+
+  it("caps how many examples one run augments", () => {
+    // Every synthetic example is a model call. 841 of them cannot be made
+    // inside one request however the batching is arranged.
+    expect(augment).toContain("const DEFAULT_LIMIT");
+    expect(augment).toContain("source.slice(0, limit)");
+  });
+
+  it("says how much is left rather than looking finished", () => {
+    expect(augment).toContain("remaining: Math.max(0, source.length - examples.length)");
+    expect(source("src/app/admin/page.tsx")).toContain("admin.ft_augment_partial");
+  });
+
+  it("trains on the whole set, with part of it doubled", () => {
+    // Not just the augmented slice: the point is more of everything.
+    expect(augment).toContain("const combined = [...source, ...synthetic]");
+  });
+
+  it("stopped making 281 sequential rounds of one call each", () => {
+    expect(augment).toContain("const CONCURRENCY = 8");
+    expect(augment).not.toContain("const batchSize = 3");
   });
 });

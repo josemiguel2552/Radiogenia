@@ -1,33 +1,96 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
+import { createServiceClient } from "@/lib/supabase/service";
 import { toErrorResponse } from "@/lib/api-error";
 import { adaptJsonl, finetuneSpec } from "@/lib/finetune-providers";
+import { uploadJsonlToProvider } from "@/lib/finetune-upload";
+import { buildTrainingExamples, toJsonl } from "@/lib/training-export";
+
+/** Building the file from the whole report history and uploading it takes a
+ *  while; the default would cut it off partway. */
+export const maxDuration = 120;
 
 /**
- * Validate a training file and hand it to the provider that will train on it.
+ * Get a training file to the provider, by either of two routes.
  *
- * The validation lives in finetune-providers so it can be tested without a
- * network and shared by both providers: a run costs money and hours, and a
- * file that is half malformed otherwise trains on whatever survived without
- * ever saying so.
+ * JSON body — the normal one. The server builds the file from the reports
+ * itself and posts it straight on. This exists because the file is about
+ * 9.5 KB per example (each embeds the whole conclusion prompt), so a real
+ * dataset is several megabytes and a request body is capped at 4.5 MB: having
+ * the browser download it and post it back answered 413, whose plain-text
+ * body the browser then failed to parse as JSON.
+ *
+ * Multipart body — an admin uploading a file by hand. Still subject to that
+ * 4.5 MB cap, which is fine for the small curated files it is meant for.
+ *
+ * Either way the content is validated by the same adapter before it leaves.
  */
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
+    const globalConfig = await getGlobalAIConfig();
+    const contentType = req.headers.get("content-type") || "";
 
+    /* ── Built here, from the reports ── */
+    if (contentType.includes("application/json")) {
+      const { provider, modality, correctionsOnly } = await req.json();
+      const spec = finetuneSpec(String(provider || "openai"));
+      const apiKey = resolveApiKey(globalConfig, spec.keyProvider);
+      if (!apiKey) {
+        return NextResponse.json(
+          { error: `No ${spec.label} API key configured. Add one in Plataforma → Modelos.` },
+          { status: 400 },
+        );
+      }
+
+      const { examples } = await buildTrainingExamples(createServiceClient(), {
+        modality: modality || null,
+        correctionsOnly: !!correctionsOnly,
+      });
+      if (examples.length === 0) {
+        return NextResponse.json(
+          { error: correctionsOnly
+            ? "No corrected reports found to build training examples from."
+            : "No reports found to build training examples from." },
+          { status: 400 },
+        );
+      }
+
+      const adapted = adaptJsonl(toJsonl(examples), spec);
+      if (!adapted.acceptable) {
+        return NextResponse.json({
+          error: `${spec.label} needs at least ${spec.minExamples} examples; this set has ${adapted.kept}.`,
+          kept: adapted.kept,
+          notes: adapted.notes,
+        }, { status: 400 });
+      }
+
+      const up = await uploadJsonlToProvider(spec, apiKey, adapted.jsonl);
+      if (up.error) return NextResponse.json({ error: up.error }, { status: 502 });
+
+      return NextResponse.json({
+        provider: spec.id,
+        fileId: up.fileId,
+        fileName: "training_data.jsonl",
+        validExamples: adapted.kept,
+        skippedErrors: adapted.dropped.length,
+        errors: adapted.dropped.slice(0, 5).map((d) => `Line ${d.line}: ${d.reason}`),
+        notes: adapted.notes,
+        bytes: Buffer.byteLength(adapted.jsonl, "utf8"),
+      });
+    }
+
+    /* ── Uploaded by hand ── */
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const spec = finetuneSpec(String(formData.get("provider") || "openai"));
-
-    const globalConfig = await getGlobalAIConfig();
     const apiKey = resolveApiKey(globalConfig, spec.keyProvider);
     if (!apiKey) {
       return NextResponse.json(
-        { error: `No ${spec.label} API key configured. Add one in Plataforma → Modelos → Provider API Keys.` },
+        { error: `No ${spec.label} API key configured. Add one in Plataforma → Modelos.` },
         { status: 400 },
       );
     }
-
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
     let text = "";
@@ -36,7 +99,7 @@ export async function POST(req: NextRequest) {
       const mammoth = (await import("mammoth")).default;
       const buffer = Buffer.from(await file.arrayBuffer());
       text = (await mammoth.extractRawText({ buffer })).value;
-    } else if (fileName.endsWith(".jsonl") || fileName.endsWith(".txt")) {
+    } else if (fileName.endsWith(".jsonl") || fileName.endsWith(".txt") || fileName.endsWith(".json")) {
       text = await file.text();
     } else {
       return NextResponse.json({ error: "Unsupported file type. Use .docx, .jsonl, or .txt" }, { status: 400 });
@@ -54,47 +117,18 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const blob = new Blob([adapted.jsonl], { type: "application/jsonl" });
-    const uploadForm = new FormData();
-    uploadForm.append("purpose", "fine-tune");
-    uploadForm.append("file", blob, "training_data.jsonl");
-    // Together's upload rejects a file it cannot tell the type of; OpenAI
-    // ignores the extra field.
-    if (spec.id === "together") uploadForm.append("file_name", "training_data.jsonl");
-
-    const uploadRes = await fetch(spec.endpoints.upload, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: uploadForm,
-    });
-
-    const raw = await uploadRes.text();
-    if (!uploadRes.ok) {
-      return NextResponse.json(
-        { error: `${spec.label} file upload failed (${uploadRes.status}): ${raw.slice(0, 600)}` },
-        { status: 502 },
-      );
-    }
-
-    let uploadData: Record<string, unknown> = {};
-    try { uploadData = JSON.parse(raw); } catch { /* handled below */ }
-
-    const fileId = (uploadData.id as string) || (uploadData.file_id as string) || "";
-    if (!fileId) {
-      return NextResponse.json(
-        { error: `${spec.label} accepted the file but returned no id: ${raw.slice(0, 400)}` },
-        { status: 502 },
-      );
-    }
+    const up = await uploadJsonlToProvider(spec, apiKey, adapted.jsonl);
+    if (up.error) return NextResponse.json({ error: up.error }, { status: 502 });
 
     return NextResponse.json({
       provider: spec.id,
-      fileId,
-      fileName: (uploadData.filename as string) || "training_data.jsonl",
+      fileId: up.fileId,
+      fileName: file.name,
       validExamples: adapted.kept,
       skippedErrors: adapted.dropped.length,
       errors: adapted.dropped.slice(0, 5).map((d) => `Line ${d.line}: ${d.reason}`),
       notes: adapted.notes,
+      bytes: Buffer.byteLength(adapted.jsonl, "utf8"),
     });
   } catch (error) {
     return toErrorResponse(error);

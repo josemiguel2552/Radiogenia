@@ -3,8 +3,27 @@ import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpe
 import { generateAI } from "@/lib/ai-provider";
 import { toErrorResponse } from "@/lib/api-error";
 import type { AIProvider } from "@/lib/types";
+import { createServiceClient } from "@/lib/supabase/service";
+import { buildTrainingExamples, toJsonl } from "@/lib/training-export";
+import { adaptJsonl, finetuneSpec } from "@/lib/finetune-providers";
+import { uploadJsonlToProvider } from "@/lib/finetune-upload";
 
 export const dynamic = "force-dynamic";
+/** Each synthetic example is an AI call, so this is the long one. */
+export const maxDuration = 300;
+
+/**
+ * How many real examples get a synthetic twin in one run.
+ *
+ * Every one is a model call. 841 examples cannot be augmented inside a single
+ * request however the batching is arranged, so the cap is explicit and the
+ * response says how many were covered — run it again for more, rather than
+ * pressing a button that always times out.
+ */
+const DEFAULT_LIMIT = 60;
+const MAX_LIMIT = 200;
+/** Concurrent calls. Was 3, which made 841 examples 281 sequential rounds. */
+const CONCURRENCY = 8;
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -35,10 +54,31 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
 
-    const { examples } = await req.json() as { examples: TrainingExample[] };
-    if (!examples || examples.length === 0) {
-      return NextResponse.json({ error: "No examples provided" }, { status: 400 });
+    const body = await req.json().catch(() => ({})) as {
+      examples?: TrainingExample[];
+      provider?: string;
+      modality?: string;
+      correctionsOnly?: boolean;
+      limit?: number;
+    };
+
+    // Built here rather than posted in: the file is ~9.5 KB an example, so a
+    // real dataset does not fit through a 4.5 MB request body — that upload
+    // answered 413, and the browser could not parse the plain-text body.
+    const spec = finetuneSpec(String(body.provider || "openai"));
+    const source: TrainingExample[] = body.examples?.length
+      ? body.examples
+      : (await buildTrainingExamples(createServiceClient(), {
+          modality: body.modality || null,
+          correctionsOnly: !!body.correctionsOnly,
+        })).examples;
+
+    if (source.length === 0) {
+      return NextResponse.json({ error: "No examples to augment" }, { status: 400 });
     }
+
+    const limit = Math.min(Math.max(Number(body.limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const examples = source.slice(0, limit);
 
     const globalConfig = await getGlobalAIConfig();
     const taskOverride = globalConfig.taskOverrides?.data_augmentation;
@@ -52,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     const synthetic: TrainingExample[] = [];
     const errors: string[] = [];
-    const batchSize = 3;
+    const batchSize = CONCURRENCY;
 
     for (let i = 0; i < examples.length; i += batchSize) {
       const batch = examples.slice(i, i + batchSize);
@@ -98,15 +138,39 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const combined = [...examples, ...synthetic];
-    const jsonl = combined.map((e) => JSON.stringify(e)).join("\n") + "\n";
+    // The whole set plus the twins we just made, not only the slice that was
+    // augmented: the point is to train on everything, with some of it doubled.
+    const combined = [...source, ...synthetic];
+    const jsonl = toJsonl(combined);
+
+    // Uploaded from here. Handing a multi-megabyte file back so the browser
+    // can post it somewhere is the round trip that was failing.
+    const adapted = adaptJsonl(jsonl, spec);
+    const uploadKey = resolveApiKey(globalConfig, spec.keyProvider);
+    let fileId: string | null = null;
+    let uploadError: string | null = null;
+    if (!uploadKey) {
+      uploadError = `No ${spec.label} API key configured.`;
+    } else if (!adapted.acceptable) {
+      uploadError = `${spec.label} needs at least ${spec.minExamples} examples; this set has ${adapted.kept}.`;
+    } else {
+      const up = await uploadJsonlToProvider(spec, uploadKey, adapted.jsonl, "training_data_augmented.jsonl");
+      if (up.error) uploadError = up.error; else fileId = up.fileId || null;
+    }
 
     return NextResponse.json({
-      originalCount: examples.length,
+      provider: spec.id,
+      originalCount: source.length,
+      augmentedOf: examples.length,
       syntheticCount: synthetic.length,
       totalCount: combined.length,
+      remaining: Math.max(0, source.length - examples.length),
       errors: errors.slice(0, 10),
-      jsonl,
+      fileId,
+      uploadError,
+      bytes: Buffer.byteLength(adapted.jsonl, "utf8"),
+      // A look at what it made, instead of several megabytes of file.
+      preview: synthetic.slice(0, 2),
     });
   } catch (error) {
     return toErrorResponse(error);

@@ -231,6 +231,26 @@ type Tab =
   // run here. One job per section, and fine-tuning in one place.
   | "ai" | "dictation" | "training" | "checklist" | "audit";
 
+/**
+ * Read a response that might not be JSON.
+ *
+ * A 413 from the platform, a gateway timeout, an HTML error page — none of
+ * them are JSON, and calling res.json() on them throws "Unexpected token 'R',
+ * \"Request En\"... is not valid JSON", which is what the admin saw instead of
+ * "Request Entity Too Large". The status and the first line of the body say
+ * far more than a parser error about the parser.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function readJson<T = any>(res: Response): Promise<T> {
+  const raw = await res.text().catch(() => "");
+  try {
+    return (raw ? JSON.parse(raw) : {}) as T;
+  } catch {
+    const firstLine = raw.split("\n")[0].slice(0, 200).trim();
+    return { error: `HTTP ${res.status}${firstLine ? ` — ${firstLine}` : ""}` } as T;
+  }
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const t = useT();
@@ -382,7 +402,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/purge-legacy-users");
       if (res.ok) {
-        const d = await res.json();
+        const d = await readJson(res);
         const cands: PurgeCandidate[] = d.candidates || [];
         setPurgeCandidates(cands);
         setPurgeSelected(new Set(cands.map((c) => c.id)));
@@ -409,7 +429,7 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userIds: Array.from(purgeSelected) }),
       });
-      const d = await res.json();
+      const d = await readJson(res);
       if (res.ok) {
         setPurgeResult(t("admin.purge_done").replace("{n}", String(d.deleted)));
         setPurgeCandidates((prev) => prev.filter((c) => !purgeSelected.has(c.id)));
@@ -433,7 +453,7 @@ export default function AdminPage() {
     setSyncResult(null);
     try {
       const res = await fetch("/api/admin/sync-billing", { method: "POST" });
-      const d = await res.json().catch(() => ({}));
+      const d = await readJson(res).catch(() => ({}));
       if (res.ok) {
         // The counts that matter for money go first: a cancellation Stripe was
         // still going to renew is a charge someone is not expecting, and it
@@ -471,7 +491,7 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
-      const d = await res.json().catch(() => ({}));
+      const d = await readJson(res).catch(() => ({}));
       setRetrying((p) => ({ ...p, [userId]: d.ok ? "paid" : d.declined ? "declined" : "error" }));
       if (d.ok) loadAll();
     } catch {
@@ -537,11 +557,9 @@ export default function AdminPage() {
   const [ftLearningRate, setFtLearningRate] = useState<string>("auto");
   const [ftBatchSize, setFtBatchSize] = useState<string>("auto");
   const [ftAugmenting, setFtAugmenting] = useState(false);
-  const [ftAugmentResult, setFtAugmentResult] = useState<{ originalCount: number; syntheticCount: number; totalCount: number } | null>(null);
+  const [ftAugmentResult, setFtAugmentResult] = useState<{ originalCount: number; syntheticCount: number; totalCount: number; augmentedOf?: number; remaining?: number } | null>(null);
   // The augmented file itself, so it can be trained on rather than only
   // downloaded. Before this it went to the browser and nowhere else.
-  const [ftAugmentedJsonl, setFtAugmentedJsonl] = useState<string | null>(null);
-  const [ftUploadingAugmented, setFtUploadingAugmented] = useState(false);
 
   const selectedProvider = PROVIDERS.find((p) => p.value === provider);
 
@@ -646,7 +664,7 @@ export default function AdminPage() {
         setChatHistory((prev) => [...prev, { role: "bot", text: "Error processing request." }]);
         return;
       }
-      const data = await res.json();
+      const data = await readJson(res);
       if (data.sections) {
         setChecklistSections(data.sections);
         setChecklistDirty(true);
@@ -665,7 +683,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/admin/audit-logs?limit=200&cursor=${encodeURIComponent(auditCursor)}`);
       if (res.ok) {
-        const d = await res.json();
+        const d = await readJson(res);
         setAuditLogs((prev) => [...prev, ...(d.logs || [])]);
         setAuditCursor(d.nextCursor || null);
       }
@@ -680,7 +698,7 @@ export default function AdminPage() {
       try {
         const res = await fetch(`/api/finetune/status?provider=${ftProvider}`);
         if (res.ok && !cancelled) {
-          const d = await res.json();
+          const d = await readJson(res);
           setFtJobs(d.jobs || []);
           setFtModelsByProvider(d.modelsByProvider || {});
         }
@@ -735,9 +753,9 @@ export default function AdminPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setConfigError((await res.json()).error || t("admin.failed"));
+        setConfigError((await readJson(res)).error || t("admin.failed"));
       } else {
-        const d = await res.json();
+        const d = await readJson(res);
         setConfig(d);
         setApiKey(d.api_key_encrypted || "");
         setWhisperKey(d.whisper_api_key_encrypted || "");
@@ -769,7 +787,7 @@ export default function AdminPage() {
           custom_base_url: provider === "custom" ? customUrl : "",
         }),
       });
-      setTestResult((await res.json()).ok ?? false);
+      setTestResult((await readJson(res)).ok ?? false);
     } catch { setTestResult(false); }
     setTesting(false);
   }
@@ -790,7 +808,7 @@ export default function AdminPage() {
       form.append("file", file);
       form.append("provider", ftProvider);
       const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) { setFtError(data.error || t("admin.ft_upload_failed")); return; }
       setFtFileId(data.fileId);
       setFtExamples(data.validExamples);
@@ -811,7 +829,7 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider: ftProvider, fileId: ftFileId, baseModel: ftBaseModel, suffix: ftSuffix, nEpochs: ftNEpochs, learningRateMultiplier: ftLearningRate, batchSize: ftBatchSize }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
       setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null, trainedTokens: null, trainingFile: null, nEpochs: null }, ...prev]);
       setFtFileId(null);
@@ -830,7 +848,7 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId, provider: ftProvider }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (res.ok) {
         setFtJobs((prev) => prev.map((j) => j.jobId === jobId ? { ...j, status: data.status, fineTunedModel: data.fineTunedModel, finishedAt: data.finishedAt, trainedTokens: data.trainedTokens } : j));
       }
@@ -896,7 +914,7 @@ export default function AdminPage() {
           subscription_plan: createPlan,
         }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         setCreateError(data.error || t("admin.failed_create_user"));
       } else {
@@ -920,7 +938,7 @@ export default function AdminPage() {
       if (ftDataModality !== "all") params.set("modality", ftDataModality);
       if (ftCorrectionsOnly) params.set("corrections_only", "true");
       const res = await fetch(`/api/admin/training-data/openai?${params}`);
-      const d = await res.json();
+      const d = await readJson(res);
       if (!res.ok) { setFtDataError(d.error); return; }
       setFtDataPreview(d);
     } catch (e) {
@@ -955,19 +973,20 @@ export default function AdminPage() {
     setFtError("");
     setFtFileId(null);
     try {
-      const params = new URLSearchParams();
-      if (ftDataModality !== "all") params.set("modality", ftDataModality);
-      if (ftCorrectionsOnly) params.set("corrections_only", "true");
-      const res = await fetch(`/api/admin/training-data/openai?${params}`);
-      if (!res.ok) { setFtError("Failed to generate training data"); return; }
-      const blob = await res.blob();
-      if (blob.size < 10) { setFtError("No correction data found to generate training examples"); return; }
-
-      const form = new FormData();
-      form.append("file", blob, `radiogenai-finetune-${new Date().toISOString().slice(0, 10)}.jsonl`);
-      form.append("provider", ftProvider);
-      const uploadRes = await fetch("/api/finetune/upload", { method: "POST", body: form });
-      const data = await uploadRes.json();
+      // The server builds the file and posts it to the provider. It used to
+      // come down to the browser and go back up through our own API, which at
+      // ~9.5 KB an example exceeded the 4.5 MB request-body cap and answered
+      // 413 — the error that read as "Unexpected token 'R'".
+      const uploadRes = await fetch("/api/finetune/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: ftProvider,
+          modality: ftDataModality === "all" ? null : ftDataModality,
+          correctionsOnly: ftCorrectionsOnly,
+        }),
+      });
+      const data = await readJson(uploadRes);
       if (!uploadRes.ok) { setFtError(data.error || "Upload failed"); return; }
       setFtFileId(data.fileId);
       setFtExamples(data.validExamples);
@@ -978,64 +997,38 @@ export default function AdminPage() {
     }
   }
 
-  /** Hands the augmented file to the same upload the plain one uses, so the
-   *  training panel below it picks up the file id with nothing else changed. */
-  async function handleUploadAugmented() {
-    if (!ftAugmentedJsonl) return;
-    setFtUploadingAugmented(true);
-    setFtError("");
-    setFtDataError(null);
-    try {
-      const blob = new Blob([ftAugmentedJsonl], { type: "application/jsonl" });
-      const form = new FormData();
-      form.append("file", blob, `radiogenai-finetune-augmented-${new Date().toISOString().slice(0, 10)}.jsonl`);
-      form.append("provider", ftProvider);
-      const res = await fetch("/api/finetune/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) { setFtDataError(data.error || "Upload failed"); return; }
-      setFtFileId(data.fileId);
-      setFtExamples(data.validExamples);
-    } catch (e) {
-      setFtDataError(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setFtUploadingAugmented(false);
-    }
-  }
-
   async function handleAugmentData() {
     setFtAugmenting(true);
     setFtDataError(null);
     setFtAugmentResult(null);
-    setFtAugmentedJsonl(null);
     try {
-      const params = new URLSearchParams();
-      if (ftDataModality !== "all") params.set("modality", ftDataModality);
-      if (ftCorrectionsOnly) params.set("corrections_only", "true");
-      const res = await fetch(`/api/admin/training-data/openai?${params}`);
-      if (!res.ok) { setFtDataError("Failed to fetch training data"); setFtAugmenting(false); return; }
-      const jsonlText = await res.text();
-      const lines = jsonlText.split("\n").filter((l) => l.trim());
-      if (lines.length === 0) { setFtDataError("No training examples to augment"); setFtAugmenting(false); return; }
-
-      const examples = lines.map((l) => JSON.parse(l));
       const augRes = await fetch("/api/admin/training-data/augment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ examples }),
+        body: JSON.stringify({
+          provider: ftProvider,
+          modality: ftDataModality === "all" ? null : ftDataModality,
+          correctionsOnly: ftCorrectionsOnly,
+        }),
       });
-      const augData = await augRes.json();
+      const augData = await readJson(augRes);
       if (!augRes.ok) { setFtDataError(augData.error || "Augmentation failed"); setFtAugmenting(false); return; }
 
-      setFtAugmentResult({ originalCount: augData.originalCount, syntheticCount: augData.syntheticCount, totalCount: augData.totalCount });
-      setFtAugmentedJsonl(augData.jsonl);
-
-      const blob = new Blob([augData.jsonl], { type: "application/jsonl" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `radiogenai-finetune-augmented-${new Date().toISOString().slice(0, 10)}.jsonl`;
-      a.click();
-      URL.revokeObjectURL(url);
+      setFtAugmentResult({
+        originalCount: augData.originalCount,
+        syntheticCount: augData.syntheticCount,
+        totalCount: augData.totalCount,
+        augmentedOf: augData.augmentedOf,
+        remaining: augData.remaining,
+      });
+      // Already uploaded by the route: a multi-megabyte file cannot come back
+      // through the browser just to be posted somewhere else.
+      if (augData.uploadError) {
+        setFtDataError(augData.uploadError);
+      } else if (augData.fileId) {
+        setFtFileId(augData.fileId);
+        setFtExamples(augData.totalCount);
+      }
     } catch (e) {
       setFtDataError(e instanceof Error ? e.message : "Augmentation failed");
     } finally {
@@ -1999,23 +1992,17 @@ export default function AdminPage() {
                         {ftAugmenting ? t("admin.ft_augmenting") : t("admin.ft_augment_button")}
                       </Button>
                       {ftAugmentResult && (
-                        <p className="text-xs text-green-600">
-                          {t("admin.ft_augment_result").replace("{0}", String(ftAugmentResult.originalCount)).replace("{1}", String(ftAugmentResult.syntheticCount)).replace("{2}", String(ftAugmentResult.totalCount))}
-                        </p>
-                      )}
-                      {ftAugmentedJsonl && (
-                        <div className="space-y-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs gap-1.5"
-                            onClick={handleUploadAugmented}
-                            disabled={ftUploadingAugmented}
-                          >
-                            {ftUploadingAugmented ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                            {ftUploadingAugmented ? t("admin.ft_uploading_augmented") : t("admin.ft_upload_augmented")}
-                          </Button>
-                          <p className="text-[11px] text-gray-500">{t("admin.ft_upload_augmented_hint")}</p>
+                        <div className="space-y-0.5">
+                          <p className="text-xs text-green-600">
+                            {t("admin.ft_augment_result").replace("{0}", String(ftAugmentResult.originalCount)).replace("{1}", String(ftAugmentResult.syntheticCount)).replace("{2}", String(ftAugmentResult.totalCount))}
+                          </p>
+                          {!!ftAugmentResult.remaining && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                              {t("admin.ft_augment_partial")
+                                .replace("{0}", String(ftAugmentResult.augmentedOf ?? 0))
+                                .replace("{1}", String(ftAugmentResult.remaining))}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

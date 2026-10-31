@@ -112,10 +112,9 @@ describe("the generator uses it", () => {
   it("no longer carries its own system prompt", async () => {
     const { readFileSync } = await import("fs");
     const { join } = await import("path");
-    const route = readFileSync(
-      join(__dirname, "../../../src/app/api/admin/training-data/openai/route.ts"),
-      "utf8",
-    );
+    // The example building moved out of the route into lib/training-export,
+    // so the server can build the file without the browser carrying it.
+    const route = readFileSync(join(__dirname, "../training-export.ts"), "utf8");
     expect(route).toContain("buildTrainingPrompt");
     // The 45-word instruction and the hand-rolled user message are both gone.
     expect(route).not.toContain("const SYSTEM_PROMPT");
