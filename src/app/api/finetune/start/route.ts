@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getGlobalAIConfig, resolveApiKey } from "@/lib/auth-helpers";
 import { toErrorResponse } from "@/lib/api-error";
-import { finetuneSpec, normaliseJob } from "@/lib/finetune-providers";
+import { finetuneSpec, normaliseJob, clampBatch } from "@/lib/finetune-providers";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,7 +41,11 @@ export async function POST(req: NextRequest) {
         model,
         lora: true,
         n_epochs: num(nEpochs, hp.defaults.epochs),
-        batch_size: num(batchSize, hp.defaults.batchSize),
+        // Per model, and for most of them a single allowed number: 8 is the
+        // only value Qwen3.5 9B takes, gpt-oss-20b takes only 1, and
+        // Qwen3.5 397B will not go below 16. Clamped here as the last guard,
+        // so a stale value in the panel cannot queue a refused job.
+        batch_size: clampBatch(spec, model, batchSize),
         learning_rate: num(learningRateMultiplier, hp.defaults.learningRate),
       };
       if (suffix) body.suffix = suffix;

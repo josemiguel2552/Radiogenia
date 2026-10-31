@@ -6,6 +6,8 @@ import {
   normaliseJob,
   finetuneSpec,
   FINETUNE_PROVIDERS,
+  batchSizesFor,
+  clampBatch,
 } from "@/lib/finetune-providers";
 
 /**
@@ -230,7 +232,8 @@ describe("the dashboard drives the whole run from one place", () => {
   it("moves the base model when the provider changes", () => {
     // A gpt-4o-mini id submitted to Together is a job that fails on arrival.
     expect(page).toContain("function changeFtProvider");
-    expect(page).toContain("setFtBaseModel(FINETUNE_PROVIDERS[id].baseModels[0].id)");
+    // The recommended one, not merely the first in the table.
+    expect(page).toContain("models.find((m) => m.recommended) || models[0]");
   });
 
   it("offers only base models the chosen provider can train", () => {
@@ -508,9 +511,10 @@ describe("hyperparameters belong to their provider", () => {
 
   it("sends Together a number for every knob", () => {
     const branch = start.slice(start.indexOf('if (spec.id === "together")'), start.indexOf("} else {"));
-    for (const field of ["n_epochs", "batch_size", "learning_rate"]) {
-      expect(branch).toContain(`${field}: num(`);
-    }
+    expect(branch).toContain("n_epochs: num(");
+    expect(branch).toContain("learning_rate: num(");
+    // Batch size is per model, so it is clamped rather than defaulted.
+    expect(branch).toContain("batch_size: clampBatch(spec, model, batchSize)");
     // Never omitted: that is what reads as zero.
     expect(branch).not.toContain('!== "auto"');
   });
@@ -518,9 +522,42 @@ describe("hyperparameters belong to their provider", () => {
   it("falls back to a real default rather than zero", () => {
     const branch = start.slice(start.indexOf('if (spec.id === "together")'), start.indexOf("} else {"));
     expect(branch).toContain("Number.isFinite(n) && n > 0 ? n : Number(fallback)");
-    expect(together.hyperparams.defaults.batchSize).not.toBe("auto");
-    expect(Number(together.hyperparams.defaults.batchSize)).toBeGreaterThan(0);
+    expect(together.hyperparams.defaults.epochs).not.toBe("auto");
     expect(Number(together.hyperparams.defaults.epochs)).toBeGreaterThan(0);
+  });
+
+  it("takes the batch size from the model, since there is no global answer", () => {
+    // 8 is the only value Qwen3.5 9B accepts and the only one gpt-oss-20b
+    // refuses; 397B will not go below 16. A single default cannot be right.
+    expect(batchSizesFor(together, "Qwen/Qwen3.5-9B")).toEqual(["8"]);
+    expect(batchSizesFor(together, "openai/gpt-oss-20b")).toEqual(["1"]);
+    expect(batchSizesFor(together, "Qwen/Qwen3.8-27B")).toEqual(["2"]);
+  });
+
+  it("clamps whatever the panel sends into what the model takes", () => {
+    expect(clampBatch(together, "openai/gpt-oss-20b", 8)).toBe(1);
+    expect(clampBatch(together, "Qwen/Qwen3.5-9B", 1)).toBe(8);
+    expect(clampBatch(together, "Qwen/Qwen3.5-9B", "")).toBe(8);
+    expect(clampBatch(together, "Qwen/Qwen3.5-9B", 8)).toBe(8);
+    // An id we do not know: pass a usable number rather than zero.
+    expect(clampBatch(together, "something/unknown", 4)).toBe(4);
+    expect(clampBatch(together, "something/unknown", 0)).toBe(1);
+  });
+
+  it("carries the real API ids, not names that look right", () => {
+    // "Qwen/Qwen3.5-9B-Instruct" was a guess and would have been refused:
+    // the id has no -Instruct suffix.
+    const ids = together.baseModels.map((m) => m.id);
+    expect(ids).toContain("Qwen/Qwen3.5-9B");
+    expect(ids).not.toContain("Qwen/Qwen3.5-9B-Instruct");
+    expect(ids).toContain("meta-llama/Meta-Llama-3.1-8B-Instruct-Reference");
+    // Every entry carries the limits that decide whether a job is accepted.
+    for (const m of together.baseModels) {
+      expect(m.minBatch).toBeGreaterThan(0);
+      expect(m.maxBatch).toBeGreaterThanOrEqual(m.minBatch);
+      // Our examples run ~3k tokens; anything here must hold them.
+      expect(m.context).toBeGreaterThan(8000);
+    }
   });
 
   it("keeps OpenAI's multiplier out of Together's learning rate", () => {
@@ -591,8 +628,11 @@ describe("a base model is not offered as trainable unless it is known to be", ()
     expect(block.slice(0, 200)).toContain("d.models.includes(current)");
   });
 
-  it("asks for a typed id when trainability is unknown", () => {
-    expect(page).toContain("ftBaseManual || (ftLiveModels.length > 0 && !ftLiveFiltered)");
+  it("offers the table's models and keeps a way to type one", () => {
+    // The curated table from Together's own docs is the source of truth now;
+    // the account's inference catalogue was not.
+    expect(page).toContain("FINETUNE_PROVIDERS[ftProvider].baseModels.map");
+    expect(page).toContain("admin.model_type_manually");
   });
 
   it("points at the official list rather than leaving you to guess", () => {

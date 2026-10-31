@@ -22,8 +22,20 @@ export type FinetuneProviderId = "openai" | "together";
 export interface FinetuneBaseModel {
   id: string;
   label: string;
-  /** Shown next to the name: why you would pick this one. */
+  /**
+   * Packed-batch limits, which are per model and usually a SINGLE allowed
+   * value — min and max are equal for most of them. A global default cannot
+   * work: 8 is the only value Qwen3.5 9B takes and the only one gpt-oss-20b
+   * refuses (it takes 1), and Qwen3.5 397B will not go below 16.
+   */
+  minBatch: number;
+  maxBatch: number;
+  /** Maximum context in SFT mode. Our examples run ~3k tokens. */
+  context: number;
+  /** Whether full fine-tuning is offered as well as LoRA. */
+  fullFt?: boolean;
   note?: string;
+  recommended?: boolean;
 }
 
 /**
@@ -85,8 +97,8 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
       jobs: "https://api.openai.com/v1/fine_tuning/jobs?limit=100",
     },
     baseModels: [
-      { id: "gpt-4o-mini-2024-07-18", label: "gpt-4o-mini", note: "retires 2027-01-14" },
-      { id: "gpt-4.1-mini-2025-04-14", label: "gpt-4.1-mini", note: "retires 2027-01-14" },
+      { id: "gpt-4o-mini-2024-07-18", label: "gpt-4o-mini", minBatch: 1, maxBatch: 32, context: 65536, recommended: true, note: "retires 2027-01-14" },
+      { id: "gpt-4.1-mini-2025-04-14", label: "gpt-4.1-mini", minBatch: 1, maxBatch: 32, context: 65536, note: "retires 2027-01-14" },
     ],
     minExamples: 10,
     hyperparams: {
@@ -123,22 +135,42 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
       job: (id) => `https://api.together.xyz/v1/fine-tunes/${id}`,
       jobs: "https://api.together.xyz/v1/fine-tunes",
     },
-    // ⚠️ Reference names only, and they go stale: "Qwen/Qwen3-8B" was
-    // rejected as "model not found in configuration" because the catalogue
-    // had moved on. The panel asks the account for its real list
-    // (/api/finetune/base-models) and only falls back to these when that
-    // call fails, so being out of date here costs a dropdown, not a run.
+    // Together's own supported-models table, API IDs and limits included.
+    // Guessing these cost three refused jobs: the catalogue at /v1/models is
+    // what the account can CALL, which is a superset of what it can TRAIN.
+    //
+    // Vision-language variants are left out (we send text), as are the
+    // reasoning-first models: the conclusion prompt wants no deliberation.
     baseModels: [
-      { id: "Qwen/Qwen3.5-9B-Instruct", label: "Qwen3.5 9B", note: "unverified name" },
-      { id: "meta-llama/Llama-4-Scout-17B-16E-Instruct", label: "Llama 4 Scout", note: "unverified name" },
-      { id: "openai/gpt-oss-20b", label: "gpt-oss 20B", note: "unverified name" },
+      { id: "Qwen/Qwen3.5-9B", label: "Qwen3.5 9B", minBatch: 8, maxBatch: 8, context: 65536, fullFt: true, recommended: true, note: "small, cheap to serve, strong in Spanish" },
+      { id: "Qwen/Qwen3.5-4B", label: "Qwen3.5 4B", minBatch: 8, maxBatch: 8, context: 131072, note: "cheapest" },
+      { id: "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference", label: "Llama 3.1 8B Instruct", minBatch: 8, maxBatch: 8, context: 131072, fullFt: true },
+      { id: "Qwen/Qwen3.5-27B", label: "Qwen3.5 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true },
+      { id: "Qwen/Qwen3.6-27B", label: "Qwen3.6 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true },
+      { id: "Qwen/Qwen3.8-27B", label: "Qwen3.8 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true },
+      { id: "Qwen/Qwen3.5-35B-A3B", label: "Qwen3.5 35B A3B", minBatch: 8, maxBatch: 8, context: 65536 },
+      { id: "Qwen/Qwen3.6-35B-A3B", label: "Qwen3.6 35B A3B", minBatch: 8, maxBatch: 8, context: 65536 },
+      { id: "google/gemma-4-31B-it", label: "Gemma 4 31B IT", minBatch: 4, maxBatch: 4, context: 49152, fullFt: true },
+      { id: "google/gemma-4-26B-A4B-it", label: "Gemma 4 26B A4B IT", minBatch: 4, maxBatch: 4, context: 49152 },
+      { id: "meta-llama/Llama-4-Scout-17B-16E-Instruct", label: "Llama 4 Scout 17B", minBatch: 8, maxBatch: 8, context: 65536 },
+      { id: "meta-llama/Llama-4-Maverick-17B-128E-Instruct", label: "Llama 4 Maverick 17B", minBatch: 16, maxBatch: 16, context: 16384 },
+      { id: "meta-llama/Llama-3.3-70B-Instruct-Reference", label: "Llama 3.3 70B Instruct", minBatch: 8, maxBatch: 8, context: 24576, fullFt: true, note: "strongest here, dearest to serve" },
+      { id: "openai/gpt-oss-20b", label: "GPT-OSS 20B", minBatch: 1, maxBatch: 1, context: 131072 },
+      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B", minBatch: 2, maxBatch: 2, context: 65536 },
+      { id: "deepseek-ai/DeepSeek-V3.1", label: "DeepSeek V3.1", minBatch: 2, maxBatch: 2, context: 65536 },
+      { id: "deepseek-ai/DeepSeek-V4-Flash", label: "DeepSeek V4 Flash", minBatch: 1, maxBatch: 1, context: 131072 },
+      { id: "mistralai/Mixtral-8x7B-Instruct-v0.1", label: "Mixtral 8x7B Instruct", minBatch: 8, maxBatch: 8, context: 32768, fullFt: true },
+      { id: "zai-org/GLM-5.3", label: "GLM 5.3", minBatch: 1, maxBatch: 1, context: 50688 },
+      { id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6", minBatch: 4, maxBatch: 4, context: 32768 },
     ],
     minExamples: 10,
     hyperparams: {
       // No "auto": a missing value is read as zero.
       supportsAuto: false,
       epochs: ["1", "2", "3", "4", "5"],
-      batchSizes: ["1", "2", "4", "8", "16", "32"],
+      // Unused for Together: the allowed values come from the chosen model,
+      // where min and max are usually the same single number.
+      batchSizes: [],
       // Absolute rates. 1e-4 is the usual starting point for a LoRA adapter;
       // the lower ones are for when a run overfits.
       learningRates: [
@@ -148,7 +180,7 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
         { value: "0.0002", label: "2e-4" },
         { value: "0.0003", label: "3e-4" },
       ],
-      defaults: { epochs: "3", batchSize: "8", learningRate: "0.0001" },
+      defaults: { epochs: "3", batchSize: "", learningRate: "0.0001" },
     },
     ownsWeights: true,
     caveat: "together_unverified",
@@ -348,4 +380,29 @@ export function normaliseJob(raw: Record<string, unknown>, provider: FinetunePro
     finishedAt: num(raw.finished_at),
     error: str((raw.error as Record<string, unknown> | null)?.message),
   };
+}
+
+/** The batch sizes a given base model accepts, as a list the UI can offer. */
+export function batchSizesFor(spec: FinetuneProviderSpec, modelId: string): string[] {
+  const model = spec.baseModels.find((m) => m.id === modelId);
+  if (!model) return spec.hyperparams.batchSizes;
+  const out: string[] = [];
+  for (let n = model.minBatch; n <= model.maxBatch; n *= 2) out.push(String(n));
+  if (out.length === 0) out.push(String(model.minBatch));
+  return out;
+}
+
+/**
+ * Keep a batch size inside what the model takes.
+ *
+ * The last guard before the request: a stale value left in the panel is
+ * otherwise a job refused on arrival, and for most of these models there is
+ * exactly one number that works.
+ */
+export function clampBatch(spec: FinetuneProviderSpec, modelId: string, given: unknown): number {
+  const model = spec.baseModels.find((m) => m.id === modelId);
+  const n = Number(given);
+  if (!model) return Number.isFinite(n) && n > 0 ? n : 1;
+  if (!Number.isFinite(n) || n <= 0) return model.minBatch;
+  return Math.min(Math.max(n, model.minBatch), model.maxBatch);
 }

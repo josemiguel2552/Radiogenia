@@ -23,7 +23,7 @@ import { PROVIDERS, PLANS, type SubscriptionPlan } from "@/lib/types";
 import { resolveRegion } from "@/lib/region";
 import { DEFAULT_CHECKLIST_SECTIONS } from "@/lib/clinical-checklist-kb";
 import { useT } from "@/lib/i18n";
-import { FINETUNE_PROVIDERS, type FinetuneProviderId } from "@/lib/finetune-providers";
+import { FINETUNE_PROVIDERS, batchSizesFor, type FinetuneProviderId } from "@/lib/finetune-providers";
 import { Logo } from "@/components/ui/logo";
 import nextDynamic from "next/dynamic";
 
@@ -338,7 +338,10 @@ export default function AdminPage() {
 
   function changeFtProvider(id: FinetuneProviderId) {
     setFtProvider(id);
-    setFtBaseModel(FINETUNE_PROVIDERS[id].baseModels[0].id);
+    const models = FINETUNE_PROVIDERS[id].baseModels;
+    const pick = models.find((m) => m.recommended) || models[0];
+    setFtBaseModel(pick.id);
+    setFtBatchSize(batchSizesFor(FINETUNE_PROVIDERS[id], pick.id)[0] || "");
     setFtFileId(null);
     setFtError("");
     setFtLiveModels([]);
@@ -2221,7 +2224,7 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-[11px] text-gray-400">{t("admin.ft_base_model")}</Label>
-                        {ftBaseManual || (ftLiveModels.length > 0 && !ftLiveFiltered) ? (
+                        {ftBaseManual ? (
                           <div className="flex gap-1">
                             <input
                               type="text" value={ftBaseModel} autoFocus
@@ -2229,34 +2232,36 @@ export default function AdminPage() {
                               className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
                               placeholder={t("admin.ft_base_placeholder")}
                             />
-                            {ftLiveModels.length > 0 && ftLiveFiltered && (
-                              <button
-                                type="button" onClick={() => setFtBaseManual(false)}
-                                className="h-8 px-2 text-[11px] text-gray-500 border rounded-md hover:text-gray-700 dark:border-gray-700"
-                              >
-                                {t("admin.model_pick_from_list")}
-                              </button>
-                            )}
+                            <button
+                              type="button" onClick={() => setFtBaseManual(false)}
+                              className="h-8 px-2 text-[11px] text-gray-500 border rounded-md hover:text-gray-700 dark:border-gray-700"
+                            >
+                              {t("admin.model_pick_from_list")}
+                            </button>
                           </div>
                         ) : (
                           <Select
                             value={ftBaseModel}
-                            onValueChange={(v) => { if (v === MANUAL) { setFtBaseManual(true); return; } setFtBaseModel(v); }}
+                            onValueChange={(v) => {
+                              if (v === MANUAL) { setFtBaseManual(true); return; }
+                              setFtBaseModel(v);
+                              // Each model allows its own batch sizes, and
+                              // usually only one; carrying the old value over
+                              // is a job refused on arrival.
+                              const allowed = batchSizesFor(FINETUNE_PROVIDERS[ftProvider], v);
+                              if (allowed.length > 0 && !allowed.includes(ftBatchSize)) setFtBatchSize(allowed[0]);
+                            }}
                           >
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              {ftLiveModels.length > 0 ? (
-                                ftLiveModels.map((m) => (
-                                  <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
-                                ))
-                              ) : (
-                                FINETUNE_PROVIDERS[ftProvider].baseModels.map((bm) => (
-                                  <SelectItem key={bm.id} value={bm.id} className="text-xs">
-                                    {bm.label}{bm.note ? ` — ${bm.note}` : ""}
-                                  </SelectItem>
-                                ))
-                              )}
-                              {ftLiveModels.length > 0 && !ftLiveModels.includes(ftBaseModel) && ftBaseModel && (
+                              {FINETUNE_PROVIDERS[ftProvider].baseModels.map((bm) => (
+                                <SelectItem key={bm.id} value={bm.id} className="text-xs">
+                                  {bm.label}
+                                  {bm.recommended ? ` ★` : ""}
+                                  {bm.note ? ` — ${bm.note}` : ""}
+                                </SelectItem>
+                              ))}
+                              {ftBaseModel && !FINETUNE_PROVIDERS[ftProvider].baseModels.some((b) => b.id === ftBaseModel) && (
                                 <SelectItem value={ftBaseModel} className="text-xs">{ftBaseModel}</SelectItem>
                               )}
                               <SelectItem value={MANUAL} className="text-xs">{t("admin.model_type_manually")}</SelectItem>
@@ -2332,16 +2337,27 @@ export default function AdminPage() {
                           </div>
                           <div className="space-y-1">
                             <Label className="text-[11px] text-gray-400">Batch size</Label>
-                            <Select value={ftBatchSize} onValueChange={setFtBatchSize}>
-                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {hp.batchSizes.map((v) => (
-                                  <SelectItem key={v} value={v} className="text-xs">
-                                    {v === "auto" ? `Auto (${t("admin.ft_recommended")})` : v}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {(() => {
+                              // Per model, and usually one allowed value.
+                              const allowed = hp.supportsAuto ? hp.batchSizes : batchSizesFor(FINETUNE_PROVIDERS[ftProvider], ftBaseModel);
+                              const fixed = allowed.length === 1;
+                              return fixed ? (
+                                <div className="h-8 px-2 flex items-center text-xs text-gray-500 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                                  {allowed[0]} · {t("admin.ft_batch_fixed")}
+                                </div>
+                              ) : (
+                                <Select value={ftBatchSize} onValueChange={setFtBatchSize}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {allowed.map((v) => (
+                                      <SelectItem key={v} value={v} className="text-xs">
+                                        {v === "auto" ? `Auto (${t("admin.ft_recommended")})` : v}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            })()}
                           </div>
                         </div>
                       );
