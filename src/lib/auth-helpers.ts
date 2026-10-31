@@ -41,15 +41,30 @@ export interface GlobalAIConfig {
 
 export const COMBO_PROVIDER_VALUE = "combo";
 
+/**
+ * The API key for one provider, or "" when there is none.
+ *
+ * It used to fall back to the main provider's key for ANY provider that had
+ * no key of its own, which did two bad things. It sent one vendor's
+ * credential to another vendor's API — configure Together with DeepSeek as
+ * the main provider and the DeepSeek key went to api.together.xyz, which
+ * answered "Invalid API key provided". And it made "no key configured"
+ * impossible to detect locally, because the key was never empty: every
+ * `if (!apiKey)` guard was dead code, and a missing key surfaced as a remote
+ * 401 about someone else's credential.
+ *
+ * The main key is the main provider's key, so it is still used for that
+ * provider — and nowhere else.
+ */
 export function resolveApiKey(config: GlobalAIConfig, taskProvider: AIProvider): string {
   if (config.providerKeys?.[taskProvider]) return config.providerKeys[taskProvider]!;
+  // Whisper's key is an OpenAI key, so it serves OpenAI tasks when OpenAI is
+  // not the main provider.
   if (taskProvider === "openai" && config.provider !== "openai" && config.whisperApiKey) {
     return config.whisperApiKey;
   }
-  if (taskProvider !== config.provider && taskProvider !== "openai" && process.env.NODE_ENV === "development") {
-    console.warn(`[resolveApiKey] No specific key for "${taskProvider}", falling back to main provider key (${config.provider})`);
-  }
-  return config.apiKey;
+  if (taskProvider === config.provider) return config.apiKey;
+  return "";
 }
 
 export async function getGlobalAIConfig(): Promise<GlobalAIConfig> {
