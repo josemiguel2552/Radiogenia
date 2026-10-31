@@ -86,10 +86,15 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
       job: (id) => `https://api.together.xyz/v1/fine-tunes/${id}`,
       jobs: "https://api.together.xyz/v1/fine-tunes",
     },
+    // ⚠️ Reference names only, and they go stale: "Qwen/Qwen3-8B" was
+    // rejected as "model not found in configuration" because the catalogue
+    // had moved on. The panel asks the account for its real list
+    // (/api/finetune/base-models) and only falls back to these when that
+    // call fails, so being out of date here costs a dropdown, not a run.
     baseModels: [
-      { id: "Qwen/Qwen3-8B", label: "Qwen3 8B", note: "cheapest, good for format and tone" },
-      { id: "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference", label: "Llama 3.1 8B" },
-      { id: "meta-llama/Meta-Llama-3.3-70B-Instruct-Reference", label: "Llama 3.3 70B", note: "strongest, costs more" },
+      { id: "Qwen/Qwen3.5-9B-Instruct", label: "Qwen3.5 9B", note: "unverified name" },
+      { id: "meta-llama/Llama-4-Scout-17B-16E-Instruct", label: "Llama 4 Scout", note: "unverified name" },
+      { id: "openai/gpt-oss-20b", label: "gpt-oss 20B", note: "unverified name" },
     ],
     minExamples: 10,
     ownsWeights: true,

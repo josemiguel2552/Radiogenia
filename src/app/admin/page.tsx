@@ -328,11 +328,20 @@ export default function AdminPage() {
   const [ftBaseModel, setFtBaseModel] = useState(FINETUNE_PROVIDERS.openai.baseModels[0].id);
   // A base model only exists for one provider, so switching has to move it or
   // the next run is launched against a name the other one has never heard of.
+  // Trainable base models as the provider lists them. A hardcoded name went
+  // stale and came back "model not found in configuration", so the provider
+  // is asked instead; the static list is only the fallback.
+  const [ftLiveModels, setFtLiveModels] = useState<string[]>([]);
+  const [ftLiveFiltered, setFtLiveFiltered] = useState(false);
+  const [ftBaseManual, setFtBaseManual] = useState(false);
+
   function changeFtProvider(id: FinetuneProviderId) {
     setFtProvider(id);
     setFtBaseModel(FINETUNE_PROVIDERS[id].baseModels[0].id);
     setFtFileId(null);
     setFtError("");
+    setFtLiveModels([]);
+    setFtBaseManual(false);
   }
   const [ftError, setFtError] = useState("");
   const [ftChecking, setFtChecking] = useState(false);
@@ -702,6 +711,25 @@ export default function AdminPage() {
     } catch { /* ignore */ }
     setAuditLoadingMore(false);
   }, [auditCursor, auditLoadingMore]);
+
+  useEffect(() => {
+    if (tab !== "training") return;
+    let stale = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/finetune/base-models?provider=${ftProvider}`);
+        const d = await readJson(res);
+        if (!stale && Array.isArray(d.models) && d.models.length > 0) {
+          setFtLiveModels(d.models);
+          setFtLiveFiltered(!!d.filtered);
+          // The static default can be a name the provider no longer has, and
+          // leaving it selected submits a job that fails on arrival.
+          setFtBaseModel((current) => (d.models.includes(current) ? current : d.models[0]));
+        }
+      } catch { /* the static list stands in */ }
+    })();
+    return () => { stale = true; };
+  }, [ftProvider, tab]);
 
   useEffect(() => {
     if (tab !== "training") return;
@@ -2182,16 +2210,53 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-[11px] text-gray-400">{t("admin.ft_base_model")}</Label>
-                        <Select value={ftBaseModel} onValueChange={setFtBaseModel}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {FINETUNE_PROVIDERS[ftProvider].baseModels.map((bm) => (
-                              <SelectItem key={bm.id} value={bm.id} className="text-xs">
-                                {bm.label}{bm.note ? ` — ${bm.note}` : ""}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {ftBaseManual ? (
+                          <div className="flex gap-1">
+                            <input
+                              type="text" value={ftBaseModel} autoFocus
+                              onChange={(e) => setFtBaseModel(e.target.value)}
+                              className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
+                              placeholder="Qwen/Qwen3.5-9B-Instruct"
+                            />
+                            <button
+                              type="button" onClick={() => setFtBaseManual(false)}
+                              className="h-8 px-2 text-[11px] text-gray-500 border rounded-md hover:text-gray-700 dark:border-gray-700"
+                            >
+                              {t("admin.model_pick_from_list")}
+                            </button>
+                          </div>
+                        ) : (
+                          <Select
+                            value={ftBaseModel}
+                            onValueChange={(v) => { if (v === MANUAL) { setFtBaseManual(true); return; } setFtBaseModel(v); }}
+                          >
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {ftLiveModels.length > 0 ? (
+                                ftLiveModels.map((m) => (
+                                  <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                                ))
+                              ) : (
+                                FINETUNE_PROVIDERS[ftProvider].baseModels.map((bm) => (
+                                  <SelectItem key={bm.id} value={bm.id} className="text-xs">
+                                    {bm.label}{bm.note ? ` — ${bm.note}` : ""}
+                                  </SelectItem>
+                                ))
+                              )}
+                              {ftLiveModels.length > 0 && !ftLiveModels.includes(ftBaseModel) && ftBaseModel && (
+                                <SelectItem value={ftBaseModel} className="text-xs">{ftBaseModel}</SelectItem>
+                              )}
+                              <SelectItem value={MANUAL} className="text-xs">{t("admin.model_type_manually")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <p className="text-[11px] text-gray-500">
+                          {ftLiveModels.length === 0
+                            ? t("admin.ft_models_offline")
+                            : ftLiveFiltered
+                            ? t("admin.ft_models_trainable").replace("{0}", String(ftLiveModels.length))
+                            : t("admin.ft_models_catalogue").replace("{0}", String(ftLiveModels.length))}
+                        </p>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[11px] text-gray-400">{t("admin.ft_suffix")}</Label>

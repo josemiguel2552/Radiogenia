@@ -149,16 +149,29 @@ describe("the Models section lets a key be entered", () => {
 describe("a model name can always be typed", () => {
   const page = adminPage;
 
-  it("offers it on both pickers, not only when the list is empty", () => {
+  it("offers it on every model field, not only where the list is empty", () => {
     // A fine-tune's name is in no static list, and before the job list
-    // refreshes it is in no fetched one either.
-    expect(page.match(/admin\.model_type_manually/g)?.length).toBe(2);
-    expect(page).toContain("all.length > 0 && !modelManual");
-    expect(page).toContain("allModels.length > 0 && !manual");
+    // refreshes it is in no fetched one either. Three fields name a model:
+    // the default model, each task override, and the training base model.
+    expect(page).toContain("all.length > 0 && !modelManual");   // default
+    expect(page).toContain("allModels.length > 0 && !manual");  // per task
+    expect(page).toContain("ftBaseManual ? (");                 // training base
+    const offers = page.match(/admin\.model_type_manually/g)?.length ?? 0;
+    expect(offers).toBe(3);
   });
 
-  it("lets you go back to the list", () => {
-    expect(page.match(/admin\.model_pick_from_list/g)?.length).toBe(2);
+  it("lets you go back to the list from each of them", () => {
+    expect(page.match(/admin\.model_pick_from_list/g)?.length).toBe(3);
+  });
+
+  it("does not leave a stale base model selected once the real list arrives", () => {
+    // The static default was a name the provider had dropped; keeping it
+    // selected submits a job that fails on arrival.
+    expect(page).toContain("d.models.includes(current) ? current : d.models[0]");
+  });
+
+  it("asks the provider which models it can train", () => {
+    expect(page).toContain("/api/finetune/base-models?provider=");
   });
 
   it("keeps the sentinel out of the saved value", () => {
