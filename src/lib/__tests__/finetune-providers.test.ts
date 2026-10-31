@@ -565,3 +565,51 @@ describe("hyperparameters belong to their provider", () => {
     expect(fn.slice(0, 900)).toContain("setFtBatchSize(hp.defaults.batchSize)");
   });
 });
+
+/**
+ * The inference catalogue is not the trainable list.
+ *
+ * /v1/models answers with what the account can CALL, which is a superset of
+ * what it can TRAIN: Qwen/Qwen2-1.5B-Instruct came from that list and was
+ * refused with "not found in configuration". Offering it as a dropdown of
+ * base models sent two jobs to be rejected, so the panel no longer presents
+ * an unverified catalogue as an answer.
+ */
+describe("a base model is not offered as trainable unless it is known to be", () => {
+  const route = source("src/app/api/finetune/base-models/route.ts");
+  const page = source("src/app/admin/page.tsx");
+
+  it("reports whether the list is the trainable one", () => {
+    expect(route).toContain("filtered: flagged.length > 0");
+  });
+
+  it("does not move the selection onto an unvouched catalogue entry", () => {
+    // Auto-selecting from the inference catalogue is exactly how a refused
+    // job gets queued without anyone choosing it.
+    expect(page).toContain("if (d.filtered) {");
+    const block = page.slice(page.indexOf("if (d.filtered) {"));
+    expect(block.slice(0, 200)).toContain("d.models.includes(current)");
+  });
+
+  it("asks for a typed id when trainability is unknown", () => {
+    expect(page).toContain("ftBaseManual || (ftLiveModels.length > 0 && !ftLiveFiltered)");
+  });
+
+  it("points at the official list rather than leaving you to guess", () => {
+    expect(page).toContain("https://docs.together.ai/docs/fine-tuning-models");
+    expect(page).toContain("admin.ft_models_open_docs");
+  });
+
+  it("surfaces the catalogue's own field names, so the filter can be fixed from evidence", () => {
+    // Two rounds of guessing field names was enough.
+    expect(route).toContain("const sampleKeys");
+    expect(page).toContain("admin.ft_catalogue_fields");
+  });
+
+  it("does not put an invented model id in the placeholder", () => {
+    // A plausible-looking name in the box invites pasting nothing and pressing
+    // train, which is how the last two refusals happened.
+    expect(page).not.toContain('placeholder="Qwen/Qwen3.5-9B-Instruct"');
+    expect(page).toContain("admin.ft_base_placeholder");
+  });
+});

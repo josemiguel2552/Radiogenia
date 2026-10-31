@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Shield, Plug, Users, Loader2, Check, X, Mic,
-  Eye, EyeOff, Zap, TrendingUp, FileText, Search, Copy,
+  Eye, EyeOff, Zap, TrendingUp, FileText, Search, Copy, ArrowRight,
   BarChart3, Trash2, UserCog, UserPlus, Crown, RefreshCw, AlertTriangle,
   Upload, GraduationCap, ChevronDown, ClipboardList, Flag, Download, Database,
   MessageSquare, DollarSign, Sparkles, ShieldAlert, Plus,
@@ -333,6 +333,7 @@ export default function AdminPage() {
   // is asked instead; the static list is only the fallback.
   const [ftLiveModels, setFtLiveModels] = useState<string[]>([]);
   const [ftLiveFiltered, setFtLiveFiltered] = useState(false);
+  const [ftCatalogueKeys, setFtCatalogueKeys] = useState<string[]>([]);
   const [ftBaseManual, setFtBaseManual] = useState(false);
 
   function changeFtProvider(id: FinetuneProviderId) {
@@ -728,9 +729,13 @@ export default function AdminPage() {
         if (!stale && Array.isArray(d.models) && d.models.length > 0) {
           setFtLiveModels(d.models);
           setFtLiveFiltered(!!d.filtered);
-          // The static default can be a name the provider no longer has, and
-          // leaving it selected submits a job that fails on arrival.
-          setFtBaseModel((current) => (d.models.includes(current) ? current : d.models[0]));
+          setFtCatalogueKeys(Array.isArray(d.sampleKeys) ? d.sampleKeys : []);
+          // Only when the list is genuinely the trainable one. Picking from
+          // the inference catalogue is how a refused job happens: it lists
+          // models that cannot be trained.
+          if (d.filtered) {
+            setFtBaseModel((current) => (d.models.includes(current) ? current : d.models[0]));
+          }
         }
       } catch { /* the static list stands in */ }
     })();
@@ -2216,20 +2221,22 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-[11px] text-gray-400">{t("admin.ft_base_model")}</Label>
-                        {ftBaseManual ? (
+                        {ftBaseManual || (ftLiveModels.length > 0 && !ftLiveFiltered) ? (
                           <div className="flex gap-1">
                             <input
                               type="text" value={ftBaseModel} autoFocus
                               onChange={(e) => setFtBaseModel(e.target.value)}
                               className="flex-1 h-8 px-2 border rounded-md text-xs bg-white dark:bg-gray-900 dark:border-gray-700"
-                              placeholder="Qwen/Qwen3.5-9B-Instruct"
+                              placeholder={t("admin.ft_base_placeholder")}
                             />
-                            <button
-                              type="button" onClick={() => setFtBaseManual(false)}
-                              className="h-8 px-2 text-[11px] text-gray-500 border rounded-md hover:text-gray-700 dark:border-gray-700"
-                            >
-                              {t("admin.model_pick_from_list")}
-                            </button>
+                            {ftLiveModels.length > 0 && ftLiveFiltered && (
+                              <button
+                                type="button" onClick={() => setFtBaseManual(false)}
+                                className="h-8 px-2 text-[11px] text-gray-500 border rounded-md hover:text-gray-700 dark:border-gray-700"
+                              >
+                                {t("admin.model_pick_from_list")}
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <Select
@@ -2256,13 +2263,30 @@ export default function AdminPage() {
                             </SelectContent>
                           </Select>
                         )}
-                        <p className="text-[11px] text-gray-500">
-                          {ftLiveModels.length === 0
-                            ? t("admin.ft_models_offline")
-                            : ftLiveFiltered
-                            ? t("admin.ft_models_trainable").replace("{0}", String(ftLiveModels.length))
-                            : t("admin.ft_models_catalogue").replace("{0}", String(ftLiveModels.length))}
-                        </p>
+                        <div className="text-[11px] text-gray-500 space-y-1">
+                          <p>
+                            {ftLiveModels.length === 0
+                              ? t("admin.ft_models_offline")
+                              : ftLiveFiltered
+                              ? t("admin.ft_models_trainable").replace("{0}", String(ftLiveModels.length))
+                              : t("admin.ft_models_catalogue").replace("{0}", String(ftLiveModels.length))}
+                          </p>
+                          {ftProvider === "together" && !ftLiveFiltered && (
+                            <a
+                              href="https://docs.together.ai/docs/fine-tuning-models"
+                              target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {t("admin.ft_models_open_docs")} <ArrowRight className="h-3 w-3" />
+                            </a>
+                          )}
+                          {ftCatalogueKeys.length > 0 && !ftLiveFiltered && (
+                            <details>
+                              <summary className="cursor-pointer text-gray-400">{t("admin.ft_catalogue_fields")}</summary>
+                              <p className="font-mono break-all mt-1 text-gray-400">{ftCatalogueKeys.join(", ")}</p>
+                            </details>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[11px] text-gray-400">{t("admin.ft_suffix")}</Label>

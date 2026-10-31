@@ -57,26 +57,30 @@ export async function GET(req: NextRequest) {
     const rows = list.filter((m): m is Record<string, unknown> => !!m && typeof m === "object");
 
     if (spec.id === "together") {
-      // Some catalogues flag trainability; when nothing does, every chat or
-      // language model is offered and the provider refuses what it cannot
-      // train — which is no worse than guessing, and the names are real.
+      // /v1/models is the INFERENCE catalogue, which is a superset: a model
+      // listed there is refused for training with "not found in
+      // configuration". So look for a flag that marks trainability, and when
+      // there is none, say so rather than offering the catalogue as if it
+      // were the answer — that sent two jobs to be refused.
       const flagged = rows.filter((m) =>
         m.finetuning === true || m.fine_tuning === true || m.supports_finetuning === true ||
+        m.trainable === true || m.supports_fine_tuning === true ||
         (typeof m.type === "string" && m.type.toLowerCase().includes("finetune")));
 
-      const candidates = (flagged.length > 0 ? flagged : rows.filter((m) => {
-        const type = String(m.type || "").toLowerCase();
-        return type === "chat" || type === "language" || type === "";
-      }));
+      const idsOf = (ms: Record<string, unknown>[]) =>
+        [...new Set(ms.map((m) => String(m.id || m.name || "")).filter(Boolean))].sort();
 
-      const models = [...new Set(candidates.map((m) => String(m.id || m.name || "")).filter(Boolean))].sort();
+      // The field names above are guesses, and guessing twice was enough.
+      // Reporting the keys the catalogue actually carries is how the filter
+      // gets written from evidence instead.
+      const sampleKeys = [...new Set(rows.slice(0, 40).flatMap((m) => Object.keys(m)))].sort();
+
       return NextResponse.json({
         provider: spec.id,
-        models,
-        // So the panel can say whether this is a trainable list or the whole
-        // catalogue, rather than implying a guarantee it does not have.
+        models: idsOf(flagged.length > 0 ? flagged : rows),
         filtered: flagged.length > 0,
         total: rows.length,
+        sampleKeys,
       });
     }
 

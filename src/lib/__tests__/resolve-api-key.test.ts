@@ -155,7 +155,7 @@ describe("a model name can always be typed", () => {
     // the default model, each task override, and the training base model.
     expect(page).toContain("all.length > 0 && !modelManual");   // default
     expect(page).toContain("allModels.length > 0 && !manual");  // per task
-    expect(page).toContain("ftBaseManual ? (");                 // training base
+    expect(page).toContain("ftBaseManual || (ftLiveModels");     // training base
     const offers = page.match(/admin\.model_type_manually/g)?.length ?? 0;
     expect(offers).toBe(3);
   });
