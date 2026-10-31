@@ -73,8 +73,10 @@ interface FtJob {
   jobId: string;
   status: string;
   fineTunedModel: string | null;
-  model: string;
-  createdAt: number;
+  // Null when the job was fetched by id rather than read off the list: not
+  // every provider reports every field on a single-job lookup.
+  model: string | null;
+  createdAt: number | null;
   finishedAt: number | null;
   trainedTokens: number | null;
   trainingFile: string | null;
@@ -334,6 +336,37 @@ export default function AdminPage() {
   const [ftLiveModels, setFtLiveModels] = useState<string[]>([]);
   const [ftLiveFiltered, setFtLiveFiltered] = useState(false);
   const [ftCatalogueKeys, setFtCatalogueKeys] = useState<string[]>([]);
+  const [ftListNote, setFtListNote] = useState<string | null>(null);
+
+  /**
+   * Job ids we started, kept across reloads.
+   *
+   * A training run outlives the page by hours, and the provider's own list
+   * endpoint is the only other record — when that returned nothing readable,
+   * a queued job simply disappeared from the panel. These ids are polled one
+   * by one, so a job we launched is never lost because a list could not be
+   * parsed.
+   */
+  const FT_JOBS_KEY = "rg_ft_jobs";
+  function rememberFtJob(provider: string, jobId: string) {
+    try {
+      const raw = localStorage.getItem(FT_JOBS_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+      const mine = new Set(all[provider] || []);
+      mine.add(jobId);
+      all[provider] = [...mine].slice(-25);
+      localStorage.setItem(FT_JOBS_KEY, JSON.stringify(all));
+    } catch { /* a private window just loses the shortcut */ }
+  }
+  function rememberedFtJobs(provider: string): string[] {
+    try {
+      const raw = localStorage.getItem(FT_JOBS_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+      return Array.isArray(all[provider]) ? all[provider] : [];
+    } catch {
+      return [];
+    }
+  }
   const [ftBaseManual, setFtBaseManual] = useState(false);
 
   function changeFtProvider(id: FinetuneProviderId) {
@@ -753,8 +786,34 @@ export default function AdminPage() {
         const res = await fetch(`/api/finetune/status?provider=${ftProvider}`);
         if (res.ok && !cancelled) {
           const d = await readJson(res);
-          setFtJobs(d.jobs || []);
           setFtModelsByProvider(d.modelsByProvider || {});
+          setFtListNote(d.listDiagnostic || null);
+
+          const listed: FtJob[] = d.jobs || [];
+          // Anything we launched that the list did not mention, asked for by
+          // id. This is what keeps a running job visible after a reload.
+          const seen = new Set(listed.map((j) => j.jobId));
+          const missing = rememberedFtJobs(ftProvider).filter((id) => !seen.has(id));
+          const extra = await Promise.all(missing.map(async (jobId) => {
+            try {
+              const r = await fetch("/api/finetune/status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ jobId, provider: ftProvider }),
+              });
+              if (!r.ok) return null;
+              const j = await readJson(r);
+              return {
+                jobId: j.jobId, status: j.status, model: j.model ?? null,
+                fineTunedModel: j.fineTunedModel ?? null, createdAt: j.createdAt ?? null,
+                finishedAt: j.finishedAt ?? null, trainedTokens: j.trainedTokens ?? null,
+                trainingFile: j.trainingFile ?? null, nEpochs: null,
+              } as FtJob;
+            } catch {
+              return null;
+            }
+          }));
+          if (!cancelled) setFtJobs([...extra.filter((j): j is FtJob => !!j), ...listed]);
         }
       } catch { /* the panel keeps whatever it had */ }
     })();
@@ -898,6 +957,7 @@ export default function AdminPage() {
       });
       const data = await readJson(res);
       if (!res.ok) { setFtError(data.error || t("admin.ft_failed_start")); return; }
+      rememberFtJob(ftProvider, data.jobId);
       setFtJobs((prev) => [{ jobId: data.jobId, status: data.status, model: data.model, fineTunedModel: null, createdAt: data.createdAt, finishedAt: null, trainedTokens: null, trainingFile: null, nEpochs: null }, ...prev]);
       setFtFileId(null);
     } catch (e) {
@@ -2163,7 +2223,9 @@ export default function AdminPage() {
             <Card>
               <div className="flex items-center gap-2 px-5 pt-5 pb-3">
                 <GraduationCap className="h-4 w-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t("admin.fine_tuning_title")}</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {t("admin.fine_tuning_title")} ({FINETUNE_PROVIDERS[ftProvider].label})
+                </h2>
               </div>
               <CardContent className="pt-0 space-y-4 max-w-xl">
                 <p className="text-xs text-gray-500">
@@ -2400,11 +2462,11 @@ export default function AdminPage() {
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                               <div>
                                 <span className="text-gray-400">{t("admin.ft_base_model")}: </span>
-                                <span className="text-gray-700 dark:text-gray-300">{job.model}</span>
+                                <span className="text-gray-700 dark:text-gray-300">{job.model || "—"}</span>
                               </div>
                               <div>
                                 <span className="text-gray-400">{t("admin.ft_date")}: </span>
-                                <span className="text-gray-700 dark:text-gray-300">{new Date(job.createdAt * 1000).toLocaleDateString()}</span>
+                                <span className="text-gray-700 dark:text-gray-300">{job.createdAt ? new Date(job.createdAt * 1000).toLocaleDateString() : "—"}</span>
                               </div>
                               {job.finishedAt && (
                                 <div>
@@ -2462,6 +2524,11 @@ export default function AdminPage() {
                     <p className="text-[11px] text-gray-400">
                       {t("admin.ft_jobs_hint")}
                     </p>
+                    {ftListNote && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                        {t("admin.ft_list_problem")}: {ftListNote}
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

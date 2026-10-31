@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       provider: spec.id,
       jobId: n.jobId || jobId,
       status: n.status,
+      model: n.baseModel,
       fineTunedModel: n.fineTunedModel,
       trainedTokens: (job.trained_tokens as number) ?? (job.total_tokens as number) ?? null,
       error: n.error,
@@ -126,14 +127,35 @@ export async function GET(req: NextRequest) {
     // the token count and the training file's name, which are provider
     // specifics that normalising deliberately drops.
     let jobs: { n: ReturnType<typeof normaliseJob>; raw: Record<string, unknown> }[] = [];
-    if (jobsRes?.ok) {
+    // What came back when no list could be found in it. A job that exists but
+    // does not appear is otherwise indistinguishable from no job at all —
+    // which is exactly how a running fine-tune vanished from the panel.
+    let listDiagnostic: string | null = null;
+
+    if (!jobsRes) {
+      listDiagnostic = apiKey ? "list request failed" : "no API key";
+    } else if (!jobsRes.ok) {
+      listDiagnostic = `list returned HTTP ${jobsRes.status}: ${(await jobsRes.text().catch(() => "")).slice(0, 200)}`;
+    } else {
       const data = await jobsRes.json().catch(() => null);
-      // OpenAI wraps the list in `data`; Together returns it bare.
-      const list: unknown = Array.isArray(data) ? data : data?.data;
+      // OpenAI wraps it in `data`. Together's shape is not documented to us,
+      // so every plausible wrapper is tried before giving up.
+      const candidates: unknown[] = [
+        data,
+        (data as { data?: unknown })?.data,
+        (data as { jobs?: unknown })?.jobs,
+        (data as { results?: unknown })?.results,
+        (data as { items?: unknown })?.items,
+      ];
+      const list = candidates.find((c) => Array.isArray(c)) as unknown[] | undefined;
+
       if (Array.isArray(list)) {
         jobs = list
           .filter((j): j is Record<string, unknown> => !!j && typeof j === "object")
           .map((raw) => ({ n: normaliseJob(raw, spec.id), raw }));
+      } else {
+        const keys = data && typeof data === "object" ? Object.keys(data as object).join(", ") : typeof data;
+        listDiagnostic = `no array in the response; top-level keys: ${keys}`;
       }
     }
 
@@ -179,6 +201,7 @@ export async function GET(req: NextRequest) {
       ftModels,
       modelsByProvider,
       fileMap,
+      listDiagnostic,
     });
   } catch (error) {
     return toErrorResponse(error);

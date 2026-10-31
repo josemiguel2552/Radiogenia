@@ -695,3 +695,52 @@ describe("every number Together needs is sent", () => {
       .toMatchObject({ loraRank: 16, loraRankMax: 16 });
   });
 });
+
+/**
+ * A training run outlives the page.
+ *
+ * The first job Together accepted showed as "queued", and ten minutes later a
+ * refresh left the panel empty: the row had come from React state after the
+ * POST, and the provider's list endpoint returned nothing this code could
+ * read. A job that exists but cannot be listed is indistinguishable from no
+ * job at all, which is the worst way to lose track of something that costs
+ * money and hours.
+ */
+describe("a launched job survives a reload", () => {
+  const page = source("src/app/admin/page.tsx");
+  const route = source("src/app/api/finetune/status/route.ts");
+
+  it("remembers the ids it started", () => {
+    expect(page).toContain("function rememberFtJob");
+    expect(page).toContain("rememberFtJob(ftProvider, data.jobId)");
+  });
+
+  it("asks for them by id when the list does not mention them", () => {
+    expect(page).toContain("rememberedFtJobs(ftProvider).filter((id) => !seen.has(id))");
+    expect(page).toContain('body: JSON.stringify({ jobId, provider: ftProvider })');
+  });
+
+  it("survives a browser that refuses storage", () => {
+    // A private window should lose the shortcut, not the page.
+    const fn = page.slice(page.indexOf("function rememberFtJob"));
+    expect(fn.slice(0, 900)).toContain("catch");
+  });
+
+  it("says why a list came back empty instead of showing nothing", () => {
+    expect(route).toContain("listDiagnostic");
+    expect(route).toContain("top-level keys:");
+    expect(page).toContain("admin.ft_list_problem");
+  });
+
+  it("looks for the list under more than one wrapper", () => {
+    // Together's shape is not documented to us; OpenAI uses `data`.
+    for (const key of ["data", "jobs", "results", "items"]) {
+      expect(route).toContain(`{ ${key}?: unknown }`);
+    }
+  });
+
+  it("names the provider on the card rather than always OpenAI", () => {
+    expect(page).toContain("FINETUNE_PROVIDERS[ftProvider].label");
+    expect(source("src/lib/i18n.ts")).not.toContain("Fine-Tuning (OpenAI)");
+  });
+});
