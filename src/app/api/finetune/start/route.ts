@@ -41,6 +41,10 @@ export async function POST(req: NextRequest) {
         model,
         lora: true,
         n_epochs: num(nEpochs, hp.defaults.epochs),
+        // Without at least one checkpoint there is no adapter to keep, and an
+        // omitted field reads as zero here — "number of checkpoints is less
+        // than one". One is what we want: the final adapter, nothing midway.
+        n_checkpoints: 1,
         // Per model, and for most of them a single allowed number: 8 is the
         // only value Qwen3.5 9B takes, gpt-oss-20b takes only 1, and
         // Qwen3.5 397B will not go below 16. Clamped here as the last guard,

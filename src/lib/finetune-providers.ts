@@ -34,6 +34,13 @@ export interface FinetuneBaseModel {
   context: number;
   /** Whether full fine-tuning is offered as well as LoRA. */
   fullFt?: boolean;
+  /**
+   * The adapter's rank, as the provider's table gives it. Recorded but not
+   * sent: the table calls it a DEFAULT, so the provider applies it. If a job
+   * is ever refused over the rank, the right number is already here.
+   */
+  loraRank?: number;
+  loraRankMax?: number;
   note?: string;
   recommended?: boolean;
 }
@@ -142,26 +149,26 @@ export const FINETUNE_PROVIDERS: Record<FinetuneProviderId, FinetuneProviderSpec
     // Vision-language variants are left out (we send text), as are the
     // reasoning-first models: the conclusion prompt wants no deliberation.
     baseModels: [
-      { id: "Qwen/Qwen3.5-9B", label: "Qwen3.5 9B", minBatch: 8, maxBatch: 8, context: 65536, fullFt: true, recommended: true, note: "small, cheap to serve, strong in Spanish" },
-      { id: "Qwen/Qwen3.5-4B", label: "Qwen3.5 4B", minBatch: 8, maxBatch: 8, context: 131072, note: "cheapest" },
-      { id: "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference", label: "Llama 3.1 8B Instruct", minBatch: 8, maxBatch: 8, context: 131072, fullFt: true },
-      { id: "Qwen/Qwen3.5-27B", label: "Qwen3.5 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true },
-      { id: "Qwen/Qwen3.6-27B", label: "Qwen3.6 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true },
-      { id: "Qwen/Qwen3.8-27B", label: "Qwen3.8 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true },
-      { id: "Qwen/Qwen3.5-35B-A3B", label: "Qwen3.5 35B A3B", minBatch: 8, maxBatch: 8, context: 65536 },
-      { id: "Qwen/Qwen3.6-35B-A3B", label: "Qwen3.6 35B A3B", minBatch: 8, maxBatch: 8, context: 65536 },
-      { id: "google/gemma-4-31B-it", label: "Gemma 4 31B IT", minBatch: 4, maxBatch: 4, context: 49152, fullFt: true },
-      { id: "google/gemma-4-26B-A4B-it", label: "Gemma 4 26B A4B IT", minBatch: 4, maxBatch: 4, context: 49152 },
-      { id: "meta-llama/Llama-4-Scout-17B-16E-Instruct", label: "Llama 4 Scout 17B", minBatch: 8, maxBatch: 8, context: 65536 },
-      { id: "meta-llama/Llama-4-Maverick-17B-128E-Instruct", label: "Llama 4 Maverick 17B", minBatch: 16, maxBatch: 16, context: 16384 },
-      { id: "meta-llama/Llama-3.3-70B-Instruct-Reference", label: "Llama 3.3 70B Instruct", minBatch: 8, maxBatch: 8, context: 24576, fullFt: true, note: "strongest here, dearest to serve" },
-      { id: "openai/gpt-oss-20b", label: "GPT-OSS 20B", minBatch: 1, maxBatch: 1, context: 131072 },
-      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B", minBatch: 2, maxBatch: 2, context: 65536 },
-      { id: "deepseek-ai/DeepSeek-V3.1", label: "DeepSeek V3.1", minBatch: 2, maxBatch: 2, context: 65536 },
-      { id: "deepseek-ai/DeepSeek-V4-Flash", label: "DeepSeek V4 Flash", minBatch: 1, maxBatch: 1, context: 131072 },
-      { id: "mistralai/Mixtral-8x7B-Instruct-v0.1", label: "Mixtral 8x7B Instruct", minBatch: 8, maxBatch: 8, context: 32768, fullFt: true },
-      { id: "zai-org/GLM-5.3", label: "GLM 5.3", minBatch: 1, maxBatch: 1, context: 50688 },
-      { id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6", minBatch: 4, maxBatch: 4, context: 32768 },
+      { id: "Qwen/Qwen3.5-9B", label: "Qwen3.5 9B", minBatch: 8, maxBatch: 8, context: 65536, fullFt: true, recommended: true, note: "small, cheap to serve, strong in Spanish", loraRank: 64, loraRankMax: 128 },
+      { id: "Qwen/Qwen3.5-4B", label: "Qwen3.5 4B", minBatch: 8, maxBatch: 8, context: 131072, note: "cheapest", loraRank: 64, loraRankMax: 128 },
+      { id: "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference", label: "Llama 3.1 8B Instruct", minBatch: 8, maxBatch: 8, context: 131072, fullFt: true, loraRank: 64, loraRankMax: 128 },
+      { id: "Qwen/Qwen3.5-27B", label: "Qwen3.5 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true, loraRank: 64, loraRankMax: 128 },
+      { id: "Qwen/Qwen3.6-27B", label: "Qwen3.6 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true, loraRank: 64, loraRankMax: 128 },
+      { id: "Qwen/Qwen3.8-27B", label: "Qwen3.8 27B", minBatch: 2, maxBatch: 2, context: 131072, fullFt: true, loraRank: 64, loraRankMax: 128 },
+      { id: "Qwen/Qwen3.5-35B-A3B", label: "Qwen3.5 35B A3B", minBatch: 8, maxBatch: 8, context: 65536, loraRank: 64, loraRankMax: 128 },
+      { id: "Qwen/Qwen3.6-35B-A3B", label: "Qwen3.6 35B A3B", minBatch: 8, maxBatch: 8, context: 65536, loraRank: 64, loraRankMax: 128 },
+      { id: "google/gemma-4-31B-it", label: "Gemma 4 31B IT", minBatch: 4, maxBatch: 4, context: 49152, fullFt: true, loraRank: 64, loraRankMax: 128 },
+      { id: "google/gemma-4-26B-A4B-it", label: "Gemma 4 26B A4B IT", minBatch: 4, maxBatch: 4, context: 49152, loraRank: 64, loraRankMax: 128 },
+      { id: "meta-llama/Llama-4-Scout-17B-16E-Instruct", label: "Llama 4 Scout 17B", minBatch: 8, maxBatch: 8, context: 65536, loraRank: 64, loraRankMax: 128 },
+      { id: "meta-llama/Llama-4-Maverick-17B-128E-Instruct", label: "Llama 4 Maverick 17B", minBatch: 16, maxBatch: 16, context: 16384, loraRank: 64, loraRankMax: 128 },
+      { id: "meta-llama/Llama-3.3-70B-Instruct-Reference", label: "Llama 3.3 70B Instruct", minBatch: 8, maxBatch: 8, context: 24576, fullFt: true, note: "strongest here, dearest to serve", loraRank: 64, loraRankMax: 128 },
+      { id: "openai/gpt-oss-20b", label: "GPT-OSS 20B", minBatch: 1, maxBatch: 1, context: 131072, loraRank: 64, loraRankMax: 128 },
+      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B", minBatch: 2, maxBatch: 2, context: 65536, loraRank: 64, loraRankMax: 128 },
+      { id: "deepseek-ai/DeepSeek-V3.1", label: "DeepSeek V3.1", minBatch: 2, maxBatch: 2, context: 65536, loraRank: 16, loraRankMax: 16 },
+      { id: "deepseek-ai/DeepSeek-V4-Flash", label: "DeepSeek V4 Flash", minBatch: 1, maxBatch: 1, context: 131072, loraRank: 64, loraRankMax: 128 },
+      { id: "mistralai/Mixtral-8x7B-Instruct-v0.1", label: "Mixtral 8x7B Instruct", minBatch: 8, maxBatch: 8, context: 32768, fullFt: true, loraRank: 64, loraRankMax: 128 },
+      { id: "zai-org/GLM-5.3", label: "GLM 5.3", minBatch: 1, maxBatch: 1, context: 50688, loraRank: 16, loraRankMax: 16 },
+      { id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6", minBatch: 4, maxBatch: 4, context: 32768, loraRank: 16, loraRankMax: 16 },
     ],
     minExamples: 10,
     hyperparams: {

@@ -653,3 +653,45 @@ describe("a base model is not offered as trainable unless it is known to be", ()
     expect(page).toContain("admin.ft_base_placeholder");
   });
 });
+
+/**
+ * Together fills nothing in, field by field.
+ *
+ * The job was refused four times in a row, each time naming one more numeric
+ * field read as zero because we omitted it: the model, the batch size, and
+ * then "number of checkpoints is less than one". Nothing optional is optional
+ * here.
+ */
+describe("every number Together needs is sent", () => {
+  const start = source("src/app/api/finetune/start/route.ts");
+  const branch = start.slice(start.indexOf('if (spec.id === "together")'), start.indexOf("} else {"));
+
+  it("asks for one checkpoint, so there is an adapter to keep", () => {
+    expect(branch).toContain("n_checkpoints: 1");
+  });
+
+  it("leaves no numeric field to be read as zero", () => {
+    for (const field of ["n_epochs", "n_checkpoints", "batch_size", "learning_rate"]) {
+      expect(branch).toContain(`${field}:`);
+    }
+  });
+
+  it("does not send a checkpoint count to OpenAI, which has no such field", () => {
+    const openaiBranch = start.slice(start.indexOf("} else {"));
+    expect(openaiBranch).not.toContain("n_checkpoints");
+  });
+
+  it("has the adapter rank on hand for whichever field is refused next", () => {
+    // Recorded from the provider's own table rather than guessed, so a rank
+    // complaint is a one-line change and not another round trip.
+    for (const m of together.baseModels) {
+      expect(m.loraRank).toBeGreaterThan(0);
+      expect(m.loraRankMax).toBeGreaterThanOrEqual(m.loraRank!);
+    }
+    const nine = together.baseModels.find((m) => m.id === "Qwen/Qwen3.5-9B");
+    expect(nine).toMatchObject({ loraRank: 64, loraRankMax: 128 });
+    // DeepSeek V3.1 caps at 16 in that table, unlike most of the others.
+    expect(together.baseModels.find((m) => m.id === "deepseek-ai/DeepSeek-V3.1"))
+      .toMatchObject({ loraRank: 16, loraRankMax: 16 });
+  });
+});
