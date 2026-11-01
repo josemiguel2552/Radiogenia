@@ -266,10 +266,10 @@ describe("the icons say what the feature is", () => {
 
 describe("the background keeps moving without being busy", () => {
   it("turns an aurora slowly enough to look still", () => {
-    // A full rotation in two minutes: noticeable only by comparing the page
-    // to itself a while later, which is the point.
+    // Shortened to 40s on request. Below about 25 a full rotation becomes a
+    // spin you can follow with your eye, which is a different thing entirely.
     const turn = Number(css.match(/animation: aurora-turn (\d+)s/)?.[1]);
-    expect(turn).toBeGreaterThanOrEqual(90);
+    expect(turn).toBeGreaterThanOrEqual(25);
     expect(css).toContain("conic-gradient");
     expect(landing).toContain("aurora");
   });
