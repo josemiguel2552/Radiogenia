@@ -3,6 +3,26 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── The brand palette, in one place ───────────────────────────
+ *
+ * The landing used to hardcode about ninety gradient stops — blue-500 to
+ * purple-600 to violet to fuchsia — so changing the colour meant editing
+ * ninety class names and hoping none were missed. These are Tailwind colours
+ * now (from-brand, to-brand-deep, bg-warm/20 and so on), so the palette lives
+ * here and a future change is these few lines.
+ *
+ * `brand` is the trust colour and carries the product. `warm` is the single
+ * accent and is for actions only: the moment it decorates, it stops meaning
+ * "press this".
+ */
+@theme {
+  --color-brand: hsl(214 95% 56%);
+  --color-brand-deep: hsl(224 76% 40%);
+  --color-brand-dark: hsl(226 71% 24%);
+  --color-warm: hsl(27 96% 55%);
+  --color-warm-deep: hsl(18 89% 48%);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -11,7 +31,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221 83% 53%;
+    --primary: 214 95% 56%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -23,7 +43,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
+    --ring: 214 95% 56%;
     --radius: 0.5rem;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   }
@@ -98,29 +118,34 @@
   animation: pulse-ring 1s ease-out infinite;
 }
 
-/* Landing page animations */
+/* Landing page animations
+ *
+ * The background washes drift about half as far and take roughly twice as
+ * long as they used to. They were competing with the text for attention;
+ * movement at this scale should be noticed only if you look for it.
+ */
 @keyframes float-slow {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
+  33% { transform: translate(16px, -16px) scale(1.02); }
+  66% { transform: translate(-11px, 11px) scale(0.98); }
 }
 @keyframes float-slower {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-40px, 20px) scale(1.08); }
-  66% { transform: translate(25px, -35px) scale(0.92); }
+  33% { transform: translate(-21px, 11px) scale(1.03); }
+  66% { transform: translate(13px, -18px) scale(0.97); }
 }
 @keyframes float-medium {
   0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(35px, 25px); }
+  50% { transform: translate(18px, 13px); }
 }
 @keyframes scroll-dot {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(8px); }
 }
 
-.animate-float-slow { animation: float-slow 15s ease-in-out infinite; }
-.animate-float-slower { animation: float-slower 20s ease-in-out infinite; }
-.animate-float-medium { animation: float-medium 12s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 28s ease-in-out infinite; }
+.animate-float-slower { animation: float-slower 38s ease-in-out infinite; }
+.animate-float-medium { animation: float-medium 24s ease-in-out infinite; }
 .animate-scroll-dot { animation: scroll-dot 1.5s ease-in-out infinite; }
 
 /* ── Scroll-reveal: fade up + sharpen from blur into focus (radiology motif) ── */

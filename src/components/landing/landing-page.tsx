@@ -6,7 +6,7 @@ import {
   Mic, FileText, Brain, Sparkles, Layout, Shield, MessageCircle,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
-  BookOpen, Tags, Building2, Loader2, Send,
+  BookOpen, Tags, Building2, Loader2, Send, SlidersHorizontal, Users, Link2,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import type { Region } from "@/lib/region";
@@ -166,9 +166,9 @@ function SectionDivider() {
   return (
     <div className="relative py-2">
       <div className="relative h-px mx-auto max-w-3xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-deep/20 to-transparent" />
         <div
-          className="absolute top-0 h-full w-1/5 bg-gradient-to-r from-transparent via-purple-400/60 to-transparent"
+          className="absolute top-0 h-full w-1/5 bg-gradient-to-r from-transparent via-brand/60 to-transparent"
           style={{ animation: "divider-pulse 4s ease-in-out infinite" }}
         />
       </div>
@@ -202,14 +202,15 @@ function handleTiltReset(e: React.MouseEvent<HTMLDivElement>) {
 const INTERPRETIVE_FEATURES = new Set(["classify", "bot"]);
 
 const FEATURE_KEYS = [
-  { icon: Mic, key: "voice", color: "from-blue-500 to-indigo-600" },
-  { icon: FileText, key: "structured", color: "from-violet-500 to-purple-600" },
-  { icon: Brain, key: "style", color: "from-purple-500 to-pink-500" },
-  { icon: Sparkles, key: "conclusions", color: "from-indigo-500 to-blue-600" },
-  { icon: Tags, key: "classify", color: "from-purple-500 to-violet-600" },
-  { icon: MessageCircle, key: "bot", color: "from-violet-500 to-fuchsia-500" },
-  { icon: Layout, key: "templates", color: "from-blue-600 to-cyan-500" },
-  { icon: Shield, key: "safety", color: "from-violet-600 to-indigo-500" },
+  { icon: Mic, key: "voice", color: "from-brand to-brand-deep" },
+  { icon: FileText, key: "structured", color: "bg-brand-deep" },
+  { icon: Brain, key: "style", color: "bg-brand-deep" },
+  { icon: Sparkles, key: "conclusions", color: "bg-brand-deep" },
+  { icon: SlidersHorizontal, key: "editai", color: "from-brand to-brand-deep" },
+  { icon: Tags, key: "classify", color: "bg-brand-deep" },
+  { icon: MessageCircle, key: "bot", color: "bg-brand-deep" },
+  { icon: Layout, key: "templates", color: "bg-brand-deep" },
+  { icon: Shield, key: "safety", color: "bg-brand-deep" },
 ];
 
 const SECURITY_ITEMS = [
@@ -261,7 +262,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
       <div className="fixed top-0 inset-x-0 z-[60] h-0.5 bg-transparent pointer-events-none">
         <div
           ref={progressRef}
-          className="scroll-progress h-full w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_12px_rgba(168,85,247,0.6)]"
+          className="scroll-progress h-full w-full bg-gradient-to-r from-brand via-brand-deep to-brand-deep shadow-[0_0_12px_rgba(168,85,247,0.6)]"
           style={{ "--scroll": "0" } as React.CSSProperties}
         />
       </div>
@@ -293,7 +294,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             </Link>
             <Link
               href="/waitlist"
-              className="text-sm font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-4 py-2 rounded-full transition-all shadow-lg shadow-purple-500/20"
+              className="text-sm font-semibold bg-warm hover:bg-warm-deep text-brand-dark px-4 py-2 rounded-full transition-colors shadow-lg shadow-warm/25"
             >
               {t("nav.get_started")}
             </Link>
@@ -309,9 +310,9 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
       >
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),rgba(99,102,241,0.15)_0%,transparent_60%)] transition-[background] duration-100" />
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] animate-float-slow" />
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] animate-float-slower" />
-          <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] bg-indigo-500/8 rounded-full blur-[100px] animate-float-medium" />
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-brand-deep/10 rounded-full blur-[120px] animate-float-slow" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-brand-deep/10 rounded-full blur-[120px] animate-float-slower" />
+          <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] bg-brand-deep/8 rounded-full blur-[100px] animate-float-medium" />
         </div>
 
         <div
@@ -326,7 +327,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <div data-reveal style={revealDelay(0)} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-sm text-gray-300 backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+            <Sparkles className="h-3.5 w-3.5 text-brand" />
             {lang === "es" ? "Informes radiológicos con IA" : lang === "pt" ? "Laudos radiológicos com IA" : "AI-powered radiology reporting"}
           </div>
 
@@ -345,7 +346,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             <div className="flex flex-col items-center gap-2">
               <Link
                 href="/waitlist"
-                className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
+                className="group flex items-center gap-2 text-base font-semibold bg-warm hover:bg-warm-deep text-brand-dark px-8 py-3.5 rounded-full transition-all shadow-xl shadow-warm/30 hover:shadow-warm/45 hover:scale-[1.02]"
               >
                 {t("hero.cta_primary")}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
@@ -363,15 +364,15 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
 
           <div data-reveal style={revealDelay(400)} className="mt-16 flex items-center justify-center gap-8 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-violet-500" />
+              <Check className="h-3.5 w-3.5 text-brand-deep" />
               {t("hero.badge_no_card")}
             </span>
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-violet-500" />
+              <Check className="h-3.5 w-3.5 text-brand-deep" />
               {t("hero.badge_hipaa")}
             </span>
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-violet-500" />
+              <Check className="h-3.5 w-3.5 text-brand-deep" />
               {t("hero.badge_encrypt")}
             </span>
           </div>
@@ -400,21 +401,21 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
               {lang === "es" ? (
                 <>
                   Todo lo que necesitas para{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     informar más rápido
                   </span>
                 </>
               ) : lang === "pt" ? (
                 <>
                   Tudo o que você precisa para{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     laudar mais rápido
                   </span>
                 </>
               ) : (
                 <>
                   Everything you need to{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     report faster
                   </span>
                 </>
@@ -444,7 +445,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
 
       {/* ─── How it works ─── */}
       <section className="relative py-24 px-6">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-dark/25 to-transparent" />
         <div className="relative max-w-4xl mx-auto">
           <h2 data-reveal className="text-3xl md:text-4xl font-bold text-center mb-16">
             {t("how.title")}
@@ -452,8 +453,8 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
           <div className="grid md:grid-cols-3 gap-8">
             {(["step1", "step2", "step3"] as const).map((step, i) => (
               <div key={step} data-reveal style={revealDelay(i * 120)} className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/5 mb-4">
-                  <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand/20 to-brand-deep/20 border border-white/5 mb-4">
+                  <span className="text-xl font-bold text-transparent bg-clip-text bg-brand">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                 </div>
@@ -475,21 +476,21 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
               {lang === "es" ? (
                 <>
                   Precios simples y{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     transparentes
                   </span>
                 </>
               ) : lang === "pt" ? (
                 <>
                   Preços simples e{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     transparentes
                   </span>
                 </>
               ) : (
                 <>
                   Simple,{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     transparent
                   </span>{" "}
                   pricing
@@ -529,28 +530,28 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
 
       {/* ─── Security & Compliance ─── */}
       <section id="security" className="relative py-32 px-6">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-dark/15 to-transparent" />
         <div className="relative max-w-6xl mx-auto">
           <div data-reveal className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {lang === "es" ? (
                 <>
                   Seguridad y privacidad{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-violet-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     de nivel hospitalario
                   </span>
                 </>
               ) : lang === "pt" ? (
                 <>
                   Segurança e privacidade{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-violet-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     de nível hospitalar
                   </span>
                 </>
               ) : (
                 <>
                   Hospital-grade{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-violet-400">
+                  <span className="text-transparent bg-clip-text bg-brand">
                     security & privacy
                   </span>
                 </>
@@ -564,9 +565,9 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
             {SECURITY_ITEMS.map((item, i) => (
               <div key={item.key} data-reveal style={revealDelay((i % 3) * 100)}>
-                <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-violet-500/30 transition-all duration-500 hover:bg-white/[0.04] hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/20 border border-violet-500/10 mb-4">
-                    <item.icon className="h-5 w-5 text-violet-400" />
+                <div className="group relative h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-brand-deep/30 transition-all duration-500 hover:bg-white/[0.04] hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-brand-deep/20 to-brand-deep/20 border border-brand-deep/10 mb-4">
+                    <item.icon className="h-5 w-5 text-brand" />
                   </div>
                   <h3 className="text-base font-semibold mb-2">{t(`security.${item.key}.title`)}</h3>
                   <p className="text-sm text-gray-400 leading-relaxed">{t(`security.${item.key}.desc`)}</p>
@@ -582,7 +583,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
                 className="badge-scan flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/5"
                 style={{ "--scan-delay": `${i * 0.7}s` } as React.CSSProperties}
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-violet-500" />
+                <ShieldCheck className="h-3.5 w-3.5 text-brand-deep" />
                 {t(`security.badge_${badge}`)}
               </span>
             ))}
@@ -590,15 +591,64 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
         </div>
       </section>
 
+      {/* ─── For departments ───
+          The hospitals page carries the full story; the landing never
+          mentioned it existed, so a department head arriving here saw only
+          the individual product. The copy is that page's, not a second
+          version of it that would drift. */}
+      <section className="relative py-28 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div
+            data-reveal
+            className="relative rounded-3xl border border-white/10 bg-white/[0.02] p-10 md:p-14 overflow-hidden"
+          >
+            <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-brand-deep/10 rounded-full blur-[120px] animate-float-slower pointer-events-none" />
+
+            <div className="relative">
+              <span className="inline-flex items-center gap-2 text-xs font-semibold text-brand mb-5">
+                <Building2 className="h-4 w-4" />
+                {t("nav.hospitals")}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 max-w-2xl">{t("hosp.title")}</h2>
+              <p className="text-gray-400 max-w-2xl mb-10">{t("hosp.subtitle")}</p>
+
+              <div className="grid sm:grid-cols-2 gap-x-10 gap-y-7 mb-10">
+                {[
+                  { icon: Users, k: "sections" },
+                  { icon: Layout, k: "templates" },
+                  { icon: Link2, k: "seats" },
+                  { icon: Shield, k: "privacy" },
+                ].map(({ icon: Icon, k }) => (
+                  <div key={k} className="flex gap-3.5">
+                    <Icon className="h-5 w-5 text-brand shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold mb-1">{t(`hosp.feat_${k}_title`)}</p>
+                      <p className="text-sm text-gray-400 leading-relaxed">{t(`hosp.feat_${k}_desc`)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                href="/hospitals"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:gap-3 transition-all"
+              >
+                {t("hosp.cta")} <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── CTA ─── */}
       <section className="relative py-24 px-6 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/[0.08] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-deep/[0.08] rounded-full blur-[120px] pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative">
           <div data-reveal className="relative p-12 rounded-3xl cta-mesh border border-white/10 backdrop-blur-sm overflow-hidden">
             {CTA_SPARKLES.map((s, i) => (
               <div
                 key={i}
-                className="absolute rounded-full bg-purple-400/40"
+                className="absolute rounded-full bg-brand/40"
                 style={{
                   left: `${s.left}%`,
                   top: `${s.top}%`,
@@ -616,7 +666,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
               </p>
               <a
                 href="/waitlist"
-                className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 px-8 py-3.5 rounded-full transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
+                className="inline-flex items-center gap-2 text-base font-semibold bg-warm hover:bg-warm-deep text-brand-dark px-8 py-3.5 rounded-full transition-all shadow-xl shadow-warm/30 hover:shadow-warm/45 hover:scale-[1.02]"
               >
                 {t("cta.button")}
                 <ArrowRight className="h-4 w-4" />
@@ -689,10 +739,10 @@ const STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
 
 const STEP_ICONS = [Mic, FileText, Tags, MessageCircle];
 const STEP_COLORS = [
-  "from-blue-400 to-blue-600",
-  "from-blue-500 to-indigo-600",
-  "from-purple-500 to-violet-600",
-  "from-violet-500 to-fuchsia-500",
+  "from-brand to-brand-deep",
+  "from-brand to-brand-deep",
+  "from-brand-deep to-brand-deep",
+  "from-brand-deep to-brand-deep",
 ];
 
 function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; showInterpretive?: boolean }) {
@@ -703,7 +753,7 @@ function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; sh
 
   return (
     <section className="relative py-24 px-6">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a1a] via-indigo-950/20 to-[#0a0a1a] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a1a] via-brand-dark/25 to-[#0a0a1a] pointer-events-none" />
       <div className="relative max-w-6xl mx-auto space-y-6">
         {steps.map((step, i) => {
           const Icon = STEP_ICONS[i];
@@ -714,17 +764,17 @@ function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; sh
               <div
                 data-reveal
                 style={revealDelay(0)}
-                className={`grid lg:grid-cols-2 gap-10 items-center ${isHighlight ? "relative rounded-2xl p-6 lg:p-8 border border-purple-500/10 bg-gradient-to-br from-purple-500/[0.04] to-transparent" : ""}`}
+                className={`grid lg:grid-cols-2 gap-10 items-center ${isHighlight ? "relative rounded-2xl p-6 lg:p-8 border border-brand-deep/10 bg-gradient-to-br from-brand-deep/[0.04] to-transparent" : ""}`}
               >
                 {isHighlight && (
-                  <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-purple-500/10 via-transparent to-fuchsia-500/10 blur-sm -z-10" />
+                  <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-brand-deep/10 via-transparent to-brand-deep/10 blur-sm -z-10" />
                 )}
                 <div className={`space-y-4 ${reverse ? "lg:order-2" : ""}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`${isHighlight ? "w-14 h-14" : "w-12 h-12"} rounded-2xl bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center shadow-lg ${isHighlight ? "shadow-purple-500/20" : ""}`}>
+                    <div className={`${isHighlight ? "w-14 h-14" : "w-12 h-12"} rounded-2xl bg-gradient-to-br ${STEP_COLORS[i]} flex items-center justify-center shadow-lg ${isHighlight ? "shadow-brand-deep/20" : ""}`}>
                       <Icon className={`${isHighlight ? "h-7 w-7" : "h-6 w-6"} text-white`} />
                     </div>
-                    <span className={`text-sm font-mono ${isHighlight ? "text-purple-300" : "text-blue-400"}`}>
+                    <span className={`text-sm font-mono ${isHighlight ? "text-brand" : "text-brand"}`}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
@@ -742,7 +792,7 @@ function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; sh
               </div>
               {i < steps.length - 1 && (
                 <div className="flex justify-center py-4">
-                  <div className={`w-px h-12 bg-gradient-to-b ${i === 1 ? "from-blue-500/30 via-purple-500/30 to-transparent" : i >= 2 ? "from-purple-500/30 to-transparent" : "from-blue-500/30 to-transparent"}`} />
+                  <div className={`w-px h-12 bg-gradient-to-b ${i === 1 ? "from-brand/30 via-brand-deep/30 to-transparent" : i >= 2 ? "from-brand-deep/30 to-transparent" : "from-brand/30 to-transparent"}`} />
                 </div>
               )}
             </div>
@@ -756,7 +806,7 @@ function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; sh
 function MockScreen({ children }: { children: React.ReactNode }) {
   return (
     <div className="demo-screen rounded-2xl p-1 relative">
-      <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-blue-500/20 via-transparent to-purple-500/20 blur-sm -z-10" />
+      <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-brand/20 via-transparent to-brand-deep/20 blur-sm -z-10" />
       <div className="rounded-xl bg-[#0c0c20] overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border-b border-white/5">
           <div className="flex gap-1.5">
@@ -786,17 +836,17 @@ function DictateVisual({ text }: { text: string }) {
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="block h-[2px] rounded-full bg-gradient-to-l from-violet-400/60 to-transparent animate-pulse"
+              className="block h-[2px] rounded-full bg-gradient-to-l from-brand/60 to-transparent animate-pulse"
               style={{ width: `${20 - i * 5}px`, animationDelay: `${i * 0.2}s` }}
             />
           ))}
         </div>
         <div className="flex flex-col items-center gap-1">
-          <div className="w-11 h-[72px] rounded-[9px] border border-violet-400/40 bg-gradient-to-b from-violet-500/15 to-blue-500/10 flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-violet-900/20">
-            <span className="block w-4 h-[2px] rounded-full bg-violet-300/40" />
+          <div className="w-11 h-[72px] rounded-[9px] border border-brand/40 bg-gradient-to-b from-brand-deep/15 to-brand/10 flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-brand-dark/20">
+            <span className="block w-4 h-[2px] rounded-full bg-brand/40" />
             <span className="relative flex items-center justify-center w-6 h-6">
-              <span className="absolute inline-block w-6 h-6 rounded-full bg-violet-400/25 animate-ping" />
-              <span className="relative inline-flex items-center justify-center w-6 h-6 rounded-full bg-violet-500/70">
+              <span className="absolute inline-block w-6 h-6 rounded-full bg-brand/25 animate-ping" />
+              <span className="relative inline-flex items-center justify-center w-6 h-6 rounded-full bg-brand-deep/70">
                 <Mic className="h-3.5 w-3.5 text-white" />
               </span>
             </span>
@@ -804,7 +854,7 @@ function DictateVisual({ text }: { text: string }) {
               {[0.5, 1, 0.7, 0.9, 0.6].map((f, i) => (
                 <span
                   key={i}
-                  className="waveform-bar w-[2.5px] rounded-full bg-violet-300/80"
+                  className="waveform-bar w-[2.5px] rounded-full bg-brand/80"
                   style={{ "--bar-delay": `${i * 0.12}s`, minHeight: `${3 + f * 4}px` } as React.CSSProperties}
                 />
               ))}
@@ -813,15 +863,15 @@ function DictateVisual({ text }: { text: string }) {
         </div>
       </div>
 
-      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center relative">
-        <Mic className="h-6 w-6 text-blue-400" />
-        <div className="absolute inset-0 rounded-full border-2 border-blue-400/40 animate-ping" />
+      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand/20 to-brand-deep/20 border border-brand/20 flex items-center justify-center relative">
+        <Mic className="h-6 w-6 text-brand" />
+        <div className="absolute inset-0 rounded-full border-2 border-brand/40 animate-ping" />
       </div>
       <div className="flex items-end justify-center gap-[3px] h-10 w-48">
         {Array.from({ length: 28 }).map((_, i) => (
           <div
             key={i}
-            className="waveform-bar w-[5px] rounded-full bg-gradient-to-t from-blue-500/80 to-purple-400/80"
+            className="waveform-bar w-[5px] rounded-full bg-gradient-to-t from-brand/80 to-brand/80"
             style={{ "--bar-delay": `${i * 0.06}s`, minHeight: "3px" } as React.CSSProperties}
           />
         ))}
@@ -894,8 +944,8 @@ function ReportVisual({ lang }: { lang: PublicLang }) {
   const sectionBlock = (label: string, text: string, key: string) => (
     <div key={key}>
       <div className="flex items-center gap-2 mb-1">
-        <div className="h-px flex-1 max-w-5 bg-purple-500/30" />
-        <span className="text-[9px] font-bold tracking-widest text-purple-400">{label}</span>
+        <div className="h-px flex-1 max-w-5 bg-brand-deep/30" />
+        <span className="text-[9px] font-bold tracking-widest text-brand">{label}</span>
       </div>
       <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
         <p className="text-xs text-gray-300 leading-relaxed">{text}</p>
@@ -913,7 +963,7 @@ function ReportVisual({ lang }: { lang: PublicLang }) {
             onClick={() => setMode(i)}
             className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all duration-300 ${
               mode === i
-                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
+                ? "bg-brand-deep text-white shadow-lg shadow-brand/20"
                 : "bg-white/[0.04] border border-white/10 text-gray-500"
             }`}
           >
@@ -964,13 +1014,13 @@ function ClassifyVisual({ lang }: { lang: PublicLang }) {
   return (
     <div className="flex flex-col gap-3 w-full">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/25 to-violet-500/25 border border-purple-500/30 flex items-center justify-center">
-          <Tags className="h-4 w-4 text-purple-400" />
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-deep/25 to-brand-deep/25 border border-brand-deep/30 flex items-center justify-center">
+          <Tags className="h-4 w-4 text-brand" />
         </div>
-        <span className="text-xs font-bold text-purple-300">{title}</span>
+        <span className="text-xs font-bold text-brand">{title}</span>
       </div>
-      <div className="rounded-xl bg-gradient-to-b from-purple-500/10 to-violet-500/10 border border-purple-500/20 p-3 space-y-2">
-        <span className="text-[10px] font-bold text-purple-300 tracking-wide">TNM (AJCC 8th ed.)</span>
+      <div className="rounded-xl bg-gradient-to-b from-brand-deep/10 to-brand-deep/10 border border-brand-deep/20 p-3 space-y-2">
+        <span className="text-[10px] font-bold text-brand tracking-wide">TNM (AJCC 8th ed.)</span>
         {tnmItems.map((item, i) => (
           <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.04]">
             <span className="text-[11px] font-bold text-white min-w-[70px]">{item.code}</span>
@@ -979,7 +1029,7 @@ function ClassifyVisual({ lang }: { lang: PublicLang }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <div className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-purple-500/20">
+        <div className="px-4 py-2 rounded-full bg-brand-deep text-xs font-semibold text-white flex items-center gap-2 shadow-lg shadow-brand-deep/20">
           <Check className="h-3.5 w-3.5" />
           {lang === "es" ? "Añadir a conclusión" : lang === "pt" ? "Adicionar à conclusão" : "Add to conclusion"}
         </div>
@@ -1003,10 +1053,10 @@ function BotVisual({ lang }: { lang: PublicLang }) {
   return (
     <div className="flex flex-col w-full">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 border border-violet-500/30 flex items-center justify-center">
-          <Brain className="h-4 w-4 text-violet-400" />
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-deep/30 to-brand-deep/30 border border-brand-deep/30 flex items-center justify-center">
+          <Brain className="h-4 w-4 text-brand" />
         </div>
-        <span className="text-xs font-bold text-violet-300">Radiogen Bot</span>
+        <span className="text-xs font-bold text-brand">Radiogen Bot</span>
         <div className="ml-auto flex gap-1 items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-green-400/60" />
           <span className="text-[9px] text-gray-500">Online</span>
@@ -1014,8 +1064,8 @@ function BotVisual({ lang }: { lang: PublicLang }) {
       </div>
       <div className="flex-1 flex flex-col justify-center gap-3">
         <div className="flex justify-end">
-          <div className="max-w-[75%] px-3 py-2 rounded-xl rounded-br-sm bg-violet-600/30 border border-violet-500/20">
-            <p className="text-xs text-violet-200">{question}</p>
+          <div className="max-w-[75%] px-3 py-2 rounded-xl rounded-br-sm bg-brand-deep/30 border border-brand-deep/20">
+            <p className="text-xs text-brand/90">{question}</p>
           </div>
         </div>
         <div className="flex justify-start">
@@ -1030,7 +1080,7 @@ function BotVisual({ lang }: { lang: PublicLang }) {
             {lang === "es" ? "Pregunta sobre guías clínicas..." : lang === "pt" ? "Pergunte sobre guias clínicos..." : "Ask about clinical guidelines..."}
           </span>
         </div>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-brand-deep flex items-center justify-center">
           <ArrowRight className="h-3.5 w-3.5 text-white" />
         </div>
       </div>
@@ -1058,7 +1108,7 @@ function AnimatedStat({ value, suffix, label }: { value: number; suffix: string;
 
   return (
     <div ref={ref} className="text-center px-6">
-      <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400" style={{ filter: visible ? "drop-shadow(0 0 20px rgba(124,58,237,0.3))" : "none", transition: "filter 1s ease-out" }}>
+      <div className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-brand" style={{ filter: visible ? "drop-shadow(0 0 20px rgba(124,58,237,0.3))" : "none", transition: "filter 1s ease-out" }}>
         {count}{suffix}
       </div>
       <p className="text-sm text-gray-400 mt-1">{label}</p>
@@ -1151,22 +1201,22 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
     <div
       className={`relative h-full p-6 rounded-2xl transition-all duration-300 ${
         isHighlight
-          ? "bg-gradient-to-b from-blue-500/10 to-purple-500/10 border-2 border-blue-500/30 shadow-xl shadow-blue-500/10 scale-[1.02]"
+          ? "bg-gradient-to-b from-brand/10 to-brand-deep/10 border-2 border-brand/30 shadow-xl shadow-brand/10 scale-[1.02]"
           : planKey === "unlimited"
-          ? "bg-gradient-to-b from-fuchsia-500/10 to-transparent border-2 border-fuchsia-500/25 shadow-lg shadow-fuchsia-500/10"
+          ? "bg-gradient-to-b from-brand-deep/10 to-transparent border-2 border-brand-deep/25 shadow-lg shadow-brand-deep/10"
           : "bg-white/[0.02] border border-white/5 hover:border-white/10"
       }`}
     >
       {planKey === "starter" && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-purple-600 rounded-full whitespace-nowrap">
+          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-brand-deep rounded-full whitespace-nowrap">
             {lang === "es" ? "7 días gratis" : lang === "pt" ? "7 dias grátis" : "7 days free"}
           </span>
         </div>
       )}
       {planKey === "unlimited" && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-gradient-to-r from-fuchsia-500 to-violet-600 rounded-full whitespace-nowrap">
+          <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider bg-brand-deep rounded-full whitespace-nowrap">
             {lang === "es" ? "Sin límites" : lang === "pt" ? "Sem limites" : "No limits"}
           </span>
         </div>
@@ -1180,7 +1230,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
             <span className="text-sm text-gray-400">USD{t("pricing.per_month")}</span>
           </div>
           {planKey === "starter" && (
-            <p className="text-xs text-blue-300 mt-1">
+            <p className="text-xs text-brand mt-1">
               {lang === "es"
                 ? "Prueba gratuita de 7 días — sin cargo hoy, cancela cuando quieras"
                 : lang === "pt"
@@ -1195,7 +1245,7 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
       <ul className="space-y-3 mb-8">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-gray-300">
-            <Check className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+            <Check className="h-4 w-4 text-brand mt-0.5 flex-shrink-0" />
             {t(f)}
           </li>
         ))}
@@ -1205,10 +1255,10 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
         href={`/waitlist?plan=${planKey}`}
         className={`block text-center text-sm font-semibold py-3 rounded-full transition-all ${
           isHighlight
-            ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20"
+            ? "bg-brand-deep hover:from-brand hover:to-brand-deep shadow-lg shadow-brand-deep/20"
             : planKey === "unlimited"
-            ? "bg-gradient-to-r from-fuchsia-500/80 to-violet-600/80 hover:from-fuchsia-500 hover:to-violet-600 shadow-md shadow-fuchsia-500/10"
-            : "bg-gradient-to-r from-blue-500/70 to-purple-600/70 hover:from-blue-500 hover:to-purple-600 shadow-md shadow-purple-500/10"
+            ? "bg-gradient-to-r from-brand-deep/80 to-brand-deep/80 hover:from-brand-deep hover:to-brand-deep shadow-md shadow-brand-deep/10"
+            : "bg-gradient-to-r from-brand/70 to-brand-deep/70 hover:from-brand hover:to-brand-deep shadow-md shadow-brand-deep/10"
         }`}
       >
         {planKey === "starter"
@@ -1281,8 +1331,8 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
     <div data-reveal style={revealDelay(index * 90)}>
       <div className="relative p-6 md:p-8 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-6">
         <div className="flex items-start gap-4 flex-1">
-          <div className="hidden md:flex h-11 w-11 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/10 items-center justify-center shrink-0">
-            <Building2 className="h-5 w-5 text-blue-400" />
+          <div className="hidden md:flex h-11 w-11 rounded-xl bg-gradient-to-br from-brand/20 to-brand-deep/20 border border-brand/10 items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5 text-brand" />
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-1">{t("pricing.enterprise_title")}</h3>
@@ -1290,7 +1340,7 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
             <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
               {ENTERPRISE_FEATURE_KEYS.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-xs text-gray-300">
-                  <Check className="h-3.5 w-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <Check className="h-3.5 w-3.5 text-brand mt-0.5 flex-shrink-0" />
                   {t(f)}
                 </li>
               ))}
@@ -1303,7 +1353,7 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-block text-center text-sm font-semibold py-3 px-6 rounded-full bg-gradient-to-r from-blue-500/70 to-purple-600/70 hover:from-blue-500 hover:to-purple-600 shadow-md shadow-purple-500/10 transition-all"
+            className="inline-block text-center text-sm font-semibold py-3 px-6 rounded-full bg-gradient-to-r from-brand/70 to-brand-deep/70 hover:from-brand hover:to-brand-deep shadow-md shadow-brand-deep/10 transition-all"
           >
             {t("pricing.enterprise_cta")}
           </button>
@@ -1314,8 +1364,8 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
         <DialogContent className="max-w-md bg-[#0f0f23] border-white/10 text-white">
           {sent ? (
             <div className="py-4 text-center space-y-3">
-              <div className="mx-auto w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                <Check className="h-5 w-5 text-blue-400" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center">
+                <Check className="h-5 w-5 text-brand" />
               </div>
               <p className="text-sm font-medium">{t("pricing.enterprise_success")}</p>
             </div>
@@ -1332,7 +1382,7 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-blue-500 outline-none"
+                    className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-brand outline-none"
                   />
                 </div>
                 <div>
@@ -1342,7 +1392,7 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-blue-500 outline-none"
+                    className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-brand outline-none"
                   />
                 </div>
                 <div>
@@ -1353,14 +1403,14 @@ function EnterprisePricingCard({ t, lang, index = 0 }: {
                     required
                     rows={4}
                     placeholder={t("pricing.enterprise_field_message_ph")}
-                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-blue-500 outline-none resize-none"
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:border-brand outline-none resize-none"
                   />
                 </div>
                 {error && <p className="text-xs text-red-400">{error}</p>}
                 <button
                   type="submit"
                   disabled={sending}
-                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold py-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-lg shadow-purple-500/20 transition-all disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold py-3 rounded-full bg-brand-deep hover:from-brand hover:to-brand-deep shadow-lg shadow-brand-deep/20 transition-all disabled:opacity-60"
                 >
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                   {t("pricing.enterprise_submit")}
