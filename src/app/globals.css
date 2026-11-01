@@ -210,14 +210,22 @@
 .aurora {
   background: conic-gradient(
     from 0deg,
-    color-mix(in srgb, var(--color-brand-deep) 38%, transparent),
-    color-mix(in srgb, var(--color-brand-violet) 36%, transparent),
-    color-mix(in srgb, var(--color-brand-cyan) 28%, transparent),
-    color-mix(in srgb, var(--color-brand-indigo) 36%, transparent),
-    color-mix(in srgb, var(--color-brand-deep) 38%, transparent)
+    color-mix(in srgb, var(--color-brand-deep) 28%, transparent),
+    color-mix(in srgb, var(--color-brand-violet) 26%, transparent),
+    color-mix(in srgb, var(--color-brand-cyan) 19%, transparent),
+    color-mix(in srgb, var(--color-brand-indigo) 26%, transparent),
+    color-mix(in srgb, var(--color-brand-deep) 28%, transparent)
   );
   animation: aurora-turn 40s linear infinite;
 }
+/* The hero's light has to end before the hero does. Without this the glow
+ * reaches the section boundary at full strength and the first scroll drops
+ * it in a single frame, which reads as the background changing colour. */
+.hero-glow {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 42%, transparent 88%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 42%, transparent 88%);
+}
+
 .aurora-reverse {
   animation-direction: reverse;
   animation-duration: 55s;

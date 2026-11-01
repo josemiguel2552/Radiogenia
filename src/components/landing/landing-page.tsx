@@ -310,12 +310,12 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
         className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden"
         style={{ "--mx": "50%", "--my": "50%" } as React.CSSProperties}
       >
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none hero-glow">
           {/* Turning once every forty seconds: still enough that you never
               catch it moving, quick enough to have changed by the time the
               headline is read. */}
-          <div className="absolute -inset-1/2 aurora blur-[140px] opacity-[0.85] pointer-events-none" />
-          <div className="absolute -inset-1/3 aurora aurora-reverse blur-[160px] opacity-[0.55] pointer-events-none" />
+          <div className="absolute -inset-1/2 aurora blur-[140px] opacity-[0.6] pointer-events-none" />
+          <div className="absolute -inset-1/3 aurora aurora-reverse blur-[160px] opacity-[0.35] pointer-events-none" />
           {/* Follows the cursor. The colour is the brand token, not a hex
               that would survive the next palette change unchanged. */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),color-mix(in_srgb,var(--color-brand-indigo)_18%,transparent)_0%,transparent_60%)] transition-[background] duration-100" />

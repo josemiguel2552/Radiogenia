@@ -324,3 +324,34 @@ describe("the pricing buttons are not all the same button", () => {
     expect(new Set(gradients).size).toBe(3);
   });
 });
+
+describe("the hero's light ends before the hero does", () => {
+  it("masks the glow out well above the section edge", () => {
+    // The glow lived inside the hero's own box, at full strength right up to
+    // its boundary, so the first scroll removed all of it in one frame and
+    // read as the background changing colour. Fading it early leaves nothing
+    // at the edge to cut.
+    expect(css).toContain(".hero-glow");
+    const block = css.slice(css.indexOf(".hero-glow {"), css.indexOf(".aurora-reverse"));
+    expect(block).toContain("mask-image");
+    // Transparent before the bottom, not at it.
+    const stop = Number(block.match(/transparent (\d+)%/)?.[1]);
+    expect(stop).toBeLessThan(95);
+  });
+
+  it("applies it to the container that holds every layer", () => {
+    // Masking one orb and not the aurora would leave half a seam.
+    const hero = landing.slice(landing.indexOf("{/* ─── Hero ─── */}"));
+    const container = hero.slice(0, hero.indexOf("aurora"));
+    expect(container).toContain("hero-glow");
+  });
+
+  it("keeps the aurora below the strength that washed the text out", () => {
+    // Only the aurora's own stops: the buttons mix the same tokens at much
+    // higher strength for their glow, which is a different thing entirely.
+    const block = css.slice(css.indexOf(".aurora {"), css.indexOf(".hero-glow {"));
+    const stops = [...block.matchAll(/--color-brand[\w-]*\) (\d+)%/g)].map((m) => Number(m[1]));
+    expect(stops.length).toBeGreaterThanOrEqual(5);
+    for (const v of stops) expect(v).toBeLessThanOrEqual(30);
+  });
+});
