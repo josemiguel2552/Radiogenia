@@ -19,9 +19,19 @@ const i18n = read("src/lib/public-i18n.ts");
 
 describe("the palette is defined once", () => {
   it("declares the brand colours as tokens", () => {
-    for (const token of ["--color-brand:", "--color-brand-deep:", "--color-brand-dark:", "--color-warm:"]) {
+    for (const token of ["--color-brand:", "--color-brand-bright:", "--color-brand-cyan:",
+                         "--color-brand-indigo:", "--color-brand-deep:", "--color-brand-dark:"]) {
       expect(css).toContain(token);
     }
+  });
+
+  it("has enough tones for a gradient to go somewhere", () => {
+    // The first attempt mapped everything onto two navy tones, so eight cards
+    // that each had their own gradient became one flat fill. Depth comes from
+    // hue movement; without the tones to move between there is none.
+    const hues = [...css.matchAll(/--color-brand[\w-]*: hsl\((\d+)/g)].map((m) => Number(m[1]));
+    expect(hues.length).toBeGreaterThanOrEqual(5);
+    expect(Math.max(...hues) - Math.min(...hues)).toBeGreaterThan(30);
   });
 
   it("hardcodes no palette colour in the landing", () => {
@@ -33,21 +43,35 @@ describe("the palette is defined once", () => {
 
   it("keeps the app's primary in step with the brand token", () => {
     // The chrome and the landing are the same product.
-    expect(css).toContain("--primary: 214 95% 56%");
-    expect(css).toContain("--color-brand: hsl(214 95% 56%)");
+    const brand = css.match(/--color-brand: hsl\(([\d\s%.]+)\)/)?.[1].trim();
+    expect(brand).toBeTruthy();
+    expect(css).toContain(`--primary: ${brand}`);
   });
 });
 
-describe("the warm accent means action", () => {
-  it("is used, and only on the calls to action", () => {
-    // \b would also match inside bg-warm-deep, since a hyphen is not a word
-    // character: the hover colour is not a fourth call to action.
-    const warm = landing.match(/bg-warm(?![-\w])/g) || [];
-    expect(warm.length).toBe(3);
-    // Each one sits on a button, not on decoration.
-    for (const m of landing.matchAll(/className="[^"]*bg-warm(?![-\w])[^"]*"/g)) {
-      expect(m[0]).toMatch(/rounded-full/);
-    }
+describe("the gradients survived the palette change", () => {
+  it("keeps a gradient on every feature card", () => {
+    // Six of eight were flattened to the same navy by a mapping that sent
+    // different hues to one token. A card with no gradient is the difference
+    // between the page looking designed and looking unfinished.
+    const block = landing.slice(landing.indexOf("const FEATURE_KEYS"), landing.indexOf("const SECURITY_ITEMS"));
+    const cards = [...block.matchAll(/color: "([^"]+)"/g)].map((m) => m[1]);
+    expect(cards.length).toBeGreaterThanOrEqual(8);
+    for (const c of cards) expect(c).toMatch(/^from-brand[\w-]* to-brand[\w-]*$/);
+    // And they are not all the same gradient.
+    expect(new Set(cards).size).toBeGreaterThanOrEqual(5);
+  });
+
+  it("flattens a gradient only when it was already one colour", () => {
+    // The colour name has to be captured whole: \S* would let the group match
+    // just "brand" and swallow "-cyan/20", so from-brand-cyan to-brand-deep
+    // read as a same-colour pair.
+    const flat = landing.match(/bg-gradient-to-\w+ from-(brand(?:-[a-z]+)*)(?:\/[\d.]+)? to-\1(?![\w-])/g);
+    expect(flat).toBeNull();
+  });
+
+  it("dropped the warm accent that did not belong", () => {
+    expect(landing).not.toContain("warm");
   });
 });
 
@@ -61,9 +85,14 @@ describe("the background motion stays, quieter", () => {
   it("drifts further apart in time than it used to", () => {
     // They were competing with the text; this is movement you notice only if
     // you look for it.
+    // Slower than the original, but not so slow it reads as no motion at
+    // all: the first pass quartered it and the effects seemed to be gone.
     const durations = [...css.matchAll(/animation: float-\w+ (\d+)s/g)].map((m) => Number(m[1]));
     expect(durations).toHaveLength(3);
-    for (const d of durations) expect(d).toBeGreaterThanOrEqual(24);
+    for (const d of durations) {
+      expect(d).toBeGreaterThan(12);
+      expect(d).toBeLessThanOrEqual(26);
+    }
   });
 });
 

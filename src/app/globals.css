@@ -16,11 +16,17 @@
  * "press this".
  */
 @theme {
-  --color-brand: hsl(214 95% 56%);
-  --color-brand-deep: hsl(224 76% 40%);
-  --color-brand-dark: hsl(226 71% 24%);
-  --color-warm: hsl(27 96% 55%);
-  --color-warm-deep: hsl(18 89% 48%);
+  /* An electric blue that moves through sky and cyan, so a gradient has
+   * somewhere to go. The first attempt collapsed everything onto two navy
+   * tones, which turned eight distinct cards into one flat fill and took the
+   * depth out of the page — flat navy reads cheaper than the purple it
+   * replaced. Depth comes from hue movement, not from more colours. */
+  --color-brand: hsl(213 94% 58%);
+  --color-brand-bright: hsl(199 95% 62%);
+  --color-brand-cyan: hsl(187 92% 50%);
+  --color-brand-indigo: hsl(237 80% 58%);
+  --color-brand-deep: hsl(226 73% 42%);
+  --color-brand-dark: hsl(228 64% 16%);
 }
 
 @layer base {
@@ -31,7 +37,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 214 95% 56%;
+    --primary: 213 94% 58%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -43,7 +49,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 214 95% 56%;
+    --ring: 213 94% 58%;
     --radius: 0.5rem;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   }
@@ -120,32 +126,33 @@
 
 /* Landing page animations
  *
- * The background washes drift about half as far and take roughly twice as
- * long as they used to. They were competing with the text for attention;
- * movement at this scale should be noticed only if you look for it.
+ * Softened once, then overcorrected into stillness: half the travel at twice
+ * the duration is a quarter of the motion, and the page read as if the
+ * effects had been taken out. These sit between the two — about three
+ * quarters of the original travel, a third longer to get there.
  */
 @keyframes float-slow {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(16px, -16px) scale(1.02); }
-  66% { transform: translate(-11px, 11px) scale(0.98); }
+  33% { transform: translate(23px, -23px) scale(1.04); }
+  66% { transform: translate(-15px, 15px) scale(0.96); }
 }
 @keyframes float-slower {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-21px, 11px) scale(1.03); }
-  66% { transform: translate(13px, -18px) scale(0.97); }
+  33% { transform: translate(-30px, 15px) scale(1.06); }
+  66% { transform: translate(19px, -26px) scale(0.94); }
 }
 @keyframes float-medium {
   0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(18px, 13px); }
+  50% { transform: translate(26px, 19px); }
 }
 @keyframes scroll-dot {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(8px); }
 }
 
-.animate-float-slow { animation: float-slow 28s ease-in-out infinite; }
-.animate-float-slower { animation: float-slower 38s ease-in-out infinite; }
-.animate-float-medium { animation: float-medium 24s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 20s ease-in-out infinite; }
+.animate-float-slower { animation: float-slower 26s ease-in-out infinite; }
+.animate-float-medium { animation: float-medium 16s ease-in-out infinite; }
 .animate-scroll-dot { animation: scroll-dot 1.5s ease-in-out infinite; }
 
 /* ── Scroll-reveal: fade up + sharpen from blur into focus (radiology motif) ── */
