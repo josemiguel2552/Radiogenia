@@ -3,10 +3,12 @@
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Mic, FileText, Brain, Sparkles, Layout, Shield, MessageCircle,
+  Mic, Brain, Sparkles, Layout, Shield,
   ChevronRight, Check, ArrowRight, Globe,
   Lock, ShieldCheck, Eye, ScrollText, Fingerprint,
-  BookOpen, Tags, Building2, Loader2, Send, SlidersHorizontal, Users, Link2,
+  BookOpen, Tags, Building2, Loader2, Send, Users, Link2,
+  AudioLines, ListTree, Signature, ListChecks, Filter, Ruler,
+  MessageCircleQuestion, LayoutTemplate, BadgeCheck,
 } from "lucide-react";
 import { PLANS, CURRENCY, type SubscriptionPlan } from "@/lib/types";
 import type { Region } from "@/lib/region";
@@ -202,15 +204,15 @@ function handleTiltReset(e: React.MouseEvent<HTMLDivElement>) {
 const INTERPRETIVE_FEATURES = new Set(["classify", "bot"]);
 
 const FEATURE_KEYS = [
-  { icon: Mic, key: "voice", color: "from-brand to-brand-indigo" },
-  { icon: FileText, key: "structured", color: "from-brand-indigo to-brand-deep" },
-  { icon: Brain, key: "style", color: "from-brand-cyan to-brand-deep" },
-  { icon: Sparkles, key: "conclusions", color: "from-brand-indigo to-brand-deep" },
-  { icon: SlidersHorizontal, key: "editai", color: "from-brand-cyan to-brand" },
-  { icon: Tags, key: "classify", color: "from-brand-cyan to-brand-deep" },
-  { icon: MessageCircle, key: "bot", color: "from-brand-indigo to-brand-cyan" },
-  { icon: Layout, key: "templates", color: "from-brand-deep to-brand-cyan" },
-  { icon: Shield, key: "safety", color: "from-brand-deep to-brand-indigo" },
+  { icon: AudioLines, key: "voice", color: "from-brand-bright via-brand to-brand-indigo" },
+  { icon: ListTree, key: "structured", color: "from-brand to-brand-violet" },
+  { icon: Signature, key: "style", color: "from-brand-violet to-brand-indigo" },
+  { icon: ListChecks, key: "conclusions", color: "from-brand-indigo via-brand-violet to-brand-deep" },
+  { icon: Filter, key: "editai", color: "from-brand-cyan via-brand to-brand-indigo" },
+  { icon: Ruler, key: "classify", color: "from-brand-violet to-brand-cyan" },
+  { icon: MessageCircleQuestion, key: "bot", color: "from-brand-indigo to-brand-cyan" },
+  { icon: LayoutTemplate, key: "templates", color: "from-brand-deep via-brand to-brand-violet" },
+  { icon: BadgeCheck, key: "safety", color: "from-brand-violet to-brand-deep" },
 ];
 
 const SECURITY_ITEMS = [
@@ -294,7 +296,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             </Link>
             <Link
               href="/waitlist"
-              className="text-sm font-semibold px-4 py-2 rounded-full transition-all shadow-lg shadow-brand-cyan/25 hover:shadow-brand-cyan/40 bg-gradient-to-r from-brand-deep via-brand to-brand-cyan gradient-live"
+              className="text-sm font-semibold px-4 py-2 rounded-full transition-all shadow-lg shadow-brand-cyan/25 hover:shadow-brand-cyan/40 bg-gradient-to-r from-brand-deep via-brand-violet to-brand-cyan gradient-live btn-crafted"
             >
               {t("nav.get_started")}
             </Link>
@@ -312,9 +314,9 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
           {/* Follows the cursor. The colour is the brand token, not a hex
               that would survive the next palette change unchanged. */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),color-mix(in_srgb,var(--color-brand-indigo)_18%,transparent)_0%,transparent_60%)] transition-[background] duration-100" />
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow animate-hue-drift bg-gradient-to-br from-brand-deep/16 via-brand-indigo/10 to-brand-cyan/8 gradient-live-slow pointer-events-none" />
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] animate-float-slower animate-hue-drift-back bg-gradient-to-tr from-brand-cyan/12 via-brand/10 to-brand-indigo/10 gradient-live-slow pointer-events-none" />
-          <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] rounded-full blur-[100px] animate-float-medium animate-hue-drift bg-gradient-to-b from-brand-indigo/12 to-brand-bright/8 gradient-live-slow pointer-events-none" />
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow animate-hue-drift bg-gradient-to-br from-brand-deep/16 via-brand-violet/12 to-brand-cyan/8 gradient-live-slow pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] animate-float-slower animate-hue-drift-back bg-gradient-to-tr from-brand-cyan/12 via-brand-violet/12 to-brand-indigo/12 gradient-live-slow pointer-events-none" />
+          <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] rounded-full blur-[100px] animate-float-medium animate-hue-drift bg-gradient-to-b from-brand-violet/14 via-brand-indigo/10 to-brand-bright/8 gradient-live-slow pointer-events-none" />
         </div>
 
         <div
@@ -348,11 +350,11 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             <div className="flex flex-col items-center gap-2">
               <Link
                 href="/waitlist"
-                className="group relative flex items-center gap-2 text-base font-semibold px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/45 hover:scale-[1.02] bg-gradient-to-r from-brand-deep via-brand to-brand-cyan gradient-live overflow-hidden"
+                className="group relative flex items-center gap-2 text-base font-semibold px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/45 hover:scale-[1.02] bg-gradient-to-r from-brand-deep via-brand-violet to-brand-cyan gradient-live btn-crafted overflow-hidden"
               >
-                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-brand-cyan/0 via-white/15 to-brand-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <span className="pointer-events-none absolute inset-0 rounded-full overflow-hidden"><span className="absolute inset-y-0 -left-full w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 group-hover:left-[150%] transition-[left] duration-[900ms] ease-out" /></span>
                 {t("hero.cta_primary")}
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
               <span className="text-[11px] text-gray-500">{t("hero.cta_microcopy")}</span>
             </div>
@@ -605,7 +607,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             data-reveal
             className="relative rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent p-10 md:p-14 overflow-hidden"
           >
-            <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-gradient-to-br from-brand-indigo/20 via-brand/12 to-brand-cyan/10 rounded-full blur-[120px] animate-float-slower animate-hue-drift gradient-live-slow pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-gradient-to-br from-brand-violet/20 via-brand-indigo/12 to-brand-cyan/10 rounded-full blur-[120px] animate-float-slower animate-hue-drift gradient-live-slow pointer-events-none" />
 
             <div className="relative">
               <span className="inline-flex items-center gap-2 text-xs font-semibold text-brand-bright mb-5">
@@ -647,7 +649,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
 
       {/* ─── CTA ─── */}
       <section className="relative py-24 px-6 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none bg-gradient-to-br from-brand-indigo/14 via-brand/10 to-brand-cyan/10 gradient-live-slow animate-glow-breathe" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none bg-gradient-to-br from-brand-violet/16 via-brand-indigo/12 to-brand-cyan/10 gradient-live-slow animate-glow-breathe" />
         <div className="max-w-3xl mx-auto text-center relative">
           <div data-reveal className="relative p-12 rounded-3xl cta-mesh border border-white/10 backdrop-blur-sm overflow-hidden">
             {CTA_SPARKLES.map((s, i) => (
@@ -671,9 +673,9 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
               </p>
               <a
                 href="/waitlist"
-                className="group relative inline-flex items-center gap-2 text-base font-semibold px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/45 hover:scale-[1.02] bg-gradient-to-r from-brand-deep via-brand to-brand-cyan gradient-live overflow-hidden"
+                className="group relative inline-flex items-center gap-2 text-base font-semibold px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/45 hover:scale-[1.02] bg-gradient-to-r from-brand-deep via-brand-violet to-brand-cyan gradient-live btn-crafted overflow-hidden"
               >
-                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-brand-cyan/0 via-white/15 to-brand-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <span className="pointer-events-none absolute inset-0 rounded-full overflow-hidden"><span className="absolute inset-y-0 -left-full w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 group-hover:left-[150%] transition-[left] duration-[900ms] ease-out" /></span>
                 {t("cta.button")}
                 <ArrowRight className="h-4 w-4" />
               </a>
@@ -743,12 +745,12 @@ const STEPS_DATA: Record<PublicLang, { title: string; desc: string }[]> = {
   ],
 };
 
-const STEP_ICONS = [Mic, FileText, Tags, MessageCircle];
+const STEP_ICONS = [AudioLines, ListTree, Ruler, MessageCircleQuestion];
 const STEP_COLORS = [
-  "from-brand-bright to-brand-deep",
-  "from-brand to-brand-indigo",
-  "from-brand-cyan to-brand-deep",
-  "from-brand-indigo to-brand-cyan",
+  "from-brand-bright via-brand to-brand-indigo",
+  "from-brand via-brand-indigo to-brand-violet",
+  "from-brand-violet via-brand-indigo to-brand-cyan",
+  "from-brand-indigo via-brand-violet to-brand-cyan",
 ];
 
 function StepsShowcase({ lang, showInterpretive = true }: { lang: PublicLang; showInterpretive?: boolean }) {

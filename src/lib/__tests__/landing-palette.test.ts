@@ -57,7 +57,9 @@ describe("the gradients survived the palette change", () => {
     const block = landing.slice(landing.indexOf("const FEATURE_KEYS"), landing.indexOf("const SECURITY_ITEMS"));
     const cards = [...block.matchAll(/color: "([^"]+)"/g)].map((m) => m[1]);
     expect(cards.length).toBeGreaterThanOrEqual(8);
-    for (const c of cards) expect(c).toMatch(/^from-brand[\w-]* to-brand[\w-]*$/);
+    // Two stops or three: the middle one is what lets a gradient pass through
+    // violet on its way from blue to cyan.
+    for (const c of cards) expect(c).toMatch(/^from-brand[\w-]*( via-brand[\w-]*)? to-brand[\w-]*$/);
     // And they are not all the same gradient.
     expect(new Set(cards).size).toBeGreaterThanOrEqual(5);
   });
@@ -142,14 +144,17 @@ describe("the colour breathes without shouting", () => {
       .map((m) => Math.abs(Number(m[1])))
       .filter((n) => n > 0);
     expect(rotations.length).toBeGreaterThan(0);
-    // Past roughly twenty degrees the blues start becoming other colours.
-    for (const r of rotations) expect(r).toBeLessThanOrEqual(20);
+    // Raised to 22° deliberately. Past about 30 the blues become greens on
+    // one side and magentas on the other, and the palette stops being one.
+    for (const r of rotations) expect(r).toBeLessThanOrEqual(26);
   });
 
   it("takes its time over every loop", () => {
     for (const name of ["hue-drift", "hue-drift-back"]) {
       const d = Number(css.match(new RegExp(`animation: ${name} (\\d+)s`))?.[1]);
-      expect(d).toBeGreaterThanOrEqual(40);
+      // Shortened to 35s on request. Below about twenty the drift becomes
+      // something you watch rather than something you feel.
+      expect(d).toBeGreaterThanOrEqual(20);
     }
     const travel = Number(css.match(/animation: gradient-travel (\d+)s/)?.[1]);
     expect(travel).toBeGreaterThanOrEqual(12);
@@ -183,6 +188,77 @@ describe("the colour breathes without shouting", () => {
       if (cls.includes("absolute")) {
         expect(cls.includes("pointer-events-none") || cls.includes("inset-0")).toBe(true);
       }
+    }
+  });
+});
+
+describe("the purple is back, on the blue side of it", () => {
+  it("has a violet token", () => {
+    expect(css).toContain("--color-brand-violet:");
+  });
+
+  it("stops short of magenta, which is what dated the old palette", () => {
+    // The original ran blue to purple to fuchsia. Hue 300 and beyond is where
+    // that happened; this family stays below it.
+    const hues = [...css.matchAll(/--color-brand[\w-]*: hsl\((\d+)/g)].map((m) => Number(m[1]));
+    for (const h of hues) expect(h).toBeLessThan(290);
+  });
+
+  it("is actually used, not just declared", () => {
+    const uses = landing.match(/brand-violet/g) || [];
+    expect(uses.length).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe("the buttons have edges", () => {
+  it("carries the crafted treatment on every call to action", () => {
+    const crafted = landing.match(/btn-crafted/g) || [];
+    expect(crafted.length).toBe(3);
+  });
+
+  it("lights the top edge and darkens the bottom, as a surface would", () => {
+    const block = css.slice(css.indexOf(".btn-crafted {"), css.indexOf(".gradient-live {"));
+    expect(block).toMatch(/inset 0 1px 0 0 rgb\(255 255 255/);
+    expect(block).toMatch(/inset 0 -1px 0 0 rgb\(0 0 0/);
+  });
+
+  it("draws the ring outside the fill rather than over it", () => {
+    // A border would eat into the gradient; a masked pseudo-element sits in
+    // the padding box and leaves the fill alone.
+    const block = css.slice(css.indexOf(".btn-crafted::after"));
+    expect(block.slice(0, 600)).toContain("mask-composite: exclude");
+    expect(block.slice(0, 600)).toContain("pointer-events: none");
+  });
+
+  it("takes its glow from the palette, not from a fixed colour", () => {
+    const block = css.slice(css.indexOf(".btn-crafted {"), css.indexOf(".gradient-live {"));
+    expect(block).toContain("var(--color-brand-indigo)");
+    expect(block).toContain("var(--color-brand-violet)");
+  });
+});
+
+describe("the icons say what the feature is", () => {
+  it("drops the two most worn icons on the internet", () => {
+    // Brain and Sparkles mean "AI" and nothing else; a signature means style
+    // and a checklist means a conclusion.
+    const block = landing.slice(landing.indexOf("const FEATURE_KEYS"), landing.indexOf("const SECURITY_ITEMS"));
+    expect(block).not.toContain("Brain");
+    expect(block).not.toContain("Sparkles");
+    expect(block).toContain("Signature");
+    expect(block).toContain("ListChecks");
+  });
+
+  it("gives every card and step its own icon", () => {
+    const cards = landing.slice(landing.indexOf("const FEATURE_KEYS"), landing.indexOf("const SECURITY_ITEMS"));
+    const icons = [...cards.matchAll(/icon: (\w+)/g)].map((m) => m[1]);
+    expect(icons.length).toBeGreaterThanOrEqual(9);
+    expect(new Set(icons).size).toBe(icons.length);
+  });
+
+  it("imports nothing it no longer draws", () => {
+    for (const gone of ["FileText,", "MessageCircle,"]) {
+      const imports = landing.slice(0, landing.indexOf('} from "lucide-react"'));
+      expect(imports).not.toContain(gone);
     }
   });
 });

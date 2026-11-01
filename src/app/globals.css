@@ -24,7 +24,11 @@
   --color-brand: hsl(213 94% 58%);
   --color-brand-bright: hsl(199 95% 62%);
   --color-brand-cyan: hsl(187 92% 50%);
-  --color-brand-indigo: hsl(237 80% 58%);
+  --color-brand-indigo: hsl(243 82% 62%);
+  /* Violet, back by request but kept on the blue side of purple: the old
+   * palette ran all the way to fuchsia, which is what dated it. This sits
+   * one step past indigo and never reaches magenta. */
+  --color-brand-violet: hsl(262 78% 62%);
   --color-brand-deep: hsl(226 73% 42%);
   --color-brand-dark: hsl(228 64% 16%);
 }
@@ -156,11 +160,11 @@
  */
 @keyframes hue-drift {
   0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(16deg); }
+  50% { filter: hue-rotate(22deg); }
 }
 @keyframes hue-drift-back {
   0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(-14deg); }
+  50% { filter: hue-rotate(-22deg); }
 }
 
 /* The gradient is wider than the element, so moving it shifts which colours
@@ -186,12 +190,58 @@
 .animate-float-slower { animation: float-slower 26s ease-in-out infinite; }
 .animate-float-medium { animation: float-medium 16s ease-in-out infinite; }
 .animate-scroll-dot { animation: scroll-dot 1.5s ease-in-out infinite; }
-.animate-hue-drift { animation: hue-drift 54s ease-in-out infinite; }
-.animate-hue-drift-back { animation: hue-drift-back 68s ease-in-out infinite; }
+.animate-hue-drift { animation: hue-drift 35s ease-in-out infinite; }
+.animate-hue-drift-back { animation: hue-drift-back 35s ease-in-out infinite; }
 .animate-glow-breathe { animation: glow-breathe 7s ease-in-out infinite; }
 
 /* Buttons and panels whose gradient travels. The size is what makes the
  * movement a colour change instead of a sliding edge. */
+/* ── A button with some craft in it ────────────────────────────
+ *
+ * Four layers, none of them loud on its own: the travelling gradient
+ * underneath, a hairline of light along the top edge where a real surface
+ * would catch it, a ring that lifts the shape off the background, and a glow
+ * that only arrives on hover. The detail is in those edges — a flat pill with
+ * a gradient reads as a template, and the difference is a couple of pixels of
+ * highlight nobody consciously notices.
+ */
+.btn-crafted {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.18),
+    0 1px 2px rgb(0 0 0 / 0.28),
+    0 10px 28px -8px color-mix(in srgb, var(--color-brand-indigo) 55%, transparent);
+  transition: box-shadow 320ms ease, transform 320ms ease;
+}
+.btn-crafted:hover {
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.38),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.16),
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 16px 40px -10px color-mix(in srgb, var(--color-brand-violet) 70%, transparent);
+}
+/* The ring sits just outside the fill, so the edge reads crisp against a dark
+ * background instead of bleeding into it. */
+.btn-crafted::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.45),
+    rgb(255 255 255 / 0.05) 45%,
+    rgb(255 255 255 / 0)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 .gradient-live {
   background-size: 220% 220%;
   animation: gradient-travel 14s ease-in-out infinite;
