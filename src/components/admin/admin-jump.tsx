@@ -1,5 +1,8 @@
 "use client";
 
+// The admin strings, registered where they are used.
+import "@/lib/i18n-admin";
+
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Search, CornerDownLeft } from "lucide-react";

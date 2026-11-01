@@ -474,7 +474,9 @@ describe("the hand-picked file", () => {
     // The server can build this exact file, so the answer is a different
     // button rather than a smaller file.
     expect(page).toContain("admin.ft_file_too_big");
-    const es = source("src/lib/i18n.ts");
+    // The admin strings live in their own dictionary now, loaded with the
+    // admin pages rather than by every page in the product.
+    const es = source("src/lib/i18n-admin.ts");
     const msg = es.slice(es.indexOf('"admin.ft_file_too_big"'), es.indexOf('"admin.ft_file_too_big"') + 400);
     expect(msg).toContain("Generar desde correcciones");
   });
@@ -778,6 +780,6 @@ describe("the provider's own list is still read when it can be", () => {
 
   it("names the provider on the card rather than always OpenAI", () => {
     expect(page).toContain("FINETUNE_PROVIDERS[ftProvider].label");
-    expect(source("src/lib/i18n.ts")).not.toContain("Fine-Tuning (OpenAI)");
+    expect(source("src/lib/i18n-admin.ts")).not.toContain("Fine-Tuning (OpenAI)");
   });
 });

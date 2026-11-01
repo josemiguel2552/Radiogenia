@@ -1,5 +1,8 @@
 "use client";
 
+// The admin strings, registered where they are used.
+import "@/lib/i18n-admin";
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -1,5 +1,8 @@
 "use client";
 
+// The admin strings, registered where they are used.
+import "@/lib/i18n-admin";
+
 /* Subscriber CONVERSION tab (card-first billing model). The old
    tool-adoption analytics were retired: what matters now is whether
    signups end up paying — and whether they cancel. */

@@ -1,5 +1,8 @@
 "use client";
 
+// The calc strings, registered where they are used.
+import "@/lib/i18n-calc";
+
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

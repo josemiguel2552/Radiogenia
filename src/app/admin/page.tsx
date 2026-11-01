@@ -1,5 +1,8 @@
 "use client";
 
+// The admin strings, registered where they are used.
+import "@/lib/i18n-admin";
+
 import { useState, useEffect, useCallback } from "react";
 import { DifferentialDialog } from "@/components/admin/differential-dialog";
 import { providerSupportsVision } from "@/lib/vision-ai";
