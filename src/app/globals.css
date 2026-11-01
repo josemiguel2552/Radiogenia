@@ -196,6 +196,44 @@
 
 /* Buttons and panels whose gradient travels. The size is what makes the
  * movement a colour change instead of a sliding edge. */
+/* ── Aurora ────────────────────────────────────────────────────
+ *
+ * A conic gradient turning very slowly behind the hero. One rotation takes
+ * two minutes, so at any moment it is indistinguishable from a still
+ * background — what it adds is that the background is never the same twice,
+ * which is what the drifting orbs alone could not do. Blurred to the point of
+ * having no edges, so it reads as light rather than as a shape.
+ */
+@keyframes aurora-turn {
+  from { transform: rotate(0deg) scale(1.35); }
+  to { transform: rotate(360deg) scale(1.35); }
+}
+.aurora {
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--color-brand-deep) 24%, transparent),
+    color-mix(in srgb, var(--color-brand-violet) 22%, transparent),
+    color-mix(in srgb, var(--color-brand-cyan) 18%, transparent),
+    color-mix(in srgb, var(--color-brand-indigo) 22%, transparent),
+    color-mix(in srgb, var(--color-brand-deep) 24%, transparent)
+  );
+  animation: aurora-turn 120s linear infinite;
+}
+.aurora-reverse {
+  animation-direction: reverse;
+  animation-duration: 165s;
+}
+
+/* A band of light that crosses the section now and then. Long gaps on
+ * purpose: something that happens every few seconds is a loop you notice,
+ * and something that happens once a minute is weather. */
+@keyframes sheen-sweep {
+  0%, 82% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  86% { opacity: 1; }
+  100% { transform: translateX(320%) skewX(-12deg); opacity: 0; }
+}
+.animate-sheen-sweep { animation: sheen-sweep 46s ease-in-out infinite; }
+
 /* ── A button with some craft in it ────────────────────────────
  *
  * Four layers, none of them loud on its own: the travelling gradient

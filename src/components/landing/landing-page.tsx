@@ -311,12 +311,21 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
         style={{ "--mx": "50%", "--my": "50%" } as React.CSSProperties}
       >
         <div className="absolute inset-0 pointer-events-none">
+          {/* Turning once every two minutes: at any moment it looks still,
+              but the background is never the same twice. */}
+          <div className="absolute -inset-1/2 aurora blur-[140px] opacity-[0.55] pointer-events-none" />
+          <div className="absolute -inset-1/3 aurora aurora-reverse blur-[160px] opacity-30 pointer-events-none" />
           {/* Follows the cursor. The colour is the brand token, not a hex
               that would survive the next palette change unchanged. */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),color-mix(in_srgb,var(--color-brand-indigo)_18%,transparent)_0%,transparent_60%)] transition-[background] duration-100" />
           <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow animate-hue-drift bg-gradient-to-br from-brand-deep/16 via-brand-violet/12 to-brand-cyan/8 gradient-live-slow pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] animate-float-slower animate-hue-drift-back bg-gradient-to-tr from-brand-cyan/12 via-brand-violet/12 to-brand-indigo/12 gradient-live-slow pointer-events-none" />
           <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] rounded-full blur-[100px] animate-float-medium animate-hue-drift bg-gradient-to-b from-brand-violet/14 via-brand-indigo/10 to-brand-bright/8 gradient-live-slow pointer-events-none" />
+          <div className="absolute bottom-0 left-1/3 w-[340px] h-[340px] rounded-full blur-[110px] animate-float-slow animate-hue-drift-back bg-gradient-to-tr from-brand-indigo/12 via-brand-violet/10 to-transparent gradient-live-slow pointer-events-none" style={{ animationDelay: "-9s, -17s, -5s" }} />
+          <div className="absolute top-1/4 left-[12%] w-[280px] h-[280px] rounded-full blur-[90px] animate-float-slower animate-hue-drift bg-gradient-to-bl from-brand-cyan/10 to-brand-violet/10 gradient-live-slow pointer-events-none" style={{ animationDelay: "-21s, -4s, -13s" }} />
+
+          {/* Crosses the hero about once a minute. */}
+          <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/[0.035] to-transparent animate-sheen-sweep pointer-events-none" />
         </div>
 
         <div
@@ -1262,11 +1271,16 @@ function PricingCard({ plan, planKey, t, lang, index = 0 }: {
       <Link
         href={`/waitlist?plan=${planKey}`}
         className={`block text-center text-sm font-semibold py-3 rounded-full transition-all ${
+          // The trial button is the one conversion on this section, so it
+          // gets the full treatment the hero's buttons have: the travelling
+          // gradient through violet and the crafted edges. The other two are
+          // deliberately a step quieter — three identical buttons would let
+          // the eye pick none of them.
           isHighlight
-            ? "bg-gradient-to-r from-brand to-brand-deep hover:from-brand-bright hover:to-brand-cyan shadow-lg shadow-brand-cyan/20"
+            ? "bg-gradient-to-r from-brand-deep via-brand-violet to-brand-cyan gradient-live btn-crafted"
             : planKey === "unlimited"
-            ? "bg-gradient-to-r from-brand-cyan/80 to-brand-deep/80 hover:from-brand-cyan hover:to-brand-deep shadow-md shadow-brand-cyan/10"
-            : "bg-gradient-to-r from-brand/70 to-brand-deep/70 hover:from-brand hover:to-brand-deep shadow-md shadow-brand-cyan/10"
+            ? "bg-gradient-to-r from-brand-indigo via-brand-violet to-brand-indigo gradient-live-slow btn-crafted"
+            : "bg-gradient-to-r from-brand-deep/85 via-brand-indigo/85 to-brand-deep/85 gradient-live-slow btn-crafted"
         }`}
       >
         {planKey === "starter"

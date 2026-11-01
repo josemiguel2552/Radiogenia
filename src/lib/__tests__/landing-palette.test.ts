@@ -212,8 +212,9 @@ describe("the purple is back, on the blue side of it", () => {
 
 describe("the buttons have edges", () => {
   it("carries the crafted treatment on every call to action", () => {
+    // The three on the page plus the three pricing buttons.
     const crafted = landing.match(/btn-crafted/g) || [];
-    expect(crafted.length).toBe(3);
+    expect(crafted.length).toBe(6);
   });
 
   it("lights the top edge and darkens the bottom, as a surface would", () => {
@@ -260,5 +261,66 @@ describe("the icons say what the feature is", () => {
       const imports = landing.slice(0, landing.indexOf('} from "lucide-react"'));
       expect(imports).not.toContain(gone);
     }
+  });
+});
+
+describe("the background keeps moving without being busy", () => {
+  it("turns an aurora slowly enough to look still", () => {
+    // A full rotation in two minutes: noticeable only by comparing the page
+    // to itself a while later, which is the point.
+    const turn = Number(css.match(/animation: aurora-turn (\d+)s/)?.[1]);
+    expect(turn).toBeGreaterThanOrEqual(90);
+    expect(css).toContain("conic-gradient");
+    expect(landing).toContain("aurora");
+  });
+
+  it("builds the aurora from the palette", () => {
+    const block = css.slice(css.indexOf(".aurora {"), css.indexOf(".aurora-reverse"));
+    for (const token of ["--color-brand-deep", "--color-brand-violet", "--color-brand-cyan"]) {
+      expect(block).toContain(token);
+    }
+  });
+
+  it("gives the washes their own clocks, so none move together", () => {
+    // Identical timing across five layers reads as one object, not weather.
+    const delays = landing.match(/animationDelay: "[^"]+"/g) || [];
+    expect(delays.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(delays).size).toBe(delays.length);
+  });
+
+  it("sweeps light across rarely rather than on a short loop", () => {
+    // Every few seconds is a loop you notice; once a minute is weather.
+    const sweep = Number(css.match(/animation: sheen-sweep (\d+)s/)?.[1]);
+    expect(sweep).toBeGreaterThanOrEqual(30);
+    // Most of the cycle is spent invisible.
+    const frames = css.slice(css.indexOf("@keyframes sheen-sweep"), css.indexOf(".animate-sheen-sweep"));
+    expect(frames).toMatch(/0%,\s*8\d%/);
+  });
+
+  it("keeps every layer out of the way of the pointer", () => {
+    const hero = landing.slice(landing.indexOf("{/* ─── Hero ─── */}"), landing.indexOf("{/* ─── Step-by-step"));
+    for (const m of hero.matchAll(/className="absolute[^"]*(?:aurora|animate-float|animate-sheen)[^"]*"/g)) {
+      expect(m[0].includes("pointer-events-none") || m[0].includes("inset-0")).toBe(true);
+    }
+  });
+});
+
+describe("the pricing buttons are not all the same button", () => {
+  it("gives the trial the strongest treatment", () => {
+    // The end has to be looked for AFTER the start: "{planKey === \"starter\""
+    // also appears further up, on the card's badge, and slicing to it gives
+    // an empty string that contains nothing and fails for the wrong reason.
+    const from = landing.indexOf("// The trial button is the one conversion");
+    const block = landing.slice(from, landing.indexOf("{planKey === \"starter\"", from));
+    expect(block).toContain("gradient-live btn-crafted");
+  });
+
+  it("makes the other two a step quieter", () => {
+    // Three identical buttons and the eye picks none of them.
+    const from = landing.indexOf("// The trial button is the one conversion");
+    const block = landing.slice(from, landing.indexOf("{planKey === \"starter\"", from));
+    const gradients = [...block.matchAll(/"bg-gradient-to-r ([^"]+)"/g)].map((m) => m[1]);
+    expect(gradients.length).toBe(3);
+    expect(new Set(gradients).size).toBe(3);
   });
 });
