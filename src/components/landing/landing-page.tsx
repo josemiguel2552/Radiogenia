@@ -294,7 +294,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             </Link>
             <Link
               href="/waitlist"
-              className="text-sm font-semibold bg-gradient-to-r from-brand to-brand-deep hover:from-brand-bright hover:to-brand-cyan px-4 py-2 rounded-full transition-all shadow-lg shadow-brand-cyan/20"
+              className="text-sm font-semibold px-4 py-2 rounded-full transition-all shadow-lg shadow-brand-cyan/25 hover:shadow-brand-cyan/40 bg-gradient-to-r from-brand-deep via-brand to-brand-cyan gradient-live"
             >
               {t("nav.get_started")}
             </Link>
@@ -308,11 +308,13 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
         className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden"
         style={{ "--mx": "50%", "--my": "50%" } as React.CSSProperties}
       >
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),rgba(99,102,241,0.15)_0%,transparent_60%)] transition-[background] duration-100" />
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-brand-deep/10 rounded-full blur-[120px] animate-float-slow" />
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-brand-deep/10 rounded-full blur-[120px] animate-float-slower" />
-          <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] bg-brand-indigo/8 rounded-full blur-[100px] animate-float-medium" />
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Follows the cursor. The colour is the brand token, not a hex
+              that would survive the next palette change unchanged. */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_var(--mx)_var(--my),color-mix(in_srgb,var(--color-brand-indigo)_18%,transparent)_0%,transparent_60%)] transition-[background] duration-100" />
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow animate-hue-drift bg-gradient-to-br from-brand-deep/16 via-brand-indigo/10 to-brand-cyan/8 gradient-live-slow pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] animate-float-slower animate-hue-drift-back bg-gradient-to-tr from-brand-cyan/12 via-brand/10 to-brand-indigo/10 gradient-live-slow pointer-events-none" />
+          <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] rounded-full blur-[100px] animate-float-medium animate-hue-drift bg-gradient-to-b from-brand-indigo/12 to-brand-bright/8 gradient-live-slow pointer-events-none" />
         </div>
 
         <div
@@ -346,8 +348,9 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             <div className="flex flex-col items-center gap-2">
               <Link
                 href="/waitlist"
-                className="group flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-brand to-brand-deep hover:from-brand-bright hover:to-brand-cyan px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/40 hover:scale-[1.02]"
+                className="group relative flex items-center gap-2 text-base font-semibold px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/45 hover:scale-[1.02] bg-gradient-to-r from-brand-deep via-brand to-brand-cyan gradient-live overflow-hidden"
               >
+                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-brand-cyan/0 via-white/15 to-brand-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 {t("hero.cta_primary")}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
@@ -602,7 +605,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
             data-reveal
             className="relative rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent p-10 md:p-14 overflow-hidden"
           >
-            <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-gradient-to-br from-brand-indigo/20 to-brand-cyan/10 rounded-full blur-[120px] animate-float-slower pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-gradient-to-br from-brand-indigo/20 via-brand/12 to-brand-cyan/10 rounded-full blur-[120px] animate-float-slower animate-hue-drift gradient-live-slow pointer-events-none" />
 
             <div className="relative">
               <span className="inline-flex items-center gap-2 text-xs font-semibold text-brand-bright mb-5">
@@ -644,7 +647,7 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
 
       {/* ─── CTA ─── */}
       <section className="relative py-24 px-6 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-deep/[0.08] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none bg-gradient-to-br from-brand-indigo/14 via-brand/10 to-brand-cyan/10 gradient-live-slow animate-glow-breathe" />
         <div className="max-w-3xl mx-auto text-center relative">
           <div data-reveal className="relative p-12 rounded-3xl cta-mesh border border-white/10 backdrop-blur-sm overflow-hidden">
             {CTA_SPARKLES.map((s, i) => (
@@ -668,8 +671,9 @@ export function LandingPage({ region = "open" }: { region?: Region }) {
               </p>
               <a
                 href="/waitlist"
-                className="inline-flex items-center gap-2 text-base font-semibold bg-gradient-to-r from-brand to-brand-deep hover:from-brand-bright hover:to-brand-cyan px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/40 hover:scale-[1.02]"
+                className="group relative inline-flex items-center gap-2 text-base font-semibold px-8 py-3.5 rounded-full transition-all shadow-xl shadow-brand-cyan/25 hover:shadow-brand-cyan/45 hover:scale-[1.02] bg-gradient-to-r from-brand-deep via-brand to-brand-cyan gradient-live overflow-hidden"
               >
+                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-brand-cyan/0 via-white/15 to-brand-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 {t("cta.button")}
                 <ArrowRight className="h-4 w-4" />
               </a>

@@ -145,6 +145,38 @@
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(26px, 19px); }
 }
+/* ── Colour that breathes ──────────────────────────────────────
+ *
+ * Two effects, both deliberately slow. The background washes drift through a
+ * narrow arc of hue so the page is never quite the same twice; the buttons
+ * carry a gradient that travels across itself. The restraint is the point:
+ * a wide hue range or a short duration turns elegant into a screensaver, so
+ * the arc is about fifteen degrees and nothing completes in under half a
+ * minute.
+ */
+@keyframes hue-drift {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(16deg); }
+}
+@keyframes hue-drift-back {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(-14deg); }
+}
+
+/* The gradient is wider than the element, so moving it shifts which colours
+ * are showing rather than sliding a hard edge across. */
+@keyframes gradient-travel {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* A glow that swells instead of blinking: opacity only, no transform, so it
+ * costs nothing to composite. */
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+
 @keyframes scroll-dot {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(8px); }
@@ -154,6 +186,20 @@
 .animate-float-slower { animation: float-slower 26s ease-in-out infinite; }
 .animate-float-medium { animation: float-medium 16s ease-in-out infinite; }
 .animate-scroll-dot { animation: scroll-dot 1.5s ease-in-out infinite; }
+.animate-hue-drift { animation: hue-drift 54s ease-in-out infinite; }
+.animate-hue-drift-back { animation: hue-drift-back 68s ease-in-out infinite; }
+.animate-glow-breathe { animation: glow-breathe 7s ease-in-out infinite; }
+
+/* Buttons and panels whose gradient travels. The size is what makes the
+ * movement a colour change instead of a sliding edge. */
+.gradient-live {
+  background-size: 220% 220%;
+  animation: gradient-travel 14s ease-in-out infinite;
+}
+.gradient-live-slow {
+  background-size: 200% 200%;
+  animation: gradient-travel 26s ease-in-out infinite;
+}
 
 /* ── Scroll-reveal: fade up + sharpen from blur into focus (radiology motif) ── */
 @media (prefers-reduced-motion: no-preference) {

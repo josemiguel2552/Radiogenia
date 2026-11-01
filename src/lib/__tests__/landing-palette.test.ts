@@ -127,3 +127,62 @@ describe("what the landing now shows", () => {
     expect(landing.toLowerCase()).not.toContain("differential");
   });
 });
+
+/**
+ * Colour that moves.
+ *
+ * The page was elegant but static. These are the two effects that give it a
+ * pulse, and the discipline is in the numbers: a wide hue arc or a short
+ * duration turns this from a product into a screensaver, and there is no way
+ * to tell from a class name which side of that line a value is on.
+ */
+describe("the colour breathes without shouting", () => {
+  it("drifts through a narrow arc of hue", () => {
+    const rotations = [...css.matchAll(/hue-rotate\((-?\d+)deg\)/g)]
+      .map((m) => Math.abs(Number(m[1])))
+      .filter((n) => n > 0);
+    expect(rotations.length).toBeGreaterThan(0);
+    // Past roughly twenty degrees the blues start becoming other colours.
+    for (const r of rotations) expect(r).toBeLessThanOrEqual(20);
+  });
+
+  it("takes its time over every loop", () => {
+    for (const name of ["hue-drift", "hue-drift-back"]) {
+      const d = Number(css.match(new RegExp(`animation: ${name} (\\d+)s`))?.[1]);
+      expect(d).toBeGreaterThanOrEqual(40);
+    }
+    const travel = Number(css.match(/animation: gradient-travel (\d+)s/)?.[1]);
+    expect(travel).toBeGreaterThanOrEqual(12);
+  });
+
+  it("moves the gradient rather than sliding an edge across", () => {
+    // Without a background larger than the element there is nothing to move
+    // into view, and the animation becomes a wipe.
+    const live = css.slice(css.indexOf(".gradient-live {"));
+    expect(live).toMatch(/background-size: \d{3}%/);
+  });
+
+  it("animates opacity for the glow, not a transform", () => {
+    // A breathing glow should cost nothing to composite.
+    const glow = css.slice(css.indexOf("@keyframes glow-breathe"), css.indexOf("@keyframes scroll-dot"));
+    expect(glow).toContain("opacity");
+    expect(glow).not.toContain("transform");
+  });
+
+  it("is on the buttons and the background washes", () => {
+    expect(landing).toContain("gradient-live");
+    expect(landing).toContain("animate-hue-drift");
+    // The three calls to action all carry it, not just the hero's.
+    const buttons = landing.match(/gradient-live(?![-\w])/g) || [];
+    expect(buttons.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps the washes out of the way of the pointer", () => {
+    for (const m of landing.matchAll(/className="[^"]*blur-\[1\d0px\][^"]*"/g)) {
+      const cls = m[0];
+      if (cls.includes("absolute")) {
+        expect(cls.includes("pointer-events-none") || cls.includes("inset-0")).toBe(true);
+      }
+    }
+  });
+});
