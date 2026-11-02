@@ -888,6 +888,19 @@ export const DEFAULT_CHECKLIST_SECTIONS: ChecklistSection[] = [
         ],
       },
       {
+        id: "marrow-signal-abnormality",
+        name: "Médula ósea de señal anómala / Abnormal Marrow Signal",
+        findings: [
+          "Comparación con el músculo esquelético en T1 (médula roja: más brillante que el músculo; sustitución medular: igual o más oscura)",
+          "Caída de señal en fase opuesta (Dixon, misma ROI en IP y OP): presente → grasa microscópica residual; mínima o ausente → sospecha de sustitución medular",
+          "Distribución: simétrica y de proximal a distal, respetando epífisis y apófisis (reconversión) vs focal o multifocal",
+          "Datos que no encajan con reconversión: masa de partes blandas, destrucción cortical, afectación epifisaria",
+          "Riesgo de fractura patológica y, en columna, extensión al canal con compresión medular o radicular",
+          "Hemograma y causas de demanda hematopoyética: anemia, enfermedad crónica o hipoxia, tabaquismo, deporte de resistencia",
+          "Tratamiento reciente con G-CSF o quimioterapia (puede cambiar la médula de forma llamativa y transitoria)",
+        ],
+      },
+      {
         id: "bone-metastases",
         name: "Metástasis óseas / Bone Metastases",
         findings: [

@@ -1720,6 +1720,60 @@ function LungRadsSheet() {
   );
 }
 
+function MarrowDixonSheet() {
+  const t = useT();
+  return (
+    <CheatSheet
+      title={t("calc.marrow_title")}
+      source="Lecouvet et al., European Radiology 2026 / Saifuddin et al., BJR 2023"
+    >
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200">{t("calc.marrow_q")}</p>
+      <SheetTable
+        headers={[t("calc.marrow_behaviour"), t("calc.marrow_meaning"), t("calc.marrow_orients")]}
+        rows={[
+          [t("calc.marrow_drops"), t("calc.marrow_drops_mean"), t("calc.marrow_drops_or")],
+          [t("calc.marrow_nodrop"), t("calc.marrow_nodrop_mean"), t("calc.marrow_nodrop_or")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3">{t("calc.marrow_formula")}</p>
+      <SheetTable
+        headers={[t("calc.marrow_drop_col"), t("calc.marrow_read_col")]}
+        rows={[
+          [t("calc.marrow_thr_20"), t("calc.marrow_thr_20_r")],
+          [t("calc.marrow_thr_2530"), t("calc.marrow_thr_2530_r")],
+          [t("calc.marrow_thr_min"), t("calc.marrow_thr_min_r")],
+        ]}
+      />
+      <p className="text-[11px] text-gray-500 mt-1.5">{t("calc.marrow_pitfall")}</p>
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3">{t("calc.marrow_why")}</p>
+      <p className="text-[11px] text-gray-500 mb-1">{t("calc.marrow_why_sub")}</p>
+      <SheetTable
+        headers={[t("calc.marrow_cause"), t("calc.marrow_check")]}
+        rows={[
+          [t("calc.marrow_c_anemia"), t("calc.marrow_c_anemia_k")],
+          [t("calc.marrow_c_chronic"), t("calc.marrow_c_chronic_k")],
+          [t("calc.marrow_c_smoke"), t("calc.marrow_c_smoke_k")],
+          [t("calc.marrow_c_gcsf"), t("calc.marrow_c_gcsf_k")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3">{t("calc.marrow_t1")}</p>
+      <SheetTable
+        headers={[t("calc.marrow_feature"), t("calc.marrow_value")]}
+        rows={[
+          [t("calc.marrow_t1_red"), t("calc.marrow_t1_red_v")],
+          [t("calc.marrow_t1_repl"), t("calc.marrow_t1_repl_v")],
+          [t("calc.marrow_t1_dist"), t("calc.marrow_t1_dist_v")],
+          [t("calc.marrow_t1_focal"), t("calc.marrow_t1_focal_v")],
+          [t("calc.marrow_t1_ctx"), t("calc.marrow_t1_ctx_v")],
+        ]}
+      />
+    </CheatSheet>
+  );
+}
+
 function BiradsSheet() {
   const t = useT();
   return (
@@ -2916,6 +2970,74 @@ function NoduleDTCalc() {
       {result && result.vdt <= 0 && (
         <ResultBox label={t("calc.dt_vdt")} value={result.text} color={result.color} />
       )}
+      {copyText && <CopyButton text={copyText} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Marrow Dixon — chemical shift signal drop
+   ═══════════════════════════════════════════ */
+
+/**
+ * Does the marrow still contain microscopic fat?
+ *
+ * Red marrow keeps fat cells between the haematopoietic cells, so its signal
+ * falls on opposed-phase; a process that REPLACES the marrow pushes that fat
+ * out, and the signal stays put. One ROI measured twice is the whole test —
+ * which is also its trap, so the thresholds are shown as bands rather than a
+ * verdict, and the caveat about T1, distribution and history travels with the
+ * number into the clipboard.
+ */
+function MarrowDixonCalc() {
+  const t = useT();
+  const [ip, setIp] = useState("");
+  const [op, setOp] = useState("");
+
+  const result = (() => {
+    const a = parseFloat(ip);
+    const b = parseFloat(op);
+    if (isNaN(a) || isNaN(b) || a <= 0 || b < 0) return null;
+    const drop = ((a - b) / a) * 100;
+    if (drop <= 0) return { drop, text: t("calc.dixon_nodrop"), color: "red" as const };
+    if (drop >= 30) return { drop, text: t("calc.dixon_preserved"), color: "green" as const };
+    if (drop >= 20) return { drop, text: t("calc.dixon_gray"), color: "blue" as const };
+    return { drop, text: t("calc.dixon_replace"), color: "red" as const };
+  })();
+
+  const shown = result ? `${result.drop.toFixed(1)}%` : "";
+  const copyText = result
+    ? `${t("calc.dixon_drop")}: ${shown} (IP ${ip} → OP ${op}). ${result.text} ${t("calc.dixon_caveat")}`
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-gray-400">Lecouvet et al., European Radiology 2026</p>
+        <ResetButton onClick={() => { setIp(""); setOp(""); }} />
+      </div>
+
+      <p className="text-[11px] text-gray-500 dark:text-gray-400">{t("calc.dixon_hint")}</p>
+
+      <div className="grid grid-cols-2 gap-2">
+        <NumInput label={t("calc.dixon_ip")} value={ip} onChange={setIp} min={0} step={1} />
+        <NumInput label={t("calc.dixon_op")} value={op} onChange={setOp} min={0} step={1} />
+      </div>
+
+      <div className="rounded-md border border-[hsl(var(--border))] px-3 py-1.5">
+        <p className="text-[11px] text-center text-gray-600 dark:text-gray-300">{t("calc.marrow_formula")}</p>
+      </div>
+
+      {result && (
+        <ResultBox
+          label={t("calc.dixon_drop")}
+          value={shown}
+          interpretation={result.text}
+          color={result.color}
+        />
+      )}
+
+      <p className="text-[10px] text-gray-400">{t("calc.dixon_caveat")}</p>
       {copyText && <CopyButton text={copyText} />}
     </div>
   );
@@ -6322,7 +6444,7 @@ const ENDOMETRIUM_TNM: TNMConfig = {
    Main Tab Component
    ═══════════════════════════════════════════ */
 
-type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol" | "breast_tnm" | "colorectal_tnm" | "gastric_tnm" | "rcc_tnm" | "bladder_tnm" | "prostate_tnm" | "pancreas_tnm" | "hcc_tnm" | "esophagus_tnm" | "gallbladder_tnm" | "thyroid_dtc_tnm" | "cervix_tnm" | "endometrium_tnm";
+type CalcId = "adrenal" | "tirads" | "pirads" | "bosniak" | "thyroid" | "prostate" | "aspects" | "ontrack" | "renal" | "lung_tnm" | "larynx_tnm" | "nodule_dt" | "cadrads" | "t1t2_mapping" | "lirads" | "birads" | "orads" | "lungrads" | "renal_vol" | "marrow_dixon" | "breast_tnm" | "colorectal_tnm" | "gastric_tnm" | "rcc_tnm" | "bladder_tnm" | "prostate_tnm" | "pancreas_tnm" | "hcc_tnm" | "esophagus_tnm" | "gallbladder_tnm" | "thyroid_dtc_tnm" | "cervix_tnm" | "endometrium_tnm";
 
 const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "adrenal", emoji: "🔬" },
@@ -6344,6 +6466,7 @@ const CALCULATORS: { id: CalcId; emoji: string }[] = [
   { id: "orads", emoji: "🥚" },
   { id: "lungrads", emoji: "🫁" },
   { id: "renal_vol", emoji: "📐" },
+  { id: "marrow_dixon", emoji: "🦴" },
   { id: "breast_tnm", emoji: "🎗️" },
   { id: "colorectal_tnm", emoji: "🧫" },
   { id: "gastric_tnm", emoji: "🍽️" },
@@ -6407,6 +6530,7 @@ export function CalculatorsTab() {
     orads: "O-RADS MRI",
     lungrads: "Lung-RADS v2022",
     renal_vol: t("crit.renal_vol_title"),
+    marrow_dixon: t("calc.dixon_title"),
     breast_tnm: tnmTitle("breast_tnm"),
     colorectal_tnm: tnmTitle("colorectal_tnm"),
     gastric_tnm: tnmTitle("gastric_tnm"),
@@ -6491,6 +6615,7 @@ export function CalculatorsTab() {
         { id: "canal", component: <CanalStenosisSheet />, label: t("calc.canal_title") },
         { id: "foraminal", component: <ForaminalStenosisSheet />, label: t("calc.foraminal_title") },
         { id: "mri_ankle", component: <MRIAnkleSheet />, label: t("calc.mri_ankle_title") },
+        { id: "marrow_dixon", component: <MarrowDixonSheet />, label: t("calc.marrow_title") },
         { id: "mri_knee", component: <MRIKneeSheet />, label: t("calc.mri_knee_title") },
         { id: "mri_shoulder", component: <MRIShoulderSheet />, label: t("calc.mri_shoulder_title") },
         { id: "mri_thigh_leg", component: <MRIThighLegSheet />, label: t("calc.mri_thigh_title") },
@@ -6676,6 +6801,7 @@ export function CalculatorsTab() {
                               {c.id === "orads" && <OradsCalc />}
                               {c.id === "lungrads" && <LungRadsCalc />}
                               {c.id === "renal_vol" && <RenalVolumeTKVCalc />}
+                              {c.id === "marrow_dixon" && <MarrowDixonCalc />}
                               {c.id === "breast_tnm" && <TNMStager config={BREAST_TNM} />}
                               {c.id === "colorectal_tnm" && <TNMStager config={COLORECTAL_TNM} />}
                               {c.id === "gastric_tnm" && <TNMStager config={GASTRIC_TNM} />}
