@@ -1986,41 +1986,366 @@ function AorticAneurysmSheet() {
   );
 }
 
-function SpineNomenclatureSheet() {
-  const t = useT();
+/* ═══════════════════════════════════════════
+   Spine diagrams
+   ═══════════════════════════════════════════ */
+
+/**
+ * Schematic figures for the spine sheets.
+ *
+ * Disc nomenclature is a set of geometric definitions — base against depth,
+ * degrees of circumference, continuity with the parent disc — and a table of
+ * sentences asks the reader to rebuild each picture in their head every time.
+ * Drawing them once is the difference between a glossary and something you
+ * can check a study against.
+ *
+ * Deliberately schematic rather than MRI-like: the figures carry the single
+ * geometric fact that separates one term from the next, with nothing else
+ * competing for attention. Colours come from Tailwind utilities so both
+ * themes are covered without a second palette.
+ */
+
+const DISC = "fill-gray-200 dark:fill-gray-700 stroke-gray-400 dark:stroke-gray-500";
+const HERN = "fill-violet-400/80 dark:fill-violet-500/70 stroke-violet-500 dark:stroke-violet-400";
+const SAC = "fill-sky-100 dark:fill-sky-950 stroke-sky-300 dark:stroke-sky-800";
+const REF = "stroke-gray-400 dark:stroke-gray-500";
+const INK = "fill-gray-500 dark:fill-gray-400";
+
+function Fig({ children, label, tag }: { children: React.ReactNode; label: string; tag: string }) {
   return (
-    <CheatSheet title={t("calc.spine_nomen_title")} source="Combined Task Forces of NASS, ASSR, ASNR (Fardon et al., Spine J 2014)">
-      <SheetTable
-        headers={[t("calc.term"), t("calc.definition")]}
-        rows={[
-          [t("calc.spine_normal"), t("calc.spine_normal_def")],
-          [t("calc.spine_bulge"), t("calc.spine_bulge_def")],
-          [t("calc.spine_protrusion"), t("calc.spine_protrusion_def")],
-          [t("calc.spine_extrusion"), t("calc.spine_extrusion_def")],
-          [t("calc.spine_sequestration"), t("calc.spine_sequestration_def")],
-          [t("calc.spine_migration"), t("calc.spine_migration_def")],
-        ]}
-      />
-      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-        {t("calc.spine_nomen_note")}
-      </p>
-    </CheatSheet>
+    <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] p-1.5">
+      <svg viewBox="0 0 120 92" className="w-full h-auto" role="img" aria-label={label}>
+        {children}
+      </svg>
+      <div className="flex items-baseline justify-between gap-1 mt-0.5">
+        <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200 leading-tight">{label}</span>
+        <span className="text-[8px] uppercase tracking-wide text-gray-400 shrink-0">{tag}</span>
+      </div>
+    </div>
   );
 }
 
-function ForaminalStenosisSheet() {
+/** Disc body seen from above, with the apophyseal ring as the reference line. */
+function AxialBase() {
+  return (
+    <>
+      <rect x="16" y="6" width="88" height="34" rx="13" className={DISC} strokeWidth="1.5" />
+      <ellipse cx="60" cy="80" rx="22" ry="10" className={SAC} strokeWidth="1.5" />
+      <line x1="14" y1="40" x2="106" y2="40" className={REF} strokeWidth="1" strokeDasharray="3 2" />
+    </>
+  );
+}
+
+/** Two bodies and the disc between them, posterior margin to the right. */
+function SagBase() {
+  return (
+    <>
+      <rect x="8" y="4" width="52" height="22" rx="3" className={DISC} strokeWidth="1.5" />
+      <rect x="8" y="26" width="52" height="14" rx="2" className={DISC} strokeWidth="1.5" />
+      <rect x="8" y="40" width="52" height="46" rx="3" className={DISC} strokeWidth="1.5" />
+      <rect x="60" y="4" width="52" height="82" rx="2" className={SAC} strokeWidth="1.5" />
+    </>
+  );
+}
+
+function FigNormal() {
+  const t = useT();
+  return <Fig label={t("calc.spine_normal")} tag={t("calc.spine_view_axial")}><AxialBase /></Fig>;
+}
+
+function FigBulge() {
   const t = useT();
   return (
-    <CheatSheet title={t("calc.foraminal_title")} source="Lee CK et al., Spine 1988 / Wildermuth et al., Radiology 1998">
+    <Fig label={t("calc.spine_bulge")} tag={t("calc.spine_view_axial")}>
+      <AxialBase />
+      <path d="M18,40 Q60,52 102,40 Z" className={HERN} strokeWidth="1.5" />
+    </Fig>
+  );
+}
+
+function FigProtrusion() {
+  const t = useT();
+  return (
+    <Fig label={t("calc.spine_protrusion")} tag={t("calc.spine_view_axial")}>
+      <AxialBase />
+      <path d="M38,40 Q60,68 82,40 Z" className={HERN} strokeWidth="1.5" />
+      {/* a 44-wide base against a depth of 14: the comparison IS the definition */}
+      <line x1="38" y1="43" x2="82" y2="43" className="stroke-violet-700 dark:stroke-violet-200" strokeWidth="1.2" />
+      <line x1="60" y1="41" x2="60" y2="54" className="stroke-violet-700 dark:stroke-violet-200" strokeWidth="1.2" strokeDasharray="2 1.5" />
+    </Fig>
+  );
+}
+
+function FigExtrusion() {
+  const t = useT();
+  return (
+    <Fig label={t("calc.spine_extrusion")} tag={t("calc.spine_view_axial")}>
+      <AxialBase />
+      {/* the same comparison inverted: a 16-wide base against a depth of 28 */}
+      <path d="M52,40 C50,48 42,50 44,58 C46,68 74,68 76,58 C78,50 70,48 68,40 Z" className={HERN} strokeWidth="1.5" />
+      <line x1="52" y1="43" x2="68" y2="43" className="stroke-violet-700 dark:stroke-violet-200" strokeWidth="1.2" />
+      <line x1="60" y1="41" x2="60" y2="68" className="stroke-violet-700 dark:stroke-violet-200" strokeWidth="1.2" strokeDasharray="2 1.5" />
+    </Fig>
+  );
+}
+
+function FigSequestration() {
+  const t = useT();
+  return (
+    <Fig label={t("calc.spine_sequestration")} tag={t("calc.spine_view_sag")}>
+      <SagBase />
+      <path d="M60,28 C68,28 70,34 68,38 L60,38 Z" className={HERN} strokeWidth="1.5" />
+      {/* the gap is the finding: no continuity with the parent disc */}
+      <ellipse cx="84" cy="33" rx="10" ry="7" className={HERN} strokeWidth="1.5" />
+    </Fig>
+  );
+}
+
+function FigMigration() {
+  const t = useT();
+  return (
+    <Fig label={t("calc.spine_migration")} tag={t("calc.spine_view_sag")}>
+      <SagBase />
+      <path d="M60,28 C68,28 70,34 68,38 L60,38 Z" className={HERN} strokeWidth="1.5" />
+      <ellipse cx="82" cy="62" rx="10" ry="7" className={HERN} strokeWidth="1.5" />
+      <path d="M72,42 L78,53" className="stroke-violet-700 dark:stroke-violet-200" strokeWidth="1.3" strokeDasharray="2 1.5" />
+      <path d="M78,54 l-4,-1.6 l1.2,4 z" className="fill-violet-700 dark:fill-violet-200" />
+    </Fig>
+  );
+}
+
+/** The four axial zones, named off the facet and the pedicle. */
+function FigZones() {
+  const t = useT();
+  return (
+    <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] p-2">
+      <svg viewBox="0 0 160 92" className="w-full h-auto" role="img" aria-label={t("calc.spine_zones")}>
+        <rect x="30" y="4" width="100" height="32" rx="12" className={DISC} strokeWidth="1.5" />
+        <ellipse cx="80" cy="56" rx="22" ry="12" className={SAC} strokeWidth="1.5" />
+        {/* pedicles: the foraminal zone is measured off their two edges */}
+        <rect x="26" y="38" width="20" height="12" rx="3" className={DISC} strokeWidth="1.5" />
+        <rect x="114" y="38" width="20" height="12" rx="3" className={DISC} strokeWidth="1.5" />
+        {/* facets: the central zone ends at their medial edge */}
+        <rect x="44" y="56" width="14" height="16" rx="3" className={DISC} strokeWidth="1.5" />
+        <rect x="102" y="56" width="14" height="16" rx="3" className={DISC} strokeWidth="1.5" />
+        {[
+          { x1: 58, x2: 80, n: "1" },
+          { x1: 46, x2: 58, n: "2" },
+          { x1: 26, x2: 46, n: "3" },
+          { x1: 6, x2: 26, n: "4" },
+        ].map((z) => (
+          <g key={z.n}>
+            <line x1={z.x1} y1="86" x2={z.x2} y2="86" className="stroke-violet-500 dark:stroke-violet-400" strokeWidth="2.5" />
+            <text x={(z.x1 + z.x2) / 2} y="82" textAnchor="middle" fontSize="9" className={INK}>{z.n}</text>
+          </g>
+        ))}
+      </svg>
+      <ol className="mt-1.5 space-y-0.5">
+        {[
+          [t("calc.spine_zone_central"), t("calc.spine_zone_central_def")],
+          [t("calc.spine_zone_subart"), t("calc.spine_zone_subart_def")],
+          [t("calc.spine_zone_foram"), t("calc.spine_zone_foram_def")],
+          [t("calc.spine_zone_extra"), t("calc.spine_zone_extra_def")],
+        ].map(([name, def], i) => (
+          <li key={name} className="text-[10px] text-gray-600 dark:text-gray-300 leading-snug">
+            <span className="font-semibold">{i + 1}. {name}</span> — {def}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/** Circumferential extent: the measurement that rules a bulge out of being a herniation. */
+function FigCircumference() {
+  const t = useT();
+  const arcs = [
+    { key: "focal", d: "M73,62.5 A26,26 0 0,1 47,62.5", label: t("calc.spine_circ_focal"), deg: "< 90°" },
+    { key: "broad", d: "M84,50 A26,26 0 0,1 36,50", label: t("calc.spine_circ_broad"), deg: "90–180°" },
+    { key: "bulge", d: "M81.3,25.1 A26,26 0 1,1 38.7,25.1", label: t("calc.spine_circ_bulge"), deg: "> 180°" },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {arcs.map((a) => (
+        <div key={a.key} className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] p-1.5">
+          <svg viewBox="0 0 120 92" className="w-full h-auto" role="img" aria-label={a.label}>
+            <circle cx="60" cy="40" r="26" className={DISC} strokeWidth="1.5" />
+            <path d={a.d} fill="none" className="stroke-violet-500 dark:stroke-violet-400" strokeWidth="6" strokeLinecap="round" />
+            <text x="60" y="86" textAnchor="middle" fontSize="11" className={INK}>{a.deg}</text>
+          </svg>
+          <p className="text-[10px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-tight">{a.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Schizas: the dural sac at the most stenotic slice. */
+function FigSchizas({ grade }: { grade: "A" | "B" | "C" | "D" }) {
+  const dots =
+    grade === "A"
+      ? [[34, 48], [42, 51], [50, 50], [38, 44], [46, 45]]
+      : grade === "B"
+      ? [[28, 40], [36, 34], [44, 32], [52, 36], [30, 48], [38, 46], [46, 48], [52, 44], [40, 54], [48, 56], [34, 28], [46, 26]]
+      : [];
+  return (
+    <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] p-1.5">
+      <svg viewBox="0 0 80 80" className="w-full h-auto" role="img" aria-label={`Schizas ${grade}`}>
+        <circle
+          cx="40" cy="40" r="26" strokeWidth="1.5"
+          className={grade === "A" || grade === "B" ? SAC : "fill-gray-400 dark:fill-gray-500 stroke-gray-500 dark:stroke-gray-400"}
+        />
+        {dots.map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="2.6" className="fill-gray-600 dark:fill-gray-300" />
+        ))}
+        {/* posterior epidural fat: present through C, gone in D */}
+        {grade !== "D" && (
+          <path d="M22,70 Q40,78 58,70" fill="none" className="stroke-amber-400 dark:stroke-amber-500" strokeWidth="5" strokeLinecap="round" />
+        )}
+      </svg>
+      <p className="text-[11px] font-bold text-center text-gray-700 dark:text-gray-200">{grade}</p>
+    </div>
+  );
+}
+
+/** Lee / Wildermuth: the foramen on sagittal T1, fat against root. */
+function FigForaminal({ grade }: { grade: 0 | 1 | 2 | 3 }) {
+  return (
+    <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.25)] p-1.5">
+      <svg viewBox="0 0 80 80" className="w-full h-auto" role="img" aria-label={`Grade ${grade}`}>
+        <ellipse cx="40" cy="42" rx="20" ry="27" className="fill-amber-200 dark:fill-amber-600/50 stroke-gray-400 dark:stroke-gray-500" strokeWidth="1.5" />
+        {/* fat lost vertically first (grade 1), then all round (grade 2) */}
+        {grade === 1 && (
+          <>
+            <ellipse cx="40" cy="22" rx="13" ry="5.5" className="fill-gray-400 dark:fill-gray-600" opacity="0.9" />
+            <ellipse cx="40" cy="63" rx="13" ry="5.5" className="fill-gray-400 dark:fill-gray-600" opacity="0.9" />
+          </>
+        )}
+        {grade >= 2 && (
+          <ellipse cx="40" cy="42" rx="19.2" ry="26.2" className="fill-gray-400 dark:fill-gray-600" opacity="0.9" />
+        )}
+        {grade === 3 ? (
+          <ellipse cx="40" cy="34" rx="12" ry="3.5" className="fill-rose-400 dark:fill-rose-500 stroke-rose-500 dark:stroke-rose-400" strokeWidth="1.2" />
+        ) : (
+          <circle cx="40" cy="32" r="8" className="fill-rose-400 dark:fill-rose-500 stroke-rose-500 dark:stroke-rose-400" strokeWidth="1.2" />
+        )}
+      </svg>
+      <p className="text-[11px] font-bold text-center text-gray-700 dark:text-gray-200">{grade}</p>
+    </div>
+  );
+}
+
+/* ── The two stenosis classifications, shared by their own sheet and the
+      nomenclature sheet, so the numbers only exist in one place. ── */
+
+function CanalStenosisBlock() {
+  const t = useT();
+  return (
+    <>
+      <div className="grid grid-cols-4 gap-2">
+        {(["A", "B", "C", "D"] as const).map((g) => <FigSchizas key={g} grade={g} />)}
+      </div>
       <SheetTable
-        headers={[t("calc.grade"), t("calc.description"), t("calc.foraminal_fat")]}
+        headers={[t("calc.grade"), t("calc.description"), t("calc.csf_rootlets"), t("calc.canal_fat")]}
         rows={[
-          ["0", t("calc.foraminal_g0"), t("calc.foraminal_g0_fat")],
-          ["1", t("calc.foraminal_g1"), t("calc.foraminal_g1_fat")],
-          ["2", t("calc.foraminal_g2"), t("calc.foraminal_g2_fat")],
-          ["3", t("calc.foraminal_g3"), t("calc.foraminal_g3_fat")],
+          ["A", t("calc.canal_a"), t("calc.canal_a_csf"), t("calc.canal_a_fat")],
+          ["B", t("calc.canal_b"), t("calc.canal_b_csf"), t("calc.canal_b_fat")],
+          ["C", t("calc.canal_c"), t("calc.canal_c_csf"), t("calc.canal_c_fat")],
+          ["D", t("calc.canal_d"), t("calc.canal_d_csf"), t("calc.canal_d_fat")],
         ]}
       />
+      <ul className="mt-1 space-y-0.5">
+        {[t("calc.canal_a1"), t("calc.canal_a2"), t("calc.canal_a3"), t("calc.canal_a4")].map((x) => (
+          <li key={x} className="text-[10px] text-gray-500 dark:text-gray-400 leading-snug">{x}</li>
+        ))}
+      </ul>
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t("calc.canal_grade_note")}</p>
+    </>
+  );
+}
+
+function ForaminalStenosisBlock() {
+  const t = useT();
+  return (
+    <>
+      <div className="grid grid-cols-4 gap-2">
+        {([0, 1, 2, 3] as const).map((g) => <FigForaminal key={g} grade={g} />)}
+      </div>
+      <SheetTable
+        headers={[t("calc.grade"), t("calc.description"), t("calc.criterion")]}
+        rows={[
+          ["0", t("calc.foraminal_g0"), t("calc.foraminal_g0_crit")],
+          ["1", t("calc.foraminal_g1"), t("calc.foraminal_g1_crit")],
+          ["2", t("calc.foraminal_g2"), t("calc.foraminal_g2_crit")],
+          ["3", t("calc.foraminal_g3"), t("calc.foraminal_g3_crit")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t("calc.foraminal_note")}</p>
+    </>
+  );
+}
+
+const SPINE_SOURCES =
+  "Fardon et al., Spine J 2014 / Schizas et al., Spine 2010 / Lee CK et al., Spine 1988 · Wildermuth et al., Radiology 1998";
+
+function SpineNomenclatureSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.spine_nomen_title")} source={SPINE_SOURCES}>
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200">{t("calc.spine_terms")}</p>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <FigNormal />
+        <FigBulge />
+        <FigProtrusion />
+        <FigExtrusion />
+        <FigSequestration />
+        <FigMigration />
+      </div>
+      <SheetTable
+        headers={[t("calc.term"), t("calc.definition"), t("calc.criterion")]}
+        rows={[
+          [t("calc.spine_normal"), t("calc.spine_normal_def"), t("calc.spine_dx_normal")],
+          [t("calc.spine_bulge"), t("calc.spine_bulge_def"), t("calc.spine_dx_bulge")],
+          [t("calc.spine_protrusion"), t("calc.spine_protrusion_def"), t("calc.spine_dx_prot")],
+          [t("calc.spine_extrusion"), t("calc.spine_extrusion_def"), t("calc.spine_dx_extr")],
+          [t("calc.spine_sequestration"), t("calc.spine_sequestration_def"), t("calc.spine_dx_seq")],
+          [t("calc.spine_migration"), t("calc.spine_migration_def"), t("calc.spine_dx_migr")],
+        ]}
+      />
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t("calc.spine_measure")}</p>
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3 mb-1">{t("calc.spine_circum")}</p>
+      <FigCircumference />
+      <SheetTable
+        headers={[t("calc.term"), t("calc.definition")]}
+        rows={[
+          [t("calc.spine_circ_focal"), t("calc.spine_circ_focal_def")],
+          [t("calc.spine_circ_broad"), t("calc.spine_circ_broad_def")],
+          [t("calc.spine_circ_bulge"), t("calc.spine_circ_bulge_def")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3 mb-1">{t("calc.spine_zones")}</p>
+      <FigZones />
+      <SheetTable
+        headers={[t("calc.spine_levels"), t("calc.definition")]}
+        rows={[
+          [
+            `${t("calc.spine_lvl_disc")} · ${t("calc.spine_lvl_infra")} · ${t("calc.spine_lvl_ped")} · ${t("calc.spine_lvl_supra")}`,
+            t("calc.spine_levels_def"),
+          ],
+          [t("calc.spine_contained"), t("calc.spine_contained_def")],
+          [t("calc.spine_uncontained"), t("calc.spine_uncontained_def")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3 mb-1">{t("calc.canal_title")}</p>
+      <CanalStenosisBlock />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 mt-3 mb-1">{t("calc.foraminal_title")}</p>
+      <ForaminalStenosisBlock />
+
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">{t("calc.spine_nomen_note")}</p>
     </CheatSheet>
   );
 }
@@ -2029,18 +2354,22 @@ function CanalStenosisSheet() {
   const t = useT();
   return (
     <CheatSheet title={t("calc.canal_title")} source="Schizas et al., Spine 2010">
-      <SheetTable
-        headers={[t("calc.grade"), t("calc.description"), t("calc.csf_rootlets")]}
-        rows={[
-          ["A (A1–A4)", t("calc.canal_a"), t("calc.canal_a_csf")],
-          ["B", t("calc.canal_b"), t("calc.canal_b_csf")],
-          ["C", t("calc.canal_c"), t("calc.canal_c_csf")],
-          ["D", t("calc.canal_d"), t("calc.canal_d_csf")],
-        ]}
-      />
+      <CanalStenosisBlock />
     </CheatSheet>
   );
 }
+
+function ForaminalStenosisSheet() {
+  const t = useT();
+  return (
+    <CheatSheet title={t("calc.foraminal_title")} source="Lee CK et al., Spine 1988 / Wildermuth et al., Radiology 1998">
+      <ForaminalStenosisBlock />
+    </CheatSheet>
+  );
+}
+
+
+
 
 function ShoulderCoronal() {
   return (
