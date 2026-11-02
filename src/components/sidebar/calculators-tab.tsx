@@ -1723,12 +1723,14 @@ function LungRadsSheet() {
 function BiradsSheet() {
   const t = useT();
   return (
-    <CheatSheet title="BI-RADS v2025" source="ACR BI-RADS v2025 Manual (Dec 2025)">
+    <CheatSheet title="BI-RADS v2025" source="ACR BI-RADS® Manual v2025">
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300">{t("calc.birads_cats")}</p>
       <SheetTable
         headers={[t("calc.category"), t("calc.description"), t("calc.recommendation")]}
         rows={[
-          ["0a", t("calc.birads_0a"), t("calc.birads_0a_rec")],
-          ["0b", t("calc.birads_0b"), t("calc.birads_0b_rec")],
+          // Category 0 is one category. The two situations that call for it
+          // are a clarification in v2025, not numbered subcategories.
+          ["0", t("calc.birads_0"), t("calc.birads_0_rec")],
           ["1", t("calc.birads_1"), t("calc.birads_1_rec")],
           ["2", t("calc.birads_2"), t("calc.birads_2_rec")],
           ["3", t("calc.birads_3"), t("calc.birads_3_rec")],
@@ -1739,7 +1741,76 @@ function BiradsSheet() {
           ["6", t("calc.birads_6"), t("calc.birads_6_rec")],
         ]}
       />
-      <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_v2025_changes")}</p>
+      <p className="text-[11px] text-gray-500 mt-1.5">{t("calc.birads_0_note")}</p>
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_mass")}</p>
+      <SheetTable
+        headers={[t("calc.birads_feature"), t("calc.birads_options")]}
+        rows={[
+          [t("calc.birads_mass_shape"), t("calc.birads_mass_shape_d")],
+          [t("calc.birads_mass_margin"), t("calc.birads_mass_margin_d")],
+          [t("calc.birads_mass_dens"), t("calc.birads_mass_dens_d")],
+          [t("calc.birads_distortion"), t("calc.birads_distortion_d")],
+          [t("calc.birads_asym"), t("calc.birads_asym_d")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_calc_morph")}</p>
+      <SheetTable
+        headers={[t("calc.birads_feature"), t("calc.birads_options")]}
+        rows={[
+          [t("calc.birads_calc_benign"), t("calc.birads_calc_benign_d")],
+          [t("calc.birads_calc_susp"), t("calc.birads_calc_susp_d")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_calc_dist")}</p>
+      <SheetTable
+        headers={[t("calc.birads_feature"), t("calc.birads_meaning")]}
+        rows={[
+          [t("calc.birads_dist_diffuse"), t("calc.birads_dist_diffuse_d")],
+          [t("calc.birads_dist_regional"), t("calc.birads_dist_regional_d")],
+          [t("calc.birads_dist_grouped"), t("calc.birads_dist_grouped_d")],
+          [t("calc.birads_dist_linear"), t("calc.birads_dist_linear_d")],
+          [t("calc.birads_dist_segmental"), t("calc.birads_dist_segmental_d")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_us")}</p>
+      <SheetTable
+        headers={[t("calc.birads_feature"), t("calc.birads_options")]}
+        rows={[
+          [t("calc.birads_us_shape"), t("calc.birads_us_shape_d")],
+          [t("calc.birads_us_margin"), t("calc.birads_us_margin_d")],
+          [t("calc.birads_us_echo"), t("calc.birads_us_echo_d")],
+          [t("calc.birads_us_post"), t("calc.birads_us_post_d")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_mri")}</p>
+      <SheetTable
+        headers={[t("calc.birads_feature"), t("calc.birads_options")]}
+        rows={[
+          [t("calc.birads_mri_bpe"), t("calc.birads_mri_bpe_d")],
+          [t("calc.birads_mri_mass"), t("calc.birads_mri_mass_d")],
+          [t("calc.birads_mri_nme"), t("calc.birads_mri_nme_d")],
+          [t("calc.birads_mri_kinetic"), t("calc.birads_mri_kinetic_d")],
+        ]}
+      />
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_density")}</p>
+      <SheetTable
+        headers={[t("calc.category"), t("calc.description")]}
+        rows={[
+          ["a", t("calc.birads_dens_a")],
+          ["b", t("calc.birads_dens_b")],
+          ["c", t("calc.birads_dens_c")],
+          ["d", t("calc.birads_dens_d")],
+        ]}
+      />
+      <p className="text-[11px] text-gray-500 mt-1.5">{t("calc.birads_dens_note")}</p>
+
+      <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-3">{t("calc.birads_v2025_changes")}</p>
       <SheetTable
         headers={[t("calc.birads_topic"), t("calc.birads_change")]}
         rows={[
@@ -1747,7 +1818,7 @@ function BiradsSheet() {
           [t("calc.birads_ch_cem"), t("calc.birads_ch_cem_d")],
           [t("calc.birads_ch_density"), t("calc.birads_ch_density_d")],
           [t("calc.birads_ch_lexicon"), t("calc.birads_ch_lexicon_d")],
-          [t("calc.birads_ch_ln"), t("calc.birads_ch_ln_d")],
+          [t("calc.birads_ch_name"), t("calc.birads_ch_name_d")],
         ]}
       />
     </CheatSheet>
