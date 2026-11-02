@@ -6,7 +6,7 @@ import { detectDiagnoses } from "@/lib/diagnosis-detect";
 import type { ConclusionStyle, OutputLanguage } from "@/lib/types";
 
 const LANGS: OutputLanguage[] = ["es", "en", "pt"];
-const STYLES: ConclusionStyle[] = ["evolutive", "concise"];
+const STYLES: ConclusionStyle[] = ["detailed", "concise"];
 
 const FINDINGS = `Hígado: lesión focal hipodensa de 12 mm en segmento VII (8 mm en el estudio previo).
 Vesícula: litiasis de 8 mm.
@@ -77,105 +77,96 @@ describe("the guardrails survive every style and language", () => {
 
 describe("the two styles ask for different shapes", () => {
   for (const lang of LANGS) {
-    it(`evolutive orders by change, not by relevance (${lang})`, () => {
-      const { system } = build(lang, "evolutive");
-      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE|PELA MUDANÇA/.test(system)).toBe(true);
-      // The five groups, in the order the points have to run in.
-      const groups = lang === "es"
-        ? ["NUEVO", "AUMENTADO", "DISMINUIDO", "SIN CAMBIOS", "RESUELTO"]
-        : lang === "pt"
-        ? ["NOVO", "AUMENTOU", "DIMINUIU", "SEM ALTERAÇÕES", "RESOLVEU"]
-        : ["NEW", "INCREASED", "DECREASED", "UNCHANGED", "RESOLVED"];
-      let at = -1;
-      for (const g of groups) {
-        const next = system.indexOf(g, at + 1);
-        expect(next).toBeGreaterThan(at);
-        at = next;
+    it(`detailed asks for reasoning, with a sentence budget per point (${lang})`, () => {
+      const { system } = build(lang, "detailed");
+      expect(/RAZONADA Y ORIENTADA|REASONED AND CLINICALLY ORIENTED|FUNDAMENTADA E ORIENTADA/.test(system)).toBe(true);
+      // The room is bounded on both sides: enough to relate, not a licence to
+      // ramble, and explicitly not a quota to fill.
+      expect(/una a tres frases|one to three sentences|uma a três frases/.test(system)).toBe(true);
+      expect(/no una cuota|not a quota|não uma cota/.test(system)).toBe(true);
+    });
+
+    it(`detailed says what reasoning is and what it is not (${lang})`, () => {
+      // Without the second half, "reason more" reads as "infer more", which is
+      // the one thing the conclusion may never do.
+      const { system } = build(lang, "detailed");
+      expect(/QUÉ CUENTA COMO RAZONAR|WHAT COUNTS AS REASONING|O QUE CONTA COMO FUNDAMENTAR/.test(system)).toBe(true);
+      expect(/QUÉ NO CUENTA|WHAT DOES NOT COUNT|O QUE NÃO CONTA/.test(system)).toBe(true);
+      expect(/deducir la enfermedad|deducing the disease|deduzir a doença/.test(system)).toBe(true);
+    });
+
+    it(`detailed carries pertinent negatives, not organ normality (${lang})`, () => {
+      const { system } = build(lang, "detailed");
+      expect(/NEGATIVOS PERTINENTES|PERTINENT NEGATIVES/.test(system)).toBe(true);
+      expect(/como relleno|as filler|como enchimento/.test(system)).toBe(true);
+    });
+
+    it(`detailed names indeterminacy instead of filling it in (${lang})`, () => {
+      const { system } = build(lang, "detailed");
+      expect(/INDETERMINACIÓN|INDETERMINACY|INDETERMINAÇÃO/.test(system)).toBe(true);
+      expect(/una probabilidad|a probability|uma probabilidade/.test(system)).toBe(true);
+    });
+
+    it(`detailed gets more room than concise, never less (${lang})`, () => {
+      const points = (style: ConclusionStyle) =>
+        Number(build(lang, style).system.match(/(?:OBJETIVO|TARGET):\s*(\d+)/)![1]);
+      expect(points("detailed")).toBeGreaterThan(points("concise"));
+    });
+
+    it(`both order by what changes management (${lang})`, () => {
+      for (const style of STYLES) {
+        const { system } = build(lang, style);
+        expect(/POR LO QUE CAMBIA EL MANEJO|BY WHAT CHANGES MANAGEMENT|QUE MUDA O MANEJO/.test(system)).toBe(true);
       }
     });
 
-    it(`evolutive states the change in the sentence, not as a label (${lang})`, () => {
-      // The radiologist rejected "Aumentado: lesión…" — a conclusion reads as
-      // prose, and the ordering already carries the change.
-      const { system } = build(lang, "evolutive");
-      expect(/NUNCA como etiqueta fija|NEVER as a fixed label|NUNCA como etiqueta fixa/.test(system)).toBe(true);
-      // And the worked example must not be teaching the format it forbids.
-      const good = system.slice(system.indexOf("✓"), system.indexOf("✗"));
-      for (const label of ["Aumentado:", "Increased:", "Sem alterações:", "Nuevo:", "New:", "Resuelto:", "Resolved:"]) {
-        expect(good).not.toContain(label);
+    it(`neither orders by kind of change any more (${lang})`, () => {
+      // The style this replaced sorted the points into new / increased /
+      // decreased / unchanged / resolved. Ordering by change buried whatever
+      // answered the clinical question somewhere in the middle.
+      for (const style of STYLES) {
+        const { system } = build(lang, style);
+        expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE|PELA MUDANÇA/.test(system)).toBe(false);
       }
-    });
-
-    it(`concise orders by what changes management, not by change (${lang})`, () => {
-      const { system } = build(lang, "concise");
-      expect(/POR LO QUE CAMBIA EL MANEJO|BY WHAT CHANGES MANAGEMENT/.test(system)).toBe(true);
-      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(false);
     });
 
     it(`both ask for numbered points (${lang})`, () => {
       for (const style of STYLES) {
-        expect(/Puntos numerados|Numbered points/.test(build(lang, style).system)).toBe(true);
+        expect(/Puntos numerados|Numbered points|Pontos numerados/.test(build(lang, style).system)).toBe(true);
       }
     });
   }
 });
 
-describe("the evolutive style guards the line between measuring and interpreting", () => {
-  // This style sits right on top of the forbidden words: an increase is not
-  // "progression", a decrease is not "response". The mapping is spelled out
-  // rather than left to the general prohibition list.
+describe("the detailed style still guards the line between measuring and interpreting", () => {
+  // The extra room is exactly where "increase" turns into "progression", so
+  // the mapping is spelled out inside the style block rather than left to the
+  // general prohibition list.
   for (const lang of LANGS) {
-    it(`forbids progression, response and stable disease by name (${lang})`, () => {
-      const { system } = build(lang, "evolutive");
+    it(`forbids progression and stable disease by name (${lang})`, () => {
+      const { system } = build(lang, "detailed");
       const banned = lang === "es"
-        ? ["progresión", "respuesta parcial", "enfermedad estable"]
+        ? ["progresión", "enfermedad estable"]
         : lang === "pt"
-        ? ["progressão", "resposta parcial", "doença estável"]
-        : ["progression", "partial response", "stable disease"];
+        ? ["progressão", "doença estável"]
+        : ["progression", "stable disease"];
       for (const term of banned) expect(system.toLowerCase()).toContain(term.toLowerCase());
-      expect(/MEDIR NO ES INTERPRETAR|MEASURING IS NOT INTERPRETING|MEDIR NÃO É INTERPRETAR/.test(system)).toBe(true);
+      expect(/Medir no es interpretar|Measuring is not interpreting|Medir não é interpretar/i.test(system)).toBe(true);
     });
-  }
-});
 
-describe("the evolutive style needs something to compare against", () => {
-  const FIRST_STUDY = "Hígado: lesión focal hipodensa de 12 mm en segmento VII.\nVesícula: litiasis de 8 mm.";
-
-  for (const lang of LANGS) {
-    it(`falls back to concise on a first study (${lang})`, () => {
-      // Asking for changes when there is no prior produces invented
-      // comparisons or empty labels, so the style quietly steps aside.
+    it(`works on a first study, with no prior to compare against (${lang})`, () => {
+      // The style it replaced needed something to have changed, and quietly
+      // fell back to concise without one. This one reasons about the findings
+      // in front of it, so there is nothing to fall back from.
       const { system } = buildConclusionPrompt({
-        findingsText: FIRST_STUDY,
+        findingsText: "Hígado: lesión focal hipodensa de 12 mm en segmento VII.\nVesícula: litiasis de 8 mm.",
         clinicalInfo: "Dolor abdominal.",
         outputLanguage: lang,
-        conclusionStyle: "evolutive",
+        conclusionStyle: "detailed",
       });
-      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(false);
-      expect(/POR LO QUE CAMBIA EL MANEJO|BY WHAT CHANGES MANAGEMENT/.test(system)).toBe(true);
-    });
-
-    it(`uses it once the findings reference a prior (${lang})`, () => {
-      const { system } = buildConclusionPrompt({
-        findingsText: FIRST_STUDY + "\nLa lesión ha aumentado respecto al estudio previo.",
-        clinicalInfo: "Control.",
-        outputLanguage: lang,
-        conclusionStyle: "evolutive",
-      });
-      expect(/POR CAMBIO, NO POR RELEVANCIA|BY CHANGE, NOT BY RELEVANCE/.test(system)).toBe(true);
+      expect(/RAZONADA Y ORIENTADA|REASONED AND CLINICALLY ORIENTED|FUNDAMENTADA E ORIENTADA/.test(system)).toBe(true);
     });
   }
-
-  it("uses it when a prior report is handed in, whatever the findings say", () => {
-    const { system } = buildConclusionPrompt({
-      findingsText: FIRST_STUDY,
-      clinicalInfo: "Control oncológico.",
-      outputLanguage: "es",
-      conclusionStyle: "evolutive",
-      recistConfig: { isBaseline: false, priorReport: "TC previa: lesión de 8 mm." },
-    });
-    expect(system).toContain("POR CAMBIO, NO POR RELEVANCIA");
-  });
 });
 
 describe("triage and completeness no longer contradict each other", () => {
@@ -196,12 +187,12 @@ describe("triage and completeness no longer contradict each other", () => {
 describe("the clinical question drives the opening", () => {
   for (const lang of LANGS) {
     it(`asks for it to be answered first when one is given (${lang})`, () => {
-      const { system } = build(lang, "evolutive");
+      const { system } = build(lang, "detailed");
       expect(/PREGUNTA CLÍNICA|CLINICAL QUESTION/.test(system)).toBe(true);
     });
 
     it(`switches to deducing the main finding when none is given (${lang})`, () => {
-      const { system } = build(lang, "evolutive", "");
+      const { system } = build(lang, "detailed", "");
       expect(/SIN CONTEXTO CLÍNICO|NO CLINICAL CONTEXT/.test(system)).toBe(true);
     });
   }
@@ -230,8 +221,8 @@ describe("the example we teach agrees with the detector we ship", () => {
       const answer = exampleAnswer(build("es", style).system, "✗");
       const kinds = new Set(detectDiagnoses(answer, FINDINGS).map((h) => h.type));
       // Each style's bad example teaches the failures that style invites:
-      // the concise one ends in a recommendation, the evolutive one reads the
-      // disease off the measurement. Both are inferences.
+      // the concise one ends in a recommendation, the detailed one fills its
+      // extra room by reading the disease off the measurement.
       expect(kinds.has("interpretation")).toBe(true);
       expect(kinds.has(style === "concise" ? "recommendation" : "diagnosis")).toBe(true);
     }
@@ -242,8 +233,8 @@ describe("the example we teach agrees with the detector we ship", () => {
  * The decisions behind the rewrite of rules 1, 3 and 4.
  *
  * The prompt had three grouping criteria competing at once — anatomy in rule
- * 4, clinical problem in its own worked example, change type in the evolutive
- * style — so the model picked a different one per report. That is what
+ * 4, clinical problem in its own worked example, change type in the style that
+ * preceded the detailed one — so the model picked a different one per report. That is what
  * produced the complaint these answer: things joined that do not belong
  * together, and things split that do.
  */
@@ -316,7 +307,7 @@ describe("the filler ban no longer contradicts the example it ships with", () =>
     it(`allows saying something is no longer seen (es/${style})`, () => {
       const { system } = build("es", style);
       expect(system).toContain("NO es muletilla");
-      // The evolutive worked example says exactly this, and the blanket ban
+      // The detailed worked example says exactly this, and the blanket ban
       // made the rulebook forbid its own example.
       expect(system).toContain("ya no se identifica");
     });

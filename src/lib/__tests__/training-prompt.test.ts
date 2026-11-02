@@ -53,12 +53,23 @@ describe("a training example is paired with the prompt production sends", () => 
 });
 
 describe("the style block has to match the conclusion it is trained against", () => {
-  it("reads numbered points as the concise style", () => {
+  it("reads short numbered points as the concise style", () => {
     expect(inferConclusionStyle("1. Nódulo de 9 mm.\n2. Derrame pleural.")).toBe("concise");
   });
 
-  it("reads a flowing conclusion as the evolutive one", () => {
-    expect(inferConclusionStyle("Colédoco dilatado a 9 mm, con litiasis vesicular de 8 mm.")).toBe("evolutive");
+  it("reads long reasoned points as the detailed style", () => {
+    // Both styles are numbered, so the tell is how much each point carries:
+    // these relate the findings to each other and to the clinical context,
+    // which is what the detailed rulebook asks for and the concise one bans.
+    const detailed = [
+      "1. Lesión focal hipodensa de 12 mm en segmento VII, mayor que en el estudio previo (8 mm), mientras que la adenopatía interaortocava de 15 mm permanece sin cambios. De los focos conocidos, solo el hepático ha variado de tamaño.",
+      "2. Litiasis vesicular de 8 mm, sin dilatación de la vía biliar ni líquido libre perivesicular, que son los datos que acotan el dolor en hipocondrio derecho del paciente.",
+    ].join("\n");
+    expect(inferConclusionStyle(detailed)).toBe("detailed");
+  });
+
+  it("reads a flowing conclusion as the detailed one", () => {
+    expect(inferConclusionStyle("Colédoco dilatado a 9 mm, con litiasis vesicular de 8 mm.")).toBe("detailed");
   });
 
   it("gives a numbered conclusion the numbered rules", () => {
@@ -71,12 +82,12 @@ describe("the style block has to match the conclusion it is trained against", ()
     expect(system).toContain("ESTILO — CONCISO");
   });
 
-  it("gives a paragraph conclusion the change-ordered rules", () => {
+  it("gives a paragraph conclusion the reasoned rules", () => {
     const { system } = buildTrainingPrompt({
       findingsText: "Hígado: lesión de 12 mm (8 mm en el previo).",
       conclusionText: "Aumento de la lesión hepática del segmento VII (8 → 12 mm).",
     });
-    expect(system).toContain("ESTILO — EVOLUTIVA");
+    expect(system).toContain("ESTILO — DETALLADA");
   });
 });
 

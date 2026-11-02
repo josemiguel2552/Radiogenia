@@ -24,7 +24,16 @@ import type { ConclusionStyle, OutputLanguage } from "./types";
  * the account prefers today, not what produced this conclusion.
  */
 export function inferConclusionStyle(conclusionText: string): ConclusionStyle {
-  return /^\s*\d+\.\s/m.test(conclusionText) ? "concise" : "evolutive";
+  // Both current styles are numbered points, so the shape alone no longer
+  // separates them: what does is how much each point carries. The concise
+  // style is one sentence per point; the detailed one relates the finding to
+  // the rest and runs two or three. Unnumbered text is older, flowing prose,
+  // which the detailed rulebook fits far better than the concise one.
+  if (!/^\s*\d+\.\s/m.test(conclusionText)) return "detailed";
+  const points = conclusionText.split(/^\s*\d+\.\s/m).map((p) => p.trim()).filter(Boolean);
+  if (points.length === 0) return "concise";
+  const mean = points.reduce((n, p) => n + p.length, 0) / points.length;
+  return mean > 160 ? "detailed" : "concise";
 }
 
 /** Spanish and Portuguese share most accented characters, so the tell is words. */

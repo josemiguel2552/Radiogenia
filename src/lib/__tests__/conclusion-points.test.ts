@@ -66,12 +66,12 @@ describe("normalizeConclusionStyle", () => {
   });
 
   it("maps every style that has held the second slot, so saved preferences still load", () => {
-    // 'grouped'/'detailed' were the integrated paragraphs, 'brief' the
-    // ultra-short one. Both were stored in this column and both must resolve
-    // to whatever occupies that slot now, without a migration having to run
-    // before the app works.
-    for (const legacy of ["grouped", "detailed", "brief", "evolutive", null, undefined, ""]) {
-      expect(normalizeConclusionStyle(legacy)).toBe("evolutive");
+    // 'grouped' was the integrated paragraphs, 'brief' the ultra-short one,
+    // 'evolutive' the one ordered by what changed. All were stored in this
+    // column and all must resolve to whatever occupies that slot now, without
+    // a migration having to run before the app works.
+    for (const legacy of ["grouped", "brief", "evolutive", null, undefined, ""]) {
+      expect(normalizeConclusionStyle(legacy)).toBe("detailed");
     }
   });
 });
