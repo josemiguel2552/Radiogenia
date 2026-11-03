@@ -1,5 +1,9 @@
 "use client";
 
+// Account and resident-verification strings.
+import "@/lib/i18n-account";
+
+
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

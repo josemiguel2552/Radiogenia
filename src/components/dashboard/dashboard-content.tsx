@@ -42,6 +42,7 @@ import {
   RefreshCw,
   Plus,
 } from "lucide-react";
+import { loadBootstrap } from "@/lib/bootstrap";
 import { MODALITIES, SECTIONS, PLANS, DICTATION_LANGUAGES, normalizeConclusionStyle, type UserTemplate, type SubscriptionPlan, type OutputLanguage, type ConclusionStyle } from "@/lib/types";
 import { checkFindingsCoherence } from "@/lib/findings-coherence";
 import { HighlightedText, TraceLegend, useTraceHighlights, findBestMatch, splitConclusionPoints, splitFindingsSentences, selectionOffsetsWithin, caretOffsetWithin, type TraceData } from "./trace-highlight";
@@ -104,8 +105,8 @@ export function DashboardContent() {
   const [isFirstTime, setIsFirstTime] = useState(false);
   useEffect(() => {
     try { if (localStorage.getItem("rg_ftu_done") === "1") return; } catch { return; }
-    fetch("/api/reports?count_only=1")
-      .then((r) => (r.ok ? r.json() : null))
+    loadBootstrap()
+      .then((b) => b.reports ?? fetch("/api/reports?count_only=1").then((r) => (r.ok ? r.json() : null)))
       .then((d) => {
         if (!d) return;
         if ((d.count || 0) > 0) {
@@ -246,8 +247,8 @@ export function DashboardContent() {
     dictation: boolean;
   }>({ classification: true, recommendations: true, clinicalCheck: true, caseAssistant: true, dictation: true });
   useEffect(() => {
-    fetch("/api/region")
-      .then((r) => (r.ok ? r.json() : null))
+    loadBootstrap()
+      .then((b) => b.region ?? fetch("/api/region").then((r) => (r.ok ? r.json() : null)))
       .then((d) => { if (d?.features) setRegionFeatures({ dictation: true, ...d.features }); })
       .catch(() => { /* keep the permissive default; the server still decides */ });
   }, []);
@@ -284,13 +285,20 @@ export function DashboardContent() {
 
   // Active signature for copy
   const activeSignatureRef = useRef<string | null>(null);
-  const refreshSignature = () => {
-    fetch("/api/signatures").then((r) => r.ok ? r.json() : []).then((sigs: { is_active: boolean; body: string }[]) => {
-      const active = sigs.find((s) => s.is_active);
-      activeSignatureRef.current = active ? active.body : null;
-    }).catch(() => {});
+  const applySignatures = (sigs: { is_active: boolean; body: string }[] | null) => {
+    const active = (sigs || []).find((s) => s.is_active);
+    activeSignatureRef.current = active ? active.body : null;
   };
-  useEffect(() => { refreshSignature(); }, []);
+  /** Re-reads the signatures after an edit; the first read comes from the batch. */
+  const refreshSignature = () => {
+    fetch("/api/signatures").then((r) => r.ok ? r.json() : []).then(applySignatures).catch(() => {});
+  };
+  useEffect(() => {
+    loadBootstrap()
+      .then((b) => b.signatures ?? fetch("/api/signatures").then((r) => (r.ok ? r.json() : [])))
+      .then(applySignatures)
+      .catch(() => {});
+  }, []);
 
   // Audit: timing + error reporting
   const generateStartRef = useRef<number>(0);
@@ -337,9 +345,10 @@ export function DashboardContent() {
   const [_subLoaded, setSubLoaded] = useState(false);
 
   useEffect(() => {
-    fetch("/api/subscription")
-      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+    loadBootstrap()
+      .then((b) => b.subscription ?? fetch("/api/subscription").then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }))
       .then((data) => {
+        if (!data) { setSubLoaded(true); return; }
         setSubPlan(data.plan || "free");
         setSubReportsUsed(data.used ?? 0);
         setSubReportsLimit(data.limit ?? 30);
@@ -770,20 +779,27 @@ export function DashboardContent() {
 
   // Seed defaults (if needed) then load templates + user config
   useEffect(() => {
-    async function seedAndLoad() {
-      const [, tplRes, cfgRes] = await Promise.all([
-        fetch("/api/seed", { method: "POST" }).catch(() => null),
-        fetch("/api/templates"),
-        fetch("/api/model-config").catch(() => null),
-      ]);
-      if (tplRes.ok) setTemplates(await tplRes.json());
-      if (cfgRes?.ok) {
-        const cfg = await cfgRes.json();
-        if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language);
+    async function load() {
+      const b = await loadBootstrap();
+      const tpl = (b.templates ?? await fetch("/api/templates")
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null)) as UserTemplate[] | null;
+      if (tpl) setTemplates(tpl);
+      const cfg = b.config ?? await fetch("/api/model-config")
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (cfg) {
+        if (cfg.dictation_language) setDictationLanguage(cfg.dictation_language as string);
         if (cfg.conclusion_style) setConclusionStyle(normalizeConclusionStyle(cfg.conclusion_style));
       }
+      // Seeding only matters for an account that has never had defaults
+      // written, which is knowable from the templates we just read. It no
+      // longer sits in front of the screen for everyone else.
+      if (!tpl || tpl.length === 0) {
+        await fetch("/api/seed", { method: "POST" }).catch(() => null);
+        await fetch("/api/templates").then((r) => (r.ok ? r.json() : null))
+          .then((t) => { if (t) setTemplates(t as UserTemplate[]); }).catch(() => {});
+      }
     }
-    seedAndLoad();
+    load();
 
     // Listen for template changes from other components
     const handleTemplatesChanged = () => {

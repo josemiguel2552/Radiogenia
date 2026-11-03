@@ -1,5 +1,9 @@
 "use client";
 
+// Pilot-programme and NPS strings.
+import "@/lib/i18n-pilot";
+
+
 // The admin strings, registered where they are used.
 import "@/lib/i18n-admin";
 

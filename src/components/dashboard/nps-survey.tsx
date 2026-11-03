@@ -1,5 +1,9 @@
 "use client";
 
+// Pilot-programme and NPS strings.
+import "@/lib/i18n-pilot";
+
+
 import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

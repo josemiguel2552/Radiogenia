@@ -1,5 +1,9 @@
 "use client";
 
+// The admin strings, registered where they are used.
+import "@/lib/i18n-admin";
+
+
 /**
  * Differential-diagnosis assistant.
  *

@@ -1,5 +1,9 @@
 "use client";
 
+// The organisation console's strings.
+import "@/lib/i18n-org";
+
+
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";

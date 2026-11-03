@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, ShieldCheck, FileText, Lock, Brain, ExternalLink } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { loadBootstrap, cachedConsentVersion, rememberConsent, forgetConsent } from "@/lib/bootstrap";
 
 interface ConsentStatus {
   required: boolean;
@@ -23,23 +24,37 @@ const DOC_ICONS: Record<string, typeof FileText> = {
 export function ConsentWall({ children }: { children: React.ReactNode }) {
   const t = useT();
   const [status, setStatus] = useState<ConsentStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  // A browser that has already accepted does not wait to find out again: it
+  // renders the dashboard now and verifies behind it. Only a browser with no
+  // record of accepting is held at the spinner, which is the case the gate
+  // actually exists for. The verification still runs on every load, so a new
+  // document version raises the wall on top of whatever is already drawn.
+  const [loading, setLoading] = useState(() => cachedConsentVersion() === null);
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    fetch("/api/consent")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data && data.required) {
-          setStatus(data);
+    let cancelled = false;
+    loadBootstrap()
+      .then((b) => {
+        if (cancelled) return;
+        const data = b.consent;
+        // A null section means the check itself failed, not that consent is
+        // not needed — the cached decision stands and nothing is rewritten.
+        if (data === null) return;
+        if (data.required) {
+          forgetConsent();
+          setStatus(data as ConsentStatus);
+          setDone(false);
         } else {
+          rememberConsent(data.version);
           setDone(true);
         }
       })
-      .catch(() => setDone(true))
-      .finally(() => setLoading(false));
+      .catch(() => { /* keep whatever the cache decided */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const toggleDoc = useCallback((doc: string) => {
@@ -61,6 +76,7 @@ export function ConsentWall({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ documents: Array.from(accepted) }),
       });
       if (res.ok) {
+        rememberConsent(status.version);
         setDone(true);
       }
     } catch { /* ignore */ }
@@ -77,6 +93,8 @@ export function ConsentWall({ children }: { children: React.ReactNode }) {
 
   if (done) return <>{children}</>;
 
+  // Nothing known yet (cached as accepted, check still in flight): show the
+  // dashboard. If the check comes back "required", the block below replaces it.
   if (!status) return <>{children}</>;
 
   const allChecked = status.pending.every((d) => accepted.has(d));
