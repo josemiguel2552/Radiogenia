@@ -12,7 +12,7 @@ import { useUIPrefs } from "@/lib/ui-prefs";
 import { buildRun, shuffled, TOPICS, type QuizLang, type QuizQuestion } from "@/lib/game-questions";
 import {
   answerPoints, creditsFor, finalScore, questionSeconds, QUESTION_BASE_S,
-  MAX_INTEGRITY, MAX_TURRET_LEVEL, STARTING_CREDITS, TURRET_COST, UPGRADE_COST, WRONG_ANSWER_DAMAGE,
+  MAX_INTEGRITY, MAX_SCANNER_LEVEL, STARTING_CREDITS, SCANNER_COST, UPGRADE_COST, WRONG_ANSWER_DAMAGE,
   type Leaderboard, type RunResult,
 } from "@/lib/game-score";
 import { World } from "./game-engine";
@@ -224,18 +224,18 @@ export function GameTab() {
   const buildOrUpgrade = useCallback(() => {
     const world = worldRef.current;
     if (!world || selected === null) return;
-    const existing = world.turretAt(selected);
+    const existing = world.scannerAt(selected);
     if (!existing) {
-      if (creditsRef.current < TURRET_COST || !world.build(selected)) return;
-      creditsRef.current -= TURRET_COST;
-    } else if (existing.level < MAX_TURRET_LEVEL) {
+      if (creditsRef.current < SCANNER_COST || !world.build(selected)) return;
+      creditsRef.current -= SCANNER_COST;
+    } else if (existing.level < MAX_SCANNER_LEVEL) {
       if (creditsRef.current < UPGRADE_COST || !world.upgrade(selected)) return;
       creditsRef.current -= UPGRADE_COST;
     } else {
       return;
     }
     setCredits(creditsRef.current);
-    setSelectedLevel(world.turretAt(selected)?.level ?? 0);
+    setSelectedLevel(world.scannerAt(selected)?.level ?? 0);
     setBuilt((n) => n + 1);
   }, [selected]);
 
@@ -345,7 +345,7 @@ export function GameTab() {
       r.width / r.height,
     ) ?? null;
     setSelected(slot);
-    setSelectedLevel(slot === null ? 0 : worldRef.current?.turretAt(slot)?.level ?? 0);
+    setSelectedLevel(slot === null ? 0 : worldRef.current?.scannerAt(slot)?.level ?? 0);
   };
 
   const toggleTopic = (topic: string) =>
@@ -354,8 +354,8 @@ export function GameTab() {
   /* ── Render ──────────────────────────────────────────────────────── */
 
   const accuracy = asked > 0 ? Math.round((correct / asked) * 100) : 0;
-  const slotCost = selectedLevel > 0 ? UPGRADE_COST : TURRET_COST;
-  const slotMaxed = selectedLevel >= MAX_TURRET_LEVEL;
+  const slotCost = selectedLevel > 0 ? UPGRADE_COST : SCANNER_COST;
+  const slotMaxed = selectedLevel >= MAX_SCANNER_LEVEL;
 
   return (
     <div className="space-y-3 pb-4">
@@ -496,7 +496,7 @@ export function GameTab() {
               [t("game.wave"), String(wavesCleared)],
               [t("game.correct"), `${correct}/${asked}`],
               [t("game.accuracy"), `${accuracy}%`],
-              [t("game.turrets"), String(built)],
+              [t("game.scanners"), String(built)],
             ].map(([k, v]) => (
               <div key={k} className="rounded-md bg-[hsl(var(--muted)/0.5)] py-1.5">
                 <p className="text-gray-500 dark:text-gray-400 text-[9px]">{k}</p>

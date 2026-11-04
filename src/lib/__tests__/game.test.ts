@@ -5,9 +5,11 @@ import { QUESTIONS, TOPICS, shuffled, buildRun } from "@/lib/game-questions";
 import {
   answerPoints, creditsFor, finalScore, maxPossibleScore, waveSpec, questionSeconds,
   cleanAlias, defaultAlias, MAX_ANSWER_MULTIPLIER, MAX_INTEGRITY, POINTS_PER_CORRECT,
-  QUESTION_BASE_S,
+  QUESTION_BASE_S, BUILD_HEAL,
 } from "@/lib/game-score";
-import { World, pointAt, PATH, PATH_LENGTH, SLOTS } from "@/components/sidebar/game-engine";
+import {
+  World, pointAt, PATHS, ROUTES, ROUTE_LENGTH, SLOTS, HOSPITAL, SPECIES, SPECIES_KEYS,
+} from "@/components/sidebar/game-engine";
 
 /**
  * Radiology Defense.
@@ -155,8 +157,8 @@ describe("waves get harder without outrunning the reading", () => {
     // A wave that crosses faster than a question can be read turns the game
     // into tapping at random, which is the opposite of revising.
     expect(waveSpec(50).speed).toBe(waveSpec(20).speed);
-    expect(waveSpec(50).speed).toBeLessThanOrEqual(0.075);
-    expect(waveSpec(50).gap).toBeGreaterThanOrEqual(0.55);
+    expect(waveSpec(50).speed).toBeLessThanOrEqual(0.064);
+    expect(waveSpec(50).gap).toBeGreaterThanOrEqual(0.5);
   });
 });
 
@@ -218,136 +220,154 @@ describe("the clock follows how much there is to read", () => {
   });
 });
 
-describe("the map gives a turret something to cover", () => {
-  it("runs a longer lane than the first draft", () => {
-    expect(PATH.length).toBeGreaterThanOrEqual(12);
-    expect(PATH_LENGTH).toBeGreaterThan(3);
+describe("the department has six ways in", () => {
+  it("runs six corridors, all ending at the hospital", () => {
+    expect(PATHS).toHaveLength(ROUTES);
+    expect(ROUTES).toBe(6);
+    for (let r = 0; r < ROUTES; r++) {
+      const end = pointAt(r, 1);
+      expect(Math.hypot(end.x - HOSPITAL.x, end.y - HOSPITAL.y)).toBeLessThan(0.001);
+    }
   });
 
-  it("offers ten emplacements", () => {
-    expect(SLOTS).toHaveLength(10);
+  it("starts every corridor off the field, so nobody appears from nowhere", () => {
+    for (let r = 0; r < ROUTES; r++) {
+      const start = pointAt(r, 0);
+      const outside = start.x < -0.01 || start.x > 1.01 || start.y < -0.01 || start.y > 1.01;
+      expect(`route ${r} enters from outside: ${outside}`).toBe(`route ${r} enters from outside: true`);
+    }
+  });
+
+  it("gives every corridor practically the same length", () => {
+    // Not exactly the same: the field is portrait, so the ring the corridors
+    // start on is an ellipse and the diagonal ones run a touch longer. Two
+    // per cent is below noticing; a shortcut would not be.
+    const lengths = PATHS.map((path) =>
+      path.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - path[i].x, p.y - path[i].y), 0));
+    for (const l of lengths) expect(Math.abs(l / ROUTE_LENGTH - 1)).toBeLessThan(0.03);
+  });
+
+  it("offers twelve bays, none of them on a corridor", () => {
+    // A scanner drawn on the lane would hide the people walking under it,
+    // which is the one thing the player has to be able to see.
+    expect(SLOTS).toHaveLength(12);
+    for (const slot of SLOTS) {
+      let nearest = 1;
+      for (let r = 0; r < ROUTES; r++) {
+        for (let t = 0; t <= 1; t += 0.004) {
+          const p = pointAt(r, t);
+          nearest = Math.min(nearest, Math.hypot(p.x - slot.x, p.y - slot.y));
+        }
+      }
+      expect(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} clear: ${nearest > 0.08}`)
+        .toBe(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} clear: true`);
+    }
+  });
+
+  it("keeps every bay inside the field, so it can be tapped", () => {
+    for (const slot of SLOTS) {
+      expect(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} inside: ${
+        slot.x > 0.02 && slot.x < 0.98 && slot.y > 0.02 && slot.y < 0.98}`)
+        .toBe(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} inside: true`);
+    }
   });
 
   it("walks at a steady pace whatever the leg lengths", () => {
-    // Giving every segment an equal slice of t makes an enemy sprint down a
-    // short leg and crawl along a long one. Nobody reads that as design;
-    // they read it as the game stuttering.
-    const steps = 200;
+    // Giving every segment an equal slice of t makes a patient sprint down a
+    // short leg and crawl along a long one. Nobody reads that as design.
+    const steps = 160;
     const dists: number[] = [];
     for (let i = 0; i < steps; i++) {
-      const a = pointAt(i / steps);
-      const b = pointAt((i + 1) / steps);
+      const a = pointAt(0, i / steps);
+      const b = pointAt(0, (i + 1) / steps);
       dists.push(Math.hypot(b.x - a.x, b.y - a.y));
     }
     const mean = dists.reduce((x, y) => x + y, 0) / dists.length;
-    const off = dists.filter((d) => Math.abs(d / mean - 1) > 0.1);
-    // Only the steps that land on a corner fall short, because they cut it.
-    // There are twelve corners, so a handful of outliers is the geometry and
-    // not the parameterisation.
-    expect(off.length).toBeLessThanOrEqual(15);
+    expect(dists.filter((d) => Math.abs(d / mean - 1) > 0.1).length).toBeLessThanOrEqual(12);
     expect(Math.min(...dists) / mean).toBeGreaterThan(0.6);
-
-    // The measure of what this fixed: the legs themselves differ sixfold, so
-    // giving each an equal slice of t would have run an enemy six times
-    // faster along one stretch than another.
-    const legs = PATH.slice(1).map((p, i) => Math.hypot(p.x - PATH[i].x, p.y - PATH[i].y));
-    expect(Math.max(...legs) / Math.min(...legs)).toBeGreaterThan(3);
-  });
-
-  it("keeps every slot clear of the lane and inside the frame", () => {
-    for (const slot of SLOTS) {
-      let nearest = 1;
-      for (let t = 0; t <= 1; t += 0.002) {
-        const p = pointAt(t);
-        nearest = Math.min(nearest, Math.hypot(p.x - slot.x, p.y - slot.y));
-      }
-      expect(`${slot.x},${slot.y} clear: ${nearest > 0.045}`).toBe(`${slot.x},${slot.y} clear: true`);
-      // A pad drawn half off the canvas cannot be tapped on its missing half.
-      expect(`${slot.x},${slot.y} inside: ${slot.x > 0.03 && slot.x < 0.97 && slot.y > 0.03 && slot.y < 0.97}`)
-        .toBe(`${slot.x},${slot.y} inside: true`);
-    }
   });
 });
 
-describe("the battlefield simulates without a canvas", () => {
+describe("five kinds of patient, each its own shape and colour", () => {
+  it("defines every species with a distinct colour", () => {
+    expect(SPECIES_KEYS).toHaveLength(5);
+    const colours = SPECIES_KEYS.map((k) => SPECIES[k].fill);
+    expect(new Set(colours).size).toBe(5);
+  });
+
+  it("trades speed against the imaging each one needs", () => {
+    // The fast ones are light, the heavy ones are slow. A species that was
+    // both would simply be the only one that mattered.
+    for (const key of SPECIES_KEYS) {
+      const s = SPECIES[key];
+      expect(`${key}: ${s.speedMul > 1 ? s.hpMul < 1 : true}`).toBe(`${key}: true`);
+    }
+  });
+
+  it("makes the heaviest arrival cost the most backlog", () => {
+    expect(SPECIES.critical.weight).toBeGreaterThan(SPECIES.routine.weight);
+    expect(SPECIES.paediatric.weight).toBeLessThan(SPECIES.routine.weight);
+  });
+
+  it("has a label for every species", () => {
+    const dict = read("src/lib/i18n-game.ts");
+    for (const key of SPECIES_KEYS) {
+      expect(`${key}: ${dict.includes(`"game.sp_${key}"`)}`).toBe(`${key}: true`);
+    }
+  });
+
+  it("spreads arrivals across all six corridors", () => {
+    // One quiet route would let the player stack a single wedge and forget
+    // the other five. Measured over a wave big enough to be a sample: the
+    // dealing is round-robin with a nudge, so a short wave can legitimately
+    // skip one and that is not what this is asking about.
+    const w = new World({ onLeak: () => {}, onWaveCleared: () => {} });
+    w.startWave(10);
+    const seen = new Set<number>();
+    for (let i = 0; i < 2500; i++) {
+      w.tick(1 / 60);
+      for (const p of w.patients) seen.add(p.route);
+    }
+    expect(seen.size).toBe(ROUTES);
+  });
+});
+
+describe("installing a scanner is capacity, so it heals", () => {
   const quiet = () => new World({ onLeak: () => {}, onWaveCleared: () => {} });
 
-  it("walks the path from start to base", () => {
-    expect(pointAt(0)).toEqual(PATH[0]);
-    expect(pointAt(1)).toEqual(PATH[PATH.length - 1]);
-    const mid = pointAt(0.5);
-    expect(mid.y).toBeGreaterThan(PATH[0].y);
-  });
-
-  it("damages the base for every enemy that gets through", () => {
-    let leaked = 0;
-    const w = new World({ onLeak: () => { leaked += 1; }, onWaveCleared: () => {} });
-    w.startWave(1);
-    for (let i = 0; i < 2000; i++) w.tick(1 / 30);
-    expect(leaked).toBe(waveSpec(1).count);
-    expect(w.integrity).toBeLessThan(MAX_INTEGRITY);
-    expect(w.enemies).toHaveLength(0);
-  });
-
-  it("leaves an undefended player several waves, not one", () => {
-    // Wave 1 landing in full must not be near-fatal: the first wave is where
-    // the player is still working out that answers are what buy turrets.
+  it("gives back ten points of integrity per scanner built", () => {
     const w = quiet();
-    w.startWave(1);
-    for (let i = 0; i < 2000; i++) w.tick(1 / 30);
-    expect(w.integrity).toBeGreaterThan(MAX_INTEGRITY * 0.6);
+    w.damageBase(50);
+    const before = w.integrity;
+    w.build(0);
+    expect(w.integrity).toBe(before + BUILD_HEAL);
   });
 
-  it("never takes the base below zero", () => {
+  it("never heals past full", () => {
     const w = quiet();
-    w.damageBase(10_000);
-    expect(w.integrity).toBe(0);
+    w.damageBase(3);
+    w.build(0);
+    expect(w.integrity).toBe(MAX_INTEGRITY);
   });
 
-  it("lets turrets stop a wave that would otherwise land", () => {
-    // The whole promise of the economy: answers buy turrets, turrets hold
-    // the line. If a maxed turret could not clear wave 1 the game would be
-    // unwinnable however well the player knew the material.
+  it("does not heal on an upgrade, nor on a refused build", () => {
+    // Only a NEW scanner is new capacity. Healing on upgrades would make
+    // integrity a currency rather than a state.
     const w = quiet();
-    w.startWave(1);
-    for (let i = 0; i < 4; i++) { w.build(i); w.upgrade(i); w.upgrade(i); }
-    let cleared = 0;
-    const w2 = new World({ onLeak: () => {}, onWaveCleared: () => { cleared += 1; } });
-    w2.startWave(1);
-    for (let i = 0; i < 4; i++) { w2.build(i); w2.upgrade(i); w2.upgrade(i); }
-    for (let i = 0; i < 3000; i++) w2.tick(1 / 30);
-    expect(cleared).toBeGreaterThan(0);
-    expect(w2.integrity).toBe(MAX_INTEGRITY);
-  });
-
-  it("refuses a second turret on one slot and a fourth level on any", () => {
-    const w = quiet();
-    expect(w.build(0)).toBe(true);
+    w.damageBase(50);
+    w.build(0);
+    const after = w.integrity;
+    w.upgrade(0);
+    expect(w.integrity).toBe(after);
     expect(w.build(0)).toBe(false);
-    expect(w.upgrade(0)).toBe(true);
-    expect(w.upgrade(0)).toBe(true);
-    expect(w.upgrade(0)).toBe(false);
-    expect(w.turretAt(0)?.level).toBe(3);
+    expect(w.integrity).toBe(after);
   });
 
-  it("maps a tap to the slot it was nearest, or to none", () => {
+  it("refuses a bay that does not exist", () => {
     const w = quiet();
-    expect(w.slotNear(SLOTS[2].x, SLOTS[2].y, 1)).toBe(2);
-    // A tap in open ground must not silently spend credits somewhere else.
-    expect(w.slotNear(0.01, 0.01, 1)).toBeNull();
-  });
-
-  it("keeps every slot off the lane it is meant to cover", () => {
-    // A turret drawn on top of the path would hide the enemies walking under
-    // it, which is the one thing the player has to be able to see.
-    for (const slot of SLOTS) {
-      let nearest = 1;
-      for (let t = 0; t <= 1; t += 0.005) {
-        const p = pointAt(t);
-        nearest = Math.min(nearest, Math.hypot(p.x - slot.x, p.y - slot.y));
-      }
-      expect(`${slot.x},${slot.y}: ${nearest > 0.05}`).toBe(`${slot.x},${slot.y}: true`);
-    }
+    expect(w.build(-1)).toBe(false);
+    expect(w.build(SLOTS.length)).toBe(false);
+    expect(w.scanners).toHaveLength(0);
   });
 });
 

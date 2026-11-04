@@ -1,112 +1,162 @@
 /**
  * Radiology Defense: the simulation, with no React and no DOM in it.
  *
- * The battlefield is a plain object that advances by `tick(dt)` and draws
- * itself onto a 2D context. Keeping it out of the component is what makes it
- * testable — a wave can be run to completion in a loop with no canvas, no
- * animation frame and no browser — and it keeps sixty frames a second of
- * enemy movement away from React's render path entirely.
+ * The world is a plain object that advances by `tick(dt)`. Keeping it out of
+ * the component is what makes it testable — a wave can be run to completion
+ * in a loop with no canvas, no animation frame and no browser — and it keeps
+ * sixty frames a second of movement away from React's render path entirely.
+ *
+ * The metaphor is the department, not a battlefield. Patients arrive along
+ * six corridors converging on the hospital; CT scanners placed beside them
+ * image whoever passes. A patient who is fully imaged is a study done and
+ * leaves; one who reaches the hospital unimaged is load the department has to
+ * absorb. "Damage" is backlog, and what the scanners emit is radiation.
  *
  * Coordinates are fractions of the canvas, so the same world plays identically
  * on a phone and a desktop and nothing has to be re-tuned per screen.
  */
 
 import {
-  LEAK_DAMAGE,
+  BUILD_HEAL,
+  LEAK_LOAD,
   MAX_INTEGRITY,
-  MAX_TURRET_LEVEL,
+  MAX_SCANNER_LEVEL,
   waveSpec,
   type WaveSpec,
 } from "@/lib/game-score";
 
 export interface Vec { x: number; y: number }
 
-/**
- * The lane enemies walk, in canvas fractions.
- *
- * Six bends rather than three: a longer run is more ground for a turret to
- * cover, which is what makes WHERE you build a decision instead of a
- * formality. Every straight is long enough for a turret beside it to get
- * more than one shot off as something passes.
- */
-export const PATH: Vec[] = [
-  { x: 0.10, y: -0.07 },
-  { x: 0.10, y: 0.10 },
-  { x: 0.62, y: 0.10 },
-  { x: 0.62, y: 0.25 },
-  { x: 0.16, y: 0.25 },
-  { x: 0.16, y: 0.41 },
-  { x: 0.88, y: 0.41 },
-  { x: 0.88, y: 0.57 },
-  { x: 0.30, y: 0.57 },
-  { x: 0.30, y: 0.72 },
-  { x: 0.70, y: 0.72 },
-  { x: 0.70, y: 0.84 },
-  { x: 0.50, y: 0.90 },
-];
+/** The hospital, and where every corridor ends. */
+export const HOSPITAL: Vec = { x: 0.5, y: 0.47 };
+
+/** How many corridors converge on it. */
+export const ROUTES = 6;
+
+/** Spread wider than tall, because the field is portrait: a true circle
+ *  would leave the sides empty and crowd the top and bottom. */
+const RX = 0.62;
+const RY = 0.64;
+
+const at = (r: number, a: number): Vec => ({
+  x: HOSPITAL.x + Math.cos(a) * r * RX,
+  y: HOSPITAL.y + Math.sin(a) * r * RY,
+});
 
 /**
- * Where a turret may be built.
+ * One corridor, from off-screen to the hospital door.
  *
- * Ten emplacements, each tucked into a different pocket of the serpentine so
- * that no two cover the same stretch. The ones in the elbows see two
- * straights at once and are worth taking early — which is the only piece of
- * strategy the game asks for, and it only exists because the slots differ.
+ * Built rather than hand-typed so all six are the same shape rotated, which
+ * is what makes them read as one department instead of six unrelated
+ * drawings. Each has a dog-leg part of the way in: a straight radial run
+ * would let a single scanner by the door cover everything, and then there
+ * would be nothing to decide.
  */
-export const SLOTS: Vec[] = [
-  { x: 0.33, y: 0.045 },
-  { x: 0.82, y: 0.07 },
-  { x: 0.38, y: 0.18 },
-  { x: 0.84, y: 0.22 },
-  { x: 0.06, y: 0.33 },
-  { x: 0.50, y: 0.33 },
-  { x: 0.52, y: 0.49 },
-  { x: 0.10, y: 0.52 },
-  { x: 0.50, y: 0.645 },
-  { x: 0.86, y: 0.67 },
-];
+function makeRoute(i: number): Vec[] {
+  const a0 = -Math.PI / 2 + (i * Math.PI * 2) / ROUTES;
+  const a1 = a0 + 0.44;
+  // The entry sits just outside the frame, not far outside it: at a wider
+  // radius a third of the walk happened off-canvas, which is a third of the
+  // time a scanner could have been working on someone the player cannot see.
+  return [at(1.02, a0), at(0.74, a0), at(0.44, a1), at(0.16, a1), HOSPITAL];
+}
 
-export type EnemyKind = "nodule" | "mass" | "calcified";
+export const PATHS: Vec[][] = Array.from({ length: ROUTES }, (_, i) => makeRoute(i));
 
-export interface Enemy {
+/**
+ * Where a scanner may be installed.
+ *
+ * Two rings of six, set between the corridors rather than on them, so each
+ * sits in a wedge and reaches the routes either side of it. The inner ring
+ * covers the convergence — more traffic, less time to act; the outer ring
+ * catches arrivals early. That trade is the only strategy the game asks for,
+ * and it exists only because the rings differ.
+ */
+export const SLOTS: Vec[] = Array.from({ length: ROUTES * 2 }, (_, k) => {
+  const ring = k % 2;
+  const i = Math.floor(k / 2);
+  // NOT the midpoint between two corridors, which is where they would
+  // obviously go and where half of them would have sat on a lane: the
+  // dog-leg swings each corridor a quarter-turn of the wedge toward its
+  // neighbour, so the clear ground is further round than it looks. These two
+  // offsets were measured against the geometry, not guessed.
+  const offset = ring === 0 ? 0.977 : 0.663;
+  const a = -Math.PI / 2 + (i * Math.PI * 2) / ROUTES + offset;
+  return at(ring === 0 ? 0.36 : 0.74, a);
+});
+
+/* ── Who arrives ─────────────────────────────────────────────────────── */
+
+export type Species = "routine" | "urgent" | "paediatric" | "stretcher" | "critical";
+
+export interface SpeciesSpec {
+  radius: number;
+  hpMul: number;
+  speedMul: number;
+  /** Backlog left behind if they arrive unimaged. */
+  weight: number;
+  /** Drawn lying down rather than upright. */
+  lying: boolean;
+  fill: string;
+}
+
+/**
+ * The five kinds of patient.
+ *
+ * Deliberately study types and urgency rather than anything about the people
+ * themselves: this sits inside a product radiologists use at work, and a game
+ * that made a caricature of a patient would be indefensible there however
+ * well it played. Each is a different silhouette as well as a different
+ * colour, so what is coming reads before it arrives.
+ */
+export const SPECIES: Record<Species, SpeciesSpec> = {
+  routine:    { radius: 0.0290, hpMul: 1.0,  speedMul: 1.0,  weight: 1.0, lying: false, fill: "#38bdf8" },
+  urgent:     { radius: 0.0275, hpMul: 0.72, speedMul: 1.45, weight: 0.9, lying: false, fill: "#fb923c" },
+  paediatric: { radius: 0.0225, hpMul: 0.55, speedMul: 1.70, weight: 0.7, lying: false, fill: "#34d399" },
+  stretcher:  { radius: 0.0360, hpMul: 1.75, speedMul: 0.68, weight: 1.7, lying: true,  fill: "#fb7185" },
+  critical:   { radius: 0.0320, hpMul: 2.30, speedMul: 0.55, weight: 2.1, lying: false, fill: "#a78bfa" },
+};
+
+export const SPECIES_KEYS = Object.keys(SPECIES) as Species[];
+
+export interface Patient {
   id: number;
-  kind: EnemyKind;
-  /** Distance travelled along the path, 0..1. */
+  species: Species;
+  /** Which corridor they are walking. */
+  route: number;
+  /** Distance travelled along it, 0..1. */
   t: number;
   speed: number;
+  /** Imaging still outstanding. At zero the study is done and they leave. */
   hp: number;
   maxHp: number;
   radius: number;
-  /** Damage dealt to the base if it arrives. */
   weight: number;
   hitFlash: number;
-  /** Per-enemy radial offsets, so no two are the same blob. A nodule is
-   *  spiculated, a mass lobulated, a calcified one nearly round — the shape
-   *  itself says which is which, before any colour does. */
-  shape: number[];
-  /** Phase offset so the breathing of neighbours is not in lockstep. */
+  /** Per-patient jitter, so a queue does not march in lockstep. */
   phase: number;
-  /** Counts up from 0 on spawn, for the arrival pop. */
+  /** Counts up from 0 on arrival, for the fade-in. */
   age: number;
 }
 
-export interface Turret {
+export interface Scanner {
   slot: number;
   level: number;
   cooldown: number;
-  /** Smoothed aim, so the head swings to a target instead of snapping. */
+  /** Smoothed aim, so the gantry swings to a patient instead of snapping. */
   angle: number;
-  /** Counts down after firing, for the muzzle flash and the recoil. */
+  /** Counts down after an exposure, for the beam flash. */
   flash: number;
 }
 
-export interface Shot {
+/** A single exposure: a fan of radiation from a gantry to a patient. */
+export interface Beam {
   from: Vec;
   to: Vec;
   life: number;
 }
 
-/** A number that rises and fades: credits earned, integrity lost. */
+/** A number that rises and fades: integrity gained or lost. */
 export interface Floater {
   x: number;
   y: number;
@@ -126,99 +176,73 @@ export interface Particle {
   hue: string;
 }
 
-/** Turret stats by level: reach in canvas fractions, damage, shots per second. */
-export const TURRET_STATS = [
-  { range: 0.20, damage: 5, rate: 1.3 },
-  { range: 0.24, damage: 9, rate: 1.6 },
-  { range: 0.28, damage: 15, rate: 2.0 },
+/** Scanner stats by level: reach in canvas fractions, dose, exposures/second. */
+export const SCANNER_STATS = [
+  { range: 0.18, damage: 5, rate: 1.3 },
+  { range: 0.22, damage: 9, rate: 1.6 },
+  { range: 0.26, damage: 15, rate: 2.0 },
 ];
 
-const KINDS: Record<EnemyKind, { radius: number; hpMul: number; speedMul: number; weight: number; fill: string; ring: string }> = {
-  nodule:    { radius: 0.026, hpMul: 0.75, speedMul: 1.35, weight: 0.8, fill: "#38bdf8", ring: "#0ea5e9" },
-  mass:      { radius: 0.039, hpMul: 1.6,  speedMul: 0.75, weight: 1.6, fill: "#fb7185", ring: "#e11d48" },
-  calcified: { radius: 0.031, hpMul: 1.15, speedMul: 1.0,  weight: 1.1, fill: "#a78bfa", ring: "#7c3aed" },
-};
+/* ── Walking the corridors ───────────────────────────────────────────── */
 
 /**
- * Radial offsets that give each enemy its outline.
- *
- * A nodule gets fine spicules, a mass a few broad lobes, a calcified one an
- * almost round border. Drawn rather than labelled: the silhouette tells the
- * player what is coming before any colour does, which is how a simple game
- * stops looking like coloured circles.
+ * Cumulative length along each corridor, so t is distance and not segment
+ * index. Giving every segment an equal slice of t makes a patient sprint
+ * down a short leg and crawl along a long one; nobody reads that as design.
  */
-function makeShape(kind: EnemyKind): number[] {
-  const N = 18;
-  const out: number[] = [];
-  const seed = Math.random() * Math.PI * 2;
-  for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    if (kind === "nodule") {
-      out.push(0.1 * Math.sin(a * 7 + seed) + 0.05 * Math.sin(a * 3 + seed * 2));
-    } else if (kind === "mass") {
-      out.push(0.16 * Math.sin(a * 3 + seed) + 0.07 * Math.sin(a * 5 + seed));
-    } else {
-      out.push(0.05 * Math.sin(a * 4 + seed));
-    }
-  }
-  return out;
-}
+const GEOM = PATHS.map((path) => {
+  const legs = path.slice(1).map((p, i) => Math.hypot(p.x - path[i].x, p.y - path[i].y));
+  const total = legs.reduce((a, b) => a + b, 0);
+  const cum = legs.reduce<number[]>((acc, len) => [...acc, acc[acc.length - 1] + len], [0]);
+  return { legs, total, cum };
+});
 
-/** Position along the path at travel fraction t. */
-/**
- * Cumulative length along the path, so t is distance and not segment index.
- *
- * Giving every segment an equal slice of t makes an enemy sprint down a short
- * leg and crawl along a long one. Nobody reads that as a design decision;
- * they read it as the game stuttering. With thirteen points and legs of very
- * different lengths it would have been impossible to miss.
- */
-const LEGS = PATH.slice(1).map((p, i) => Math.hypot(p.x - PATH[i].x, p.y - PATH[i].y));
-const TOTAL = LEGS.reduce((a, b) => a + b, 0);
-const CUM = LEGS.reduce<number[]>((acc, len) => [...acc, acc[acc.length - 1] + len], [0]);
-
-/** Position at travel fraction t, measured along the path's real length. */
-export function pointAt(t: number): Vec {
-  const want = Math.max(0, Math.min(1, t)) * TOTAL;
+/** Position on corridor `route` at travel fraction t, along its real length. */
+export function pointAt(route: number, t: number): Vec {
+  const idx = ((route % ROUTES) + ROUTES) % ROUTES;
+  const path = PATHS[idx];
+  const g = GEOM[idx];
+  const want = Math.max(0, Math.min(1, t)) * g.total;
   let i = 0;
-  while (i < LEGS.length - 1 && CUM[i + 1] < want) i++;
-  const local = LEGS[i] > 0 ? (want - CUM[i]) / LEGS[i] : 0;
-  const a = PATH[i];
-  const b = PATH[i + 1];
+  while (i < g.legs.length - 1 && g.cum[i + 1] < want) i++;
+  const local = g.legs[i] > 0 ? (want - g.cum[i]) / g.legs[i] : 0;
+  const a = path[i];
+  const b = path[i + 1];
   return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
 }
 
-/** The path's total length in canvas fractions, for tuning and for tests. */
-export const PATH_LENGTH = TOTAL;
+/** The length of one corridor, for tuning and for tests. */
+export const ROUTE_LENGTH = GEOM[0].total;
 
 export interface WorldEvents {
-  /** An enemy reached the base. */
-  onLeak: (damage: number) => void;
-  /** Every enemy of the wave is dead and none are left to spawn. */
+  /** A patient reached the hospital unimaged. */
+  onLeak: (load: number) => void;
+  /** Everyone in the wave is seen, and none are left to arrive. */
   onWaveCleared: (wave: number) => void;
 }
 
 export class World {
-  enemies: Enemy[] = [];
-  turrets: Turret[] = [];
-  shots: Shot[] = [];
+  patients: Patient[] = [];
+  scanners: Scanner[] = [];
+  beams: Beam[] = [];
   particles: Particle[] = [];
   floaters: Floater[] = [];
-  /** Seconds of camera shake left. What makes a hit land physically. */
+  /** Seconds of camera shake left. What makes an arrival land physically. */
   shake = 0;
   /** Seconds the wave banner still shows. */
   banner = 0;
-  /** Wall clock for idle animation: breathing, flowing lane, rotating ring. */
+  /** Wall clock for idle animation: breathing, flowing corridors, the ring. */
   time = 0;
   integrity = MAX_INTEGRITY;
   wave = 0;
   spec: WaveSpec = waveSpec(1);
-  /** Enemies still to spawn in this wave. */
+  /** Patients still to arrive in this wave. */
   pending = 0;
   spawnTimer = 0;
   /** Seconds of calm before the next wave. */
   breather = 0;
   private nextId = 1;
+  private nextRoute = 0;
   private events: WorldEvents;
 
   constructor(events: WorldEvents) {
@@ -235,25 +259,38 @@ export class World {
   }
 
   /** A rising number at a point on the field. */
-  float(at: Vec, text: string, tone: "good" | "bad") {
-    this.floaters.push({ x: at.x, y: at.y, text, life: 1.1, tone });
+  float(point: Vec, text: string, tone: "good" | "bad") {
+    this.floaters.push({ x: point.x, y: point.y, text, life: 1.1, tone });
   }
 
+  /**
+   * Installs a scanner, which relieves the department.
+   *
+   * Building heals: a scanner IS capacity, and capacity is exactly what the
+   * hospital was short of. It also gives a player who is losing a way back
+   * that is not "answer faster" — which, in a revision game, would only ever
+   * mean "guess".
+   */
   build(slot: number): boolean {
-    if (this.turrets.some((t) => t.slot === slot)) return false;
-    this.turrets.push({ slot, level: 1, cooldown: 0, angle: Math.PI / 2, flash: 0 });
+    if (slot < 0 || slot >= SLOTS.length) return false;
+    if (this.scanners.some((s) => s.slot === slot)) return false;
+    this.scanners.push({ slot, level: 1, cooldown: 0, angle: Math.PI / 2, flash: 0 });
+    const before = this.integrity;
+    this.integrity = Math.min(MAX_INTEGRITY, this.integrity + BUILD_HEAL);
+    const gained = this.integrity - before;
+    if (gained > 0) this.float(SLOTS[slot], `+${gained}%`, "good");
     return true;
   }
 
   upgrade(slot: number): boolean {
-    const t = this.turrets.find((x) => x.slot === slot);
-    if (!t || t.level >= MAX_TURRET_LEVEL) return false;
-    t.level += 1;
+    const s = this.scanners.find((x) => x.slot === slot);
+    if (!s || s.level >= MAX_SCANNER_LEVEL) return false;
+    s.level += 1;
     return true;
   }
 
-  turretAt(slot: number): Turret | undefined {
-    return this.turrets.find((t) => t.slot === slot);
+  scannerAt(slot: number): Scanner | undefined {
+    return this.scanners.find((s) => s.slot === slot);
   }
 
   damageBase(amount: number) {
@@ -262,16 +299,25 @@ export class World {
   }
 
   private spawn() {
-    // The mix shifts with the wave: early waves are soft nodules, later ones
-    // bring masses that a single level-1 turret cannot stop in time.
+    // Arrivals are dealt round-robin across the corridors with a nudge of
+    // randomness, so no route is quiet for a whole wave and the player cannot
+    // simply stack one wedge and forget the rest.
+    const route = (this.nextRoute + (Math.random() < 0.3 ? 1 : 0)) % ROUTES;
+    this.nextRoute = (this.nextRoute + 1) % ROUTES;
+
     const roll = Math.random();
-    const kind: EnemyKind =
-      this.wave >= 3 && roll > 0.72 ? "mass" : this.wave >= 2 && roll > 0.45 ? "calcified" : "nodule";
-    const k = KINDS[kind];
-    const hp = Math.round(this.spec.hp * k.hpMul);
-    this.enemies.push({
+    let species: Species = "routine";
+    if (this.wave >= 5 && roll > 0.86) species = "critical";
+    else if (this.wave >= 3 && roll > 0.68) species = "stretcher";
+    else if (this.wave >= 2 && roll > 0.50) species = "urgent";
+    else if (roll > 0.82) species = "paediatric";
+
+    const k = SPECIES[species];
+    const hp = Math.max(1, Math.round(this.spec.hp * k.hpMul));
+    this.patients.push({
       id: this.nextId++,
-      kind,
+      species,
+      route,
       t: 0,
       speed: this.spec.speed * k.speedMul,
       hp,
@@ -279,13 +325,11 @@ export class World {
       radius: k.radius,
       weight: k.weight,
       hitFlash: 0,
-      shape: makeShape(kind),
       phase: Math.random() * Math.PI * 2,
       age: 0,
     });
   }
 
-  /** Advances the world. Returns true while the wave is still running. */
   tick(dt: number) {
     this.time += dt;
     this.shake = Math.max(0, this.shake - dt * 1.8);
@@ -302,59 +346,54 @@ export class World {
       }
     }
 
-    for (const e of this.enemies) {
-      e.t += e.speed * dt;
-      e.age += dt;
-      e.hitFlash = Math.max(0, e.hitFlash - dt * 4);
+    for (const p of this.patients) {
+      p.t += p.speed * dt;
+      p.age += dt;
+      p.hitFlash = Math.max(0, p.hitFlash - dt * 4);
     }
 
-    // Arrivals damage the base and are removed.
-    const arrived = this.enemies.filter((e) => e.t >= 1);
-    for (const e of arrived) {
-      const hurt = Math.round(LEAK_DAMAGE * e.weight);
-      this.damageBase(hurt);
-      this.burst(pointAt(1), "#f43f5e", 16);
-      this.float(pointAt(0.97), `-${hurt}`, "bad");
-      this.events.onLeak(hurt);
+    const arrived = this.patients.filter((p) => p.t >= 1);
+    for (const p of arrived) {
+      const load = Math.round(LEAK_LOAD * p.weight);
+      this.damageBase(load);
+      this.burst(HOSPITAL, "#f43f5e", 16);
+      this.float({ x: HOSPITAL.x, y: HOSPITAL.y - 0.07 }, `-${load}`, "bad");
+      this.events.onLeak(load);
     }
-    if (arrived.length) this.enemies = this.enemies.filter((e) => e.t < 1);
+    if (arrived.length) this.patients = this.patients.filter((p) => p.t < 1);
 
-    // Turrets fire at the enemy furthest along that is within reach — the one
-    // about to cost integrity, not the one that is merely closest.
-    for (const turret of this.turrets) {
-      turret.cooldown -= dt;
-      turret.flash = Math.max(0, turret.flash - dt * 6);
-      const stats = TURRET_STATS[turret.level - 1];
-      // The head tracks its target even between shots, which is most of what
-      // makes a turret read as a machine rather than a decal.
-      const look = this.pick(turret, stats.range);
+    for (const scanner of this.scanners) {
+      scanner.cooldown -= dt;
+      scanner.flash = Math.max(0, scanner.flash - dt * 6);
+      const stats = SCANNER_STATS[scanner.level - 1];
+      const look = this.pick(scanner, stats.range);
+      // The gantry tracks its patient between exposures, which is most of
+      // what makes it read as a machine rather than a decal.
       if (look) {
-        const p = pointAt(look.t);
-        const want = Math.atan2(p.y - SLOTS[turret.slot].y, p.x - SLOTS[turret.slot].x);
-        let d = want - turret.angle;
+        const to = pointAt(look.route, look.t);
+        const want = Math.atan2(to.y - SLOTS[scanner.slot].y, to.x - SLOTS[scanner.slot].x);
+        let d = want - scanner.angle;
         while (d > Math.PI) d -= Math.PI * 2;
         while (d < -Math.PI) d += Math.PI * 2;
-        turret.angle += d * Math.min(1, dt * 9);
+        scanner.angle += d * Math.min(1, dt * 9);
       }
-      if (turret.cooldown > 0) continue;
-      const from = SLOTS[turret.slot];
-      const target = look;
-      if (!target) continue;
-      turret.cooldown = 1 / stats.rate;
-      turret.flash = 1;
-      target.hp -= stats.damage;
-      target.hitFlash = 1;
-      const to = pointAt(target.t);
-      this.shots.push({ from, to, life: 0.14 });
-      this.burst(to, "#e0e7ff", 3, 0.06);
-      if (target.hp <= 0) {
-        this.burst(to, KINDS[target.kind].fill, 14);
-        this.enemies = this.enemies.filter((e) => e.id !== target.id);
+      if (scanner.cooldown > 0 || !look) continue;
+      scanner.cooldown = 1 / stats.rate;
+      scanner.flash = 1;
+      look.hp -= stats.damage;
+      look.hitFlash = 1;
+      const to = pointAt(look.route, look.t);
+      this.beams.push({ from: SLOTS[scanner.slot], to, life: 0.16 });
+      this.burst(to, "#e0f2fe", 3, 0.05);
+      if (look.hp <= 0) {
+        // Study complete: the patient has been seen and leaves.
+        this.burst(to, SPECIES[look.species].fill, 14);
+        this.patients = this.patients.filter((p) => p.id !== look.id);
       }
     }
 
-    for (const s of this.shots) s.life -= dt;
-    if (this.shots.some((s) => s.life <= 0)) this.shots = this.shots.filter((s) => s.life > 0);
+    for (const b of this.beams) b.life -= dt;
+    if (this.beams.some((b) => b.life <= 0)) this.beams = this.beams.filter((b) => b.life > 0);
 
     for (const p of this.particles) {
       p.x += p.vx * dt;
@@ -371,32 +410,32 @@ export class World {
     }
     if (this.floaters.some((f) => f.life <= 0)) this.floaters = this.floaters.filter((f) => f.life > 0);
 
-    if (this.pending === 0 && this.enemies.length === 0 && this.breather === 0 && this.wave > 0) {
+    if (this.pending === 0 && this.patients.length === 0 && this.breather === 0 && this.wave > 0) {
       this.events.onWaveCleared(this.wave);
       this.breather = 3.5;
     }
   }
 
-  /** The enemy furthest along that a turret can reach — the one about to
-   *  cost integrity, not merely the closest. */
-  private pick(turret: Turret, range: number): Enemy | null {
-    const from = SLOTS[turret.slot];
-    let best: Enemy | null = null;
-    for (const e of this.enemies) {
-      const p = pointAt(e.t);
-      if (Math.hypot(p.x - from.x, p.y - from.y) > range) continue;
-      if (!best || e.t > best.t) best = e;
+  /** The patient furthest along that a scanner can reach — the one about to
+   *  arrive, not merely the nearest. */
+  private pick(scanner: Scanner, range: number): Patient | null {
+    const from = SLOTS[scanner.slot];
+    let best: Patient | null = null;
+    for (const p of this.patients) {
+      const to = pointAt(p.route, p.t);
+      if (Math.hypot(to.x - from.x, to.y - from.y) > range) continue;
+      if (!best || p.t > best.t) best = p;
     }
     return best;
   }
 
-  burst(at: Vec, colour: string, count = 10, speed = 0.12) {
+  burst(point: Vec, colour: string, count = 10, speed = 0.12) {
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = speed * (0.4 + Math.random());
       const life = 0.35 + Math.random() * 0.35;
       this.particles.push({
-        x: at.x, y: at.y,
+        x: point.x, y: point.y,
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
         life, maxLife: life,
         size: 1.6 + Math.random() * 2.2,
@@ -405,10 +444,10 @@ export class World {
     }
   }
 
-  /** The slot nearest a click, if the click was close enough to mean it. */
+  /** The slot nearest a tap, if the tap was close enough to mean it. */
   slotNear(x: number, y: number, aspect: number): number | null {
     let best: number | null = null;
-    let bestD = 0.09;
+    let bestD = 0.075;
     SLOTS.forEach((s, i) => {
       const d = Math.hypot((s.x - x) * aspect, s.y - y);
       if (d < bestD) { bestD = d; best = i; }

@@ -30,19 +30,29 @@ export interface RunResult {
   durationS: number;
 }
 
+/* ── The department ───────────────────────────────────────────────────── */
+
 /* ── The base ─────────────────────────────────────────────────────────── */
 
 export const MAX_INTEGRITY = 100;
-/** What a wrong answer costs the base. */
-export const WRONG_ANSWER_DAMAGE = 9;
-/** What one enemy reaching the base costs, before its own weight. */
-export const LEAK_DAMAGE = 7;
+/** What a wrong answer costs the hospital. Ten per cent heavier than it was. */
+export const WRONG_ANSWER_DAMAGE = 10;
+/** The backlog one unimaged arrival leaves, before their own weight. */
+export const LEAK_LOAD = 8;
+/**
+ * What installing a scanner gives back.
+ *
+ * A scanner is capacity, and capacity is what the hospital was short of. It
+ * also gives a player who is losing a route back that is not "answer faster"
+ * — which, in a revision game, would only ever mean "guess".
+ */
+export const BUILD_HEAL = 10;
 
 /* ── The economy ──────────────────────────────────────────────────────── */
 
-export const TURRET_COST = 20;
+export const SCANNER_COST = 20;
 export const UPGRADE_COST = 30;
-export const MAX_TURRET_LEVEL = 3;
+export const MAX_SCANNER_LEVEL = 3;
 export const STARTING_CREDITS = 40;
 
 /**
@@ -77,16 +87,23 @@ export interface WaveSpec {
  * a wave that outruns the time it takes to read a question stops being a
  * quiz and becomes a reflex test. The ceiling is deliberate.
  */
+/**
+ * How hard wave N is.
+ *
+ * Every dial is ten per cent harsher than the previous tuning: more people
+ * arrive, each needs more imaging, they walk faster and they arrive closer
+ * together. The speed ceiling moved up with the rest but is still a ceiling,
+ * because a wave that crosses faster than a question can be read stops being
+ * a quiz and becomes a reflex test.
+ */
 export function waveSpec(wave: number): WaveSpec {
   return {
     wave,
-    count: 3 + Math.floor(wave * 1.4),
-    hp: 10 + (wave - 1) * 7,
-    // Fractions of the path per second. The path is now twice as long, so
-    // these are scaled down further than that: the walk should take LONGER
-    // than it used to, not merely cover more ground at the same pace.
-    speed: Math.min(0.058, 0.021 + (wave - 1) * 0.003),
-    gap: Math.max(0.55, 1.6 - (wave - 1) * 0.08),
+    count: 3 + Math.floor(wave * 1.54),
+    hp: Math.round((10 + (wave - 1) * 7) * 1.1),
+    // Fractions of one corridor per second.
+    speed: Math.min(0.064, 0.0231 + (wave - 1) * 0.0033),
+    gap: Math.max(0.5, 1.45 - (wave - 1) * 0.073),
   };
 }
 
