@@ -12,6 +12,8 @@ import { registerMessages } from "./i18n";
 
 registerMessages({
   es: {
+    "game.tier": "Grado",
+    "game.level_cleared": "¡Planta superada!",
     "game.sp_critical": "Crítico",
     "game.sp_stretcher": "En camilla",
     "game.sp_paediatric": "Pediátrico",
@@ -75,6 +77,8 @@ registerMessages({
     "game.t_aorta": "Aorta",
   },
   en: {
+    "game.tier": "Tier",
+    "game.level_cleared": "Floor cleared!",
     "game.sp_critical": "Critical",
     "game.sp_stretcher": "On a trolley",
     "game.sp_paediatric": "Paediatric",
@@ -138,6 +142,8 @@ registerMessages({
     "game.t_aorta": "Aorta",
   },
   pt: {
+    "game.tier": "Grau",
+    "game.level_cleared": "Piso superado!",
     "game.sp_critical": "Crítico",
     "game.sp_stretcher": "Em maca",
     "game.sp_paediatric": "Pediátrico",

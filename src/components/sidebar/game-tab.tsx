@@ -6,7 +6,7 @@ import "@/lib/i18n-game";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Trophy, Coins, Zap, Play, RotateCcw, ChevronUp, Hammer, Waves } from "lucide-react";
+import { Shield, Trophy, Coins, Zap, Play, RotateCcw, ChevronUp, Hammer, Waves, Layers } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { buildRun, shuffled, TOPICS, type QuizLang, type QuizQuestion } from "@/lib/game-questions";
@@ -16,6 +16,7 @@ import {
   type Leaderboard, type RunResult,
 } from "@/lib/game-score";
 import { World } from "./game-engine";
+import { LEVEL_COUNT } from "./game-levels";
 import { draw } from "./game-render";
 
 type Phase = "idle" | "playing" | "over";
@@ -54,6 +55,11 @@ export function GameTab() {
   const [integrity, setIntegrity] = useState(MAX_INTEGRITY);
   const [credits, setCredits] = useState(STARTING_CREDITS);
   const [wave, setWave] = useState(0);
+  const [level, setLevel] = useState(1);
+  /** How many waves this floor asks for. Mirrored into state rather than
+   *  read off the world ref during render, which is the tear concurrent
+   *  rendering is allowed to produce. */
+  const [waveTarget, setWaveTarget] = useState(0);
   const [score, setScore] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [asked, setAsked] = useState(0);
@@ -70,6 +76,7 @@ export function GameTab() {
   const [questionS, setQuestionS] = useState(QUESTION_BASE_S);
   const [built, setBuilt] = useState(0);
   const [wavesCleared, setWavesCleared] = useState(0);
+  const [levelsCleared, setLevelsCleared] = useState(0);
 
   const [board, setBoard] = useState<Leaderboard | null>(null);
   const [alias, setAlias] = useState("");
@@ -84,12 +91,13 @@ export function GameTab() {
   const askedAtRef = useRef(0);
   const questionSRef = useRef(QUESTION_BASE_S);
   const lockRef = useRef(false);
-  const statsRef = useRef({ answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: 0, wavesCleared: 0 });
+  const statsRef = useRef({ answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: 0, wavesCleared: 0, levelsCleared: 0 });
   const creditsRef = useRef(STARTING_CREDITS);
   const selectedRef = useRef<number | null>(null);
   const nextQuestionRef = useRef<() => void>(() => {});
   /** The translated word for "wave", read by the canvas banner. */
   const waveLabelRef = useRef("");
+  const levelLabelRef = useRef("");
   const answerRef = useRef<(p: { text: string; correct: boolean } | null) => void>(() => {});
   const endRunRef = useRef<() => void>(() => {});
 
@@ -162,7 +170,12 @@ export function GameTab() {
     cancelAnimationFrame(rafRef.current);
     const s = statsRef.current;
     const integrityLeft = worldRef.current?.integrity ?? 0;
-    const total = finalScore({ answerScore: s.answerScore, wavesCleared: s.wavesCleared, integrity: integrityLeft });
+    const total = finalScore({
+      answerScore: s.answerScore,
+      wavesCleared: s.wavesCleared,
+      levelsCleared: s.levelsCleared,
+      integrity: integrityLeft,
+    });
     setScore(total);
     setPhase("over");
     submit({
@@ -283,7 +296,7 @@ export function GameTab() {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         const dark = document.documentElement.classList.contains("dark");
-        draw(ctx, world, w, h, { dark, brand: "" }, selectedRef.current, creditsRef.current, waveLabelRef.current);
+        draw(ctx, world, w, h, { dark, brand: "" }, selectedRef.current, creditsRef.current, waveLabelRef.current, levelLabelRef.current);
       }
 
       if (world.integrity <= 0 && !ended) {
@@ -296,7 +309,7 @@ export function GameTab() {
   }, [phase]);
 
   useEffect(() => { selectedRef.current = selected; }, [selected]);
-  useEffect(() => { waveLabelRef.current = t("game.wave"); }, [t]);
+  useEffect(() => { waveLabelRef.current = t("game.wave"); levelLabelRef.current = t("game.level"); }, [t]);
 
   /* ── Lifecycle ───────────────────────────────────────────────────── */
 
@@ -305,32 +318,56 @@ export function GameTab() {
     if (run.length === 0) return;
     runRef.current = run;
     cursorRef.current = 0;
-    statsRef.current = { answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: Date.now(), wavesCleared: 0 };
+    statsRef.current = { answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: Date.now(), wavesCleared: 0, levelsCleared: 0 };
     creditsRef.current = STARTING_CREDITS;
 
+    let clearedLevel = false;
     const world = new World({
       onLeak: () => setIntegrity(worldRef.current?.integrity ?? 0),
-      onWaveCleared: (cleared) => {
-        statsRef.current.wavesCleared = cleared;
-        setWavesCleared(cleared);
-        // A cleared wave pays a dividend, so holding the line is worth
-        // something on its own and not only the answers that bought it.
-        creditsRef.current += 15 + cleared * 5;
+      onLevelCleared: (done) => {
+        clearedLevel = true;
+        statsRef.current.levelsCleared = done;
+        setLevelsCleared(done);
+        // Finishing a floor pays for the rebuild on the next one, where every
+        // bay starts empty again.
+        creditsRef.current += 45 + done * 15;
         setCredits(creditsRef.current);
         window.setTimeout(() => {
-          const next = cleared + 1;
-          setWave(next);
-          worldRef.current?.startWave(next);
+          const next = done + 1;
+          setLevel(next);
+          worldRef.current?.startLevel(next);
+          setWaveTarget(worldRef.current?.layout.spec.waves ?? 0);
+          setIntegrity(worldRef.current?.integrity ?? 0);
+          setWave(1);
+          clearedLevel = false;
+        }, 2000);
+      },
+      onWaveCleared: (totalCleared) => {
+        statsRef.current.wavesCleared = totalCleared;
+        setWavesCleared(totalCleared);
+        // A cleared wave pays a dividend, so holding the line is worth
+        // something on its own and not only the answers that bought it.
+        creditsRef.current += 15 + totalCleared * 5;
+        setCredits(creditsRef.current);
+        window.setTimeout(() => {
+          // The level handler owns the handover when a floor is finished.
+          if (clearedLevel) return;
+          const w = worldRef.current;
+          if (!w) return;
+          w.startWave(w.waveInLevel + 1);
+          setWave(w.waveInLevel);
         }, 1200);
       },
     });
     worldRef.current = world;
-    world.startWave(1);
+    world.startLevel(1);
+    setWaveTarget(world.layout.spec.waves);
 
     setPhase("playing");
     setIntegrity(MAX_INTEGRITY);
     setCredits(STARTING_CREDITS);
-    setWave(1); setScore(0); setCorrect(0); setAsked(0); setStreak(0); setWavesCleared(0);
+    setWave(1); setLevel(1); setScore(0); setCorrect(0);
+    setAsked(0); setStreak(0); setWavesCleared(0); setLevelsCleared(0);
     setSelected(null); setSelectedLevel(0); setMiss(null); setSaveState("idle"); setBuilt(0);
     nextQuestionRef.current();
   }, [topics]);
@@ -401,10 +438,11 @@ export function GameTab() {
 
       {phase === "playing" && (
         <>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
             {[
               { icon: Shield, label: t("game.integrity"), value: `${integrity}%`, tone: integrity > 40 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500" },
-              { icon: Waves, label: t("game.wave"), value: String(wave), tone: "text-sky-600 dark:text-sky-400" },
+              { icon: Layers, label: t("game.level"), value: String(level), tone: "text-indigo-600 dark:text-indigo-300" },
+              { icon: Waves, label: t("game.wave"), value: `${wave}/${waveTarget || "-"}`, tone: "text-sky-600 dark:text-sky-400" },
               { icon: Coins, label: t("game.credits"), value: String(credits), tone: "text-amber-600 dark:text-amber-400" },
               { icon: Zap, label: t("game.streak"), value: String(streak), tone: "text-violet-600 dark:text-violet-400" },
             ].map((s) => (
@@ -449,7 +487,7 @@ export function GameTab() {
             ) : (
               <>
                 <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                  {t("game.slot")} {selected + 1}{selectedLevel > 0 ? ` · ${t("game.level")} ${selectedLevel}` : ""}
+                  {t("game.slot")} {selected + 1}{selectedLevel > 0 ? ` · ${t("game.tier")} ${selectedLevel}` : ""}
                 </span>
                 <Button
                   size="sm" onClick={buildOrUpgrade} disabled={slotMaxed || credits < slotCost}
@@ -491,8 +529,9 @@ export function GameTab() {
         <div className="rounded-lg border border-[hsl(var(--border))] p-4 text-center space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wide text-rose-500">{t("game.over")}</p>
           <p className="text-3xl font-extrabold text-gray-900 dark:text-white">{score}</p>
-          <div className="grid grid-cols-4 gap-1.5 text-[11px]">
+          <div className="grid grid-cols-5 gap-1.5 text-[11px]">
             {[
+              [t("game.level"), `${level}${levelsCleared >= LEVEL_COUNT ? "+" : ""}`],
               [t("game.wave"), String(wavesCleared)],
               [t("game.correct"), `${correct}/${asked}`],
               [t("game.accuracy"), `${accuracy}%`],

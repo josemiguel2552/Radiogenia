@@ -22,10 +22,8 @@
  */
 
 import { MAX_SCANNER_LEVEL, SCANNER_COST } from "@/lib/game-score";
-import {
-  HOSPITAL, PATHS, ROUTES, SLOTS, SCANNER_STATS, SPECIES, World, pointAt,
-  type Patient, type Scanner,
-} from "./game-engine";
+import { SCANNER_STATS, SPECIES, World, type Patient, type Scanner } from "./game-engine";
+import { HOSPITAL, type LevelTint } from "./game-levels";
 
 export interface Theme {
   dark: boolean;
@@ -49,31 +47,59 @@ interface Palette {
   mote: string;
 }
 
-function palette(dark: boolean): Palette {
+/** Mixes a hex colour toward white (k>0) or black (k<0). */
+function shade(hex: string, k: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const to = k > 0 ? 255 : 0;
+  const a = Math.abs(k);
+  const mix = (c: number) => Math.round(c + (to - c) * a);
+  const r = mix((n >> 16) & 255);
+  const g = mix((n >> 8) & 255);
+  const b = mix(n & 255);
+  return `rgb(${r},${g},${b})`;
+}
+
+/** Same hex with an alpha, for washes that must sit over the ground. */
+function alpha(hex: string, a: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/**
+ * The palette for a floor.
+ *
+ * Derived from that level's single hue rather than written out six times:
+ * one tint carried through the ground, the corridors and the machines is
+ * what makes a level read as a different place. Six hand-written palettes
+ * would be six chances for one of them to be subtly wrong.
+ */
+function palette(dark: boolean, tint: LevelTint): Palette {
   return dark
     ? {
-        skyTop: "#080d1c", skyBottom: "#141b30",
-        gridFine: "rgba(148,163,184,0.045)", gridMajor: "rgba(148,163,184,0.10)",
-        laneFill: ["#272c4f", "#191e3c"],
-        laneKerb: "#454a9c", laneEdge: "rgba(165,180,252,0.30)",
-        chevron: "rgba(199,210,254,0.28)",
+        skyTop: tint.skyDark[0], skyBottom: tint.skyDark[1],
+        gridFine: "rgba(148,163,184,0.045)", gridMajor: alpha(tint.accent, 0.08),
+        laneFill: [shade(tint.laneDeep, 0.34), shade(tint.laneDeep, -0.04)],
+        laneKerb: shade(tint.lane, 0.08), laneEdge: alpha(tint.accent, 0.32),
+        chevron: alpha(tint.accent, 0.3),
         ink: "#e2e8f0",
-        steel: ["#8d94f6", "#272255"], steelEdge: "#c7d2fe",
+        steel: [shade(tint.lane, 0.35), shade(tint.laneDeep, -0.3)],
+        steelEdge: shade(tint.accent, 0.1),
         shadow: "rgba(2,6,23,0.55)",
         vignette: "rgba(2,6,23,0.6)",
-        mote: "rgba(199,210,254,0.18)",
+        mote: alpha(tint.accent, 0.18),
       }
     : {
-        skyTop: "#eef3ff", skyBottom: "#d6deef",
-        gridFine: "rgba(71,85,105,0.06)", gridMajor: "rgba(71,85,105,0.13)",
-        laneFill: ["#ccd1f1", "#b2b9e6"],
-        laneKerb: "#6b72c9", laneEdge: "rgba(67,56,202,0.28)",
-        chevron: "rgba(55,48,163,0.24)",
+        skyTop: tint.skyLight[0], skyBottom: tint.skyLight[1],
+        gridFine: "rgba(71,85,105,0.06)", gridMajor: alpha(tint.laneDeep, 0.1),
+        laneFill: [shade(tint.lane, 0.6), shade(tint.lane, 0.42)],
+        laneKerb: shade(tint.lane, 0.05), laneEdge: alpha(tint.laneDeep, 0.3),
+        chevron: alpha(tint.laneDeep, 0.26),
         ink: "#1e293b",
-        steel: ["#b4bbfd", "#4338ca"], steelEdge: "#312e81",
+        steel: [shade(tint.lane, 0.55), tint.laneDeep],
+        steelEdge: tint.laneDeep,
         shadow: "rgba(30,41,59,0.17)",
         vignette: "rgba(100,116,139,0.22)",
-        mote: "rgba(79,70,229,0.13)",
+        mote: alpha(tint.laneDeep, 0.13),
       };
 }
 
@@ -128,8 +154,15 @@ export function draw(
   /** The translated word for "wave". The renderer has no dictionary of its
    *  own, and a banner showing a bare number says nothing. */
   waveLabel = "",
+  /** The translated word for "level", for the arrival banner. */
+  levelLabel = "",
 ) {
-  const P = palette(theme.dark);
+  const tint = world.layout.spec.tint;
+  const P = palette(theme.dark, tint);
+  const PATHS = world.layout.paths;
+  const SLOTS = world.layout.slots;
+  const ROUTES = PATHS.length;
+  const pointAt = (r: number, t: number) => world.at(r, t);
   const X = (v: number) => v * w;
   const Y = (v: number) => v * h;
   const time = world.time;
@@ -248,9 +281,9 @@ export function draw(
       const stats = SCANNER_STATS[(scanner?.level ?? 1) - 1];
       ctx.beginPath();
       ctx.arc(cx, cy, stats.range * w, 0, Math.PI * 2);
-      ctx.fillStyle = theme.dark ? "rgba(129,140,248,0.09)" : "rgba(79,70,229,0.07)";
+      ctx.fillStyle = alpha(theme.dark ? tint.accent : tint.laneDeep, theme.dark ? 0.1 : 0.07);
       ctx.fill();
-      ctx.strokeStyle = theme.dark ? "rgba(165,180,252,0.55)" : "rgba(79,70,229,0.5)";
+      ctx.strokeStyle = alpha(theme.dark ? tint.accent : tint.laneDeep, theme.dark ? 0.6 : 0.5);
       ctx.lineWidth = 1.5;
       ctx.setLineDash([5, 5]);
       ctx.lineDashOffset = -time * 14;
@@ -302,7 +335,7 @@ export function draw(
   }
 
   /* ── Patients ─────────────────────────────────────────────────────── */
-  for (const p of world.patients) drawPatient(ctx, p, X, Y, w, time, P, theme);
+  for (const p of world.patients) drawPatient(ctx, p, world, X, Y, w, time, P, theme);
 
   /* ── Particles ────────────────────────────────────────────────────── */
   for (const p of world.particles) {
@@ -354,8 +387,36 @@ export function draw(
     ctx.stroke();
   }
 
+  /* ── Arriving on a floor ──────────────────────────────────────────── */
+  if (world.levelBanner > 0) {
+    const k = world.levelBanner > 1.9 ? (2.4 - world.levelBanner) / 0.5 : Math.min(1, world.levelBanner / 0.7);
+    const e = Math.max(0, Math.min(1, k));
+    ctx.save();
+    ctx.globalAlpha = e;
+    // A full-width band, so a new floor is unmistakably a new floor and not
+    // another wave with a bigger number.
+    const bandH = Math.max(46, h * 0.13);
+    ctx.fillStyle = alpha(tint.laneDeep, theme.dark ? 0.9 : 0.14);
+    ctx.fillRect(0, h * 0.5 - bandH / 2, w, bandH);
+    ctx.fillStyle = tint.accent;
+    ctx.fillRect(0, h * 0.5 - bandH / 2, w * e, 2);
+    ctx.fillRect(w * (1 - e), h * 0.5 + bandH / 2 - 2, w * e, 2);
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `800 ${Math.round(Math.max(10, w * 0.032))}px system-ui, sans-serif`;
+    ctx.letterSpacing = "4px";
+    ctx.fillStyle = tint.accent;
+    ctx.fillText(levelLabel.toUpperCase(), w / 2, h * 0.5 - bandH * 0.22);
+    ctx.letterSpacing = "0px";
+    ctx.font = `900 ${Math.round(Math.max(24, w * 0.085))}px system-ui, sans-serif`;
+    ctx.fillStyle = theme.dark ? "#ffffff" : tint.laneDeep;
+    ctx.fillText(`${world.level}`, w / 2, h * 0.5 + bandH * 0.16);
+    ctx.restore();
+  }
+
   /* ── Wave banner ──────────────────────────────────────────────────── */
-  if (world.banner > 0) {
+  if (world.banner > 0 && world.levelBanner <= 0) {
     const k = world.banner > 1.4 ? (1.8 - world.banner) / 0.4 : Math.min(1, world.banner / 0.6);
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, k));
@@ -538,6 +599,7 @@ function drawScanner(
 function drawPatient(
   ctx: CanvasRenderingContext2D,
   p: Patient,
+  world: World,
   X: (v: number) => number,
   Y: (v: number) => number,
   w: number,
@@ -545,7 +607,7 @@ function drawPatient(
   P: Palette,
   theme: Theme,
 ) {
-  const at = pointAt(p.route, p.t);
+  const at = world.at(p.route, p.t);
   const cx = X(at.x);
   const cy = Y(at.y);
   const grow = Math.min(1, p.age * 4);

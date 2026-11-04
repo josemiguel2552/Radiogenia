@@ -7,9 +7,13 @@ import {
   cleanAlias, defaultAlias, MAX_ANSWER_MULTIPLIER, MAX_INTEGRITY, POINTS_PER_CORRECT,
   QUESTION_BASE_S, BUILD_HEAL,
 } from "@/lib/game-score";
+import { World, SPECIES, SPECIES_KEYS } from "@/components/sidebar/game-engine";
 import {
-  World, pointAt, PATHS, ROUTES, ROUTE_LENGTH, SLOTS, HOSPITAL, SPECIES, SPECIES_KEYS,
-} from "@/components/sidebar/game-engine";
+  buildLayout, levelSpec, slotClearance, HOSPITAL, LEVEL_COUNT, TINTS,
+} from "@/components/sidebar/game-levels";
+
+/** The quiet world used by most of these: no callbacks, just a simulation. */
+const quietWorld = () => new World({ onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: () => {} });
 
 /**
  * Radiology Defense.
@@ -220,71 +224,170 @@ describe("the clock follows how much there is to read", () => {
   });
 });
 
-describe("the department has six ways in", () => {
-  it("runs six corridors, all ending at the hospital", () => {
-    expect(PATHS).toHaveLength(ROUTES);
-    expect(ROUTES).toBe(6);
-    for (let r = 0; r < ROUTES; r++) {
-      const end = pointAt(r, 1);
-      expect(Math.hypot(end.x - HOSPITAL.x, end.y - HOSPITAL.y)).toBeLessThan(0.001);
+describe("every level lays out a department that works", () => {
+  const levels = Array.from({ length: LEVEL_COUNT }, (_, i) => buildLayout(levelSpec(i + 1)));
+
+  it("grows from three corridors to eight", () => {
+    const routes = levels.map((l) => l.paths.length);
+    expect(routes[0]).toBe(3);
+    expect(routes[routes.length - 1]).toBe(8);
+    for (let i = 1; i < routes.length; i++) expect(routes[i]).toBeGreaterThan(routes[i - 1]);
+  });
+
+  it("ends every corridor at the hospital and starts it off the field", () => {
+    for (const layout of levels) {
+      for (let r = 0; r < layout.paths.length; r++) {
+        const end = layout.at(r, 1);
+        expect(Math.hypot(end.x - HOSPITAL.x, end.y - HOSPITAL.y)).toBeLessThan(0.001);
+        const start = layout.at(r, 0);
+        const outside = start.x < -0.005 || start.x > 1.005 || start.y < -0.005 || start.y > 1.005;
+        expect(`L${layout.spec.level} r${r} enters from outside: ${outside}`)
+          .toBe(`L${layout.spec.level} r${r} enters from outside: true`);
+      }
     }
   });
 
-  it("starts every corridor off the field, so nobody appears from nowhere", () => {
-    for (let r = 0; r < ROUTES; r++) {
-      const start = pointAt(r, 0);
-      const outside = start.x < -0.01 || start.x > 1.01 || start.y < -0.01 || start.y > 1.01;
-      expect(`route ${r} enters from outside: ${outside}`).toBe(`route ${r} enters from outside: true`);
+  it("places every bay it promised, clear of every corridor", () => {
+    // This is the whole reason the geometry is searched instead of typed:
+    // the dog-leg swings each corridor a quarter of a wedge toward its
+    // neighbour, so the obvious midpoint sits ON a lane. With six layouts
+    // that mistake would be waiting in all of them.
+    for (const layout of levels) {
+      expect(`L${layout.spec.level} bays`).toBe(
+        layout.slots.length === layout.spec.perRing * 2 ? `L${layout.spec.level} bays` : `L${layout.spec.level} MISSING`);
+      expect(`L${layout.spec.level} clearance ok: ${slotClearance(layout) > 0.08}`)
+        .toBe(`L${layout.spec.level} clearance ok: true`);
     }
   });
 
-  it("gives every corridor practically the same length", () => {
-    // Not exactly the same: the field is portrait, so the ring the corridors
-    // start on is an ellipse and the diagonal ones run a touch longer. Two
-    // per cent is below noticing; a shortcut would not be.
-    const lengths = PATHS.map((path) =>
-      path.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - path[i].x, p.y - path[i].y), 0));
-    for (const l of lengths) expect(Math.abs(l / ROUTE_LENGTH - 1)).toBeLessThan(0.03);
+  it("keeps every bay on the field, where it can be tapped", () => {
+    for (const layout of levels) {
+      for (const s of layout.slots) {
+        const inside = s.x > 0.05 && s.x < 0.95 && s.y > 0.04 && s.y < 0.96;
+        expect(`L${layout.spec.level} (${s.x.toFixed(2)},${s.y.toFixed(2)}) inside: ${inside}`)
+          .toBe(`L${layout.spec.level} (${s.x.toFixed(2)},${s.y.toFixed(2)}) inside: true`);
+      }
+    }
   });
 
-  it("offers twelve bays, none of them on a corridor", () => {
-    // A scanner drawn on the lane would hide the people walking under it,
-    // which is the one thing the player has to be able to see.
-    expect(SLOTS).toHaveLength(12);
-    for (const slot of SLOTS) {
-      let nearest = 1;
-      for (let r = 0; r < ROUTES; r++) {
-        for (let t = 0; t <= 1; t += 0.004) {
-          const p = pointAt(r, t);
-          nearest = Math.min(nearest, Math.hypot(p.x - slot.x, p.y - slot.y));
+  it("keeps most of every walk on screen", () => {
+    // Time spent off-canvas is time a scanner works on someone nobody sees.
+    for (const layout of levels) {
+      let vis = 0;
+      let all = 0;
+      for (let r = 0; r < layout.paths.length; r++) {
+        for (let t = 0; t <= 1; t += 0.01) {
+          const p = layout.at(r, t);
+          all += 1;
+          if (p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1) vis += 1;
         }
       }
-      expect(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} clear: ${nearest > 0.08}`)
-        .toBe(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} clear: true`);
+      expect(`L${layout.spec.level} visible: ${vis / all > 0.75}`).toBe(`L${layout.spec.level} visible: true`);
     }
   });
 
-  it("keeps every bay inside the field, so it can be tapped", () => {
-    for (const slot of SLOTS) {
-      expect(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} inside: ${
-        slot.x > 0.02 && slot.x < 0.98 && slot.y > 0.02 && slot.y < 0.98}`)
-        .toBe(`${slot.x.toFixed(2)},${slot.y.toFixed(2)} inside: true`);
+  it("gives each floor its own colour and a harder curve", () => {
+    const tints = levels.map((l) => l.spec.tint.lane);
+    expect(new Set(tints).size).toBe(LEVEL_COUNT);
+    expect(TINTS.length).toBeGreaterThanOrEqual(LEVEL_COUNT);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i].spec.hardness).toBeGreaterThan(levels[i - 1].spec.hardness);
+      expect(levels[i].spec.waves).toBeGreaterThanOrEqual(levels[i - 1].spec.waves);
     }
   });
 
-  it("walks at a steady pace whatever the leg lengths", () => {
-    // Giving every segment an equal slice of t makes a patient sprint down a
-    // short leg and crawl along a long one. Nobody reads that as design.
-    const steps = 160;
-    const dists: number[] = [];
-    for (let i = 0; i < steps; i++) {
-      const a = pointAt(0, i / steps);
-      const b = pointAt(0, (i + 1) / steps);
-      dists.push(Math.hypot(b.x - a.x, b.y - a.y));
+  it("introduces the heavier patients floor by floor", () => {
+    // Arriving at a trolley case on the first wave of the first level would
+    // teach nothing except that the game is unfair.
+    expect(levels[0].spec.species).not.toContain("critical");
+    expect(levels[0].spec.species).not.toContain("stretcher");
+    expect(levels[LEVEL_COUNT - 1].spec.species).toHaveLength(5);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i].spec.species.length).toBeGreaterThanOrEqual(levels[i - 1].spec.species.length);
     }
-    const mean = dists.reduce((x, y) => x + y, 0) / dists.length;
-    expect(dists.filter((d) => Math.abs(d / mean - 1) > 0.1).length).toBeLessThanOrEqual(12);
-    expect(Math.min(...dists) / mean).toBeGreaterThan(0.6);
+  });
+
+  it("keeps going past the last authored floor", () => {
+    // "You win, stop now" is a worse ending than being finally overrun.
+    const beyond = levelSpec(LEVEL_COUNT + 3);
+    expect(beyond.routes).toBe(levelSpec(LEVEL_COUNT).routes);
+    expect(beyond.hardness).toBeGreaterThan(levelSpec(LEVEL_COUNT).hardness);
+  });
+
+  it("walks at a steady pace on every layout", () => {
+    for (const layout of levels) {
+      const steps = 120;
+      const dists: number[] = [];
+      for (let i = 0; i < steps; i++) {
+        const a = layout.at(0, i / steps);
+        const b = layout.at(0, (i + 1) / steps);
+        dists.push(Math.hypot(b.x - a.x, b.y - a.y));
+      }
+      const mean = dists.reduce((x, y) => x + y, 0) / dists.length;
+      expect(`L${layout.spec.level} steady: ${Math.min(...dists) / mean > 0.55}`)
+        .toBe(`L${layout.spec.level} steady: true`);
+    }
+  });
+});
+
+describe("a floor is cleared, and the next one is a different place", () => {
+  it("reports the level cleared only after its last wave", () => {
+    const levels: number[] = [];
+    const w = new World({ onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: (n) => levels.push(n) });
+    w.startLevel(1);
+    const need = w.layout.spec.waves;
+    for (let n = 1; n <= need; n++) {
+      w.startWave(n);
+      w.pending = 0;
+      w.breather = 0;
+      w.tick(1 / 60);
+      expect(`after wave ${n}: ${levels.length}`).toBe(`after wave ${n}: ${n === need ? 1 : 0}`);
+    }
+  });
+
+  it("rebuilds the department on the new floor", () => {
+    // Scanners do not carry over: it is a different place, and rebuilding is
+    // most of what makes arriving somewhere feel like arriving.
+    const w = quietWorld();
+    w.startLevel(1);
+    w.build(0);
+    w.damageBase(60);
+    w.startLevel(2);
+    expect(w.scanners).toHaveLength(0);
+    expect(w.patients).toHaveLength(0);
+    expect(w.integrity).toBe(MAX_INTEGRITY);
+    expect(w.level).toBe(2);
+    expect(w.layout.paths).toHaveLength(4);
+    expect(w.waveInLevel).toBe(1);
+  });
+
+  it("counts waves per floor for the HUD and in total for the board", () => {
+    let total = 0;
+    const w = new World({ onLeak: () => {}, onWaveCleared: (n) => { total = n; }, onLevelCleared: () => {} });
+    w.startLevel(1);
+    for (let n = 1; n <= 3; n++) {
+      w.startWave(n);
+      w.pending = 0;
+      w.breather = 0;
+      w.tick(1 / 60);
+    }
+    expect(w.waveInLevel).toBe(3);
+    expect(total).toBe(3);
+    w.startLevel(2);
+    w.pending = 0;
+    w.breather = 0;
+    w.tick(1 / 60);
+    expect(w.waveInLevel).toBe(1);
+    expect(total).toBe(4);
+  });
+
+  it("makes wave 1 of a later floor heavier than wave 1 of the first", () => {
+    const a = quietWorld();
+    a.startLevel(1);
+    const b = quietWorld();
+    b.startLevel(4);
+    expect(b.spec.hp).toBeGreaterThan(a.spec.hp);
+    expect(b.spec.count).toBeGreaterThan(a.spec.count);
   });
 });
 
@@ -316,24 +419,25 @@ describe("five kinds of patient, each its own shape and colour", () => {
     }
   });
 
-  it("spreads arrivals across all six corridors", () => {
+  it("spreads arrivals across every corridor of the floor", () => {
     // One quiet route would let the player stack a single wedge and forget
-    // the other five. Measured over a wave big enough to be a sample: the
+    // the rest. Measured over a sample big enough to mean something: the
     // dealing is round-robin with a nudge, so a short wave can legitimately
     // skip one and that is not what this is asking about.
-    const w = new World({ onLeak: () => {}, onWaveCleared: () => {} });
-    w.startWave(10);
+    const w = quietWorld();
+    w.startLevel(LEVEL_COUNT);
+    w.startWave(9);
     const seen = new Set<number>();
-    for (let i = 0; i < 2500; i++) {
+    for (let i = 0; i < 4000; i++) {
       w.tick(1 / 60);
       for (const p of w.patients) seen.add(p.route);
     }
-    expect(seen.size).toBe(ROUTES);
+    expect(seen.size).toBe(w.layout.paths.length);
   });
 });
 
 describe("installing a scanner is capacity, so it heals", () => {
-  const quiet = () => new World({ onLeak: () => {}, onWaveCleared: () => {} });
+  const quiet = () => { const w = quietWorld(); w.startLevel(1); return w; };
 
   it("gives back ten points of integrity per scanner built", () => {
     const w = quiet();
@@ -366,7 +470,7 @@ describe("installing a scanner is capacity, so it heals", () => {
   it("refuses a bay that does not exist", () => {
     const w = quiet();
     expect(w.build(-1)).toBe(false);
-    expect(w.build(SLOTS.length)).toBe(false);
+    expect(w.build(w.layout.slots.length)).toBe(false);
     expect(w.scanners).toHaveLength(0);
   });
 });

@@ -24,66 +24,10 @@ import {
   waveSpec,
   type WaveSpec,
 } from "@/lib/game-score";
+import { buildLayout, levelSpec, HOSPITAL as CENTRE, type Layout, type Vec } from "./game-levels";
 
-export interface Vec { x: number; y: number }
-
-/** The hospital, and where every corridor ends. */
-export const HOSPITAL: Vec = { x: 0.5, y: 0.47 };
-
-/** How many corridors converge on it. */
-export const ROUTES = 6;
-
-/** Spread wider than tall, because the field is portrait: a true circle
- *  would leave the sides empty and crowd the top and bottom. */
-const RX = 0.62;
-const RY = 0.64;
-
-const at = (r: number, a: number): Vec => ({
-  x: HOSPITAL.x + Math.cos(a) * r * RX,
-  y: HOSPITAL.y + Math.sin(a) * r * RY,
-});
-
-/**
- * One corridor, from off-screen to the hospital door.
- *
- * Built rather than hand-typed so all six are the same shape rotated, which
- * is what makes them read as one department instead of six unrelated
- * drawings. Each has a dog-leg part of the way in: a straight radial run
- * would let a single scanner by the door cover everything, and then there
- * would be nothing to decide.
- */
-function makeRoute(i: number): Vec[] {
-  const a0 = -Math.PI / 2 + (i * Math.PI * 2) / ROUTES;
-  const a1 = a0 + 0.44;
-  // The entry sits just outside the frame, not far outside it: at a wider
-  // radius a third of the walk happened off-canvas, which is a third of the
-  // time a scanner could have been working on someone the player cannot see.
-  return [at(1.02, a0), at(0.74, a0), at(0.44, a1), at(0.16, a1), HOSPITAL];
-}
-
-export const PATHS: Vec[][] = Array.from({ length: ROUTES }, (_, i) => makeRoute(i));
-
-/**
- * Where a scanner may be installed.
- *
- * Two rings of six, set between the corridors rather than on them, so each
- * sits in a wedge and reaches the routes either side of it. The inner ring
- * covers the convergence — more traffic, less time to act; the outer ring
- * catches arrivals early. That trade is the only strategy the game asks for,
- * and it exists only because the rings differ.
- */
-export const SLOTS: Vec[] = Array.from({ length: ROUTES * 2 }, (_, k) => {
-  const ring = k % 2;
-  const i = Math.floor(k / 2);
-  // NOT the midpoint between two corridors, which is where they would
-  // obviously go and where half of them would have sat on a lane: the
-  // dog-leg swings each corridor a quarter-turn of the wedge toward its
-  // neighbour, so the clear ground is further round than it looks. These two
-  // offsets were measured against the geometry, not guessed.
-  const offset = ring === 0 ? 0.977 : 0.663;
-  const a = -Math.PI / 2 + (i * Math.PI * 2) / ROUTES + offset;
-  return at(ring === 0 ? 0.36 : 0.74, a);
-});
+export type { Vec } from "./game-levels";
+export { HOSPITAL } from "./game-levels";
 
 /* ── Who arrives ─────────────────────────────────────────────────────── */
 
@@ -183,42 +127,13 @@ export const SCANNER_STATS = [
   { range: 0.26, damage: 15, rate: 2.0 },
 ];
 
-/* ── Walking the corridors ───────────────────────────────────────────── */
-
-/**
- * Cumulative length along each corridor, so t is distance and not segment
- * index. Giving every segment an equal slice of t makes a patient sprint
- * down a short leg and crawl along a long one; nobody reads that as design.
- */
-const GEOM = PATHS.map((path) => {
-  const legs = path.slice(1).map((p, i) => Math.hypot(p.x - path[i].x, p.y - path[i].y));
-  const total = legs.reduce((a, b) => a + b, 0);
-  const cum = legs.reduce<number[]>((acc, len) => [...acc, acc[acc.length - 1] + len], [0]);
-  return { legs, total, cum };
-});
-
-/** Position on corridor `route` at travel fraction t, along its real length. */
-export function pointAt(route: number, t: number): Vec {
-  const idx = ((route % ROUTES) + ROUTES) % ROUTES;
-  const path = PATHS[idx];
-  const g = GEOM[idx];
-  const want = Math.max(0, Math.min(1, t)) * g.total;
-  let i = 0;
-  while (i < g.legs.length - 1 && g.cum[i + 1] < want) i++;
-  const local = g.legs[i] > 0 ? (want - g.cum[i]) / g.legs[i] : 0;
-  const a = path[i];
-  const b = path[i + 1];
-  return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
-}
-
-/** The length of one corridor, for tuning and for tests. */
-export const ROUTE_LENGTH = GEOM[0].total;
-
 export interface WorldEvents {
   /** A patient reached the hospital unimaged. */
   onLeak: (load: number) => void;
   /** Everyone in the wave is seen, and none are left to arrive. */
   onWaveCleared: (wave: number) => void;
+  /** Every wave of the floor is done. The next level is about to load. */
+  onLevelCleared: (level: number) => void;
 }
 
 export class World {
@@ -234,7 +149,15 @@ export class World {
   /** Wall clock for idle animation: breathing, flowing corridors, the ring. */
   time = 0;
   integrity = MAX_INTEGRITY;
-  wave = 0;
+  /** Which floor is being defended. Each has its own map and palette. */
+  level = 1;
+  layout: Layout = buildLayout(levelSpec(1));
+  /** Which wave of this floor, counting from one. */
+  waveInLevel = 0;
+  /** Waves cleared across the whole run, which is what the board ranks. */
+  totalWaves = 0;
+  /** Seconds the LEVEL banner shows, drawn larger than the wave one. */
+  levelBanner = 0;
   spec: WaveSpec = waveSpec(1);
   /** Patients still to arrive in this wave. */
   pending = 0;
@@ -249,13 +172,56 @@ export class World {
     this.events = events;
   }
 
+  /** The wave number the HUD shows: where you are on this floor. */
+  get wave(): number {
+    return this.waveInLevel;
+  }
+
+  /**
+   * Opens a floor: new map, new palette, a clean department.
+   *
+   * Scanners do NOT carry over — it is a different place, and rebuilding is
+   * most of what makes arriving somewhere feel like arriving. Integrity is
+   * restored in full, because a floor that began half-lost would be decided
+   * before the first question.
+   */
+  startLevel(level: number) {
+    this.level = Math.max(1, level);
+    this.layout = buildLayout(levelSpec(this.level));
+    this.patients = [];
+    this.scanners = [];
+    this.beams = [];
+    this.particles = [];
+    this.floaters = [];
+    this.integrity = MAX_INTEGRITY;
+    this.waveInLevel = 0;
+    this.nextRoute = 0;
+    this.levelBanner = 2.4;
+    this.startWave(1);
+  }
+
   startWave(wave: number) {
-    this.wave = wave;
-    this.spec = waveSpec(wave);
+    this.waveInLevel = wave;
+    // The floor's own hardness rides on top of the wave curve, so wave 1 of
+    // level 4 is already heavier than wave 1 of level 1.
+    const base = waveSpec(wave);
+    const k = this.layout.spec.hardness;
+    this.spec = {
+      wave,
+      count: Math.round(base.count * k),
+      hp: Math.round(base.hp * k),
+      speed: Math.min(0.08, base.speed * (1 + (k - 1) * 0.5)),
+      gap: Math.max(0.42, base.gap / (1 + (k - 1) * 0.35)),
+    };
     this.pending = this.spec.count;
     this.spawnTimer = 0;
     this.breather = 0;
     this.banner = 1.8;
+  }
+
+  /** Position on a corridor of the current floor. */
+  at(route: number, t: number): Vec {
+    return this.layout.at(route, t);
   }
 
   /** A rising number at a point on the field. */
@@ -272,13 +238,13 @@ export class World {
    * mean "guess".
    */
   build(slot: number): boolean {
-    if (slot < 0 || slot >= SLOTS.length) return false;
+    if (slot < 0 || slot >= this.layout.slots.length) return false;
     if (this.scanners.some((s) => s.slot === slot)) return false;
     this.scanners.push({ slot, level: 1, cooldown: 0, angle: Math.PI / 2, flash: 0 });
     const before = this.integrity;
     this.integrity = Math.min(MAX_INTEGRITY, this.integrity + BUILD_HEAL);
     const gained = this.integrity - before;
-    if (gained > 0) this.float(SLOTS[slot], `+${gained}%`, "good");
+    if (gained > 0) this.float(this.layout.slots[slot], `+${gained}%`, "good");
     return true;
   }
 
@@ -302,15 +268,28 @@ export class World {
     // Arrivals are dealt round-robin across the corridors with a nudge of
     // randomness, so no route is quiet for a whole wave and the player cannot
     // simply stack one wedge and forget the rest.
-    const route = (this.nextRoute + (Math.random() < 0.3 ? 1 : 0)) % ROUTES;
-    this.nextRoute = (this.nextRoute + 1) % ROUTES;
+    const routes = this.layout.paths.length;
+    const route = (this.nextRoute + (Math.random() < 0.3 ? 1 : 0)) % routes;
+    this.nextRoute = (this.nextRoute + 1) % routes;
 
-    const roll = Math.random();
-    let species: Species = "routine";
-    if (this.wave >= 5 && roll > 0.86) species = "critical";
-    else if (this.wave >= 3 && roll > 0.68) species = "stretcher";
-    else if (this.wave >= 2 && roll > 0.50) species = "urgent";
-    else if (roll > 0.82) species = "paediatric";
+    // Only the kinds this floor sees, and the heavier ones only once the
+    // wave has had time to establish itself.
+    const allowed = this.layout.spec.species;
+    const pool = allowed.filter((sp) => {
+      if (sp === "critical") return this.waveInLevel >= 3;
+      if (sp === "stretcher") return this.waveInLevel >= 2;
+      return true;
+    });
+    const weights: Record<Species, number> = {
+      routine: 5, paediatric: 2, urgent: 3, stretcher: 2, critical: 1.4,
+    };
+    const total = pool.reduce((n, sp) => n + weights[sp], 0);
+    let roll = Math.random() * total;
+    let species: Species = pool[0] ?? "routine";
+    for (const sp of pool) {
+      roll -= weights[sp];
+      if (roll <= 0) { species = sp; break; }
+    }
 
     const k = SPECIES[species];
     const hp = Math.max(1, Math.round(this.spec.hp * k.hpMul));
@@ -334,6 +313,7 @@ export class World {
     this.time += dt;
     this.shake = Math.max(0, this.shake - dt * 1.8);
     this.banner = Math.max(0, this.banner - dt);
+    this.levelBanner = Math.max(0, this.levelBanner - dt);
 
     if (this.breather > 0) {
       this.breather = Math.max(0, this.breather - dt);
@@ -356,8 +336,8 @@ export class World {
     for (const p of arrived) {
       const load = Math.round(LEAK_LOAD * p.weight);
       this.damageBase(load);
-      this.burst(HOSPITAL, "#f43f5e", 16);
-      this.float({ x: HOSPITAL.x, y: HOSPITAL.y - 0.07 }, `-${load}`, "bad");
+      this.burst(CENTRE, "#f43f5e", 16);
+      this.float({ x: CENTRE.x, y: CENTRE.y - 0.07 }, `-${load}`, "bad");
       this.events.onLeak(load);
     }
     if (arrived.length) this.patients = this.patients.filter((p) => p.t < 1);
@@ -370,8 +350,8 @@ export class World {
       // The gantry tracks its patient between exposures, which is most of
       // what makes it read as a machine rather than a decal.
       if (look) {
-        const to = pointAt(look.route, look.t);
-        const want = Math.atan2(to.y - SLOTS[scanner.slot].y, to.x - SLOTS[scanner.slot].x);
+        const to = this.at(look.route, look.t);
+        const want = Math.atan2(to.y - this.layout.slots[scanner.slot].y, to.x - this.layout.slots[scanner.slot].x);
         let d = want - scanner.angle;
         while (d > Math.PI) d -= Math.PI * 2;
         while (d < -Math.PI) d += Math.PI * 2;
@@ -382,8 +362,8 @@ export class World {
       scanner.flash = 1;
       look.hp -= stats.damage;
       look.hitFlash = 1;
-      const to = pointAt(look.route, look.t);
-      this.beams.push({ from: SLOTS[scanner.slot], to, life: 0.16 });
+      const to = this.at(look.route, look.t);
+      this.beams.push({ from: this.layout.slots[scanner.slot], to, life: 0.16 });
       this.burst(to, "#e0f2fe", 3, 0.05);
       if (look.hp <= 0) {
         // Study complete: the patient has been seen and leaves.
@@ -410,8 +390,10 @@ export class World {
     }
     if (this.floaters.some((f) => f.life <= 0)) this.floaters = this.floaters.filter((f) => f.life > 0);
 
-    if (this.pending === 0 && this.patients.length === 0 && this.breather === 0 && this.wave > 0) {
-      this.events.onWaveCleared(this.wave);
+    if (this.pending === 0 && this.patients.length === 0 && this.breather === 0 && this.waveInLevel > 0) {
+      this.totalWaves += 1;
+      this.events.onWaveCleared(this.totalWaves);
+      if (this.waveInLevel >= this.layout.spec.waves) this.events.onLevelCleared(this.level);
       this.breather = 3.5;
     }
   }
@@ -419,10 +401,10 @@ export class World {
   /** The patient furthest along that a scanner can reach — the one about to
    *  arrive, not merely the nearest. */
   private pick(scanner: Scanner, range: number): Patient | null {
-    const from = SLOTS[scanner.slot];
+    const from = this.layout.slots[scanner.slot];
     let best: Patient | null = null;
     for (const p of this.patients) {
-      const to = pointAt(p.route, p.t);
+      const to = this.at(p.route, p.t);
       if (Math.hypot(to.x - from.x, to.y - from.y) > range) continue;
       if (!best || p.t > best.t) best = p;
     }
@@ -448,7 +430,7 @@ export class World {
   slotNear(x: number, y: number, aspect: number): number | null {
     let best: number | null = null;
     let bestD = 0.075;
-    SLOTS.forEach((s, i) => {
+    this.layout.slots.forEach((s, i) => {
       const d = Math.hypot((s.x - x) * aspect, s.y - y);
       if (d < bestD) { bestD = d; best = i; }
     });

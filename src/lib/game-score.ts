@@ -137,6 +137,10 @@ export const POINTS_PER_CORRECT = 50;
 export const MAX_ANSWER_MULTIPLIER = 3;
 export const POINTS_PER_WAVE = 100;
 export const POINTS_PER_INTEGRITY = 5;
+/** A cleared floor is worth more than its waves: it is the thing the run is
+ *  actually about, and the board should rank someone who reached level 4
+ *  above someone who ground out the same wave count on level 1. */
+export const POINTS_PER_LEVEL = 400;
 
 /** What one correct answer is worth, given the streak it continues. */
 export function answerPoints(streak: number): number {
@@ -151,10 +155,16 @@ export function answerPoints(streak: number): number {
  * waves. Counting it twice would make one good streak worth more than a whole
  * extra wave, and the board would stop being about surviving.
  */
-export function finalScore(opts: { answerScore: number; wavesCleared: number; integrity: number }): number {
+export function finalScore(opts: {
+  answerScore: number;
+  wavesCleared: number;
+  integrity: number;
+  levelsCleared?: number;
+}): number {
   return Math.round(
     opts.answerScore +
       opts.wavesCleared * POINTS_PER_WAVE +
+      (opts.levelsCleared ?? 0) * POINTS_PER_LEVEL +
       Math.max(0, opts.integrity) * POINTS_PER_INTEGRITY,
   );
 }
@@ -172,6 +182,10 @@ export function maxPossibleScore(correct: number, wave: number, integrity: numbe
   return finalScore({
     answerScore: bestAnswers,
     wavesCleared: Math.max(0, wave),
+    // A floor takes at least four waves, so a run that cleared W waves
+    // cannot have cleared more than W/4 floors. Any more is a claim the run
+    // could not have produced.
+    levelsCleared: Math.floor(Math.max(0, wave) / 4),
     integrity: Math.min(MAX_INTEGRITY, Math.max(0, integrity)),
   });
 }
