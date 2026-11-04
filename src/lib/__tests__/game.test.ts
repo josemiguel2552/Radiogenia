@@ -3,10 +3,11 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { QUESTIONS, TOPICS, shuffled, buildRun } from "@/lib/game-questions";
 import {
-  answerPoints, creditsFor, finalScore, maxPossibleScore, waveSpec,
+  answerPoints, creditsFor, finalScore, maxPossibleScore, waveSpec, questionSeconds,
   cleanAlias, defaultAlias, MAX_ANSWER_MULTIPLIER, MAX_INTEGRITY, POINTS_PER_CORRECT,
+  QUESTION_BASE_S,
 } from "@/lib/game-score";
-import { World, pointAt, PATH, SLOTS } from "@/components/sidebar/game-engine";
+import { World, pointAt, PATH, PATH_LENGTH, SLOTS } from "@/components/sidebar/game-engine";
 
 /**
  * Radiology Defense.
@@ -195,6 +196,76 @@ describe("the server bounds what a browser may claim", () => {
     const route = read("src/app/api/game/route.ts");
     const post = route.slice(route.indexOf("export async function POST"));
     expect(post.indexOf("maxPossibleScore")).toBeLessThan(post.indexOf(".insert("));
+  });
+});
+
+describe("the clock follows how much there is to read", () => {
+  it("gives a short question the base time", () => {
+    expect(questionSeconds(30, 40)).toBe(QUESTION_BASE_S);
+  });
+
+  it("adds two seconds for a long stem and one more for long options", () => {
+    // A fixed timer punishes the questions worth the most: the ones whose
+    // stem names three findings, or whose options are sentences rather than
+    // "LR-5". The player is not slower on those, there is simply more to read.
+    expect(questionSeconds(120, 40)).toBe(QUESTION_BASE_S + 2);
+    expect(questionSeconds(30, 300)).toBe(QUESTION_BASE_S + 1);
+    expect(questionSeconds(120, 300)).toBe(QUESTION_BASE_S + 3);
+  });
+
+  it("never shortens a question below the base", () => {
+    expect(questionSeconds(0, 0)).toBe(QUESTION_BASE_S);
+  });
+});
+
+describe("the map gives a turret something to cover", () => {
+  it("runs a longer lane than the first draft", () => {
+    expect(PATH.length).toBeGreaterThanOrEqual(12);
+    expect(PATH_LENGTH).toBeGreaterThan(3);
+  });
+
+  it("offers ten emplacements", () => {
+    expect(SLOTS).toHaveLength(10);
+  });
+
+  it("walks at a steady pace whatever the leg lengths", () => {
+    // Giving every segment an equal slice of t makes an enemy sprint down a
+    // short leg and crawl along a long one. Nobody reads that as design;
+    // they read it as the game stuttering.
+    const steps = 200;
+    const dists: number[] = [];
+    for (let i = 0; i < steps; i++) {
+      const a = pointAt(i / steps);
+      const b = pointAt((i + 1) / steps);
+      dists.push(Math.hypot(b.x - a.x, b.y - a.y));
+    }
+    const mean = dists.reduce((x, y) => x + y, 0) / dists.length;
+    const off = dists.filter((d) => Math.abs(d / mean - 1) > 0.1);
+    // Only the steps that land on a corner fall short, because they cut it.
+    // There are twelve corners, so a handful of outliers is the geometry and
+    // not the parameterisation.
+    expect(off.length).toBeLessThanOrEqual(15);
+    expect(Math.min(...dists) / mean).toBeGreaterThan(0.6);
+
+    // The measure of what this fixed: the legs themselves differ sixfold, so
+    // giving each an equal slice of t would have run an enemy six times
+    // faster along one stretch than another.
+    const legs = PATH.slice(1).map((p, i) => Math.hypot(p.x - PATH[i].x, p.y - PATH[i].y));
+    expect(Math.max(...legs) / Math.min(...legs)).toBeGreaterThan(3);
+  });
+
+  it("keeps every slot clear of the lane and inside the frame", () => {
+    for (const slot of SLOTS) {
+      let nearest = 1;
+      for (let t = 0; t <= 1; t += 0.002) {
+        const p = pointAt(t);
+        nearest = Math.min(nearest, Math.hypot(p.x - slot.x, p.y - slot.y));
+      }
+      expect(`${slot.x},${slot.y} clear: ${nearest > 0.045}`).toBe(`${slot.x},${slot.y} clear: true`);
+      // A pad drawn half off the canvas cannot be tapped on its missing half.
+      expect(`${slot.x},${slot.y} inside: ${slot.x > 0.03 && slot.x < 0.97 && slot.y > 0.03 && slot.y < 0.97}`)
+        .toBe(`${slot.x},${slot.y} inside: true`);
+    }
   });
 });
 

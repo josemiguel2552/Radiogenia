@@ -21,27 +21,49 @@ import {
 
 export interface Vec { x: number; y: number }
 
-/** The lane enemies walk, in canvas fractions. The bends exist to give
- *  turrets something to cover: a straight line makes every slot identical. */
+/**
+ * The lane enemies walk, in canvas fractions.
+ *
+ * Six bends rather than three: a longer run is more ground for a turret to
+ * cover, which is what makes WHERE you build a decision instead of a
+ * formality. Every straight is long enough for a turret beside it to get
+ * more than one shot off as something passes.
+ */
 export const PATH: Vec[] = [
-  { x: 0.5, y: -0.06 },
-  { x: 0.5, y: 0.14 },
-  { x: 0.18, y: 0.26 },
-  { x: 0.18, y: 0.46 },
-  { x: 0.82, y: 0.58 },
-  { x: 0.82, y: 0.72 },
-  { x: 0.5, y: 0.82 },
-  { x: 0.5, y: 0.87 },
+  { x: 0.10, y: -0.07 },
+  { x: 0.10, y: 0.10 },
+  { x: 0.62, y: 0.10 },
+  { x: 0.62, y: 0.25 },
+  { x: 0.16, y: 0.25 },
+  { x: 0.16, y: 0.41 },
+  { x: 0.88, y: 0.41 },
+  { x: 0.88, y: 0.57 },
+  { x: 0.30, y: 0.57 },
+  { x: 0.30, y: 0.72 },
+  { x: 0.70, y: 0.72 },
+  { x: 0.70, y: 0.84 },
+  { x: 0.50, y: 0.90 },
 ];
 
-/** Where a turret may be built. Each one covers a different bend. */
+/**
+ * Where a turret may be built.
+ *
+ * Ten emplacements, each tucked into a different pocket of the serpentine so
+ * that no two cover the same stretch. The ones in the elbows see two
+ * straights at once and are worth taking early — which is the only piece of
+ * strategy the game asks for, and it only exists because the slots differ.
+ */
 export const SLOTS: Vec[] = [
-  { x: 0.80, y: 0.17 },
-  { x: 0.42, y: 0.36 },
-  { x: 0.80, y: 0.40 },
-  { x: 0.20, y: 0.63 },
-  { x: 0.56, y: 0.69 },
-  { x: 0.22, y: 0.86 },
+  { x: 0.33, y: 0.045 },
+  { x: 0.82, y: 0.07 },
+  { x: 0.38, y: 0.18 },
+  { x: 0.84, y: 0.22 },
+  { x: 0.06, y: 0.33 },
+  { x: 0.50, y: 0.33 },
+  { x: 0.52, y: 0.49 },
+  { x: 0.10, y: 0.52 },
+  { x: 0.50, y: 0.645 },
+  { x: 0.86, y: 0.67 },
 ];
 
 export type EnemyKind = "nodule" | "mass" | "calcified";
@@ -112,9 +134,9 @@ export const TURRET_STATS = [
 ];
 
 const KINDS: Record<EnemyKind, { radius: number; hpMul: number; speedMul: number; weight: number; fill: string; ring: string }> = {
-  nodule:    { radius: 0.022, hpMul: 0.75, speedMul: 1.35, weight: 0.8, fill: "#38bdf8", ring: "#0ea5e9" },
-  mass:      { radius: 0.034, hpMul: 1.6,  speedMul: 0.75, weight: 1.6, fill: "#fb7185", ring: "#e11d48" },
-  calcified: { radius: 0.027, hpMul: 1.15, speedMul: 1.0,  weight: 1.1, fill: "#a78bfa", ring: "#7c3aed" },
+  nodule:    { radius: 0.026, hpMul: 0.75, speedMul: 1.35, weight: 0.8, fill: "#38bdf8", ring: "#0ea5e9" },
+  mass:      { radius: 0.039, hpMul: 1.6,  speedMul: 0.75, weight: 1.6, fill: "#fb7185", ring: "#e11d48" },
+  calcified: { radius: 0.031, hpMul: 1.15, speedMul: 1.0,  weight: 1.1, fill: "#a78bfa", ring: "#7c3aed" },
 };
 
 /**
@@ -143,15 +165,31 @@ function makeShape(kind: EnemyKind): number[] {
 }
 
 /** Position along the path at travel fraction t. */
+/**
+ * Cumulative length along the path, so t is distance and not segment index.
+ *
+ * Giving every segment an equal slice of t makes an enemy sprint down a short
+ * leg and crawl along a long one. Nobody reads that as a design decision;
+ * they read it as the game stuttering. With thirteen points and legs of very
+ * different lengths it would have been impossible to miss.
+ */
+const LEGS = PATH.slice(1).map((p, i) => Math.hypot(p.x - PATH[i].x, p.y - PATH[i].y));
+const TOTAL = LEGS.reduce((a, b) => a + b, 0);
+const CUM = LEGS.reduce<number[]>((acc, len) => [...acc, acc[acc.length - 1] + len], [0]);
+
+/** Position at travel fraction t, measured along the path's real length. */
 export function pointAt(t: number): Vec {
-  const clamped = Math.max(0, Math.min(1, t));
-  const span = 1 / (PATH.length - 1);
-  const i = Math.min(PATH.length - 2, Math.floor(clamped / span));
-  const local = (clamped - i * span) / span;
+  const want = Math.max(0, Math.min(1, t)) * TOTAL;
+  let i = 0;
+  while (i < LEGS.length - 1 && CUM[i + 1] < want) i++;
+  const local = LEGS[i] > 0 ? (want - CUM[i]) / LEGS[i] : 0;
   const a = PATH[i];
   const b = PATH[i + 1];
   return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
 }
+
+/** The path's total length in canvas fractions, for tuning and for tests. */
+export const PATH_LENGTH = TOTAL;
 
 export interface WorldEvents {
   /** An enemy reached the base. */

@@ -82,9 +82,36 @@ export function waveSpec(wave: number): WaveSpec {
     wave,
     count: 3 + Math.floor(wave * 1.4),
     hp: 10 + (wave - 1) * 7,
-    speed: Math.min(0.075, 0.028 + (wave - 1) * 0.004),
+    // Fractions of the path per second. The path is now twice as long, so
+    // these are scaled down further than that: the walk should take LONGER
+    // than it used to, not merely cover more ground at the same pace.
+    speed: Math.min(0.058, 0.021 + (wave - 1) * 0.003),
     gap: Math.max(0.55, 1.6 - (wave - 1) * 0.08),
   };
+}
+
+/* ── How long a question stands ───────────────────────────────────────── */
+
+/** The clock a short question gets, in seconds. */
+export const QUESTION_BASE_S = 14;
+
+/**
+ * The clock this particular question deserves.
+ *
+ * A fixed timer punishes the questions that are worth the most: the ones
+ * whose stem names three findings, or whose four options are full sentences
+ * rather than "LR-5". The player is not slower on those, they simply have
+ * more to read, and a timer that cannot tell the difference is measuring
+ * reading speed instead of radiology.
+ *
+ * Two steps rather than a smooth curve, so the clock is predictable: a long
+ * stem buys two seconds, long options buy one more.
+ */
+export function questionSeconds(stemChars: number, optionChars: number): number {
+  let seconds = QUESTION_BASE_S;
+  if (stemChars > 58) seconds += 2;
+  if (optionChars > 110) seconds += 1;
+  return seconds;
 }
 
 /* ── The score ────────────────────────────────────────────────────────── */

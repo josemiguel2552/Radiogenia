@@ -11,7 +11,7 @@ import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { buildRun, shuffled, TOPICS, type QuizLang, type QuizQuestion } from "@/lib/game-questions";
 import {
-  answerPoints, creditsFor, finalScore,
+  answerPoints, creditsFor, finalScore, questionSeconds, QUESTION_BASE_S,
   MAX_INTEGRITY, MAX_TURRET_LEVEL, STARTING_CREDITS, TURRET_COST, UPGRADE_COST, WRONG_ANSWER_DAMAGE,
   type Leaderboard, type RunResult,
 } from "@/lib/game-score";
@@ -22,8 +22,7 @@ type Phase = "idle" | "playing" | "over";
 
 /** How long the right answer and its source stay on screen after a miss. */
 const MISS_MS = 2300;
-/** How long a question stands before it counts as unanswered. */
-const QUESTION_S = 14;
+
 
 /**
  * Radiology Defense.
@@ -64,7 +63,11 @@ export function GameTab() {
    *  Mirrored into state because reading it out of the world ref during
    *  render is exactly the tear concurrent rendering is allowed to produce. */
   const [selectedLevel, setSelectedLevel] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(QUESTION_S);
+  const [timeLeft, setTimeLeft] = useState(QUESTION_BASE_S);
+  /** The clock this question was given, which depends on how much there is
+   *  to read. Kept in state as well as a ref: one drives the bar, the other
+   *  is read inside the animation frame. */
+  const [questionS, setQuestionS] = useState(QUESTION_BASE_S);
   const [built, setBuilt] = useState(0);
   const [wavesCleared, setWavesCleared] = useState(0);
 
@@ -79,6 +82,7 @@ export function GameTab() {
   const rafRef = useRef(0);
   const lastRef = useRef(0);
   const askedAtRef = useRef(0);
+  const questionSRef = useRef(QUESTION_BASE_S);
   const lockRef = useRef(false);
   const statsRef = useRef({ answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: 0, wavesCleared: 0 });
   const creditsRef = useRef(STARTING_CREDITS);
@@ -139,9 +143,16 @@ export function GameTab() {
     // Shuffled per question: otherwise the right answer sits wherever the
     // bank happened to write it, and after three rounds the player is
     // reading positions instead of radiology.
-    setOptions(shuffled(q.options).map((o) => ({ text: o.t[lang], correct: o.correct })));
+    const opts = shuffled(q.options).map((o) => ({ text: o.t[lang], correct: o.correct }));
+    setOptions(opts);
+    const seconds = questionSeconds(
+      q.q[lang].length,
+      opts.reduce((n, o) => n + o.text.length, 0),
+    );
+    questionSRef.current = seconds;
+    setQuestionS(seconds);
     askedAtRef.current = performance.now();
-    setTimeLeft(QUESTION_S);
+    setTimeLeft(seconds);
     lockRef.current = false;
   }, [lang, topics]);
 
@@ -175,7 +186,7 @@ export function GameTab() {
     setAsked(s.asked);
 
     if (picked?.correct) {
-      const secondsLeft = Math.max(0, QUESTION_S - (performance.now() - askedAtRef.current) / 1000);
+      const secondsLeft = Math.max(0, questionSRef.current - (performance.now() - askedAtRef.current) / 1000);
       s.correct += 1;
       s.answerScore += answerPoints(s.streak);
       s.streak += 1;
@@ -264,7 +275,7 @@ export function GameTab() {
       // The question has its own clock. Letting it run out is a miss: a base
       // under attack does not wait for the radiologist to feel ready.
       if (!lockRef.current) {
-        const left = QUESTION_S - (now - askedAtRef.current) / 1000;
+        const left = questionSRef.current - (now - askedAtRef.current) / 1000;
         setTimeLeft(Math.max(0, left));
         if (left <= 0) answerRef.current(null);
       }
@@ -416,7 +427,7 @@ export function GameTab() {
             <canvas
               ref={canvasRef}
               onPointerDown={onCanvasPointer}
-              className="w-full h-[min(46vh,340px)] rounded-lg border border-[hsl(var(--border))] touch-manipulation block"
+              className="w-full h-[min(54vh,420px)] rounded-lg border border-[hsl(var(--border))] touch-manipulation block"
             />
             {miss && (
               <div className="absolute inset-0 flex items-center justify-center bg-[hsl(var(--background)/0.9)] backdrop-blur-[2px] p-4 rounded-lg">
@@ -453,7 +464,7 @@ export function GameTab() {
 
           <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] p-2.5 space-y-2">
             <div className="h-1 w-full rounded-full bg-[hsl(var(--muted))] overflow-hidden">
-              <div className={`h-full ${timeLeft > 4 ? "bg-brand" : "bg-rose-500"}`} style={{ width: `${(timeLeft / QUESTION_S) * 100}%` }} />
+              <div className={`h-full ${timeLeft > 4 ? "bg-brand" : "bg-rose-500"}`} style={{ width: `${(timeLeft / questionS) * 100}%` }} />
             </div>
             <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-snug">{question?.q[lang]}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
