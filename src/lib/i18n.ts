@@ -293,6 +293,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.rail_reports": "Informes",
     "nav.rail_templates": "Plantillas",
     "nav.rail_calculators": "Calculadoras",
+    "nav.rail_game": "Juego",
     "nav.rail_recommendations": "Guías",
     "nav.rail_account": "Cuenta",
     "nav.recent": "Recientes",
@@ -347,6 +348,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.reports": "Informes",
     "nav.templates": "Plantillas",
     "nav.calculators": "Calculadoras",
+    "nav.game": "Juego",
     "nav.config": "Configuración",
     // Sidebar tabs (legacy keys kept for compat)
     "tab.templates": "Plantillas", "tab.guidelines": "Guías clínicas",
@@ -1022,6 +1024,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.rail_reports": "Reports",
     "nav.rail_templates": "Templates",
     "nav.rail_calculators": "Calculators",
+    "nav.rail_game": "Game",
     "nav.rail_recommendations": "Guidelines",
     "nav.rail_account": "Account",
     "nav.recent": "Recent",
@@ -1076,6 +1079,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.reports": "Reports",
     "nav.templates": "Templates",
     "nav.calculators": "Calculators",
+    "nav.game": "Game",
     "nav.config": "Settings",
     // Sidebar tabs (legacy keys kept for compat)
     "tab.templates": "Templates", "tab.guidelines": "Guidelines",
@@ -1716,6 +1720,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.rail_reports": "Laudos",
     "nav.rail_templates": "Modelos",
     "nav.rail_calculators": "Calculadoras",
+    "nav.rail_game": "Jogo",
     "nav.rail_recommendations": "Diretrizes",
     "nav.rail_account": "Conta",
     "nav.recent": "Recentes",
@@ -1770,6 +1775,7 @@ const ui: Record<UILanguage, Record<string, string>> = {
     "nav.reports": "Laudos",
     "nav.templates": "Templates",
     "nav.calculators": "Calculadoras",
+    "nav.game": "Jogo",
     "nav.config": "Configurações",
     // Sidebar tabs (legacy keys kept for compat)
     "tab.templates": "Templates", "tab.guidelines": "Diretrizes clínicas",

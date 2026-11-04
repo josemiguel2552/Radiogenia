@@ -34,7 +34,7 @@ import {
   Rows3,
   HelpCircle,
   Clock,
-  FileClock,
+  FileClock, Crosshair,
 } from "lucide-react";
 import {
   getRecentReports,
@@ -57,6 +57,7 @@ const TemplatesTab = dynamic(() => import("@/components/sidebar/templates-tab").
 const CalculatorsTab = dynamic(() => import("@/components/sidebar/calculators-tab").then((m) => m.CalculatorsTab), { ssr: false, loading: tabLoading });
 const RecommendationsTab = dynamic(() => import("@/components/sidebar/recommendations-tab").then((m) => m.RecommendationsTab), { ssr: false, loading: tabLoading });
 const AccountTab = dynamic(() => import("@/components/sidebar/account-tab").then((m) => m.AccountTab), { ssr: false, loading: tabLoading });
+const GameTab = dynamic(() => import("@/components/sidebar/game-tab").then((m) => m.GameTab), { ssr: false, loading: tabLoading });
 import { HelpDialog } from "@/components/dashboard/help-dialog";
 import { UIPrefsProvider, useUIPrefs, SKINS } from "@/lib/ui-prefs";
 import type { UILanguage } from "@/lib/ui-prefs";
@@ -67,7 +68,7 @@ import type { Signature } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
-type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations" | "account";
+type ActiveView = "dashboard" | "templates" | "calculators" | "recommendations" | "game" | "account";
 
 /* ── Popover helper (click-outside to close) ─────────────────── */
 
@@ -735,6 +736,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
       {visitedViews.has("templates") && <div id="rg-view-templates" className={activeView === "templates" ? "max-w-4xl mx-auto" : "hidden"}><TemplatesTab /></div>}
       {visitedViews.has("calculators") && <div id="rg-view-calculators" className={activeView === "calculators" ? "max-w-4xl mx-auto" : "hidden"}><CalculatorsTab /></div>}
       {visitedViews.has("recommendations") && <div id="rg-view-recommendations" className={activeView === "recommendations" ? "max-w-4xl mx-auto" : "hidden"}><RecommendationsTab /></div>}
+      {visitedViews.has("game") && <div id="rg-view-game" className={activeView === "game" ? "max-w-2xl mx-auto" : "hidden"}><GameTab /></div>}
       {visitedViews.has("account") && <div id="rg-view-account" className={activeView === "account" ? "max-w-2xl mx-auto" : "hidden"}><AccountTab /></div>}
     </>
   );
@@ -751,6 +753,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
           { view: "templates" as ActiveView, icon: FileText, label: t("nav.rail_templates"), show: true },
           { view: "calculators" as ActiveView, icon: Calculator, label: t("nav.rail_calculators"), show: true },
           { view: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.rail_recommendations"), show: recommendationsAllowed },
+          { view: "game" as ActiveView, icon: Crosshair, label: t("nav.rail_game"), show: true },
           { view: "account" as ActiveView, icon: UserIcon, label: t("nav.rail_account"), show: !isOrgUser },
         ]).filter((item) => item.show).map((item) => (
           <button
@@ -871,6 +874,7 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
             { key: "templates" as ActiveView, icon: FileText, label: t("nav.templates"), show: true },
             { key: "calculators" as ActiveView, icon: Calculator, label: t("nav.calculators"), show: true },
             { key: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.recommendations"), show: recommendationsAllowed },
+            { key: "game" as ActiveView, icon: Crosshair, label: t("nav.game"), show: true },
           ] as const).filter((item) => item.show).map((item) => (
             <button
               key={item.key}

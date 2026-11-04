@@ -44,10 +44,11 @@ const FAMILIES = [
   // Resident verification sits in the account panel and shares its module.
   { prefix: "rv", module: "i18n-account" },
   { prefix: "pilot", module: "i18n-pilot" },
+  { prefix: "game", module: "i18n-game" },
 ] as const;
 
 /** Modules small enough that the ">100 entries" floor does not apply. */
-const SMALL = new Set(["i18n-support", "i18n-pilot", "i18n-org"]);
+const SMALL = new Set(["i18n-support", "i18n-pilot", "i18n-org", "i18n-game"]);
 
 describe("a feature's strings travel with the feature", () => {
   for (const { prefix, module } of FAMILIES) {
