@@ -29,9 +29,9 @@ export const PATH: Vec[] = [
   { x: 0.18, y: 0.26 },
   { x: 0.18, y: 0.46 },
   { x: 0.82, y: 0.58 },
-  { x: 0.82, y: 0.74 },
-  { x: 0.5, y: 0.85 },
-  { x: 0.5, y: 0.95 },
+  { x: 0.82, y: 0.72 },
+  { x: 0.5, y: 0.82 },
+  { x: 0.5, y: 0.87 },
 ];
 
 /** Where a turret may be built. Each one covers a different bend. */
@@ -58,12 +58,24 @@ export interface Enemy {
   /** Damage dealt to the base if it arrives. */
   weight: number;
   hitFlash: number;
+  /** Per-enemy radial offsets, so no two are the same blob. A nodule is
+   *  spiculated, a mass lobulated, a calcified one nearly round — the shape
+   *  itself says which is which, before any colour does. */
+  shape: number[];
+  /** Phase offset so the breathing of neighbours is not in lockstep. */
+  phase: number;
+  /** Counts up from 0 on spawn, for the arrival pop. */
+  age: number;
 }
 
 export interface Turret {
   slot: number;
   level: number;
   cooldown: number;
+  /** Smoothed aim, so the head swings to a target instead of snapping. */
+  angle: number;
+  /** Counts down after firing, for the muzzle flash and the recoil. */
+  flash: number;
 }
 
 export interface Shot {
@@ -72,12 +84,23 @@ export interface Shot {
   life: number;
 }
 
+/** A number that rises and fades: credits earned, integrity lost. */
+export interface Floater {
+  x: number;
+  y: number;
+  text: string;
+  life: number;
+  tone: "good" | "bad";
+}
+
 export interface Particle {
   x: number;
   y: number;
   vx: number;
   vy: number;
   life: number;
+  maxLife: number;
+  size: number;
   hue: string;
 }
 
@@ -93,6 +116,31 @@ const KINDS: Record<EnemyKind, { radius: number; hpMul: number; speedMul: number
   mass:      { radius: 0.034, hpMul: 1.6,  speedMul: 0.75, weight: 1.6, fill: "#fb7185", ring: "#e11d48" },
   calcified: { radius: 0.027, hpMul: 1.15, speedMul: 1.0,  weight: 1.1, fill: "#a78bfa", ring: "#7c3aed" },
 };
+
+/**
+ * Radial offsets that give each enemy its outline.
+ *
+ * A nodule gets fine spicules, a mass a few broad lobes, a calcified one an
+ * almost round border. Drawn rather than labelled: the silhouette tells the
+ * player what is coming before any colour does, which is how a simple game
+ * stops looking like coloured circles.
+ */
+function makeShape(kind: EnemyKind): number[] {
+  const N = 18;
+  const out: number[] = [];
+  const seed = Math.random() * Math.PI * 2;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    if (kind === "nodule") {
+      out.push(0.1 * Math.sin(a * 7 + seed) + 0.05 * Math.sin(a * 3 + seed * 2));
+    } else if (kind === "mass") {
+      out.push(0.16 * Math.sin(a * 3 + seed) + 0.07 * Math.sin(a * 5 + seed));
+    } else {
+      out.push(0.05 * Math.sin(a * 4 + seed));
+    }
+  }
+  return out;
+}
 
 /** Position along the path at travel fraction t. */
 export function pointAt(t: number): Vec {
@@ -117,6 +165,13 @@ export class World {
   turrets: Turret[] = [];
   shots: Shot[] = [];
   particles: Particle[] = [];
+  floaters: Floater[] = [];
+  /** Seconds of camera shake left. What makes a hit land physically. */
+  shake = 0;
+  /** Seconds the wave banner still shows. */
+  banner = 0;
+  /** Wall clock for idle animation: breathing, flowing lane, rotating ring. */
+  time = 0;
   integrity = MAX_INTEGRITY;
   wave = 0;
   spec: WaveSpec = waveSpec(1);
@@ -138,11 +193,17 @@ export class World {
     this.pending = this.spec.count;
     this.spawnTimer = 0;
     this.breather = 0;
+    this.banner = 1.8;
+  }
+
+  /** A rising number at a point on the field. */
+  float(at: Vec, text: string, tone: "good" | "bad") {
+    this.floaters.push({ x: at.x, y: at.y, text, life: 1.1, tone });
   }
 
   build(slot: number): boolean {
     if (this.turrets.some((t) => t.slot === slot)) return false;
-    this.turrets.push({ slot, level: 1, cooldown: 0 });
+    this.turrets.push({ slot, level: 1, cooldown: 0, angle: Math.PI / 2, flash: 0 });
     return true;
   }
 
@@ -159,6 +220,7 @@ export class World {
 
   damageBase(amount: number) {
     this.integrity = Math.max(0, this.integrity - amount);
+    this.shake = Math.min(0.5, this.shake + 0.18 + amount * 0.006);
   }
 
   private spawn() {
@@ -179,11 +241,18 @@ export class World {
       radius: k.radius,
       weight: k.weight,
       hitFlash: 0,
+      shape: makeShape(kind),
+      phase: Math.random() * Math.PI * 2,
+      age: 0,
     });
   }
 
   /** Advances the world. Returns true while the wave is still running. */
   tick(dt: number) {
+    this.time += dt;
+    this.shake = Math.max(0, this.shake - dt * 1.8);
+    this.banner = Math.max(0, this.banner - dt);
+
     if (this.breather > 0) {
       this.breather = Math.max(0, this.breather - dt);
     } else if (this.pending > 0) {
@@ -197,15 +266,18 @@ export class World {
 
     for (const e of this.enemies) {
       e.t += e.speed * dt;
+      e.age += dt;
       e.hitFlash = Math.max(0, e.hitFlash - dt * 4);
     }
 
     // Arrivals damage the base and are removed.
     const arrived = this.enemies.filter((e) => e.t >= 1);
     for (const e of arrived) {
-      this.damageBase(Math.round(LEAK_DAMAGE * e.weight));
-      this.burst(pointAt(1), "#f43f5e");
-      this.events.onLeak(Math.round(LEAK_DAMAGE * e.weight));
+      const hurt = Math.round(LEAK_DAMAGE * e.weight);
+      this.damageBase(hurt);
+      this.burst(pointAt(1), "#f43f5e", 16);
+      this.float(pointAt(0.97), `-${hurt}`, "bad");
+      this.events.onLeak(hurt);
     }
     if (arrived.length) this.enemies = this.enemies.filter((e) => e.t < 1);
 
@@ -213,24 +285,33 @@ export class World {
     // about to cost integrity, not the one that is merely closest.
     for (const turret of this.turrets) {
       turret.cooldown -= dt;
+      turret.flash = Math.max(0, turret.flash - dt * 6);
       const stats = TURRET_STATS[turret.level - 1];
+      // The head tracks its target even between shots, which is most of what
+      // makes a turret read as a machine rather than a decal.
+      const look = this.pick(turret, stats.range);
+      if (look) {
+        const p = pointAt(look.t);
+        const want = Math.atan2(p.y - SLOTS[turret.slot].y, p.x - SLOTS[turret.slot].x);
+        let d = want - turret.angle;
+        while (d > Math.PI) d -= Math.PI * 2;
+        while (d < -Math.PI) d += Math.PI * 2;
+        turret.angle += d * Math.min(1, dt * 9);
+      }
       if (turret.cooldown > 0) continue;
       const from = SLOTS[turret.slot];
-      let target: Enemy | null = null;
-      for (const e of this.enemies) {
-        const p = pointAt(e.t);
-        const d = Math.hypot(p.x - from.x, p.y - from.y);
-        if (d <= stats.range && (!target || e.t > target.t)) target = e;
-      }
+      const target = look;
       if (!target) continue;
       turret.cooldown = 1 / stats.rate;
+      turret.flash = 1;
       target.hp -= stats.damage;
       target.hitFlash = 1;
       const to = pointAt(target.t);
-      this.shots.push({ from, to, life: 0.12 });
+      this.shots.push({ from, to, life: 0.14 });
+      this.burst(to, "#e0e7ff", 3, 0.06);
       if (target.hp <= 0) {
-        this.burst(to, KINDS[target.kind].fill);
-        this.enemies = this.enemies.filter((e) => e.id !== target!.id);
+        this.burst(to, KINDS[target.kind].fill, 14);
+        this.enemies = this.enemies.filter((e) => e.id !== target.id);
       }
     }
 
@@ -241,9 +322,16 @@ export class World {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.vy += 0.25 * dt;
+      p.vx *= 1 - dt * 1.2;
       p.life -= dt;
     }
     if (this.particles.some((p) => p.life <= 0)) this.particles = this.particles.filter((p) => p.life > 0);
+
+    for (const f of this.floaters) {
+      f.y -= dt * 0.055;
+      f.life -= dt;
+    }
+    if (this.floaters.some((f) => f.life <= 0)) this.floaters = this.floaters.filter((f) => f.life > 0);
 
     if (this.pending === 0 && this.enemies.length === 0 && this.breather === 0 && this.wave > 0) {
       this.events.onWaveCleared(this.wave);
@@ -251,11 +339,31 @@ export class World {
     }
   }
 
-  burst(at: Vec, colour: string) {
-    for (let i = 0; i < 10; i++) {
+  /** The enemy furthest along that a turret can reach — the one about to
+   *  cost integrity, not merely the closest. */
+  private pick(turret: Turret, range: number): Enemy | null {
+    const from = SLOTS[turret.slot];
+    let best: Enemy | null = null;
+    for (const e of this.enemies) {
+      const p = pointAt(e.t);
+      if (Math.hypot(p.x - from.x, p.y - from.y) > range) continue;
+      if (!best || e.t > best.t) best = e;
+    }
+    return best;
+  }
+
+  burst(at: Vec, colour: string, count = 10, speed = 0.12) {
+    for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
-      const sp = 0.05 + Math.random() * 0.12;
-      this.particles.push({ x: at.x, y: at.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4 + Math.random() * 0.3, hue: colour });
+      const sp = speed * (0.4 + Math.random());
+      const life = 0.35 + Math.random() * 0.35;
+      this.particles.push({
+        x: at.x, y: at.y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        life, maxLife: life,
+        size: 1.6 + Math.random() * 2.2,
+        hue: colour,
+      });
     }
   }
 

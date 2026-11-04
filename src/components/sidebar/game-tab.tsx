@@ -84,6 +84,8 @@ export function GameTab() {
   const creditsRef = useRef(STARTING_CREDITS);
   const selectedRef = useRef<number | null>(null);
   const nextQuestionRef = useRef<() => void>(() => {});
+  /** The translated word for "wave", read by the canvas banner. */
+  const waveLabelRef = useRef("");
   const answerRef = useRef<(p: { text: string; correct: boolean } | null) => void>(() => {});
   const endRunRef = useRef<() => void>(() => {});
 
@@ -177,7 +179,11 @@ export function GameTab() {
       s.correct += 1;
       s.answerScore += answerPoints(s.streak);
       s.streak += 1;
-      creditsRef.current += creditsFor(s.streak - 1, secondsLeft);
+      const earned = creditsFor(s.streak - 1, secondsLeft);
+      creditsRef.current += earned;
+      // Thrown onto the battlefield rather than only incremented in the HUD:
+      // the reward has to happen where the player is looking.
+      world?.float({ x: 0.5, y: 0.45 }, `+${earned}`, "good");
       setCredits(creditsRef.current);
       setCorrect(s.correct);
       setStreak(s.streak);
@@ -266,7 +272,7 @@ export function GameTab() {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         const dark = document.documentElement.classList.contains("dark");
-        draw(ctx, world, w, h, { dark, brand: "" }, selectedRef.current, creditsRef.current);
+        draw(ctx, world, w, h, { dark, brand: "" }, selectedRef.current, creditsRef.current, waveLabelRef.current);
       }
 
       if (world.integrity <= 0 && !ended) {
@@ -279,6 +285,7 @@ export function GameTab() {
   }, [phase]);
 
   useEffect(() => { selectedRef.current = selected; }, [selected]);
+  useEffect(() => { waveLabelRef.current = t("game.wave"); }, [t]);
 
   /* ── Lifecycle ───────────────────────────────────────────────────── */
 
