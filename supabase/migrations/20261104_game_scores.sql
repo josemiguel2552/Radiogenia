@@ -34,6 +34,12 @@ CREATE TABLE IF NOT EXISTS game_scores (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Belt and braces: CREATE TABLE IF NOT EXISTS silently skips an existing
+-- table, columns and all, so a table created from an older copy of this file
+-- would quietly lack these two and every insert would fail.
+ALTER TABLE game_scores ADD COLUMN IF NOT EXISTS wave integer NOT NULL DEFAULT 0;
+ALTER TABLE game_scores ADD COLUMN IF NOT EXISTS integrity integer NOT NULL DEFAULT 0;
+
 -- The board reads the best score per player, newest first on a tie.
 CREATE INDEX IF NOT EXISTS game_scores_score_idx ON game_scores (score DESC, created_at ASC);
 CREATE INDEX IF NOT EXISTS game_scores_user_idx ON game_scores (user_id, score DESC);
