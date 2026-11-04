@@ -3,9 +3,9 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { QUESTIONS, TOPICS, shuffled, buildRun } from "@/lib/game-questions";
 import {
-  answerPoints, creditsFor, finalScore, maxPossibleScore, waveSpec, questionSeconds,
+  answerPoints, creditsFor, finalScore, maxPossibleScore, waveSpec, studyReward,
   cleanAlias, defaultAlias, MAX_ANSWER_MULTIPLIER, MAX_INTEGRITY, POINTS_PER_CORRECT,
-  QUESTION_BASE_S, BUILD_HEAL,
+  BUILD_HEAL,
 } from "@/lib/game-score";
 import { World, SPECIES, SPECIES_KEYS } from "@/components/sidebar/game-engine";
 import {
@@ -13,7 +13,7 @@ import {
 } from "@/components/sidebar/game-levels";
 
 /** The quiet world used by most of these: no callbacks, just a simulation. */
-const quietWorld = () => new World({ onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: () => {} });
+const quietWorld = () => new World({ onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: () => {}, onStudyDone: () => {} });
 
 /**
  * Radiology Defense.
@@ -131,15 +131,24 @@ describe("shuffling is a real shuffle", () => {
 
 describe("the economy rewards being sure, not being quick", () => {
   it("pays more for a longer streak, up to a cap", () => {
-    expect(creditsFor(3, 0)).toBeGreaterThan(creditsFor(0, 0));
-    // Without a ceiling, one long streak funds every turret in the game and
+    expect(creditsFor(3)).toBeGreaterThan(creditsFor(0));
+    // Without a ceiling, one long streak funds every scanner in the game and
     // the rest of the run stops being a decision.
-    expect(creditsFor(50, 0)).toBe(creditsFor(8, 0));
+    expect(creditsFor(50)).toBe(creditsFor(8));
   });
 
-  it("pays a little for answering early, but bounded", () => {
-    expect(creditsFor(0, 6)).toBeGreaterThan(creditsFor(0, 0));
-    expect(creditsFor(0, 60)).toBe(creditsFor(0, 6));
+  it("pays nothing at all for being quick", () => {
+    // A clock on the question measures reading speed, not radiology. The
+    // only thing rewarded here is being sure, which is what revision is.
+    const source = read("src/lib/game-score.ts");
+    const fn = source.slice(source.indexOf("export function creditsFor"), source.indexOf("export function studyReward"));
+    expect(fn).not.toMatch(/second|elapsed|time|clock/i);
+    expect(creditsFor(0)).toBe(12);
+  });
+
+  it("pays for a completed study, so scanners produce", () => {
+    expect(studyReward(1)).toBeGreaterThan(0);
+    expect(studyReward(2.1)).toBeGreaterThan(studyReward(1));
   });
 
   it("scores an answer higher the longer the streak, up to a cap", () => {
@@ -205,22 +214,53 @@ describe("the server bounds what a browser may claim", () => {
   });
 });
 
-describe("the clock follows how much there is to read", () => {
-  it("gives a short question the base time", () => {
-    expect(questionSeconds(30, 40)).toBe(QUESTION_BASE_S);
+describe("nothing on the question is timed", () => {
+  it("keeps no clock in the game component", () => {
+    // The complaint this answers: a revision game that will not let you stop
+    // and think is fighting the thing it is for.
+    const tab = read("src/components/sidebar/game-tab.tsx");
+    expect(tab).not.toMatch(/timeLeft|questionS|QUESTION_BASE_S|questionSeconds/);
   });
 
-  it("adds two seconds for a long stem and one more for long options", () => {
-    // A fixed timer punishes the questions worth the most: the ones whose
-    // stem names three findings, or whose options are sentences rather than
-    // "LR-5". The player is not slower on those, there is simply more to read.
-    expect(questionSeconds(120, 40)).toBe(QUESTION_BASE_S + 2);
-    expect(questionSeconds(30, 300)).toBe(QUESTION_BASE_S + 1);
-    expect(questionSeconds(120, 300)).toBe(QUESTION_BASE_S + 3);
+  it("holds the department still until the player opens the doors", () => {
+    const w = quietWorld();
+    w.startLevel(1);
+    expect(w.active).toBe(false);
+    for (let i = 0; i < 600; i++) w.tick(1 / 60);
+    expect(w.patients).toHaveLength(0);
+    expect(w.integrity).toBe(MAX_INTEGRITY);
+
+    w.beginAssault();
+    expect(w.active).toBe(true);
+    for (let i = 0; i < 300; i++) w.tick(1 / 60);
+    expect(w.patients.length).toBeGreaterThan(0);
   });
 
-  it("never shortens a question below the base", () => {
-    expect(questionSeconds(0, 0)).toBe(QUESTION_BASE_S);
+  it("freezes the walk while paused but keeps the place alive", () => {
+    const w = quietWorld();
+    w.startLevel(1);
+    w.beginAssault();
+    for (let i = 0; i < 400; i++) w.tick(1 / 60);
+    const before = w.patients.map((p) => p.t);
+    const timeBefore = w.time;
+
+    w.active = false;
+    for (let i = 0; i < 400; i++) w.tick(1 / 60);
+    expect(w.patients.map((p) => p.t)).toEqual(before);
+    // Idle animation keeps running, so a paused board is a living place and
+    // not a freeze-frame.
+    expect(w.time).toBeGreaterThan(timeBefore);
+  });
+
+  it("returns to preparation when a wave is cleared", () => {
+    const w = new World({
+      onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: () => {}, onStudyDone: () => {},
+    });
+    w.startLevel(1);
+    w.beginAssault();
+    w.pending = 0;
+    w.tick(1 / 60);
+    expect(w.active).toBe(false);
   });
 });
 
@@ -333,13 +373,13 @@ describe("every level lays out a department that works", () => {
 describe("a floor is cleared, and the next one is a different place", () => {
   it("reports the level cleared only after its last wave", () => {
     const levels: number[] = [];
-    const w = new World({ onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: (n) => levels.push(n) });
+    const w = new World({ onLeak: () => {}, onWaveCleared: () => {}, onStudyDone: () => {}, onLevelCleared: (n) => levels.push(n) });
     w.startLevel(1);
     const need = w.layout.spec.waves;
     for (let n = 1; n <= need; n++) {
       w.startWave(n);
+      w.beginAssault();
       w.pending = 0;
-      w.breather = 0;
       w.tick(1 / 60);
       expect(`after wave ${n}: ${levels.length}`).toBe(`after wave ${n}: ${n === need ? 1 : 0}`);
     }
@@ -363,19 +403,19 @@ describe("a floor is cleared, and the next one is a different place", () => {
 
   it("counts waves per floor for the HUD and in total for the board", () => {
     let total = 0;
-    const w = new World({ onLeak: () => {}, onWaveCleared: (n) => { total = n; }, onLevelCleared: () => {} });
+    const w = new World({ onLeak: () => {}, onWaveCleared: (n) => { total = n; }, onStudyDone: () => {}, onLevelCleared: () => {} });
     w.startLevel(1);
     for (let n = 1; n <= 3; n++) {
       w.startWave(n);
+      w.beginAssault();
       w.pending = 0;
-      w.breather = 0;
       w.tick(1 / 60);
     }
     expect(w.waveInLevel).toBe(3);
     expect(total).toBe(3);
     w.startLevel(2);
+    w.beginAssault();
     w.pending = 0;
-    w.breather = 0;
     w.tick(1 / 60);
     expect(w.waveInLevel).toBe(1);
     expect(total).toBe(4);
@@ -427,6 +467,7 @@ describe("five kinds of patient, each its own shape and colour", () => {
     const w = quietWorld();
     w.startLevel(LEVEL_COUNT);
     w.startWave(9);
+    w.beginAssault();
     const seen = new Set<number>();
     for (let i = 0; i < 4000; i++) {
       w.tick(1 / 60);
@@ -437,7 +478,7 @@ describe("five kinds of patient, each its own shape and colour", () => {
 });
 
 describe("installing a scanner is capacity, so it heals", () => {
-  const quiet = () => { const w = quietWorld(); w.startLevel(1); return w; };
+  const quiet = () => { const w = quietWorld(); w.startLevel(1); w.beginAssault(); return w; };
 
   it("gives back ten points of integrity per scanner built", () => {
     const w = quiet();

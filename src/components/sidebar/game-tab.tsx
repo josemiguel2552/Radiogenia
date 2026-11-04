@@ -6,12 +6,12 @@ import "@/lib/i18n-game";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Trophy, Coins, Zap, Play, RotateCcw, ChevronUp, Hammer, Waves, Layers } from "lucide-react";
+import { Shield, Trophy, Coins, Zap, Play, Pause, RotateCcw, ChevronUp, Hammer, Waves, Layers, Swords } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { buildRun, shuffled, TOPICS, type QuizLang, type QuizQuestion } from "@/lib/game-questions";
 import {
-  answerPoints, creditsFor, finalScore, questionSeconds, QUESTION_BASE_S,
+  answerPoints, creditsFor, finalScore,
   MAX_INTEGRITY, MAX_SCANNER_LEVEL, STARTING_CREDITS, SCANNER_COST, UPGRADE_COST, WRONG_ANSWER_DAMAGE,
   type Leaderboard, type RunResult,
 } from "@/lib/game-score";
@@ -69,11 +69,17 @@ export function GameTab() {
    *  Mirrored into state because reading it out of the world ref during
    *  render is exactly the tear concurrent rendering is allowed to produce. */
   const [selectedLevel, setSelectedLevel] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(QUESTION_BASE_S);
-  /** The clock this question was given, which depends on how much there is
-   *  to read. Kept in state as well as a ref: one drives the bar, the other
-   *  is read inside the animation frame. */
-  const [questionS, setQuestionS] = useState(QUESTION_BASE_S);
+
+  /**
+   * Whether the doors are open.
+   *
+   * "prep" is the department between waves: nothing is walking, there is no
+   * clock on anything, and the player answers and builds at whatever pace
+   * they like. "assault" runs the wave. The player moves between them, which
+   * is the whole of the redesign — a revision game that will not let you
+   * stop and think is fighting the thing it is for.
+   */
+  const [mode, setMode] = useState<"prep" | "assault" | "paused">("prep");
   const [built, setBuilt] = useState(0);
   const [wavesCleared, setWavesCleared] = useState(0);
   const [levelsCleared, setLevelsCleared] = useState(0);
@@ -88,8 +94,6 @@ export function GameTab() {
   const cursorRef = useRef(0);
   const rafRef = useRef(0);
   const lastRef = useRef(0);
-  const askedAtRef = useRef(0);
-  const questionSRef = useRef(QUESTION_BASE_S);
   const lockRef = useRef(false);
   const statsRef = useRef({ answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: 0, wavesCleared: 0, levelsCleared: 0 });
   const creditsRef = useRef(STARTING_CREDITS);
@@ -151,16 +155,7 @@ export function GameTab() {
     // Shuffled per question: otherwise the right answer sits wherever the
     // bank happened to write it, and after three rounds the player is
     // reading positions instead of radiology.
-    const opts = shuffled(q.options).map((o) => ({ text: o.t[lang], correct: o.correct }));
-    setOptions(opts);
-    const seconds = questionSeconds(
-      q.q[lang].length,
-      opts.reduce((n, o) => n + o.text.length, 0),
-    );
-    questionSRef.current = seconds;
-    setQuestionS(seconds);
-    askedAtRef.current = performance.now();
-    setTimeLeft(seconds);
+    setOptions(shuffled(q.options).map((o) => ({ text: o.t[lang], correct: o.correct })));
     lockRef.current = false;
   }, [lang, topics]);
 
@@ -199,11 +194,10 @@ export function GameTab() {
     setAsked(s.asked);
 
     if (picked?.correct) {
-      const secondsLeft = Math.max(0, questionSRef.current - (performance.now() - askedAtRef.current) / 1000);
       s.correct += 1;
       s.answerScore += answerPoints(s.streak);
       s.streak += 1;
-      const earned = creditsFor(s.streak - 1, secondsLeft);
+      const earned = creditsFor(s.streak - 1);
       creditsRef.current += earned;
       // Thrown onto the battlefield rather than only incremented in the HUD:
       // the reward has to happen where the player is looking.
@@ -285,14 +279,6 @@ export function GameTab() {
 
       world.tick(dt);
 
-      // The question has its own clock. Letting it run out is a miss: a base
-      // under attack does not wait for the radiologist to feel ready.
-      if (!lockRef.current) {
-        const left = questionSRef.current - (now - askedAtRef.current) / 1000;
-        setTimeLeft(Math.max(0, left));
-        if (left <= 0) answerRef.current(null);
-      }
-
       const ctx = canvas.getContext("2d");
       if (ctx) {
         const dark = document.documentElement.classList.contains("dark");
@@ -324,6 +310,10 @@ export function GameTab() {
     let clearedLevel = false;
     const world = new World({
       onLeak: () => setIntegrity(worldRef.current?.integrity ?? 0),
+      onStudyDone: (paid) => {
+        creditsRef.current += paid;
+        setCredits(creditsRef.current);
+      },
       onLevelCleared: (done) => {
         clearedLevel = true;
         statsRef.current.levelsCleared = done;
@@ -339,6 +329,7 @@ export function GameTab() {
           setWaveTarget(worldRef.current?.layout.spec.waves ?? 0);
           setIntegrity(worldRef.current?.integrity ?? 0);
           setWave(1);
+          setMode("prep");
           clearedLevel = false;
         }, 2000);
       },
@@ -349,14 +340,13 @@ export function GameTab() {
         // something on its own and not only the answers that bought it.
         creditsRef.current += 15 + totalCleared * 5;
         setCredits(creditsRef.current);
-        window.setTimeout(() => {
-          // The level handler owns the handover when a floor is finished.
-          if (clearedLevel) return;
-          const w = worldRef.current;
-          if (!w) return;
-          w.startWave(w.waveInLevel + 1);
-          setWave(w.waveInLevel);
-        }, 1200);
+        // The level handler owns the handover when a floor is finished.
+        if (clearedLevel) return;
+        const w = worldRef.current;
+        if (!w) return;
+        w.prepareWave(w.waveInLevel + 1);
+        setWave(w.waveInLevel);
+        setMode("prep");
       },
     });
     worldRef.current = world;
@@ -369,6 +359,7 @@ export function GameTab() {
     setWave(1); setLevel(1); setScore(0); setCorrect(0);
     setAsked(0); setStreak(0); setWavesCleared(0); setLevelsCleared(0);
     setSelected(null); setSelectedLevel(0); setMiss(null); setSaveState("idle"); setBuilt(0);
+    setMode("prep");
     nextQuestionRef.current();
   }, [topics]);
 
@@ -407,7 +398,7 @@ export function GameTab() {
         <>
           <div className="rounded-lg border border-[hsl(var(--border))] p-3 space-y-1.5">
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200">{t("game.how")}</p>
-            {[t("game.how_answer"), t("game.how_build"), t("game.how_wrong"), t("game.how_waves")].map((line) => (
+            {[t("game.how_answer"), t("game.how_pace"), t("game.how_build"), t("game.how_wrong"), t("game.how_waves")].map((line) => (
               <p key={line} className="text-[11px] text-gray-600 dark:text-gray-300 flex gap-1.5">
                 <span className="text-brand">•</span>{line}
               </p>
@@ -500,10 +491,46 @@ export function GameTab() {
             )}
           </div>
 
+          {/* ── Who sets the pace ── */}
+          <div className="flex items-center gap-2">
+            {mode === "prep" ? (
+              <>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight flex-1">
+                  {t("game.prep_hint")}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => { worldRef.current?.beginAssault(); setMode("assault"); }}
+                  className="h-8 text-[11px] gap-1.5 shrink-0"
+                >
+                  <Swords className="h-3.5 w-3.5" />
+                  {t("game.begin_wave")} {wave}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight flex-1">
+                  {mode === "paused" ? t("game.paused_hint") : t("game.assault_hint")}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const w = worldRef.current;
+                    if (!w) return;
+                    w.active = mode === "paused";
+                    setMode(mode === "paused" ? "assault" : "paused");
+                  }}
+                  className="h-8 text-[11px] gap-1.5 shrink-0"
+                >
+                  {mode === "paused" ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+                  {mode === "paused" ? t("game.resume") : t("game.pause")}
+                </Button>
+              </>
+            )}
+          </div>
+
           <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] p-2.5 space-y-2">
-            <div className="h-1 w-full rounded-full bg-[hsl(var(--muted))] overflow-hidden">
-              <div className={`h-full ${timeLeft > 4 ? "bg-brand" : "bg-rose-500"}`} style={{ width: `${(timeLeft / questionS) * 100}%` }} />
-            </div>
             <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-snug">{question?.q[lang]}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {options.map((o) => (

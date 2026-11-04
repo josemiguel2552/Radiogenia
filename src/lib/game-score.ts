@@ -58,14 +58,27 @@ export const STARTING_CREDITS = 40;
 /**
  * What a correct answer pays.
  *
- * The streak is the whole incentive to be sure rather than fast: guessing
- * resets the multiplier AND damages the base, so a player who waits to know
- * out-builds one who taps. Speed adds a little on top so that knowing it cold
- * still beats knowing it slowly.
+ * Nothing here rewards speed, and that is deliberate. This is a revision
+ * tool: a clock on the question measures reading speed, not radiology, and
+ * the one thing a radiologist should be able to do in front of a case is
+ * take their time over it. The only incentive is the streak, which rewards
+ * being SURE — guessing resets it and costs the hospital besides.
  */
-export function creditsFor(streak: number, secondsLeft: number): number {
+export function creditsFor(streak: number): number {
   const multiplier = Math.min(1 + streak * 0.2, 2.5);
-  return Math.round(10 * multiplier + Math.max(0, Math.min(6, secondsLeft)));
+  return Math.round(12 * multiplier);
+}
+
+/**
+ * What a completed study pays.
+ *
+ * Scanners are not only defences, they are production: every patient they
+ * finish imaging is a study reported. That closes the economy — answers buy
+ * scanners, scanners earn, earnings buy more scanners — so building is worth
+ * doing for its own sake and not merely to survive the next wave.
+ */
+export function studyReward(weight: number): number {
+  return Math.max(1, Math.round(2 * weight));
 }
 
 /* ── The wave curve ───────────────────────────────────────────────────── */
@@ -105,30 +118,6 @@ export function waveSpec(wave: number): WaveSpec {
     speed: Math.min(0.064, 0.0231 + (wave - 1) * 0.0033),
     gap: Math.max(0.5, 1.45 - (wave - 1) * 0.073),
   };
-}
-
-/* ── How long a question stands ───────────────────────────────────────── */
-
-/** The clock a short question gets, in seconds. */
-export const QUESTION_BASE_S = 14;
-
-/**
- * The clock this particular question deserves.
- *
- * A fixed timer punishes the questions that are worth the most: the ones
- * whose stem names three findings, or whose four options are full sentences
- * rather than "LR-5". The player is not slower on those, they simply have
- * more to read, and a timer that cannot tell the difference is measuring
- * reading speed instead of radiology.
- *
- * Two steps rather than a smooth curve, so the clock is predictable: a long
- * stem buys two seconds, long options buy one more.
- */
-export function questionSeconds(stemChars: number, optionChars: number): number {
-  let seconds = QUESTION_BASE_S;
-  if (stemChars > 58) seconds += 2;
-  if (optionChars > 110) seconds += 1;
-  return seconds;
 }
 
 /* ── The score ────────────────────────────────────────────────────────── */

@@ -21,6 +21,7 @@ import {
   LEAK_LOAD,
   MAX_INTEGRITY,
   MAX_SCANNER_LEVEL,
+  studyReward,
   waveSpec,
   type WaveSpec,
 } from "@/lib/game-score";
@@ -132,6 +133,8 @@ export interface WorldEvents {
   onLeak: (load: number) => void;
   /** Everyone in the wave is seen, and none are left to arrive. */
   onWaveCleared: (wave: number) => void;
+  /** A study was completed. Scanners earn their keep. */
+  onStudyDone: (credits: number) => void;
   /** Every wave of the floor is done. The next level is about to load. */
   onLevelCleared: (level: number) => void;
 }
@@ -162,8 +165,15 @@ export class World {
   /** Patients still to arrive in this wave. */
   pending = 0;
   spawnTimer = 0;
-  /** Seconds of calm before the next wave. */
-  breather = 0;
+  /**
+   * Whether the clock is running.
+   *
+   * False during preparation and while paused. The department exists and can
+   * be rebuilt; nobody is walking. This is the whole point of the redesign:
+   * a revision game that will not let you stop and think is a revision game
+   * fighting the thing it is for.
+   */
+  active = false;
   private nextId = 1;
   private nextRoute = 0;
   private events: WorldEvents;
@@ -197,7 +207,23 @@ export class World {
     this.waveInLevel = 0;
     this.nextRoute = 0;
     this.levelBanner = 2.4;
-    this.startWave(1);
+    this.active = false;
+    this.prepareWave(1);
+  }
+
+  /** Lines a wave up without starting it. The player opens the doors. */
+  prepareWave(wave: number) {
+    this.startWave(wave);
+    this.active = false;
+    // No banner yet: announcing a wave that has not started would be the
+    // department shouting about something standing outside the door.
+    this.banner = 0;
+  }
+
+  /** Opens the doors: the wave begins. */
+  beginAssault() {
+    this.active = true;
+    this.banner = 1.4;
   }
 
   startWave(wave: number) {
@@ -215,7 +241,6 @@ export class World {
     };
     this.pending = this.spec.count;
     this.spawnTimer = 0;
-    this.breather = 0;
     this.banner = 1.8;
   }
 
@@ -310,14 +335,16 @@ export class World {
   }
 
   tick(dt: number) {
+    // Idle animation keeps running whatever the state, so a paused board is
+    // still a living place rather than a freeze-frame.
     this.time += dt;
     this.shake = Math.max(0, this.shake - dt * 1.8);
     this.banner = Math.max(0, this.banner - dt);
     this.levelBanner = Math.max(0, this.levelBanner - dt);
+    this.decay(dt);
+    if (!this.active) return;
 
-    if (this.breather > 0) {
-      this.breather = Math.max(0, this.breather - dt);
-    } else if (this.pending > 0) {
+    if (this.pending > 0) {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) {
         this.spawn();
@@ -366,12 +393,28 @@ export class World {
       this.beams.push({ from: this.layout.slots[scanner.slot], to, life: 0.16 });
       this.burst(to, "#e0f2fe", 3, 0.05);
       if (look.hp <= 0) {
-        // Study complete: the patient has been seen and leaves.
+        // Study complete: the patient has been seen and leaves, and the
+        // report is worth something.
+        const paid = studyReward(look.weight);
         this.burst(to, SPECIES[look.species].fill, 14);
+        this.float(to, `+${paid}`, "good");
+        this.events.onStudyDone(paid);
         this.patients = this.patients.filter((p) => p.id !== look.id);
       }
     }
 
+    if (this.pending === 0 && this.patients.length === 0 && this.waveInLevel > 0) {
+      this.totalWaves += 1;
+      // Back to preparation: nothing moves again until the player says so.
+      this.active = false;
+      this.events.onWaveCleared(this.totalWaves);
+      if (this.waveInLevel >= this.layout.spec.waves) this.events.onLevelCleared(this.level);
+    }
+  }
+
+  /** Effects fade whether or not the clock is running, so pausing does not
+   *  leave a burst of particles hanging in the air. */
+  private decay(dt: number) {
     for (const b of this.beams) b.life -= dt;
     if (this.beams.some((b) => b.life <= 0)) this.beams = this.beams.filter((b) => b.life > 0);
 
@@ -389,13 +432,6 @@ export class World {
       f.life -= dt;
     }
     if (this.floaters.some((f) => f.life <= 0)) this.floaters = this.floaters.filter((f) => f.life > 0);
-
-    if (this.pending === 0 && this.patients.length === 0 && this.breather === 0 && this.waveInLevel > 0) {
-      this.totalWaves += 1;
-      this.events.onWaveCleared(this.totalWaves);
-      if (this.waveInLevel >= this.layout.spec.waves) this.events.onLevelCleared(this.level);
-      this.breather = 3.5;
-    }
   }
 
   /** The patient furthest along that a scanner can reach — the one about to
