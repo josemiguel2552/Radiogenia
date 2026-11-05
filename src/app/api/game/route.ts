@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { toErrorResponse, dbErrorResponse } from "@/lib/api-error";
-import { maxPossibleScore } from "@/lib/game-build";
-import { cleanAlias, defaultAlias, type LeaderRow } from "@/lib/game-alias";
+import { cleanAlias, defaultAlias, maxPossibleScore, type LeaderRow } from "@/lib/game-score";
 
 export const dynamic = "force-dynamic";
 
@@ -103,10 +102,7 @@ export async function POST(req: NextRequest) {
     // The browser does the scoring, so the browser can claim anything. This
     // does not make it honest, but it bounds it: a score has to be one that
     // the stated number of correct answers could actually have produced.
-    // `integrity` carries how much of the department was built, as a
-    // percentage, so the room count it implies is what bounds the claim.
-    const rooms = Math.round((integrity / 100) * 8);
-    if (score > maxPossibleScore(correct, wave, rooms)) {
+    if (score > maxPossibleScore(correct, wave, integrity)) {
       return NextResponse.json({ error: "Score exceeds what that run allows" }, { status: 400 });
     }
 

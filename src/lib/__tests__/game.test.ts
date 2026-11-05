@@ -3,23 +3,30 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { QUESTIONS, TOPICS, shuffled, buildRun } from "@/lib/game-questions";
 import {
-  BUILDINGS, ROUND_SIZE, ROUNDS_PER_WAVE, STARTING_POINTS, TOTAL_CAPACITY, TOTAL_COST,
-  PERFECT_ROUND, LAST_SURVIVABLE_WAVE, MAX_POINTS,
-  capacityOf, costOf, finalScore, isComplete, maxPossibleScore, pointsFor, waveDemand,
-  waveIsNext, waveNumber, type Glyph,
-} from "@/lib/game-build";
-import { cleanAlias, defaultAlias } from "@/lib/game-alias";
+  answerPoints, creditsFor, finalScore, maxPossibleScore, waveSpec, studyReward,
+  cleanAlias, defaultAlias, MAX_ANSWER_MULTIPLIER, MAX_INTEGRITY, POINTS_PER_CORRECT,
+  BUILD_HEAL,
+} from "@/lib/game-score";
+import { World, SPECIES, SPECIES_KEYS } from "@/components/sidebar/game-engine";
+import {
+  buildLayout, levelSpec, slotClearance, HOSPITAL, LEVEL_COUNT, TINTS,
+} from "@/components/sidebar/game-levels";
+
+/** The quiet world used by most of these: no callbacks, just a simulation. */
+const quietWorld = () => new World({ onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: () => {}, onStudyDone: () => {} });
 
 /**
- * Build the department.
+ * Radiology Defense.
  *
  * A game that teaches is only worth shipping if the answers are right, so
- * most of what is checked here is the bank itself. The rest guards the shape
- * the game finally took after several that did not work: rounds of seven,
- * points that build rooms, and a wave every two rounds decided purely by
- * what was accumulated. The properties worth pinning are that the economy
- * can actually be finished, that it cannot be finished by a player who does
- * not know the material, and that nothing anywhere is timed.
+ * most of what is checked here is the bank itself: exactly one correct
+ * option, four options, three languages, a citable source. A question with
+ * two correct answers is unwinnable; one with none is worse, because the
+ * player concludes they misremembered something they had right.
+ *
+ * The simulation is tested too, which is the point of keeping it out of the
+ * component: a wave can be run to its end in a plain loop, with no canvas and
+ * no animation frame.
  */
 
 const ROOT = join(__dirname, "../../..");
@@ -61,7 +68,20 @@ describe("the question bank is answerable", () => {
     const ids = QUESTIONS.map((q) => q.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const q of QUESTIONS) {
-      expect(`${q.id}: ${new Set(q.options.map((o) => o.t.es)).size}`).toBe(`${q.id}: 4`);
+      const es = q.options.map((o) => o.t.es);
+      expect(`${q.id}: ${new Set(es).size}`).toBe(`${q.id}: 4`);
+    }
+  });
+
+  it("keeps option text short enough to read on a falling block", () => {
+    // Four lanes across a phone leaves roughly a quarter of the width each.
+    // A 120-character option is a wall of text nobody reads before it lands.
+    for (const q of QUESTIONS) {
+      for (const o of q.options) {
+        for (const lang of ["es", "en", "pt"] as const) {
+          expect(`${q.id}: ${o.t[lang].length <= 70}`).toBe(`${q.id}: true`);
+        }
+      }
     }
   });
 
@@ -72,16 +92,11 @@ describe("the question bank is answerable", () => {
   });
 
   it("has a label for every topic in the bank", () => {
+    // A topic with no label renders its raw key on the filter chip.
     const dict = read("src/lib/i18n-game.ts");
     for (const topic of TOPICS) {
       expect(`${topic}: ${dict.includes(`"game.t_${topic}"`)}`).toBe(`${topic}: true`);
     }
-  });
-
-  it("holds enough questions that a full run is not one loop of the bank", () => {
-    // A winning run is roughly ten rounds. The bank reshuffles when it runs
-    // out, which is fine; starting the second lap on round four would not be.
-    expect(QUESTIONS.length).toBeGreaterThan(ROUND_SIZE * 5);
   });
 });
 
@@ -94,6 +109,9 @@ describe("shuffling is a real shuffle", () => {
   });
 
   it("can move the first element anywhere, which sort(random) cannot", () => {
+    // `sort(() => Math.random() - 0.5)` leaves early items far likelier to
+    // stay put. Over many runs a real shuffle spreads item 0 across every
+    // position; a comparator shuffle visibly does not.
     const seen = new Set<number>();
     for (let i = 0; i < 400; i++) seen.add(shuffled([0, 1, 2, 3]).indexOf(0));
     expect(seen.size).toBe(4);
@@ -104,201 +122,89 @@ describe("shuffling is a real shuffle", () => {
     expect(run.length).toBeGreaterThan(0);
     expect(run.every((q) => q.topic === "birads")).toBe(true);
   });
-});
 
-describe("nothing in the game is timed", () => {
-  it("keeps no clock in the rules or the view", () => {
-    // The complaint that ended the previous design: a revision game that
-    // will not let you stop and think is fighting the thing it is for.
-    // Timing a question measures reading speed, not radiology.
-    for (const file of ["src/lib/game-build.ts", "src/components/sidebar/game-tab.tsx"]) {
-      const src = read(file).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
-      expect(`${file}: ${/timeLeft|secondsLeft|countdown|deadline/.test(src)}`).toBe(`${file}: false`);
-    }
-  });
-
-  it("pays for a run of right answers and nothing else", () => {
-    expect(pointsFor(0)).toBeLessThan(pointsFor(3));
-    // Capped, or one long streak funds the whole department and the
-    // decision about what to build stops existing.
-    expect(pointsFor(100)).toBe(MAX_POINTS);
+  it("falls back to the whole bank when no topic is chosen", () => {
+    expect(buildRun([]).length).toBe(QUESTIONS.length);
+    expect(buildRun(undefined).length).toBe(QUESTIONS.length);
   });
 });
 
-describe("the rhythm is rounds of seven, with a wave every two", () => {
-  it("asks seven questions a round", () => {
-    expect(ROUND_SIZE).toBe(7);
-    expect(ROUNDS_PER_WAVE).toBe(2);
+describe("the economy rewards being sure, not being quick", () => {
+  it("pays more for a longer streak, up to a cap", () => {
+    expect(creditsFor(3)).toBeGreaterThan(creditsFor(0));
+    // Without a ceiling, one long streak funds every scanner in the game and
+    // the rest of the run stops being a decision.
+    expect(creditsFor(50)).toBe(creditsFor(8));
   });
 
-  it("puts a wave after every second round and not before", () => {
-    expect(waveIsNext(0)).toBe(false);
-    expect(waveIsNext(1)).toBe(false);
-    expect(waveIsNext(2)).toBe(true);
-    expect(waveIsNext(3)).toBe(false);
-    expect(waveIsNext(4)).toBe(true);
+  it("pays nothing at all for being quick", () => {
+    // A clock on the question measures reading speed, not radiology. The
+    // only thing rewarded here is being sure, which is what revision is.
+    const source = read("src/lib/game-score.ts");
+    const fn = source.slice(source.indexOf("export function creditsFor"), source.indexOf("export function studyReward"));
+    expect(fn).not.toMatch(/second|elapsed|time|clock/i);
+    expect(creditsFor(0)).toBe(12);
   });
 
-  it("numbers the waves from the rounds behind them", () => {
-    expect(waveNumber(2)).toBe(1);
-    expect(waveNumber(4)).toBe(2);
-    expect(waveNumber(5)).toBe(2);
+  it("pays for a completed study, so scanners produce", () => {
+    expect(studyReward(1)).toBeGreaterThan(0);
+    expect(studyReward(2.1)).toBeGreaterThan(studyReward(1));
   });
 
-  it("raises the demand every wave", () => {
-    for (let n = 2; n <= 8; n++) expect(waveDemand(n)).toBeGreaterThan(waveDemand(n - 1));
-  });
-
-  it("asks less of the first wave than one round can pay for", () => {
-    // Two unlucky rounds used to end a run before the player had seen what
-    // the game was. Losing at wave one teaches nothing but bad dice.
-    const afterOneRound = STARTING_POINTS + PERFECT_ROUND;
-    const affordable = BUILDINGS.filter((b) => b.cost <= afterOneRound);
-    expect(affordable.length).toBeGreaterThan(0);
-    expect(Math.max(...affordable.map((b) => b.capacity))).toBeGreaterThanOrEqual(waveDemand(1));
+  it("scores an answer higher the longer the streak, up to a cap", () => {
+    expect(answerPoints(0)).toBe(POINTS_PER_CORRECT);
+    expect(answerPoints(4)).toBeGreaterThan(answerPoints(0));
+    expect(answerPoints(99)).toBe(POINTS_PER_CORRECT * MAX_ANSWER_MULTIPLIER);
   });
 });
 
-describe("the department can be finished, and not by accident", () => {
-  it("can absorb every wave it will ever be asked to face", () => {
-    expect(waveDemand(LAST_SURVIVABLE_WAVE)).toBeLessThanOrEqual(TOTAL_CAPACITY);
-    expect(waveDemand(LAST_SURVIVABLE_WAVE + 1)).toBeGreaterThan(TOTAL_CAPACITY);
-  });
-
-  it("costs more than a careless player will ever accumulate", () => {
-    // Ten rounds of perfect answers is roughly what a finished department
-    // costs. A player answering half right cannot get near it, which is
-    // what makes finishing mean something.
-    expect(TOTAL_COST).toBeGreaterThan(PERFECT_ROUND * 5);
-    expect(TOTAL_COST).toBeLessThan(PERFECT_ROUND * 9);
-  });
-
-  it("prices the big rooms better per point and worse per round", () => {
-    // That trade IS the decision the game asks for. Without it, buying in
-    // cost order would always be right and there would be nothing to think
-    // about between rounds.
-    const sorted = [...BUILDINGS].sort((a, b) => a.cost - b.cost);
-    const value = (b: { cost: number; capacity: number }) => b.capacity / b.cost;
-    expect(value(sorted[sorted.length - 1])).toBeGreaterThan(value(sorted[0]));
-  });
-
-  it("adds up capacity only for what was built", () => {
-    expect(capacityOf([])).toBe(0);
-    expect(capacityOf(BUILDINGS.map((b) => b.id))).toBe(TOTAL_CAPACITY);
-    expect(capacityOf(["ct"])).toBe(costOf("ct") > 0 ? BUILDINGS.find((b) => b.id === "ct")!.capacity : 0);
-  });
-
-  it("calls the department finished only when every room is up", () => {
-    expect(isComplete([])).toBe(false);
-    expect(isComplete(BUILDINGS.slice(0, -1).map((b) => b.id))).toBe(false);
-    expect(isComplete(BUILDINGS.map((b) => b.id))).toBe(true);
-  });
-
-  it("gives every room a distinct plot that stays on the plan", () => {
-    // A plot off the edge cannot be tapped, and two on the same spot make
-    // one of them unbuildable.
-    const seen = new Set<string>();
-    for (const b of BUILDINGS) {
-      const { x, y, w, h } = b.plot;
-      expect(`${b.id} on plan: ${x >= 0 && y >= 0 && x + w <= 1 && y + h <= 1}`).toBe(`${b.id} on plan: true`);
-      const key = `${x},${y}`;
-      expect(`${b.id} unique: ${!seen.has(key)}`).toBe(`${b.id} unique: true`);
-      seen.add(key);
+describe("waves get harder without outrunning the reading", () => {
+  it("brings more and tougher enemies each wave", () => {
+    for (const w of [2, 5, 9]) {
+      expect(waveSpec(w).count).toBeGreaterThan(waveSpec(w - 1).count);
+      expect(waveSpec(w).hp).toBeGreaterThan(waveSpec(w - 1).hp);
     }
   });
 
-  it("has a name for every room", () => {
-    const dict = read("src/lib/i18n-game.ts");
-    for (const b of BUILDINGS) {
-      expect(`${b.id}: ${dict.includes(`"game.room_${b.id}"`)}`).toBe(`${b.id}: true`);
-    }
+  it("caps the speed, so it stays a quiz and not a reflex test", () => {
+    // A wave that crosses faster than a question can be read turns the game
+    // into tapping at random, which is the opposite of revising.
+    expect(waveSpec(50).speed).toBe(waveSpec(20).speed);
+    expect(waveSpec(50).speed).toBeLessThanOrEqual(0.064);
+    expect(waveSpec(50).gap).toBeGreaterThanOrEqual(0.5);
   });
 });
 
-describe("a simulated run separates knowing it from not", () => {
-  /** Plays a whole run at a fixed accuracy, buying the best room it can. */
-  function play(accuracy: number, rnd: () => number): { won: boolean; waves: number; rooms: number } {
-    let points = STARTING_POINTS;
-    let built: Glyph[] = [];
-    let waves = 0;
-    for (let round = 1; round <= 30; round++) {
-      let streak = 0;
-      for (let q = 0; q < ROUND_SIZE; q++) {
-        if (rnd() < accuracy) { points += pointsFor(streak); streak += 1; } else streak = 0;
-      }
-      for (;;) {
-        const options = BUILDINGS.filter((b) => !built.includes(b.id) && b.cost <= points);
-        if (options.length === 0) break;
-        const best = options.sort((a, b) => b.capacity - a.capacity)[0];
-        points -= best.cost;
-        built = [...built, best.id];
-      }
-      if (isComplete(built)) return { won: true, waves, rooms: built.length };
-      if (round % ROUNDS_PER_WAVE === 0) {
-        const n = round / ROUNDS_PER_WAVE;
-        if (capacityOf(built) < waveDemand(n)) return { won: false, waves, rooms: built.length };
-        waves += 1;
-      }
-    }
-    return { won: false, waves, rooms: built.length };
-  }
-
-  /** A fixed sequence, so the balance is asserted and not sampled. */
-  const seeded = (seed: number) => {
-    let s = seed;
-    return () => {
-      s = (s * 1664525 + 1013904223) % 4294967296;
-      return s / 4294967296;
-    };
-  };
-
-  it("lets a player who knows the material finish", () => {
-    for (const seed of [1, 7, 42, 99]) {
-      expect(`seed ${seed}: ${play(0.85, seeded(seed)).won}`).toBe(`seed ${seed}: true`);
-    }
+describe("the final score is survival, and only counted once", () => {
+  it("adds waves and surviving integrity to the answers", () => {
+    const base = finalScore({ answerScore: 0, wavesCleared: 0, integrity: 0 });
+    expect(base).toBe(0);
+    expect(finalScore({ answerScore: 0, wavesCleared: 3, integrity: 0 })).toBeGreaterThan(base);
+    expect(finalScore({ answerScore: 0, wavesCleared: 0, integrity: 50 })).toBeGreaterThan(base);
   });
 
-  it("stops a player who is guessing", () => {
-    // Half right has to fail, or the department is a participation trophy.
-    for (const seed of [1, 7, 42, 99]) {
-      expect(`seed ${seed}: ${play(0.4, seeded(seed)).won}`).toBe(`seed ${seed}: false`);
-    }
-  });
-
-  it("takes a winning run several rounds, not one lucky burst", () => {
-    const r = play(1, seeded(3));
-    expect(r.won).toBe(true);
-    expect(r.rooms).toBe(BUILDINGS.length);
-  });
-});
-
-describe("the score is mostly what you built", () => {
-  it("counts rooms, waves held and a bonus for finishing", () => {
-    const none = finalScore({ answerPoints: 0, built: [], waves: 0, complete: false });
-    expect(none).toBe(0);
-    expect(finalScore({ answerPoints: 0, built: ["ct"], waves: 0, complete: false })).toBeGreaterThan(none);
-    expect(finalScore({ answerPoints: 0, built: [], waves: 2, complete: false })).toBeGreaterThan(none);
-  });
-
-  it("puts a finished department above a longer run that stalled", () => {
-    // Two players who answered the same should be separated by what they
-    // did with it, or the only decision in the game stops mattering.
-    const finished = finalScore({ answerPoints: 600, built: BUILDINGS.map((b) => b.id), waves: 4, complete: true });
-    const stalled = finalScore({ answerPoints: 900, built: BUILDINGS.slice(0, 5).map((b) => b.id), waves: 4, complete: false });
-    expect(finished).toBeGreaterThan(stalled);
+  it("never pays for integrity below zero", () => {
+    expect(finalScore({ answerScore: 100, wavesCleared: 0, integrity: -40 })).toBe(100);
   });
 });
 
 describe("the server bounds what a browser may claim", () => {
   it("accepts a perfect run and nothing beyond it", () => {
+    // The browser keeps the score, so it can lie. The ceiling turns "any
+    // number" into "a number this run could actually have produced".
+    const perfect = maxPossibleScore(10, 4, MAX_INTEGRITY);
+    expect(perfect).toBeGreaterThan(0);
     expect(maxPossibleScore(0, 0, 0)).toBe(0);
-    expect(maxPossibleScore(70, 5, 8)).toBeGreaterThan(maxPossibleScore(70, 5, 7));
-    expect(maxPossibleScore(70, 5, 8)).toBeGreaterThan(maxPossibleScore(69, 5, 8));
   });
 
-  it("cannot be inflated by claiming impossible rooms or waves", () => {
-    expect(maxPossibleScore(1, 1, 500)).toBe(maxPossibleScore(1, 1, BUILDINGS.length));
-    expect(maxPossibleScore(1, 999, 1)).toBe(maxPossibleScore(1, LAST_SURVIVABLE_WAVE, 1));
+  it("grows with each of the three things it is built from", () => {
+    expect(maxPossibleScore(5, 2, 50)).toBeGreaterThan(maxPossibleScore(4, 2, 50));
+    expect(maxPossibleScore(5, 3, 50)).toBeGreaterThan(maxPossibleScore(5, 2, 50));
+    expect(maxPossibleScore(5, 2, 60)).toBeGreaterThan(maxPossibleScore(5, 2, 50));
+  });
+
+  it("cannot be inflated by claiming impossible integrity", () => {
+    expect(maxPossibleScore(1, 1, 10_000)).toBe(maxPossibleScore(1, 1, MAX_INTEGRITY));
   });
 
   it("is checked by the endpoint before anything is written", () => {
@@ -308,8 +214,313 @@ describe("the server bounds what a browser may claim", () => {
   });
 });
 
+describe("nothing on the question is timed", () => {
+  it("keeps no clock in the game component", () => {
+    // The complaint this answers: a revision game that will not let you stop
+    // and think is fighting the thing it is for.
+    const tab = read("src/components/sidebar/game-tab.tsx");
+    expect(tab).not.toMatch(/timeLeft|questionS|QUESTION_BASE_S|questionSeconds/);
+  });
+
+  it("holds the department still until the player opens the doors", () => {
+    const w = quietWorld();
+    w.startLevel(1);
+    expect(w.active).toBe(false);
+    for (let i = 0; i < 600; i++) w.tick(1 / 60);
+    expect(w.patients).toHaveLength(0);
+    expect(w.integrity).toBe(MAX_INTEGRITY);
+
+    w.beginAssault();
+    expect(w.active).toBe(true);
+    for (let i = 0; i < 300; i++) w.tick(1 / 60);
+    expect(w.patients.length).toBeGreaterThan(0);
+  });
+
+  it("freezes the walk while paused but keeps the place alive", () => {
+    const w = quietWorld();
+    w.startLevel(1);
+    w.beginAssault();
+    for (let i = 0; i < 400; i++) w.tick(1 / 60);
+    const before = w.patients.map((p) => p.t);
+    const timeBefore = w.time;
+
+    w.active = false;
+    for (let i = 0; i < 400; i++) w.tick(1 / 60);
+    expect(w.patients.map((p) => p.t)).toEqual(before);
+    // Idle animation keeps running, so a paused board is a living place and
+    // not a freeze-frame.
+    expect(w.time).toBeGreaterThan(timeBefore);
+  });
+
+  it("returns to preparation when a wave is cleared", () => {
+    const w = new World({
+      onLeak: () => {}, onWaveCleared: () => {}, onLevelCleared: () => {}, onStudyDone: () => {},
+    });
+    w.startLevel(1);
+    w.beginAssault();
+    w.pending = 0;
+    w.tick(1 / 60);
+    expect(w.active).toBe(false);
+  });
+});
+
+describe("every level lays out a department that works", () => {
+  const levels = Array.from({ length: LEVEL_COUNT }, (_, i) => buildLayout(levelSpec(i + 1)));
+
+  it("grows from three corridors to eight", () => {
+    const routes = levels.map((l) => l.paths.length);
+    expect(routes[0]).toBe(3);
+    expect(routes[routes.length - 1]).toBe(8);
+    for (let i = 1; i < routes.length; i++) expect(routes[i]).toBeGreaterThan(routes[i - 1]);
+  });
+
+  it("ends every corridor at the hospital and starts it off the field", () => {
+    for (const layout of levels) {
+      for (let r = 0; r < layout.paths.length; r++) {
+        const end = layout.at(r, 1);
+        expect(Math.hypot(end.x - HOSPITAL.x, end.y - HOSPITAL.y)).toBeLessThan(0.001);
+        const start = layout.at(r, 0);
+        const outside = start.x < -0.005 || start.x > 1.005 || start.y < -0.005 || start.y > 1.005;
+        expect(`L${layout.spec.level} r${r} enters from outside: ${outside}`)
+          .toBe(`L${layout.spec.level} r${r} enters from outside: true`);
+      }
+    }
+  });
+
+  it("places every bay it promised, clear of every corridor", () => {
+    // This is the whole reason the geometry is searched instead of typed:
+    // the dog-leg swings each corridor a quarter of a wedge toward its
+    // neighbour, so the obvious midpoint sits ON a lane. With six layouts
+    // that mistake would be waiting in all of them.
+    for (const layout of levels) {
+      expect(`L${layout.spec.level} bays`).toBe(
+        layout.slots.length === layout.spec.perRing * 2 ? `L${layout.spec.level} bays` : `L${layout.spec.level} MISSING`);
+      expect(`L${layout.spec.level} clearance ok: ${slotClearance(layout) > 0.08}`)
+        .toBe(`L${layout.spec.level} clearance ok: true`);
+    }
+  });
+
+  it("keeps every bay on the field, where it can be tapped", () => {
+    for (const layout of levels) {
+      for (const s of layout.slots) {
+        const inside = s.x > 0.05 && s.x < 0.95 && s.y > 0.04 && s.y < 0.96;
+        expect(`L${layout.spec.level} (${s.x.toFixed(2)},${s.y.toFixed(2)}) inside: ${inside}`)
+          .toBe(`L${layout.spec.level} (${s.x.toFixed(2)},${s.y.toFixed(2)}) inside: true`);
+      }
+    }
+  });
+
+  it("keeps most of every walk on screen", () => {
+    // Time spent off-canvas is time a scanner works on someone nobody sees.
+    for (const layout of levels) {
+      let vis = 0;
+      let all = 0;
+      for (let r = 0; r < layout.paths.length; r++) {
+        for (let t = 0; t <= 1; t += 0.01) {
+          const p = layout.at(r, t);
+          all += 1;
+          if (p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1) vis += 1;
+        }
+      }
+      expect(`L${layout.spec.level} visible: ${vis / all > 0.75}`).toBe(`L${layout.spec.level} visible: true`);
+    }
+  });
+
+  it("gives each floor its own colour and a harder curve", () => {
+    const tints = levels.map((l) => l.spec.tint.lane);
+    expect(new Set(tints).size).toBe(LEVEL_COUNT);
+    expect(TINTS.length).toBeGreaterThanOrEqual(LEVEL_COUNT);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i].spec.hardness).toBeGreaterThan(levels[i - 1].spec.hardness);
+      expect(levels[i].spec.waves).toBeGreaterThanOrEqual(levels[i - 1].spec.waves);
+    }
+  });
+
+  it("introduces the heavier patients floor by floor", () => {
+    // Arriving at a trolley case on the first wave of the first level would
+    // teach nothing except that the game is unfair.
+    expect(levels[0].spec.species).not.toContain("critical");
+    expect(levels[0].spec.species).not.toContain("stretcher");
+    expect(levels[LEVEL_COUNT - 1].spec.species).toHaveLength(5);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i].spec.species.length).toBeGreaterThanOrEqual(levels[i - 1].spec.species.length);
+    }
+  });
+
+  it("keeps going past the last authored floor", () => {
+    // "You win, stop now" is a worse ending than being finally overrun.
+    const beyond = levelSpec(LEVEL_COUNT + 3);
+    expect(beyond.routes).toBe(levelSpec(LEVEL_COUNT).routes);
+    expect(beyond.hardness).toBeGreaterThan(levelSpec(LEVEL_COUNT).hardness);
+  });
+
+  it("walks at a steady pace on every layout", () => {
+    for (const layout of levels) {
+      const steps = 120;
+      const dists: number[] = [];
+      for (let i = 0; i < steps; i++) {
+        const a = layout.at(0, i / steps);
+        const b = layout.at(0, (i + 1) / steps);
+        dists.push(Math.hypot(b.x - a.x, b.y - a.y));
+      }
+      const mean = dists.reduce((x, y) => x + y, 0) / dists.length;
+      expect(`L${layout.spec.level} steady: ${Math.min(...dists) / mean > 0.55}`)
+        .toBe(`L${layout.spec.level} steady: true`);
+    }
+  });
+});
+
+describe("a floor is cleared, and the next one is a different place", () => {
+  it("reports the level cleared only after its last wave", () => {
+    const levels: number[] = [];
+    const w = new World({ onLeak: () => {}, onWaveCleared: () => {}, onStudyDone: () => {}, onLevelCleared: (n) => levels.push(n) });
+    w.startLevel(1);
+    const need = w.layout.spec.waves;
+    for (let n = 1; n <= need; n++) {
+      w.startWave(n);
+      w.beginAssault();
+      w.pending = 0;
+      w.tick(1 / 60);
+      expect(`after wave ${n}: ${levels.length}`).toBe(`after wave ${n}: ${n === need ? 1 : 0}`);
+    }
+  });
+
+  it("rebuilds the department on the new floor", () => {
+    // Scanners do not carry over: it is a different place, and rebuilding is
+    // most of what makes arriving somewhere feel like arriving.
+    const w = quietWorld();
+    w.startLevel(1);
+    w.build(0);
+    w.damageBase(60);
+    w.startLevel(2);
+    expect(w.scanners).toHaveLength(0);
+    expect(w.patients).toHaveLength(0);
+    expect(w.integrity).toBe(MAX_INTEGRITY);
+    expect(w.level).toBe(2);
+    expect(w.layout.paths).toHaveLength(4);
+    expect(w.waveInLevel).toBe(1);
+  });
+
+  it("counts waves per floor for the HUD and in total for the board", () => {
+    let total = 0;
+    const w = new World({ onLeak: () => {}, onWaveCleared: (n) => { total = n; }, onStudyDone: () => {}, onLevelCleared: () => {} });
+    w.startLevel(1);
+    for (let n = 1; n <= 3; n++) {
+      w.startWave(n);
+      w.beginAssault();
+      w.pending = 0;
+      w.tick(1 / 60);
+    }
+    expect(w.waveInLevel).toBe(3);
+    expect(total).toBe(3);
+    w.startLevel(2);
+    w.beginAssault();
+    w.pending = 0;
+    w.tick(1 / 60);
+    expect(w.waveInLevel).toBe(1);
+    expect(total).toBe(4);
+  });
+
+  it("makes wave 1 of a later floor heavier than wave 1 of the first", () => {
+    const a = quietWorld();
+    a.startLevel(1);
+    const b = quietWorld();
+    b.startLevel(4);
+    expect(b.spec.hp).toBeGreaterThan(a.spec.hp);
+    expect(b.spec.count).toBeGreaterThan(a.spec.count);
+  });
+});
+
+describe("five kinds of patient, each its own shape and colour", () => {
+  it("defines every species with a distinct colour", () => {
+    expect(SPECIES_KEYS).toHaveLength(5);
+    const colours = SPECIES_KEYS.map((k) => SPECIES[k].fill);
+    expect(new Set(colours).size).toBe(5);
+  });
+
+  it("trades speed against the imaging each one needs", () => {
+    // The fast ones are light, the heavy ones are slow. A species that was
+    // both would simply be the only one that mattered.
+    for (const key of SPECIES_KEYS) {
+      const s = SPECIES[key];
+      expect(`${key}: ${s.speedMul > 1 ? s.hpMul < 1 : true}`).toBe(`${key}: true`);
+    }
+  });
+
+  it("makes the heaviest arrival cost the most backlog", () => {
+    expect(SPECIES.critical.weight).toBeGreaterThan(SPECIES.routine.weight);
+    expect(SPECIES.paediatric.weight).toBeLessThan(SPECIES.routine.weight);
+  });
+
+  it("has a label for every species", () => {
+    const dict = read("src/lib/i18n-game.ts");
+    for (const key of SPECIES_KEYS) {
+      expect(`${key}: ${dict.includes(`"game.sp_${key}"`)}`).toBe(`${key}: true`);
+    }
+  });
+
+  it("spreads arrivals across every corridor of the floor", () => {
+    // One quiet route would let the player stack a single wedge and forget
+    // the rest. Measured over a sample big enough to mean something: the
+    // dealing is round-robin with a nudge, so a short wave can legitimately
+    // skip one and that is not what this is asking about.
+    const w = quietWorld();
+    w.startLevel(LEVEL_COUNT);
+    w.startWave(9);
+    w.beginAssault();
+    const seen = new Set<number>();
+    for (let i = 0; i < 4000; i++) {
+      w.tick(1 / 60);
+      for (const p of w.patients) seen.add(p.route);
+    }
+    expect(seen.size).toBe(w.layout.paths.length);
+  });
+});
+
+describe("installing a scanner is capacity, so it heals", () => {
+  const quiet = () => { const w = quietWorld(); w.startLevel(1); w.beginAssault(); return w; };
+
+  it("gives back ten points of integrity per scanner built", () => {
+    const w = quiet();
+    w.damageBase(50);
+    const before = w.integrity;
+    w.build(0);
+    expect(w.integrity).toBe(before + BUILD_HEAL);
+  });
+
+  it("never heals past full", () => {
+    const w = quiet();
+    w.damageBase(3);
+    w.build(0);
+    expect(w.integrity).toBe(MAX_INTEGRITY);
+  });
+
+  it("does not heal on an upgrade, nor on a refused build", () => {
+    // Only a NEW scanner is new capacity. Healing on upgrades would make
+    // integrity a currency rather than a state.
+    const w = quiet();
+    w.damageBase(50);
+    w.build(0);
+    const after = w.integrity;
+    w.upgrade(0);
+    expect(w.integrity).toBe(after);
+    expect(w.build(0)).toBe(false);
+    expect(w.integrity).toBe(after);
+  });
+
+  it("refuses a bay that does not exist", () => {
+    const w = quiet();
+    expect(w.build(-1)).toBe(false);
+    expect(w.build(w.layout.slots.length)).toBe(false);
+    expect(w.scanners).toHaveLength(0);
+  });
+});
+
 describe("the board is a game board, not a staff directory", () => {
   it("returns no user ids to the browser", () => {
+    // A board that named people would turn revision into a comparison
+    // between named radiologists, which is the one thing the productivity
+    // rules in this product exist to prevent.
     const route = read("src/app/api/game/route.ts");
     const get = route.slice(route.indexOf("export async function GET"), route.indexOf("export async function POST"));
     expect(get).toContain("me: uid === user.id");
@@ -317,7 +528,8 @@ describe("the board is a game board, not a staff directory", () => {
   });
 
   it("derives a default alias from the id, never from a name or email", () => {
-    expect(defaultAlias("11111111-2222-3333-4444-555555555555")).toMatch(/^R-\d{4}$/);
+    const a = defaultAlias("11111111-2222-3333-4444-555555555555");
+    expect(a).toMatch(/^R-\d{4}$/);
     expect(defaultAlias("same")).toBe(defaultAlias("same"));
     expect(defaultAlias("a")).not.toBe(defaultAlias("b"));
   });
@@ -325,12 +537,16 @@ describe("the board is a game board, not a staff directory", () => {
   it("trims and bounds an alias before anyone else sees it", () => {
     expect(cleanAlias("  Dr   Fuego  ")).toBe("Dr Fuego");
     expect(cleanAlias("a")).toBeNull();
+    expect(cleanAlias("")).toBeNull();
     expect(cleanAlias(42)).toBeNull();
     expect(cleanAlias("x".repeat(80))?.length).toBe(24);
   });
 
   it("ranks players, not runs", () => {
-    expect(read("src/app/api/game/route.ts")).toContain("best.has(r.user_id)");
+    // Per-run ranking lets one good session fill every row and nobody else
+    // ever appears on the board.
+    const route = read("src/app/api/game/route.ts");
+    expect(route).toContain("best.has(r.user_id)");
   });
 });
 
@@ -350,6 +566,7 @@ describe("the game is reachable and costs non-players nothing", () => {
     // The shell renders before the tab is ever opened, so a label living in
     // the game's own dictionary would show as a raw key until someone clicks.
     expect(shell).toContain('t("nav.rail_game")');
+    expect(shell).not.toContain('t("game.nav")');
     expect(read("src/lib/i18n.ts")).toContain('"nav.rail_game"');
   });
 });
