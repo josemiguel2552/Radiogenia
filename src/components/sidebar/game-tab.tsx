@@ -6,106 +6,82 @@ import "@/lib/i18n-game";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Trophy, Coins, Zap, Play, Pause, RotateCcw, ChevronUp, Hammer, Waves, Layers, Swords } from "lucide-react";
+import {
+  Building2, Trophy, Coins, Zap, Play, RotateCcw, Hammer, Waves, CheckCircle2, ArrowRight,
+} from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { buildRun, shuffled, TOPICS, type QuizLang, type QuizQuestion } from "@/lib/game-questions";
 import {
-  answerPoints, creditsFor, finalScore,
-  MAX_INTEGRITY, MAX_SCANNER_LEVEL, STARTING_CREDITS, SCANNER_COST, UPGRADE_COST, WRONG_ANSWER_DAMAGE,
-  type Leaderboard, type RunResult,
-} from "@/lib/game-score";
-import { World } from "./game-engine";
-import { LEVEL_COUNT } from "./game-levels";
-import { draw } from "./game-render";
+  BUILDINGS, ROUND_SIZE, ROUNDS_PER_WAVE, STARTING_POINTS, TOTAL_CAPACITY,
+  capacityOf, costOf, finalScore, isComplete, pointsFor, waveDemand, waveNumber,
+  type Glyph,
+} from "@/lib/game-build";
+import type { Leaderboard } from "@/lib/game-alias";
+import { drawPlan, type WaveView } from "./game-plan";
 
-type Phase = "idle" | "playing" | "over";
+/** What the board is doing right now. */
+type Stage = "idle" | "round" | "build" | "wave" | "over" | "won";
 
-/** How long the right answer and its source stay on screen after a miss. */
-const MISS_MS = 2300;
-
+/** How long the wave animation runs before the verdict stands. */
+const WAVE_MS = 2600;
 
 /**
- * Radiology Defense.
+ * Build the department.
  *
- * Waves of findings advance on a hospital. The only way to hold them is to
- * answer: a correct answer pays credits, credits buy turrets, a wrong one
- * takes a bite out of the base. That is the whole design — the quiz is not
- * bolted onto a tower defence, it IS the economy, so there is never a moment
- * where the radiology is the optional part.
+ * Rounds of seven questions pay points, points put rooms up, and every two
+ * rounds a wave of demand arrives that the rooms either absorb or do not.
+ * Finish the department and the run is won.
  *
- * It plays with one thumb: tap an answer, tap a slot, tap build. No dragging
- * and no aiming, because the point is revising between reports on whatever
- * device is to hand.
- *
- * The simulation and the drawing live in their own modules. React owns the
- * question, the HUD and the board here, and never the sixty frames a second.
+ * What the earlier attempts got wrong, and this is built to avoid: the
+ * radiology was a currency generator for a game happening beside it. Here
+ * answering is the ONLY thing that builds, the thing built is on screen the
+ * whole time, and a wave is decided purely by what was accumulated — no
+ * clock, no aim, no reflex anywhere. Losing always has one cause, and the
+ * number that causes it is printed a round before it arrives.
  */
 export function GameTab() {
   const t = useT();
   const { prefs } = useUIPrefs();
   const lang = ((prefs.uiLanguage || "es") as QuizLang);
 
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [question, setQuestion] = useState<QuizQuestion | null>(null);
-  const [options, setOptions] = useState<{ text: string; correct: boolean }[]>([]);
-  const [miss, setMiss] = useState<{ answer: string; source: string } | null>(null);
+  const [stage, setStage] = useState<Stage>("idle");
   const [topics, setTopics] = useState<string[]>([]);
 
-  const [integrity, setIntegrity] = useState(MAX_INTEGRITY);
-  const [credits, setCredits] = useState(STARTING_CREDITS);
-  const [wave, setWave] = useState(0);
-  const [level, setLevel] = useState(1);
-  /** How many waves this floor asks for. Mirrored into state rather than
-   *  read off the world ref during render, which is the tear concurrent
-   *  rendering is allowed to produce. */
-  const [waveTarget, setWaveTarget] = useState(0);
-  const [score, setScore] = useState(0);
+  const [points, setPoints] = useState(STARTING_POINTS);
+  const [built, setBuilt] = useState<Glyph[]>([]);
+  const [rounds, setRounds] = useState(0);
+  const [wavesHeld, setWavesHeld] = useState(0);
+  const [selected, setSelected] = useState<Glyph | null>(null);
+
+  const [question, setQuestion] = useState<QuizQuestion | null>(null);
+  const [options, setOptions] = useState<{ text: string; correct: boolean }[]>([]);
+  const [inRound, setInRound] = useState(0);
+  const [roundPoints, setRoundPoints] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [asked, setAsked] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  /** The level of the turret on the selected slot, or 0 for an empty one.
-   *  Mirrored into state because reading it out of the world ref during
-   *  render is exactly the tear concurrent rendering is allowed to produce. */
-  const [selectedLevel, setSelectedLevel] = useState(0);
+  const [verdict, setVerdict] = useState<{ ok: boolean; answer: string; source: string } | null>(null);
 
-  /**
-   * Whether the doors are open.
-   *
-   * "prep" is the department between waves: nothing is walking, there is no
-   * clock on anything, and the player answers and builds at whatever pace
-   * they like. "assault" runs the wave. The player moves between them, which
-   * is the whole of the redesign — a revision game that will not let you
-   * stop and think is fighting the thing it is for.
-   */
-  const [mode, setMode] = useState<"prep" | "assault" | "paused">("prep");
-  const [built, setBuilt] = useState(0);
-  const [wavesCleared, setWavesCleared] = useState(0);
-  const [levelsCleared, setLevelsCleared] = useState(0);
+  const [wave, setWave] = useState<WaveView | null>(null);
+  const [score, setScore] = useState(0);
 
   const [board, setBoard] = useState<Leaderboard | null>(null);
   const [alias, setAlias] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const worldRef = useRef<World | null>(null);
   const runRef = useRef<QuizQuestion[]>([]);
   const cursorRef = useRef(0);
   const rafRef = useRef(0);
-  const lastRef = useRef(0);
-  const lockRef = useRef(false);
-  const statsRef = useRef({ answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: 0, wavesCleared: 0, levelsCleared: 0 });
-  const creditsRef = useRef(STARTING_CREDITS);
-  const selectedRef = useRef<number | null>(null);
-  const nextQuestionRef = useRef<() => void>(() => {});
-  /** The translated word for "wave", read by the canvas banner. */
-  const waveLabelRef = useRef("");
-  const levelLabelRef = useRef("");
-  const answerRef = useRef<(p: { text: string; correct: boolean } | null) => void>(() => {});
-  const endRunRef = useRef<() => void>(() => {});
+  const viewRef = useRef({ built: [] as Glyph[], points: 0, selected: null as Glyph | null, wave: null as WaveView | null, time: 0 });
+  const statsRef = useRef({ answerPoints: 0, correct: 0, asked: 0, startedAt: 0 });
 
-  /* ── Leaderboard ─────────────────────────────────────────────────── */
+  const capacity = capacityOf(built);
+  const nextWave = waveNumber(rounds) + 1;
+  const demand = waveDemand(nextWave);
+
+  /* ── Board ───────────────────────────────────────────────────────── */
 
   const loadBoard = useCallback(() => {
     fetch("/api/game")
@@ -123,19 +99,26 @@ export function GameTab() {
   const saveAlias = useCallback(() => {
     if (alias.trim().length < 2) return;
     fetch("/api/game", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ alias: alias.trim() }),
     }).then(() => loadBoard()).catch(() => {});
   }, [alias, loadBoard]);
 
-  const submit = useCallback((result: RunResult) => {
-    if (result.correct === 0) { setSaveState("idle"); return; }
+  const submit = useCallback((total: number, rooms: Glyph[], held: number) => {
+    const s = statsRef.current;
+    if (s.correct === 0) { setSaveState("idle"); return; }
     setSaveState("saving");
     fetch("/api/game", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(result),
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        score: total,
+        correct: s.correct,
+        wave: held,
+        // The column is called integrity; what it carries now is how much of
+        // the department got built, as a percentage.
+        integrity: Math.round((capacityOf(rooms) / TOTAL_CAPACITY) * 100),
+        durationS: Math.round((Date.now() - s.startedAt) / 1000),
+      }),
     })
       .then((r) => { setSaveState(r.ok ? "saved" : "failed"); if (r.ok) loadBoard(); })
       .catch(() => setSaveState("failed"));
@@ -152,104 +135,109 @@ export function GameTab() {
     }
     const q = runRef.current[cursorRef.current++];
     setQuestion(q);
-    // Shuffled per question: otherwise the right answer sits wherever the
-    // bank happened to write it, and after three rounds the player is
-    // reading positions instead of radiology.
+    // Shuffled per question, or the right answer sits wherever the bank
+    // happened to write it and the player reads positions, not radiology.
     setOptions(shuffled(q.options).map((o) => ({ text: o.t[lang], correct: o.correct })));
-    lockRef.current = false;
+    setVerdict(null);
   }, [lang, topics]);
 
+  const nextQuestionRef = useRef(nextQuestion);
   useEffect(() => { nextQuestionRef.current = nextQuestion; }, [nextQuestion]);
 
-  const endRun = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
+  const answer = useCallback((picked: { text: string; correct: boolean }) => {
+    if (verdict) return;
     const s = statsRef.current;
-    const integrityLeft = worldRef.current?.integrity ?? 0;
-    const total = finalScore({
-      answerScore: s.answerScore,
-      wavesCleared: s.wavesCleared,
-      levelsCleared: s.levelsCleared,
-      integrity: integrityLeft,
-    });
-    setScore(total);
-    setPhase("over");
-    submit({
-      score: total,
-      correct: s.correct,
-      wave: s.wavesCleared,
-      integrity: integrityLeft,
-      durationS: Math.round((Date.now() - s.startedAt) / 1000),
-    });
-  }, [submit]);
-
-  useEffect(() => { endRunRef.current = endRun; }, [endRun]);
-
-  /** One answer: right, wrong, or the clock running out. */
-  const answer = useCallback((picked: { text: string; correct: boolean } | null) => {
-    if (lockRef.current) return;
-    lockRef.current = true;
-    const s = statsRef.current;
-    const world = worldRef.current;
     s.asked += 1;
     setAsked(s.asked);
 
-    if (picked?.correct) {
-      s.correct += 1;
-      s.answerScore += answerPoints(s.streak);
-      s.streak += 1;
-      const earned = creditsFor(s.streak - 1);
-      creditsRef.current += earned;
-      // Thrown onto the battlefield rather than only incremented in the HUD:
-      // the reward has to happen where the player is looking.
-      world?.float({ x: 0.5, y: 0.45 }, `+${earned}`, "good");
-      setCredits(creditsRef.current);
-      setCorrect(s.correct);
-      setStreak(s.streak);
-      nextQuestionRef.current();
-      return;
-    }
-
-    // A miss costs the base. That is what ties the quiz to the battlefield:
-    // not knowing it is not a lost point, it is a breach.
-    s.streak = 0;
-    setStreak(0);
-    world?.damageBase(WRONG_ANSWER_DAMAGE);
-    if (world) setIntegrity(world.integrity);
     const right = question?.options.find((o) => o.correct);
-    setMiss({ answer: right ? right.t[lang] : "", source: question?.source || "" });
-    window.setTimeout(() => {
-      setMiss(null);
-      if ((worldRef.current?.integrity ?? 0) <= 0) endRunRef.current();
-      else nextQuestionRef.current();
-    }, MISS_MS);
-  }, [lang, question]);
-
-  useEffect(() => { answerRef.current = answer; }, [answer]);
-
-  /* ── Build ───────────────────────────────────────────────────────── */
-
-  const buildOrUpgrade = useCallback(() => {
-    const world = worldRef.current;
-    if (!world || selected === null) return;
-    const existing = world.scannerAt(selected);
-    if (!existing) {
-      if (creditsRef.current < SCANNER_COST || !world.build(selected)) return;
-      creditsRef.current -= SCANNER_COST;
-    } else if (existing.level < MAX_SCANNER_LEVEL) {
-      if (creditsRef.current < UPGRADE_COST || !world.upgrade(selected)) return;
-      creditsRef.current -= UPGRADE_COST;
+    if (picked.correct) {
+      const paid = pointsFor(streak);
+      s.correct += 1;
+      s.answerPoints += paid;
+      setCorrect(s.correct);
+      setStreak((n) => n + 1);
+      setRoundPoints((n) => n + paid);
+      setPoints((n) => n + paid);
+      setVerdict({ ok: true, answer: `+${paid}`, source: question?.source || "" });
     } else {
+      setStreak(0);
+      setVerdict({ ok: false, answer: right ? right.t[lang] : "", source: question?.source || "" });
+    }
+  }, [lang, question, streak, verdict]);
+
+  /** Moves on from the verdict: another question, or the end of the round. */
+  const advance = useCallback(() => {
+    const done = inRound + 1;
+    if (done >= ROUND_SIZE) {
+      setInRound(0);
+      setRounds((n) => n + 1);
+      setStage("build");
+      setVerdict(null);
       return;
     }
-    setCredits(creditsRef.current);
-    setSelectedLevel(world.scannerAt(selected)?.level ?? 0);
-    setBuilt((n) => n + 1);
-  }, [selected]);
+    setInRound(done);
+    nextQuestionRef.current();
+  }, [inRound]);
 
-  /* ── The loop ────────────────────────────────────────────────────── */
+  /* ── Build and waves ─────────────────────────────────────────────── */
+
+  const buildRoom = useCallback((id: Glyph) => {
+    if (built.includes(id)) return;
+    const cost = costOf(id);
+    if (points < cost) return;
+    const after = [...built, id];
+    setPoints((n) => n - cost);
+    setBuilt(after);
+    setSelected(null);
+    if (isComplete(after)) {
+      const total = finalScore({ answerPoints: statsRef.current.answerPoints, built: after, waves: wavesHeld, complete: true });
+      setScore(total);
+      setStage("won");
+      submit(total, after, wavesHeld);
+    }
+  }, [built, points, submit, wavesHeld]);
+
+  const runWave = useCallback(() => {
+    const n = waveNumber(rounds);
+    const held = capacityOf(built) >= waveDemand(n);
+    setWave({ n, demand: waveDemand(n), progress: 0, held });
+    setStage("wave");
+
+    const started = performance.now();
+    const step = () => {
+      const p = Math.min(1, (performance.now() - started) / WAVE_MS);
+      setWave((w) => (w ? { ...w, progress: p } : w));
+      if (p < 1) { requestAnimationFrame(step); return; }
+      if (held) {
+        setWavesHeld((k) => k + 1);
+        setWave(null);
+        setStage("round");
+        nextQuestionRef.current();
+      } else {
+        const total = finalScore({ answerPoints: statsRef.current.answerPoints, built, waves: wavesHeld, complete: false });
+        setScore(total);
+        setStage("over");
+        submit(total, built, wavesHeld);
+      }
+    };
+    requestAnimationFrame(step);
+  }, [built, rounds, submit, wavesHeld]);
+
+  const continueFromBuild = useCallback(() => {
+    if (rounds % ROUNDS_PER_WAVE === 0) { runWave(); return; }
+    setStage("round");
+    nextQuestionRef.current();
+  }, [rounds, runWave]);
+
+  /* ── The plan ────────────────────────────────────────────────────── */
 
   useEffect(() => {
-    if (phase !== "playing") return;
+    viewRef.current = { built, points, selected, wave, time: viewRef.current.time };
+  }, [built, points, selected, wave]);
+
+  useEffect(() => {
+    if (stage === "idle") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -258,8 +246,7 @@ export function GameTab() {
     const resize = () => {
       const r = canvas.getBoundingClientRect();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      w = r.width;
-      h = r.height;
+      w = r.width; h = r.height;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       canvas.getContext("2d")?.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -268,34 +255,37 @@ export function GameTab() {
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    let ended = false;
-    lastRef.current = performance.now();
+    let last = performance.now();
+    const labels = Object.fromEntries(BUILDINGS.map((b) => [b.id, t(`game.room_${b.id}`)])) as Record<Glyph, string>;
     const step = (now: number) => {
       rafRef.current = requestAnimationFrame(step);
-      const dt = Math.min(0.05, (now - lastRef.current) / 1000);
-      lastRef.current = now;
-      const world = worldRef.current;
-      if (!world || w === 0) return;
-
-      world.tick(dt);
-
+      viewRef.current.time += Math.min(0.05, (now - last) / 1000);
+      last = now;
       const ctx = canvas.getContext("2d");
-      if (ctx) {
-        const dark = document.documentElement.classList.contains("dark");
-        draw(ctx, world, w, h, { dark, brand: "" }, selectedRef.current, creditsRef.current, waveLabelRef.current, levelLabelRef.current);
-      }
-
-      if (world.integrity <= 0 && !ended) {
-        ended = true;
-        endRunRef.current();
-      }
+      if (!ctx || w === 0) return;
+      drawPlan(ctx, {
+        ...viewRef.current,
+        labels,
+        dark: document.documentElement.classList.contains("dark"),
+      }, w, h);
     };
     rafRef.current = requestAnimationFrame(step);
     return () => { cancelAnimationFrame(rafRef.current); ro.disconnect(); };
-  }, [phase]);
+  }, [stage, t]);
 
-  useEffect(() => { selectedRef.current = selected; }, [selected]);
-  useEffect(() => { waveLabelRef.current = t("game.wave"); levelLabelRef.current = t("game.level"); }, [t]);
+  const onCanvasTap = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (stage !== "build") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const r = canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    const hit = BUILDINGS.find((b) =>
+      !built.includes(b.id) &&
+      x >= b.plot.x && x <= b.plot.x + b.plot.w &&
+      y >= b.plot.y && y <= b.plot.y + b.plot.h);
+    setSelected(hit ? hit.id : null);
+  };
 
   /* ── Lifecycle ───────────────────────────────────────────────────── */
 
@@ -304,101 +294,36 @@ export function GameTab() {
     if (run.length === 0) return;
     runRef.current = run;
     cursorRef.current = 0;
-    statsRef.current = { answerScore: 0, correct: 0, asked: 0, streak: 0, startedAt: Date.now(), wavesCleared: 0, levelsCleared: 0 };
-    creditsRef.current = STARTING_CREDITS;
-
-    let clearedLevel = false;
-    const world = new World({
-      onLeak: () => setIntegrity(worldRef.current?.integrity ?? 0),
-      onStudyDone: (paid) => {
-        creditsRef.current += paid;
-        setCredits(creditsRef.current);
-      },
-      onLevelCleared: (done) => {
-        clearedLevel = true;
-        statsRef.current.levelsCleared = done;
-        setLevelsCleared(done);
-        // Finishing a floor pays for the rebuild on the next one, where every
-        // bay starts empty again.
-        creditsRef.current += 45 + done * 15;
-        setCredits(creditsRef.current);
-        window.setTimeout(() => {
-          const next = done + 1;
-          setLevel(next);
-          worldRef.current?.startLevel(next);
-          setWaveTarget(worldRef.current?.layout.spec.waves ?? 0);
-          setIntegrity(worldRef.current?.integrity ?? 0);
-          setWave(1);
-          setMode("prep");
-          clearedLevel = false;
-        }, 2000);
-      },
-      onWaveCleared: (totalCleared) => {
-        statsRef.current.wavesCleared = totalCleared;
-        setWavesCleared(totalCleared);
-        // A cleared wave pays a dividend, so holding the line is worth
-        // something on its own and not only the answers that bought it.
-        creditsRef.current += 15 + totalCleared * 5;
-        setCredits(creditsRef.current);
-        // The level handler owns the handover when a floor is finished.
-        if (clearedLevel) return;
-        const w = worldRef.current;
-        if (!w) return;
-        w.prepareWave(w.waveInLevel + 1);
-        setWave(w.waveInLevel);
-        setMode("prep");
-      },
-    });
-    worldRef.current = world;
-    world.startLevel(1);
-    setWaveTarget(world.layout.spec.waves);
-
-    setPhase("playing");
-    setIntegrity(MAX_INTEGRITY);
-    setCredits(STARTING_CREDITS);
-    setWave(1); setLevel(1); setScore(0); setCorrect(0);
-    setAsked(0); setStreak(0); setWavesCleared(0); setLevelsCleared(0);
-    setSelected(null); setSelectedLevel(0); setMiss(null); setSaveState("idle"); setBuilt(0);
-    setMode("prep");
+    statsRef.current = { answerPoints: 0, correct: 0, asked: 0, startedAt: Date.now() };
+    setPoints(STARTING_POINTS); setBuilt([]); setRounds(0); setWavesHeld(0);
+    setInRound(0); setRoundPoints(0); setStreak(0); setCorrect(0); setAsked(0);
+    setSelected(null); setWave(null); setVerdict(null); setSaveState("idle"); setScore(0);
+    setStage("round");
     nextQuestionRef.current();
   }, [topics]);
-
-  const onCanvasPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const r = canvas.getBoundingClientRect();
-    const slot = worldRef.current?.slotNear(
-      (e.clientX - r.left) / r.width,
-      (e.clientY - r.top) / r.height,
-      r.width / r.height,
-    ) ?? null;
-    setSelected(slot);
-    setSelectedLevel(slot === null ? 0 : worldRef.current?.scannerAt(slot)?.level ?? 0);
-  };
 
   const toggleTopic = (topic: string) =>
     setTopics((p) => (p.includes(topic) ? p.filter((x) => x !== topic) : [...p, topic]));
 
-  /* ── Render ──────────────────────────────────────────────────────── */
-
   const accuracy = asked > 0 ? Math.round((correct / asked) * 100) : 0;
-  const slotCost = selectedLevel > 0 ? UPGRADE_COST : SCANNER_COST;
-  const slotMaxed = selectedLevel >= MAX_SCANNER_LEVEL;
+  const playing = stage !== "idle" && stage !== "over" && stage !== "won";
+
+  /* ── Render ──────────────────────────────────────────────────────── */
 
   return (
     <div className="space-y-3 pb-4">
       <header>
         <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-          <Shield className="h-4 w-4 text-brand" /> {t("game.title")}
+          <Building2 className="h-4 w-4 text-brand" /> {t("game.title")}
         </h2>
         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{t("game.subtitle")}</p>
       </header>
 
-      {phase === "idle" && (
+      {stage === "idle" && (
         <>
           <div className="rounded-lg border border-[hsl(var(--border))] p-3 space-y-1.5">
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200">{t("game.how")}</p>
-            {[t("game.how_answer"), t("game.how_pace"), t("game.how_build"), t("game.how_wrong"), t("game.how_waves")].map((line) => (
+            {[t("game.how_round"), t("game.how_build"), t("game.how_wave"), t("game.how_win")].map((line) => (
               <p key={line} className="text-[11px] text-gray-600 dark:text-gray-300 flex gap-1.5">
                 <span className="text-brand">•</span>{line}
               </p>
@@ -408,17 +333,17 @@ export function GameTab() {
           <div>
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mb-1.5">{t("game.topics")}</p>
             <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button" onClick={() => setTopics([])}
+              <button type="button" onClick={() => setTopics([])}
                 className={`px-2 py-1 rounded-md text-[10px] font-medium border transition-colors ${
-                  topics.length === 0 ? "bg-brand text-white border-brand" : "border-[hsl(var(--border))] text-gray-600 dark:text-gray-300"}`}
-              >{t("game.all_topics")}</button>
+                  topics.length === 0 ? "bg-brand text-white border-brand" : "border-[hsl(var(--border))] text-gray-600 dark:text-gray-300"}`}>
+                {t("game.all_topics")}
+              </button>
               {TOPICS.map((topic) => (
-                <button
-                  key={topic} type="button" onClick={() => toggleTopic(topic)}
+                <button key={topic} type="button" onClick={() => toggleTopic(topic)}
                   className={`px-2 py-1 rounded-md text-[10px] font-medium border transition-colors ${
-                    topics.includes(topic) ? "bg-brand text-white border-brand" : "border-[hsl(var(--border))] text-gray-600 dark:text-gray-300"}`}
-                >{t(`game.t_${topic}`)}</button>
+                    topics.includes(topic) ? "bg-brand text-white border-brand" : "border-[hsl(var(--border))] text-gray-600 dark:text-gray-300"}`}>
+                  {t(`game.t_${topic}`)}
+                </button>
               ))}
             </div>
           </div>
@@ -427,14 +352,13 @@ export function GameTab() {
         </>
       )}
 
-      {phase === "playing" && (
+      {playing && (
         <>
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5">
             {[
-              { icon: Shield, label: t("game.integrity"), value: `${integrity}%`, tone: integrity > 40 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500" },
-              { icon: Layers, label: t("game.level"), value: String(level), tone: "text-indigo-600 dark:text-indigo-300" },
-              { icon: Waves, label: t("game.wave"), value: `${wave}/${waveTarget || "-"}`, tone: "text-sky-600 dark:text-sky-400" },
-              { icon: Coins, label: t("game.credits"), value: String(credits), tone: "text-amber-600 dark:text-amber-400" },
+              { icon: Coins, label: t("game.points"), value: String(points), tone: "text-amber-600 dark:text-amber-400" },
+              { icon: Building2, label: t("game.capacity"), value: `${capacity}`, tone: "text-sky-600 dark:text-sky-400" },
+              { icon: Waves, label: t("game.next_wave"), value: `${demand}`, tone: capacity >= demand ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500" },
               { icon: Zap, label: t("game.streak"), value: String(streak), tone: "text-violet-600 dark:text-violet-400" },
             ].map((s) => (
               <div key={s.label} className="rounded-md border border-[hsl(var(--border))] px-1.5 py-1 text-center">
@@ -445,124 +369,106 @@ export function GameTab() {
             ))}
           </div>
 
-          <div className="h-1.5 w-full rounded-full bg-[hsl(var(--muted))] overflow-hidden">
-            <div
-              className={`h-full transition-[width] duration-300 ${integrity > 40 ? "bg-emerald-500" : "bg-rose-500"}`}
-              style={{ width: `${integrity}%` }}
-            />
-          </div>
+          <canvas
+            ref={canvasRef}
+            onPointerDown={onCanvasTap}
+            className="w-full h-[min(46vh,360px)] rounded-lg border border-[hsl(var(--border))] block touch-manipulation"
+          />
 
-          <div className="relative">
-            <canvas
-              ref={canvasRef}
-              onPointerDown={onCanvasPointer}
-              className="w-full h-[min(54vh,420px)] rounded-lg border border-[hsl(var(--border))] touch-manipulation block"
-            />
-            {miss && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[hsl(var(--background)/0.9)] backdrop-blur-[2px] p-4 rounded-lg">
-                <div className="text-center max-w-sm">
-                  <p className="text-[11px] font-bold text-rose-500 uppercase tracking-wide">{t("game.breach")}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{t("game.correct_was")}</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1 leading-snug">{miss.answer}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2">{t("game.source")}: {miss.source}</p>
-                </div>
+          {stage === "round" && (
+            <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] p-2.5 space-y-2">
+              <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400">
+                <span>{t("game.question")} {inRound + 1}/{ROUND_SIZE}</span>
+                <span>+{roundPoints}</span>
               </div>
-            )}
-          </div>
+              <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-snug">{question?.q[lang]}</p>
 
-          <div className="flex items-center gap-2 min-h-[30px]">
-            {selected === null ? (
-              <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                <Hammer className="h-3 w-3" />{t("game.tap_slot")}
-              </p>
-            ) : (
-              <>
-                <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                  {t("game.slot")} {selected + 1}{selectedLevel > 0 ? ` · ${t("game.tier")} ${selectedLevel}` : ""}
-                </span>
-                <Button
-                  size="sm" onClick={buildOrUpgrade} disabled={slotMaxed || credits < slotCost}
-                  className="h-7 text-[10px] gap-1 ml-auto"
-                >
-                  {selectedLevel > 0 ? <ChevronUp className="h-3 w-3" /> : <Hammer className="h-3 w-3" />}
-                  {slotMaxed ? t("game.maxed") : `${selectedLevel > 0 ? t("game.upgrade") : t("game.build")} · ${slotCost}`}
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* ── Who sets the pace ── */}
-          <div className="flex items-center gap-2">
-            {mode === "prep" ? (
-              <>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight flex-1">
-                  {t("game.prep_hint")}
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => { worldRef.current?.beginAssault(); setMode("assault"); }}
-                  className="h-8 text-[11px] gap-1.5 shrink-0"
-                >
-                  <Swords className="h-3.5 w-3.5" />
-                  {t("game.begin_wave")} {wave}
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight flex-1">
-                  {mode === "paused" ? t("game.paused_hint") : t("game.assault_hint")}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const w = worldRef.current;
-                    if (!w) return;
-                    w.active = mode === "paused";
-                    setMode(mode === "paused" ? "assault" : "paused");
-                  }}
-                  className="h-8 text-[11px] gap-1.5 shrink-0"
-                >
-                  {mode === "paused" ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-                  {mode === "paused" ? t("game.resume") : t("game.pause")}
-                </Button>
-              </>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] p-2.5 space-y-2">
-            <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-snug">{question?.q[lang]}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {options.map((o) => (
-                <button
-                  key={o.text}
-                  type="button"
-                  disabled={!!miss}
-                  onClick={() => answerRef.current(o)}
-                  className="text-left text-[11px] leading-snug rounded-md border border-[hsl(var(--border))]
-                             bg-[hsl(var(--card))] px-2 py-2 min-h-[38px] transition-colors
-                             hover:border-brand hover:bg-brand/5 active:bg-brand/10
-                             disabled:opacity-50 text-gray-800 dark:text-gray-100"
-                >
-                  {o.text}
-                </button>
-              ))}
+              {!verdict ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {options.map((o) => (
+                    <button key={o.text} type="button" onClick={() => answer(o)}
+                      className="text-left text-[11px] leading-snug rounded-md border border-[hsl(var(--border))]
+                                 bg-[hsl(var(--card))] px-2 py-2 min-h-[38px] transition-colors
+                                 hover:border-brand hover:bg-brand/5 active:bg-brand/10 text-gray-800 dark:text-gray-100">
+                      {o.text}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className={`rounded-md border p-2 ${verdict.ok
+                  ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30"
+                  : "border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30"}`}>
+                  {verdict.ok ? (
+                    <p className="text-[12px] font-bold text-emerald-700 dark:text-emerald-300">{verdict.answer} {t("game.points")}</p>
+                  ) : (
+                    <>
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">{t("game.correct_was")}</p>
+                      <p className="text-[12px] font-semibold text-gray-900 dark:text-white leading-snug mt-0.5">{verdict.answer}</p>
+                    </>
+                  )}
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">{t("game.source")}: {verdict.source}</p>
+                  <Button size="sm" onClick={advance} className="h-7 text-[11px] gap-1 mt-2 w-full">
+                    {t("game.next")} <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {stage === "build" && (
+            <div className="rounded-lg border border-[hsl(var(--border))] p-2.5 space-y-2">
+              <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+                <Hammer className="h-3.5 w-3.5 text-brand" /> {t("game.build_phase")}
+              </p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                {rounds % ROUNDS_PER_WAVE === 0 ? t("game.wave_next_hint") : t("game.round_next_hint")}
+              </p>
+
+              {selected ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-gray-800 dark:text-gray-100 flex-1">
+                    {t(`game.room_${selected}`)} · {costOf(selected)} · +{BUILDINGS.find((b) => b.id === selected)?.capacity}
+                  </span>
+                  <Button size="sm" onClick={() => buildRoom(selected)} disabled={points < costOf(selected)}
+                    className="h-7 text-[10px] gap-1">
+                    <Hammer className="h-3 w-3" />{t("game.build")}
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-[10px] text-gray-400">{t("game.tap_plot")}</p>
+              )}
+
+              <Button size="sm" variant="outline" onClick={continueFromBuild} className="h-8 text-[11px] w-full gap-1.5">
+                {rounds % ROUNDS_PER_WAVE === 0 ? <Waves className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
+                {rounds % ROUNDS_PER_WAVE === 0 ? `${t("game.face_wave")} ${waveNumber(rounds)}` : t("game.next_round")}
+              </Button>
+            </div>
+          )}
+
+          {stage === "wave" && wave && (
+            <div className="rounded-lg border border-[hsl(var(--border))] p-2.5 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-gray-400">{t("game.wave")} {wave.n}</p>
+              <p className="text-[12px] font-semibold text-gray-800 dark:text-gray-100 mt-0.5">
+                {t("game.capacity")} {capacity} · {t("game.demand")} {wave.demand}
+              </p>
+            </div>
+          )}
         </>
       )}
 
-      {phase === "over" && (
+      {(stage === "over" || stage === "won") && (
         <div className="rounded-lg border border-[hsl(var(--border))] p-4 text-center space-y-3">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-rose-500">{t("game.over")}</p>
+          <p className={`text-[11px] font-bold uppercase tracking-wide ${stage === "won" ? "text-emerald-600" : "text-rose-500"}`}>
+            {stage === "won" ? t("game.won") : t("game.over")}
+          </p>
+          {stage === "won" && <CheckCircle2 className="h-8 w-8 mx-auto text-emerald-500" />}
           <p className="text-3xl font-extrabold text-gray-900 dark:text-white">{score}</p>
-          <div className="grid grid-cols-5 gap-1.5 text-[11px]">
+          <div className="grid grid-cols-4 gap-1.5 text-[11px]">
             {[
-              [t("game.level"), `${level}${levelsCleared >= LEVEL_COUNT ? "+" : ""}`],
-              [t("game.wave"), String(wavesCleared)],
+              [t("game.rooms"), `${built.length}/${BUILDINGS.length}`],
+              [t("game.waves_held"), String(wavesHeld)],
               [t("game.correct"), `${correct}/${asked}`],
               [t("game.accuracy"), `${accuracy}%`],
-              [t("game.scanners"), String(built)],
             ].map(([k, v]) => (
               <div key={k} className="rounded-md bg-[hsl(var(--muted)/0.5)] py-1.5">
                 <p className="text-gray-500 dark:text-gray-400 text-[9px]">{k}</p>
@@ -577,12 +483,12 @@ export function GameTab() {
           </p>
           <div className="flex gap-2">
             <Button onClick={start} className="flex-1 gap-1.5"><RotateCcw className="h-4 w-4" />{t("game.play_again")}</Button>
-            <Button variant="outline" onClick={() => setPhase("idle")} className="flex-1">{t("game.topics")}</Button>
+            <Button variant="outline" onClick={() => setStage("idle")} className="flex-1">{t("game.topics")}</Button>
           </div>
         </div>
       )}
 
-      {phase !== "playing" && (
+      {!playing && (
         <div className="rounded-lg border border-[hsl(var(--border))] p-3 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
