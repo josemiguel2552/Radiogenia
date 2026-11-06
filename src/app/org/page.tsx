@@ -19,7 +19,8 @@ import {
   Check, X, Download, Upload,
 } from "lucide-react";
 import { DEFAULT_TEMPLATES } from "@/lib/templates";
-import { useT, useModality as useModalityLabel } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
+import { useModality as useModalityLabel } from "@/lib/i18n-vocab";
 import { MODALITIES } from "@/lib/types";
 import type { OrgMembership, OrgSection, OrgTemplate, SectionRole } from "@/lib/types";
 import { toSlug } from "@/lib/slug";

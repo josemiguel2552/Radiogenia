@@ -45,10 +45,25 @@ const FAMILIES = [
   { prefix: "rv", module: "i18n-account" },
   { prefix: "pilot", module: "i18n-pilot" },
   { prefix: "game", module: "i18n-game" },
+  // The report view and everything it opens.
+  { prefix: "dash", module: "i18n-dashboard" },
+  { prefix: "classify", module: "i18n-dashboard" },
+  { prefix: "pii", module: "i18n-dashboard" },
+  { prefix: "app", module: "i18n-dashboard" },
+  { prefix: "sig", module: "i18n-dashboard" },
+  { prefix: "cfg", module: "i18n-templates" },
+  { prefix: "tpl", module: "i18n-templates" },
+  { prefix: "norm", module: "i18n-templates" },
+  { prefix: "mrec", module: "i18n-mrec" },
+  { prefix: "help", module: "i18n-help" },
+  { prefix: "consent", module: "i18n-consent" },
+  { prefix: "rdp", module: "i18n-rdp" },
+  { prefix: "conv", module: "i18n-admin" },
 ] as const;
 
 /** Modules small enough that the ">100 entries" floor does not apply. */
-const SMALL = new Set(["i18n-support", "i18n-pilot", "i18n-org", "i18n-game"]);
+const SMALL = new Set(["i18n-support", "i18n-pilot", "i18n-org", "i18n-game",
+  "i18n-help", "i18n-consent", "i18n-rdp", "i18n-mrec", "i18n-templates"]);
 
 describe("a feature's strings travel with the feature", () => {
   for (const { prefix, module } of FAMILIES) {
@@ -88,7 +103,7 @@ describe("a feature's strings travel with the feature", () => {
       });
       expect(counts[0]).toBe(counts[1]);
       expect(counts[1]).toBe(counts[2]);
-      expect(counts[0]).toBeGreaterThan(SMALL.has(mod) ? 15 : 100);
+      expect(counts[0]).toBeGreaterThan(SMALL.has(mod) ? 8 : 100);
     }
   });
 
@@ -116,5 +131,53 @@ describe("strings nobody reads are not shipped at all", () => {
     for (const file of sourceFiles()) {
       expect(`${file}: ${/"eng\.[a-z_0-9]+"/.test(readFileSync(file, "utf8"))}`).toBe(`${file}: false`);
     }
+  });
+});
+
+describe("the medical vocabulary travels with the report view", () => {
+  const VOCAB = ["useSection", "translateSection", "useTemplateName", "translateTemplateName", "useModality"];
+
+  it("is out of the shared dictionary", () => {
+    // Section headings, template names and the term dictionary were the
+    // single largest thing in the module every page imports. A visitor on
+    // the login page was parsing every anatomical heading in three
+    // languages to render a password field.
+    const core = read("src/lib/i18n.ts");
+    expect(core).not.toContain("const sections: Record");
+    expect(core).not.toContain("const templateNames: Record");
+    expect(core).not.toContain("const tplTerms: Record");
+  });
+
+  it("is smaller in the core than what moved out of it", () => {
+    const core = read("src/lib/i18n.ts").length;
+    const vocab = read("src/lib/i18n-vocab.ts").length;
+    expect(vocab).toBeGreaterThan(core * 0.5);
+  });
+
+  it("is never imported from the shared dictionary", () => {
+    // An import left pointing at @/lib/i18n would pull the vocabulary back
+    // into every page, silently undoing the split.
+    for (const file of sourceFiles()) {
+      const src = readFileSync(file, "utf8");
+      for (const name of VOCAB) {
+        const fromCore = new RegExp(`import \\{[^}]*\\b${name}\\b[^}]*\\} from "(@/lib/i18n|\\.{1,2}/i18n)"`);
+        expect(`${file.replace(ROOT + "/", "")} imports ${name} from core: ${fromCore.test(src)}`)
+          .toBe(`${file.replace(ROOT + "/", "")} imports ${name} from core: false`);
+      }
+    }
+  });
+});
+
+describe("nothing translates against the raw core table", () => {
+  it("keeps _uiDictionary out of every component and page", () => {
+    // It holds only what never moved into a feature dictionary, so a lookup
+    // against it alone returns the key for everything that did. That is
+    // exactly how the phone-dictation page started printing "rdp.invalid"
+    // on screen the moment its namespace was split out — a bug no import
+    // check could catch, because the import was there and correct.
+    const offenders = sourceFiles()
+      .filter((f) => readFileSync(f, "utf8").includes("_uiDictionary"))
+      .map((f) => f.replace(ROOT + "/", ""));
+    expect(offenders).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { translateTemplateName } from "../i18n";
+import { translateTemplateName } from "../i18n-vocab";
 
 describe("translateTemplateName", () => {
   describe("static dictionary (predefined templates)", () => {

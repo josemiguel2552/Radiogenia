@@ -1,5 +1,9 @@
 "use client";
 
+// The report view's strings, registered where they are used.
+import "@/lib/i18n-dashboard";
+
+
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,7 +56,8 @@ import { RemotePhoneDictation } from "@/components/dashboard/remote-phone-dictat
 import { processVoiceCommands } from "@/lib/voice-commands";
 import { AnatomyLoader } from "./anatomy-loader";
 // FloatingDictation removed — dictation is inline only
-import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
+import { useSection, useTemplateName, useModality } from "@/lib/i18n-vocab";
 import { detectPii, stripPii, type PiiMatch } from "@/lib/pii-detect";
 import { addRecentReport, LOAD_RECENT_EVENT, type RecentReport } from "@/lib/recent-reports";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

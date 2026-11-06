@@ -1,5 +1,9 @@
 "use client";
 
+// The report view's strings, registered where they are used.
+import "@/lib/i18n-dashboard";
+
+
 import { Label } from "@/components/ui/label";
 import { useUIPrefs, SKINS, type UILanguage } from "@/lib/ui-prefs";
 import { setUnifiedLanguage } from "@/lib/set-language";

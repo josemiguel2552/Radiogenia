@@ -1,5 +1,9 @@
 "use client";
 
+// The report view's strings, registered where they are used.
+import "@/lib/i18n-dashboard";
+
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DifferentialDialog } from "@/components/admin/differential-dialog";
 import { Button } from "@/components/ui/button";

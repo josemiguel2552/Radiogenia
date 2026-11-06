@@ -1,5 +1,9 @@
 "use client";
 
+// The report view's strings, registered where they are used.
+import "@/lib/i18n-dashboard";
+
+
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
 

@@ -1,5 +1,9 @@
 "use client";
 
+// The help and onboarding strings, registered where they are used.
+import "@/lib/i18n-help";
+
+
 import { useState, useEffect } from "react";
 import { HelpCircle, Stethoscope, Mic, Sparkles, PenLine, Save, Wrench, Settings, Scale, Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";

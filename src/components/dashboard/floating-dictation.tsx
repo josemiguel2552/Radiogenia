@@ -1,5 +1,9 @@
 "use client";
 
+// The report view's strings, registered where they are used.
+import "@/lib/i18n-dashboard";
+
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, MicOff, X, Minimize2, Send, Loader2, GripVertical, Keyboard } from "lucide-react";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";

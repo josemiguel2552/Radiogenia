@@ -1,5 +1,9 @@
 "use client";
 
+// The recommendations strings, registered where they are used.
+import "@/lib/i18n-mrec";
+
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +27,8 @@ import {
   Loader2,
   BookOpen,
 } from "lucide-react";
-import { useT, useSection, useModality } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
+import { useSection, useModality } from "@/lib/i18n-vocab";
 import { useUIPrefs } from "@/lib/ui-prefs";
 import { DEFAULT_RECOMMENDATIONS } from "@/lib/recommendation-defaults";
 import { MODALITIES, SECTIONS } from "@/lib/types";

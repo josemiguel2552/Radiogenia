@@ -1,5 +1,9 @@
 "use client";
 
+// The template strings, registered where they are used.
+import "@/lib/i18n-templates";
+
+
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

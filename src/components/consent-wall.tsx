@@ -1,5 +1,9 @@
 "use client";
 
+// The consent wall's strings, registered where they are used.
+import "@/lib/i18n-consent";
+
+
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

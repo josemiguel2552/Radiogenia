@@ -1,5 +1,9 @@
 "use client";
 
+// The phone-dictation strings, registered where they are used.
+import "@/lib/i18n-rdp";
+
+
 /* Phone-as-dictaphone page. Opened by scanning the QR shown on the desktop.
    The phone runs the exact same dictation pipeline (Deepgram + Whisper refine),
    authenticated by the signed pairing token, and streams the resulting TEXT to
@@ -13,7 +17,7 @@ import { useSearchParams } from "next/navigation";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
-import { _uiDictionary } from "@/lib/i18n";
+import { translate } from "@/lib/i18n";
 import { Mic, Square, Loader2, MonitorCheck, MonitorX, Wand2 } from "lucide-react";
 
 type Phase = "loading" | "invalid" | "ready" | "ended";
@@ -60,7 +64,9 @@ function RemoteDictationInner() {
   const token = params.get("t") || "";
   const uiLang = (["es", "en", "pt"].includes(params.get("lang") || "") ? params.get("lang") : "es") as "es" | "en" | "pt";
   const t = useCallback(
-    (key: string) => _uiDictionary[uiLang]?.[key] ?? _uiDictionary.en[key] ?? key,
+    // translate(), not the raw table: this page's strings live in their own
+    // feature dictionary, and the raw table does not know about those.
+    (key: string) => translate(uiLang, key),
     [uiLang],
   );
 

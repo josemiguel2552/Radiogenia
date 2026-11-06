@@ -1,5 +1,9 @@
 "use client";
 
+// The template strings, registered where they are used.
+import "@/lib/i18n-templates";
+
+
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +35,8 @@ import {
 } from "lucide-react";
 import type { UserTemplate } from "@/lib/types";
 import { MODALITIES, SECTIONS } from "@/lib/types";
-import { useT, useSection, useTemplateName, useModality } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
+import { useSection, useTemplateName, useModality } from "@/lib/i18n-vocab";
 import { SectionEditor, parseTemplateSections, serializeTemplateSections, nextFieldId } from "@/components/shared/template-section-editor";
 import type { TemplateField } from "@/components/shared/template-section-editor";
 import { TemplateBot } from "./template-bot";

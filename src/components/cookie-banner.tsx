@@ -3,19 +3,20 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
-
-const STORAGE_KEY = "cookie_consent";
+import { readConsent, writeConsent, type Consent } from "@/lib/consent-cookies";
 
 export function CookieBanner() {
   const t = useT();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
+    if (readConsent() === null) setVisible(true);
   }, []);
 
-  function accept(value: "all" | "essential") {
-    localStorage.setItem(STORAGE_KEY, value);
+  /** Records the answer AND announces it, so the trackers react to it on
+   *  this page rather than on some later reload. */
+  function accept(value: Consent) {
+    writeConsent(value);
     setVisible(false);
   }
 

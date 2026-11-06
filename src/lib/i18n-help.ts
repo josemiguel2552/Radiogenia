@@ -1,0 +1,92 @@
+"use client";
+
+/**
+ * Help and onboarding dialog strings.
+ *
+ * Split out of the shared dictionary because every page used to download
+ * all three languages of every string in the product. The login page was
+ * parsing 200 KB of report-view labels it could never show.
+ */
+
+import { registerMessages } from "./i18n";
+
+registerMessages({
+  es: {
+    "help.title": "Cómo usar Radiogen.AI",
+    "help.step1_title": "1. Selecciona plantilla y modalidad",
+    "help.step1_desc": "En el panel lateral, elige la plantilla de informe adecuada para tu estudio (ej. TC de tórax). La modalidad se selecciona automáticamente.",
+    "help.step2_title": "2. Dicta o escribe los hallazgos",
+    "help.step2_desc": "Usa el botón de micrófono para dictar los hallazgos anormales y negativos relevantes, o escríbelos directamente. No es necesario describir lo normal — la IA lo completa.",
+    "help.step3_title": "3. Genera el informe",
+    "help.step3_desc": "Pulsa 'Generar' para que la IA distribuya tus hallazgos en las secciones del template, añada descripciones de normalidad, y redacte la conclusión.",
+    "help.step4_title": "4. Revisa y corrige",
+    "help.step4_desc": "Revisa y edita libremente los hallazgos y la conclusión. El sistema aprende de tus correcciones para adaptarse a tu estilo.",
+    "help.step5_title": "5. Guarda el informe",
+    "help.step5_desc": "Pulsa 'Guardar' para almacenar el informe y que el sistema aprenda de tus preferencias de redacción.",
+    "help.step6_title": "6. Herramientas que te ayudan",
+    "help.step6_desc": "Tras generar: recomendaciones de seguimiento según guías (Fleischner, TI-RADS…), apoyo a la clasificación y revisión clínica. En el panel lateral tienes calculadoras (RECIST, volúmenes…) y el Radiogen Bot para consultar tus guías sin salir del informe.",
+    "help.config_title": "Configuración",
+    "help.config_desc": "En la pestaña 'Config IA' del panel lateral puedes personalizar: longitud de hallazgos, frases de normalidad preferidas, idioma de salida y modo compacto.",
+    "help.legal_title": "Aviso legal",
+    "help.legal_desc": "Radiogen.AI es una herramienta de apoyo a la redacción de informes radiológicos. Los textos generados son borradores orientativos que deben ser revisados y validados por el profesional antes de su uso clínico.",
+    "help.shortcuts_title": "Atajos de teclado",
+    "help.shortcut_dictation": "Iniciar / detener dictado",
+    "help.shortcut_copy": "Copiar hallazgos + conclusión",
+    "help.shortcut_generate": "Generar informe",
+    "help.shortcut_new": "Nuevo informe",
+    "help.shortcut_help": "Abrir ayuda",
+    "help.shortcut_cheatsheet": "Ver atajos de teclado",
+  },
+  en: {
+    "help.title": "How to use Radiogen.AI",
+    "help.step1_title": "1. Select template and modality",
+    "help.step1_desc": "In the side panel, choose the appropriate report template for your study (e.g. Chest CT). The modality is selected automatically.",
+    "help.step2_title": "2. Dictate or type findings",
+    "help.step2_desc": "Use the microphone button to dictate abnormal and relevant negative findings, or type them directly. No need to describe normal findings — the AI fills those in.",
+    "help.step3_title": "3. Generate the report",
+    "help.step3_desc": "Click 'Generate' so the AI distributes your findings into the template sections, adds normality descriptions, and writes the conclusion.",
+    "help.step4_title": "4. Review and correct",
+    "help.step4_desc": "Review and freely edit the findings and conclusion. The system learns from your corrections to adapt to your style.",
+    "help.step5_title": "5. Save the report",
+    "help.step5_desc": "Click 'Save' to store the report and let the system learn from your writing preferences.",
+    "help.step6_title": "6. Tools that help you",
+    "help.step6_desc": "After generating: guideline-based follow-up recommendations (Fleischner, TI-RADS…), classification assist, and clinical review. The sidebar offers calculators (RECIST, volumes…) and the Radiogen Bot to consult your guidelines without leaving the report.",
+    "help.config_title": "Configuration",
+    "help.config_desc": "In the 'AI Config' tab of the side panel you can customize: findings length, preferred normality phrases, output language, and compact mode.",
+    "help.legal_title": "Legal notice",
+    "help.legal_desc": "Radiogen.AI is a radiology report drafting assistant. Generated texts are indicative drafts that should be reviewed and validated by the professional before clinical use.",
+    "help.shortcuts_title": "Keyboard shortcuts",
+    "help.shortcut_dictation": "Start / stop dictation",
+    "help.shortcut_copy": "Copy findings + conclusion",
+    "help.shortcut_generate": "Generate report",
+    "help.shortcut_new": "New report",
+    "help.shortcut_help": "Open help",
+    "help.shortcut_cheatsheet": "Show keyboard shortcuts",
+  },
+  pt: {
+    "help.title": "Como usar o Radiogen.AI",
+    "help.step1_title": "1. Selecione template e modalidade",
+    "help.step1_desc": "No painel lateral, escolha o template de laudo adequado para o seu exame (ex. TC de tórax). A modalidade é selecionada automaticamente.",
+    "help.step2_title": "2. Dite ou digite os achados",
+    "help.step2_desc": "Use o botão do microfone para ditar os achados anormais e negativos relevantes, ou digite diretamente. Não é necessário descrever o normal — a IA completa.",
+    "help.step3_title": "3. Gere o laudo",
+    "help.step3_desc": "Clique em 'Gerar' para que a IA distribua seus achados nas seções do template, adicione descrições de normalidade e redija a conclusão.",
+    "help.step4_title": "4. Revise e corrija",
+    "help.step4_desc": "Revise e edite livremente os achados e a conclusão. O sistema aprende com suas correções para se adaptar ao seu estilo.",
+    "help.step5_title": "5. Salve o laudo",
+    "help.step5_desc": "Clique em 'Salvar' para armazenar o laudo e permitir que o sistema aprenda com suas preferências de redação.",
+    "help.step6_title": "6. Ferramentas que ajudam você",
+    "help.step6_desc": "Após gerar: recomendações de seguimento baseadas em diretrizes (Fleischner, TI-RADS…), apoio à classificação e revisão clínica. Na barra lateral há calculadoras (RECIST, volumes…) e o Radiogen Bot para consultar suas diretrizes sem sair do laudo.",
+    "help.config_title": "Configuração",
+    "help.config_desc": "Na aba 'Config IA' do painel lateral você pode personalizar: extensão dos achados, frases de normalidade preferidas, idioma do laudo e modo compacto.",
+    "help.legal_title": "Aviso legal",
+    "help.legal_desc": "Radiogen.AI é uma ferramenta de apoio à redação de laudos radiológicos. Os textos gerados são rascunhos orientativos que devem ser revisados e validados pelo profissional antes do uso clínico.",
+    "help.shortcuts_title": "Atalhos de teclado",
+    "help.shortcut_dictation": "Iniciar / parar ditado",
+    "help.shortcut_copy": "Copiar achados + conclusão",
+    "help.shortcut_generate": "Gerar laudo",
+    "help.shortcut_new": "Novo laudo",
+    "help.shortcut_help": "Abrir ajuda",
+    "help.shortcut_cheatsheet": "Ver atalhos de teclado",
+  },
+});

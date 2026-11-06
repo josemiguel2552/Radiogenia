@@ -1,5 +1,9 @@
 "use client";
 
+// The recommendations strings, registered where they are used.
+import "@/lib/i18n-mrec";
+
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { ChevronDown, ChevronRight, Copy, Check, Plus, X, Search, ClipboardList, Sparkles, ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
