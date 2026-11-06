@@ -753,7 +753,6 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
           { view: "templates" as ActiveView, icon: FileText, label: t("nav.rail_templates"), show: true },
           { view: "calculators" as ActiveView, icon: Calculator, label: t("nav.rail_calculators"), show: true },
           { view: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.rail_recommendations"), show: recommendationsAllowed },
-          { view: "game" as ActiveView, icon: Crosshair, label: t("nav.rail_game"), show: true },
           { view: "account" as ActiveView, icon: UserIcon, label: t("nav.rail_account"), show: !isOrgUser },
         ]).filter((item) => item.show).map((item) => (
           <button
@@ -787,6 +786,20 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
         <Separator className="bg-gray-800 w-8" />
         <RecentReportsRail onOpenReport={() => setActiveView("dashboard")} />
         <div className="flex-1" />
+        {/* Tucked into the bottom corner on purpose: it is a break, not a
+            tool, and it should not sit in the rail competing with the things
+            someone opened the panel to do. */}
+        <button
+          type="button"
+          onClick={() => setActiveView("game")}
+          title={t("nav.rail_game")}
+          aria-label={t("nav.rail_game")}
+          className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer ${
+            activeView === "game" ? "text-brand bg-gray-800" : "text-gray-700 hover:text-gray-400 hover:bg-gray-800"
+          }`}
+        >
+          <Crosshair className="h-4 w-4" />
+        </button>
         <HelpDialog showTrigger={false} />
         <Separator className="bg-gray-800 w-8" />
         <RailMenu
@@ -874,7 +887,6 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
             { key: "templates" as ActiveView, icon: FileText, label: t("nav.templates"), show: true },
             { key: "calculators" as ActiveView, icon: Calculator, label: t("nav.calculators"), show: true },
             { key: "recommendations" as ActiveView, icon: ClipboardList, label: t("nav.recommendations"), show: recommendationsAllowed },
-            { key: "game" as ActiveView, icon: Crosshair, label: t("nav.game"), show: true },
           ] as const).filter((item) => item.show).map((item) => (
             <button
               key={item.key}
@@ -914,6 +926,18 @@ function DashboardShellInner({ children, user, role, verifyDaysLeft, trialCancel
           <button className="flex flex-col items-center shrink-0 gap-0.5 text-gray-500 py-1.5 px-2 min-w-[48px]" onClick={handleLogout}>
             <LogOut className="h-5 w-5" />
             <span className="text-[9px] leading-tight">{t("nav.sign_out")}</span>
+          </button>
+          {/* Last, small and unlabelled: reachable without being on offer. */}
+          <button
+            type="button"
+            onClick={() => setActiveView("game")}
+            title={t("nav.game")}
+            aria-label={t("nav.game")}
+            className={`flex items-center justify-center shrink-0 h-8 w-8 rounded-lg mr-1 ${
+              activeView === "game" ? "text-brand" : "text-gray-400/60"
+            }`}
+          >
+            <Crosshair className="h-4 w-4" />
           </button>
         </div>
       </nav>

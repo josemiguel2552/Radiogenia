@@ -557,9 +557,18 @@ describe("the game is reachable and costs non-players nothing", () => {
     expect(shell).toContain('dynamic(() => import("@/components/sidebar/game-tab")');
   });
 
-  it("is in both the desktop rail and the mobile bar", () => {
-    expect(shell).toContain('{ view: "game" as ActiveView');
-    expect(shell).toContain('{ key: "game" as ActiveView');
+  it("is reachable from the rail and from the mobile bar", () => {
+    expect((shell.match(/setActiveView\("game"\)/g) || []).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("stays out of the main nav lists, in a corner", () => {
+    // It is a break, not a tool. Sitting in the rail next to reports and
+    // templates puts it on offer to someone who opened the panel to work.
+    expect(shell).not.toContain('{ view: "game" as ActiveView');
+    expect(shell).not.toContain('{ key: "game" as ActiveView');
+    // Reachable all the same, and named for whoever hovers or uses a reader.
+    expect(shell).toContain('aria-label={t("nav.rail_game")}');
+    expect(shell).toContain('aria-label={t("nav.game")}');
   });
 
   it("takes its nav label from the shared dictionary, not the split one", () => {
